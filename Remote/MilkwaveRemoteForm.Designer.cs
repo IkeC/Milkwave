@@ -275,7 +275,7 @@ namespace MilkwaveRemote
       // numSize
       // 
       numSize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numSize.Location = new Point(337, 123);
+      numSize.Location = new Point(335, 123);
       numSize.Margin = new Padding(3, 2, 3, 2);
       numSize.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numSize.Name = "numSize";
@@ -291,7 +291,7 @@ namespace MilkwaveRemote
       // 
       lblSize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       lblSize.AutoSize = true;
-      lblSize.Location = new Point(305, 126);
+      lblSize.Location = new Point(303, 126);
       lblSize.Name = "lblSize";
       lblSize.Size = new Size(27, 15);
       lblSize.TabIndex = 98;
@@ -382,7 +382,7 @@ namespace MilkwaveRemote
       // 
       lblColor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       lblColor.AutoSize = true;
-      lblColor.Location = new Point(441, 127);
+      lblColor.Location = new Point(443, 126);
       lblColor.Name = "lblColor";
       lblColor.Size = new Size(36, 15);
       lblColor.TabIndex = 96;
@@ -731,7 +731,7 @@ namespace MilkwaveRemote
       numWavemode.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numWavemode.Location = new Point(408, 63);
       numWavemode.Margin = new Padding(3, 2, 3, 2);
-      numWavemode.Maximum = new decimal(new int[] { 15, 0, 0, 0 });
+      numWavemode.Maximum = new decimal(new int[] { 16, 0, 0, 0 });
       numWavemode.Name = "numWavemode";
       numWavemode.Size = new Size(38, 23);
       numWavemode.TabIndex = 109;
@@ -757,7 +757,7 @@ namespace MilkwaveRemote
       // 
       lblWaveColor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       lblWaveColor.AutoSize = true;
-      lblWaveColor.Location = new Point(451, 67);
+      lblWaveColor.Location = new Point(451, 65);
       lblWaveColor.Name = "lblWaveColor";
       lblWaveColor.Size = new Size(36, 15);
       lblWaveColor.TabIndex = 112;

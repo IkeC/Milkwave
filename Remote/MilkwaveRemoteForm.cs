@@ -249,10 +249,10 @@ namespace MilkwaveRemote {
     private void MainForm_Shown(object sender, EventArgs e) {
       btnSend.Focus();
 
-      pnlColorMessage.BackColor = Color.FromArgb(191, 0, 0); // Color.FromArgb(230, 0, 120);
+      pnlColorMessage.BackColor = Color.FromArgb(200, 0, 200); // purple
       colorDialogMessage.Color = pnlColorMessage.BackColor;
 
-      pnlColorWave.BackColor = Color.FromArgb(0, 0, 225); // dark blue
+      pnlColorWave.BackColor = Color.FromArgb(0, 200, 0); // dark green
       colorDialogWave.Color = pnlColorWave.BackColor;
 
       if (cboParameters.Items.Count > 0) {
@@ -1513,9 +1513,7 @@ namespace MilkwaveRemote {
 
     private void lblAmpLeft_Click(object sender, EventArgs e) {
       numAmpLeft.Value = 1.0M;
-      if (chkAmpLinked.Checked) {
-        numAmpRight.Value = numAmpLeft.Value;
-      }
+      numAmpRight.Value = 1.0M;
     }
 
     private void lblAmpRight_Click(object sender, EventArgs e) {

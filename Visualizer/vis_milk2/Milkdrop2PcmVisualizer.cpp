@@ -299,6 +299,7 @@ void ToggleStretch(HWND hwnd) {
         SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
         SetWindowPos(hwnd, HWND_NOTOPMOST, left, top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
         SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+		DragAcceptFiles(hwnd, TRUE);
 
         stretch = true;
     }
@@ -360,6 +361,7 @@ void ToggleFullScreen(HWND hwnd) {
 
         pD3DDevice->Reset(&d3dPp);
         SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+		DragAcceptFiles(hwnd, TRUE);
         fullscreen = true;
     }
     else {
