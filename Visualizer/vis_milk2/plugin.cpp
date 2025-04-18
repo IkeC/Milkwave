@@ -9385,7 +9385,7 @@ retry:
             goto retry;
         }
 
-        g_plugin.AddError(wasabiApiLangString(IDS_SCANNING_PRESETS), 8.0f, ERR_SCANNING_PRESETS, false);
+        // g_plugin.AddError(wasabiApiLangString(IDS_SCANNING_PRESETS), 8.0f, ERR_SCANNING_PRESETS, false);
     }
 
     if (g_plugin.m_bPresetListReady)

@@ -7,10 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using static DarkModeForms.DarkModeCS;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace MilkwaveRemote {
   public partial class MilkwaveRemoteForm : Form {
