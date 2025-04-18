@@ -47,47 +47,47 @@ float   AdjustRateToFPS(float per_frame_decay_rate_at_fps1, float fps1, float ac
 //int   GetPrivateProfileInt - part of Win32 API
 #define GetPrivateProfileBoolW(w,x,y,z) ((bool)(GetPrivateProfileIntW(w,x,y,z) != 0))
 #define GetPrivateProfileBOOLW(w,x,y,z) ((BOOL)(GetPrivateProfileIntW(w,x,y,z) != 0))
-float   GetPrivateProfileFloatW(wchar_t *szSectionName, wchar_t *szKeyName, float fDefault, wchar_t *szIniFile);
-bool    WritePrivateProfileIntW(int d, wchar_t *szKeyName, wchar_t *szIniFile, wchar_t *szSectionName);
-bool    WritePrivateProfileFloatW(float f, wchar_t *szKeyName, wchar_t *szIniFile, wchar_t *szSectionName);
+float   GetPrivateProfileFloatW(wchar_t* szSectionName, wchar_t* szKeyName, float fDefault, wchar_t* szIniFile);
+bool    WritePrivateProfileIntW(int d, wchar_t* szKeyName, wchar_t* szIniFile, wchar_t* szSectionName);
+bool    WritePrivateProfileFloatW(float f, wchar_t* szKeyName, wchar_t* szIniFile, wchar_t* szSectionName);
 
 extern  _locale_t g_use_C_locale;
 extern	char keyMappings[8];
 
-void    RemoveExtension(wchar_t *str);
-void    RemoveSingleAmpersands(wchar_t *str);
-void    TextToGuid(char *str, GUID *pGUID);
-void    GuidToText(GUID *pGUID, char *str, int nStrLen);
+void    RemoveExtension(wchar_t* str);
+void    RemoveSingleAmpersands(wchar_t* str);
+void    TextToGuid(char* str, GUID* pGUID);
+void    GuidToText(GUID* pGUID, char* str, int nStrLen);
 void    MissingDirectX(HWND hwnd);
 bool    CheckForMMX();
 bool    CheckForSSE();
-void    GetDesktopFolder(char *szDesktopFolder); // should be MAX_PATH len.
+void    GetDesktopFolder(char* szDesktopFolder); // should be MAX_PATH len.
 
 #include <shlobj.h>
 #include <list>
 
-BOOL    DoExplorerMenu (HWND hwnd, LPCTSTR pszPath,   POINT point);
-BOOL    DoExplorerMenu (HWND hwnd, LPITEMIDLIST pidl, POINT point);
-UINT    GetItemCount (LPITEMIDLIST pidl);
-LPITEMIDLIST GetNextItem (LPITEMIDLIST pidl);
-LPITEMIDLIST DuplicateItem (LPMALLOC pMalloc, LPITEMIDLIST pidl);
-void    FindDesktopWindows(HWND *desktop_progman, HWND *desktopview_wnd, HWND *listview_wnd);
-void    ExecutePidl(LPITEMIDLIST pidl, char *szPathAndFile, char *szWorkingDirectory, HWND hWnd);
+BOOL    DoExplorerMenu(HWND hwnd, LPCTSTR pszPath, POINT point);
+BOOL    DoExplorerMenu(HWND hwnd, LPITEMIDLIST pidl, POINT point);
+UINT    GetItemCount(LPITEMIDLIST pidl);
+LPITEMIDLIST GetNextItem(LPITEMIDLIST pidl);
+LPITEMIDLIST DuplicateItem(LPMALLOC pMalloc, LPITEMIDLIST pidl);
+void    FindDesktopWindows(HWND* desktop_progman, HWND* desktopview_wnd, HWND* listview_wnd);
+void    ExecutePidl(LPITEMIDLIST pidl, char* szPathAndFile, char* szWorkingDirectory, HWND hWnd);
 int     GetDesktopIconSize();
 
 // handy functions for populating Combo Boxes:
 inline void AddItem(HWND ctrl, const wchar_t* text, DWORD itemdata) {
-	LRESULT nPos = SendMessageW( ctrl, CB_ADDSTRING, 0, (LPARAM)text);
-	SendMessage( ctrl, CB_SETITEMDATA, nPos, itemdata);
+  LRESULT nPos = SendMessageW(ctrl, CB_ADDSTRING, 0, (LPARAM)text);
+  SendMessage(ctrl, CB_SETITEMDATA, nPos, itemdata);
 }
 inline void SelectItemByPos(HWND ctrl, int pos) {
-    SendMessage(ctrl, CB_SETCURSEL, pos, 0);
+  SendMessage(ctrl, CB_SETCURSEL, pos, 0);
 }
 int SelectItemByValue(HWND ctrl, DWORD value);
 bool ReadCBValue(HWND hwnd, DWORD ctrl_id, int* pRetValue);
 
 void* GetTextResource(UINT id, int no_fallback);
 
-intptr_t myOpenURL(HWND hwnd, wchar_t *loc);
+intptr_t myOpenURL(HWND hwnd, wchar_t* loc);
 
 #endif

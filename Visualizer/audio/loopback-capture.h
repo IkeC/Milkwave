@@ -8,13 +8,13 @@
 // any failures will be propagated back via hr
 
 struct LoopbackCaptureThreadFunctionArguments {
-    IMMDevice *pMMDevice;
-    bool bInt16;
-    HMMIO hFile;
-    HANDLE hStartedEvent;
-    HANDLE hStopEvent;
-    UINT32 nFrames;
-    HRESULT hr;
+  IMMDevice* pMMDevice;
+  bool bInt16;
+  HMMIO hFile;
+  HANDLE hStartedEvent;
+  HANDLE hStopEvent;
+  UINT32 nFrames;
+  HRESULT hr;
 };
 
 DWORD WINAPI LoopbackCaptureThreadFunction(LPVOID pContext);

@@ -31,7 +31,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define GEISS_TEXT_DRAWING_MANAGER 1
 
 #ifdef _DEBUG
-    #define D3D_DEBUG_INFO  // declare this before including d3d9.h
+#define D3D_DEBUG_INFO  // declare this before including d3d9.h
 #endif
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -40,52 +40,50 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define MAX_MSGS 4096
 
-typedef struct
-{
-    wchar_t* msg;       // points to some character in g_szMsgPool[2][].
-    LPD3DXFONT pfont;   // note: iff this string is really a dark box, pfont will be NULL!
-    RECT rect;
-    DWORD flags;
-    DWORD color;
-    DWORD bgColor;
-    int added, deleted;        // temporary; used during DrawNow()
-    void* prev_dark_box_ptr;   // temporary; used during DrawNow()
+typedef struct {
+  wchar_t* msg;       // points to some character in g_szMsgPool[2][].
+  LPD3DXFONT pfont;   // note: iff this string is really a dark box, pfont will be NULL!
+  RECT rect;
+  DWORD flags;
+  DWORD color;
+  DWORD bgColor;
+  int added, deleted;        // temporary; used during DrawNow()
+  void* prev_dark_box_ptr;   // temporary; used during DrawNow()
 }
 td_string;
 
-class CTextManager
-{
+class CTextManager {
 public:
-    CTextManager();
-    ~CTextManager();
+  CTextManager();
+  ~CTextManager();
 
-    // note: if you can't create lpTextSurface full-size, don't create it at all!
-    void Init(LPDIRECT3DDEVICE9 lpDevice, IDirect3DTexture9* lpTextSurface, int bAdditive); // note: ok if lpTextSurface==NULL; in that case, text will be drawn directly to screen (but not til end anyway).
-    void Finish();
+  // note: if you can't create lpTextSurface full-size, don't create it at all!
+  void Init(LPDIRECT3DDEVICE9 lpDevice, IDirect3DTexture9* lpTextSurface, int bAdditive); // note: ok if lpTextSurface==NULL; in that case, text will be drawn directly to screen (but not til end anyway).
+  void Finish();
 
-    // note: pFont must persist until DrawNow() is called!
-    int  DrawText(LPD3DXFONT pFont, char* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor=0xFF000000); // actually queues the text!
-    int  DrawText(LPD3DXFONT pFont, char* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor=0xFF000000) {
-        return DrawTextW(pFont, AutoWide(szText), pRect, flags, color, bBox, boxColor);
-    };
-    int  DrawTextW(LPD3DXFONT pFont, wchar_t* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor=0xFF000000); // actually queues the text!
-    int  DrawTextW(LPD3DXFONT pFont, wchar_t* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor=0xFF000000) {
-        return DrawTextW(pFont, szText, pRect, flags, color, bBox, boxColor);
-    };
-    void DrawBox(LPRECT pRect, DWORD boxColor);
-    void DrawDarkBox(LPRECT pRect) { DrawBox(pRect, 0xFF000000); }
-    void DrawNow();
-    void ClearAll(); // automatically called @ end of DrawNow()
+  // note: pFont must persist until DrawNow() is called!
+  int  DrawText(LPD3DXFONT pFont, char* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor = 0xFF000000); // actually queues the text!
+  int  DrawText(LPD3DXFONT pFont, char* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor = 0xFF000000) {
+    return DrawTextW(pFont, AutoWide(szText), pRect, flags, color, bBox, boxColor);
+  };
+  int  DrawTextW(LPD3DXFONT pFont, wchar_t* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor = 0xFF000000); // actually queues the text!
+  int  DrawTextW(LPD3DXFONT pFont, wchar_t* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor = 0xFF000000) {
+    return DrawTextW(pFont, szText, pRect, flags, color, bBox, boxColor);
+  };
+  void DrawBox(LPRECT pRect, DWORD boxColor);
+  void DrawDarkBox(LPRECT pRect) { DrawBox(pRect, 0xFF000000); }
+  void DrawNow();
+  void ClearAll(); // automatically called @ end of DrawNow()
 
 protected:
-    LPDIRECT3DDEVICE9    m_lpDevice;
-    IDirect3DTexture9*   m_lpTextSurface;
-    int                  m_blit_additively;
+  LPDIRECT3DDEVICE9    m_lpDevice;
+  IDirect3DTexture9* m_lpTextSurface;
+  int                  m_blit_additively;
 
-    int       m_nMsg[2];
-    td_string m_msg[2][MAX_MSGS];
-    wchar_t*  m_next_msg_start_ptr;
-    int       m_b;
+  int       m_nMsg[2];
+  td_string m_msg[2][MAX_MSGS];
+  wchar_t* m_next_msg_start_ptr;
+  int       m_b;
 };
 
 #endif

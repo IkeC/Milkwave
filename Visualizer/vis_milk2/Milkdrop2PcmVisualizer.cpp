@@ -186,596 +186,591 @@ static HICON icon = nullptr;
 
 // SPOUT
 // ===============================================
-BOOL CALLBACK GetWindowNames(HWND h, LPARAM l)
-{
-	if (h == NULL)
-		return FALSE;
+BOOL CALLBACK GetWindowNames(HWND h, LPARAM l) {
+  if (h == NULL)
+    return FALSE;
 
-	char search_window_name[MAX_PATH];
+  char search_window_name[MAX_PATH];
 
-	if (IsWindow(h) && IsWindowVisible(h)) {
-		GetWindowTextA(h, search_window_name, MAX_PATH);
-		if(search_window_name[0]) {
-			// Does the search window name contain "Milkwave Visualizer" ?
-			if (strstr(search_window_name, "Milkwave Visualizer") != NULL) {
-				nBeatDrops++;
-			}
-		}
-	}
-	return TRUE;
+  if (IsWindow(h) && IsWindowVisible(h)) {
+    GetWindowTextA(h, search_window_name, MAX_PATH);
+    if (search_window_name[0]) {
+      // Does the search window name contain "Milkwave Visualizer" ?
+      if (strstr(search_window_name, "Milkwave Visualizer") != NULL) {
+        nBeatDrops++;
+      }
+    }
+  }
+  return TRUE;
 }
 // ===============================================
 
 // SPOUT - DX9EX
 void InitD3d(HWND hwnd, int width, int height) {
-	
-	// TODO - error return
-	HRESULT Hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3D9);
 
-	D3DCAPS9 d3dCaps;
+  // TODO - error return
+  HRESULT Hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3D9);
 
-	D3DDISPLAYMODEEX mode;
-	D3DDISPLAYROTATION rot;
-	pD3D9->GetAdapterDisplayModeEx(D3DADAPTER_DEFAULT, &mode, &rot);
+  D3DCAPS9 d3dCaps;
 
-	UINT adapterId = g_plugin.m_adapterId;
+  D3DDISPLAYMODEEX mode;
+  D3DDISPLAYROTATION rot;
+  pD3D9->GetAdapterDisplayModeEx(D3DADAPTER_DEFAULT, &mode, &rot);
 
-	if (adapterId > pD3D9->GetAdapterCount()) {
-		adapterId = D3DADAPTER_DEFAULT;
-	}
+  UINT adapterId = g_plugin.m_adapterId;
 
-	memset(&d3dPp, 0, sizeof(d3dPp));
+  if (adapterId > pD3D9->GetAdapterCount()) {
+    adapterId = D3DADAPTER_DEFAULT;
+  }
 
-	d3dPp.BackBufferCount = 1;
-	d3dPp.BackBufferFormat = D3DFMT_UNKNOWN;// mode.Format;
-	d3dPp.BackBufferWidth = width;
-	d3dPp.BackBufferHeight = height;
-	d3dPp.SwapEffect = D3DSWAPEFFECT_COPY;
-	d3dPp.Flags = 0;
-	d3dPp.EnableAutoDepthStencil = FALSE;// TRUE;
-	d3dPp.AutoDepthStencilFormat = D3DFMT_D24S8;// D3DFMT_D24X8;
-	d3dPp.Windowed = TRUE;
-	d3dPp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-	d3dPp.MultiSampleType = D3DMULTISAMPLE_NONE;
-	d3dPp.hDeviceWindow = (HWND)hwnd;
+  memset(&d3dPp, 0, sizeof(d3dPp));
 
-	// Test for hardware vertex processing capability and set up as needed
-	// D3DCREATE_MULTITHREADED required by interop spec
-	if (pD3D9->GetDeviceCaps(adapterId, D3DDEVTYPE_HAL, &d3dCaps) != S_OK) {
-		printf("Milkdrop2PcmVisualizer::CreateDX9device - GetDeviceCaps error\n");
-		return;
-	}
+  d3dPp.BackBufferCount = 1;
+  d3dPp.BackBufferFormat = D3DFMT_UNKNOWN;// mode.Format;
+  d3dPp.BackBufferWidth = width;
+  d3dPp.BackBufferHeight = height;
+  d3dPp.SwapEffect = D3DSWAPEFFECT_COPY;
+  d3dPp.Flags = 0;
+  d3dPp.EnableAutoDepthStencil = FALSE;// TRUE;
+  d3dPp.AutoDepthStencilFormat = D3DFMT_D24S8;// D3DFMT_D24X8;
+  d3dPp.Windowed = TRUE;
+  d3dPp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+  d3dPp.MultiSampleType = D3DMULTISAMPLE_NONE;
+  d3dPp.hDeviceWindow = (HWND)hwnd;
 
-	DWORD dwBehaviorFlags = D3DCREATE_PUREDEVICE | D3DCREATE_MULTITHREADED;
-	if (d3dCaps.VertexProcessingCaps != 0)
-		dwBehaviorFlags |= D3DCREATE_HARDWARE_VERTEXPROCESSING;
-	else
-		dwBehaviorFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+  // Test for hardware vertex processing capability and set up as needed
+  // D3DCREATE_MULTITHREADED required by interop spec
+  if (pD3D9->GetDeviceCaps(adapterId, D3DDEVTYPE_HAL, &d3dCaps) != S_OK) {
+    printf("Milkdrop2PcmVisualizer::CreateDX9device - GetDeviceCaps error\n");
+    return;
+  }
 
-	Hr = pD3D9->CreateDeviceEx(
-		adapterId,
-		D3DDEVTYPE_HAL,
-		(HWND)hwnd,
-		dwBehaviorFlags,
-		&d3dPp,
-		NULL,
-		&pD3DDevice);
+  DWORD dwBehaviorFlags = D3DCREATE_PUREDEVICE | D3DCREATE_MULTITHREADED;
+  if (d3dCaps.VertexProcessingCaps != 0)
+    dwBehaviorFlags |= D3DCREATE_HARDWARE_VERTEXPROCESSING;
+  else
+    dwBehaviorFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+
+  Hr = pD3D9->CreateDeviceEx(
+    adapterId,
+    D3DDEVTYPE_HAL,
+    (HWND)hwnd,
+    dwBehaviorFlags,
+    &d3dPp,
+    NULL,
+    &pD3DDevice);
 }
 
 void DeinitD3d() {
-    if (pD3DDevice) {
-        pD3DDevice->Release();
-        pD3DDevice = nullptr;
-    }
+  if (pD3DDevice) {
+    pD3DDevice->Release();
+    pD3DDevice = nullptr;
+  }
 
-    if (pD3D9) {
-        pD3D9->Release();
-        pD3D9 = nullptr;
-    }
+  if (pD3D9) {
+    pD3D9->Release();
+    pD3D9 = nullptr;
+  }
 }
 
 //Multiple monitor stretch - Credit to @milkdropper for the code!
 void ToggleStretch(HWND hwnd) {
-    if (!stretch) {
-        ShowCursor(FALSE);
-        int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-        int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-        int left = GetSystemMetrics(SM_XVIRTUALSCREEN);
-        int top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+  if (!stretch) {
+    ShowCursor(FALSE);
+    int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+    int left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    int top = GetSystemMetrics(SM_YVIRTUALSCREEN);
 
-        if (!fullscreen) {
-            lastWindowStyle = GetWindowLong(hwnd, GWL_STYLE);
-            lastWindowStyleEx = GetWindowLongW(hwnd, GWL_EXSTYLE);
-            lastWindowStyleEx &= ~WS_EX_TOPMOST;
-            GetWindowRect(hwnd, &lastRect);
-        }
-
-        d3dPp.BackBufferWidth = width;
-        d3dPp.BackBufferHeight = height;
-
-        pD3DDevice->Reset(&d3dPp);
-
-        SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-        SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
-        SetWindowPos(hwnd, HWND_NOTOPMOST, left, top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
-		DragAcceptFiles(hwnd, TRUE);
-
-        stretch = true;
+    if (!fullscreen) {
+      lastWindowStyle = GetWindowLong(hwnd, GWL_STYLE);
+      lastWindowStyleEx = GetWindowLongW(hwnd, GWL_EXSTYLE);
+      lastWindowStyleEx &= ~WS_EX_TOPMOST;
+      GetWindowRect(hwnd, &lastRect);
     }
-    else {
-        ShowCursor(TRUE);
 
-        int x = lastRect.left;
-        int y = lastRect.top;
-        int width = lastRect.right - lastRect.left;
-        int height = lastRect.bottom - lastRect.top;
+    d3dPp.BackBufferWidth = width;
+    d3dPp.BackBufferHeight = height;
 
-        d3dPp.BackBufferWidth = width;
-        d3dPp.BackBufferHeight = height;
+    pD3DDevice->Reset(&d3dPp);
 
-        pD3DDevice->Reset(&d3dPp);
-        SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
-        stretch = false;
+    SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+    SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
+    SetWindowPos(hwnd, HWND_NOTOPMOST, left, top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
+    SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+    DragAcceptFiles(hwnd, TRUE);
 
-        SetWindowLongW(hwnd, GWL_STYLE, lastWindowStyle);
-        SetWindowLongW(hwnd, GWL_EXSTYLE, lastWindowStyleEx);
-        SetWindowPos(hwnd, HWND_NOTOPMOST, lastRect.left, lastRect.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
-        if (borderless)
-        {
-            SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-            SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        }
+    stretch = true;
+  }
+  else {
+    ShowCursor(TRUE);
+
+    int x = lastRect.left;
+    int y = lastRect.top;
+    int width = lastRect.right - lastRect.left;
+    int height = lastRect.bottom - lastRect.top;
+
+    d3dPp.BackBufferWidth = width;
+    d3dPp.BackBufferHeight = height;
+
+    pD3DDevice->Reset(&d3dPp);
+    SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+    stretch = false;
+
+    SetWindowLongW(hwnd, GWL_STYLE, lastWindowStyle);
+    SetWindowLongW(hwnd, GWL_EXSTYLE, lastWindowStyleEx);
+    SetWindowPos(hwnd, HWND_NOTOPMOST, lastRect.left, lastRect.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
+    SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+    if (borderless) {
+      SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+      SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
     }
-    fullscreen = false;
+  }
+  fullscreen = false;
 }
 
 void ToggleFullScreen(HWND hwnd) {
-    if (!fullscreen) {
-        ShowCursor(FALSE);
+  if (!fullscreen) {
+    ShowCursor(FALSE);
 
-        if (!stretch) {
-            lastWindowStyle = GetWindowLong(hwnd, GWL_STYLE);
-            lastWindowStyleEx = GetWindowLongW(hwnd, GWL_EXSTYLE);
-            lastWindowStyleEx &= ~WS_EX_TOPMOST;
-            GetWindowRect(hwnd, &lastRect);
-        }
-
-        HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-
-        MONITORINFO info;
-        info.cbSize = sizeof(MONITORINFO);
-
-        GetMonitorInfoW(monitor, &info);
-
-        int width = info.rcMonitor.right - info.rcMonitor.left;
-        int height = info.rcMonitor.bottom - info.rcMonitor.top;
-
-        SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-        SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
-        SetWindowPos(hwnd, HWND_TOPMOST, info.rcMonitor.left, info.rcMonitor.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
-
-        d3dPp.BackBufferWidth = width;
-        d3dPp.BackBufferHeight = height;
-
-        pD3DDevice->Reset(&d3dPp);
-        SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
-		DragAcceptFiles(hwnd, TRUE);
-        fullscreen = true;
+    if (!stretch) {
+      lastWindowStyle = GetWindowLong(hwnd, GWL_STYLE);
+      lastWindowStyleEx = GetWindowLongW(hwnd, GWL_EXSTYLE);
+      lastWindowStyleEx &= ~WS_EX_TOPMOST;
+      GetWindowRect(hwnd, &lastRect);
     }
-    else {
-        ShowCursor(TRUE);
 
-        int x = lastRect.left;
-        int y = lastRect.top;
-        int width = lastRect.right - lastRect.left;
-        int height = lastRect.bottom - lastRect.top;
+    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 
-        d3dPp.BackBufferWidth = width;
-        d3dPp.BackBufferHeight = height;
+    MONITORINFO info;
+    info.cbSize = sizeof(MONITORINFO);
 
-        pD3DDevice->Reset(&d3dPp);
-        SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
-        fullscreen = false;
+    GetMonitorInfoW(monitor, &info);
 
-        SetWindowLongW(hwnd, GWL_STYLE, lastWindowStyle);
-        SetWindowLongW(hwnd, GWL_EXSTYLE, lastWindowStyleEx);
-        SetWindowPos(hwnd, HWND_NOTOPMOST, lastRect.left, lastRect.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
-        if (borderless)
-        {
-            SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-            SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        }
+    int width = info.rcMonitor.right - info.rcMonitor.left;
+    int height = info.rcMonitor.bottom - info.rcMonitor.top;
+
+    SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+    SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
+    SetWindowPos(hwnd, HWND_TOPMOST, info.rcMonitor.left, info.rcMonitor.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
+
+    d3dPp.BackBufferWidth = width;
+    d3dPp.BackBufferHeight = height;
+
+    pD3DDevice->Reset(&d3dPp);
+    SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+    DragAcceptFiles(hwnd, TRUE);
+    fullscreen = true;
+  }
+  else {
+    ShowCursor(TRUE);
+
+    int x = lastRect.left;
+    int y = lastRect.top;
+    int width = lastRect.right - lastRect.left;
+    int height = lastRect.bottom - lastRect.top;
+
+    d3dPp.BackBufferWidth = width;
+    d3dPp.BackBufferHeight = height;
+
+    pD3DDevice->Reset(&d3dPp);
+    SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+    fullscreen = false;
+
+    SetWindowLongW(hwnd, GWL_STYLE, lastWindowStyle);
+    SetWindowLongW(hwnd, GWL_EXSTYLE, lastWindowStyleEx);
+    SetWindowPos(hwnd, HWND_NOTOPMOST, lastRect.left, lastRect.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
+    SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+    if (borderless) {
+      SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+      SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
     }
-    stretch = false;
+  }
+  stretch = false;
 }
 
-void ToggleBorderlessWindow(HWND hwnd)
-{
-    if (!borderless)
-    {
-        RECT rect;
-        GetWindowRect(hwnd, &rect);
-        int x = rect.left;
-        int y = rect.top;
-        int width = rect.right - rect.left;
-        int height = rect.bottom - rect.top;
+void ToggleBorderlessWindow(HWND hwnd) {
+  if (!borderless) {
+    RECT rect;
+    GetWindowRect(hwnd, &rect);
+    int x = rect.left;
+    int y = rect.top;
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
 
-        SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-        SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        borderless = true;
-    }
-    else {
-        RECT rect;
-        GetWindowRect(hwnd, &rect);
-        int x = rect.left;
-        int y = rect.top;
-        int width = rect.right - rect.left;
-        int height = rect.bottom - rect.top;
+    SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+    SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
+    borderless = true;
+  }
+  else {
+    RECT rect;
+    GetWindowRect(hwnd, &rect);
+    int x = rect.left;
+    int y = rect.top;
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
 
-        SetWindowLongW(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
-        SetWindowPos(hwnd, HWND_NOTOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        borderless = false;
-    }
+    SetWindowLongW(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+    SetWindowPos(hwnd, HWND_NOTOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
+    borderless = false;
+  }
 }
 
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
-	switch(uMsg) {
+  switch (uMsg) {
 
-        case WM_CLOSE: {
-            DestroyWindow( hWnd );
-            UnregisterClassW(L"Direct3DWindowClass", NULL);
-            return 0;
-        }
+  case WM_CLOSE:
+  {
+    DestroyWindow(hWnd);
+    UnregisterClassW(L"Direct3DWindowClass", NULL);
+    return 0;
+  }
 
-        case WM_DESTROY: {
-            PostQuitMessage(0);
-            break;
-        }
+  case WM_DESTROY:
+  {
+    PostQuitMessage(0);
+    break;
+  }
 
-        case WM_KEYDOWN: {
+  case WM_KEYDOWN:
+  {
 
-			/*
-			if (wParam == VK_RETURN) {
-				printf("Return\n");
-				ToggleFullScreen(hWnd);
-			}
-			*/
-
-			// SPOUT - there is no playback for BeatDrop
-            /*if (playback && wParam >= VK_F1 && wParam <= VK_F8) {
-                switch (wParam) {
-                case VK_F1:
-                    playback->PauseOrResume();
-                    break;
-                case VK_F2:
-                    playback->Stop();
-                    break;
-                case VK_F3:
-                    playback->Previous();
-                    break;
-                case VK_F4:
-                    playback->Next();
-                    break;
-                case VK_F5:
-                    playback->SetVolume(playback->GetVolume() - 0.05);
-                    break;
-                case VK_F6:
-                    playback->SetVolume(playback->GetVolume() + 0.05);
-                    break;
-                case VK_F7:
-                    playback->ToggleShuffle();
-                    break;
-                case VK_F8:
-                    playback->ToggleMute();
-                    break;
-                }
-            }*/
-            g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-        }
-        if (wParam == VK_F2)
-        {
-            if (!fullscreen && !stretch)
-            ToggleBorderlessWindow(hWnd);
-        }
-        break;
-
-        case WM_NCHITTEST: //used for borderless window
-        {
-            if (borderless)
-                if (!fullscreen && !stretch)
-            {
-                //resizable borderless
-                //from https://stackoverflow.com/questions/19106047/winapi-c-reprogramming-window-resize
-                    #define BORDERWIDTH  10
-                    #define TITLEBARWIDTH  30
-                    RECT rect;
-                    int x, y;
-                    GetWindowRect(hWnd, &rect);
-
-                    x = GET_X_LPARAM(lParam) - rect.left;
-                    y = GET_Y_LPARAM(lParam) - rect.top;
-
-                    if (x >= BORDERWIDTH && x <= rect.right - rect.left - BORDERWIDTH && y >= BORDERWIDTH && y <= TITLEBARWIDTH)
-                        return HTCAPTION;
-
-                    else if (x < BORDERWIDTH && y < BORDERWIDTH)
-                        return HTTOPLEFT;
-                    else if (x > rect.right - rect.left - BORDERWIDTH && y < BORDERWIDTH)
-                        return HTTOPRIGHT;
-                    else if (x > rect.right - rect.left - BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
-                        return HTBOTTOMRIGHT;
-                    else if (x < BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
-                        return HTBOTTOMLEFT;
-
-                    else if (x < BORDERWIDTH)
-                        return HTLEFT;
-                    else if (y < BORDERWIDTH)
-                        return HTTOP;
-                    else if (x > rect.right - rect.left - BORDERWIDTH)
-                        return HTRIGHT;
-                    else if (y > rect.bottom - rect.top - BORDERWIDTH)
-                        return HTBOTTOM;
-                return HTCAPTION;
-            case WM_NCLBUTTONDBLCLK:
-            {
-            if (borderless)
-                 ToggleFullScreen(hWnd);
-                 break;
-            }
-        }
-            break;
-        }
-
-        case WM_SYSKEYDOWN: {
-
-            if (wParam == VK_F4) { // SPOUT ??
-                PostQuitMessage(0);
-            }
-            else if (wParam == 'S' || wParam == 's')
-        	{
-            	ToggleStretch(hWnd);
-        	}
-             else if (wParam == VK_RETURN) {
-                 ToggleFullScreen(hWnd);
-             }
-            else {
-                g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-            }
-            break;
-        }
-    
-        case WM_LBUTTONDBLCLK:
-        {
-            ToggleFullScreen(hWnd);
-            break;
-        }
-
-
-        default:
-            return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    /*
+    if (wParam == VK_RETURN) {
+      printf("Return\n");
+      ToggleFullScreen(hWnd);
     }
+    */
 
-    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+    // SPOUT - there is no playback for BeatDrop
+          /*if (playback && wParam >= VK_F1 && wParam <= VK_F8) {
+              switch (wParam) {
+              case VK_F1:
+                  playback->PauseOrResume();
+                  break;
+              case VK_F2:
+                  playback->Stop();
+                  break;
+              case VK_F3:
+                  playback->Previous();
+                  break;
+              case VK_F4:
+                  playback->Next();
+                  break;
+              case VK_F5:
+                  playback->SetVolume(playback->GetVolume() - 0.05);
+                  break;
+              case VK_F6:
+                  playback->SetVolume(playback->GetVolume() + 0.05);
+                  break;
+              case VK_F7:
+                  playback->ToggleShuffle();
+                  break;
+              case VK_F8:
+                  playback->ToggleMute();
+                  break;
+              }
+          }*/
+    g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+  }
+  if (wParam == VK_F2) {
+    if (!fullscreen && !stretch)
+      ToggleBorderlessWindow(hWnd);
+  }
+  break;
+
+  case WM_NCHITTEST: //used for borderless window
+  {
+    if (borderless)
+      if (!fullscreen && !stretch) {
+        //resizable borderless
+        //from https://stackoverflow.com/questions/19106047/winapi-c-reprogramming-window-resize
+#define BORDERWIDTH  10
+#define TITLEBARWIDTH  30
+        RECT rect;
+        int x, y;
+        GetWindowRect(hWnd, &rect);
+
+        x = GET_X_LPARAM(lParam) - rect.left;
+        y = GET_Y_LPARAM(lParam) - rect.top;
+
+        if (x >= BORDERWIDTH && x <= rect.right - rect.left - BORDERWIDTH && y >= BORDERWIDTH && y <= TITLEBARWIDTH)
+          return HTCAPTION;
+
+        else if (x < BORDERWIDTH && y < BORDERWIDTH)
+          return HTTOPLEFT;
+        else if (x > rect.right - rect.left - BORDERWIDTH && y < BORDERWIDTH)
+          return HTTOPRIGHT;
+        else if (x > rect.right - rect.left - BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
+          return HTBOTTOMRIGHT;
+        else if (x < BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
+          return HTBOTTOMLEFT;
+
+        else if (x < BORDERWIDTH)
+          return HTLEFT;
+        else if (y < BORDERWIDTH)
+          return HTTOP;
+        else if (x > rect.right - rect.left - BORDERWIDTH)
+          return HTRIGHT;
+        else if (y > rect.bottom - rect.top - BORDERWIDTH)
+          return HTBOTTOM;
+        return HTCAPTION;
+  case WM_NCLBUTTONDBLCLK:
+  {
+    if (borderless)
+      ToggleFullScreen(hWnd);
+    break;
+  }
+      }
+    break;
+  }
+
+  case WM_SYSKEYDOWN:
+  {
+
+    if (wParam == VK_F4) { // SPOUT ??
+      PostQuitMessage(0);
+    }
+    else if (wParam == 'S' || wParam == 's') {
+      ToggleStretch(hWnd);
+    }
+    else if (wParam == VK_RETURN) {
+      ToggleFullScreen(hWnd);
+    }
+    else {
+      g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    }
+    break;
+  }
+
+  case WM_LBUTTONDBLCLK:
+  {
+    ToggleFullScreen(hWnd);
+    break;
+  }
+
+
+  default:
+    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+  }
+
+  return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
 void RenderFrame() {
 
-    {
-        std::unique_lock<std::mutex> lock(pcmMutex);
-        memcpy(pcmLeftOut, pcmLeftIn, SAMPLE_SIZE);
-        memcpy(pcmRightOut, pcmRightIn, SAMPLE_SIZE);
-        memset(pcmLeftIn, 0, SAMPLE_SIZE);
-        memset(pcmRightIn, 0, SAMPLE_SIZE);
-    }
+  {
+    std::unique_lock<std::mutex> lock(pcmMutex);
+    memcpy(pcmLeftOut, pcmLeftIn, SAMPLE_SIZE);
+    memcpy(pcmRightOut, pcmRightIn, SAMPLE_SIZE);
+    memset(pcmLeftIn, 0, SAMPLE_SIZE);
+    memset(pcmRightIn, 0, SAMPLE_SIZE);
+  }
 
-    g_plugin.PluginRender(
-        (unsigned char*) pcmLeftOut,
-        (unsigned char*) pcmRightOut);
+  g_plugin.PluginRender(
+    (unsigned char*)pcmLeftOut,
+    (unsigned char*)pcmRightOut);
 }
 
 // SPOUT
-void ResizeBeatDrop(int newWidth, int newHeight)
-{
-	// Client window size
-	int width  = 640;
-	int height = 360;
-	// If the window is square - 512x512, otherwise 640x360
-	if (newWidth == newHeight) {
-		width  = 512;
-		height = 512;
-	}
-	HWND hw = FindWindowA("Direct3DWindowClass", "Milkwave Visualizer");
-	// Client to window
-	RECT rc;
-	SetRect(&rc, 0, 0, width, height);
-	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
-	width = rc.right - rc.left;
-	height = rc.bottom - rc.top;
-	// Resize but do not move
-	SetWindowPos(hw, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
+void ResizeBeatDrop(int newWidth, int newHeight) {
+  // Client window size
+  int width = 640;
+  int height = 360;
+  // If the window is square - 512x512, otherwise 640x360
+  if (newWidth == newHeight) {
+    width = 512;
+    height = 512;
+  }
+  HWND hw = FindWindowA("Direct3DWindowClass", "Milkwave Visualizer");
+  // Client to window
+  RECT rc;
+  SetRect(&rc, 0, 0, width, height);
+  AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
+  width = rc.right - rc.left;
+  height = rc.bottom - rc.top;
+  // Resize but do not move
+  SetWindowPos(hw, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 }
 
 
 unsigned __stdcall CreateWindowAndRun(void* data) {
-	HINSTANCE instance = (HINSTANCE)data;
+  HINSTANCE instance = (HINSTANCE)data;
 
 #ifdef DEBUG
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	_CrtSetBreakAlloc(60);
+  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+  _CrtSetBreakAlloc(60);
 #endif
 
-	// SPOUT
-	// Set Per Monitor awareness
-	SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); //older Windows versions: Entry Point Not Found Fix
-	// SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
+  // SPOUT
+  // Set Per Monitor awareness
+  SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); //older Windows versions: Entry Point Not Found Fix
+  // SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
 
-	// Register the windows class
-	WNDCLASSW wndClass;
-	wndClass.style = CS_DBLCLKS;
-	wndClass.lpfnWndProc = StaticWndProc;
-	wndClass.cbClsExtra = 0;
-	wndClass.cbWndExtra = 0;
-	wndClass.hInstance = instance;
-	wndClass.hIcon = NULL;
-	wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-	wndClass.lpszMenuName = NULL;
-	wndClass.lpszClassName = L"Direct3DWindowClass";
+  // Register the windows class
+  WNDCLASSW wndClass;
+  wndClass.style = CS_DBLCLKS;
+  wndClass.lpfnWndProc = StaticWndProc;
+  wndClass.cbClsExtra = 0;
+  wndClass.cbWndExtra = 0;
+  wndClass.hInstance = instance;
+  wndClass.hIcon = NULL;
+  wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+  wndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+  wndClass.lpszMenuName = NULL;
+  wndClass.lpszClassName = L"Direct3DWindowClass";
 
-	if (!RegisterClassW(&wndClass)) {
-		DWORD dwError = GetLastError();
-		if (dwError != ERROR_CLASS_ALREADY_EXISTS) {
-			return 0;
-		}
-	}
+  if (!RegisterClassW(&wndClass)) {
+    DWORD dwError = GetLastError();
+    if (dwError != ERROR_CLASS_ALREADY_EXISTS) {
+      return 0;
+    }
+  }
 
-	// SPOUT
-	// Make the window a fixed size
+  // SPOUT
+  // Make the window a fixed size
     // The sender resolution is independent - see SpoutWidth/SpoutHeight below
-	int windowWidth = 720; // standalone version 1280x720
-	int windowHeight = 720;
+  int windowWidth = 720; // standalone version 1280x720
+  int windowHeight = 720;
 
-	RECT rc;
-	SetRect(&rc, 0, 0, windowWidth, windowHeight);
-	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
+  RECT rc;
+  SetRect(&rc, 0, 0, windowWidth, windowHeight);
+  AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
 
-	// SPOUT
-	// Centre on the desktop work area
-	int WindowPosLeft = 0;
-	int WindowPosTop = 0;
-	RECT WorkArea;
-	SystemParametersInfo(SPI_GETWORKAREA, 0, (LPVOID)&WorkArea, 0);
-	WindowPosLeft += ((WorkArea.right - WorkArea.left) - windowWidth) / 2;
-	WindowPosTop += ((WorkArea.bottom - WorkArea.top) - windowHeight) / 2;
+  // SPOUT
+  // Centre on the desktop work area
+  int WindowPosLeft = 0;
+  int WindowPosTop = 0;
+  RECT WorkArea;
+  SystemParametersInfo(SPI_GETWORKAREA, 0, (LPVOID)&WorkArea, 0);
+  WindowPosLeft += ((WorkArea.right - WorkArea.left) - windowWidth) / 2;
+  WindowPosTop += ((WorkArea.bottom - WorkArea.top) - windowHeight) / 2;
 
-	// SPOUT
-	// Remove minimize and maximize
-	//DWORD dwStyle = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME);
+  // SPOUT
+  // Remove minimize and maximize
+  //DWORD dwStyle = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME);
 
-	// ===============================================
-	// Enumerate other instances of BeatDrop to increment the title
-	WCHAR BeatDroptitle[256];
-	lstrcpyW(BeatDroptitle, L"Milkwave Visualizer"); // default render window title
-	EnumWindows((WNDENUMPROC)&GetWindowNames, NULL);
-	// printf("Number of existing BeatDrops (%d)\n", nBeatDrops);
-	if (nBeatDrops > 0) {
-		// swprintf_s(BeatDroptitle, L"Milkwave %2.2d", nBeatDrops);
-		// printf("New title [%S]\n", BeatDroptitle);
-	}
-	// ===============================================
+  // ===============================================
+  // Enumerate other instances of BeatDrop to increment the title
+  WCHAR BeatDroptitle[256];
+  lstrcpyW(BeatDroptitle, L"Milkwave Visualizer"); // default render window title
+  EnumWindows((WNDENUMPROC)&GetWindowNames, NULL);
+  // printf("Number of existing BeatDrops (%d)\n", nBeatDrops);
+  if (nBeatDrops > 0) {
+    // swprintf_s(BeatDroptitle, L"Milkwave %2.2d", nBeatDrops);
+    // printf("New title [%S]\n", BeatDroptitle);
+  }
+  // ===============================================
 
     // Create the render window
-    HWND hwnd = CreateWindowW(
-        L"Direct3DWindowClass",
-		// ===========================
+  HWND hwnd = CreateWindowW(
+    L"Direct3DWindowClass",
+    // ===========================
         // L"Milkwave",
-		BeatDroptitle,
-		// ===========================
-        WS_OVERLAPPEDWINDOW, // SPOUT
-		//dwStyle,
-		WindowPosLeft, // SPOUT
-		WindowPosTop,
-		// CW_USEDEFAULT,
-		// CW_USEDEFAULT,
-		(rc.right - rc.left),
-        (rc.bottom - rc.top),
-        0,
-        NULL,
-        instance,
-        0);
-	// ====================================================
+    BeatDroptitle,
+    // ===========================
+    WS_OVERLAPPEDWINDOW, // SPOUT
+    //dwStyle,
+    WindowPosLeft, // SPOUT
+    WindowPosTop,
+    // CW_USEDEFAULT,
+    // CW_USEDEFAULT,
+    (rc.right - rc.left),
+    (rc.bottom - rc.top),
+    0,
+    NULL,
+    instance,
+    0);
+  // ====================================================
 
-    if (!hwnd) {
-        DWORD dwError = GetLastError();
-        return 0;
-    }
+  if (!hwnd) {
+    DWORD dwError = GetLastError();
+    return 0;
+  }
 
-    if (!icon) {
-        icon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_PLUGIN_ICON));
-    }
+  if (!icon) {
+    icon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_PLUGIN_ICON));
+  }
 
-    SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM) icon);
-    SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) icon);
+  SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
+  SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
 
-    ShowWindow(hwnd, SW_SHOW);
+  ShowWindow(hwnd, SW_SHOW);
 
-	unsigned int frame = 0;
+  unsigned int frame = 0;
 
-	// SPOUT - defaults if no GUI
+  // SPOUT - defaults if no GUI
     // Change the values here to set the fixed sender size
-	unsigned int SpoutWidth = 720;
-	unsigned int SpoutHeight = 720;
+  unsigned int SpoutWidth = 720;
+  unsigned int SpoutHeight = 720;
 
-    // Set to windowWidth/windowHeight for a variable sender size
-    // See milkDropfs.cpp RenderFrame - change to SendDX9surface(back_buffer, true); 
-    // SpoutWidth = windowWidth;
-    // SpoutHeight = windowHeight;
+  // Set to windowWidth/windowHeight for a variable sender size
+  // See milkDropfs.cpp RenderFrame - change to SendDX9surface(back_buffer, true); 
+  // SpoutWidth = windowWidth;
+  // SpoutHeight = windowHeight;
 
-	unsigned int SpoutWidthOld = 0;
-	unsigned int SpoutHeightOld = 0;
-	// Read values if UI is open
-	SpoutWidthOld = SpoutWidth;
-	SpoutHeightOld = SpoutHeight;
+  unsigned int SpoutWidthOld = 0;
+  unsigned int SpoutHeightOld = 0;
+  // Read values if UI is open
+  SpoutWidthOld = SpoutWidth;
+  SpoutHeightOld = SpoutHeight;
 
   // Milkwave: Moved to StartThreads()
-	// g_plugin.PluginPreInitialize(0, 0);
+  // g_plugin.PluginPreInitialize(0, 0);
 
     // SPOUT
-	// InitD3d(hwnd, windowWidth, windowHeight);
-	InitD3d(hwnd, SpoutWidth, SpoutHeight);
+  // InitD3d(hwnd, windowWidth, windowHeight);
+  InitD3d(hwnd, SpoutWidth, SpoutHeight);
 
-	g_plugin.PluginInitialize(
-		pD3DDevice,
-		&d3dPp,
-		hwnd,
-		// windowWidth,
-		// windowHeight);
-		SpoutWidth,
-		SpoutHeight);
+  g_plugin.PluginInitialize(
+    pD3DDevice,
+    &d3dPp,
+    hwnd,
+    // windowWidth,
+    // windowHeight);
+    SpoutWidth,
+    SpoutHeight);
 
-	// g_plugin. .m_lpVS->
+  // g_plugin. .m_lpVS->
 
-    MSG msg;
-    msg.message = WM_NULL;
+  MSG msg;
+  msg.message = WM_NULL;
 
-    PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
-    while (WM_QUIT != msg.message) {
-        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else {
-            GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
-            RenderFrame();
-			
-		}
-		frame++;
-		////////////////////////////////////////////////////////////////////////////////////////////////
+  PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
+  while (WM_QUIT != msg.message) {
+    if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
     }
+    else {
+      GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
+      RenderFrame();
 
-    g_plugin.MyWriteConfig();
-    g_plugin.PluginQuit();
+    }
+    frame++;
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+  }
 
-    DeinitD3d();
+  g_plugin.MyWriteConfig();
+  g_plugin.PluginQuit();
 
-    threadRender = nullptr;
-    threadId = 0;
+  DeinitD3d();
 
-    return 1;
+  threadRender = nullptr;
+  threadId = 0;
+
+  return 1;
 }
 
 void StartRenderThread(HINSTANCE instance) {
-    threadRender = (HANDLE) _beginthreadex(
-        nullptr,
-        0,
-        &CreateWindowAndRun,
-        (void *) instance,
-        0,
-        &threadId);
+  threadRender = (HANDLE)_beginthreadex(
+    nullptr,
+    0,
+    &CreateWindowAndRun,
+    (void*)instance,
+    0,
+    &threadId);
 }
 
 int StartAudioCaptureThread(HINSTANCE instance) {
@@ -913,8 +908,9 @@ int StartAudioCaptureThread(HINSTANCE instance) {
     while (bKeepWaiting) {
       if (threadRender == nullptr) {
         // render thread stopped
-        bKeepWaiting = false;  
-      } else if (g_plugin.m_AudioLoopState == 1) {
+        bKeepWaiting = false;
+      }
+      else if (g_plugin.m_AudioLoopState == 1) {
         // audio device changed
         bKeepWaiting = false;
         g_plugin.m_AudioLoopState = 2;
@@ -949,16 +945,16 @@ int StartAudioCaptureThread(HINSTANCE instance) {
 }
 
 int StartThreads(HINSTANCE instance) {
-  
-    // Milkwave: early init so we can read audio device from settings
-    g_plugin.PluginPreInitialize(0,0);
-    
-    StartRenderThread(instance);
-    // WaitForSingleObject(threadRender, INFINITE);
 
-    StartAudioCaptureThread(instance);
+  // Milkwave: early init so we can read audio device from settings
+  g_plugin.PluginPreInitialize(0, 0);
 
-    return 0;
+  StartRenderThread(instance);
+  // WaitForSingleObject(threadRender, INFINITE);
+
+  StartAudioCaptureThread(instance);
+
+  return 0;
 }
 
 // SPOUT
@@ -967,50 +963,49 @@ int StartThreads(HINSTANCE instance) {
 // TODO : doesn't seem to need a header declaration
 //
 // Registry method only works for DirectX 9 and lower but that is OK
-bool CheckForDirectX9c()
-{
+bool CheckForDirectX9c() {
 
-	// HKLM\Software\Microsoft\DirectX\Version should be 4.09.00.0904
-	// handy information : http://en.wikipedia.org/wiki/DirectX
-	HKEY  hRegKey;
-	LONG  regres;
-	DWORD  dwSize, major, minor, revision, notused;
-	char value[256];
-	dwSize = 256;
+  // HKLM\Software\Microsoft\DirectX\Version should be 4.09.00.0904
+  // handy information : http://en.wikipedia.org/wiki/DirectX
+  HKEY  hRegKey;
+  LONG  regres;
+  DWORD  dwSize, major, minor, revision, notused;
+  char value[256];
+  dwSize = 256;
 
-	// Does the key exist
-	regres = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\DirectX", NULL, KEY_READ, &hRegKey);
-	if (regres == ERROR_SUCCESS) {
-		// Read the key
-		regres = RegQueryValueExA(hRegKey, "Version", 0, NULL, (LPBYTE)value, &dwSize);
-		// Decode the string : 4.09.00.0904
-		sscanf_s(value, "%d.%d.%d.%d", &major, &minor, &notused, &revision);
-		// printf("DirectX registry : [%s] (%d.%d.%d.%d)\n", value, major, minor, notused, revision);
-		RegCloseKey(hRegKey);
-		if (major == 4 && minor == 9 && revision == 904)
-			return true;
-	}
+  // Does the key exist
+  regres = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\DirectX", NULL, KEY_READ, &hRegKey);
+  if (regres == ERROR_SUCCESS) {
+    // Read the key
+    regres = RegQueryValueExA(hRegKey, "Version", 0, NULL, (LPBYTE)value, &dwSize);
+    // Decode the string : 4.09.00.0904
+    sscanf_s(value, "%d.%d.%d.%d", &major, &minor, &notused, &revision);
+    // printf("DirectX registry : [%s] (%d.%d.%d.%d)\n", value, major, minor, notused, revision);
+    RegCloseKey(hRegKey);
+    if (major == 4 && minor == 9 && revision == 904)
+      return true;
+  }
 
-	return false;
+  return false;
 
 }
 
 
 #ifdef COMPILE_AS_DLL
-    BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
-        module = hModule;
-        api_orig_hinstance = hModule;
-        return true;
-    }
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
+  module = hModule;
+  api_orig_hinstance = hModule;
+  return true;
+}
 #else
-    int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
-        api_orig_hinstance = hInstance;
-		// SPOUT
-		if (CheckForDirectX9c())
-			return StartThreads(hInstance);
-		else
-			return false;
-    }
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
+  api_orig_hinstance = hInstance;
+  // SPOUT
+  if (CheckForDirectX9c())
+    return StartThreads(hInstance);
+  else
+    return false;
+}
 #endif
 
 static std::string title;
@@ -1126,12 +1121,11 @@ extern "C" DLL_EXPORT musik::core::sdk::IPlaybackRemote* GetPlaybackRemote() {
 */
 #ifdef DEBUG
 struct _DEBUG_STATE {
-    _DEBUG_STATE() {
-    }
+  _DEBUG_STATE() {}
 
-    ~_DEBUG_STATE() {
-        _CrtDumpMemoryLeaks();
-    }
+  ~_DEBUG_STATE() {
+    _CrtDumpMemoryLeaks();
+  }
 };
 
 _DEBUG_STATE ds;

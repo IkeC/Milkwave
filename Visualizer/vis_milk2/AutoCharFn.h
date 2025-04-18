@@ -11,35 +11,31 @@
 #include <windows.h>
 #include <shlwapi.h>
 
-class AutoCharFn
-{
+class AutoCharFn {
 public:
-	AutoCharFn(const wchar_t *filename)
-	{
-		out[0]=0;
-		if (!filename)
-			return;
-		if (PathIsURLW(filename))
-		{
-			WideCharToMultiByte(CP_ACP, 0, filename, -1, out, FILENAME_SIZE, NULL, NULL);
-			return ;
-		}
+  AutoCharFn(const wchar_t* filename) {
+    out[0] = 0;
+    if (!filename)
+      return;
+    if (PathIsURLW(filename)) {
+      WideCharToMultiByte(CP_ACP, 0, filename, -1, out, FILENAME_SIZE, NULL, NULL);
+      return;
+    }
 
-		BOOL unconvertable = FALSE;
-		WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, filename, -1, out, FILENAME_SIZE, NULL, &unconvertable);
+    BOOL unconvertable = FALSE;
+    WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, filename, -1, out, FILENAME_SIZE, NULL, &unconvertable);
 
-		if (unconvertable)
-		{
-			wchar_t temp[MAX_PATH];
-			if (GetShortPathNameW(filename, temp, MAX_PATH))
-				WideCharToMultiByte(CP_ACP, 0, temp, -1, out, FILENAME_SIZE, NULL, NULL);
-				
-		}
-	}
+    if (unconvertable) {
+      wchar_t temp[MAX_PATH];
+      if (GetShortPathNameW(filename, temp, MAX_PATH))
+        WideCharToMultiByte(CP_ACP, 0, temp, -1, out, FILENAME_SIZE, NULL, NULL);
 
-	operator char *() { return out; }
+    }
+  }
+
+  operator char* () { return out; }
 private:
-	char out[FILENAME_SIZE];
+  char out[FILENAME_SIZE];
 };
 
 

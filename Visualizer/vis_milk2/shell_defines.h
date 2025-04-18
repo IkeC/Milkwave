@@ -45,17 +45,16 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define  HELP_FONT 2
 #define  DESK_FONT 3
 #define MAX_EXTRA_FONTS 5
-typedef enum
-{
-    SIMPLE_FONT = 0,  // aka 'system' font; should be legible
-    DECORATIVE_FONT = 1,
-    HELPSCREEN_FONT = 2,
-    PLAYLIST_FONT = 3,
-    EXTRA_1 = 4,
-    EXTRA_2 = 5,
-    EXTRA_3 = 6,
-    EXTRA_4 = 7,
-    EXTRA_5 = 8
+typedef enum {
+  SIMPLE_FONT = 0,  // aka 'system' font; should be legible
+  DECORATIVE_FONT = 1,
+  HELPSCREEN_FONT = 2,
+  PLAYLIST_FONT = 3,
+  EXTRA_1 = 4,
+  EXTRA_2 = 5,
+  EXTRA_3 = 6,
+  EXTRA_4 = 7,
+  EXTRA_5 = 8
 }
 eFontIndex;
 

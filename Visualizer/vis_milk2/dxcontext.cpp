@@ -33,144 +33,132 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <strsafe.h>
 
 // SPOUT - DX9EX
-DXContext::DXContext(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd, wchar_t* szIniFile)
-{
-    m_szWindowCaption[0] = 0;
-    m_hwnd = hwnd;
-    m_lpDevice = device;
-    m_d3dpp = d3dpp;
-    m_hmod_d3d9 = NULL;
-    m_hmod_d3dx9 = NULL;
-    m_zFormat = D3DFMT_UNKNOWN;
-    for (int i = 0; i<MAX_DXC_ADAPTERS; i++)
-        m_orig_windowed_mode_format[i] = D3DFMT_UNKNOWN;
-    m_ordinal_adapter = D3DADAPTER_DEFAULT;
-    m_winamp_minimized = 0;
-    m_truly_exiting = 0;
-    m_bpp = 0;
-    m_frame_delay = 0;
-    StringCbCopyW(m_szIniFile, sizeof(m_szIniFile), szIniFile);
-    m_szDriver[0] = 0;
-    m_szDesc[0] = 0;
-    m_lastErr = S_OK;
+DXContext::DXContext(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd, wchar_t* szIniFile) {
+  m_szWindowCaption[0] = 0;
+  m_hwnd = hwnd;
+  m_lpDevice = device;
+  m_d3dpp = d3dpp;
+  m_hmod_d3d9 = NULL;
+  m_hmod_d3dx9 = NULL;
+  m_zFormat = D3DFMT_UNKNOWN;
+  for (int i = 0; i < MAX_DXC_ADAPTERS; i++)
+    m_orig_windowed_mode_format[i] = D3DFMT_UNKNOWN;
+  m_ordinal_adapter = D3DADAPTER_DEFAULT;
+  m_winamp_minimized = 0;
+  m_truly_exiting = 0;
+  m_bpp = 0;
+  m_frame_delay = 0;
+  StringCbCopyW(m_szIniFile, sizeof(m_szIniFile), szIniFile);
+  m_szDriver[0] = 0;
+  m_szDesc[0] = 0;
+  m_lastErr = S_OK;
+  m_ready = FALSE;
+}
+
+DXContext::~DXContext() {
+  Internal_CleanUp();
+}
+
+void DXContext::Internal_CleanUp() {
+  m_ready = FALSE;
+}
+
+BOOL DXContext::Internal_Init(DXCONTEXT_PARAMS* pParams, BOOL bFirstInit) {
+  memcpy(&m_current_mode, pParams, sizeof(DXCONTEXT_PARAMS));
+
+  memset(&m_caps, 0, sizeof(m_caps));
+  m_lpDevice->GetDeviceCaps(&m_caps);
+  m_bpp = 32;
+
+  m_ready = TRUE;
+  return TRUE;
+}
+
+BOOL DXContext::StartOrRestartDevice(DXCONTEXT_PARAMS* pParams) {
+
+  // call this to [re]initialize the DirectX environment with new parameters.
+  // examples: startup; toggle windowed/fullscreen mode; change fullscreen resolution;
+  //   and so on.
+  // be sure to clean up all your DirectX stuff first (textures, vertex buffers,
+  //   D3DX allocations, etc.) and reallocate it afterwards!
+
+  // note: for windowed mode, 'pParams->disp_mode' (w/h/r/f) is ignored.
+
+  if (!m_ready) {
+    // first-time init: create a fresh new device
+    return Internal_Init(pParams, TRUE);
+  }
+  else {
+    // re-init: preserve the DX9 object (m_lpD3D),
+    // but destroy and re-create the DX9 device (m_lpDevice).
     m_ready = FALSE;
-}
 
-DXContext::~DXContext()
-{
-    Internal_CleanUp();
-}
+    //SafeRelease(m_lpDevice);
+    // but leave the D3D object!
 
-void DXContext::Internal_CleanUp()
-{
-    m_ready = FALSE;
-}
-
-BOOL DXContext::Internal_Init(DXCONTEXT_PARAMS *pParams, BOOL bFirstInit)
-{
-    memcpy(&m_current_mode, pParams, sizeof(DXCONTEXT_PARAMS));
-
-    memset(&m_caps, 0, sizeof(m_caps));
-    m_lpDevice->GetDeviceCaps(&m_caps);
-    m_bpp = 32;
-
-    m_ready = TRUE;
-    return TRUE;
-}
-
-BOOL DXContext::StartOrRestartDevice(DXCONTEXT_PARAMS *pParams)
-{
-
-    // call this to [re]initialize the DirectX environment with new parameters.
-    // examples: startup; toggle windowed/fullscreen mode; change fullscreen resolution;
-    //   and so on.
-    // be sure to clean up all your DirectX stuff first (textures, vertex buffers,
-    //   D3DX allocations, etc.) and reallocate it afterwards!
-
-    // note: for windowed mode, 'pParams->disp_mode' (w/h/r/f) is ignored.
-
-    if (!m_ready)
-    {
-        // first-time init: create a fresh new device
-        return Internal_Init(pParams, TRUE);
-    }
-    else
-    {
-        // re-init: preserve the DX9 object (m_lpD3D),
-        // but destroy and re-create the DX9 device (m_lpDevice).
-        m_ready = FALSE;
-
-        //SafeRelease(m_lpDevice);
-        // but leave the D3D object!
-
-        //		RestoreWinamp();
-        return Internal_Init(pParams, FALSE);
-    }
+    //		RestoreWinamp();
+    return Internal_Init(pParams, FALSE);
+  }
 }
 
 HWND DXContext::GetHwnd() { return m_hwnd; }
 bool DXContext::TempIgnoreDestroyMessages() { return false; }
-void DXContext::SaveWindow() { }
+void DXContext::SaveWindow() {}
 
-void DXContext::WriteSafeWindowPos()
-{
-    WritePrivateProfileIntW(64, L"nMainWndTop", m_szIniFile, L"Settings");
-    WritePrivateProfileIntW(64, L"nMainWndLeft", m_szIniFile, L"Settings");
-    WritePrivateProfileIntW(64 + 256, L"nMainWndRight", m_szIniFile, L"Settings");
-    WritePrivateProfileIntW(64 + 256, L"nMainWndBottom", m_szIniFile, L"Settings");
-    WritePrivateProfileIntW(64, L"avs_wx", m_szIniFile, L"Settings");
-    WritePrivateProfileIntW(64, L"avs_wy", m_szIniFile, L"Settings");
-    WritePrivateProfileIntW(256, L"avs_ww", m_szIniFile, L"Settings");
-    WritePrivateProfileIntW(256, L"avs_wh", m_szIniFile, L"Settings");
+void DXContext::WriteSafeWindowPos() {
+  WritePrivateProfileIntW(64, L"nMainWndTop", m_szIniFile, L"Settings");
+  WritePrivateProfileIntW(64, L"nMainWndLeft", m_szIniFile, L"Settings");
+  WritePrivateProfileIntW(64 + 256, L"nMainWndRight", m_szIniFile, L"Settings");
+  WritePrivateProfileIntW(64 + 256, L"nMainWndBottom", m_szIniFile, L"Settings");
+  WritePrivateProfileIntW(64, L"avs_wx", m_szIniFile, L"Settings");
+  WritePrivateProfileIntW(64, L"avs_wy", m_szIniFile, L"Settings");
+  WritePrivateProfileIntW(256, L"avs_ww", m_szIniFile, L"Settings");
+  WritePrivateProfileIntW(256, L"avs_wh", m_szIniFile, L"Settings");
 }
 
-bool DXContext::OnUserResizeWindow(RECT *new_window_rect, RECT *new_client_rect)
-{
-    // call this function on WM_EXITSIZEMOVE when running windowed.
-    // don't bother calling this when fullscreen.
-    // be sure to clean up all your DirectX stuff first (textures, vertex buffers,
-    //   D3DX allocations, etc.) and reallocate it afterwards!
+bool DXContext::OnUserResizeWindow(RECT* new_window_rect, RECT* new_client_rect) {
+  // call this function on WM_EXITSIZEMOVE when running windowed.
+  // don't bother calling this when fullscreen.
+  // be sure to clean up all your DirectX stuff first (textures, vertex buffers,
+  //   D3DX allocations, etc.) and reallocate it afterwards!
 
-    if (!m_ready)
-        return FALSE;
+  if (!m_ready)
+    return FALSE;
 
-    if ((m_client_width == new_client_rect->right - new_client_rect->left) &&
-        (m_client_height == new_client_rect->bottom - new_client_rect->top) &&
-        (m_window_width == new_window_rect->right - new_window_rect->left) &&
-        (m_window_height == new_window_rect->bottom - new_window_rect->top))
-    {
-        return TRUE;
-    }
-
-    m_ready = FALSE;
-
-    m_window_width = new_window_rect->right - new_window_rect->left;
-    m_window_height = new_window_rect->bottom - new_window_rect->top;
-    m_client_width = m_REAL_client_width = new_client_rect->right - new_client_rect->left;
-    m_client_height = m_REAL_client_height = new_client_rect->bottom - new_client_rect->top;
-
-    m_d3dpp->BackBufferWidth = m_client_width;
-    m_d3dpp->BackBufferHeight = m_client_height;
-    if (m_lpDevice->Reset(m_d3dpp) != D3D_OK)
-    {
-        WriteSafeWindowPos();
-        m_lastErr = DXC_ERR_RESIZEFAILED;
-        return FALSE;
-    }
-
-    SetViewport();
-    m_ready = TRUE;
+  if ((m_client_width == new_client_rect->right - new_client_rect->left) &&
+    (m_client_height == new_client_rect->bottom - new_client_rect->top) &&
+    (m_window_width == new_window_rect->right - new_window_rect->left) &&
+    (m_window_height == new_window_rect->bottom - new_window_rect->top)) {
     return TRUE;
+  }
+
+  m_ready = FALSE;
+
+  m_window_width = new_window_rect->right - new_window_rect->left;
+  m_window_height = new_window_rect->bottom - new_window_rect->top;
+  m_client_width = m_REAL_client_width = new_client_rect->right - new_client_rect->left;
+  m_client_height = m_REAL_client_height = new_client_rect->bottom - new_client_rect->top;
+
+  m_d3dpp->BackBufferWidth = m_client_width;
+  m_d3dpp->BackBufferHeight = m_client_height;
+  if (m_lpDevice->Reset(m_d3dpp) != D3D_OK) {
+    WriteSafeWindowPos();
+    m_lastErr = DXC_ERR_RESIZEFAILED;
+    return FALSE;
+  }
+
+  SetViewport();
+  m_ready = TRUE;
+  return TRUE;
 }
 
-void DXContext::SetViewport()
-{
-    D3DVIEWPORT9 v;
-    v.X = 0;
-    v.Y = 0;
-    v.Width = m_client_width;
-    v.Height = m_client_height;
-    v.MinZ = 0.0f;
-    v.MaxZ = 1.0f;
-    m_lpDevice->SetViewport(&v);
+void DXContext::SetViewport() {
+  D3DVIEWPORT9 v;
+  v.X = 0;
+  v.Y = 0;
+  v.Width = m_client_width;
+  v.Height = m_client_height;
+  v.MinZ = 0.0f;
+  v.MaxZ = 1.0f;
+  m_lpDevice->SetViewport(&v);
 }

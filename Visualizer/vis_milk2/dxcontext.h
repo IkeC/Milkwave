@@ -41,101 +41,99 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define SNAP_WINDOWED_MODE_BLOCKSIZE  32    // or use 0 if you don't want snapping
 
-typedef struct
-{
-    int  nbackbuf;
-    int  allow_page_tearing;
-    GUID adapter_guid;
-    char adapter_devicename[256];
+typedef struct {
+  int  nbackbuf;
+  int  allow_page_tearing;
+  GUID adapter_guid;
+  char adapter_devicename[256];
 
-	// SPOUT - DX9EX
-	D3DDISPLAYMODEEX display_mode;    // ONLY VALID FOR FULLSCREEN MODE.
+  // SPOUT - DX9EX
+  D3DDISPLAYMODEEX display_mode;    // ONLY VALID FOR FULLSCREEN MODE.
 
-    D3DMULTISAMPLE_TYPE multisamp;
-    HWND parent_window;
-    int m_dualhead_horz; // 0 = span both, 1 = left only, 2 = right only
-    int m_dualhead_vert; // 0 = span both, 1 = top only, 2 = bottom only
-    int m_skin;
+  D3DMULTISAMPLE_TYPE multisamp;
+  HWND parent_window;
+  int m_dualhead_horz; // 0 = span both, 1 = left only, 2 = right only
+  int m_dualhead_vert; // 0 = span both, 1 = top only, 2 = bottom only
+  int m_skin;
 }
 DXCONTEXT_PARAMS;
 
 #define MAX_DXC_ADAPTERS 32
 
-class DXContext
-{
+class DXContext {
 public:
-    // PUBLIC FUNCTIONS
-	
-	// SPOUT - DX9EX
-	DXContext(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd, wchar_t* szIniFile);
+  // PUBLIC FUNCTIONS
 
-    ~DXContext();
-    BOOL StartOrRestartDevice(DXCONTEXT_PARAMS *pParams); // also serves as Init() function
-    void OnTrulyExiting() { m_truly_exiting = 1; }
-    void UpdateMonitorWorkRect();
-    int  GetBitDepth() { return m_bpp; };
-    inline D3DFORMAT GetZFormat() { return m_zFormat; };
-    char* GetDriver() { return m_szDriver; };
-    char* GetDesc() { return m_szDesc; };
+// SPOUT - DX9EX
+  DXContext(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd, wchar_t* szIniFile);
 
-    void SaveWindow();
-    HWND GetHwnd();
-    bool OnUserResizeWindow(RECT* w, RECT* c);
-    bool TempIgnoreDestroyMessages();
+  ~DXContext();
+  BOOL StartOrRestartDevice(DXCONTEXT_PARAMS* pParams); // also serves as Init() function
+  void OnTrulyExiting() { m_truly_exiting = 1; }
+  void UpdateMonitorWorkRect();
+  int  GetBitDepth() { return m_bpp; };
+  inline D3DFORMAT GetZFormat() { return m_zFormat; };
+  char* GetDriver() { return m_szDriver; };
+  char* GetDesc() { return m_szDesc; };
 
-    // PUBLIC DATA - DO NOT WRITE TO THESE FROM OUTSIDE THE CLASS
-    int m_ready;
-    HRESULT m_lastErr;
-    int m_window_width;
-    int m_window_height;
-    int m_client_width;        //in windowed mode, these are the SNAPPED (locked to nearest 32x32)
-    int m_client_height;       //  width and height
-    int m_REAL_client_width;   //these are the ACTUAL (raw) width and height -
-    int m_REAL_client_height;  //  only valid in windowed mode!
-    int m_fake_fs_covers_all;
-    int m_frame_delay;
-    RECT m_all_monitors_rect;   // rect that encompasses all monitors that make up the desktop.  The primary monitor's upper-left corner is (0,0).
-    RECT m_monitor_rect;        // rect for monitor the plugin is running on; for pseudo-multimon modes like 2048x768, if user decides to only run on half the monitor, this rect reflects that as well.
-    RECT m_monitor_rect_orig;   //  same, but it's the original rect; does not account for pseudo-multimon modes like 2048x768
-    RECT m_monitor_work_rect;   // same, but excludes the taskbar area.
-    RECT m_monitor_work_rect_orig; // original work rect; does not account for pseudo-multimon modes like 2048x768
-    DXCONTEXT_PARAMS       m_current_mode;
+  void SaveWindow();
+  HWND GetHwnd();
+  bool OnUserResizeWindow(RECT* w, RECT* c);
+  bool TempIgnoreDestroyMessages();
 
-	// SPOUT - DX9EX
-	LPDIRECT3DDEVICE9EX      m_lpDevice;
-	LPDIRECT3D9EX            m_lpD3D;
+  // PUBLIC DATA - DO NOT WRITE TO THESE FROM OUTSIDE THE CLASS
+  int m_ready;
+  HRESULT m_lastErr;
+  int m_window_width;
+  int m_window_height;
+  int m_client_width;        //in windowed mode, these are the SNAPPED (locked to nearest 32x32)
+  int m_client_height;       //  width and height
+  int m_REAL_client_width;   //these are the ACTUAL (raw) width and height -
+  int m_REAL_client_height;  //  only valid in windowed mode!
+  int m_fake_fs_covers_all;
+  int m_frame_delay;
+  RECT m_all_monitors_rect;   // rect that encompasses all monitors that make up the desktop.  The primary monitor's upper-left corner is (0,0).
+  RECT m_monitor_rect;        // rect for monitor the plugin is running on; for pseudo-multimon modes like 2048x768, if user decides to only run on half the monitor, this rect reflects that as well.
+  RECT m_monitor_rect_orig;   //  same, but it's the original rect; does not account for pseudo-multimon modes like 2048x768
+  RECT m_monitor_work_rect;   // same, but excludes the taskbar area.
+  RECT m_monitor_work_rect_orig; // original work rect; does not account for pseudo-multimon modes like 2048x768
+  DXCONTEXT_PARAMS       m_current_mode;
 
-    D3DPRESENT_PARAMETERS* m_d3dpp;
-    D3DCAPS9               m_caps;
+  // SPOUT - DX9EX
+  LPDIRECT3DDEVICE9EX      m_lpDevice;
+  LPDIRECT3D9EX            m_lpD3D;
+
+  D3DPRESENT_PARAMETERS* m_d3dpp;
+  D3DCAPS9               m_caps;
 
 protected:
-    D3DMULTISAMPLE_TYPE    m_multisamp;
-    D3DFORMAT              m_zFormat;
-    D3DFORMAT              m_orig_windowed_mode_format[MAX_DXC_ADAPTERS];
-    HMODULE m_hmod_d3d9, m_hmod_d3dx9;
-    int  m_ordinal_adapter;
-    HWND m_hwnd;
-    HWND m_hwnd_winamp;
-    LONG_PTR m_uWindowLong;
-    char m_szWindowCaption[512];
-    wchar_t m_szIniFile[MAX_PATH];
-    char m_szDriver[MAX_DEVICE_IDENTIFIER_STRING];
-    char m_szDesc[MAX_DEVICE_IDENTIFIER_STRING];
-    HINSTANCE m_hInstance;
-    int  m_minimize_winamp;
-    int  m_winamp_minimized;
-    int  m_truly_exiting;
-    int  m_bpp;
+  D3DMULTISAMPLE_TYPE    m_multisamp;
+  D3DFORMAT              m_zFormat;
+  D3DFORMAT              m_orig_windowed_mode_format[MAX_DXC_ADAPTERS];
+  HMODULE m_hmod_d3d9, m_hmod_d3dx9;
+  int  m_ordinal_adapter;
+  HWND m_hwnd;
+  HWND m_hwnd_winamp;
+  LONG_PTR m_uWindowLong;
+  char m_szWindowCaption[512];
+  wchar_t m_szIniFile[MAX_PATH];
+  char m_szDriver[MAX_DEVICE_IDENTIFIER_STRING];
+  char m_szDesc[MAX_DEVICE_IDENTIFIER_STRING];
+  HINSTANCE m_hInstance;
+  int  m_minimize_winamp;
+  int  m_winamp_minimized;
+  int  m_truly_exiting;
+  int  m_bpp;
 
-    void WriteSafeWindowPos();
-    int GetWindowedModeAutoSize(int iteration);
-    BOOL TestDepth(int ordinal_adapter, D3DFORMAT fmt);
-    BOOL TestFormat(int ordinal_adapter, D3DFORMAT fmt);
-    int  CheckAndCorrectFullscreenDispMode(int ordinal_adapter, D3DDISPLAYMODE *pdm);
-    void SetViewport();
-    BOOL Internal_Init(DXCONTEXT_PARAMS *pParams, BOOL bFirstInit);
-    void Internal_CleanUp();
-    void GetSnappedClientSize(); //windowed mode only
+  void WriteSafeWindowPos();
+  int GetWindowedModeAutoSize(int iteration);
+  BOOL TestDepth(int ordinal_adapter, D3DFORMAT fmt);
+  BOOL TestFormat(int ordinal_adapter, D3DFORMAT fmt);
+  int  CheckAndCorrectFullscreenDispMode(int ordinal_adapter, D3DDISPLAYMODE* pdm);
+  void SetViewport();
+  BOOL Internal_Init(DXCONTEXT_PARAMS* pParams, BOOL bFirstInit);
+  void Internal_CleanUp();
+  void GetSnappedClientSize(); //windowed mode only
 };
 
 #define DXC_ERR_REGWIN    -2
