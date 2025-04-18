@@ -8,15 +8,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkwaveRemote", "Remote\Mi
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
-		Release\messages.ini = Release\messages.ini
-		README.md = README.md
-		Release\README.txt = Release\README.txt
-		Release\release.cmd = Release\release.cmd
-		Release\roadmap.md = Release\roadmap.md
-		Release\script-default.txt = Release\script-default.txt
-		Release\settings-milkwave.json = Release\settings-milkwave.json
-		Release\settings.ini = Release\settings.ini
-		Release\sprites.ini = Release\sprites.ini
+		Build\messages.ini = Build\messages.ini
+		Build\README.txt = Build\README.txt
+		Build\release.cmd = Build\release.cmd
+		Build\roadmap.md = Build\roadmap.md
+		Build\script-default.txt = Build\script-default.txt
+		Build\settings-milkwave.json = Build\settings-milkwave.json
+		Build\settings.ini = Build\settings.ini
+		Build\sprites.ini = Build\sprites.ini
 	EndProjectSection
 EndProject
 Global

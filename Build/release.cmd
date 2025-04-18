@@ -1,0 +1,10 @@
+set releasePath=C:\Tools\Milkwave\Release
+copy *.ini %releasePath%
+copy *.txt %releasePath%
+copy *.json %releasePath%
+copy ..\Remote\bin\Release\net8.0-windows7.0\MilkwaveRemote.exe %releasePath%
+copy ..\Remote\bin\Release\net8.0-windows7.0\MilkwaveRemote.dll %releasePath%
+copy ..\Remote\bin\Release\net8.0-windows7.0\MilkwaveRemote.runtimeconfig.json %releasePath%
+copy ..\Remote\bin\Release\net8.0-windows7.0\NAudio.Wasapi.dll %releasePath%
+copy ..\Visualizer\vis_milk2\Release\MilkwaveVisualizer.exe %releasePath%
+pause

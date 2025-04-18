@@ -1,0 +1,38 @@
+{
+  "Styles": [
+    {
+      "Name": "Style A",
+      "Value": "size=25|time=5.0|growth=2.0"
+    },
+    {
+      "Name": "Style B",
+      "Value": "size=23|time=5.0|growth=2.0|randx=0.1|randy=0.1|r=0|g=191|b=0"
+    }
+  ],
+  "RemoteWindowLocation": {
+    "IsEmpty": false,
+    "X": 54,
+    "Y": 48
+  },
+  "RemoteWindowSize": {
+    "IsEmpty": false,
+    "Width": 788,
+    "Height": 740
+  },
+  "VisualizerWindowLocation": {
+    "IsEmpty": false,
+    "X": 850,
+    "Y": 50
+  },
+  "VisualizerWindowSize": {
+    "IsEmpty": false,
+    "Width": 640,
+    "Height": 360
+  },
+  "SplitterDistance1": 226,
+  "SplitterDistance2": 152,
+  "DarkMode": true,
+  "ShowMessagePanel": true,
+  "ShowPresetPanel": true,
+  "ShowButtonPanel": true
+}

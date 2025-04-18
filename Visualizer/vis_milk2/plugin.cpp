@@ -1415,7 +1415,8 @@ void CPlugin::MyReadConfig()
     // --------
 
 	GetPrivateProfileStringW(L"Settings",L"szPresetDir",m_szPresetDir,m_szPresetDir,sizeof(m_szPresetDir),pIni);
-    GetPrivateProfileStringW(L"Settings",L"szPresetStartup",m_szPresetStartup,m_szPresetStartup,sizeof(m_szPresetStartup), pIni);
+  GetPrivateProfileStringW(L"Settings",L"szPresetStartup",m_szPresetStartup,m_szPresetStartup,sizeof(m_szPresetStartup), pIni);
+  GetPrivateProfileStringW(L"Settings", L"MilkwaveAudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);
 
 	ReadCustomMessages();
 
@@ -1521,6 +1522,9 @@ void CPlugin::MyWriteConfig()
 
     WritePrivateProfileIntW(m_adapterId, L"nVideoAdapterIndex", pIni, L"Settings");
 
+    // Milkwave
+    WritePrivateProfileStringW(L"Settings", L"szPresetStartup", m_szCurrentPresetFile, pIni);
+    WritePrivateProfileStringW(L"Settings", L"MilkwaveAudioDevice", m_szAudioDevice, pIni);
 }
 
 //----------------------------------------------------------------------

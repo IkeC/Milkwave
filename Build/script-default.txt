@@ -1,0 +1,41 @@
+# Example script file for Milkwave Remote
+#
+# Lines starting with # are ignored when parsing this file.
+# You can load other files by right-clicking "From File" in the Milkwave Remote window.
+#
+# You can add 0..n commands per line separated by | 
+# If it's not a known command, the text is treated as message
+#
+# Possible commmands: 
+#
+# NEXT: Next preset (like pressing the Space key in the Visualizer)
+# PREV: Previous preset (like pressing the Backspace key in the Visualizer)
+# STYLE=My Style: Switch to saved messenger style named "My Style"
+# FONT=Arial: Set font in Remote to Arial
+# BPM=123: Set BPM to 123
+# BEATS=8: Set Beats to 8
+# STOP: Stop autoplay
+# SEND=00: Send this string to the Visualizer window, eg. for triggering sprite 00
+# PRESET=C:\Path\To\Preset.milk: Run preset file in Visualizer, the path can be 
+#   absolute or relative to the Milkwave base directory
+# RESET: Reset the Remote form timer. The timer may run out of sync after a while,
+#   depending on the set BPM, beats and your computer. This command resets the 
+#   timer. The same can be achieved by double-clicking the "BPM"-label in the 
+#   Remote window.
+#
+Welcome to Milkwave!
+SEND=00|A wild sprite appears!
+STYLE=Style B|Switch to "Style B"
+Here's another line
+Switching preset...|NEXT
+FONT=Arial|Everybody likes Arial!
+Let's try some//multiline text!
+PRESET=resources\presets\Milkwave\12 - IkeC - wave mode 7.milk|I like this preset!
+BPM=180|BEATS=4|Let's go faster!
+RESET|Boom
+Boom
+# use any number of blank lines for delays
+
+BOOM
+STYLE=Style A|That's all folks!|STOP
+# if you don't STOP, autoplay will continue from the beginning (unless random play is enabled)
