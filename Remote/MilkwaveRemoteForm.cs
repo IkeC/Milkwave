@@ -282,16 +282,24 @@ namespace MilkwaveRemote {
         if (cds.lpData != IntPtr.Zero) {
           // Convert the received data to a string
           string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2) ?? "";
-          if (receivedString.Length > 0) {
-            string findString = "RESOURCES\\";
-            int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
-            string displayText = receivedString;
-            if (index > -1) {
-              displayText = receivedString.Substring(index + findString.Length);
+          if (receivedString.StartsWith("PRESET=")) {
+            string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            if (receivedString.Length > 0) {
+              string findString = "RESOURCES\\";
+              int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+              string displayText = receivedString;
+              if (index > -1) {
+                displayText = receivedString.Substring(index + findString.Length);
+              }
+              // Process the received string
+              txtVisRunning.Text = displayText;
+              toolTip1.SetToolTip(txtVisRunning, receivedString);
             }
-            // Process the received string
-            txtVisRunning.Text = displayText;
-            toolTip1.SetToolTip(txtVisRunning, receivedString);
+          } else if (receivedString.StartsWith("STATUS=")) {
+            string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            if (status.Length > 0) {
+              SetStatusText(status);
+            }
           }
         }
       }
@@ -906,8 +914,9 @@ namespace MilkwaveRemote {
       SendUnicodeChars("k");
     }
 
+    private const int VK_F10 = 0x79;
     private void btnY_Click(object sender, EventArgs e) {
-      SendUnicodeChars("y");
+      SendPostMessage(VK_F10, "F10");
     }
 
     private void btn00_Click(object sender, EventArgs e) {
@@ -961,6 +970,8 @@ namespace MilkwaveRemote {
       } else if (e.KeyCode == Keys.F7) {
         SelectNextPreset();
         btnPresetSend.PerformClick();
+      } else if (e.KeyCode == Keys.F10) {
+        btnY.PerformClick();
       } else if (e.KeyCode == Keys.F12) {
         chkAutoplay.Checked = !chkAutoplay.Checked;
       }
@@ -1308,7 +1319,7 @@ namespace MilkwaveRemote {
   "GitHub issues: https://github.com/IkeC/Milkwave/issues" + Environment.NewLine +
   "Ikes Discord: https://bit.ly/Ikes-Discord" + Environment.NewLine +
   "" + Environment.NewLine +
-  "and the README.txt in the program folder";
+  "and the README.txt in the program folder.";
       new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Help", dialogtext);
     }
 

@@ -3,7 +3,7 @@
    ESC                  exit BeatDrop / menus
    ALT + ENTER          toggle fullscreen (or double-click)
    ALT + S              toggle multiple monitor stretch
-   CTRL + Z             enable/disable spout output
+   CTRL + Z / F10       enable/disable spout output
    CTRL + T             instantly reset time variable
    SHIFT + UP           increase window opacity
    SHIFT + DOWN         decrease window opacity
@@ -31,7 +31,7 @@
    
  HOTKEYS:
 
-   F2                   toggle borderless window (untoggleable while on fullscreen or stretch mode)
+   F2                   toggle borderless window (unless on fullscreen or stretch mode)
    F3                   toggle fps to 30/60/90/120/144/240/360/Unlimited
    F7                   always on top
    F11                  hardcut mode: normal/based of music
@@ -49,9 +49,8 @@
 
  CUSTOM SPRITES/MESSAGES:
 
-   K                    enter sprite mode
+   K                    toggle sprite/message mode
    SHIFT + K            enter sprite kill mode
-   Y                    enter custom message mode
    00-99                invoke sprites/messages (clears some sprites while you introduced some digits - sprite kill mode)
    *                    clears the number of digits that you introduced
    DEL                  clear latest sprite from the slot/message

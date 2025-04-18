@@ -1047,7 +1047,7 @@ namespace MilkwaveRemote
       tableLayoutPanel1.Controls.Add(btnF2, 0, 1);
       tableLayoutPanel1.Controls.Add(btnN, 4, 0);
       tableLayoutPanel1.Controls.Add(btnAltEnter, 0, 2);
-      tableLayoutPanel1.Controls.Add(btnY, 4, 2);
+      tableLayoutPanel1.Controls.Add(btnY, 6, 2);
       tableLayoutPanel1.Controls.Add(btn11, 1, 3);
       tableLayoutPanel1.Controls.Add(btnTilde, 6, 0);
       tableLayoutPanel1.Controls.Add(btn00, 0, 3);
@@ -1056,7 +1056,7 @@ namespace MilkwaveRemote
       tableLayoutPanel1.Controls.Add(btnF4, 4, 1);
       tableLayoutPanel1.Controls.Add(btnF3, 2, 1);
       tableLayoutPanel1.Controls.Add(btnBackspace, 2, 0);
-      tableLayoutPanel1.Controls.Add(btnDelete, 6, 2);
+      tableLayoutPanel1.Controls.Add(btnDelete, 4, 2);
       tableLayoutPanel1.Dock = DockStyle.Fill;
       tableLayoutPanel1.Location = new Point(0, 0);
       tableLayoutPanel1.Margin = new Padding(3, 2, 3, 2);
@@ -1153,7 +1153,7 @@ namespace MilkwaveRemote
       btnK.Name = "btnK";
       btnK.Size = new Size(158, 41);
       btnK.TabIndex = 9;
-      btnK.Text = "Sprite Mode\r\n(K)";
+      btnK.Text = "Sprite/Message Mode\r\n(K)";
       btnK.UseVisualStyleBackColor = true;
       btnK.Click += btnK_Click;
       // 
@@ -1200,12 +1200,12 @@ namespace MilkwaveRemote
       // 
       tableLayoutPanel1.SetColumnSpan(btnY, 2);
       btnY.Dock = DockStyle.Fill;
-      btnY.Location = new Point(335, 96);
+      btnY.Location = new Point(499, 96);
       btnY.Margin = new Padding(3, 2, 3, 2);
       btnY.Name = "btnY";
-      btnY.Size = new Size(158, 41);
+      btnY.Size = new Size(163, 41);
       btnY.TabIndex = 10;
-      btnY.Text = "Message Mode\r\n(Y)";
+      btnY.Text = "Toggle Spout Output\r\n(F10)";
       btnY.UseVisualStyleBackColor = true;
       btnY.Click += btnY_Click;
       // 
@@ -1289,10 +1289,10 @@ namespace MilkwaveRemote
       // 
       tableLayoutPanel1.SetColumnSpan(btnDelete, 2);
       btnDelete.Dock = DockStyle.Fill;
-      btnDelete.Location = new Point(499, 96);
+      btnDelete.Location = new Point(335, 96);
       btnDelete.Margin = new Padding(3, 2, 3, 2);
       btnDelete.Name = "btnDelete";
-      btnDelete.Size = new Size(163, 41);
+      btnDelete.Size = new Size(158, 41);
       btnDelete.TabIndex = 11;
       btnDelete.Text = "Clear Latest Sprite\r\n(Delete)";
       btnDelete.UseVisualStyleBackColor = true;

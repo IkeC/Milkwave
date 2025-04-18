@@ -6211,6 +6211,9 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         //          - Milkdrop2077 (a.k.a. serge000) on Twitter DMs
          
 
+        case VK_F10:
+          ToggleSpout();
+          return 0;
         case VK_F11:   //Only changing the HardcutModes value!
         //Functionalities are moved on void MyRenderFn()
         {
@@ -7262,27 +7265,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 		case 'Z':
 			if (bCtrlHeldDown)
 			{
-				bSpoutChanged = true; // write config on exit
-				bSpoutOut = !bSpoutOut;
-				if (bSpoutOut) {
-					// Start spout
-                    wchar_t buf[1024], tmp[64];
-                    swprintf(buf, L"Spout output enabled.", tmp, 64);
-                    AddError(buf, 3.0f, ERR_NOTIFY, false);
-				}
-				else {
-					// Stop Spout
-                    wchar_t buf[1024], tmp[64];
-                    swprintf(buf, L"Spout output disabled.", tmp, 64);
-                    AddError(buf, 3.0f, ERR_NOTIFY, false);
-				}
-				if (bInitialized) {
-					spoutsender.ReleaseDX9sender();
-					bInitialized = false;
-                    // Initialized next render frame
-                    // milkdropfs.cpp - RenderFrame / OpenSender
-				}
-				return 0;
+        ToggleSpout();
 			}
 		break;
 		
@@ -7333,6 +7316,32 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
     return 0;
 };
+
+int CPlugin::ToggleSpout() {
+  bSpoutChanged = true; // write config on exit
+  bSpoutOut = !bSpoutOut;
+  if (bSpoutOut) {
+    // Start spout
+    wchar_t buf[1024], tmp[64];
+    swprintf(buf, L"Spout output enabled.", tmp, 64);
+    SendMessageToMilkwaveRemote(L"STATUS=Spout output enabled");
+    // AddError(buf, 3.0f, ERR_NOTIFY, false);
+  }
+  else {
+    // Stop Spout
+    wchar_t buf[1024], tmp[64];
+    swprintf(buf, L"Spout output disabled.", tmp, 64);
+    SendMessageToMilkwaveRemote(L"STATUS=Spout output disabled");
+    // AddError(buf, 3.0f, ERR_NOTIFY, false);
+  }
+  if (bInitialized) {
+    spoutsender.ReleaseDX9sender();
+    bInitialized = false;
+    // Initialized next render frame
+    // milkdropfs.cpp - RenderFrame / OpenSender
+  }
+  return 0;
+}
 
 //----------------------------------------------------------------------
 
@@ -7598,8 +7607,15 @@ int CPlugin::HandleRegularKey(WPARAM wParam)
 
 			if (bShiftHeldDown)
 				m_nNumericInputMode   = NUMERIC_INPUT_MODE_SPRITE_KILL;
-			else
-				m_nNumericInputMode   = NUMERIC_INPUT_MODE_SPRITE;
+      else if (m_nNumericInputMode == NUMERIC_INPUT_MODE_SPRITE) {
+        m_nNumericInputMode = NUMERIC_INPUT_MODE_CUST_MSG;
+        SendMessageToMilkwaveRemote(L"STATUS=Message Mode set");
+      }
+      else {
+        m_nNumericInputMode = NUMERIC_INPUT_MODE_SPRITE;
+        SendMessageToMilkwaveRemote(L"STATUS=Sprite Mode set");
+      }
+
 			m_nNumericInputNum    = 0;
 			m_nNumericInputDigits = 0;
 		}
@@ -7717,13 +7733,11 @@ int CPlugin::HandleRegularKey(WPARAM wParam)
 
 	if (wParam == 'y' || wParam == 'Y')	// 'y' or 'Y'
 	{
-		m_nNumericInputMode   = NUMERIC_INPUT_MODE_CUST_MSG;
-		m_nNumericInputNum    = 0;
-		m_nNumericInputDigits = 0;
+    // Milkwave: 'k' now toggles between sprite and message mode
 		return 0; // we processed (or absorbed) the key
 	}
 
-    return 1;
+  return 1;
 }
 
 wchar_t* FormImageCacheSizeString(wchar_t* itemStr, UINT sizeID)
@@ -9165,7 +9179,7 @@ void CPlugin::OnFinishedLoadingPreset()
     for (int mash=0; mash<MASH_SLOTS; mash++)
         m_nMashPreset[mash] = m_nCurrentPreset;
       
-    SendMessageToMilkwaveRemote(m_szCurrentPresetFile);
+    SendMessageToMilkwaveRemote((L"PRESET=" + std::wstring(m_szCurrentPresetFile)).c_str());    
 }
 
 void CPlugin::SendMessageToMilkwaveRemote(const wchar_t* presetFile) {
