@@ -1,9 +1,10 @@
-# v1.4
+# v1.5
 
-BeatDrop Changes
+- save sequential order setting
 
 # Backlog
 
+- better opacity control
 - projectM
 - Select and send sprite
 - AI

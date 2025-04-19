@@ -1064,8 +1064,10 @@ namespace MilkwaveRemote {
           }
           Settings.VisualizerWindowSize = new Size(savedWindowRect.Right - savedWindowRect.Left, savedWindowRect.Bottom - savedWindowRect.Top);
 
-          // Close the Visualizer window
-          PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
+          // Close the Visualizer window unless Alt key is pressed
+          if ((Control.ModifierKeys & Keys.Alt) != Keys.Alt) {
+            PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
+          }
         }
 
         Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
