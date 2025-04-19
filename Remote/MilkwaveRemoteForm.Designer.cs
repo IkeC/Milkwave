@@ -41,7 +41,7 @@ namespace MilkwaveRemote
       toolStripMenuItemDarkMode = new ToolStripMenuItem();
       toolStripSeparator2 = new ToolStripSeparator();
       toolStripMenuItemMessagePanel = new ToolStripMenuItem();
-      toolStripMenuItemPresetPanel = new ToolStripMenuItem();
+      toolStripMenuItemVisualizerPanel = new ToolStripMenuItem();
       toolStripMenuItemButtonPanel = new ToolStripMenuItem();
       toolTip1 = new ToolTip(components);
       chkPreview = new CheckBox();
@@ -70,8 +70,6 @@ namespace MilkwaveRemote
       txtWindowTitle = new TextBox();
       btnSend = new Button();
       txtMessage = new TextBox();
-      btnSpace = new Button();
-      btnBackspace = new Button();
       lblPreset = new Label();
       btnPresetLoadFile = new Button();
       btnPresetSend = new Button();
@@ -94,10 +92,12 @@ namespace MilkwaveRemote
       btnSetAudioDevice = new Button();
       cboAudioDevice = new ComboBox();
       numAlpha = new NumericUpDown();
+      btnSpace = new Button();
+      btnBackspace = new Button();
       colorDialogMessage = new ColorDialog();
       splitContainer1 = new SplitContainer();
-      txtStyle = new TextBox();
       label2 = new Label();
+      txtStyle = new TextBox();
       splitContainer2 = new SplitContainer();
       lblAudioDevice = new Label();
       tableLayoutPanel1 = new TableLayoutPanel();
@@ -159,13 +159,13 @@ namespace MilkwaveRemote
       // 
       statusBar.Margin = new Padding(7, 4, 0, 2);
       statusBar.Name = "statusBar";
-      statusBar.Size = new Size(601, 20);
+      statusBar.Size = new Size(570, 20);
       statusBar.Spring = true;
       statusBar.TextAlign = ContentAlignment.TopLeft;
       // 
       // toolStripDropDownButton
       // 
-      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHelp, toolStripMenuItemHomepage, toolStripMenuItemSupporters, toolStripSeparator1, toolStripMenuItemDarkMode, toolStripSeparator2, toolStripMenuItemMessagePanel, toolStripMenuItemPresetPanel, toolStripMenuItemButtonPanel });
+      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHelp, toolStripMenuItemHomepage, toolStripMenuItemSupporters, toolStripSeparator1, toolStripMenuItemDarkMode, toolStripSeparator2, toolStripMenuItemMessagePanel, toolStripMenuItemVisualizerPanel, toolStripMenuItemButtonPanel });
       toolStripDropDownButton.Image = (Image)resources.GetObject("toolStripDropDownButton.Image");
       toolStripDropDownButton.ImageTransparentColor = Color.Magenta;
       toolStripDropDownButton.Name = "toolStripDropDownButton";
@@ -176,67 +176,67 @@ namespace MilkwaveRemote
       // toolStripMenuItemHelp
       // 
       toolStripMenuItemHelp.Name = "toolStripMenuItemHelp";
-      toolStripMenuItemHelp.Size = new Size(152, 22);
+      toolStripMenuItemHelp.Size = new Size(180, 22);
       toolStripMenuItemHelp.Text = "Help";
       toolStripMenuItemHelp.Click += toolStripMenuItemHelp_Click;
       // 
       // toolStripMenuItemHomepage
       // 
       toolStripMenuItemHomepage.Name = "toolStripMenuItemHomepage";
-      toolStripMenuItemHomepage.Size = new Size(152, 22);
+      toolStripMenuItemHomepage.Size = new Size(180, 22);
       toolStripMenuItemHomepage.Text = "Releases";
       toolStripMenuItemHomepage.Click += toolStripMenuItemReleases_Click;
       // 
       // toolStripMenuItemSupporters
       // 
       toolStripMenuItemSupporters.Name = "toolStripMenuItemSupporters";
-      toolStripMenuItemSupporters.Size = new Size(152, 22);
+      toolStripMenuItemSupporters.Size = new Size(180, 22);
       toolStripMenuItemSupporters.Text = "Supporters";
       toolStripMenuItemSupporters.Click += toolStripMenuItemSupporters_Click;
       // 
       // toolStripSeparator1
       // 
       toolStripSeparator1.Name = "toolStripSeparator1";
-      toolStripSeparator1.Size = new Size(149, 6);
+      toolStripSeparator1.Size = new Size(177, 6);
       // 
       // toolStripMenuItemDarkMode
       // 
       toolStripMenuItemDarkMode.Checked = true;
       toolStripMenuItemDarkMode.CheckState = CheckState.Checked;
       toolStripMenuItemDarkMode.Name = "toolStripMenuItemDarkMode";
-      toolStripMenuItemDarkMode.Size = new Size(152, 22);
+      toolStripMenuItemDarkMode.Size = new Size(180, 22);
       toolStripMenuItemDarkMode.Text = "Dark Mode";
       toolStripMenuItemDarkMode.Click += toolStripMenuItemDarkMode_Click;
       // 
       // toolStripSeparator2
       // 
       toolStripSeparator2.Name = "toolStripSeparator2";
-      toolStripSeparator2.Size = new Size(149, 6);
+      toolStripSeparator2.Size = new Size(177, 6);
       // 
       // toolStripMenuItemMessagePanel
       // 
       toolStripMenuItemMessagePanel.Checked = true;
       toolStripMenuItemMessagePanel.CheckState = CheckState.Checked;
       toolStripMenuItemMessagePanel.Name = "toolStripMenuItemMessagePanel";
-      toolStripMenuItemMessagePanel.Size = new Size(152, 22);
+      toolStripMenuItemMessagePanel.Size = new Size(180, 22);
       toolStripMenuItemMessagePanel.Text = "Message Panel";
       toolStripMenuItemMessagePanel.Click += toolStripMenuItemMessagePanel_Click;
       // 
-      // toolStripMenuItemPresetPanel
+      // toolStripMenuItemVisualizerPanel
       // 
-      toolStripMenuItemPresetPanel.Checked = true;
-      toolStripMenuItemPresetPanel.CheckState = CheckState.Checked;
-      toolStripMenuItemPresetPanel.Name = "toolStripMenuItemPresetPanel";
-      toolStripMenuItemPresetPanel.Size = new Size(152, 22);
-      toolStripMenuItemPresetPanel.Text = "Preset Panel";
-      toolStripMenuItemPresetPanel.Click += toolStripMenuItemPresetPanel_Click;
+      toolStripMenuItemVisualizerPanel.Checked = true;
+      toolStripMenuItemVisualizerPanel.CheckState = CheckState.Checked;
+      toolStripMenuItemVisualizerPanel.Name = "toolStripMenuItemVisualizerPanel";
+      toolStripMenuItemVisualizerPanel.Size = new Size(180, 22);
+      toolStripMenuItemVisualizerPanel.Text = "Visualizer Panel";
+      toolStripMenuItemVisualizerPanel.Click += toolStripMenuItemPresetPanel_Click;
       // 
       // toolStripMenuItemButtonPanel
       // 
       toolStripMenuItemButtonPanel.Checked = true;
       toolStripMenuItemButtonPanel.CheckState = CheckState.Checked;
       toolStripMenuItemButtonPanel.Name = "toolStripMenuItemButtonPanel";
-      toolStripMenuItemButtonPanel.Size = new Size(152, 22);
+      toolStripMenuItemButtonPanel.Size = new Size(180, 22);
       toolStripMenuItemButtonPanel.Text = "Button Panel";
       toolStripMenuItemButtonPanel.Click += toolStripMenuItemButtonPanel_Click;
       // 
@@ -573,32 +573,6 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(txtMessage, "Ctrl+A: Select all text\r\nEnter: Send to Visualizer\r\nShift+Enter: line break (or use // in message text)");
       txtMessage.KeyDown += txtMessage_KeyDown;
       // 
-      // btnSpace
-      // 
-      tableLayoutPanel1.SetColumnSpan(btnSpace, 2);
-      btnSpace.Dock = DockStyle.Fill;
-      btnSpace.Location = new Point(7, 6);
-      btnSpace.Margin = new Padding(3, 2, 3, 2);
-      btnSpace.Name = "btnSpace";
-      btnSpace.Size = new Size(158, 41);
-      btnSpace.TabIndex = 0;
-      btnSpace.Text = "Next Preset\r\n(Space)";
-      btnSpace.UseVisualStyleBackColor = true;
-      btnSpace.Click += btnSpace_Click;
-      // 
-      // btnBackspace
-      // 
-      tableLayoutPanel1.SetColumnSpan(btnBackspace, 2);
-      btnBackspace.Dock = DockStyle.Fill;
-      btnBackspace.Location = new Point(171, 6);
-      btnBackspace.Margin = new Padding(3, 2, 3, 2);
-      btnBackspace.Name = "btnBackspace";
-      btnBackspace.Size = new Size(158, 41);
-      btnBackspace.TabIndex = 1;
-      btnBackspace.Text = "Previous Preset\r\n(Backspace)";
-      btnBackspace.UseVisualStyleBackColor = true;
-      btnBackspace.Click += btnBackspace_Click;
-      // 
       // lblPreset
       // 
       lblPreset.AutoSize = true;
@@ -884,6 +858,32 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(numAlpha, "Alpha (opacity)");
       numAlpha.Value = new decimal(new int[] { 10, 0, 0, 65536 });
       // 
+      // btnSpace
+      // 
+      tableLayoutPanel1.SetColumnSpan(btnSpace, 2);
+      btnSpace.Dock = DockStyle.Fill;
+      btnSpace.Location = new Point(7, 6);
+      btnSpace.Margin = new Padding(3, 2, 3, 2);
+      btnSpace.Name = "btnSpace";
+      btnSpace.Size = new Size(158, 41);
+      btnSpace.TabIndex = 0;
+      btnSpace.Text = "Next Preset\r\n(Space)";
+      btnSpace.UseVisualStyleBackColor = true;
+      btnSpace.Click += btnSpace_Click;
+      // 
+      // btnBackspace
+      // 
+      tableLayoutPanel1.SetColumnSpan(btnBackspace, 2);
+      btnBackspace.Dock = DockStyle.Fill;
+      btnBackspace.Location = new Point(171, 6);
+      btnBackspace.Margin = new Padding(3, 2, 3, 2);
+      btnBackspace.Name = "btnBackspace";
+      btnBackspace.Size = new Size(158, 41);
+      btnBackspace.TabIndex = 1;
+      btnBackspace.Text = "Previous Preset\r\n(Backspace)";
+      btnBackspace.UseVisualStyleBackColor = true;
+      btnBackspace.Click += btnBackspace_Click;
+      // 
       // colorDialogMessage
       // 
       colorDialogMessage.AnyColor = true;
@@ -902,6 +902,17 @@ namespace MilkwaveRemote
       // 
       // splitContainer1.Panel1
       // 
+      splitContainer1.Panel1.Controls.Add(lblFont);
+      splitContainer1.Panel1.Controls.Add(cboFonts);
+      splitContainer1.Panel1.Controls.Add(lblFromFile);
+      splitContainer1.Panel1.Controls.Add(txtAutoplay);
+      splitContainer1.Panel1.Controls.Add(lblParameters);
+      splitContainer1.Panel1.Controls.Add(cboParameters);
+      splitContainer1.Panel1.Controls.Add(label2);
+      splitContainer1.Panel1.Controls.Add(lblWindow);
+      splitContainer1.Panel1.Controls.Add(txtWindowTitle);
+      splitContainer1.Panel1.Controls.Add(btnSend);
+      splitContainer1.Panel1.Controls.Add(txtMessage);
       splitContainer1.Panel1.Controls.Add(numWrap);
       splitContainer1.Panel1.Controls.Add(chkWrap);
       splitContainer1.Panel1.Controls.Add(chkPreview);
@@ -916,22 +927,11 @@ namespace MilkwaveRemote
       splitContainer1.Panel1.Controls.Add(pnlColorMessage);
       splitContainer1.Panel1.Controls.Add(btnAppendColor);
       splitContainer1.Panel1.Controls.Add(lblColor);
-      splitContainer1.Panel1.Controls.Add(btnFontAppend);
-      splitContainer1.Panel1.Controls.Add(lblFont);
-      splitContainer1.Panel1.Controls.Add(cboFonts);
       splitContainer1.Panel1.Controls.Add(numBeats);
       splitContainer1.Panel1.Controls.Add(label7);
-      splitContainer1.Panel1.Controls.Add(lblFromFile);
       splitContainer1.Panel1.Controls.Add(chkAutoplay);
-      splitContainer1.Panel1.Controls.Add(txtAutoplay);
       splitContainer1.Panel1.Controls.Add(btnSaveParam);
-      splitContainer1.Panel1.Controls.Add(lblParameters);
-      splitContainer1.Panel1.Controls.Add(cboParameters);
-      splitContainer1.Panel1.Controls.Add(label2);
-      splitContainer1.Panel1.Controls.Add(lblWindow);
-      splitContainer1.Panel1.Controls.Add(txtWindowTitle);
-      splitContainer1.Panel1.Controls.Add(btnSend);
-      splitContainer1.Panel1.Controls.Add(txtMessage);
+      splitContainer1.Panel1.Controls.Add(btnFontAppend);
       splitContainer1.Panel1.RightToLeft = RightToLeft.No;
       splitContainer1.Panel1.Paint += splitContainer1_Panel1_Paint;
       splitContainer1.Panel1MinSize = 0;
@@ -948,6 +948,15 @@ namespace MilkwaveRemote
       splitContainer1.SplitterMoved += splitContainer1_SplitterMoved;
       splitContainer1.SizeChanged += splitContainer1_SizeChanged;
       // 
+      // label2
+      // 
+      label2.AutoSize = true;
+      label2.Location = new Point(19, 9);
+      label2.Name = "label2";
+      label2.Size = new Size(53, 15);
+      label2.TabIndex = 90;
+      label2.Text = "Message";
+      // 
       // txtStyle
       // 
       txtStyle.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -958,15 +967,6 @@ namespace MilkwaveRemote
       txtStyle.TabIndex = 76;
       txtStyle.Text = "Style A";
       txtStyle.KeyDown += txtStyle_KeyDown;
-      // 
-      // label2
-      // 
-      label2.AutoSize = true;
-      label2.Location = new Point(19, 9);
-      label2.Name = "label2";
-      label2.Size = new Size(53, 15);
-      label2.TabIndex = 90;
-      label2.Text = "Message";
       // 
       // splitContainer2
       // 
@@ -979,16 +979,9 @@ namespace MilkwaveRemote
       // 
       // splitContainer2.Panel1
       // 
-      splitContainer2.Panel1.Controls.Add(numAlpha);
       splitContainer2.Panel1.Controls.Add(btnSetAudioDevice);
       splitContainer2.Panel1.Controls.Add(lblAudioDevice);
       splitContainer2.Panel1.Controls.Add(cboAudioDevice);
-      splitContainer2.Panel1.Controls.Add(chkAmpLinked);
-      splitContainer2.Panel1.Controls.Add(pnlColorWave);
-      splitContainer2.Panel1.Controls.Add(lblWaveColor);
-      splitContainer2.Panel1.Controls.Add(btnSendWave);
-      splitContainer2.Panel1.Controls.Add(numWavemode);
-      splitContainer2.Panel1.Controls.Add(lblWavemode);
       splitContainer2.Panel1.Controls.Add(numAmpRight);
       splitContainer2.Panel1.Controls.Add(numAmpLeft);
       splitContainer2.Panel1.Controls.Add(lblAmp);
@@ -1000,6 +993,13 @@ namespace MilkwaveRemote
       splitContainer2.Panel1.Controls.Add(cboPresets);
       splitContainer2.Panel1.Controls.Add(txtVisRunning);
       splitContainer2.Panel1.Controls.Add(lblCurrentPreset);
+      splitContainer2.Panel1.Controls.Add(chkAmpLinked);
+      splitContainer2.Panel1.Controls.Add(numAlpha);
+      splitContainer2.Panel1.Controls.Add(pnlColorWave);
+      splitContainer2.Panel1.Controls.Add(lblWaveColor);
+      splitContainer2.Panel1.Controls.Add(btnSendWave);
+      splitContainer2.Panel1.Controls.Add(numWavemode);
+      splitContainer2.Panel1.Controls.Add(lblWavemode);
       splitContainer2.Panel1.RightToLeft = RightToLeft.No;
       splitContainer2.Panel1.Paint += splitContainer2_Panel1_Paint;
       splitContainer2.Panel1MinSize = 44;
@@ -1442,7 +1442,7 @@ namespace MilkwaveRemote
     private ToolStripSeparator toolStripSeparator1;
     private ToolStripMenuItem toolStripMenuItemDarkMode;
     private ToolStripMenuItem toolStripMenuItemButtonPanel;
-    private ToolStripMenuItem toolStripMenuItemPresetPanel;
+    private ToolStripMenuItem toolStripMenuItemVisualizerPanel;
     private ToolStripSeparator toolStripSeparator2;
     private ToolStripMenuItem toolStripMenuItemMessagePanel;
     private Label lblPreset;

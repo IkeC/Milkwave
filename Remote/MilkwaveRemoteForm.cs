@@ -161,7 +161,7 @@ namespace MilkwaveRemote {
       cboParameters.DropDownStyle = ComboBoxStyle.DropDown;
       cboParameters.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
 
-      // Initialize 'ofd' to avoid CS8618 error  
+      // Initialize 'ofd' to avoid CS8618 error
       ofd = new OpenFileDialog();
 
       // #if !DEBUG
@@ -227,7 +227,7 @@ namespace MilkwaveRemote {
       }
 
       toolStripMenuItemMessagePanel.Checked = Settings.ShowMessagePanel;
-      toolStripMenuItemPresetPanel.Checked = Settings.ShowPresetPanel;
+      toolStripMenuItemVisualizerPanel.Checked = Settings.ShowPresetPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
       SetPanelsVisibility();
 
@@ -1333,7 +1333,7 @@ namespace MilkwaveRemote {
 
     private void toolStripMenuItemHelp_Click(object sender, EventArgs e) {
       string dialogtext =
-  "There are many tooltips explaining all features when you hover over the frm elements." + Environment.NewLine +
+  "There are many tooltips explaining all features when you move your mouse over all the form elements." + Environment.NewLine +
   "" + Environment.NewLine +
   "More help resources:" + Environment.NewLine +
   "" + Environment.NewLine +
@@ -1388,8 +1388,8 @@ namespace MilkwaveRemote {
     }
 
     private void toolStripMenuItemPresetPanel_Click(object sender, EventArgs e) {
-      toolStripMenuItemPresetPanel.Checked = !toolStripMenuItemPresetPanel.Checked;
-      Settings.ShowPresetPanel = toolStripMenuItemPresetPanel.Checked;
+      toolStripMenuItemVisualizerPanel.Checked = !toolStripMenuItemVisualizerPanel.Checked;
+      Settings.ShowPresetPanel = toolStripMenuItemVisualizerPanel.Checked;
       SetPanelsVisibility();
     }
 
