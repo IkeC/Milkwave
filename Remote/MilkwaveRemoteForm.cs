@@ -55,22 +55,41 @@ namespace MilkwaveRemote {
 
     private System.Windows.Forms.Timer autoplayTimer;
     private int currentLineIndex = 0;
-    private float autoplayRemainingBeats = 1;
     private int lastLineIndex = 0;
+    private float autoplayRemainingBeats = 1;
 
     private List<string> lines = new List<string>();
 
-    private string lastScritFileName = "script-default.txt";
+    private string lastScriptFileName = "script-default.txt";
     private string windowNotFound = "Milkwave Visualizer window not found";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
+    private string milkwaveSettingsFile = "settings-milkwave.json";
 
     Random rnd = new Random();
     private Settings Settings = new Settings();
-    string milkwaveSettingsFile = "settings-milkwave.json";
+    private RemoteHelper helper = new RemoteHelper();
+
     private OpenFileDialog ofd;
     private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
-    private RemoteHelper helper;
+
+    private const int VK_F1 = 0x70;
+    private const int VK_F2 = 0x71;
+    private const int VK_F3 = 0x72;
+    private const int VK_F4 = 0x73;
+    private const int VK_F5 = 0x74;
+    private const int VK_F6 = 0x75;
+    private const int VK_F7 = 0x76;
+    private const int VK_F8 = 0x77;
+    private const int VK_F9 = 0x78;
+    private const int VK_F10 = 0x79;
+    private const int VK_F11 = 0x7A;
+    private const int VK_F12 = 0x7B;
+
+    private const int VK_SPACE = 0x20;
+    private const int VK_DELETE = 0x2E;
+    private const int VK_ENTER = 0x0D;
+    private const int VK_BACKSPACE = 0x08;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct COPYDATASTRUCT {
@@ -133,7 +152,6 @@ namespace MilkwaveRemote {
     public MilkwaveRemoteForm() {
       InitializeComponent();
       FixNumericUpDownMouseWheel(this);
-      helper = new RemoteHelper();
 
       Assembly executingAssembly = Assembly.GetExecutingAssembly();
       var fieVersionInfo = FileVersionInfo.GetVersionInfo(executingAssembly.Location);
@@ -146,7 +164,7 @@ namespace MilkwaveRemote {
       // Initialize 'ofd' to avoid CS8618 error  
       ofd = new OpenFileDialog();
 
-      // #if !DEBUG  
+      // #if !DEBUG
       try {
         string jsonString = File.ReadAllText(milkwaveSettingsFile);
         Settings? loadedSettings = JsonSerializer.Deserialize<Settings>(jsonString, new JsonSerializerOptions {
@@ -158,7 +176,7 @@ namespace MilkwaveRemote {
       } catch (Exception ex) {
         Settings = new Settings();
       }
-      //  #endif  
+      // #endif
 
       dm = new DarkModeCS(this) {
         ColorMode = Settings.DarkMode ? DarkModeCS.DisplayMode.DarkMode : DarkModeCS.DisplayMode.ClearMode,
@@ -184,7 +202,7 @@ namespace MilkwaveRemote {
         }
       }
 
-      LoadMessages(lastScritFileName);
+      LoadMessages(lastScriptFileName);
 
       autoplayTimer = new System.Windows.Forms.Timer();
       autoplayTimer.Tick += AutoplayTimer_Tick;
@@ -581,7 +599,7 @@ namespace MilkwaveRemote {
               string fileName = token.Substring(5);
               if (fileName.Length > 0) {
                 LoadMessages(fileName);
-                lastScritFileName = fileName;
+                lastScriptFileName = fileName;
                 txtAutoplay.Text = lines[currentLineIndex];
                 SetStatusText($"Next line in {autoplayRemainingBeats} beats");
               }
@@ -817,31 +835,21 @@ namespace MilkwaveRemote {
       }
     }
 
-    private const int VK_F3 = 0x72;
-
     private void btnF3_Click(object sender, EventArgs e) {
       SendPostMessage(VK_F3, "F3");
     }
-
-    private const int VK_F4 = 0x73;
 
     private void btnF4_Click(object sender, EventArgs e) {
       SendPostMessage(VK_F4, "F4");
     }
 
-    private const int VK_F7 = 0x76;
-
     private void btnF7_Click(object sender, EventArgs e) {
       SendPostMessage(VK_F7, "F7");
     }
 
-    private const int VK_SPACE = 0x20;
-
     private void btnSpace_Click(object sender, EventArgs e) {
       SendPostMessage(VK_SPACE, "Space");
     }
-
-    private const int VK_BACKSPACE = 0x08;
 
     private void btnBackspace_Click(object sender, EventArgs e) {
       SendPostMessage(VK_BACKSPACE, "Backspace");
@@ -885,13 +893,9 @@ namespace MilkwaveRemote {
       SendUnicodeChars("~");
     }
 
-    private const int VK_DELETE = 0x2E;
-
     private void btnDelete_Click(object sender, EventArgs e) {
       SendPostMessage(VK_DELETE, "Delete");
     }
-
-    private const int VK_ENTER = 0x0D;
 
     private void btnAltEnter_Click(object sender, EventArgs e) {
       SendInput(VK_ENTER, "Alt+Enter", false, true);
@@ -901,8 +905,6 @@ namespace MilkwaveRemote {
       SendUnicodeChars("n");
     }
 
-    private const int VK_F2 = 0x71;
-
     private void btnF2_Click(object sender, EventArgs e) {
       SendPostMessage(VK_F2, "F2");
     }
@@ -911,8 +913,7 @@ namespace MilkwaveRemote {
       SendUnicodeChars("k");
     }
 
-    private const int VK_F10 = 0x79;
-    private void btnY_Click(object sender, EventArgs e) {
+    private void btnF10_Click(object sender, EventArgs e) {
       SendPostMessage(VK_F10, "F10");
     }
 
@@ -949,28 +950,52 @@ namespace MilkwaveRemote {
     }
 
     private void lblFromFile_DoubleClick(object sender, EventArgs e) {
-      LoadMessages(lastScritFileName);
+      LoadMessages(lastScriptFileName);
     }
 
     private void MainForm_KeyDown(object sender, KeyEventArgs e) {
+      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        if (e.KeyCode == Keys.A) {
+          txtMessage.Focus();
+          txtMessage.SelectAll();
+        } else if (e.KeyCode == Keys.D) {
+          btnPresetLoadDirectory_Click(null, null);
+        } else if (e.KeyCode == Keys.P) {
+          btnPresetSend_Click(null, null);
+        } else if (e.KeyCode == Keys.N) {
+          SelectNextPreset();
+          btnPresetSend_Click(null, null);
+        } else if (e.KeyCode == Keys.S) {
+          SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
+        } else if (e.KeyCode == Keys.Y) {
+          chkAutoplay.Checked = !chkAutoplay.Checked;
+        }
+      }
+
       if (e.KeyCode == Keys.F1) {
-        txtMessage.Focus();
-        txtMessage.SelectAll();
+        SendPostMessage(VK_F1, "F1");
       } else if (e.KeyCode == Keys.F2) {
-        SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
+        SendPostMessage(VK_F2, "F2");
       } else if (e.KeyCode == Keys.F3) {
-        btnSpace.PerformClick();
+        SendPostMessage(VK_F3, "F3");
       } else if (e.KeyCode == Keys.F4) {
-        btnBackspace.PerformClick();
+        SendPostMessage(VK_F4, "F4");
+      } else if (e.KeyCode == Keys.F5) {
+        SendPostMessage(VK_F5, "F5");
       } else if (e.KeyCode == Keys.F6) {
-        btnPresetSend.PerformClick();
+        SendPostMessage(VK_F6, "F6");
       } else if (e.KeyCode == Keys.F7) {
-        SelectNextPreset();
-        btnPresetSend.PerformClick();
+        SendPostMessage(VK_F7, "F7");
+      } else if (e.KeyCode == Keys.F8) {
+        SendPostMessage(VK_F8, "F8");
+      } else if (e.KeyCode == Keys.F9) {
+        SendPostMessage(VK_F9, "F9");
       } else if (e.KeyCode == Keys.F10) {
-        btnY.PerformClick();
+        SendPostMessage(VK_F10, "F10");
+      } else if (e.KeyCode == Keys.F11) {
+        SendPostMessage(VK_F11, "F11");
       } else if (e.KeyCode == Keys.F12) {
-        chkAutoplay.Checked = !chkAutoplay.Checked;
+        SendPostMessage(VK_F12, "F12");
       }
     }
 
@@ -1232,8 +1257,8 @@ namespace MilkwaveRemote {
         ofdScriptFile.InitialDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
         if (ofdScriptFile.ShowDialog() == DialogResult.OK) {
-          lastScritFileName = ofdScriptFile.FileName;
-          LoadMessages(lastScritFileName);
+          lastScriptFileName = ofdScriptFile.FileName;
+          LoadMessages(lastScriptFileName);
         }
       }
     }
@@ -1406,7 +1431,7 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnPresetSend_Click(object sender, EventArgs e) {
+    private void btnPresetSend_Click(object? sender, EventArgs? e) {
 
       // Check if the Ctrl key is pressed
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
@@ -1451,7 +1476,7 @@ namespace MilkwaveRemote {
       cboPresets.Text = "";
     }
 
-    private void btnPresetLoadDirectory_Click(object sender, EventArgs e) {
+    private void btnPresetLoadDirectory_Click(object? sender, EventArgs? e) {
       using (var fbd = new FolderBrowserDialog()) {
         DialogResult result = fbd.ShowDialog();
 
@@ -1535,6 +1560,7 @@ namespace MilkwaveRemote {
       if (chkAmpLinked.Checked) {
         numAmpRight.Value = numAmpLeft.Value;
       }
+      SetAmpIncrements(numAmpLeft);
       SendToMilkwaveVisualizer("", MessageType.Amplify);
     }
 
@@ -1542,7 +1568,25 @@ namespace MilkwaveRemote {
       if (chkAmpLinked.Checked) {
         numAmpLeft.Value = numAmpRight.Value;
       }
+      SetAmpIncrements(numAmpRight);
       SendToMilkwaveVisualizer("", MessageType.Amplify);
+    }
+
+    private void SetAmpIncrements(NumericUpDown nud) {
+      // Ensure the Tag property is cast to decimal before comparison
+      decimal previousValue = nud.Tag is decimal tagValue ? tagValue : 0;
+      bool up = previousValue < nud.Value;
+
+      if (nud.Value < 0.1M || (nud.Value == 0.1M && !up)) {
+        nud.Increment = 0.01M;
+      } else if (nud.Value < 2M || (nud.Value == 2M && !up)) {
+        nud.Increment = 0.1M;
+      } else if (nud.Value < 10M || (nud.Value == 10M && !up)) {
+        nud.Increment = 1M;
+      } else {
+        nud.Increment = 5M;
+      }
+      nud.Tag = nud.Value;
     }
 
     private void numWavemode_ValueChanged(object sender, EventArgs e) {

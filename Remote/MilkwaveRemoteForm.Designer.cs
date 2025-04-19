@@ -477,7 +477,7 @@ namespace MilkwaveRemote
       chkAutoplay.Text = "Autoplay";
       chkAutoplay.TextAlign = ContentAlignment.MiddleCenter;
       chkAutoplay.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkAutoplay, "F12");
+      toolTip1.SetToolTip(chkAutoplay, "Autoplay on/off\r\n(Ctrl+Y)");
       chkAutoplay.UseVisualStyleBackColor = true;
       chkAutoplay.CheckedChanged += chkAutoplay_CheckedChanged;
       // 
@@ -557,7 +557,7 @@ namespace MilkwaveRemote
       btnSend.Size = new Size(83, 55);
       btnSend.TabIndex = 71;
       btnSend.Text = "Send";
-      toolTip1.SetToolTip(btnSend, "Send to Visualizer (F2)");
+      toolTip1.SetToolTip(btnSend, "Send to Visualizer \r\n(Ctrl+S)");
       btnSend.UseVisualStyleBackColor = true;
       btnSend.Click += btnSend_Click;
       // 
@@ -570,7 +570,7 @@ namespace MilkwaveRemote
       txtMessage.Size = new Size(497, 54);
       txtMessage.TabIndex = 70;
       txtMessage.Text = "Hi from Milkwave Remote!";
-      toolTip1.SetToolTip(txtMessage, "F1: Select all text\r\nEnter: Send to Visualizer\r\nShift+Enter: line break (or use // in message text)");
+      toolTip1.SetToolTip(txtMessage, "Ctrl+A: Select all text\r\nEnter: Send to Visualizer\r\nShift+Enter: line break (or use // in message text)");
       txtMessage.KeyDown += txtMessage_KeyDown;
       // 
       // btnSpace
@@ -583,7 +583,6 @@ namespace MilkwaveRemote
       btnSpace.Size = new Size(158, 41);
       btnSpace.TabIndex = 0;
       btnSpace.Text = "Next Preset\r\n(Space)";
-      toolTip1.SetToolTip(btnSpace, "F3");
       btnSpace.UseVisualStyleBackColor = true;
       btnSpace.Click += btnSpace_Click;
       // 
@@ -597,7 +596,6 @@ namespace MilkwaveRemote
       btnBackspace.Size = new Size(158, 41);
       btnBackspace.TabIndex = 1;
       btnBackspace.Text = "Previous Preset\r\n(Backspace)";
-      toolTip1.SetToolTip(btnBackspace, "F4");
       btnBackspace.UseVisualStyleBackColor = true;
       btnBackspace.Click += btnBackspace_Click;
       // 
@@ -635,7 +633,7 @@ namespace MilkwaveRemote
       btnPresetSend.Size = new Size(83, 23);
       btnPresetSend.TabIndex = 100;
       btnPresetSend.Text = "Send";
-      toolTip1.SetToolTip(btnPresetSend, "Send to Visualizer (F6)\r\nCtrl+Click: Send next to Visualizer (F7)");
+      toolTip1.SetToolTip(btnPresetSend, "Send to Visualizer (Ctrl+P)\r\nCtrl+Click: Send next to Visualizer (Ctrl+N)");
       btnPresetSend.UseVisualStyleBackColor = true;
       btnPresetSend.Click += btnPresetSend_Click;
       // 
@@ -648,7 +646,7 @@ namespace MilkwaveRemote
       btnPresetLoadDirectory.Size = new Size(71, 23);
       btnPresetLoadDirectory.TabIndex = 101;
       btnPresetLoadDirectory.Text = "Directory";
-      toolTip1.SetToolTip(btnPresetLoadDirectory, "Load all presets from a directory");
+      toolTip1.SetToolTip(btnPresetLoadDirectory, "Load all presets from a directory\r\n(Ctrl+D)\r\n\r\n");
       btnPresetLoadDirectory.UseVisualStyleBackColor = true;
       btnPresetLoadDirectory.Click += btnPresetLoadDirectory_Click;
       // 
@@ -688,12 +686,12 @@ namespace MilkwaveRemote
       // 
       // numAmpLeft
       // 
-      numAmpLeft.DecimalPlaces = 1;
+      numAmpLeft.DecimalPlaces = 2;
       numAmpLeft.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
       numAmpLeft.Location = new Point(78, 63);
-      numAmpLeft.Maximum = new decimal(new int[] { 999, 0, 0, 65536 });
+      numAmpLeft.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numAmpLeft.Name = "numAmpLeft";
-      numAmpLeft.Size = new Size(50, 23);
+      numAmpLeft.Size = new Size(54, 23);
       numAmpLeft.TabIndex = 103;
       numAmpLeft.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numAmpLeft, "Amplification factor for left channel");
@@ -713,17 +711,17 @@ namespace MilkwaveRemote
       // 
       // numAmpRight
       // 
-      numAmpRight.DecimalPlaces = 1;
+      numAmpRight.DecimalPlaces = 2;
       numAmpRight.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numAmpRight.Location = new Point(134, 63);
+      numAmpRight.Location = new Point(138, 63);
       numAmpRight.Margin = new Padding(3, 2, 3, 2);
-      numAmpRight.Maximum = new decimal(new int[] { 999, 0, 0, 65536 });
+      numAmpRight.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numAmpRight.Name = "numAmpRight";
-      numAmpRight.Size = new Size(50, 23);
+      numAmpRight.Size = new Size(54, 23);
       numAmpRight.TabIndex = 106;
       numAmpRight.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numAmpRight, "Amplification factor for right channel");
-      numAmpRight.Value = new decimal(new int[] { 10, 0, 0, 65536 });
+      numAmpRight.Value = new decimal(new int[] { 1, 0, 0, 0 });
       numAmpRight.ValueChanged += numAmpRight_ValueChanged;
       // 
       // numWavemode
@@ -804,7 +802,7 @@ namespace MilkwaveRemote
       chkAmpLinked.Checked = true;
       chkAmpLinked.CheckState = CheckState.Checked;
       chkAmpLinked.FlatStyle = FlatStyle.System;
-      chkAmpLinked.Location = new Point(190, 62);
+      chkAmpLinked.Location = new Point(198, 62);
       chkAmpLinked.Margin = new Padding(3, 2, 3, 2);
       chkAmpLinked.Name = "chkAmpLinked";
       chkAmpLinked.Size = new Size(51, 23);
@@ -1207,7 +1205,7 @@ namespace MilkwaveRemote
       btnY.TabIndex = 10;
       btnY.Text = "Toggle Spout Output\r\n(F10)";
       btnY.UseVisualStyleBackColor = true;
-      btnY.Click += btnY_Click;
+      btnY.Click += btnF10_Click;
       // 
       // btn11
       // 
