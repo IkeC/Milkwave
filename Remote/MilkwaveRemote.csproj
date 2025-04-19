@@ -44,4 +44,9 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="cd ..\Build
+          call release.cmd" Condition="'$(Configuration)'=='Release'"/>
+  </Target>
+
 </Project>
