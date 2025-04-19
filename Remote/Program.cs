@@ -21,24 +21,30 @@ namespace MilkwaveRemote {
         SaveErrorToFile(e.Exception, "Unhandled Thread Exception");
       } catch (Exception ex) {
         // Handle any errors that occur while logging
-        MessageBox.Show($"Failed to write error log: {ex.Message}", "Logging Error");
+        MessageBox.Show($"Failed to write error log: {ex.Message}" +
+          Environment.NewLine + Environment.NewLine + e.Exception?.StackTrace, "Error");
+      } finally {
+        Environment.Exit(1);
       }
     }
 
     static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
       try {
         if (e.ExceptionObject is Exception ex) { // Use pattern matching to fix IDE0019
-          SaveErrorToFile(ex, "Unhandled UI Exception");
+          SaveErrorToFile(ex, "Unhandled Exception");
         } else {
           MessageBox.Show("An unknown error occurred.", "Unhandled Exception");
         }
       } catch (Exception ex) {
         // Handle any errors that occur while logging  
-        MessageBox.Show($"Failed to write error log: {ex.Message}", "Logging Error");
+        MessageBox.Show($"Failed to write error log: {ex.Message}" +
+          Environment.NewLine + Environment.NewLine + ((Exception)e.ExceptionObject).StackTrace, "Error");
+      } finally {
+        Environment.Exit(1);
       }
     }
 
-    private static void SaveErrorToFile(Exception e, string type) {
+    public static void SaveErrorToFile(Exception e, string type) {
       // Get the directory of the executable
       string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
 

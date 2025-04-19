@@ -1044,40 +1044,53 @@ namespace MilkwaveRemote {
     }
 
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
-
-      if (WindowState == FormWindowState.Normal) {
-        Settings.RemoteWindowLocation = Location;
-        Settings.RemoteWindowSize = Size;
-      } else {
-        Settings.RemoteWindowLocation = RestoreBounds.Location;
-        Settings.RemoteWindowSize = RestoreBounds.Size;
-      }
-
-      IntPtr foundWindow = FindVisualizerWindow();
-      if (foundWindow != IntPtr.Zero) {
-        RECT savedWindowRect;
-        GetWindowRect(foundWindow, out savedWindowRect);
-
-        Point visWindow = new Point(savedWindowRect.Left, savedWindowRect.Top);
-        if (visWindow.X > -32000 && visWindow.Y > -32000) {
-          Settings.VisualizerWindowLocation = visWindow;
+      try {
+        if (WindowState == FormWindowState.Normal) {
+          Settings.RemoteWindowLocation = Location;
+          Settings.RemoteWindowSize = Size;
+        } else {
+          Settings.RemoteWindowLocation = RestoreBounds.Location;
+          Settings.RemoteWindowSize = RestoreBounds.Size;
         }
-        Settings.VisualizerWindowSize = new Size(savedWindowRect.Right - savedWindowRect.Left, savedWindowRect.Bottom - savedWindowRect.Top);
 
-        // Close the Visualizer window
-        PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
+        IntPtr foundWindow = FindVisualizerWindow();
+        if (foundWindow != IntPtr.Zero) {
+          RECT savedWindowRect;
+          GetWindowRect(foundWindow, out savedWindowRect);
+
+          Point visWindow = new Point(savedWindowRect.Left, savedWindowRect.Top);
+          if (visWindow.X > -32000 && visWindow.Y > -32000) {
+            Settings.VisualizerWindowLocation = visWindow;
+          }
+          Settings.VisualizerWindowSize = new Size(savedWindowRect.Right - savedWindowRect.Left, savedWindowRect.Bottom - savedWindowRect.Top);
+
+          // Close the Visualizer window
+          PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
+        }
+
+        Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
+        Settings.SplitterDistance2 = splitContainer2.SplitterDistance;
+
+        // Hold the Ctrl key while closing the form to reset local settings to default
+        if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+          Settings = new Settings();
+        }
+
+        string jsonString = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
+        string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveSettingsFile);
+        try {
+          File.WriteAllText(settingsFile, jsonString);
+        } catch (UnauthorizedAccessException ex) {
+          MessageBox.Show($"Unable to save settings to {settingsFile}." +
+            Environment.NewLine + Environment.NewLine +
+            "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
+            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        } catch (Exception ex) {
+          Program.SaveErrorToFile(ex, "Error");
+        }
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Error");
       }
-
-      Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
-      Settings.SplitterDistance2 = splitContainer2.SplitterDistance;
-
-      // Hold the Ctrl key while closing the form to reset local settings to default
-      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-        Settings = new Settings();
-      }
-
-      string jsonString = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
-      File.WriteAllText(milkwaveSettingsFile, jsonString);
     }
 
     private void cboParameters_KeyDown(object sender, KeyEventArgs e) {

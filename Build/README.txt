@@ -1,4 +1,4 @@
-Milkwave - Advanced MilkDrop2 Music Visualizer
+Milkwave - Remote controlled MilkDrop2 Visualizer
 
 MilkwaveRemote.exe: 
 The main program. When you start this, MilkwaveVisualizer.exe will be started automatically.

@@ -1,4 +1,4 @@
-set releasePath=C:\Tools\Milkwave\Release
+set releasePath=..\Release
 copy *.ini %releasePath%
 copy *.txt %releasePath%
 copy *.json %releasePath%
