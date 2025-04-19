@@ -56,9 +56,9 @@ Source: "settings-milkwave.json"; DestDir: "{app}"
 Source: "sprites.ini"; DestDir: "{app}"
 
 [Icons]
-Name: "{group}\Milkwave Remote"; Filename: "{app}\MilkwaveRemote.exe"
 Name: "{group}\Milkwave Visualizer"; Filename: "{app}\MilkwaveVisualizer.exe"
+Name: "{group}\Milkwave Remote"; Filename: "{app}\MilkwaveRemote.exe"
 
 [Run]
 Filename: "{app}\README.txt"; WorkingDir: "{app}"; Description: "View README.txt"; Flags: postinstall shellexec
-Filename: "{app}\MilkwaveRemote.exe"; WorkingDir: "{app}"; Description: "Run Milkwave now!"; Flags: postinstall nowait
+Filename: "{app}\MilkwaveRemote.exe"; WorkingDir: "{app}"; Description: "Run Milkwave now!"; Flags: postinstall shellexec nowait
