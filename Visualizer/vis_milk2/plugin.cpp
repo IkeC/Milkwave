@@ -1077,7 +1077,7 @@ void CPlugin::MyPreInitialize() {
   m_fBlendTimeAuto = 2.7f;
   m_fTimeBetweenPresets = 16.0f;
   m_fTimeBetweenPresetsRand = 10.0f;
-  m_bSequentialPresetOrder = false;
+  m_bSequentialPresetOrder = true;
   m_bHardCutsDisabled = true;
   m_fHardCutLoudnessThresh = 2.5f;
   m_fHardCutHalflife = 60.0f;
@@ -1338,6 +1338,8 @@ void CPlugin::MyReadConfig() {
   m_bWarningsDisabled2 = GetPrivateProfileBoolW(L"Settings", L"bWarningsDisabled2", m_bWarningsDisabled2, pIni);
   //m_bAnisotropicFiltering = GetPrivateProfileBool("settings","bAnisotropicFiltering",m_bAnisotropicFiltering,pIni);
   m_bPresetLockOnAtStartup = GetPrivateProfileBoolW(L"Settings", L"bPresetLockOnAtStartup", m_bPresetLockOnAtStartup, pIni);
+  m_bSequentialPresetOrder = GetPrivateProfileBoolW(L"Settings", L"bSequentialPresetOrder", m_bSequentialPresetOrder, pIni);
+
   m_bPreventScollLockHandling = GetPrivateProfileBoolW(L"Settings", L"m_bPreventScollLockHandling", m_bPreventScollLockHandling, pIni);
 
   m_nCanvasStretch = 100;  //GetPrivateProfileIntW(L"Settings",L"nCanvasStretch"    ,m_nCanvasStretch,pIni);
@@ -1449,6 +1451,8 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_bWarningsDisabled2, L"bWarningsDisabled2", pIni, L"Settings");
   //WritePrivateProfileIntW(m_bAnisotropicFiltering,	"bAnisotropicFiltering",pIni, "settings");
   WritePrivateProfileIntW(m_bPresetLockOnAtStartup, L"bPresetLockOnAtStartup", pIni, L"Settings");
+  WritePrivateProfileIntW(m_bSequentialPresetOrder, L"bSequentialPresetOrder", pIni, L"Settings");
+  
   WritePrivateProfileIntW(m_bPreventScollLockHandling, L"m_bPreventScollLockHandling", pIni, L"Settings");
   // note: this is also written @ exit of the visualizer
   WritePrivateProfileIntW(m_bEnablePresetStartup, L"bEnablePresetStartup", pIni, L"Settings");
