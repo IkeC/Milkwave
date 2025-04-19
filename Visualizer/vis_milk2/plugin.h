@@ -452,7 +452,7 @@ public:
   void        PrevPreset(float fBlendTime);
   void        NextPreset(float fBlendTime);  // if not retracing our former steps, it will choose a random one.
   void        OnFinishedLoadingPreset();
-  void        SendMessageToMilkwaveRemote(const wchar_t* presetFile);
+  int         SendMessageToMilkwaveRemote(const wchar_t* presetFile);
 
   FFT            myfft;
   td_mysounddata mysound;

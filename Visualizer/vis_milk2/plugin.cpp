@@ -5206,13 +5206,17 @@ void CPlugin::MyRenderUI(
       int N = m_errors.size();
       for (int i = 0; i < N; i++) {
         if (t >= m_errors[i].birthTime && t < m_errors[i].expireTime) {
-          swprintf(buf, L"%s ", m_errors[i].msg.c_str());
-          float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);
-          DWORD cr = (DWORD)(200 - 199 * powf(age_rel, 4));
-          DWORD cg = 0;//(DWORD)(136 - 135*powf(age_rel,1));
-          DWORD cb = 0;
-          DWORD z = 0xFF000000 | (cr << 16) | (cg << 8) | cb;
-          MyTextOut_BGCOLOR(buf, MTO_UPPER_RIGHT, true, m_errors[i].bBold ? z : 0xFF000000);
+          
+          int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
+          if (res != 1) {
+            swprintf(buf, L"%s ", m_errors[i].msg.c_str());
+            float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);
+            DWORD cr = (DWORD)(200 - 199 * powf(age_rel, 4));
+            DWORD cg = 0;//(DWORD)(136 - 135*powf(age_rel,1));
+            DWORD cb = 0;
+            DWORD z = 0xFF000000 | (cr << 16) | (cg << 8) | cb;
+            MyTextOut_BGCOLOR(buf, MTO_UPPER_RIGHT, true, m_errors[i].bBold ? z : 0xFF000000);
+          }
         }
         else {
           m_errors.erase(m_errors.begin() + i);
@@ -8555,32 +8559,34 @@ void CPlugin::OnFinishedLoadingPreset() {
   SendMessageToMilkwaveRemote((L"PRESET=" + std::wstring(m_szCurrentPresetFile)).c_str());
 }
 
-void CPlugin::SendMessageToMilkwaveRemote(const wchar_t* presetFile) {
-  if (!presetFile || !*presetFile) {
-    wprintf(L"Preset file is null or empty.\n");
-    return;
+int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
+  if (!messageToSend || !*messageToSend) {
+    wprintf(L"message is null or empty.\n");
+    return 0;
   }
 
   // Find the Milkwave Remote window
   HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
   if (!hRemoteWnd) {
     wprintf(L"Milkwave Remote window not found.\n");
-    return;
+    return 0;
   }
 
   // Prepare the COPYDATASTRUCT
   COPYDATASTRUCT cds;
   cds.dwData = 1; // Custom identifier for the message
-  cds.cbData = (wcslen(presetFile) + 1) * sizeof(wchar_t); // Size of the data in bytes
-  cds.lpData = (void*)presetFile; // Pointer to the data
+  cds.cbData = (wcslen(messageToSend) + 1) * sizeof(wchar_t); // Size of the data in bytes
+  cds.lpData = (void*)messageToSend; // Pointer to the data
 
   // Send the WM_COPYDATA message
-  if (SendMessage(hRemoteWnd, WM_COPYDATA, (WPARAM)GetPluginWindow(), (LPARAM)&cds) == 0) {
+  if (SendMessage(hRemoteWnd, WM_COPYDATA, (WPARAM)GetPluginWindow(), (LPARAM)&cds) != 0) {
     wprintf(L"Failed to send WM_COPYDATA message to Milkwave Remote.\n");
+    return 0;
   }
   else {
     wprintf(L"WM_COPYDATA message sent successfully to Milkwave Remote.\n");
   }
+  return 1;
 }
 
 void CPlugin::LoadPresetTick() {
