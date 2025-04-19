@@ -118,6 +118,9 @@
     <ClCompile Include="..\spoutDX9\SpoutUtils.cpp">
       <Filter>spoutDX9</Filter>
     </ClCompile>
+    <ClCompile Include="milkwave.cpp">
+      <Filter>musikcube</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="wasabi.h">

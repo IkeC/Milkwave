@@ -135,6 +135,7 @@
 //#include <core/sdk/IPlaybackRemote.h>
 
 #include "..\audio\common.h"
+#include "milkwave.cpp"
 
 #define DLL_EXPORT __declspec(dllexport)
 //#define COMPILE_AS_DLL
@@ -596,6 +597,7 @@ void ResizeBeatDrop(int newWidth, int newHeight) {
 
 
 unsigned __stdcall CreateWindowAndRun(void* data) {
+
   HINSTANCE instance = (HINSTANCE)data;
 
 #ifdef DEBUG
@@ -737,19 +739,22 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   MSG msg;
   msg.message = WM_NULL;
 
-  PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
-  while (WM_QUIT != msg.message) {
-    if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
-      TranslateMessage(&msg);
-      DispatchMessage(&msg);
+  try {
+    PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
+    while (WM_QUIT != msg.message) {
+      if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+      }
+      else {
+        GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
+        RenderFrame();
+      }
+      frame++;
+      ////////////////////////////////////////////////////////////////////////////////////////////////
     }
-    else {
-      GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
-      RenderFrame();
-
-    }
-    frame++;
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+  } catch (const std::exception& e) {
+    LogException(L"Exception in main loop", e);
   }
 
   g_plugin.MyWriteConfig();
@@ -1000,11 +1005,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
 #else
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
   api_orig_hinstance = hInstance;
-  // SPOUT
-  if (CheckForDirectX9c())
-    return StartThreads(hInstance);
-  else
-    return false;
+  try {
+    // test error logging
+    // throw std::runtime_error("An example exception occurred.");
+    if (CheckForDirectX9c())
+      return StartThreads(hInstance);
+    else
+      return false;
+  } catch (const std::exception& e) {
+    LogException(L"WinMain", e);
+  }
 }
 #endif
 

@@ -49,7 +49,7 @@ Source: "MilkwaveRemote.exe"; DestDir: "{app}"
 Source: "MilkwaveRemote.runtimeconfig.json"; DestDir: "{app}"
 Source: "MilkwaveVisualizer.exe"; DestDir: "{app}"
 Source: "NAudio.Wasapi.dll"; DestDir: "{app}"
-Source: "README.txt"; DestDir: "{app}"; Flags: isreadme
+Source: "README.txt"; DestDir: "{app}"
 Source: "script-default.txt"; DestDir: "{app}"
 Source: "settings.ini"; DestDir: "{app}"
 Source: "settings-milkwave.json"; DestDir: "{app}"
@@ -60,4 +60,5 @@ Name: "{group}\Milkwave Remote"; Filename: "{app}\MilkwaveRemote.exe"
 Name: "{group}\Milkwave Visualizer"; Filename: "{app}\MilkwaveVisualizer.exe"
 
 [Run]
-Filename: {app}\MilkwaveRemote.exe; Description: Run Milkwave now!; Flags: postinstall nowait skipifsilent
+Filename: "{app}\README.txt"; WorkingDir: "{app}"; Description: "View README.txt"; Flags: postinstall shellexec
+Filename: "{app}\MilkwaveRemote.exe"; WorkingDir: "{app}"; Description: "Run Milkwave now!"; Flags: postinstall nowait

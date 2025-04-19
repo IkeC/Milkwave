@@ -2,11 +2,14 @@
 
 #include "log.h"
 
+
 #define LOG_SIZE 512
 
 //LPCTSTR UNICODE _UNICODE
 
 //--------------------------------------------------
+
+
 
 //LPCSTR
 void LOGA(LPCSTR format, ...) {

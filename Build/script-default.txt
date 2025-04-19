@@ -24,12 +24,12 @@
 #   Remote window.
 #
 Welcome to Milkwave!
-SEND=00|A wild sprite appears!
+SEND=11|A wild sprite appears!
 STYLE=Style B|Switch to "Style B"
 Here's another line
 Switching preset...|NEXT
-FONT=Arial|Everybody likes Arial!
-Let's try some//multiline text!
+FONT=Courier New|Everybody likes Courier!
+FONT=Arial|Let's try//doubleline text!
 PRESET=resources\presets\Milkwave\12 - IkeC - wave mode 7.milk|I like this preset!
 BPM=180|BEATS=4|Let's go faster!
 RESET|Boom

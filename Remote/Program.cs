@@ -52,7 +52,11 @@ namespace MilkwaveRemote {
       string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
 
       // Construct the log file path
-      string logFilePath = Path.Combine(exeDirectory, $"error-{timestamp}.log");
+      string logFilePath = Path.Combine(exeDirectory, "log");
+      if (!Directory.Exists(logFilePath)) {
+        Directory.CreateDirectory(logFilePath);
+      }
+      logFilePath = Path.Combine(logFilePath, $"error.{timestamp}.remote.log");
 
       // Write the exception details to the log file
       File.WriteAllText(logFilePath, e.ToString());

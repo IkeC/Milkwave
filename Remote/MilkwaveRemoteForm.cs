@@ -407,7 +407,7 @@ namespace MilkwaveRemote {
             statusMessage = $"Set device '{cboAudioDevice.Text}' in";
           }
         } else if (type == MessageType.Message) {
-          if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !message.Contains("//") && !message.Contains(Environment.NewLine)) {
+          if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
             // try auto-wrap
             if (chkWrap.Checked && !message.Contains("//") && !message.Contains(Environment.NewLine)) {
               // Find the whitespace character closest to the middle of messageToSend
