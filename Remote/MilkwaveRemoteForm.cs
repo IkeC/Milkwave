@@ -146,7 +146,8 @@ namespace MilkwaveRemote {
       PresetFilePath,
       Amplify,
       Wave,
-      AudioDevice
+      AudioDevice,
+      Opacity
     }
 
     public MilkwaveRemoteForm() {
@@ -406,6 +407,9 @@ namespace MilkwaveRemote {
             message = "DEVICE=" + cboAudioDevice.Text;
             statusMessage = $"Set device '{cboAudioDevice.Text}' in";
           }
+        } else if (type == MessageType.Opacity) {
+          decimal val = numOpacity.Value / 100;
+          message = "OPACITY=" + val.ToString(CultureInfo.InvariantCulture);
         } else if (type == MessageType.Message) {
           if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
             // try auto-wrap
@@ -1651,5 +1655,12 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void numOpacity_ValueChanged(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.Opacity);
+    }
+
+    private void lblPercent_Click(object sender, EventArgs e) {
+      numOpacity.Value = 100;
+    }
   }
 }

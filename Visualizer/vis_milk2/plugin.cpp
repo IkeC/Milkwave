@@ -641,7 +641,7 @@ float timetick2 = 0;
 float TimeToAutoLockPreset = 0;
 int beatcount;
 bool TranspaMode = false;
-int OpacityControl = 10;                 // Default is 100% window opacity.
+float fOpacity = 1.0f; // 0.0f = 100% transparent, 1.0f = 100% opaque
 int NumTotalPresetsLoaded = 0;
 bool AutoLockedPreset = false;
 //bool ShowPresetOnTitle = 0;
@@ -1452,7 +1452,7 @@ void CPlugin::MyWriteConfig() {
   //WritePrivateProfileIntW(m_bAnisotropicFiltering,	"bAnisotropicFiltering",pIni, "settings");
   WritePrivateProfileIntW(m_bPresetLockOnAtStartup, L"bPresetLockOnAtStartup", pIni, L"Settings");
   WritePrivateProfileIntW(m_bSequentialPresetOrder, L"bSequentialPresetOrder", pIni, L"Settings");
-  
+
   WritePrivateProfileIntW(m_bPreventScollLockHandling, L"m_bPreventScollLockHandling", pIni, L"Settings");
   // note: this is also written @ exit of the visualizer
   WritePrivateProfileIntW(m_bEnablePresetStartup, L"bEnablePresetStartup", pIni, L"Settings");
@@ -5210,7 +5210,7 @@ void CPlugin::MyRenderUI(
       int N = m_errors.size();
       for (int i = 0; i < N; i++) {
         if (t >= m_errors[i].birthTime && t < m_errors[i].expireTime) {
-          
+
           int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
           if (res != 1) {
             swprintf(buf, L"%s ", m_errors[i].msg.c_str());
@@ -5272,7 +5272,7 @@ void ToggleTransparency(HWND hwnd) {
       DwmEnableComposition(DWM_EC_DISABLECOMPOSITION); //Disable Aero Composition
     //SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
     SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
-    OpacityControl = 10; //Reverts the window opacity back to 100%
+    fOpacity = 1.0f;
     DragAcceptFiles(hwnd, TRUE);
   }
   else {
@@ -5284,7 +5284,20 @@ void ToggleTransparency(HWND hwnd) {
   }
 }
 
-void ToggleWindowOpacity(HWND hwnd) {
+void SetOpacity(HWND hwnd) {
+  int alpha = std::ceil(255 * fOpacity);
+
+  SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
+  SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), alpha, LWA_ALPHA);
+  DragAcceptFiles(hwnd, TRUE);
+
+  int display = std::ceil(100 * fOpacity);
+  wchar_t buf[1024];
+  swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
+  g_plugin.AddError(buf, 3.0f, ERR_NOTIFY, false);
+}
+
+void ToggleWindowOpacity(HWND hwnd, bool bDown) {
   RECT rect;
   GetWindowRect(hwnd, &rect);
   int x = rect.left;
@@ -5292,61 +5305,27 @@ void ToggleWindowOpacity(HWND hwnd) {
   int width = rect.right - rect.left;
   int height = rect.bottom - rect.top;
 
-  if (OpacityControl >= 11)
-    OpacityControl = 10;
-  else if (OpacityControl == 10) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
+  float changeVal = 0.1f;
+  if (fOpacity < 0.09 || (fOpacity <= 0.1 && bDown)) {
+    changeVal = 0.01f;
   }
-  else if (OpacityControl == 9) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 230, LWA_ALPHA);
-    TranspaMode = false; //Automatically turns off the transparency mode when you are toggling the window opacity!
-    DragAcceptFiles(hwnd, TRUE);
+  else {
+    changeVal = 0.05f;
   }
-  else if (OpacityControl == 8) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 205, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
+  if (bDown) {
+    fOpacity -= changeVal;
   }
-  else if (OpacityControl == 7) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 179, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
+  else {
+    fOpacity += changeVal;
   }
-  else if (OpacityControl == 6) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 154, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
-  }
-  else if (OpacityControl == 5) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 128, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
-  }
-  else if (OpacityControl == 4) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 102, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
-  }
-  else if (OpacityControl == 3) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 77, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
-  }
-  else if (OpacityControl == 2) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 51, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
-  }
-  else if (OpacityControl == 1) {
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 26, LWA_ALPHA);
-    DragAcceptFiles(hwnd, TRUE);
-  }
-  else if (OpacityControl <= 0)
-    OpacityControl = 1;
+
+  if (fOpacity < 0.01f)
+    fOpacity = 0.01f;
+  else if (fOpacity > 1.0f)
+    fOpacity = 1.0f;
+
+  // Set the opacity of the window
+  SetOpacity(hwnd);
 }
 
 void LoadPresetFilesViaDragAndDrop(WPARAM wParam) {
@@ -5436,6 +5415,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         }
       }
       LaunchMessage(receivedMessage);
+      return 0; // Message handled
       //MessageBoxW(hWnd, receivedMessage, L"Received Message", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
     }
     break;
@@ -5652,9 +5632,16 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   case WM_MOUSEWHEEL:
 
     if (GET_WHEEL_DELTA_WPARAM(wParam) < 0 && !m_bPresetLockedByCode)
-      NextPreset(0);
+      if (bShiftHeldDown)
+        ToggleWindowOpacity(hWnd, true);
+      else
+        NextPreset(0);
+
     else if (GET_WHEEL_DELTA_WPARAM(wParam) > 0 && !m_bPresetLockedByCode)
-      PrevPreset(0);
+      if (bShiftHeldDown)
+        ToggleWindowOpacity(hWnd, false);
+      else
+        PrevPreset(0);
 
     return 0;
 
@@ -6407,58 +6394,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         //lstrcpy(m_szLastPresetSelected, m_presets[m_nPresetListCurPos].szFilename.c_str());
       }
       else if (bShiftHeldDown) {
-        OpacityControl++;
-        if (OpacityControl == 10) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 100%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 9) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 90%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 8) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 80%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 7) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 70%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 6) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 60%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 5) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 50%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 4) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 40%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 3) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 30%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 2) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 20%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 1) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 10%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        ToggleWindowOpacity(hWnd);
+        ToggleWindowOpacity(hWnd, false);
       }
       break;
 
@@ -6479,58 +6415,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         //lstrcpy(m_szLastPresetSelected, m_presets[m_nPresetListCurPos].szFilename.c_str());
       }
       else if (bShiftHeldDown) {
-        OpacityControl--;
-        if (OpacityControl == 10) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 100%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 9) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 90%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 8) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 80%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 7) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 70%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 6) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 60%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 5) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 50%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 4) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 40%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 3) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 30%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 2) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 20%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        else if (OpacityControl == 1) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Window Opacity: 10%%", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
-        }
-        ToggleWindowOpacity(hWnd);
+        ToggleWindowOpacity(hWnd, true);
       }
       break;
 
@@ -8564,31 +8449,35 @@ void CPlugin::OnFinishedLoadingPreset() {
 }
 
 int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
-  if (!messageToSend || !*messageToSend) {
-    wprintf(L"message is null or empty.\n");
-    return 0;
-  }
+  try {
+    if (!messageToSend || !*messageToSend) {
+      wprintf(L"message is null or empty.\n");
+      return 0;
+    }
 
-  // Find the Milkwave Remote window
-  HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
-  if (!hRemoteWnd) {
-    wprintf(L"Milkwave Remote window not found.\n");
-    return 0;
-  }
+    // Find the Milkwave Remote window
+    HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
+    if (!hRemoteWnd) {
+      wprintf(L"Milkwave Remote window not found.\n");
+      return 0;
+    }
 
-  // Prepare the COPYDATASTRUCT
-  COPYDATASTRUCT cds;
-  cds.dwData = 1; // Custom identifier for the message
-  cds.cbData = (wcslen(messageToSend) + 1) * sizeof(wchar_t); // Size of the data in bytes
-  cds.lpData = (void*)messageToSend; // Pointer to the data
+    // Prepare the COPYDATASTRUCT
+    COPYDATASTRUCT cds;
+    cds.dwData = 1; // Custom identifier for the message
+    cds.cbData = (wcslen(messageToSend) + 1) * sizeof(wchar_t); // Size of the data in bytes
+    cds.lpData = (void*)messageToSend; // Pointer to the data
 
-  // Send the WM_COPYDATA message
-  if (SendMessage(hRemoteWnd, WM_COPYDATA, (WPARAM)GetPluginWindow(), (LPARAM)&cds) != 0) {
-    wprintf(L"Failed to send WM_COPYDATA message to Milkwave Remote.\n");
-    return 0;
-  }
-  else {
-    wprintf(L"WM_COPYDATA message sent successfully to Milkwave Remote.\n");
+    // Send the WM_COPYDATA message
+    if (SendMessage(hRemoteWnd, WM_COPYDATA, (WPARAM)GetPluginWindow(), (LPARAM)&cds) != 0) {
+      wprintf(L"Failed to send WM_COPYDATA message to Milkwave Remote.\n");
+      return 0;
+    }
+    else {
+      wprintf(L"WM_COPYDATA message sent successfully to Milkwave Remote.\n");
+    }
+  } catch (...) {
+    // ignore
   }
   return 1;
 }
@@ -9988,6 +9877,11 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     wcscpy(g_plugin.m_szAudioDevice, message.c_str());
     // Restart audio
     m_AudioLoopState = 1;
+  }
+  else if (wcsncmp(sMessage, L"OPACITY=", 8) == 0) {
+    std::wstring message(sMessage + 8);
+    fOpacity = std::stof(message);
+    SetOpacity(GetPluginWindow());
   }
 }
 

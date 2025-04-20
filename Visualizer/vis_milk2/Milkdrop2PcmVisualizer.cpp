@@ -742,13 +742,17 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   try {
     PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
     while (WM_QUIT != msg.message) {
-      if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-      }
-      else {
-        GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
-        RenderFrame();
+      try {
+        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
+          TranslateMessage(&msg);
+          DispatchMessage(&msg);
+        }
+        else {
+          GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
+          RenderFrame();
+        }
+      } catch ( ... ) {
+        // ignore
       }
       frame++;
       ////////////////////////////////////////////////////////////////////////////////////////////////
