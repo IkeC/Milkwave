@@ -547,7 +547,7 @@ namespace MilkwaveRemote
       txtWindowTitle.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       txtWindowTitle.Location = new Point(78, 66);
       txtWindowTitle.Name = "txtWindowTitle";
-      txtWindowTitle.Size = new Size(153, 23);
+      txtWindowTitle.Size = new Size(251, 23);
       txtWindowTitle.TabIndex = 72;
       txtWindowTitle.Text = "Milkwave Visualizer";
       toolTip1.SetToolTip(txtWindowTitle, "Partitial window title of Milkwave Visualizer window");
@@ -610,9 +610,10 @@ namespace MilkwaveRemote
       btnPresetSend.Size = new Size(83, 23);
       btnPresetSend.TabIndex = 100;
       btnPresetSend.Text = "Send";
-      toolTip1.SetToolTip(btnPresetSend, "Send to Visualizer (Ctrl+P)\r\nCtrl+Click: Send next to Visualizer (Ctrl+N)");
+      toolTip1.SetToolTip(btnPresetSend, "Send to Visualizer (Ctrl+P)\r\nRight Click: Send next to Visualizer (Ctrl+N)\r\nMiddle Click: Send previous to Visualizer");
       btnPresetSend.UseVisualStyleBackColor = true;
       btnPresetSend.Click += btnPresetSend_Click;
+      btnPresetSend.MouseDown += btnPresetSend_MouseDown;
       // 
       // btnPresetLoadDirectory
       // 
@@ -865,7 +866,7 @@ namespace MilkwaveRemote
       // 
       numOpacity.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numOpacity.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numOpacity.Location = new Point(237, 66);
+      numOpacity.Location = new Point(335, 66);
       numOpacity.Name = "numOpacity";
       numOpacity.Size = new Size(46, 23);
       numOpacity.TabIndex = 104;
@@ -878,7 +879,7 @@ namespace MilkwaveRemote
       // 
       lblPercent.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       lblPercent.AutoSize = true;
-      lblPercent.Location = new Point(284, 68);
+      lblPercent.Location = new Point(382, 68);
       lblPercent.Name = "lblPercent";
       lblPercent.Size = new Size(17, 15);
       lblPercent.TabIndex = 105;

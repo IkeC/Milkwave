@@ -1450,12 +1450,17 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnPresetSend_Click(object? sender, EventArgs? e) {
-
-      // Check if the Ctrl key is pressed
-      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+    private void btnPresetSend_MouseDown(object sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Middle) {
+        SelectPreviousPreset();
+        btnPresetSend_Click(null, null);
+      } else if (e.Button == MouseButtons.Right) {
         SelectNextPreset();
+        btnPresetSend_Click(null, null);
       }
+    }
+
+    private void btnPresetSend_Click(object? sender, EventArgs? e) {
 
       if (cboPresets.Text.Length > 0) {
         Preset? preset = null; // Use nullable type to handle potential null values
@@ -1487,6 +1492,16 @@ namespace MilkwaveRemote {
       } else {
         // Optionally, loop back to the first item
         cboPresets.SelectedIndex = 0;
+      }
+    }
+
+    private void SelectPreviousPreset() {
+      // Move to the previous item in cboPresets if possible
+      if (cboPresets.SelectedIndex > 0) {
+        cboPresets.SelectedIndex--;
+      } else {
+        // Optionally, loop back to the last item
+        cboPresets.SelectedIndex = cboPresets.Items.Count - 1;
       }
     }
 
