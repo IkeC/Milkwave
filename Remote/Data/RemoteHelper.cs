@@ -29,47 +29,59 @@ namespace MilkwaveRemote {
       string iniMilkwaveAudioDevice = ReadMilkwaveAudioDevice();
 
       using (var enumerator = new MMDeviceEnumerator()) {
-        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
         defaultMDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+
+        bool includeCaptureDevices = false;
+#if DEBUG
+        includeCaptureDevices = true; // Include capture devices in debug mode
+#endif
         foreach (var device in devices) {
           bool isDefaultDevice = device.ID == defaultMDevice.ID;
-          cbo.Items.Add(new ComboBoxItem(device.FriendlyName, device, isDefaultDevice)); // Add device names to ComboBox
+          string name = includeCaptureDevices ? "Output: " + device.FriendlyName : device.FriendlyName;
+          cbo.Items.Add(new ComboBoxItemDevice(name, device, isDefaultDevice)); // Add device names to ComboBox
         }
-      }
 
-      // Sort items alphabetically
-      var sortedItems = cbo.Items.Cast<ComboBoxItem>().OrderBy(item => item.Text).ToList();
-      cbo.Items.Clear();
-      foreach (var item in sortedItems) {
-        cbo.Items.Add(item);
-      }
-
-      if (cbo.Items.Count > 0) {
-        bool found = false;
-        if (iniMilkwaveAudioDevice.Length > 0) {
-          foreach (ComboBoxItem item in cbo.Items) {
-            if (item.Device.FriendlyName.Equals(iniMilkwaveAudioDevice)) {
-              cbo.SelectedItem = item;
-              found = true;
-              break;
-            }
+        if (includeCaptureDevices) {
+          devices = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
+          foreach (var device in devices) {
+            cbo.Items.Add(new ComboBoxItemDevice("Input: " + device.FriendlyName, device, false)); // Add device names to ComboBox
           }
         }
 
-        if (!found) {
-          foreach (ComboBoxItem item in cbo.Items) {
-            if (item.IsDefaultDevice) {
-              cbo.SelectedItem = item;
-              break;
+        // Sort items alphabetically
+        var sortedItems = cbo.Items.Cast<ComboBoxItemDevice>().OrderBy(item => item.Text).ToList();
+        cbo.Items.Clear();
+        foreach (var item in sortedItems) {
+          cbo.Items.Add(item);
+        }
+
+        if (cbo.Items.Count > 0) {
+          bool found = false;
+          if (iniMilkwaveAudioDevice.Length > 0) {
+            foreach (ComboBoxItemDevice item in cbo.Items) {
+              if (item.Device.FriendlyName.Equals(iniMilkwaveAudioDevice)) {
+                cbo.SelectedItem = item;
+                found = true;
+                break;
+              }
+            }
+          }
+
+          if (!found) {
+            foreach (ComboBoxItemDevice item in cbo.Items) {
+              if (item.IsDefaultDevice) {
+                cbo.SelectedItem = item;
+                break;
+              }
             }
           }
         }
-
       }
     }
 
     public void SelectDeviceByName(ComboBox cbo, string deviceName) {
-      foreach (ComboBoxItem item in cbo.Items) {
+      foreach (ComboBoxItemDevice item in cbo.Items) {
         if (item.Device.FriendlyName.Equals(deviceName) || (deviceName.Length == 0 && item.IsDefaultDevice)) {
           cbo.SelectedItem = item;
           break;
@@ -77,9 +89,9 @@ namespace MilkwaveRemote {
       }
     }
 
-    protected class ComboBoxItem {
+    public class ComboBoxItemDevice {
 
-      public ComboBoxItem(string text, MMDevice device, bool isDefaultDevice) {
+      public ComboBoxItemDevice(string text, MMDevice device, bool isDefaultDevice) {
         Text = text;
         Device = device;
         IsDefaultDevice = isDefaultDevice;

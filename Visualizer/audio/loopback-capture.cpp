@@ -77,6 +77,49 @@ HRESULT LoopbackCapture(
   }
   CoTaskMemFreeOnExit freeMixFormat(pwfx);
 
+  /*
+  if (!pwfx) {
+    ERR(L"pwfx is null after GetMixFormat");
+    return E_POINTER;
+  }
+
+  hr = pMMDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**)&pAudioClient);
+  if (FAILED(hr) || !pAudioClient) {
+    ERR(L"IMMDevice::Activate failed or returned null: hr = 0x%08x", hr);
+    return hr;
+  }
+
+  if (!pAudioClient) {
+    ERR(L"pAudioClient is null before calling IsFormatSupported");
+    return E_POINTER;
+  }
+  */
+
+  /*
+  WAVEFORMATEX* pClosestMatch = nullptr;
+
+  hr = pAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, pwfx, &pClosestMatch);
+  if (FAILED(hr)) {
+    // ERR(L"Format not supported: hr = 0x%08x", hr);
+
+    // Define fallback formats
+    WAVEFORMATEX fallbackFormats[] = {
+        { WAVE_FORMAT_PCM, 2, 44100, 176400, 4, 16, 0 }, // 16-bit PCM, 44.1 kHz, stereo
+        { WAVE_FORMAT_PCM, 2, 48000, 192000, 4, 16, 0 }  // 16-bit PCM, 48 kHz, stereo
+    };
+
+    for (const auto& format : fallbackFormats) {
+      hr = pAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, &format, NULL);
+      if (SUCCEEDED(hr)) {
+        // Allocate and copy the supported format
+        pwfx = (WAVEFORMATEX*)CoTaskMemAlloc(sizeof(WAVEFORMATEX));
+      }
+    }
+
+    //return hr;
+  }
+  */
+
   if (bInt16) {
     // coerce int-16 wave format
     // can do this in-place since we're not changing the size of the format
@@ -135,6 +178,8 @@ HRESULT LoopbackCapture(
 
   UINT32 nBlockAlign = pwfx->nBlockAlign;
   *pnFrames = 0;
+
+
 
   // call IAudioClient::Initialize
   // note that AUDCLNT_STREAMFLAGS_LOOPBACK and AUDCLNT_STREAMFLAGS_EVENTCALLBACK

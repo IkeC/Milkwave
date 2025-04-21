@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using static DarkModeForms.DarkModeCS;
+using static MilkwaveRemote.RemoteHelper;
 
 namespace MilkwaveRemote {
   public partial class MilkwaveRemoteForm : Form {
@@ -407,8 +408,11 @@ namespace MilkwaveRemote {
             $"/{numAmpRight.Value.ToString(CultureInfo.InvariantCulture)} to";
         } else if (type == MessageType.AudioDevice) {
           if (cboAudioDevice.Text.Length > 0) {
-            message = "DEVICE=" + cboAudioDevice.Text;
-            statusMessage = $"Set device '{cboAudioDevice.Text}' in";
+            ComboBoxItemDevice? selectedItem = (ComboBoxItemDevice?)cboAudioDevice.SelectedItem;
+            if (selectedItem != null) {
+              message = "DEVICE=" + selectedItem.Device.FriendlyName;
+              statusMessage = $"Set device '{cboAudioDevice.Text}' in";
+            }
           }
         } else if (type == MessageType.Opacity) {
           decimal val = numOpacity.Value / 100;

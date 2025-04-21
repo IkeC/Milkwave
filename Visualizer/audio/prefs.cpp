@@ -203,9 +203,16 @@ HRESULT list_devices() {
   IMMDeviceCollection* pMMDeviceCollection;
 
   // get all the active render endpoints
+  
   hr = pMMDeviceEnumerator->EnumAudioEndpoints(
-    eRender, DEVICE_STATE_ACTIVE, &pMMDeviceCollection
+#ifdef _DEBUG
+    eAll, // Use eAll in debug mode
+#else
+    eRender, // Use eRender in release mode
+#endif
+    DEVICE_STATE_ACTIVE, &pMMDeviceCollection
   );
+
   if (FAILED(hr)) {
     ERR(L"IMMDeviceEnumerator::EnumAudioEndpoints failed: hr = 0x%08x", hr);
     return hr;
