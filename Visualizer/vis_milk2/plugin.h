@@ -505,6 +505,7 @@ public:
   wchar_t     m_szImgIniFile[MAX_PATH];
   wchar_t		m_szPresetDir[MAX_PATH];
   wchar_t     m_szPresetStartup[MAX_PATH];
+  wchar_t     m_szAudioDevicePrevious[MAX_PATH];
   wchar_t     m_szAudioDevice[MAX_PATH];
 
   int m_AudioLoopState = 0; // 0: Running, 1: Cancel running thread, 2: Must restart

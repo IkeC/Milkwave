@@ -30,10 +30,11 @@ namespace MilkwaveRemote {
 
       using (var enumerator = new MMDeviceEnumerator()) {
         var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-        foreach (var device in devices) {
-          cbo.Items.Add(new ComboBoxItem(device.FriendlyName, device)); // Add device names to ComboBox
-        }
         defaultMDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+        foreach (var device in devices) {
+          bool isDefaultDevice = device.ID == defaultMDevice.ID;
+          cbo.Items.Add(new ComboBoxItem(device.FriendlyName, device, isDefaultDevice)); // Add device names to ComboBox
+        }
       }
 
       // Sort items alphabetically
@@ -44,31 +45,49 @@ namespace MilkwaveRemote {
       }
 
       if (cbo.Items.Count > 0) {
-        if (defaultMDevice != null) {
+        bool found = false;
+        if (iniMilkwaveAudioDevice.Length > 0) {
           foreach (ComboBoxItem item in cbo.Items) {
-            if (iniMilkwaveAudioDevice.Length > 0) {
-              if (item.Device.FriendlyName.Equals(iniMilkwaveAudioDevice)) {
-                cbo.SelectedItem = item;
-                break;
-              }
-            } else if (item.Device.ID == defaultMDevice.ID) {
+            if (item.Device.FriendlyName.Equals(iniMilkwaveAudioDevice)) {
+              cbo.SelectedItem = item;
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (!found) {
+          foreach (ComboBoxItem item in cbo.Items) {
+            if (item.IsDefaultDevice) {
               cbo.SelectedItem = item;
               break;
             }
           }
+        }
+
+      }
+    }
+
+    public void SelectDeviceByName(ComboBox cbo, string deviceName) {
+      foreach (ComboBoxItem item in cbo.Items) {
+        if (item.Device.FriendlyName.Equals(deviceName) || (deviceName.Length == 0 && item.IsDefaultDevice)) {
+          cbo.SelectedItem = item;
+          break;
         }
       }
     }
 
     protected class ComboBoxItem {
 
-      public ComboBoxItem(string text, MMDevice device) {
+      public ComboBoxItem(string text, MMDevice device, bool isDefaultDevice) {
         Text = text;
         Device = device;
+        IsDefaultDevice = isDefaultDevice;
       }
 
       public string Text { get; set; }
       public MMDevice Device { get; set; }
+      public bool IsDefaultDevice { get; set; } = false;
 
       public override string ToString() {
         return Text;

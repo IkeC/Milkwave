@@ -296,8 +296,8 @@ namespace MilkwaveRemote {
         // Extract the COPYDATASTRUCT from the message
         COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
         if (cds.lpData != IntPtr.Zero) {
-          // Convert the received data to a string
-          string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2) ?? "";
+          // Convert the received data to a string          
+          string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
           if (receivedString.StartsWith("PRESET=")) {
             string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
             if (receivedString.Length > 0) {
@@ -316,6 +316,9 @@ namespace MilkwaveRemote {
             if (status.Length > 0) {
               SetStatusText(status);
             }
+          } else if (receivedString.StartsWith("DEVICE=")) {
+            string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            helper.SelectDeviceByName(cboAudioDevice, device);
           }
         }
       }

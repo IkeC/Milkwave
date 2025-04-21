@@ -1075,7 +1075,7 @@ void CPlugin::MyPreInitialize() {
   m_bInitialPresetSelected = false;
   m_fBlendTimeUser = 1.7f;
   m_fBlendTimeAuto = 2.7f;
-  m_fTimeBetweenPresets = 16.0f;
+  m_fTimeBetweenPresets = 60.0f;
   m_fTimeBetweenPresetsRand = 10.0f;
   m_bSequentialPresetOrder = true;
   m_bHardCutsDisabled = true;
@@ -1114,7 +1114,7 @@ void CPlugin::MyPreInitialize() {
   //m_bWarningsDisabled     = false;
   m_bWarningsDisabled2 = false;
   //m_bAnisotropicFiltering = true;
-  m_bPresetLockOnAtStartup = false;
+  m_bPresetLockOnAtStartup = true;
   m_bPreventScollLockHandling = false;
   m_nMaxPSVersion_ConfigPanel = -1;  // -1 = auto, 0 = disable shaders, 2 = ps_2_0, 3 = ps_3_0
   m_nMaxPSVersion_DX9 = -1;          // 0 = no shader support, 2 = ps_2_0, 3 = ps_3_0
@@ -9874,6 +9874,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   }
   else if (wcsncmp(sMessage, L"DEVICE=", 7) == 0) {
     std::wstring message(sMessage + 7);
+    wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
     wcscpy(g_plugin.m_szAudioDevice, message.c_str());
     // Restart audio
     m_AudioLoopState = 1;

@@ -1,10 +1,11 @@
 # v1.5
 
 - save sequential order setting
+- better opacity control
 
 # Backlog
 
-- better opacity control
+- time between presets
 - projectM
 - Select and send sprite
 - AI

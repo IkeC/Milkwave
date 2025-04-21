@@ -178,7 +178,11 @@ static unsigned char pcmLeftOut[SAMPLE_SIZE];
 static unsigned char pcmRightOut[SAMPLE_SIZE];
 
 wchar_t m_szAudioDevice[MAX_PATH];
+wchar_t m_szAudioDevicePrevious[MAX_PATH];
+
 HANDLE hThreadLoopbackCapture;
+
+bool pauseRender = false;
 
 //static musik::core::sdk::IPlaybackService* playback = nullptr;
 
@@ -743,15 +747,15 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
     while (WM_QUIT != msg.message) {
       try {
-        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
-          TranslateMessage(&msg);
-          DispatchMessage(&msg);
-        }
-        else {
-          GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
-          RenderFrame();
-        }
-      } catch ( ... ) {
+          if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+          }
+          else if (!pauseRender) {
+            GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
+            RenderFrame();
+          }
+        } catch ( ... ) {
         // ignore
       }
       frame++;
@@ -949,7 +953,19 @@ int StartAudioCaptureThread(HINSTANCE instance) {
   // let prefs' destructor call mmioClose
 
   if (g_plugin.m_AudioLoopState == 2) {
-    StartAudioCaptureThread(instance);
+    // pauseRender = true;
+    int result = StartAudioCaptureThread(instance);
+    if (result != 0) {
+      ERR(L"StartAudioCaptureThread failed: %d", result);
+      std::wstring statusMessage = L"STATUS=Device init failed, reverting to previous device";
+      g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
+
+      statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevicePrevious);
+      g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
+
+      wcscpy_s(g_plugin.m_szAudioDevice, g_plugin.m_szAudioDevicePrevious);
+      result = StartAudioCaptureThread(instance);
+    }
   }
 }
 
