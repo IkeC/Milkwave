@@ -9885,31 +9885,34 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.m_pState->m_fWaveAlpha = std::stof(params[L"alpha"]);
     }
     if (params.find(L"colorr") != params.end()) {
-      // g_plugin.m_pState->var_pf_wave_r = g_plugin.m_pState->var_pf_wave_r;
-
-      g_plugin.m_pState->m_fWaveR = std::stoi(params[L"colorr"]);
-
-      // g_plugin.m_pState->m_fOuterBorderR = std::stoi(params[L"colorr"]);
-      // g_plugin.m_pState->m_fInnerBorderR = std::stoi(params[L"colorr"]);
-
-      // amount of color in the motion vectors
-      g_plugin.m_pState->m_fMvR = std::stoi(params[L"colorr"]);
+      int colR = std::stoi(params[L"colorr"]);
+      double colRDbl = colR / 255.0;
+      g_plugin.m_pState->m_fWaveR = colR;
+      g_plugin.m_pState->m_fMvR = colR;
+      // g_plugin.m_pState->var_pf_wave_r = &colRDbl;
+      // g_plugin.m_pState->var_pf_ob_r = &colRDbl;
+      // g_plugin.m_pState->var_pf_mv_r = &colRDbl;
+      // g_plugin.m_pState->var_pf_ib_r = &colRDbl;
     }
     if (params.find(L"colorg") != params.end()) {
-      g_plugin.m_pState->m_fWaveG = std::stoi(params[L"colorg"]);
-      // g_plugin.m_pState->m_fOuterBorderG = std::stoi(params[L"colorg"]);
-      // g_plugin.m_pState->m_fInnerBorderG = std::stoi(params[L"colorg"]);
-
-      // amount of color in the motion vectors
-      g_plugin.m_pState->m_fMvG = std::stoi(params[L"colorg"]);
+      int colG = std::stoi(params[L"colorg"]);
+      double colGDbl = colG / 255.0;
+      g_plugin.m_pState->m_fWaveG = colG;
+      g_plugin.m_pState->m_fMvG = colG;
+      // g_plugin.m_pState->var_pf_wave_g = &colGDbl;
+      // g_plugin.m_pState->var_pf_ob_g = &colGDbl;
+      // g_plugin.m_pState->var_pf_mv_g = &colGDbl;
+      // g_plugin.m_pState->var_pf_ib_g = &colGDbl;
     }
     if (params.find(L"colorb") != params.end()) {
-      g_plugin.m_pState->m_fWaveB = std::stoi(params[L"colorb"]);
-      // g_plugin.m_pState->m_fOuterBorderB = std::stoi(params[L"colorb"]);
-      // g_plugin.m_pState->m_fInnerBorderB = std::stoi(params[L"colorb"]);
-
-      // amount of color in the motion vectors
-      g_plugin.m_pState->m_fMvB = std::stoi(params[L"colorb"]);
+      int colB = std::stoi(params[L"colorb"]);
+      double colBDbl = colB / 255.0;
+      g_plugin.m_pState->m_fWaveB = colB;
+      g_plugin.m_pState->m_fMvB = colB;
+      // g_plugin.m_pState->var_pf_wave_b = &colBDbl;
+      // g_plugin.m_pState->var_pf_ob_b = &colBDbl;
+      // g_plugin.m_pState->var_pf_mv_b = &colBDbl;
+      // g_plugin.m_pState->var_pf_ib_b = &colBDbl;
     }
   }
   else if (wcsncmp(sMessage, L"DEVICE=", 7) == 0) {
