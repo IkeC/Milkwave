@@ -1684,5 +1684,10 @@ namespace MilkwaveRemote {
     private void lblPercent_Click(object sender, EventArgs e) {
       numOpacity.Value = 100;
     }
+
+    private void lblAudioDevice_DoubleClick(object sender, EventArgs e) {
+      helper.ReloadAudioDevices(cboAudioDevice);
+      SetStatusText($"Audio device list reloaded");
+    }
   }
 }

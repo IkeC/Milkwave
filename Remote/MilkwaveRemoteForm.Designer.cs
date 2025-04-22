@@ -94,6 +94,7 @@ namespace MilkwaveRemote
       numAlpha = new NumericUpDown();
       numOpacity = new NumericUpDown();
       lblPercent = new Label();
+      lblAudioDevice = new Label();
       btnSpace = new Button();
       btnBackspace = new Button();
       colorDialogMessage = new ColorDialog();
@@ -101,7 +102,6 @@ namespace MilkwaveRemote
       label2 = new Label();
       txtStyle = new TextBox();
       splitContainer2 = new SplitContainer();
-      lblAudioDevice = new Label();
       tableLayoutPanel1 = new TableLayoutPanel();
       btn77 = new Button();
       btn66 = new Button();
@@ -610,7 +610,7 @@ namespace MilkwaveRemote
       btnPresetSend.Size = new Size(83, 23);
       btnPresetSend.TabIndex = 100;
       btnPresetSend.Text = "Send";
-      toolTip1.SetToolTip(btnPresetSend, "Send to Visualizer (Ctrl+P)\r\nRight Click: Send next to Visualizer (Ctrl+N)\r\nMiddle Click: Send previous to Visualizer");
+      toolTip1.SetToolTip(btnPresetSend, "Send to Visualizer (Ctrl+P)\r\nRight-click: Send next to Visualizer (Ctrl+N)\r\nMiddle-click: Send previous to Visualizer");
       btnPresetSend.UseVisualStyleBackColor = true;
       btnPresetSend.Click += btnPresetSend_Click;
       btnPresetSend.MouseDown += btnPresetSend_MouseDown;
@@ -684,7 +684,7 @@ namespace MilkwaveRemote
       lblAmp.Size = new Size(54, 15);
       lblAmp.TabIndex = 104;
       lblAmp.Text = "Amp L/R";
-      toolTip1.SetToolTip(lblAmp, "Double-Click to reset");
+      toolTip1.SetToolTip(lblAmp, "Double-click to reset");
       lblAmp.Click += lblAmpLeft_Click;
       // 
       // numAmpRight
@@ -887,6 +887,17 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblPercent, "Click to reset");
       lblPercent.Click += lblPercent_Click;
       // 
+      // lblAudioDevice
+      // 
+      lblAudioDevice.AutoSize = true;
+      lblAudioDevice.Location = new Point(30, 95);
+      lblAudioDevice.Name = "lblAudioDevice";
+      lblAudioDevice.Size = new Size(42, 15);
+      lblAudioDevice.TabIndex = 115;
+      lblAudioDevice.Text = "Device";
+      toolTip1.SetToolTip(lblAudioDevice, "Double-click to reload list");
+      lblAudioDevice.DoubleClick += lblAudioDevice_DoubleClick;
+      // 
       // btnSpace
       // 
       tableLayoutPanel1.SetColumnSpan(btnSpace, 2);
@@ -1045,15 +1056,6 @@ namespace MilkwaveRemote
       splitContainer2.SplitterDistance = 138;
       splitContainer2.SplitterWidth = 8;
       splitContainer2.TabIndex = 0;
-      // 
-      // lblAudioDevice
-      // 
-      lblAudioDevice.AutoSize = true;
-      lblAudioDevice.Location = new Point(30, 95);
-      lblAudioDevice.Name = "lblAudioDevice";
-      lblAudioDevice.Size = new Size(42, 15);
-      lblAudioDevice.TabIndex = 115;
-      lblAudioDevice.Text = "Device";
       // 
       // tableLayoutPanel1
       // 

@@ -80,6 +80,23 @@ namespace MilkwaveRemote {
       }
     }
 
+    public void ReloadAudioDevices(ComboBox cbo) {
+      if (cbo.SelectedItem is ComboBoxItemDevice currentItem) { // Use pattern matching to check and cast
+        FillAudioDevices(cbo);
+        foreach (ComboBoxItemDevice item in cbo.Items) {
+          if (item.Device.ID == currentItem.Device.ID) {
+            cbo.SelectedItem = item;
+            break;
+          }
+        }
+      } else {
+        FillAudioDevices(cbo);
+        if (cbo.Items.Count > 0) {
+          cbo.SelectedIndex = 0; // Select the first item if no previous selection
+        }
+      }
+    }
+
     public void SelectDeviceByName(ComboBox cbo, string deviceName) {
       foreach (ComboBoxItemDevice item in cbo.Items) {
         if (item.Device.FriendlyName.Equals(deviceName) || (deviceName.Length == 0 && item.IsDefaultDevice)) {

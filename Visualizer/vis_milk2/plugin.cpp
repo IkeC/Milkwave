@@ -6218,39 +6218,8 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           else if (m_UI_mode == UI_CHANGEDIR) {
             //m_fShowUserMessageUntilThisTime = GetTime();	// if there was an error message already, clear it
 
-            // change dir
-            wchar_t szOldDir[512];
-            wchar_t szNewDir[512];
-            lstrcpyW(szOldDir, g_plugin.m_szPresetDir);
-            lstrcpyW(szNewDir, m_waitstring.szText);
-
-            int len = lstrlenW(szNewDir);
-            if (len > 0 && szNewDir[len - 1] != L'\\')
-              lstrcatW(szNewDir, L"\\");
-
-            lstrcpyW(g_plugin.m_szPresetDir, szNewDir);
-
-            bool bSuccess = true;
-            if (GetFileAttributesW(g_plugin.m_szPresetDir) == -1)
-              bSuccess = false;
+            bool bSuccess = ChangePresetDir(m_waitstring.szText, g_plugin.m_szPresetDir);
             if (bSuccess) {
-              UpdatePresetList(true, true, false);
-              bSuccess = (m_nPresets > 0);
-            }
-
-            if (!bSuccess) {
-              // new dir. was invalid -> allow them to try again
-              lstrcpyW(g_plugin.m_szPresetDir, szOldDir);
-
-              // give them a warning
-              AddError(wasabiApiLangString(IDS_INVALID_PATH), 3.5f, ERR_MISC, true);
-            }
-            else {
-              // success
-              lstrcpyW(g_plugin.m_szPresetDir, szNewDir);
-
-              // save new path to registry
-              WritePrivateProfileStringW(L"Settings", L"szPresetDir", g_plugin.m_szPresetDir, GetConfigIniFile());
 
               // set current preset index to -1 because current preset is no longer in the list
               m_nCurrentPreset = -1;
@@ -6702,6 +6671,44 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
   return 0;
 };
+
+bool CPlugin::ChangePresetDir(wchar_t* newDir, wchar_t* oldDir) {
+  // change dir
+  wchar_t szOldDir[512];
+  wchar_t szNewDir[512];
+  lstrcpyW(szOldDir, oldDir);
+  lstrcpyW(szNewDir, newDir);
+
+  int len = lstrlenW(szNewDir);
+  if (len > 0 && szNewDir[len - 1] != L'\\')
+    lstrcatW(szNewDir, L"\\");
+
+  lstrcpyW(g_plugin.m_szPresetDir, szNewDir);
+
+  bool bSuccess = true;
+  if (GetFileAttributesW(g_plugin.m_szPresetDir) == -1)
+    bSuccess = false;
+  if (bSuccess) {
+    UpdatePresetList(true, true, false);
+
+    // bSuccess = (m_nPresets > 0);
+    // success
+    lstrcpyW(g_plugin.m_szPresetDir, szNewDir);
+
+    // save new path to registry
+    WritePrivateProfileStringW(L"Settings", L"szPresetDir", g_plugin.m_szPresetDir, GetConfigIniFile());
+
+  }
+  else {
+    // new dir. was invalid -> allow them to try again
+    lstrcpyW(g_plugin.m_szPresetDir, oldDir);
+
+    // give them a warning
+    AddError(wasabiApiLangString(IDS_INVALID_PATH), 3.5f, ERR_MISC, true);
+  }
+
+  return bSuccess;
+}
 
 int CPlugin::ToggleSpout() {
   bSpoutChanged = true; // write config on exit
@@ -8373,7 +8380,6 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
     }
     else {
       // we're retracing our steps, either forward or backward...
-
     }
   }
 
@@ -9819,6 +9825,40 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     //   pos[5] = L'\0'; // Truncate the string after ".milk"
     // }
     std::wstring message(sMessage + 7); // Remove "PRESET="
+
+    size_t pos = message.find_last_of(L"\\/");
+    std::wstring sPath;
+    std::wstring sFilename;
+    if (pos != std::wstring::npos) {
+      // Extract the path up to and including the last separator
+      sPath = message.substr(0, pos +1);
+      // Extract the filename after the last separator
+      sFilename = message.substr(pos + 1);
+    }
+    else {
+      // If no separator is found, assume the fullPath is just a filename
+      sFilename = message;
+    }
+
+    if (sPath.length() > 0) {
+      // Ensure 'sNewPath' is zero-terminated before using it in wcscmp
+      wchar_t sNewPath[MAX_PATH];
+      wcscpy_s(sNewPath, sPath.c_str());
+      // ensure it is zero-terminated
+      sNewPath[MAX_PATH - 1] = L'\0';
+      if (wcscmp(sNewPath, g_plugin.m_szPresetDir) != 0) {
+        g_plugin.ChangePresetDir(sNewPath, g_plugin.m_szPresetDir);
+      }
+    }
+
+    // try to set the current preset index
+    for (int i = 0; i < m_presets.size(); i++) {
+      if (wcscmp(m_presets[i].szFilename.c_str(), sFilename.c_str()) == 0) {
+        m_nCurrentPreset = i;
+        break;
+      }
+    }
+
     LoadPreset(message.c_str(), 1);
     // Handle other message types here if needed
   }
