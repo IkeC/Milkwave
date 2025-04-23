@@ -58,10 +58,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 #define MY_FFT_SAMPLES 512     // for old [pre-vms] milkdrop sound analysis
 typedef struct {
   float   imm[3];			// bass, mids, treble (absolute)
-  float	imm_rel[3];		// bass, mids, treble (relative to song; 1=avg, 0.9~below, 1.1~above)
-  float	avg[3];			// bass, mids, treble (absolute)
-  float	avg_rel[3];		// bass, mids, treble (relative to song; 1=avg, 0.9~below, 1.1~above)
-  float	long_avg[3];	// bass, mids, treble (absolute)
+  float	  imm_rel[3];		// bass, mids, treble (relative to song; 1=avg, 0.9~below, 1.1~above)
+  float	  avg[3];			// bass, mids, treble (absolute)
+  float	  avg_rel[3];		// bass, mids, treble (relative to song; 1=avg, 0.9~below, 1.1~above)
+  float	  long_avg[3];	// bass, mids, treble (absolute)
   float   fWave[2][576];
   float   fSpecLeft[MY_FFT_SAMPLES];
   float   fSpecRight[MY_FFT_SAMPLES];
@@ -106,7 +106,7 @@ typedef struct {
   float	x;
   float	y;
   float	randx;
-  float   randy;
+  float randy;
   float	growth;
   float	fTime;	// total time to display the message, in seconds
   float	fFade;	// % (0..1) of the time that is spent fading in
@@ -118,12 +118,12 @@ typedef struct {
   int     bOverrideColorR;
   int     bOverrideColorG;
   int     bOverrideColorB;
-  int		nColorR;    // 0..255
-  int		nColorG;    // 0..255
-  int		nColorB;    // 0..255
-  int  	nRandR;
+  int	    ColorR;    // 0..255
+  int	    ColorG;    // 0..255
+  int	    ColorB;    // 0..255
+  int     nRandR;
   int     nRandG;
-  int  	nRandB;
+  int  	  nRandB;
   int     bBold;
   int     bItal;
   wchar_t szFace[128];
@@ -141,15 +141,15 @@ typedef struct {
   int 	bBold;
   int 	bItal;
   float	fX;
-  float   fY;
+  float fY;
   float	fFontSize;			// [0..100] for custom messages, [0..4] for song titles
-  float   fGrowth;			// applies to custom messages only
+  float fGrowth;			// applies to custom messages only
   int		nFontSizeUsed;		// height IN PIXELS
   float	fStartTime;
   float	fDuration;
   float	fFadeTime;			// applies to custom messages only; song title fade times are handled specially
   int  	nColorR;
-  int     nColorG;
+  int   nColorG;
   int  	nColorB;
 }
 td_supertext;
@@ -289,7 +289,7 @@ public:
   float		m_fBlendTimeUser;		// blend time when user loads a new preset
   float		m_fTimeBetweenPresets;		// <- this is in addition to m_fBlendTimeAuto
   float		m_fTimeBetweenPresetsRand;	// <- this is in addition to m_fTimeBetweenPresets
-  bool        m_bSequentialPresetOrder;
+  bool    m_bSequentialPresetOrder;
   bool		m_bHardCutsDisabled;
   float		m_fHardCutLoudnessThresh;
   float		m_fHardCutHalflife;
@@ -297,14 +297,14 @@ public:
   //int			m_nWidth;
   //int			m_nHeight;
   //int			m_nDispBits;
-  int         m_nCanvasStretch;   // 0=Auto, 100=None, 125 = 1.25X, 133, 150, 167, 200, 300, 400 (4X).
+  int     m_nCanvasStretch;   // 0=Auto, 100=None, 125 = 1.25X, 133, 150, 167, 200, 300, 400 (4X).
   int			m_nTexSizeX;			// -1 = exact match to screen; -2 = nearest power of 2.
   int			m_nTexSizeY;
-  float       m_fAspectX;
-  float       m_fAspectY;
-  float       m_fInvAspectX;
-  float       m_fInvAspectY;
-  int         m_nTexBitsPerCh;
+  float   m_fAspectX;
+  float   m_fAspectY;
+  float   m_fInvAspectX;
+  float   m_fInvAspectY;
+  int     m_nTexBitsPerCh;
   int			m_nGridX;
   int			m_nGridY;
 
@@ -324,30 +324,33 @@ public:
   float		m_fTimeBetweenRandomCustomMsgs;
   int			m_nSongTitlesSpawned;
   int			m_nCustMsgsSpawned;
-  bool        m_bEnablePresetStartup;
-  bool        m_bAutoLockPresetWhenNoMusic;
-  int         m_nBassStart = 0;
-  int         m_nBassEnd = 250;
-  int         m_nMidStart = 250;
-  int         m_nMidEnd = 4000;
-  int         m_nTrebStart = 4000;
-  int         m_nTrebEnd = 20000;
+  bool    m_bEnablePresetStartup;
+  bool    m_bAutoLockPresetWhenNoMusic;
+  int     m_nBassStart = 0;
+  int     m_nBassEnd = 250;
+  int     m_nMidStart = 250;
+  int     m_nMidEnd = 4000;
+  int     m_nTrebStart = 4000;
+  int     m_nTrebEnd = 20000;
 
   int m_WindowX = 850;
   int m_WindowY = 50;
   int m_WindowWidth = 640;
   int m_WindowHeight = 360;
+  
   bool m_SongInfoActive = true;
+  bool m_ChangePresetWithSong = true;
+  float m_SongInfoDisplaySeconds = 5.0f;
 
   //bool		m_bAlways3D;
   //float       m_fStereoSep;
   //bool		m_bAlwaysOnTop;
   //bool		m_bFixSlowText;
   //bool		m_bWarningsDisabled;		// messageboxes
-  bool		m_bWarningsDisabled2;		// warnings/errors in upper-right corner (m_szUserMessage)
+  bool		    m_bWarningsDisabled2;		// warnings/errors in upper-right corner (m_szUserMessage)
   //bool        m_bAnisotropicFiltering;
   bool        m_bPresetLockOnAtStartup;
-  bool		m_bPreventScollLockHandling;
+  bool        m_bPreventScollLockHandling;
   int         m_nMaxPSVersion_ConfigPanel;  // -1 = auto, 0 = disable shaders, 2 = ps_2_0, 3 = ps_3_0
   int         m_nMaxPSVersion_DX9;          // 0 = no shader support, 2 = ps_2_0, 3 = ps_3_0
   int         m_nMaxPSVersion;              // this one will be the ~min of the other two.  0/2/3.

@@ -16,23 +16,22 @@
 
 using namespace winrt;
 using namespace Windows::Media::Control;
-// using namespace Windows::Foundation;
-// using namespace Windows::Media::Playback;
 using namespace std::chrono_literals;
 
 extern float milkwave_amp_left;
 extern float milkwave_amp_right;
 
 class Milkwave {
-  // MediaPlayer mediaPlayer;
 
 public:
   std::wstring currentArtist;
   std::wstring currentTitle;
   std::wstring currentAlbum;
+  
   bool updated = false;
   bool doPoll = false;
-  bool doPollOnce = false;
+  bool doPollExplicit = false;
+  bool isSongChange = false;
   std::chrono::steady_clock::time_point start_time;
 
   Milkwave();

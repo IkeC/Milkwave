@@ -465,12 +465,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         }
       }
       else {
-        if (!milkwave.doPoll) {
-          milkwave.doPollOnce = true;
-        }
-        else {
-          milkwave.updated = true;
-        }
+        milkwave.doPollExplicit = true;
       }
       return 0;
   }
@@ -566,7 +561,10 @@ void RenderFrame() {
 
   milkwave.PollMediaInfo();
   if (milkwave.updated) {
-
+    if (g_plugin.m_ChangePresetWithSong && !milkwave.doPollExplicit && milkwave.isSongChange) {
+      g_plugin.NextPreset(g_plugin.m_fBlendTimeAuto);
+    }
+    milkwave.doPollExplicit = false;
     wchar_t buf[512];
 
     // Convert wchar_t array to std::string
@@ -590,15 +588,15 @@ void RenderFrame() {
 
       if (currentToken == "artist") {
         wcscpy(buf, milkwave.currentArtist.c_str());
-        g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_1, false);
+        g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
       }
       else if (currentToken == "title") {
         wcscpy(buf, milkwave.currentTitle.c_str());
-        g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_2, false);
+        g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_2, false);
       }
       else if (currentToken == "album") {
         wcscpy(buf, milkwave.currentAlbum.c_str());
-        g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_3, false);
+        g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_3, false);
       }
     }
 
@@ -796,7 +794,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
       ////////////////////////////////////////////////////////////////////////////////////////////////
     }
   } catch (const std::exception& e) {
-    // milkwave.LogException(L"Exception in main loop", e);
+    milkwave.LogException(L"Exception in main loop", e);
   }
 
   g_plugin.MyWriteConfig();
