@@ -1044,19 +1044,14 @@ namespace MilkwaveRemote {
 
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
-          // Close the Visualizer window unless Alt key is pressed
-          if ((Control.ModifierKeys & Keys.Alt) != Keys.Alt) {
+          // Close the Visualizer window unless Alt ot Ctrl key are pressed
+          if ((Control.ModifierKeys & Keys.Alt) != Keys.Alt || (Control.ModifierKeys & Keys.Control) != Keys.Control) {
             PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
           }
         }
 
         Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
         Settings.SplitterDistance2 = splitContainer2.SplitterDistance;
-
-        // Hold the Ctrl key while closing the form to reset local settings to default
-        if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-          Settings = new Settings();
-        }
 
         string jsonString = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
         string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveSettingsFile);

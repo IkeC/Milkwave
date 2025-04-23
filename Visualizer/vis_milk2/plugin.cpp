@@ -1494,7 +1494,7 @@ void CPlugin::MyWriteConfig() {
   // Milkwave
   WritePrivateProfileStringW(L"Settings", L"szPresetStartup", m_szCurrentPresetFile, pIni);
   WritePrivateProfileStringW(L"Settings", L"MilkwaveAudioDevice", m_szAudioDevice, pIni);
-  
+
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Settings");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Settings");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Settings");
@@ -5265,14 +5265,15 @@ void CPlugin::MyRenderUI(
           if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_1 || m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_2) {
             if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_1) {
               SelectFont(EXTRA_1);
-            } else if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_2) {
+            }
+            else if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_2) {
               SelectFont(EXTRA_2);
             }
             swprintf(buf, L"%s ", m_errors[i].msg.c_str());
 
             // 0..1
             float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);
-            
+
             // Replace the problematic line with the following:
             // std::wstring logMessage = L"rel=" + std::to_wstring(age_rel) + L"\n";
             // LOG(logMessage.c_str());
@@ -5281,12 +5282,14 @@ void CPlugin::MyRenderUI(
             DWORD cg = 255;
             DWORD cb = 255;
             DWORD alpha = 0;
-            if (age_rel >= 0.0f && age_rel < 0.05f) {  
-                alpha = (DWORD)(255 * (age_rel / 0.05f));  
-            } else if (age_rel > 0.8f && age_rel <= 1.0f) {  
-                alpha = (DWORD)(255 * ((1.0f - age_rel) / 0.2f));  
-            } else if (age_rel >= 0.05f && age_rel <= 0.8f) {  
-                alpha = 255;  
+            if (age_rel >= 0.0f && age_rel < 0.05f) {
+              alpha = (DWORD)(255 * (age_rel / 0.05f));
+            }
+            else if (age_rel > 0.8f && age_rel <= 1.0f) {
+              alpha = (DWORD)(255 * ((1.0f - age_rel) / 0.2f));
+            }
+            else if (age_rel >= 0.05f && age_rel <= 0.8f) {
+              alpha = 255;
             }
             DWORD z = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
             MyTextOut_Color(buf, MTO_LOWER_LEFT, z);
@@ -5893,8 +5896,9 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       //Abandoned!
       //"no f4 is enough for me"
       //          - Milkdrop2077 (a.k.a. serge000) on Twitter DMs
-
-
+    case VK_F8:
+      OpenMilkwaveRemote();
+      return 0;
     case VK_F10:
       ToggleSpout();
       return 0;
@@ -9917,7 +9921,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring sFilename;
     if (pos != std::wstring::npos) {
       // Extract the path up to and including the last separator
-      sPath = message.substr(0, pos +1);
+      sPath = message.substr(0, pos + 1);
       // Extract the filename after the last separator
       sFilename = message.substr(pos + 1);
     }
@@ -10420,5 +10424,29 @@ bool CPlugin::OpenSender(unsigned int width, unsigned int height) {
 
 } // end OpenSender
 
+void CPlugin::OpenMilkwaveRemote() {
+  HWND hwnd = FindWindowW(NULL, L"Milkwave Remote");
+  if (hwnd) {
+    // Bring the window to the front  
+    SetForegroundWindow(hwnd);
+    ShowWindow(hwnd, SW_RESTORE);
+  }
+  else {
+    // Start the program "MilkwaveRemote.exe"  
+    // Ensure STARTUPINFOW is used for CreateProcessW
+    STARTUPINFOW si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
 
-// =========================================================
+    if (!CreateProcessW(L"MilkwaveRemote.exe", NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+      g_plugin.AddError(L"Could not start Milkwave Remote", 3.0f, ERR_MISC, false);
+    }
+    else {
+      g_plugin.AddError(L"Starting Milkwave Remote", 3.0f, ERR_NOTIFY, false);
+      CloseHandle(pi.hProcess);
+      CloseHandle(pi.hThread);
+    }
+  }
+}
