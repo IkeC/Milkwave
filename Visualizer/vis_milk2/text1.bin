@@ -1,4 +1,4 @@
-ESC                  exit BeatDrop / menus
+ESC                  exit Milkwave Visualizer / menus
 ALT + ENTER          toggle fullscreen (or double-click)
 ALT + S              toggle multiple monitor stretch
 CTRL + T             instantly reset time variable
@@ -37,10 +37,11 @@ V                    next track
 LEFT ARROW           rewind track (seek -5 seconds)
 RIGHT ARROW          fast forward track (seek +5 seconds)
 B                    show track info
+SHIFT + B            toggle track info polling
 
 K                    toggle sprite/message mode
 SHIFT + K            enter sprite kill mode
-00-99                invoke sprites/messages (clears some sprites while you introduced some digits - sprite kill mode)
+00-99                invoke sprites/messages
 *                    clears the number of digits that you introduced
 DEL                  clear latest sprite from the slot/message
 SHIFT + DEL          clear oldest sprite from the slot/message

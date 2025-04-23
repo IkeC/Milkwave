@@ -136,6 +136,8 @@
 
 #include "..\audio\common.h"
 #include "milkwave.h"
+#include <locale>
+#include <codecvt>
 
 #define DLL_EXPORT __declspec(dllexport)
 //#define COMPILE_AS_DLL
@@ -442,43 +444,6 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_KEYDOWN:
   {
-
-    /*
-    if (wParam == VK_RETURN) {
-      printf("Return\n");
-      ToggleFullScreen(hWnd);
-    }
-    */
-
-    // SPOUT - there is no playback for BeatDrop
-          /*if (playback && wParam >= VK_F1 && wParam <= VK_F8) {
-              switch (wParam) {
-              case VK_F1:
-                  playback->PauseOrResume();
-                  break;
-              case VK_F2:
-                  playback->Stop();
-                  break;
-              case VK_F3:
-                  playback->Previous();
-                  break;
-              case VK_F4:
-                  playback->Next();
-                  break;
-              case VK_F5:
-                  playback->SetVolume(playback->GetVolume() - 0.05);
-                  break;
-              case VK_F6:
-                  playback->SetVolume(playback->GetVolume() + 0.05);
-                  break;
-              case VK_F7:
-                  playback->ToggleShuffle();
-                  break;
-              case VK_F8:
-                  playback->ToggleMute();
-                  break;
-              }
-          }*/
     g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
   }
   if (wParam == VK_F2) {
@@ -486,7 +451,28 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       ToggleBorderlessWindow(hWnd);
   }
   else if (wParam == VK_B) {
-    milkwave.updated = true;
+      if (GetKeyState(VK_SHIFT) & 0x8000) { // Check if Shift is pressed
+        g_plugin.m_SongInfoActive = !g_plugin.m_SongInfoActive;
+        milkwave.doPoll = g_plugin.m_SongInfoActive;
+        if (g_plugin.m_SongInfoActive) {
+          g_plugin.AddError(L"Song Info enabled", 5.0f, ERR_NOTIFY, false);
+        }
+        else {
+          g_plugin.AddError(L"Song Info disabled", 5.0f, ERR_NOTIFY, false);
+          milkwave.currentArtist = L"";
+          milkwave.currentTitle = L"";
+          milkwave.currentAlbum = L"";
+        }
+      }
+      else {
+        if (!milkwave.doPoll) {
+          milkwave.doPollOnce = true;
+        }
+        else {
+          milkwave.updated = true;
+        }
+      }
+      return 0;
   }
   break;
 
@@ -580,14 +566,41 @@ void RenderFrame() {
 
   milkwave.PollMediaInfo();
   if (milkwave.updated) {
-    
+
     wchar_t buf[512];
 
-    wcscpy(buf, milkwave.currentArtist.c_str());
-    g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_2, false);
+    // Convert wchar_t array to std::string
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    std::string format = converter.to_bytes(g_plugin.m_SongInfoFormat);
+    std::istringstream stream(format);
+    std::vector<std::string> tokens;
+    std::string token;
 
-    wcscpy(buf, milkwave.currentTitle.c_str());
-    g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_1, false);
+    // Split the string into tokens
+    while (std::getline(stream, token, ';')) {
+      tokens.push_back(token);
+    }
+
+    // Iterate over tokens in reverse order
+    for (auto it = tokens.rbegin(); it != tokens.rend(); ++it) {
+      std::string currentToken = *it;
+
+      // Convert token to lowercase for case-insensitive comparison
+      std::transform(currentToken.begin(), currentToken.end(), currentToken.begin(), ::tolower);
+
+      if (currentToken == "artist") {
+        wcscpy(buf, milkwave.currentArtist.c_str());
+        g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_1, false);
+      }
+      else if (currentToken == "title") {
+        wcscpy(buf, milkwave.currentTitle.c_str());
+        g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_2, false);
+      }
+      else if (currentToken == "album") {
+        wcscpy(buf, milkwave.currentAlbum.c_str());
+        g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_3, false);
+      }
+    }
 
     milkwave.updated = false;
   }
@@ -723,6 +736,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   ShowWindow(hwnd, SW_SHOW);
 
   milkwave.Init();
+  milkwave.doPoll = g_plugin.m_SongInfoActive;
+
   unsigned int frame = 0;
 
   // SPOUT - defaults if no GUI

@@ -337,6 +337,7 @@ public:
   int m_WindowY = 50;
   int m_WindowWidth = 640;
   int m_WindowHeight = 360;
+  bool m_SongInfoActive = true;
 
   //bool		m_bAlways3D;
   //float       m_fStereoSep;
@@ -482,6 +483,7 @@ public:
 #define ERR_SCANNING_PRESETS 5
 #define ERR_MSG_BOTTOM_EXTRA_1 6
 #define ERR_MSG_BOTTOM_EXTRA_2 7
+#define ERR_MSG_BOTTOM_EXTRA_3 8
 
 
   ErrorMsgList m_errors;
@@ -517,7 +519,7 @@ public:
   wchar_t     m_szPresetStartup[MAX_PATH];
   wchar_t     m_szAudioDevicePrevious[MAX_PATH];
   wchar_t     m_szAudioDevice[MAX_PATH];
-
+  wchar_t     m_SongInfoFormat[MAX_PATH];
   int m_AudioLoopState = 0; // 0: Running, 1: Cancel running thread, 2: Must restart
 
   float		m_fRandStart[4];
@@ -665,7 +667,7 @@ public:
   virtual void MyRenderUI(int* upper_left_corner_y, int* upper_right_corner_y, int* lower_left_corner_y, int* lower_right_corner_y, int xL, int xR);
   virtual LRESULT MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
   bool ChangePresetDir(wchar_t* newDir, wchar_t* oldDir);
-  int ToggleSpout();  
+  int ToggleSpout();
   virtual void OnAltK();
 };
 

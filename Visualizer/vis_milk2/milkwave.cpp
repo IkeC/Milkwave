@@ -76,6 +76,9 @@ void Milkwave::LogException(const wchar_t* context, const std::exception& e) {
 }
 
 void Milkwave::PollMediaInfo() {
+
+  if (!doPoll && !doPollOnce) return;
+  
   // Get the current time
   auto current_time = std::chrono::steady_clock::now();
 
@@ -91,7 +94,7 @@ void Milkwave::PollMediaInfo() {
     if (currentSession) {
       auto properties = currentSession.TryGetMediaPropertiesAsync().get();
       if (properties) {
-        if (properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum) {
+        if (doPollOnce  || properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum) {
           currentArtist = properties.Artist().c_str();
           currentTitle = properties.Title().c_str();
           currentAlbum = properties.AlbumTitle().c_str();
@@ -110,5 +113,9 @@ void Milkwave::PollMediaInfo() {
 
     // Reset the start time to the current time
     start_time = current_time;
+
+    if (doPollOnce) {
+      doPollOnce = false;
+    }
   }
 }

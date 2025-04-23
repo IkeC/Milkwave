@@ -31,6 +31,8 @@ public:
   std::wstring currentTitle;
   std::wstring currentAlbum;
   bool updated = false;
+  bool doPoll = false;
+  bool doPollOnce = false;
   std::chrono::steady_clock::time_point start_time;
 
   Milkwave();

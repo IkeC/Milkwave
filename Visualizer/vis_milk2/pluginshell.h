@@ -50,6 +50,9 @@ typedef struct {
   int bBold;
   int bItalic;
   int bAntiAliased;
+  int R = 255;
+  int G = 255;
+  int B = 255;
 } td_fontinfo;
 
 typedef struct {

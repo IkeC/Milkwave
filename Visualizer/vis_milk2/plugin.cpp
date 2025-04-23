@@ -1378,12 +1378,16 @@ void CPlugin::MyReadConfig() {
 
   GetPrivateProfileStringW(L"Settings", L"szPresetDir", m_szPresetDir, m_szPresetDir, sizeof(m_szPresetDir), pIni);
   GetPrivateProfileStringW(L"Settings", L"szPresetStartup", m_szPresetStartup, m_szPresetStartup, sizeof(m_szPresetStartup), pIni);
-  GetPrivateProfileStringW(L"Settings", L"MilkwaveAudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);
+  
+  // Milkwave
+  GetPrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);  
+  m_SongInfoActive = GetPrivateProfileBoolW(L"Milkwave", L"SongInfoActive", m_SongInfoActive, pIni);
+  GetPrivateProfileStringW(L"Milkwave", L"SongInfoFormat", L"Artist;Title;Album", m_SongInfoFormat, sizeof(m_SongInfoFormat), pIni);
 
-  m_WindowX = GetPrivateProfileIntW(L"Settings", L"WindowX", m_WindowX, pIni);
-  m_WindowY = GetPrivateProfileIntW(L"Settings", L"WindowY", m_WindowY, pIni);
-  m_WindowWidth = GetPrivateProfileIntW(L"Settings", L"WindowWidth", m_WindowWidth, pIni);
-  m_WindowHeight = GetPrivateProfileIntW(L"Settings", L"WindowHeight", m_WindowHeight, pIni);
+  m_WindowX = GetPrivateProfileIntW(L"Milkwave", L"WindowX", m_WindowX, pIni);
+  m_WindowY = GetPrivateProfileIntW(L"Milkwave", L"WindowY", m_WindowY, pIni);
+  m_WindowWidth = GetPrivateProfileIntW(L"Milkwave", L"WindowWidth", m_WindowWidth, pIni);
+  m_WindowHeight = GetPrivateProfileIntW(L"Milkwave", L"WindowHeight", m_WindowHeight, pIni);
 
   ReadCustomMessages();
 
@@ -1495,10 +1499,10 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileStringW(L"Settings", L"szPresetStartup", m_szCurrentPresetFile, pIni);
   WritePrivateProfileStringW(L"Settings", L"MilkwaveAudioDevice", m_szAudioDevice, pIni);
 
-  WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Settings");
-  WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Settings");
-  WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Settings");
-  WritePrivateProfileIntW(m_WindowHeight, L"WindowHeight", pIni, L"Settings");
+  WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_WindowHeight, L"WindowHeight", pIni, L"Milkwave");
 }
 
 void CPlugin::SaveWindowSizeAndPosition(HWND hwnd) {
@@ -2507,7 +2511,7 @@ int CPlugin::AllocateMyDX9Stuff() {
 
   if (!m_bInitialPresetSelected) {
     UpdatePresetList(true); //...just does its initial burst!
-    if (m_bEnablePresetStartup)
+    if (m_bEnablePresetStartup && wcslen(m_szPresetStartup) > 0)
       LoadPreset(m_szPresetStartup, 0.0f);
     else
       LoadRandomPreset(0.0f);
@@ -5262,25 +5266,18 @@ void CPlugin::MyRenderUI(
       int N = m_errors.size();
       for (int i = 0; i < N; i++) {
         if (t >= m_errors[i].birthTime && t < m_errors[i].expireTime) {
-          if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_1 || m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_2) {
-            if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_1) {
-              SelectFont(EXTRA_1);
-            }
-            else if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_2) {
-              SelectFont(EXTRA_2);
-            }
+          if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_1 || m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_2 || m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_3) {
+            // ERR_MSG_BOTTOM_EXTRA_1 = 6
+            int fontIndex = NUM_BASIC_FONTS + m_errors[i].category - ERR_MSG_BOTTOM_EXTRA_1;
+            SelectFont(static_cast<eFontIndex>(fontIndex));
+            
             swprintf(buf, L"%s ", m_errors[i].msg.c_str());
 
             // 0..1
             float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);
-
-            // Replace the problematic line with the following:
-            // std::wstring logMessage = L"rel=" + std::to_wstring(age_rel) + L"\n";
-            // LOG(logMessage.c_str());
-
-            DWORD cr = 255;
-            DWORD cg = 255;
-            DWORD cb = 255;
+            DWORD cr = m_fontinfo[fontIndex].R;
+            DWORD cg = m_fontinfo[fontIndex].G;
+            DWORD cb = m_fontinfo[fontIndex].B;
             DWORD alpha = 0;
             if (age_rel >= 0.0f && age_rel < 0.05f) {
               alpha = (DWORD)(255 * (age_rel / 0.05f));
@@ -6495,9 +6492,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         Sleep(200);
         */ //Any media players force stops the track without fading (Ex: AIMP) - so I think I don't need this.
       }
-      break;
-    case 'B':
-      // milkwave.updated = false;
       break;
     case 'V':
       if (m_UI_mode == UI_REGULAR) {

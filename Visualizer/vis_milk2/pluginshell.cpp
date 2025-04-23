@@ -838,16 +838,19 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   m_fontinfo[SIMPLE_FONT].bBold = SIMPLE_FONT_DEFAULT_BOLD;
   m_fontinfo[SIMPLE_FONT].bItalic = SIMPLE_FONT_DEFAULT_ITAL;
   m_fontinfo[SIMPLE_FONT].bAntiAliased = SIMPLE_FONT_DEFAULT_AA;
+  
   wcscpy(m_fontinfo[DECORATIVE_FONT].szFace, DECORATIVE_FONT_DEFAULT_FACE);
   m_fontinfo[DECORATIVE_FONT].nSize = DECORATIVE_FONT_DEFAULT_SIZE;
   m_fontinfo[DECORATIVE_FONT].bBold = DECORATIVE_FONT_DEFAULT_BOLD;
   m_fontinfo[DECORATIVE_FONT].bItalic = DECORATIVE_FONT_DEFAULT_ITAL;
   m_fontinfo[DECORATIVE_FONT].bAntiAliased = DECORATIVE_FONT_DEFAULT_AA;
+  
   wcscpy(m_fontinfo[HELPSCREEN_FONT].szFace, HELPSCREEN_FONT_DEFAULT_FACE);
   m_fontinfo[HELPSCREEN_FONT].nSize = HELPSCREEN_FONT_DEFAULT_SIZE;
   m_fontinfo[HELPSCREEN_FONT].bBold = HELPSCREEN_FONT_DEFAULT_BOLD;
   m_fontinfo[HELPSCREEN_FONT].bItalic = HELPSCREEN_FONT_DEFAULT_ITAL;
   m_fontinfo[HELPSCREEN_FONT].bAntiAliased = HELPSCREEN_FONT_DEFAULT_AA;
+  
   wcscpy(m_fontinfo[PLAYLIST_FONT].szFace, PLAYLIST_FONT_DEFAULT_FACE);
   m_fontinfo[PLAYLIST_FONT].nSize = PLAYLIST_FONT_DEFAULT_SIZE;
   m_fontinfo[PLAYLIST_FONT].bBold = PLAYLIST_FONT_DEFAULT_BOLD;
@@ -869,7 +872,7 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   m_fontinfo[NUM_BASIC_FONTS + 1].bAntiAliased = EXTRA_FONT_2_DEFAULT_AA;
 #endif
 #if (NUM_EXTRA_FONTS >= 3)
-  strcpy(m_fontinfo[NUM_BASIC_FONTS + 2].szFace, EXTRA_FONT_3_DEFAULT_FACE);
+  wcscpy(m_fontinfo[NUM_BASIC_FONTS + 2].szFace, EXTRA_FONT_3_DEFAULT_FACE);
   m_fontinfo[NUM_BASIC_FONTS + 2].nSize = EXTRA_FONT_3_DEFAULT_SIZE;
   m_fontinfo[NUM_BASIC_FONTS + 2].bBold = EXTRA_FONT_3_DEFAULT_BOLD;
   m_fontinfo[NUM_BASIC_FONTS + 2].bItalic = EXTRA_FONT_3_DEFAULT_ITAL;
@@ -1050,11 +1053,15 @@ wchar_t* BuildSettingName(wchar_t* name, int number) {
 }
 
 void CPluginShell::READ_FONT(int n) {
-  GetPrivateProfileStringW(L"Settings", BuildSettingName(L"szFontFace", n), m_fontinfo[n].szFace, m_fontinfo[n].szFace, sizeof(m_fontinfo[n].szFace), m_szConfigIniFile);
-  m_fontinfo[n].nSize = GetPrivateProfileIntW(L"Settings", BuildSettingName(L"nFontSize", n), m_fontinfo[n].nSize, m_szConfigIniFile);
-  m_fontinfo[n].bBold = GetPrivateProfileIntW(L"Settings", BuildSettingName(L"bFontBold", n), m_fontinfo[n].bBold, m_szConfigIniFile);
-  m_fontinfo[n].bItalic = GetPrivateProfileIntW(L"Settings", BuildSettingName(L"bFontItalic", n), m_fontinfo[n].bItalic, m_szConfigIniFile);
-  m_fontinfo[n].bAntiAliased = GetPrivateProfileIntW(L"Settings", BuildSettingName(L"bFontAA", n), m_fontinfo[n].bItalic, m_szConfigIniFile);
+  int iniIndex = n + 1;
+  GetPrivateProfileStringW(L"Fonts", BuildSettingName(L"FontFace", iniIndex), m_fontinfo[n].szFace, m_fontinfo[n].szFace, sizeof(m_fontinfo[n].szFace), m_szConfigIniFile);
+  m_fontinfo[n].nSize = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontSize", iniIndex), m_fontinfo[n].nSize, m_szConfigIniFile);
+  m_fontinfo[n].bBold = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontBold", iniIndex), m_fontinfo[n].bBold, m_szConfigIniFile);
+  m_fontinfo[n].bItalic = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontItalic", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
+  m_fontinfo[n].bAntiAliased = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontAA", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
+  m_fontinfo[n].R = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorR", iniIndex), m_fontinfo[n].R, m_szConfigIniFile);
+  m_fontinfo[n].G = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorG", iniIndex), m_fontinfo[n].G, m_szConfigIniFile);
+  m_fontinfo[n].B = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorB", iniIndex), m_fontinfo[n].B, m_szConfigIniFile);
 }
 
 void CPluginShell::ReadConfig() {

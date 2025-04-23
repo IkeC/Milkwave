@@ -137,22 +137,25 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //     verdana
 //     webdings
 #define SIMPLE_FONT_DEFAULT_FACE L"Courier" //"MS Sans Serif"  - changed to Courier because menus + code FAR more legible!
-#define SIMPLE_FONT_DEFAULT_SIZE 12 //16
+#define SIMPLE_FONT_DEFAULT_SIZE 13
 #define SIMPLE_FONT_DEFAULT_BOLD 0
 #define SIMPLE_FONT_DEFAULT_ITAL 0
 #define SIMPLE_FONT_DEFAULT_AA   0
-#define DECORATIVE_FONT_DEFAULT_FACE L"Courier"
-#define DECORATIVE_FONT_DEFAULT_SIZE 19
-#define DECORATIVE_FONT_DEFAULT_BOLD 1
+
+#define DECORATIVE_FONT_DEFAULT_FACE L"Bahnschrift"
+#define DECORATIVE_FONT_DEFAULT_SIZE 25
+#define DECORATIVE_FONT_DEFAULT_BOLD 0
 #define DECORATIVE_FONT_DEFAULT_ITAL 0
-#define DECORATIVE_FONT_DEFAULT_AA   0
+#define DECORATIVE_FONT_DEFAULT_AA   1
+
 #define HELPSCREEN_FONT_DEFAULT_FACE L"Courier"
 #define HELPSCREEN_FONT_DEFAULT_SIZE 12  // NOTE: should fit on 640x480 screen!
 #define HELPSCREEN_FONT_DEFAULT_BOLD 0
 #define HELPSCREEN_FONT_DEFAULT_ITAL 0
 #define HELPSCREEN_FONT_DEFAULT_AA   0
-#define PLAYLIST_FONT_DEFAULT_FACE L"Arial"
-#define PLAYLIST_FONT_DEFAULT_SIZE 16
+
+#define PLAYLIST_FONT_DEFAULT_FACE L"Courier"
+#define PLAYLIST_FONT_DEFAULT_SIZE 13
 #define PLAYLIST_FONT_DEFAULT_BOLD 0
 #define PLAYLIST_FONT_DEFAULT_ITAL 0
 #define PLAYLIST_FONT_DEFAULT_AA   0
@@ -161,23 +164,29 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // by simply #defining them here, UP TO A MAX OF 5 EXTRA FONTS.
 // access the font by calling GetFont(EXTRA_1) for extra font #1,
 // GetExtraFont(EXTRA_2) for extra font #2, and so on.
-#define NUM_EXTRA_FONTS 2  // <- don't exceed 5 here!
+#define NUM_EXTRA_FONTS 3  // <- don't exceed 5 here!
 #define TOOLTIP_FONT EXTRA_1
 //#define EXTRA_FONT_1_NAME         "Tooltips"
 // defined in the stringtable resources now since 2.0e
 #define EXTRA_FONT_1_DEFAULT_FACE L"Bahnschrift"
-#define EXTRA_FONT_1_DEFAULT_SIZE 45
-#define EXTRA_FONT_1_DEFAULT_BOLD 1
+#define EXTRA_FONT_1_DEFAULT_SIZE 30
+#define EXTRA_FONT_1_DEFAULT_BOLD 0
 #define EXTRA_FONT_1_DEFAULT_ITAL 0
 #define EXTRA_FONT_1_DEFAULT_AA   1
 #define SONGTITLE_FONT EXTRA_2
 //#define EXTRA_FONT_2_NAME         "Animated Songtitles"
 // defined in the stringtable resources now since 2.0e
 #define EXTRA_FONT_2_DEFAULT_FACE L"Bahnschrift"
-#define EXTRA_FONT_2_DEFAULT_SIZE 35
-#define EXTRA_FONT_2_DEFAULT_BOLD 0
+#define EXTRA_FONT_2_DEFAULT_SIZE 40
+#define EXTRA_FONT_2_DEFAULT_BOLD 1
 #define EXTRA_FONT_2_DEFAULT_ITAL 0
 #define EXTRA_FONT_2_DEFAULT_AA   1
+
+#define EXTRA_FONT_3_DEFAULT_FACE L"Bahnschrift"
+#define EXTRA_FONT_3_DEFAULT_SIZE 25
+#define EXTRA_FONT_3_DEFAULT_BOLD 0
+#define EXTRA_FONT_3_DEFAULT_ITAL 0
+#define EXTRA_FONT_3_DEFAULT_AA   1
 
 #define WINDOWCAPTION   SHORTNAME   // the caption that will appear on the plugin window
 #define DLLDESC         LONGNAME    // the desc. of this DLL, as it appears in Winamp's list of viz plugins

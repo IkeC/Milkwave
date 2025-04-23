@@ -17,7 +17,7 @@ namespace MilkwaveRemote {
       StringBuilder returnValue = new StringBuilder(256);
       string iniFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
       if (File.Exists(iniFile)) {
-        int result = GetPrivateProfileString("Settings", "MilkwaveAudioDevice", string.Empty, returnValue, 256, iniFile);
+        int result = GetPrivateProfileString("Milkwave", "AudioDevice", string.Empty, returnValue, 256, iniFile);
       }
       return returnValue.ToString();
     }

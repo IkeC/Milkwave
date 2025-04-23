@@ -1045,7 +1045,7 @@ namespace MilkwaveRemote {
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
           // Close the Visualizer window unless Alt ot Ctrl key are pressed
-          if ((Control.ModifierKeys & Keys.Alt) != Keys.Alt || (Control.ModifierKeys & Keys.Control) != Keys.Control) {
+          if ((Control.ModifierKeys & Keys.Alt) != Keys.Alt && (Control.ModifierKeys & Keys.Control) != Keys.Control) {
             PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
           }
         }
