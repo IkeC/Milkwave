@@ -99,6 +99,11 @@ void Milkwave::PollMediaInfo() {
           currentArtist = properties.Artist().c_str();
           currentTitle = properties.Title().c_str();
           currentAlbum = properties.AlbumTitle().c_str();
+
+          if (doSaveCover && properties.Thumbnail()) {
+            SaveThumbnailToFile(properties);
+          }
+
           updated = true;
         }
       }
@@ -114,5 +119,60 @@ void Milkwave::PollMediaInfo() {
 
     // Reset the start time to the current time
     start_time = current_time;
+  }
+}
+
+void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties) {
+  try {
+    // Retrieve the thumbnail
+    auto thumbnailRef = properties.Thumbnail();
+    if (!thumbnailRef) {
+      std::wcerr << L"No thumbnail available for the current media." << std::endl;
+      return;
+    }
+
+    // Open the thumbnail stream
+    auto thumbnailStream = thumbnailRef.OpenReadAsync().get();
+    auto decoder = winrt::Windows::Graphics::Imaging::BitmapDecoder::CreateAsync(thumbnailStream).get();
+
+    // Get the executable's directory
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
+
+    // Construct the "resources/sprites/" directory path relative to the executable
+    std::filesystem::path spritesDir = exeDir / "resources/sprites";
+    std::filesystem::create_directories(spritesDir);
+
+    // Construct the file path
+    std::filesystem::path filePath = spritesDir / "cover.png";
+
+    // Encode the image as a PNG and save it to the file
+    auto fileStream = winrt::Windows::Storage::Streams::InMemoryRandomAccessStream();
+    auto encoder = winrt::Windows::Graphics::Imaging::BitmapEncoder::CreateAsync(
+      winrt::Windows::Graphics::Imaging::BitmapEncoder::PngEncoderId(), fileStream).get();
+
+    encoder.SetSoftwareBitmap(decoder.GetSoftwareBitmapAsync().get());
+    encoder.FlushAsync().get();
+
+    // Write the encoded image to the file
+    std::ofstream outputFile(filePath, std::ios::binary);
+    if (!outputFile.is_open()) {
+      std::wcerr << L"Failed to open file for writing: " << filePath << std::endl;
+      return;
+    }
+
+    // Use DataReader to read the stream content
+    auto size = fileStream.Size();
+    fileStream.Seek(0);
+    auto buffer = winrt::Windows::Storage::Streams::Buffer(static_cast<uint32_t>(size));
+    fileStream.ReadAsync(buffer, static_cast<uint32_t>(size), winrt::Windows::Storage::Streams::InputStreamOptions::None).get();
+
+    outputFile.write(reinterpret_cast<const char*>(buffer.data()), buffer.Length());
+    outputFile.close();
+
+    std::wcout << L"Thumbnail saved to: " << filePath.wstring() << std::endl;
+  } catch (const std::exception& e) {
+    LogException(L"SaveThumbnailToFile", e);
   }
 }

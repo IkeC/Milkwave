@@ -118,9 +118,9 @@ typedef struct {
   int     bOverrideColorR;
   int     bOverrideColorG;
   int     bOverrideColorB;
-  int	    ColorR;    // 0..255
-  int	    ColorG;    // 0..255
-  int	    ColorB;    // 0..255
+  int	    nColorR;    // 0..255
+  int	    nColorG;    // 0..255
+  int	    nColorB;    // 0..255
   int     nRandR;
   int     nRandG;
   int  	  nRandB;
@@ -341,6 +341,7 @@ public:
   bool m_SongInfoActive = true;
   bool m_ChangePresetWithSong = true;
   float m_SongInfoDisplaySeconds = 5.0f;
+  bool m_DisplayCover = true;
 
   //bool		m_bAlways3D;
   //float       m_fStereoSep;

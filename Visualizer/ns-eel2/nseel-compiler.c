@@ -1725,12 +1725,16 @@ void NSEEL_VM_resetvars(NSEEL_VMCTX _ctx)
       if (ctx->varTable_Values) free(ctx->varTable_Values[x]);
     }
 
-    free(ctx->varTable_Values);
-    free(ctx->varTable_Names);
-    ctx->varTable_Values=0;
-    ctx->varTable_Names=0;
+    if (ctx->varTable_Values) {
+      free(ctx->varTable_Values);
+    }
+    if (ctx->varTable_Names) {
+      free(ctx->varTable_Names);
+    }
+    ctx->varTable_Values = 0;
+    ctx->varTable_Names = 0;
 
-    ctx->varTable_numBlocks=0;
+    ctx->varTable_numBlocks = 0;
   }
 }
 

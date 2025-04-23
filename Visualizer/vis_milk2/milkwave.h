@@ -14,6 +14,10 @@
 #include <winrt/Windows.Media.Control.h>
 #include <winrt/Windows.Foundation.h>
 
+#include <winrt/Windows.Storage.Streams.h>
+#include <winrt/Windows.Graphics.Imaging.h>
+#include <filesystem>
+
 using namespace winrt;
 using namespace Windows::Media::Control;
 using namespace std::chrono_literals;
@@ -27,15 +31,18 @@ public:
   std::wstring currentArtist;
   std::wstring currentTitle;
   std::wstring currentAlbum;
-  
+
+  std::chrono::steady_clock::time_point start_time;
+
   bool updated = false;
   bool doPoll = false;
   bool doPollExplicit = false;
   bool isSongChange = false;
-  std::chrono::steady_clock::time_point start_time;
+  bool doSaveCover = true;
 
   Milkwave();
   void Init();
   void LogException(const wchar_t* context, const std::exception& e);
   void PollMediaInfo();
+  void SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
 };

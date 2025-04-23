@@ -564,6 +564,9 @@ void RenderFrame() {
     if (g_plugin.m_ChangePresetWithSong && !milkwave.doPollExplicit && milkwave.isSongChange) {
       g_plugin.NextPreset(g_plugin.m_fBlendTimeAuto);
     }
+    if (g_plugin.m_DisplayCover) {
+      g_plugin.LaunchSprite(0, -1);
+    }
     milkwave.doPollExplicit = false;
     wchar_t buf[512];
 
@@ -1065,8 +1068,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     else
       return false;
   } catch (const std::exception& e) {
-    Milkwave mv;
-    mv.LogException(L"WinMain", e);
+    milkwave.LogException(L"WinMain", e);
   }
 }
 #endif
