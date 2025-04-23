@@ -135,7 +135,7 @@
 //#include <core/sdk/IPlaybackRemote.h>
 
 #include "..\audio\common.h"
-#include "milkwave.cpp"
+#include "milkwave.h"
 
 #define DLL_EXPORT __declspec(dllexport)
 //#define COMPILE_AS_DLL
@@ -144,6 +144,7 @@
 #define DEFAULT_HEIGHT 720;
 
 CPlugin g_plugin;
+Milkwave milkwave;
 HINSTANCE api_orig_hinstance = nullptr;
 _locale_t g_use_C_locale;
 char keyMappings[8];
@@ -483,6 +484,9 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     if (!fullscreen && !stretch)
       ToggleBorderlessWindow(hWnd);
   }
+  else if (wParam == VK_B) {
+    milkwave.updated = true;
+  }
   break;
 
   case WM_NCHITTEST: //used for borderless window
@@ -573,9 +577,24 @@ void RenderFrame() {
     memset(pcmRightIn, 0, SAMPLE_SIZE);
   }
 
+  milkwave.PollMediaInfo();
+  if (milkwave.updated) {
+    
+    wchar_t buf[512];
+
+    wcscpy(buf, milkwave.currentArtist.c_str());
+    g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_2, false);
+
+    wcscpy(buf, milkwave.currentTitle.c_str());
+    g_plugin.AddError(buf, 5.0f, ERR_MSG_BOTTOM_EXTRA_1, false);
+
+    milkwave.updated = false;
+  }
+
   g_plugin.PluginRender(
     (unsigned char*)pcmLeftOut,
     (unsigned char*)pcmRightOut);
+
 }
 
 // SPOUT
@@ -704,6 +723,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   ShowWindow(hwnd, SW_SHOW);
 
+  milkwave.Init();
   unsigned int frame = 0;
 
   // SPOUT - defaults if no GUI
@@ -747,22 +767,22 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
     while (WM_QUIT != msg.message) {
       try {
-          if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-          }
-          else if (!pauseRender) {
-            GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
-            RenderFrame();
-          }
-        } catch ( ... ) {
+        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
+          TranslateMessage(&msg);
+          DispatchMessage(&msg);
+        }
+        else if (!pauseRender) {
+          GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
+          RenderFrame();
+        }
+      } catch (...) {
         // ignore
       }
       frame++;
       ////////////////////////////////////////////////////////////////////////////////////////////////
     }
   } catch (const std::exception& e) {
-    LogException(L"Exception in main loop", e);
+    // milkwave.LogException(L"Exception in main loop", e);
   }
 
   g_plugin.MyWriteConfig();
@@ -1033,7 +1053,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     else
       return false;
   } catch (const std::exception& e) {
-    LogException(L"WinMain", e);
+    Milkwave mv;
+    mv.LogException(L"WinMain", e);
   }
 }
 #endif

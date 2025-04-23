@@ -1,15 +1,15 @@
 #include "milkwave.h"
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <ctime>
-#include <windows.h>
-#include <direct.h>
-#include <string>
-#include <dbghelp.h>
 
-static void LogException(const wchar_t* context, const std::exception& e) {
+Milkwave::Milkwave() {
+}
+
+void Milkwave::Init() {
+  winrt::init_apartment(); // Initialize the WinRT runtime
+  start_time = std::chrono::steady_clock::now();
+}
+
+void Milkwave::LogException(const wchar_t* context, const std::exception& e) {
   std::string exceptionMessage = e.what();
 
   // Ensure the "log" directory exists  
@@ -35,7 +35,7 @@ static void LogException(const wchar_t* context, const std::exception& e) {
   std::ofstream logFile(logFilePath.str());
   if (logFile.is_open()) {
     logFile << "Exception occurred: " << context << "\n" << exceptionMessage << std::endl;
-    
+
     // Capture and log the stack trace
     logFile << "\nStack trace:\n";
     HANDLE process = GetCurrentProcess();
@@ -73,4 +73,42 @@ static void LogException(const wchar_t* context, const std::exception& e) {
   message += L"\n\nDetails have been written to the log directory.\n\nDouble-click 'Window' in the Remote to restart Visualizer.";
 
   MessageBoxW(NULL, message.c_str(), L"Milkwave Error", MB_OK | MB_ICONERROR);
+}
+
+void Milkwave::PollMediaInfo() {
+  // Get the current time
+  auto current_time = std::chrono::steady_clock::now();
+
+  // Calculate the elapsed time in seconds
+  auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
+
+  // Check if 2 seconds have passed
+  if (elapsed_seconds >= 2) {
+
+    auto smtcManager = winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+    auto currentSession = smtcManager.GetCurrentSession();
+    updated = false;
+    if (currentSession) {
+      auto properties = currentSession.TryGetMediaPropertiesAsync().get();
+      if (properties) {
+        if (properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum) {
+          currentArtist = properties.Artist().c_str();
+          currentTitle = properties.Title().c_str();
+          currentAlbum = properties.AlbumTitle().c_str();
+          updated = true;
+        }
+      }
+    }
+    else {
+      if (currentArtist.length() || currentTitle.length() || currentAlbum.length()) {
+        currentArtist = L"";
+        currentTitle = L"";
+        currentAlbum = L"";
+        updated = true;
+      }
+    }
+
+    // Reset the start time to the current time
+    start_time = current_time;
+  }
 }

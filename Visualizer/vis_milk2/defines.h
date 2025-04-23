@@ -165,18 +165,18 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define TOOLTIP_FONT EXTRA_1
 //#define EXTRA_FONT_1_NAME         "Tooltips"
 // defined in the stringtable resources now since 2.0e
-#define EXTRA_FONT_1_DEFAULT_FACE L"Arial"
-#define EXTRA_FONT_1_DEFAULT_SIZE 14
-#define EXTRA_FONT_1_DEFAULT_BOLD 0
+#define EXTRA_FONT_1_DEFAULT_FACE L"Bahnschrift"
+#define EXTRA_FONT_1_DEFAULT_SIZE 45
+#define EXTRA_FONT_1_DEFAULT_BOLD 1
 #define EXTRA_FONT_1_DEFAULT_ITAL 0
-#define EXTRA_FONT_1_DEFAULT_AA   0
+#define EXTRA_FONT_1_DEFAULT_AA   1
 #define SONGTITLE_FONT EXTRA_2
 //#define EXTRA_FONT_2_NAME         "Animated Songtitles"
 // defined in the stringtable resources now since 2.0e
-#define EXTRA_FONT_2_DEFAULT_FACE L"Times New Roman"
-#define EXTRA_FONT_2_DEFAULT_SIZE 18
+#define EXTRA_FONT_2_DEFAULT_FACE L"Bahnschrift"
+#define EXTRA_FONT_2_DEFAULT_SIZE 35
 #define EXTRA_FONT_2_DEFAULT_BOLD 0
-#define EXTRA_FONT_2_DEFAULT_ITAL 1
+#define EXTRA_FONT_2_DEFAULT_ITAL 0
 #define EXTRA_FONT_2_DEFAULT_AA   1
 
 #define WINDOWCAPTION   SHORTNAME   // the caption that will appear on the plugin window

@@ -474,6 +474,10 @@ public:
 #define ERR_NOTIFY 4  // a simple notification - not an error at all. ("shuffle is now ON." etc.)
   // NOTE: each NOTIFY msg clears all the old NOTIFY messages!
 #define ERR_SCANNING_PRESETS 5
+#define ERR_MSG_BOTTOM_EXTRA_1 6
+#define ERR_MSG_BOTTOM_EXTRA_2 7
+
+
   ErrorMsgList m_errors;
   void        AddError(wchar_t* szMsg, float fDuration, int category = ERR_ALL, bool bBold = true);
   void        ClearErrors(int category = ERR_ALL);  // 0=all categories

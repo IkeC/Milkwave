@@ -651,6 +651,7 @@ bool AutoLockedPreset = false;
 #include <mmdeviceapi.h>
 #include <propsys.h>
 #include <functiondiscoverykeys_devpkey.h>
+#include "../audio/log.h"
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "propsys.lib")
 //
@@ -4218,6 +4219,21 @@ void CPlugin::DrawTooltip(wchar_t* str, int xR, int yB) {
     else if (corner == MTO_LOWER_RIGHT) *lower_right_corner_y -= h; \
 }
 
+#define MyTextOut_Color(str, corner, color) { \
+    SetRect(&r, 0, 0, xR-xL, 2048); \
+	m_text.DrawTextW(pFont, str, -1, &r, DT_NOPREFIX | ((corner == MTO_UPPER_RIGHT)?0:DT_SINGLELINE) | DT_WORD_ELLIPSIS | DT_CALCRECT | ((corner == MTO_UPPER_RIGHT) ? DT_RIGHT : 0), color, false, 0xFF000000); \
+    int w = r.right - r.left; \
+    if      (corner == MTO_UPPER_LEFT ) SetRect(&r, xL, *upper_left_corner_y, xL+w, *upper_left_corner_y + h); \
+    else if (corner == MTO_UPPER_RIGHT) SetRect(&r, xR-w, *upper_right_corner_y, xR, *upper_right_corner_y + h); \
+    else if (corner == MTO_LOWER_LEFT ) SetRect(&r, xL, *lower_left_corner_y - h, xL+w, *lower_left_corner_y); \
+    else if (corner == MTO_LOWER_RIGHT) SetRect(&r, xR-w, *lower_right_corner_y - h, xR, *lower_right_corner_y); \
+	m_text.DrawTextW(pFont, str, -1, &r, DT_NOPREFIX | ((corner == MTO_UPPER_RIGHT)?0:DT_SINGLELINE) | DT_WORD_ELLIPSIS | ((corner == MTO_UPPER_RIGHT) ? DT_RIGHT: 0), color, false, 0xFF000000); \
+    if      (corner == MTO_UPPER_LEFT ) *upper_left_corner_y  += h; \
+    else if (corner == MTO_UPPER_RIGHT) *upper_right_corner_y += h; \
+    else if (corner == MTO_LOWER_LEFT ) *lower_left_corner_y  -= h; \
+    else if (corner == MTO_LOWER_RIGHT) *lower_right_corner_y -= h; \
+}
+
 #define MyTextOut(str, corner, bDarkBox) MyTextOut_BGCOLOR(str, corner, bDarkBox, 0xFF000000)
 
 #define MyTextOut_Shadow(str, corner) { \
@@ -4235,6 +4251,27 @@ void CPlugin::DrawTooltip(wchar_t* str, int xR, int yB) {
     /* now draw real text */            \
     r.top -= 1; r.left -= 1;       \
 	m_text.DrawTextW(pFont, (wchar_t*)str, -1, &r, DT_NOPREFIX | DT_SINGLELINE | DT_WORD_ELLIPSIS, 0xFFFFFFFF, false, 0xFF000000); \
+    if      (corner == MTO_UPPER_LEFT ) *upper_left_corner_y  += h; \
+    else if (corner == MTO_UPPER_RIGHT) *upper_right_corner_y += h; \
+    else if (corner == MTO_LOWER_LEFT ) *lower_left_corner_y  -= h; \
+    else if (corner == MTO_LOWER_RIGHT) *lower_right_corner_y -= h; \
+}
+
+#define MyTextOut_Shadow_Color(str, corner, color) { \
+    /* calc rect size */        \
+    SetRect(&r, 0, 0, xR-xL, 2048); \
+	m_text.DrawTextW(pFont, (wchar_t*)str, -1, &r, DT_NOPREFIX | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_CALCRECT, color, false, 0xFF000000); \
+    int w = r.right - r.left; \
+    /* first the shadow */         \
+    if      (corner == MTO_UPPER_LEFT ) SetRect(&r, xL, *upper_left_corner_y, xL+w, *upper_left_corner_y + h); \
+    else if (corner == MTO_UPPER_RIGHT) SetRect(&r, xR-w, *upper_right_corner_y, xR, *upper_right_corner_y + h); \
+    else if (corner == MTO_LOWER_LEFT ) SetRect(&r, xL, *lower_left_corner_y - h, xL+w, *lower_left_corner_y); \
+    else if (corner == MTO_LOWER_RIGHT) SetRect(&r, xR-w, *lower_right_corner_y - h, xR, *lower_right_corner_y); \
+    r.top += 1; r.left += 1;      \
+    m_text.DrawTextW(pFont, (wchar_t*)str, -1, &r, DT_NOPREFIX | DT_SINGLELINE | DT_WORD_ELLIPSIS, 0xFF000000, false, 0xFF000000); \
+    /* now draw real text */            \
+    r.top -= 1; r.left -= 1;       \
+	m_text.DrawTextW(pFont, (wchar_t*)str, -1, &r, DT_NOPREFIX | DT_SINGLELINE | DT_WORD_ELLIPSIS, color, false, 0xFF000000); \
     if      (corner == MTO_UPPER_LEFT ) *upper_left_corner_y  += h; \
     else if (corner == MTO_UPPER_RIGHT) *upper_right_corner_y += h; \
     else if (corner == MTO_LOWER_LEFT ) *lower_left_corner_y  -= h; \
@@ -5210,16 +5247,46 @@ void CPlugin::MyRenderUI(
       int N = m_errors.size();
       for (int i = 0; i < N; i++) {
         if (t >= m_errors[i].birthTime && t < m_errors[i].expireTime) {
-
-          int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
-          if (res != 1) {
+          if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_1 || m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_2) {
+            if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_1) {
+              SelectFont(EXTRA_1);
+            } else if (m_errors[i].category == ERR_MSG_BOTTOM_EXTRA_2) {
+              SelectFont(EXTRA_2);
+            }
             swprintf(buf, L"%s ", m_errors[i].msg.c_str());
+
+            // 0..1
             float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);
-            DWORD cr = (DWORD)(200 - 199 * powf(age_rel, 4));
-            DWORD cg = 0;//(DWORD)(136 - 135*powf(age_rel,1));
-            DWORD cb = 0;
-            DWORD z = 0xFF000000 | (cr << 16) | (cg << 8) | cb;
-            MyTextOut_BGCOLOR(buf, MTO_UPPER_RIGHT, true, m_errors[i].bBold ? z : 0xFF000000);
+            
+            // Replace the problematic line with the following:
+            // std::wstring logMessage = L"rel=" + std::to_wstring(age_rel) + L"\n";
+            // LOG(logMessage.c_str());
+
+            DWORD cr = 255;
+            DWORD cg = 255;
+            DWORD cb = 255;
+            DWORD alpha = 0;
+            if (age_rel >= 0.0f && age_rel < 0.05f) {  
+                alpha = (DWORD)(255 * (age_rel / 0.05f));  
+            } else if (age_rel > 0.8f && age_rel <= 1.0f) {  
+                alpha = (DWORD)(255 * ((1.0f - age_rel) / 0.2f));  
+            } else if (age_rel >= 0.05f && age_rel <= 0.8f) {  
+                alpha = 255;  
+            }
+            DWORD z = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
+            MyTextOut_Color(buf, MTO_LOWER_LEFT, z);
+          }
+          else {
+            int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
+            if (res != 1) {
+              swprintf(buf, L"%s ", m_errors[i].msg.c_str());
+              float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);
+              DWORD cr = (DWORD)(200 - 199 * powf(age_rel, 4));
+              DWORD cg = 0;//(DWORD)(136 - 135*powf(age_rel,1));
+              DWORD cb = 0;
+              DWORD z = 0xFF000000 | (cr << 16) | (cg << 8) | cb;
+              MyTextOut_BGCOLOR(buf, MTO_UPPER_RIGHT, true, m_errors[i].bBold ? z : 0xFF000000);
+            }
           }
         }
         else {
@@ -5231,6 +5298,7 @@ void CPlugin::MyRenderUI(
     }
   }
 }
+
 void ToggleAlwaysOnTop(HWND hwnd) {
 
   RECT rect;
@@ -6408,6 +6476,9 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         Sleep(200);
         */ //Any media players force stops the track without fading (Ex: AIMP) - so I think I don't need this.
       }
+      break;
+    case 'B':
+      // milkwave.updated = false;
       break;
     case 'V':
       if (m_UI_mode == UI_REGULAR) {
