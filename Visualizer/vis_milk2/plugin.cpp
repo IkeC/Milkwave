@@ -1380,6 +1380,11 @@ void CPlugin::MyReadConfig() {
   GetPrivateProfileStringW(L"Settings", L"szPresetStartup", m_szPresetStartup, m_szPresetStartup, sizeof(m_szPresetStartup), pIni);
   GetPrivateProfileStringW(L"Settings", L"MilkwaveAudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);
 
+  m_WindowX = GetPrivateProfileIntW(L"Settings", L"WindowX", m_WindowX, pIni);
+  m_WindowY = GetPrivateProfileIntW(L"Settings", L"WindowY", m_WindowY, pIni);
+  m_WindowWidth = GetPrivateProfileIntW(L"Settings", L"WindowWidth", m_WindowWidth, pIni);
+  m_WindowHeight = GetPrivateProfileIntW(L"Settings", L"WindowHeight", m_WindowHeight, pIni);
+
   ReadCustomMessages();
 
   // bounds-checking:
@@ -1484,10 +1489,26 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileFloatW(m_fTimeBetweenRandomCustomMsgs, L"fTimeBetweenRandomCustomMsgs", pIni, L"Settings");
 
   WritePrivateProfileIntW(m_adapterId, L"nVideoAdapterIndex", pIni, L"Settings");
+  WritePrivateProfileIntW(m_bPresetLockedByUser, L"bPresetLockOnAtStartup", GetConfigIniFile(), L"Settings");
 
   // Milkwave
   WritePrivateProfileStringW(L"Settings", L"szPresetStartup", m_szCurrentPresetFile, pIni);
   WritePrivateProfileStringW(L"Settings", L"MilkwaveAudioDevice", m_szAudioDevice, pIni);
+  
+  WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Settings");
+  WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Settings");
+  WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Settings");
+  WritePrivateProfileIntW(m_WindowHeight, L"WindowHeight", pIni, L"Settings");
+}
+
+void CPlugin::SaveWindowSizeAndPosition(HWND hwnd) {
+  RECT rect;
+  if (GetWindowRect(hwnd, &rect)) {
+    m_WindowX = rect.left;
+    m_WindowY = rect.top;
+    m_WindowWidth = rect.right - rect.left;
+    m_WindowHeight = rect.bottom - rect.top;
+  }
 }
 
 //----------------------------------------------------------------------
@@ -3884,12 +3905,6 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   }
 
   ClearErrors();
-
-  // This setting is closely tied to the modern skin "random" button.
-  // The "random" state should be preserved from session to session.
-  // It's pretty safe to do, because the Scroll Lock key is hard to
-  //   accidentally click... :)
-  WritePrivateProfileIntW(m_bPresetLockedByUser, L"bPresetLockOnAtStartup", GetConfigIniFile(), L"Settings");
 }
 
 //----------------------------------------------------------------------

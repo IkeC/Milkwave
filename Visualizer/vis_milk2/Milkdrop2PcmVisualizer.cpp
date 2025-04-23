@@ -428,6 +428,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_CLOSE:
   {
+    g_plugin.SaveWindowSizeAndPosition(hWnd);
     DestroyWindow(hWnd);
     UnregisterClassW(L"Direct3DWindowClass", NULL);
     return 0;
@@ -697,12 +698,10 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     // ===========================
     WS_OVERLAPPEDWINDOW, // SPOUT
     //dwStyle,
-    WindowPosLeft, // SPOUT
-    WindowPosTop,
-    // CW_USEDEFAULT,
-    // CW_USEDEFAULT,
-    (rc.right - rc.left),
-    (rc.bottom - rc.top),
+    g_plugin.m_WindowX,
+    g_plugin.m_WindowY,
+    g_plugin.m_WindowWidth,
+    g_plugin.m_WindowHeight,
     0,
     NULL,
     instance,
@@ -728,8 +727,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   // SPOUT - defaults if no GUI
     // Change the values here to set the fixed sender size
-  unsigned int SpoutWidth = 720;
-  unsigned int SpoutHeight = 720;
+  unsigned int SpoutWidth = g_plugin.m_WindowWidth;
+  unsigned int SpoutHeight = g_plugin.m_WindowHeight;
 
   // Set to windowWidth/windowHeight for a variable sender size
   // See milkDropfs.cpp RenderFrame - change to SendDX9surface(back_buffer, true); 

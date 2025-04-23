@@ -332,6 +332,11 @@ public:
   int         m_nTrebStart = 4000;
   int         m_nTrebEnd = 20000;
 
+  int m_WindowX = 850;
+  int m_WindowY = 50;
+  int m_WindowWidth = 640;
+  int m_WindowHeight = 360;
+
   //bool		m_bAlways3D;
   //float       m_fStereoSep;
   //bool		m_bAlwaysOnTop;
@@ -650,6 +655,7 @@ public:
   virtual void MyPreInitialize();
   virtual void MyReadConfig();
   virtual void MyWriteConfig();
+  void SaveWindowSizeAndPosition(HWND hwnd);
   virtual int  AllocateMyNonDx9Stuff();
   virtual void  CleanUpMyNonDx9Stuff();
   virtual int  AllocateMyDX9Stuff();

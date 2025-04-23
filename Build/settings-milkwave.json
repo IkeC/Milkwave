@@ -19,16 +19,6 @@
     "Width": 788,
     "Height": 740
   },
-  "VisualizerWindowLocation": {
-    "IsEmpty": false,
-    "X": 850,
-    "Y": 50
-  },
-  "VisualizerWindowSize": {
-    "IsEmpty": false,
-    "Width": 640,
-    "Height": 360
-  },
   "SplitterDistance1": 226,
   "SplitterDistance2": 152,
   "DarkMode": true,

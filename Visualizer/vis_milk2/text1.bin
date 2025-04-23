@@ -1,62 +1,48 @@
- GENERAL:
+ESC                  exit BeatDrop / menus
+ALT + ENTER          toggle fullscreen (or double-click)
+ALT + S              toggle multiple monitor stretch
+CTRL + T             instantly reset time variable
+SHIFT + UP           increase window opacity
+SHIFT + DOWN         decrease window opacity
 
-   ESC                  exit BeatDrop / menus
-   ALT + ENTER          toggle fullscreen (or double-click)
-   ALT + S              toggle multiple monitor stretch
-   CTRL + Z / F10       enable/disable spout output
-   CTRL + T             instantly reset time variable
-   SHIFT + UP           increase window opacity
-   SHIFT + DOWN         decrease window opacity
+SPACE / H            soft / hard cut to next preset
+BACKSPACE            go back to previous preset
+` / ~                [un]lock current preset
+R                    toggle random/sequential preset order 
+L                    load specific preset
+M                    show/hide preset-editing menu
+N                    show per-frame monitor
+S                    save new preset
+A                    do random mini-mash-up
+D                    toggle warp & comp shader locks
+!                    randomize warp shader
+@                    randomize comp shader
 
- PRESETS:
+F1                   show/hide help
+F2                   toggle borderless window (unless on fullscreen or stretch mode)
+F3                   toggle fps to 30/60/90/120/144/240/360/Unlimited
+F4                   show/hide preset info
+F5                   show/hide fps
+F6                   show/hide rating
+F7                   always on top
+F10 / CTRL + Z       enable/disable spout output
+F11                  hardcut mode: normal/based of music
+F12                  transparency mode (removes the black background)
 
-   SPACE / H            soft / hard cut to next preset
-   BACKSPACE            go back to previous preset
-   ` / ~                [un]lock current preset
-   R                    toggle random/sequential preset order 
-   L                    load specific preset
-   M                    show/hide preset-editing menu
-   S                    save new preset
-   A                    do random mini-mash-up
-   D                    toggle warp & comp shader locks
-   !                    randomize warp shader
-   @                    randomize comp shader
+Z                    previous track
+X                    play/pause track
+C                    stop track
+V                    next track
+LEFT ARROW           rewind track (seek -5 seconds)
+RIGHT ARROW          fast forward track (seek +5 seconds)
+B                    show track info
 
- INFO:
-
-   F1                   show/hide help
-   F4                   show/hide preset info
-   F5                   show/hide fps
-   F6                   show/hide rating
-   
- HOTKEYS:
-
-   F2                   toggle borderless window (unless on fullscreen or stretch mode)
-   F3                   toggle fps to 30/60/90/120/144/240/360/Unlimited
-   F7                   always on top
-   F11                  hardcut mode: normal/based of music
-   F12                  transparency mode (removes the black background)
-   N                    show per-frame monitor
-
- PLAYBACK:
-
-   Z                    previous track
-   X                    play/pause track
-   C                    stop track
-   V                    next track
-   LEFT ARROW           rewind track (seek -5 seconds)
-   RIGHT ARROW          fast forward track (seek +5 seconds)
-
- CUSTOM SPRITES/MESSAGES:
-
-   K                    toggle sprite/message mode
-   SHIFT + K            enter sprite kill mode
-   00-99                invoke sprites/messages (clears some sprites while you introduced some digits - sprite kill mode)
-   *                    clears the number of digits that you introduced
-   DEL                  clear latest sprite from the slot/message
-   SHIFT + DEL          clear oldest sprite from the slot/message
-   SHIFT + CTRL + DEL   clear all the sprites/messages
-   CTRL + K             kills all the sprites
-   CTRL + T             kills custom messages/song titles
-
---- see on docs/milkdrop.html for more information. --- 
+K                    toggle sprite/message mode
+SHIFT + K            enter sprite kill mode
+00-99                invoke sprites/messages (clears some sprites while you introduced some digits - sprite kill mode)
+*                    clears the number of digits that you introduced
+DEL                  clear latest sprite from the slot/message
+SHIFT + DEL          clear oldest sprite from the slot/message
+SHIFT + CTRL + DEL   clear all the sprites/messages
+CTRL + K             kills all the sprites
+CTRL + T             kills custom messages/song titles

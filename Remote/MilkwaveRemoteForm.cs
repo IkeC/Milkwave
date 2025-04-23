@@ -233,9 +233,7 @@ namespace MilkwaveRemote {
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
       SetPanelsVisibility();
 
-      if (StartVisualizerIfNotFound() != IntPtr.Zero) {
-        SetVisualizerWindowSizeAndPosition(true);
-      }
+      StartVisualizerIfNotFound();
 
       ofd = new OpenFileDialog();
       ofd.Filter = "MilkDrop Presets|*.milk;*.milk2|All files (*.*)|*.*";
@@ -325,26 +323,6 @@ namespace MilkwaveRemote {
       }
 
       base.WndProc(ref m);
-    }
-
-    private void SetVisualizerWindowSizeAndPosition(bool setDefault) {
-
-      Point VisualizerLocation = Settings.VisualizerWindowLocation;
-      Size VisualizerSize = Settings.VisualizerWindowSize;
-      if (setDefault || VisualizerLocation.X < -10000 || VisualizerLocation.Y < -10000) {
-        VisualizerLocation = Settings.VisualizerDefaultWindowLocation;
-        VisualizerSize = Settings.VisualizerDefaultWindowSize;
-      }
-
-      if (VisualizerSize.Height > 0 && VisualizerSize.Width > 0) {
-        IntPtr foundWindow = FindVisualizerWindow();
-        if (foundWindow == IntPtr.Zero) {
-          foundWindow = StartVisualizerIfNotFound();
-        }
-        if (foundWindow != IntPtr.Zero) {
-          SetWindowPos(foundWindow, HWND_TOPMOST, VisualizerLocation.X, VisualizerLocation.Y, VisualizerSize.Width, VisualizerSize.Height, SWP_NOACTIVATE);
-        }
-      }
     }
 
     private nint FindVisualizerWindow() {
@@ -1066,15 +1044,6 @@ namespace MilkwaveRemote {
 
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
-          RECT savedWindowRect;
-          GetWindowRect(foundWindow, out savedWindowRect);
-
-          Point visWindow = new Point(savedWindowRect.Left, savedWindowRect.Top);
-          if (visWindow.X > -32000 && visWindow.Y > -32000) {
-            Settings.VisualizerWindowLocation = visWindow;
-          }
-          Settings.VisualizerWindowSize = new Size(savedWindowRect.Right - savedWindowRect.Left, savedWindowRect.Bottom - savedWindowRect.Top);
-
           // Close the Visualizer window unless Alt key is pressed
           if ((Control.ModifierKeys & Keys.Alt) != Keys.Alt) {
             PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
@@ -1312,7 +1281,7 @@ namespace MilkwaveRemote {
     }
 
     private void lblWindow_DoubleClick(object sender, EventArgs e) {
-      SetVisualizerWindowSizeAndPosition(true);
+      StartVisualizerIfNotFound();
     }
 
     private void PaintContainerBorder(PaintEventArgs e) {
