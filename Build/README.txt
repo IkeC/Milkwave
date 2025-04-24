@@ -1,10 +1,10 @@
-Milkwave - Remote controlled MilkDrop2 Visualizer
+Milkwave - Advanced MilkDrop2 Visualizer with Remote Control
 
 MilkwaveRemote.exe: 
-The main program. When you start this, MilkwaveVisualizer.exe will be started automatically.
+The program to remotely control the Visualizer. When you start this, MilkwaveVisualizer.exe will be started automatically. If you hold Ctrl or Alt while closing this window, the Visualizer will not be closed.
 
 MilkwaveVisualizer.exe: 
-The visualizer window. You may run and use this independent without the Remote.
+The Visualizer. You may run and use this independently without the Remote. You can press F8 anytime to start the Remote.
 
 settings.ini:
 Settings for the Visualizer. Feel free to edit.
@@ -13,10 +13,10 @@ settings-remote.json:
 Settings for the Remote. Feel free to edit.
 
 sprites.ini:
-Sprites definition file for the visualizer. To display your own images, you must add a definition in this file and put the image in resources\sprites. You can trigger them by typing 00..99 in the visualizer window when Sprite Mode is selected, or using the number buttons on the Remote.
+Sprites definition file for the Visualizer. To display your own images, you must add a definition in this file and put the image in resources\sprites. You can trigger them by typing 00..99 in the Visualizer window when Sprite Mode is selected, or using the number buttons on the Remote.
 
 messages.ini:
-Messages definition file for the visualizer. This is the standard MilkDrop way to display pre-defined messages. You can trigger them by typing 00..99 in the visualizer window when Message Mode is selected. Using the Remote messaging features is more flexible and works in either mode, but this still works great eg. for assigning certain messages to fixed buttons.
+Messages definition file for the Visualizer. This is the standard MilkDrop way to display pre-defined messages. You can trigger them by typing 00..99 in the Visualizer window when Message Mode is selected. Using the Remote messaging features is more flexible and works in either mode, but this still works great eg. for assigning certain messages to fixed buttons.
 
 For further information please visit the Milkwave page on GitHub: https://github.com/IkeC/Milkwave or click the "Help" link at the bottom of the Remote window.
 

@@ -1386,6 +1386,7 @@ void CPlugin::MyReadConfig() {
   m_ChangePresetWithSong = GetPrivateProfileBoolW(L"Milkwave", L"ChangePresetWithSong", m_ChangePresetWithSong, pIni);
   m_SongInfoDisplaySeconds = GetPrivateProfileFloatW(L"Milkwave", L"SongInfoDisplaySeconds", m_SongInfoDisplaySeconds, pIni);
   m_DisplayCover = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCover", m_DisplayCover, pIni);
+  m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
 
   m_WindowX = GetPrivateProfileIntW(L"Milkwave", L"WindowX", m_WindowX, pIni);
   m_WindowY = GetPrivateProfileIntW(L"Milkwave", L"WindowY", m_WindowY, pIni);
@@ -4384,20 +4385,9 @@ void CPlugin::MyRenderUI(
       swprintf(
         buf,
         L"%s %s ",
-        (m_bPresetLockedByUser || m_bPresetLockedByCode) ? L"\xD83D\xDD12" : L"",
+        (m_bPresetLockedByUser || m_bPresetLockedByCode) && m_ShowLockSymbol ? L"\xD83D\xDD12" : L"",
         (m_nLoadingPreset != 0) ? m_pNewState->m_szDesc : m_pState->m_szDesc);
       MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
-      /*
-      SelectFont(SIMPLE_FONT);
-      swprintf(
-          buf,
-          L"%s Preset used: %s ",
-          (m_bPresetLockedByUser || m_bPresetLockedByCode) ? L"" : L"",
-          (m_nLoadingPreset != 0) ? m_pState->m_szDesc : m_pOldState->m_szDesc);
-      MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
-      swprintf(buf, L" %s: %0.0f ", L"Total presets loaded", (float)(NumTotalPresetsLoaded));
-      MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
-      */
     }
 
     // b) preset rating
@@ -7174,12 +7164,12 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     m_bPresetLockedByUser = !m_bPresetLockedByUser;
     if (m_bPresetLockedByUser) {
       wchar_t buf[1024], tmp[64];
-      swprintf(buf, L"Preset locked.", tmp, 64);
+      swprintf(buf, L"Preset locked", tmp, 64);
       AddError(buf, 3.0f, ERR_NOTIFY, false);
     }
     else {
       wchar_t buf[1024], tmp[64];
-      swprintf(buf, L"Preset unlocked.", tmp, 64);
+      swprintf(buf, L"Preset unlocked", tmp, 64);
       AddError(buf, 3.0f, ERR_NOTIFY, false);
     }
     return 0;

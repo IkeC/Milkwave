@@ -401,6 +401,7 @@ public:
   bool        m_bTexSizeWasAutoExact;
   bool		m_bPresetLockedByUser;
   bool		m_bPresetLockedByCode;
+  bool		m_ShowLockSymbol = true;
   float		m_fAnimTime;
   float		m_fStartTime;
   float		m_fPresetStartTime;

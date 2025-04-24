@@ -1,14 +1,11 @@
 # v1.5
 
-- save sequential order setting
-- better opacity control
+- song info + cover
 - file position synchronization
-- song info
-- cover
+- better opacity control
 
 # Backlog
 
-- shortcut cover, change w/ song
 - time between presets
 - preset creator
 - projectM
