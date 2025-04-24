@@ -333,6 +333,7 @@ public:
   int     m_nTrebStart = 4000;
   int     m_nTrebEnd = 20000;
 
+  bool m_WindowBorderless = false;
   int m_WindowX = 850;
   int m_WindowY = 50;
   int m_WindowWidth = 640;

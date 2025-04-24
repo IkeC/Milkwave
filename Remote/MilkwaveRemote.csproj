@@ -7,8 +7,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>MilkwaveRemote.ico</ApplicationIcon>
-    <AssemblyVersion>1.4</AssemblyVersion>
-    <FileVersion>1.4</FileVersion>
+    <AssemblyVersion>1.5</AssemblyVersion>
+    <FileVersion>1.5</FileVersion>
     <Authors>IkeC</Authors>
     <Product>Milkwave Remote</Product>
     <PackageId>Milkwave Remote</PackageId>
@@ -45,8 +45,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="cd ..\Build
-          call release.cmd" Condition="'$(Configuration)'=='Release'"/>
+    <Exec Command="cd ..\Build&#xD;&#xA;          call release.cmd" Condition="'$(Configuration)'=='Release'" />
   </Target>
 
 </Project>

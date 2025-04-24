@@ -422,6 +422,7 @@ void ToggleBorderlessWindow(HWND hwnd) {
     SetWindowPos(hwnd, HWND_NOTOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
     borderless = false;
   }
+  g_plugin.m_WindowBorderless = borderless;
 }
 
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -447,8 +448,9 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
   }
   if (wParam == VK_F2) {
-    if (!fullscreen && !stretch)
+    if (!fullscreen && !stretch) {
       ToggleBorderlessWindow(hWnd);
+    }
   }
   else if (wParam == VK_B) {
     if (GetKeyState(VK_SHIFT) & 0x8000) { // Check if Shift is pressed
@@ -607,16 +609,22 @@ void RenderFrame() {
       std::transform(currentToken.begin(), currentToken.end(), currentToken.begin(), ::tolower);
 
       if (currentToken == "artist") {
-        wcscpy(buf, milkwave.currentArtist.c_str());
-        g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
+        if (milkwave.currentArtist.length() > 0) {
+          wcscpy(buf, milkwave.currentArtist.c_str());
+          g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
+        }
       }
       else if (currentToken == "title") {
-        wcscpy(buf, milkwave.currentTitle.c_str());
-        g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_2, false);
+        if (milkwave.currentTitle.length() > 0) {
+          wcscpy(buf, milkwave.currentTitle.c_str());
+          g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_2, false);
+        }
       }
       else if (currentToken == "album") {
-        wcscpy(buf, milkwave.currentAlbum.c_str());
-        g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_3, false);
+        if (milkwave.currentAlbum.length() > 0) {
+          wcscpy(buf, milkwave.currentAlbum.c_str());
+          g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_3, false);
+        }
       }
     }
 
@@ -750,6 +758,10 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
   SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+
+  if (g_plugin.m_WindowBorderless) {
+    ToggleBorderlessWindow(hwnd);
+  }
 
   ShowWindow(hwnd, SW_SHOW);
 

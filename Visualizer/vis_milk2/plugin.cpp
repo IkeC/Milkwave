@@ -1388,6 +1388,7 @@ void CPlugin::MyReadConfig() {
   m_DisplayCover = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCover", m_DisplayCover, pIni);
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
 
+  m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
   m_WindowX = GetPrivateProfileIntW(L"Milkwave", L"WindowX", m_WindowX, pIni);
   m_WindowY = GetPrivateProfileIntW(L"Milkwave", L"WindowY", m_WindowY, pIni);
   m_WindowWidth = GetPrivateProfileIntW(L"Milkwave", L"WindowWidth", m_WindowWidth, pIni);
@@ -1500,12 +1501,17 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_bPresetLockedByUser, L"bPresetLockOnAtStartup", GetConfigIniFile(), L"Settings");
   WritePrivateProfileStringW(L"Settings", L"szPresetStartup", m_szCurrentPresetFile, pIni);
 
+  WritePrivateProfileIntW(m_bShowFPS, L"bShowFPS", GetConfigIniFile(), L"Settings");
+  WritePrivateProfileIntW(m_bShowRating, L"bShowRating", GetConfigIniFile(), L"Settings");
+  WritePrivateProfileIntW(m_bShowPresetInfo, L"bShowPresetInfo", GetConfigIniFile(), L"Settings");
+
   // Milkwave
   WritePrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, pIni);
   WritePrivateProfileIntW(m_SongInfoPollingEnabled, L"SongInfoPollingEnabled", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
   
+  WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
@@ -4387,13 +4393,20 @@ void CPlugin::MyRenderUI(
         L"%s %s ",
         (m_bPresetLockedByUser || m_bPresetLockedByCode) && m_ShowLockSymbol ? L"\xD83D\xDD12" : L"",
         (m_nLoadingPreset != 0) ? m_pNewState->m_szDesc : m_pState->m_szDesc);
-      MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      
+      DWORD alpha = 255;
+      DWORD cr = m_fontinfo[DECORATIVE_FONT].R;
+      DWORD cg = m_fontinfo[DECORATIVE_FONT].G;
+      DWORD cb = m_fontinfo[DECORATIVE_FONT].B;
+      DWORD color = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
+      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
+      // MyTextOut_Shadow(buf, MTO_UPPER_RIGHT, color);
     }
 
     // b) preset rating
     if (m_bShowRating || GetTime() < m_fShowRatingUntilThisTime) {
       // see also: SetCurrentPresetRating() in milkdrop.cpp
-      SelectFont(DECORATIVE_FONT);
+      SelectFont(SIMPLE_FONT);
       swprintf(buf, L" %s: %d ", wasabiApiLangString(IDS_RATING), (int)m_pState->m_fRating);
       if (!m_bEnableRating) lstrcatW(buf, wasabiApiLangString(IDS_DISABLED));
       MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
@@ -4401,7 +4414,7 @@ void CPlugin::MyRenderUI(
 
     // c) fps display
     if (m_bShowFPS) {
-      SelectFont(DECORATIVE_FONT);
+      SelectFont(SIMPLE_FONT);
       swprintf(buf, L"%s: %4.2f ", wasabiApiLangString(IDS_FPS), GetFps()); // leave extra space @ end, so italicized fonts don't get clipped
       MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
     }
@@ -5823,7 +5836,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_dm = 0;
         m_max_fps_w = 0;
         wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Unlimited fps!", tmp, 64);
+        swprintf(buf, L"Unlimited fps", tmp, 64);
         AddError(buf, 3.0f, ERR_NOTIFY, false);
       }
       else if (ToggleFPSNumPressed == 8) {
@@ -5845,13 +5858,13 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       if (m_bAlwaysOnTop) {
         ToggleAlwaysOnTop(hWnd);
         wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Always On Top ON", tmp, 64);
+        swprintf(buf, L"Always On Top enabled", tmp, 64);
         AddError(buf, 3.0f, ERR_NOTIFY, false);
       }
       else {
         ToggleAlwaysOnTop(hWnd);
         wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Always On Top OFF", tmp, 64);
+        swprintf(buf, L"Always On Top disabled", tmp, 64);
         AddError(buf, 3.0f, ERR_NOTIFY, false);
       }
       return 0;
@@ -5860,35 +5873,16 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       if (TranspaMode) {
         ToggleTransparency(hWnd);
         wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Transparency Mode ON", tmp, 64);
+        swprintf(buf, L"Transparency Mode enabled", tmp, 64);
         AddError(buf, 3.0f, ERR_NOTIFY, false);
       }
       else {
         ToggleTransparency(hWnd);
         wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Transparency Mode OFF", tmp, 64);
+        swprintf(buf, L"Transparency Mode disabled", tmp, 64);
         AddError(buf, 3.0f, ERR_NOTIFY, false);
       }
       return 0;
-      //case VK_F2:
-
-      //    ShowPresetOnTitle = !ShowPresetOnTitle;
-      //    if (ShowPresetOnTitle)
-      //    {
-      //        wchar_t buf[1024] = { 0 };
-      //        wchar_t PresetInfoWindowUpdater = swprintf(buf, L"BeatDrop Music Visualizer ⫸ %s", (m_nLoadingPreset != 0) ? m_pNewState->m_szDesc : m_pState->m_szDesc);
-      //        SetWindowText(hWnd, PresetInfoWindowUpdater);
-      //        wsprintfW(m_szSongTitle, L"Show Preset Name on Window Title ON"); LaunchSongTitleAnim();
-      //    }
-      // else
-      // {
-      //     SetWindowText(hWnd, "BeatDrop Music Visualizer");
-      //     wsprintfW(m_szSongTitle, L"Show Preset Name on Window Title OFF"); LaunchSongTitleAnim();
-      //}
-      //return 0;  //WIP: Show Preset Info on Window
-      //Abandoned!
-      //"no f4 is enough for me"
-      //          - Milkdrop2077 (a.k.a. serge000) on Twitter DMs
     case VK_F8:
       OpenMilkwaveRemote();
       return 0;
@@ -7486,12 +7480,9 @@ void CPlugin::BuildMenus() {
 }
 
 void CPlugin::WriteRealtimeConfig() {
-  WritePrivateProfileIntW(m_bShowFPS, L"bShowFPS", GetConfigIniFile(), L"Settings");
-  WritePrivateProfileIntW(m_bShowRating, L"bShowRating", GetConfigIniFile(), L"Settings");
-  WritePrivateProfileIntW(m_bShowPresetInfo, L"bShowPresetInfo", GetConfigIniFile(), L"Settings");
-  WritePrivateProfileIntW(m_bShowSongTitle, L"bShowSongTitle", GetConfigIniFile(), L"Settings");
-  WritePrivateProfileIntW(m_bShowSongTime, L"bShowSongTime", GetConfigIniFile(), L"Settings");
-  WritePrivateProfileIntW(m_bShowSongLen, L"bShowSongLen", GetConfigIniFile(), L"Settings");
+  // WritePrivateProfileIntW(m_bShowSongTitle, L"bShowSongTitle", GetConfigIniFile(), L"Settings");
+  // WritePrivateProfileIntW(m_bShowSongTime, L"bShowSongTime", GetConfigIniFile(), L"Settings");
+  // WritePrivateProfileIntW(m_bShowSongLen, L"bShowSongLen", GetConfigIniFile(), L"Settings");
 }
 
 void CPlugin::dumpmsg(wchar_t* s) {

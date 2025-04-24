@@ -1059,17 +1059,22 @@ void CPluginShell::READ_FONT(int n) {
   m_fontinfo[n].bBold = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontBold", iniIndex), m_fontinfo[n].bBold, m_szConfigIniFile);
   m_fontinfo[n].bItalic = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontItalic", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
   m_fontinfo[n].bAntiAliased = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontAA", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
-  if (iniIndex == 5) {
+  if (n == DECORATIVE_FONT) {
+    m_fontinfo[n].R = DECORATIVE_FONT_DEFAULT_COLOR_R;
+    m_fontinfo[n].G = DECORATIVE_FONT_DEFAULT_COLOR_G;
+    m_fontinfo[n].B = DECORATIVE_FONT_DEFAULT_COLOR_B;
+  }
+  else if (n == EXTRA_1) {
     m_fontinfo[n].R = EXTRA_FONT_1_DEFAULT_COLOR_R;
     m_fontinfo[n].G = EXTRA_FONT_1_DEFAULT_COLOR_G;
     m_fontinfo[n].B = EXTRA_FONT_1_DEFAULT_COLOR_B;
   }
-  else if (iniIndex == 6) {
+  else if (n == EXTRA_2) {
     m_fontinfo[n].R = EXTRA_FONT_2_DEFAULT_COLOR_R;
     m_fontinfo[n].G = EXTRA_FONT_2_DEFAULT_COLOR_G;
     m_fontinfo[n].B = EXTRA_FONT_2_DEFAULT_COLOR_B;
   }
-  else if (iniIndex == 7) {
+  else if (n == EXTRA_3) {
     m_fontinfo[n].R = EXTRA_FONT_3_DEFAULT_COLOR_R;
     m_fontinfo[n].G = EXTRA_FONT_3_DEFAULT_COLOR_G;
     m_fontinfo[n].B = EXTRA_FONT_3_DEFAULT_COLOR_B;
@@ -1884,7 +1889,14 @@ void CPluginShell::RenderBuiltInTextMsgs() {
       }
 
       SetRect(&r, m_left_edge, m_lower_right_corner_y - GetFontHeight(DECORATIVE_FONT), m_right_edge + dx, m_lower_right_corner_y);
-      m_lower_right_corner_y -= m_d3dx_font[DECORATIVE_FONT]->DrawTextW(NULL, wasabiApiLangString(IDS_PRESS_F1_MSG), -1, &r, DT_RIGHT, 0xFFFFFFFF);
+
+      DWORD alpha = 255;
+      DWORD cr = m_fontinfo[DECORATIVE_FONT].R;
+      DWORD cg = m_fontinfo[DECORATIVE_FONT].G;
+      DWORD cb = m_fontinfo[DECORATIVE_FONT].B;
+      DWORD color = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
+
+      m_lower_right_corner_y -= m_d3dx_font[DECORATIVE_FONT]->DrawTextW(NULL, wasabiApiLangString(IDS_PRESS_F1_MSG), -1, &r, DT_RIGHT, color);
     }
   }
 }
