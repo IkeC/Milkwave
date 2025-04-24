@@ -582,7 +582,7 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
       // Set the window position and size to fit the work area
       SetWindowPos(
         hWnd,
-        HWND_TOPMOST, // Ensure the window is always on top
+        isShiftPressed ? HWND_TOPMOST : HWND_NOTOPMOST,
         workArea.left,
         workArea.top,
         workArea.right - workArea.left,
@@ -590,7 +590,7 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
         SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
       );
 
-      // If Shift is pressed, enable clickthrough and set opacity to 0.2f
+      // If Shift is pressed, enable clickthrough
       if (isShiftPressed) {
         if (!clickthrough) {
           ToggleClickThrough(hWnd);
