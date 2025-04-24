@@ -26,8 +26,8 @@ F6                   show/hide rating
 F7                   always on top
 F8                   open Milkwave Remote
 F9                   toggle clickthrough mode
-CTRL + F9            borderless fullscreen mode
-CTRL + SHIFT + F9    borderless fullscreen clickthrough mode
+CTRL + F9            toggle windowed fullscreen mode (cover screen except taskbar)
+CTRL + SHIFT + F9    toggle watermark mode (windowed fullscreen, clickthrough, on top)
 F10 / CTRL + Z       enable/disable spout output
 F11                  hardcut mode: normal/based of music
 F12                  transparency mode (removes the black background)

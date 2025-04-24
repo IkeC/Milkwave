@@ -633,7 +633,6 @@ SPOUT :
 #define FRAND ((rand() % 7381)/7380.0f)
 #define clamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 
-static bool m_bAlwaysOnTop = false;
 int ToggleFPSNumPressed = 7;			// Default is Unlimited FPS.
 int HardcutMode = 0;
 float timetick = 0;
@@ -5349,7 +5348,7 @@ void CPlugin::MyRenderUI(
   }
 }
 
-void ToggleAlwaysOnTop(HWND hwnd) {
+void CPlugin::ToggleAlwaysOnTop(HWND hwnd) {
 
   RECT rect;
   GetWindowRect(hwnd, &rect);

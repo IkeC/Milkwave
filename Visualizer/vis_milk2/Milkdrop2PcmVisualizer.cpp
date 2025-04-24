@@ -962,7 +962,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     // printf("New title [%S]\n", BeatDroptitle);
   }
   // ===============================================
-
+  
     // Create the render window
   HWND hwnd = CreateWindowW(
     L"Direct3DWindowClass",
@@ -994,13 +994,17 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
   SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
 
-  if (g_plugin.m_WindowBorderless) {
+  if (g_plugin.m_WindowBorderless && !borderless) {
     ToggleBorderlessWindow(hwnd);
   }
 
+  // window was closed in borderless fullscreen mode
   if (g_plugin.IsBorderlessFullscreen(hwnd)) {
     g_plugin.fOpacity = g_plugin.m_WindowBorderlessFullscreenClickthroughOpacity;
     g_plugin.SetOpacity(hwnd);
+    if (!clickthrough) ToggleClickThrough(hwnd);
+    g_plugin.m_bAlwaysOnTop = true;
+    g_plugin.ToggleAlwaysOnTop(hwnd);
   }
 
   ShowWindow(hwnd, SW_SHOW);
