@@ -269,7 +269,7 @@ public:
   char WinampSenderName[256]; // The sender name
   bool bInitialized; // did it work ?
   bool OpenSender(unsigned int width, unsigned int height);
-  void OpenMilkwaveRemote();
+  void OpenMilkwaveRemote();  
   bool bSpoutChanged; // set to write config on exit
   bool bSpoutOut; // Spout output on or off
   bool bEnablePresetStartup;
@@ -334,6 +334,7 @@ public:
   int     m_nTrebEnd = 20000;
 
   bool m_WindowBorderless = false;
+  float m_WindowBorderlessFullscreenClickthroughOpacity = 0.3f;
   int m_WindowX = 850;
   int m_WindowY = 50;
   int m_WindowWidth = 640;

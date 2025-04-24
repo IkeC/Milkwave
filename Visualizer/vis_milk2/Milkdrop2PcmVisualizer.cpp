@@ -169,6 +169,7 @@ static LONG lastWindowStyleEx = 0;
 static bool fullscreen = false;
 static bool stretch = false;
 static bool borderless = false;
+static bool clickthrough = false;
 static RECT lastRect = { 0 };
 
 static HMODULE module = nullptr;
@@ -365,7 +366,47 @@ void ToggleFullScreen(HWND hwnd) {
     d3dPp.BackBufferWidth = width;
     d3dPp.BackBufferHeight = height;
 
-    pD3DDevice->Reset(&d3dPp);
+    HRESULT hr = pD3DDevice->Reset(&d3dPp);
+    if (FAILED(hr)) {
+      switch (hr) {
+      case D3DERR_DEVICELOST:
+        // Device is lost, cannot reset now. Retry later.
+        g_plugin.AddError(L"Direct3D device is lost. Retry later.", 5.0f, ERR_NOTIFY, false);
+        break;
+
+      case D3DERR_DEVICENOTRESET:
+        // Device is ready to be reset but failed. Consider releasing resources.
+        g_plugin.AddError(L"Direct3D device could not be reset. Releasing resources.", 5.0f, ERR_NOTIFY, false);
+        // Add code to release and recreate resources if necessary.
+        break;
+
+      case D3DERR_OUTOFVIDEOMEMORY:
+        // Out of video memory.
+        g_plugin.AddError(L"Out of video memory. Reduce resource usage.", 5.0f, ERR_NOTIFY, false);
+        break;
+
+      case E_OUTOFMEMORY:
+        // General memory allocation failure.
+        g_plugin.AddError(L"Out of memory. Unable to reset device.", 5.0f, ERR_NOTIFY, false);
+        break;
+
+      default:
+        // Unknown error.
+        wchar_t buf[256];
+        swprintf(buf, 256, L"Unknown error during Reset: 0x%08X", hr);
+        g_plugin.AddError(buf, 5.0f, ERR_NOTIFY, false);
+        break;
+      }
+
+      // Optional: Fallback to windowed mode or attempt recovery.
+      fullscreen = false;
+      SetWindowLongW(hwnd, GWL_STYLE, lastWindowStyle);
+      SetWindowLongW(hwnd, GWL_EXSTYLE, lastWindowStyleEx);
+      SetWindowPos(hwnd, HWND_NOTOPMOST, lastRect.left, lastRect.top,
+        lastRect.right - lastRect.left, lastRect.bottom - lastRect.top,
+        SWP_DRAWFRAME | SWP_FRAMECHANGED);
+    }
+
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     DragAcceptFiles(hwnd, TRUE);
     fullscreen = true;
@@ -425,10 +466,147 @@ void ToggleBorderlessWindow(HWND hwnd) {
   g_plugin.m_WindowBorderless = borderless;
 }
 
+void ToggleClickThrough(HWND hWnd) {
+  // Retrieve the current alpha value
+  BYTE currentAlpha = 255; // Default to fully opaque
+  DWORD flags = 0;
+  COLORREF colorKey = 0;
+  if (GetLayeredWindowAttributes(hWnd, &colorKey, &currentAlpha, &flags)) {
+    // Successfully retrieved the current alpha value
+  }
+
+  if (clickthrough) {
+    // Make the window normal while retaining WS_EX_LAYERED
+    LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+    style &= ~WS_EX_TRANSPARENT; // Remove click-through
+    SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
+    SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+  }
+  else {
+    // Make the window click-through
+    LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+    style |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
+    SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
+    SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+  }
+  clickthrough = !clickthrough;
+}
+
+void ToggleBorderlessFullscreen(HWND hWnd) {
+  static bool previousClickthrough = false; // Store the previous clickthrough state
+  static BYTE previousOpacity = 255;       // Store the previous opacity (fully opaque by default)
+
+  // Check if Shift is pressed
+  bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+  // Get the work area of the monitor (excluding the taskbar)
+  MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
+  HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+  if (GetMonitorInfo(hMonitor, &monitorInfo)) {
+    RECT workArea = monitorInfo.rcWork;
+
+    // Check if the window is already in borderless fullscreen mode
+    RECT currentRect;
+    GetWindowRect(hWnd, &currentRect);
+
+    if (currentRect.left == workArea.left &&
+      currentRect.top == workArea.top &&
+      currentRect.right == workArea.right &&
+      currentRect.bottom == workArea.bottom) {
+      // Restore the previous window dimensions, borderless state, clickthrough state, and opacity
+      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
+      if (g_plugin.m_WindowBorderless) {
+        style = WS_POPUP | WS_VISIBLE; // Restore borderless style
+      }
+      else {
+        style = WS_OVERLAPPEDWINDOW | WS_VISIBLE; // Restore normal window style
+      }
+      SetWindowLongPtr(hWnd, GWL_STYLE, style);
+
+      // Check if the saved dimensions are the same as the current dimensions
+      if (g_plugin.m_WindowWidth == (currentRect.right - currentRect.left) &&
+        g_plugin.m_WindowHeight == (currentRect.bottom - currentRect.top)) {
+        // Reduce the dimensions by 50%
+        g_plugin.m_WindowWidth /= 2;
+        g_plugin.m_WindowHeight /= 2;
+
+        // Center the window
+        g_plugin.m_WindowX = (workArea.right - workArea.left - g_plugin.m_WindowWidth) / 2;
+        g_plugin.m_WindowY = (workArea.bottom - workArea.top - g_plugin.m_WindowHeight) / 2;
+      }
+
+      SetWindowPos(
+        hWnd,
+        g_plugin.m_WindowBorderless ? HWND_TOPMOST : HWND_NOTOPMOST,
+        g_plugin.m_WindowX,
+        g_plugin.m_WindowY,
+        g_plugin.m_WindowWidth,
+        g_plugin.m_WindowHeight,
+        SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
+      );
+
+      // Restore the previous clickthrough state
+      if (clickthrough != previousClickthrough) {
+        ToggleClickThrough(hWnd);
+      }
+
+      // Restore the previous opacity
+      SetLayeredWindowAttributes(hWnd, 0, previousOpacity, LWA_ALPHA);
+
+      borderless = g_plugin.m_WindowBorderless; // Restore the borderless state
+    }
+    else {
+      // Save the current window dimensions, borderless state, clickthrough state, and opacity
+      RECT currentWindowRect;
+      GetWindowRect(hWnd, &currentWindowRect);
+      g_plugin.m_WindowX = currentWindowRect.left;
+      g_plugin.m_WindowY = currentWindowRect.top;
+      g_plugin.m_WindowWidth = currentWindowRect.right - currentWindowRect.left;
+      g_plugin.m_WindowHeight = currentWindowRect.bottom - currentWindowRect.top;
+      g_plugin.m_WindowBorderless = borderless; // Save the current borderless state
+
+      previousClickthrough = clickthrough; // Save the current clickthrough state
+
+      // Retrieve the current opacity
+      BYTE currentOpacity = 255; // Default to fully opaque
+      DWORD flags = 0;
+      COLORREF colorKey = 0;
+      if (GetLayeredWindowAttributes(hWnd, &colorKey, &currentOpacity, &flags)) {
+        previousOpacity = currentOpacity; // Save the current opacity
+      }
+
+      // Set the window style to borderless
+      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
+      style &= ~(WS_OVERLAPPEDWINDOW); // Remove standard window styles
+      style |= WS_POPUP; // Add popup style for borderless
+      SetWindowLongPtr(hWnd, GWL_STYLE, style);
+
+      // Set the window position and size to fit the work area
+      SetWindowPos(
+        hWnd,
+        HWND_TOP,
+        workArea.left,
+        workArea.top,
+        workArea.right - workArea.left,
+        workArea.bottom - workArea.top,
+        SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
+      );
+
+      // If Shift is pressed, enable clickthrough and set opacity to 0.2f
+      if (isShiftPressed) {
+        if (!clickthrough) {
+          ToggleClickThrough(hWnd);
+        }
+        SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowBorderlessFullscreenClickthroughOpacity * 255), LWA_ALPHA);
+      }
+
+      borderless = true;
+    }
+  }
+}
+
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
   switch (uMsg) {
-
   case WM_CLOSE:
   {
     g_plugin.SaveWindowSizeAndPosition(hWnd);
@@ -443,6 +621,49 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     break;
   }
 
+  case WM_MOVE:
+  {
+    // Get the current window rectangle
+    RECT windowRect;
+    GetWindowRect(hWnd, &windowRect);
+
+    // Get the virtual screen area (spanning all monitors)
+    int virtualLeft = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    int virtualTop = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    int virtualWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    int virtualHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    int virtualRight = virtualLeft + virtualWidth;
+    int virtualBottom = virtualTop + virtualHeight;
+
+    int windowWidth = windowRect.right - windowRect.left;
+    int windowHeight = windowRect.bottom - windowRect.top;
+
+    // Constrain the window to stay within the virtual screen area
+    int newX = windowRect.left;
+    int newY = windowRect.top;
+
+    if (newX < virtualLeft) {
+      newX = virtualLeft;
+    }
+    if (newY < virtualTop) {
+      newY = virtualTop;
+    }
+    if (newX + windowWidth > virtualRight) {
+      newX = virtualRight - windowWidth;
+    }
+    if (newY + windowHeight > virtualBottom) {
+      newY = virtualBottom - windowHeight;
+    }
+
+    // Set the new position if adjustments were made
+    if (newX != windowRect.left || newY != windowRect.top) {
+      SetWindowPos(hWnd, NULL, newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    break;
+  }
+
+
   case WM_KEYDOWN:
   {
     g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
@@ -450,6 +671,23 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   if (wParam == VK_F2) {
     if (!fullscreen && !stretch) {
       ToggleBorderlessWindow(hWnd);
+    }
+  }
+  if (wParam == VK_F9) {
+    bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    if (isCtrlPressed) {
+      ToggleBorderlessFullscreen(hWnd);
+    }
+    else {
+      ToggleClickThrough(hWnd);
+      wchar_t buf[1024], tmp[64];
+      if (clickthrough) {
+        swprintf(buf, L"Clickthrough Mode enabled", tmp, 64);
+      }
+      else {
+        swprintf(buf, L"Clickthrough Mode disabled", tmp, 64);
+      }
+      g_plugin.AddError(buf, 5.0f, ERR_NOTIFY, false);
     }
   }
   else if (wParam == VK_B) {
@@ -537,7 +775,6 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_SYSKEYDOWN:
   {
-
     if (wParam == VK_F4) { // SPOUT ??
       PostQuitMessage(0);
     }
@@ -559,13 +796,13 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     break;
   }
 
-
   default:
     return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
   }
 
   return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
+
 
 void RenderFrame() {
 
@@ -1079,7 +1316,6 @@ bool CheckForDirectX9c() {
 
 }
 
-
 #ifdef COMPILE_AS_DLL
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
   module = hModule;
@@ -1103,116 +1339,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #endif
 
 static std::string title;
-/*
-class VisaulizerPlugin : public musik::core::sdk::IPlugin {
-    public:
-        virtual void Release() override { }
-        virtual const char* Name() override { return "Milkdrop2 IPcmVisualizer, IPlaybackRemote"; }
-        virtual const char* Version() override { return "0.5.3"; }
-        virtual const char* Author() override { return "clangen"; }
-        virtual const char* Guid() override { return "5533c371-ed2b-40cf-aabb-f897661aeec1"; }
-        virtual bool Configurable() override { return false; }
-        virtual void Configure() override { }
-        virtual void Reload() override { }
-        virtual int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-};
 
-class Visualizer :
-    public musik::core::sdk::IPcmVisualizer ,
-    public musik::core::sdk::IPlaybackRemote {
-        public:
-            virtual const char* Name() override {
-                return "Milkdrop2";
-            }
-
-            virtual void Release() override {
-                this->Hide();
-            }
-
-            virtual void SetPlaybackService(musik::core::sdk::IPlaybackService* playback) override {
-                g_plugin.playbackService = playback;
-                ::playback = playback;
-            }
-
-            virtual void OnTrackChanged(musik::core::sdk::ITrack* track) override {
-                if (track) {
-                    char buffer[1024];
-                    track->GetString("title", buffer, 1024);
-                    g_plugin.emulatedWinampSongTitle = std::string(buffer);
-                }
-                else {
-                    g_plugin.emulatedWinampSongTitle = "";
-                }
-            }
-
-            virtual void OnPlaybackStateChanged(musik::core::sdk::PlaybackState state) override {
-
-            }
-
-            virtual void OnVolumeChanged(double volume) override {
-
-            }
-
-            virtual void OnModeChanged(musik::core::sdk::RepeatMode repeatMode, bool shuffled) override {
-
-            }
-
-            virtual void OnPlayQueueChanged() override {
-
-            }
-
-            virtual void OnPlaybackTimeChanged(double time) override {
-
-            }
-
-            virtual void Write(musik::core::sdk::IBuffer* buffer) override {
-                if (Visible()) {
-                    float* b = buffer->BufferPointer();
-
-                    std::unique_lock<std::mutex> lock(pcmMutex);
-
-                    int n = 0;
-                    for (int i = 0; i < buffer->Samples(); i++, n++) {
-                        int x = i * 2;
-                        pcmLeftIn[n % SAMPLE_SIZE] = (unsigned char)(b[i + 0] * 255.0f);
-                        pcmRightIn[n % SAMPLE_SIZE] = (unsigned char)(b[i + 1] * 255.0f);
-                    }
-                }
-            }
-
-            virtual void Show() override {
-                if (!Visible()) {
-                    StartRenderThread(module);
-                }
-            }
-
-            virtual void Hide() override {
-                if (Visible()) {
-                    PostThreadMessage(threadId, WM_QUIT, 0, 0);
-                    WaitForSingleObject(thread, INFINITE);
-                }
-            }
-
-            virtual bool Visible() override {
-                return thread.load() != nullptr;
-            }
-};
-
-static VisaulizerPlugin visualizerPlugin;
-static Visualizer visualizer;
-
-extern "C" DLL_EXPORT musik::core::sdk::IPlugin* GetPlugin() {
-    return &visualizerPlugin;
-}
-
-extern "C" DLL_EXPORT musik::core::sdk::IPcmVisualizer* GetPcmVisualizer() {
-    return &visualizer;
-}
-
-extern "C" DLL_EXPORT musik::core::sdk::IPlaybackRemote* GetPlaybackRemote() {
-    return &visualizer;
-}
-*/
 #ifdef DEBUG
 struct _DEBUG_STATE {
   _DEBUG_STATE() {}

@@ -1378,9 +1378,9 @@ void CPlugin::MyReadConfig() {
 
   GetPrivateProfileStringW(L"Settings", L"szPresetDir", m_szPresetDir, m_szPresetDir, sizeof(m_szPresetDir), pIni);
   GetPrivateProfileStringW(L"Settings", L"szPresetStartup", m_szPresetStartup, m_szPresetStartup, sizeof(m_szPresetStartup), pIni);
-  
+
   // Milkwave
-  GetPrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);  
+  GetPrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);
   m_SongInfoPollingEnabled = GetPrivateProfileBoolW(L"Milkwave", L"SongInfoPollingEnabled", m_SongInfoPollingEnabled, pIni);
   GetPrivateProfileStringW(L"Milkwave", L"SongInfoFormat", L"Artist;Title;Album", m_SongInfoFormat, sizeof(m_SongInfoFormat), pIni);
   m_ChangePresetWithSong = GetPrivateProfileBoolW(L"Milkwave", L"ChangePresetWithSong", m_ChangePresetWithSong, pIni);
@@ -1389,6 +1389,7 @@ void CPlugin::MyReadConfig() {
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
+  m_WindowBorderlessFullscreenClickthroughOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowBorderlessFullscreenClickthroughOpacity", m_WindowBorderlessFullscreenClickthroughOpacity, pIni);
   m_WindowX = GetPrivateProfileIntW(L"Milkwave", L"WindowX", m_WindowX, pIni);
   m_WindowY = GetPrivateProfileIntW(L"Milkwave", L"WindowY", m_WindowY, pIni);
   m_WindowWidth = GetPrivateProfileIntW(L"Milkwave", L"WindowWidth", m_WindowWidth, pIni);
@@ -1510,8 +1511,9 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_SongInfoPollingEnabled, L"SongInfoPollingEnabled", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
-  
+
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
+  // WritePrivateProfileFloatW(m_WindowBorderlessFullscreenClickthroughOpacity, L"WindowBorderlessFullscreenClickthroughOpacity", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
@@ -2524,10 +2526,35 @@ int CPlugin::AllocateMyDX9Stuff() {
 
   if (!m_bInitialPresetSelected) {
     UpdatePresetList(true); //...just does its initial burst!
-    if (m_bEnablePresetStartup && wcslen(m_szPresetStartup) > 0)
+    if (m_bEnablePresetStartup && wcslen(m_szPresetStartup) > 0) {
       LoadPreset(m_szPresetStartup, 0.0f);
-    else
+
+      std::wstring message(m_szPresetStartup);
+      size_t pos = message.find_last_of(L"\\/");
+      std::wstring sPath;
+      std::wstring sFilename;
+      if (pos != std::wstring::npos) {
+        // Extract the path up to and including the last separator
+        sPath = message.substr(0, pos + 1);
+        // Extract the filename after the last separator
+        sFilename = message.substr(pos + 1);
+      }
+      else {
+        // If no separator is found, assume the fullPath is just a filename
+        sFilename = message;
+      }
+
+      // try to set the current preset index
+      for (int i = 0; i < m_presets.size(); i++) {
+        if (wcscmp(m_presets[i].szFilename.c_str(), sFilename.c_str()) == 0) {
+          m_nCurrentPreset = i;
+          break;
+        }
+      }
+    }
+    else {
       LoadRandomPreset(0.0f);
+    }
     if (m_bAutoLockPresetWhenNoMusic)
       m_bPresetLockedByUser = false;
     m_bInitialPresetSelected = true;
@@ -4393,7 +4420,7 @@ void CPlugin::MyRenderUI(
         L"%s %s ",
         (m_bPresetLockedByUser || m_bPresetLockedByCode) && m_ShowLockSymbol ? L"\xD83D\xDD12" : L"",
         (m_nLoadingPreset != 0) ? m_pNewState->m_szDesc : m_pState->m_szDesc);
-      
+
       DWORD alpha = 255;
       DWORD cr = m_fontinfo[DECORATIVE_FONT].R;
       DWORD cg = m_fontinfo[DECORATIVE_FONT].G;
@@ -5279,7 +5306,7 @@ void CPlugin::MyRenderUI(
             // ERR_MSG_BOTTOM_EXTRA_1 = 6
             int fontIndex = NUM_BASIC_FONTS + m_errors[i].category - ERR_MSG_BOTTOM_EXTRA_1;
             SelectFont(static_cast<eFontIndex>(fontIndex));
-            
+
             swprintf(buf, L"%s ", m_errors[i].msg.c_str());
 
             // 0..1
@@ -5886,6 +5913,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     case VK_F8:
       OpenMilkwaveRemote();
       return 0;
+    // F9 is handled in Milkdrop2PcmVisualizer.cpp
     case VK_F10:
       ToggleSpout();
       return 0;
@@ -6404,8 +6432,8 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       else {
         // Don't close if esc pressed when vj window has focus
         if (GetFocus() == GetPluginWindow()) {
-          // SPOUT - MessageBox to make sure
-          if (MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
+          bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+          if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(Press SHIFT + ESC to close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
             PostMessage(hWnd, WM_CLOSE, 0, 0);
           }
           return 0;

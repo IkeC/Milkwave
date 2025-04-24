@@ -2,8 +2,7 @@ ESC                  exit Milkwave Visualizer / menus
 ALT + ENTER          toggle fullscreen (or double-click)
 ALT + S              toggle multiple monitor stretch
 CTRL + T             instantly reset time variable
-SHIFT + UP           increase window opacity
-SHIFT + DOWN         decrease window opacity
+SHIFT + UP / DOWN    increase/decrease window opacity (or mousewheel)
 
 SPACE / H            soft / hard cut to next preset
 BACKSPACE            go back to previous preset
@@ -19,13 +18,16 @@ D                    toggle warp & comp shader locks
 @                    randomize comp shader
 
 F1                   show/hide help
-F2                   toggle borderless window (unless on fullscreen or stretch mode)
+F2                   toggle borderless window (unless in fullscreen/stretch mode)
 F3                   toggle fps to 30/60/90/120/144/240/360/Unlimited
 F4                   show/hide preset info
 F5                   show/hide fps
 F6                   show/hide rating
 F7                   always on top
 F8                   open Milkwave Remote
+F9                   toggle clickthrough mode
+CTRL + F9            borderless fullscreen mode
+CTRL + SHIFT + F9    borderless fullscreen clickthrough mode
 F10 / CTRL + Z       enable/disable spout output
 F11                  hardcut mode: normal/based of music
 F12                  transparency mode (removes the black background)
@@ -34,8 +36,7 @@ Z                    previous track
 X                    play/pause track
 C                    stop track
 V                    next track
-LEFT ARROW           rewind track (seek -5 seconds)
-RIGHT ARROW          fast forward track (seek +5 seconds)
+LEFT/RIGHT ARROW     fast forward/rewind track (5 seconds)
 B                    show track info
 SHIFT + A            toggle next preset when track changes
 SHIFT + B            toggle track info polling
