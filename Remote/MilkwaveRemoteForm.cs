@@ -65,7 +65,7 @@ namespace MilkwaveRemote {
     private string windowNotFound = "Milkwave Visualizer window not found";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
-    private string milkwaveSettingsFile = "settings-milkwave.json";
+    private string milkwaveSettingsFile = "settings-remote.json";
 
     Random rnd = new Random();
     private Settings Settings = new Settings();

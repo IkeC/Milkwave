@@ -338,7 +338,7 @@ public:
   int m_WindowWidth = 640;
   int m_WindowHeight = 360;
   
-  bool m_SongInfoActive = true;
+  bool m_SongInfoPollingEnabled = true;
   bool m_ChangePresetWithSong = true;
   float m_SongInfoDisplaySeconds = 5.0f;
   bool m_DisplayCover = true;

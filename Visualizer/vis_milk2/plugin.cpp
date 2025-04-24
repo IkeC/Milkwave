@@ -1381,7 +1381,7 @@ void CPlugin::MyReadConfig() {
   
   // Milkwave
   GetPrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);  
-  m_SongInfoActive = GetPrivateProfileBoolW(L"Milkwave", L"SongInfoActive", m_SongInfoActive, pIni);
+  m_SongInfoPollingEnabled = GetPrivateProfileBoolW(L"Milkwave", L"SongInfoPollingEnabled", m_SongInfoPollingEnabled, pIni);
   GetPrivateProfileStringW(L"Milkwave", L"SongInfoFormat", L"Artist;Title;Album", m_SongInfoFormat, sizeof(m_SongInfoFormat), pIni);
   m_ChangePresetWithSong = GetPrivateProfileBoolW(L"Milkwave", L"ChangePresetWithSong", m_ChangePresetWithSong, pIni);
   m_SongInfoDisplaySeconds = GetPrivateProfileFloatW(L"Milkwave", L"SongInfoDisplaySeconds", m_SongInfoDisplaySeconds, pIni);
@@ -1501,6 +1501,10 @@ void CPlugin::MyWriteConfig() {
 
   // Milkwave
   WritePrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, pIni);
+  WritePrivateProfileIntW(m_SongInfoPollingEnabled, L"SongInfoPollingEnabled", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
+  
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
@@ -6484,11 +6488,37 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         */ //YouTube inaccurately plays/pauses the video when you do this.
       }
       break;
-
+    case 'A':
+      if (m_UI_mode == UI_REGULAR) {
+        if ((GetKeyState(VK_SHIFT) & mask) != 0) {
+          m_ChangePresetWithSong = !m_ChangePresetWithSong;
+          if (m_ChangePresetWithSong) {
+            AddError(L"Auto Preset Change enabled", 5.0f, ERR_NOTIFY, false);
+          }
+          else {
+            AddError(L"Auto Preset Change disabled", 5.0f, ERR_NOTIFY, false);
+          }
+          return 0; // we processed (or absorbed) the key
+        }
+        else {
+          keybd_event(VK_MEDIA_STOP, 0, 0, 0);
+          keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
+        }
+        /*
+        SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_STOP));
+        Sleep(200);
+        */ //Any media players force stops the track without fading (Ex: AIMP) - so I think I don't need this.
+      }
+      break;
     case 'C':
       if (m_UI_mode == UI_REGULAR) {
-        keybd_event(VK_MEDIA_STOP, 0, 0, 0);
-        keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
+        if ((GetKeyState(VK_SHIFT) & mask) != 0) {
+          // TODO
+        }
+        else {
+          keybd_event(VK_MEDIA_STOP, 0, 0, 0);
+          keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
+        }
         /*
         SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_STOP));
         Sleep(200);
@@ -6981,16 +7011,20 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     // load a random preset, a random warp shader, and a random comp shader.
     // not quite as extreme as a mash-up.
   {
-    bool bCompLock = m_bCompShaderLock;
-    bool bWarpLock = m_bWarpShaderLock;
-    m_bCompShaderLock = false; m_bWarpShaderLock = false;
-    LoadRandomPreset(0.0f);
-    m_bCompShaderLock = true; m_bWarpShaderLock = false;
-    LoadRandomPreset(0.0f);
-    m_bCompShaderLock = false; m_bWarpShaderLock = true;
-    LoadRandomPreset(0.0f);
-    m_bCompShaderLock = bCompLock;
-    m_bWarpShaderLock = bWarpLock;
+    USHORT mask = 1 << (sizeof(SHORT) * 8 - 1);	// we want the highest-order bit
+    bool bShiftHeldDown = (GetKeyState(VK_SHIFT) & mask) != 0;
+    if (!bShiftHeldDown) {
+      bool bCompLock = m_bCompShaderLock;
+      bool bWarpLock = m_bWarpShaderLock;
+      m_bCompShaderLock = false; m_bWarpShaderLock = false;
+      LoadRandomPreset(0.0f);
+      m_bCompShaderLock = true; m_bWarpShaderLock = false;
+      LoadRandomPreset(0.0f);
+      m_bCompShaderLock = false; m_bWarpShaderLock = true;
+      LoadRandomPreset(0.0f);
+      m_bCompShaderLock = bCompLock;
+      m_bWarpShaderLock = bWarpLock;
+    }
   }
   break;
   case 'd':

@@ -9,7 +9,7 @@ The visualizer window. You may run and use this independent without the Remote.
 settings.ini:
 Settings for the Visualizer. Feel free to edit.
 
-settings-milkwave.json:
+settings-remote.json:
 Settings for the Remote. Feel free to edit.
 
 sprites.ini:

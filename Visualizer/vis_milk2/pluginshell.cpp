@@ -1059,6 +1059,21 @@ void CPluginShell::READ_FONT(int n) {
   m_fontinfo[n].bBold = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontBold", iniIndex), m_fontinfo[n].bBold, m_szConfigIniFile);
   m_fontinfo[n].bItalic = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontItalic", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
   m_fontinfo[n].bAntiAliased = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontAA", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
+  if (iniIndex == 5) {
+    m_fontinfo[n].R = EXTRA_FONT_1_DEFAULT_COLOR_R;
+    m_fontinfo[n].G = EXTRA_FONT_1_DEFAULT_COLOR_G;
+    m_fontinfo[n].B = EXTRA_FONT_1_DEFAULT_COLOR_B;
+  }
+  else if (iniIndex == 6) {
+    m_fontinfo[n].R = EXTRA_FONT_2_DEFAULT_COLOR_R;
+    m_fontinfo[n].G = EXTRA_FONT_2_DEFAULT_COLOR_G;
+    m_fontinfo[n].B = EXTRA_FONT_2_DEFAULT_COLOR_B;
+  }
+  else if (iniIndex == 7) {
+    m_fontinfo[n].R = EXTRA_FONT_3_DEFAULT_COLOR_R;
+    m_fontinfo[n].G = EXTRA_FONT_3_DEFAULT_COLOR_G;
+    m_fontinfo[n].B = EXTRA_FONT_3_DEFAULT_COLOR_B;
+  }
   m_fontinfo[n].R = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorR", iniIndex), m_fontinfo[n].R, m_szConfigIniFile);
   m_fontinfo[n].G = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorG", iniIndex), m_fontinfo[n].G, m_szConfigIniFile);
   m_fontinfo[n].B = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorB", iniIndex), m_fontinfo[n].B, m_szConfigIniFile);

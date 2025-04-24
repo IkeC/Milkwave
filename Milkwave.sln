@@ -16,7 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Build\release.cmd = Build\release.cmd
 		Build\roadmap.md = Build\roadmap.md
 		Build\script-default.txt = Build\script-default.txt
-		Build\settings-milkwave.json = Build\settings-milkwave.json
+		Build\settings-remote.json = Build\settings-remote.json
 		Build\settings.ini = Build\settings.ini
 		Build\sprites.ini = Build\sprites.ini
 	EndProjectSection

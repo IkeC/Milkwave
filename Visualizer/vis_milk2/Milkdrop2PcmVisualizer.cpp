@@ -451,23 +451,39 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       ToggleBorderlessWindow(hWnd);
   }
   else if (wParam == VK_B) {
-      if (GetKeyState(VK_SHIFT) & 0x8000) { // Check if Shift is pressed
-        g_plugin.m_SongInfoActive = !g_plugin.m_SongInfoActive;
-        milkwave.doPoll = g_plugin.m_SongInfoActive;
-        if (g_plugin.m_SongInfoActive) {
-          g_plugin.AddError(L"Song Info enabled", 5.0f, ERR_NOTIFY, false);
-        }
-        else {
-          g_plugin.AddError(L"Song Info disabled", 5.0f, ERR_NOTIFY, false);
-          milkwave.currentArtist = L"";
-          milkwave.currentTitle = L"";
-          milkwave.currentAlbum = L"";
-        }
+    if (GetKeyState(VK_SHIFT) & 0x8000) { // Check if Shift is pressed
+      g_plugin.m_SongInfoPollingEnabled = !g_plugin.m_SongInfoPollingEnabled;
+      milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
+      if (g_plugin.m_SongInfoPollingEnabled) {
+        g_plugin.AddError(L"Song Info enabled", 5.0f, ERR_NOTIFY, false);
       }
       else {
-        milkwave.doPollExplicit = true;
+        g_plugin.AddError(L"Song Info disabled", 5.0f, ERR_NOTIFY, false);
+        milkwave.currentArtist = L"";
+        milkwave.currentTitle = L"";
+        milkwave.currentAlbum = L"";
       }
-      return 0;
+    }
+    else {
+      milkwave.doPollExplicit = true;
+    }
+    return 0;
+  }
+  else if (wParam == VK_C) {
+    if (GetKeyState(VK_SHIFT) & 0x8000) { // Check if Shift is pressed
+      g_plugin.m_DisplayCover = !g_plugin.m_DisplayCover;
+      milkwave.doSaveCover = g_plugin.m_DisplayCover;
+      if (g_plugin.m_DisplayCover) {
+        g_plugin.AddError(L"Cover Display enabled", 5.0f, ERR_NOTIFY, false);
+      }
+      else {
+        g_plugin.AddError(L"Cover Display disabled", 5.0f, ERR_NOTIFY, false);
+      }
+    }
+    else {
+      milkwave.doPollExplicit = true;
+    }
+    return 0;
   }
   break;
 
@@ -564,9 +580,10 @@ void RenderFrame() {
     if (g_plugin.m_ChangePresetWithSong && !milkwave.doPollExplicit && milkwave.isSongChange) {
       g_plugin.NextPreset(g_plugin.m_fBlendTimeAuto);
     }
-    if (g_plugin.m_DisplayCover) {
+    if (g_plugin.m_DisplayCover && !milkwave.doPollExplicit && milkwave.isSongChange) {
       g_plugin.LaunchSprite(0, -1);
     }
+
     milkwave.doPollExplicit = false;
     wchar_t buf[512];
 
@@ -737,8 +754,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   ShowWindow(hwnd, SW_SHOW);
 
   milkwave.Init();
-  milkwave.doPoll = g_plugin.m_SongInfoActive;
-
+  milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
+  milkwave.doSaveCover = g_plugin.m_DisplayCover;
   unsigned int frame = 0;
 
   // SPOUT - defaults if no GUI
