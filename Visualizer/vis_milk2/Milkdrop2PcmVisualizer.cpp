@@ -188,8 +188,6 @@ HANDLE hThreadLoopbackCapture;
 
 bool pauseRender = false;
 
-//static musik::core::sdk::IPlaybackService* playback = nullptr;
-
 static HICON icon = nullptr;
 
 
@@ -584,7 +582,7 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
       // Set the window position and size to fit the work area
       SetWindowPos(
         hWnd,
-        HWND_TOP,
+        HWND_TOPMOST, // Ensure the window is always on top
         workArea.left,
         workArea.top,
         workArea.right - workArea.left,
@@ -998,6 +996,11 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   if (g_plugin.m_WindowBorderless) {
     ToggleBorderlessWindow(hwnd);
+  }
+
+  if (g_plugin.IsBorderlessFullscreen(hwnd)) {
+    g_plugin.fOpacity = g_plugin.m_WindowBorderlessFullscreenClickthroughOpacity;
+    g_plugin.SetOpacity(hwnd);
   }
 
   ShowWindow(hwnd, SW_SHOW);

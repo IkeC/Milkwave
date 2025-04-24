@@ -641,7 +641,6 @@ float timetick2 = 0;
 float TimeToAutoLockPreset = 0;
 int beatcount;
 bool TranspaMode = false;
-float fOpacity = 1.0f; // 0.0f = 100% transparent, 1.0f = 100% opaque
 int NumTotalPresetsLoaded = 0;
 bool AutoLockedPreset = false;
 //bool ShowPresetOnTitle = 0;
@@ -1513,7 +1512,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
-  // WritePrivateProfileFloatW(m_WindowBorderlessFullscreenClickthroughOpacity, L"WindowBorderlessFullscreenClickthroughOpacity", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_WindowBorderlessFullscreenClickthroughOpacity, L"WindowBorderlessFullscreenClickthroughOpacity", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
@@ -5391,7 +5390,7 @@ void ToggleTransparency(HWND hwnd) {
       DwmEnableComposition(DWM_EC_DISABLECOMPOSITION); //Disable Aero Composition
     //SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
     SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
-    fOpacity = 1.0f;
+    g_plugin.fOpacity = 1.0f;
     DragAcceptFiles(hwnd, TRUE);
   }
   else {
@@ -5403,7 +5402,7 @@ void ToggleTransparency(HWND hwnd) {
   }
 }
 
-void SetOpacity(HWND hwnd) {
+void CPlugin::SetOpacity(HWND hwnd) {
   int alpha = std::ceil(255 * fOpacity);
 
   SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
@@ -5414,6 +5413,11 @@ void SetOpacity(HWND hwnd) {
   wchar_t buf[1024];
   swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
   g_plugin.AddError(buf, 3.0f, ERR_NOTIFY, false);
+
+  if (IsBorderlessFullscreen(hwnd)) {
+    // If the window is in borderless fullscreen mode, save the opacity
+    g_plugin.m_WindowBorderlessFullscreenClickthroughOpacity = fOpacity;
+  }
 }
 
 void ToggleWindowOpacity(HWND hwnd, bool bDown) {
@@ -5425,26 +5429,42 @@ void ToggleWindowOpacity(HWND hwnd, bool bDown) {
   int height = rect.bottom - rect.top;
 
   float changeVal = 0.1f;
-  if (fOpacity < 0.09 || (fOpacity <= 0.1 && bDown)) {
+  if (g_plugin.fOpacity < 0.09 || (g_plugin.fOpacity <= 0.1 && bDown)) {
     changeVal = 0.01f;
   }
   else {
     changeVal = 0.05f;
   }
   if (bDown) {
-    fOpacity -= changeVal;
+    g_plugin.fOpacity -= changeVal;
   }
   else {
-    fOpacity += changeVal;
+    g_plugin.fOpacity += changeVal;
   }
 
-  if (fOpacity < 0.01f)
-    fOpacity = 0.01f;
-  else if (fOpacity > 1.0f)
-    fOpacity = 1.0f;
+  if (g_plugin.fOpacity < 0.01f)
+    g_plugin.fOpacity = 0.01f;
+  else if (g_plugin.fOpacity > 1.0f)
+    g_plugin.fOpacity = 1.0f;
 
   // Set the opacity of the window
-  SetOpacity(hwnd);
+  g_plugin.SetOpacity(hwnd);
+}
+
+bool CPlugin::IsBorderlessFullscreen(HWND hWnd) {
+  // Check if the window is borderless fullscreen
+  RECT workArea;
+  MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
+  HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+  if (GetMonitorInfo(hMonitor, &monitorInfo)) {
+    workArea = monitorInfo.rcWork;
+  }
+  RECT currentRect;
+  GetWindowRect(hWnd, &currentRect);
+  return (currentRect.left == workArea.left &&
+    currentRect.top == workArea.top &&
+    currentRect.right == workArea.right &&
+    currentRect.bottom == workArea.bottom);
 }
 
 void LoadPresetFilesViaDragAndDrop(WPARAM wParam) {

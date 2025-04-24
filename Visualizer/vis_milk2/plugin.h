@@ -339,7 +339,8 @@ public:
   int m_WindowY = 50;
   int m_WindowWidth = 640;
   int m_WindowHeight = 360;
-  
+  float fOpacity = 1.0f; // 0.0f = 100% transparent, 1.0f = 100% opaque
+
   bool m_SongInfoPollingEnabled = true;
   bool m_ChangePresetWithSong = true;
   float m_SongInfoDisplaySeconds = 5.0f;
@@ -672,6 +673,8 @@ public:
   virtual void  CleanUpMyDX9Stuff(int final_cleanup);
   virtual void MyRenderFn(int redraw);
   virtual void MyRenderUI(int* upper_left_corner_y, int* upper_right_corner_y, int* lower_left_corner_y, int* lower_right_corner_y, int xL, int xR);
+  void SetOpacity(HWND hwnd);
+  bool IsBorderlessFullscreen(HWND hWnd);
   virtual LRESULT MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
   bool ChangePresetDir(wchar_t* newDir, wchar_t* oldDir);
   int ToggleSpout();
