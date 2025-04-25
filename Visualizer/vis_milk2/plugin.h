@@ -614,7 +614,6 @@ public:
   wchar_t* GetMsgIniFile() { return m_szMsgIniFile; };
   wchar_t* GetPresetDir() { return m_szPresetDir; };
   void		SavePresetAs(wchar_t* szNewFile);		// overwrites the file if it was already there.
-  void QuicksavePresetAs(wchar_t* szNewFile);
   void		DeletePresetFile(wchar_t* szDelFile);
   void		RenamePresetFile(wchar_t* szOldFile, wchar_t* szNewFile);
   void		SetCurrentPresetRating(float fNewRating);

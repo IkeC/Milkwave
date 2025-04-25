@@ -5438,7 +5438,7 @@ void CPlugin::SetOpacity(HWND hwnd) {
     printf("Failed to reapply window opacity. Error: %lu\n", error);
   }
 
-  int display = std::ceil(100 * fOpacity); 
+  int display = std::ceil(100 * fOpacity);
   wchar_t buf[1024];
   swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
   g_plugin.AddError(buf, 3.0f, ERR_NOTIFY, false);
@@ -5959,7 +5959,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     case VK_F8:
       OpenMilkwaveRemote();
       return 0;
-    // F9 is handled in Milkdrop2PcmVisualizer.cpp
+      // F9 is handled in Milkdrop2PcmVisualizer.cpp
     case VK_F10:
       ToggleSpout();
       return 0;
@@ -7219,7 +7219,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     if (m_UI_mode == UI_REGULAR) {
       bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
       if (isCtrlPressed) {
-        
+
       }
       else {
         //m_bPresetLockedByCode = true;
@@ -7236,7 +7236,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
         m_waitstring.szToolTip[0] = 0;
         m_waitstring.nCursorPos = lstrlenW(m_waitstring.szText);	// set the starting edit position      
       }
-      
+
       return 0;
     }
     break;
@@ -7330,13 +7330,23 @@ void CPlugin::SaveCurrentPresetToQuicksave() {
     // If no '\\' is found, assume the full path is just the filename
     presetFilename = m_szCurrentPresetFile;
   }
+  // Get the executable's directory
+  wchar_t exePath[MAX_PATH];
+  GetModuleFileNameW(NULL, exePath, MAX_PATH);
+  std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
 
-  // Construct the full path for the quicksave preset
-  wchar_t quicksavePresetPath[MAX_PATH];
-  swprintf(quicksavePresetPath, MAX_PATH, L"%s\\%s", quicksaveDir, presetFilename);
+  // Construct the "resources/sprites/Quicksave" directory path relative to the executable
+  std::filesystem::path quicksavePresetPath = exeDir / "resources/presets/Quicksave";
+  std::filesystem::create_directories(quicksavePresetPath);
 
-  // Save the current preset to the quicksave folder
-  QuicksavePresetAs(quicksavePresetPath);
+  quicksavePresetPath.append(presetFilename);
+  // Convert std::filesystem::path to const wchar_t* before passing to Export
+  if (!m_pState->Export(quicksavePresetPath.wstring().c_str())) {
+    AddError(L"Quicksave failed", 5.0f, ERR_PRESET, true);
+  }
+  else {
+    AddError(L"Quicksave successful", 3.0f, ERR_NOTIFY, false);
+  }
 }
 
 wchar_t* FormImageCacheSizeString(wchar_t* itemStr, UINT sizeID) {
@@ -9480,19 +9490,6 @@ void CPlugin::SavePresetAs(wchar_t* szNewFile) {
 
     // refresh file listing
     UpdatePresetList(true, true);
-  }
-}
-
-void CPlugin::QuicksavePresetAs(wchar_t* szNewFile) {
-  // overwrites the file if it was already there,
-  // so you should check if the file exists first & prompt user to overwrite,
-  //   before calling this function
-
-  if (!m_pState->Export(szNewFile)) {
-    AddError(L"Quicksave failed", 5.0f, ERR_PRESET, true);
-  }
-  else {
-    AddError(L"Quicksave successful", 3.0f, ERR_NOTIFY, false);
   }
 }
 

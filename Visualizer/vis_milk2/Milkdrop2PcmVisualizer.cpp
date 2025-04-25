@@ -958,8 +958,9 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   EnumWindows((WNDENUMPROC)&GetWindowNames, NULL);
   // printf("Number of existing BeatDrops (%d)\n", nBeatDrops);
   if (nBeatDrops > 0) {
-    // swprintf_s(BeatDroptitle, L"Milkwave %2.2d", nBeatDrops);
-    // printf("New title [%S]\n", BeatDroptitle);
+    // swprintf_s(BeatDroptitle, L"Milkwave Visualizer %2.2d", nBeatDrops);
+    swprintf_s(BeatDroptitle, L"Milkwave Visualizer %d", nBeatDrops+1);
+    printf("New title [%S]\n", BeatDroptitle);
   }
   // ===============================================
   

@@ -3,6 +3,7 @@
 - song info + cover
 - file position synchronization
 - better opacity control
+- quicksave
 
 # Backlog
 
