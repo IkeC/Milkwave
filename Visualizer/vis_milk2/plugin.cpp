@@ -5402,21 +5402,46 @@ void ToggleTransparency(HWND hwnd) {
 }
 
 void CPlugin::SetOpacity(HWND hwnd) {
-  int alpha = std::ceil(255 * fOpacity);
+  // Retrieve the current extended window style
+  LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 
-  SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
-  SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), alpha, LWA_ALPHA);
-  DragAcceptFiles(hwnd, TRUE);
+  // Check if the window is currently in clickthrough mode
+  bool isClickthrough = (exStyle & WS_EX_TRANSPARENT) != 0;
 
-  int display = std::ceil(100 * fOpacity);
+  // Ensure the window is layered (required for transparency)
+  if (!(exStyle & WS_EX_LAYERED)) {
+    exStyle |= WS_EX_LAYERED;
+    SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+  }
+
+  // Set the new opacity
+  BYTE alpha = static_cast<BYTE>(fOpacity * 255); // Convert opacity (0.0 to 1.0) to alpha (0 to 255)
+  if (!SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)) {
+    DWORD error = GetLastError();
+    printf("Failed to set window opacity. Error: %lu\n", error);
+  }
+
+  // Modify the clickthrough state
+  if (isClickthrough) {
+    exStyle |= WS_EX_TRANSPARENT;
+  }
+  else {
+    exStyle &= ~WS_EX_TRANSPARENT;
+  }
+
+  // Reapply the extended window styles
+  SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+
+  // Reapply the alpha value after modifying the extended styles
+  if (!SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)) {
+    DWORD error = GetLastError();
+    printf("Failed to reapply window opacity. Error: %lu\n", error);
+  }
+
+  int display = std::ceil(100 * fOpacity); 
   wchar_t buf[1024];
   swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
   g_plugin.AddError(buf, 3.0f, ERR_NOTIFY, false);
-
-  if (IsBorderlessFullscreen(hwnd)) {
-    // If the window is in borderless fullscreen mode, save the opacity
-    g_plugin.m_WindowBorderlessFullscreenClickthroughOpacity = fOpacity;
-  }
 }
 
 void ToggleWindowOpacity(HWND hwnd, bool bDown) {
