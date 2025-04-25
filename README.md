@@ -1,4 +1,3 @@
-# Milkwave
 Milkwave is:
 - **Milkwave Visualizer**:
   An advanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
@@ -40,8 +39,7 @@ The original MilkDrop 2 WinAMP plugin created by Ryan Geiss was turned into a Wi
 ## System Requirements
 * Windows 7 or later
 * DirectX 9 or higher - compatible GPU
-* [Microsoft .NET Desktop Runtime 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-* DirectX End-User [Runtimes](https://www.microsoft.com/en-us/download/details.aspx?id=8109) (also included in the installer) contains the required 32-bit helper libraries d3dx9_43.dll and d3dx9_31.dll
+* [Microsoft .NET Desktop Runtime 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) (for Remote)
 
 ## Support
 
