@@ -95,6 +95,7 @@ namespace MilkwaveRemote
       numOpacity = new NumericUpDown();
       lblPercent = new Label();
       lblAudioDevice = new Label();
+      btn00 = new Button();
       btnSpace = new Button();
       btnBackspace = new Button();
       colorDialogMessage = new ColorDialog();
@@ -116,7 +117,6 @@ namespace MilkwaveRemote
       btnY = new Button();
       btn11 = new Button();
       btnTilde = new Button();
-      btn00 = new Button();
       btnF7 = new Button();
       btnF4 = new Button();
       btnF3 = new Button();
@@ -124,6 +124,7 @@ namespace MilkwaveRemote
       colorDialogWave = new ColorDialog();
       tabControl1 = new TabControl();
       tabRemote = new TabPage();
+      toolStripSeparator3 = new ToolStripSeparator();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -162,13 +163,13 @@ namespace MilkwaveRemote
       // 
       statusBar.Margin = new Padding(7, 4, 0, 2);
       statusBar.Name = "statusBar";
-      statusBar.Size = new Size(601, 20);
+      statusBar.Size = new Size(570, 20);
       statusBar.Spring = true;
       statusBar.TextAlign = ContentAlignment.TopLeft;
       // 
       // toolStripDropDownButton
       // 
-      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHelp, toolStripMenuItemHomepage, toolStripMenuItemSupporters, toolStripSeparator1, toolStripMenuItemDarkMode, toolStripSeparator2, toolStripMenuItemMessagePanel, toolStripMenuItemVisualizerPanel, toolStripMenuItemButtonPanel });
+      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemMessagePanel, toolStripMenuItemVisualizerPanel, toolStripMenuItemButtonPanel, toolStripSeparator2, toolStripMenuItemDarkMode });
       toolStripDropDownButton.Image = (Image)resources.GetObject("toolStripDropDownButton.Image");
       toolStripDropDownButton.ImageTransparentColor = Color.Magenta;
       toolStripDropDownButton.Name = "toolStripDropDownButton";
@@ -179,49 +180,49 @@ namespace MilkwaveRemote
       // toolStripMenuItemHelp
       // 
       toolStripMenuItemHelp.Name = "toolStripMenuItemHelp";
-      toolStripMenuItemHelp.Size = new Size(155, 22);
+      toolStripMenuItemHelp.Size = new Size(180, 22);
       toolStripMenuItemHelp.Text = "Help";
       toolStripMenuItemHelp.Click += toolStripMenuItemHelp_Click;
       // 
       // toolStripMenuItemHomepage
       // 
       toolStripMenuItemHomepage.Name = "toolStripMenuItemHomepage";
-      toolStripMenuItemHomepage.Size = new Size(155, 22);
-      toolStripMenuItemHomepage.Text = "Releases";
+      toolStripMenuItemHomepage.Size = new Size(180, 22);
+      toolStripMenuItemHomepage.Text = "Milkwave";
       toolStripMenuItemHomepage.Click += toolStripMenuItemReleases_Click;
       // 
       // toolStripMenuItemSupporters
       // 
       toolStripMenuItemSupporters.Name = "toolStripMenuItemSupporters";
-      toolStripMenuItemSupporters.Size = new Size(155, 22);
+      toolStripMenuItemSupporters.Size = new Size(180, 22);
       toolStripMenuItemSupporters.Text = "Supporters";
       toolStripMenuItemSupporters.Click += toolStripMenuItemSupporters_Click;
       // 
       // toolStripSeparator1
       // 
       toolStripSeparator1.Name = "toolStripSeparator1";
-      toolStripSeparator1.Size = new Size(152, 6);
+      toolStripSeparator1.Size = new Size(177, 6);
       // 
       // toolStripMenuItemDarkMode
       // 
       toolStripMenuItemDarkMode.Checked = true;
       toolStripMenuItemDarkMode.CheckState = CheckState.Checked;
       toolStripMenuItemDarkMode.Name = "toolStripMenuItemDarkMode";
-      toolStripMenuItemDarkMode.Size = new Size(155, 22);
+      toolStripMenuItemDarkMode.Size = new Size(180, 22);
       toolStripMenuItemDarkMode.Text = "Dark Mode";
       toolStripMenuItemDarkMode.Click += toolStripMenuItemDarkMode_Click;
       // 
       // toolStripSeparator2
       // 
       toolStripSeparator2.Name = "toolStripSeparator2";
-      toolStripSeparator2.Size = new Size(152, 6);
+      toolStripSeparator2.Size = new Size(177, 6);
       // 
       // toolStripMenuItemMessagePanel
       // 
       toolStripMenuItemMessagePanel.Checked = true;
       toolStripMenuItemMessagePanel.CheckState = CheckState.Checked;
       toolStripMenuItemMessagePanel.Name = "toolStripMenuItemMessagePanel";
-      toolStripMenuItemMessagePanel.Size = new Size(155, 22);
+      toolStripMenuItemMessagePanel.Size = new Size(180, 22);
       toolStripMenuItemMessagePanel.Text = "Message Panel";
       toolStripMenuItemMessagePanel.Click += toolStripMenuItemMessagePanel_Click;
       // 
@@ -230,7 +231,7 @@ namespace MilkwaveRemote
       toolStripMenuItemVisualizerPanel.Checked = true;
       toolStripMenuItemVisualizerPanel.CheckState = CheckState.Checked;
       toolStripMenuItemVisualizerPanel.Name = "toolStripMenuItemVisualizerPanel";
-      toolStripMenuItemVisualizerPanel.Size = new Size(155, 22);
+      toolStripMenuItemVisualizerPanel.Size = new Size(180, 22);
       toolStripMenuItemVisualizerPanel.Text = "Visualizer Panel";
       toolStripMenuItemVisualizerPanel.Click += toolStripMenuItemPresetPanel_Click;
       // 
@@ -239,7 +240,7 @@ namespace MilkwaveRemote
       toolStripMenuItemButtonPanel.Checked = true;
       toolStripMenuItemButtonPanel.CheckState = CheckState.Checked;
       toolStripMenuItemButtonPanel.Name = "toolStripMenuItemButtonPanel";
-      toolStripMenuItemButtonPanel.Size = new Size(155, 22);
+      toolStripMenuItemButtonPanel.Size = new Size(180, 22);
       toolStripMenuItemButtonPanel.Text = "Button Panel";
       toolStripMenuItemButtonPanel.Click += toolStripMenuItemButtonPanel_Click;
       // 
@@ -898,6 +899,19 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblAudioDevice, "Double-click to reload list");
       lblAudioDevice.DoubleClick += lblAudioDevice_DoubleClick;
       // 
+      // btn00
+      // 
+      btn00.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+      btn00.Location = new Point(7, 141);
+      btn00.Margin = new Padding(3, 2, 3, 2);
+      btn00.Name = "btn00";
+      btn00.Size = new Size(76, 43);
+      btn00.TabIndex = 12;
+      btn00.Text = "00";
+      toolTip1.SetToolTip(btn00, "Cover slot");
+      btn00.UseVisualStyleBackColor = true;
+      btn00.Click += btn00_Click;
+      // 
       // btnSpace
       // 
       tableLayoutPanel1.SetColumnSpan(btnSpace, 2);
@@ -1265,18 +1279,6 @@ namespace MilkwaveRemote
       btnTilde.UseVisualStyleBackColor = true;
       btnTilde.Click += btnTilde_Click;
       // 
-      // btn00
-      // 
-      btn00.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      btn00.Location = new Point(7, 141);
-      btn00.Margin = new Padding(3, 2, 3, 2);
-      btn00.Name = "btn00";
-      btn00.Size = new Size(76, 43);
-      btn00.TabIndex = 12;
-      btn00.Text = "00";
-      btn00.UseVisualStyleBackColor = true;
-      btn00.Click += btn00_Click;
-      // 
       // btnF7
       // 
       tableLayoutPanel1.SetColumnSpan(btnF7, 2);
@@ -1359,6 +1361,11 @@ namespace MilkwaveRemote
       tabRemote.TabIndex = 0;
       tabRemote.Text = "Remote";
       tabRemote.UseVisualStyleBackColor = true;
+      // 
+      // toolStripSeparator3
+      // 
+      toolStripSeparator3.Name = "toolStripSeparator3";
+      toolStripSeparator3.Size = new Size(177, 6);
       // 
       // MilkwaveRemoteForm
       // 
@@ -1505,5 +1512,6 @@ namespace MilkwaveRemote
     private NumericUpDown numAlpha;
     private NumericUpDown numOpacity;
     private Label lblPercent;
+    private ToolStripSeparator toolStripSeparator3;
   }
 }

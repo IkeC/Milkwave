@@ -1007,6 +1007,11 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     g_plugin.m_bAlwaysOnTop = true;
     g_plugin.ToggleAlwaysOnTop(hwnd);
   }
+  else {
+    if (g_plugin.fOpacity < 1) {
+      g_plugin.SetOpacity(hwnd);
+    }
+  }
 
   ShowWindow(hwnd, SW_SHOW);
 

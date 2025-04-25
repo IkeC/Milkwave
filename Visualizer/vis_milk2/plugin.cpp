@@ -1387,6 +1387,7 @@ void CPlugin::MyReadConfig() {
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
+  fOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowOpacity", fOpacity, pIni);
   m_WindowWatermarkModeOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowWatermarkModeOpacity", m_WindowWatermarkModeOpacity, pIni);
   m_WindowX = GetPrivateProfileIntW(L"Milkwave", L"WindowX", m_WindowX, pIni);
   m_WindowY = GetPrivateProfileIntW(L"Milkwave", L"WindowY", m_WindowY, pIni);
@@ -1512,6 +1513,7 @@ void CPlugin::MyWriteConfig() {
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
   WritePrivateProfileFloatW(m_WindowWatermarkModeOpacity, L"WindowWatermarkModeOpacity", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(fOpacity, L"WindowOpacity", pIni, L"Milkwave"); 
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
@@ -10152,6 +10154,15 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 8);
     fOpacity = std::stof(message);
     SetOpacity(GetPluginWindow());
+  } 
+  else if (wcsncmp(sMessage, L"STATE", 5) == 0) {
+    int display = std::ceil(100 * fOpacity);
+    wchar_t buf[1024];
+    swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
+    g_plugin.AddError(buf, 3.0f, ERR_NOTIFY, false);
+    SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
+
+    SendMessageToMilkwaveRemote((L"PRESET=" + std::wstring(m_szCurrentPresetFile)).c_str());
   }
 }
 

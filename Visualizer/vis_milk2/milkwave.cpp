@@ -33,7 +33,7 @@ void Milkwave::PollMediaInfo() {
           currentTitle = properties.Title().c_str();
           currentAlbum = properties.AlbumTitle().c_str();
 
-          if (doSaveCover && properties.Thumbnail()) {
+          if ((doPollExplicit || doSaveCover) && properties.Thumbnail()) {
             SaveThumbnailToFile(properties);
           }
 

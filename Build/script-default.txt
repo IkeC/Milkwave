@@ -27,10 +27,10 @@ Welcome to Milkwave!
 SEND=11|A wild sprite appears!
 STYLE=Style B|Switch to "Style B"
 Here's another line
-Switching preset...|NEXT
+Switched to next preset|NEXT
 FONT=Courier New|Everybody likes Courier!
 FONT=Arial|Let's try//doubleline text!
-PRESET=resources\presets\Milkwave\12 - IkeC - wave mode 7.milk|I like this preset!
+PRESET=resources\presets\Milkwave\Flexi - lorenz attractor.milk|I like this preset!
 BPM=180|BEATS=4|Let's go faster!
 RESET|Boom
 Boom

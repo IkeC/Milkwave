@@ -148,7 +148,8 @@ namespace MilkwaveRemote {
       Amplify,
       Wave,
       AudioDevice,
-      Opacity
+      Opacity,
+      GetState
     }
 
     public MilkwaveRemoteForm() {
@@ -158,7 +159,7 @@ namespace MilkwaveRemote {
       Assembly executingAssembly = Assembly.GetExecutingAssembly();
       var fieVersionInfo = FileVersionInfo.GetVersionInfo(executingAssembly.Location);
       var version = fieVersionInfo.FileVersion;
-      toolStripDropDownButton.Text = $"Milkwave v{version}";
+      toolStripMenuItemHomepage.Text = $"Milkwave v{version}";
 
       cboParameters.DropDownStyle = ComboBoxStyle.DropDown;
       cboParameters.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
@@ -286,6 +287,8 @@ namespace MilkwaveRemote {
       if (Directory.Exists(MilkwavePresetsFolder)) {
         LoadPresetsFromDirectory(MilkwavePresetsFolder);
       }
+
+      SendToMilkwaveVisualizer("", MessageType.GetState);
     }
 
     protected override void WndProc(ref Message m) {
@@ -405,6 +408,8 @@ namespace MilkwaveRemote {
         } else if (type == MessageType.Opacity) {
           decimal val = numOpacity.Value / 100;
           message = "OPACITY=" + val.ToString(CultureInfo.InvariantCulture);
+        } else if (type == MessageType.GetState) {
+          message = "STATE";
         } else if (type == MessageType.Message) {
           if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
             // try auto-wrap
@@ -557,6 +562,7 @@ namespace MilkwaveRemote {
             string tokenUpper = token.ToUpper();
             if (tokenUpper.Equals("NEXT")) {
               btnSpace.PerformClick();
+              Thread.Sleep(100);
             } else if (tokenUpper.Equals("PREV")) {
               btnBackspace.PerformClick();
             } else if (tokenUpper.Equals("STOP")) {
