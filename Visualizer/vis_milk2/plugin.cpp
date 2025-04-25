@@ -1387,7 +1387,7 @@ void CPlugin::MyReadConfig() {
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
-  m_WindowBorderlessFullscreenClickthroughOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowBorderlessFullscreenClickthroughOpacity", m_WindowBorderlessFullscreenClickthroughOpacity, pIni);
+  m_WindowWatermarkModeOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowWatermarkModeOpacity", m_WindowWatermarkModeOpacity, pIni);
   m_WindowX = GetPrivateProfileIntW(L"Milkwave", L"WindowX", m_WindowX, pIni);
   m_WindowY = GetPrivateProfileIntW(L"Milkwave", L"WindowY", m_WindowY, pIni);
   m_WindowWidth = GetPrivateProfileIntW(L"Milkwave", L"WindowWidth", m_WindowWidth, pIni);
@@ -1511,7 +1511,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
-  WritePrivateProfileFloatW(m_WindowBorderlessFullscreenClickthroughOpacity, L"WindowBorderlessFullscreenClickthroughOpacity", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_WindowWatermarkModeOpacity, L"WindowWatermarkModeOpacity", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
@@ -5442,6 +5442,8 @@ void CPlugin::SetOpacity(HWND hwnd) {
   wchar_t buf[1024];
   swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
   g_plugin.AddError(buf, 3.0f, ERR_NOTIFY, false);
+
+  SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
 }
 
 void ToggleWindowOpacity(HWND hwnd, bool bDown) {
@@ -6797,6 +6799,13 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       }
       break;
 
+    case 'S':
+      if (bCtrlHeldDown) {
+        g_plugin.SaveCurrentPresetToQuicksave();
+        return 0;
+      }
+      break;
+
     case 'T':
       if (bCtrlHeldDown) {
         // stop display of custom message or song title.
@@ -7208,19 +7217,26 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     // SPOUT
     m_show_help = false;
     if (m_UI_mode == UI_REGULAR) {
-      //m_bPresetLockedByCode = true;
-      m_UI_mode = UI_SAVEAS;
+      bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+      if (isCtrlPressed) {
+        
+      }
+      else {
+        //m_bPresetLockedByCode = true;
+        m_UI_mode = UI_SAVEAS;
 
-      // enter WaitString mode
-      m_waitstring.bActive = true;
-      m_waitstring.bFilterBadChars = true;
-      m_waitstring.bDisplayAsCode = false;
-      m_waitstring.nSelAnchorPos = -1;
-      m_waitstring.nMaxLen = min(sizeof(m_waitstring.szText) - 1, MAX_PATH - lstrlenW(GetPresetDir()) - 6);	// 6 for the extension + null char.    We set this because win32 LoadFile, MoveFile, etc. barf if the path+filename+ext are > MAX_PATH chars.
-      lstrcpyW(m_waitstring.szText, m_pState->m_szDesc);			// initial string is the filename, minus the extension
-      wasabiApiLangString(IDS_SAVE_AS, m_waitstring.szPrompt, 512);
-      m_waitstring.szToolTip[0] = 0;
-      m_waitstring.nCursorPos = lstrlenW(m_waitstring.szText);	// set the starting edit position
+        // enter WaitString mode
+        m_waitstring.bActive = true;
+        m_waitstring.bFilterBadChars = true;
+        m_waitstring.bDisplayAsCode = false;
+        m_waitstring.nSelAnchorPos = -1;
+        m_waitstring.nMaxLen = min(sizeof(m_waitstring.szText) - 1, MAX_PATH - lstrlenW(GetPresetDir()) - 6);	// 6 for the extension + null char.    We set this because win32 LoadFile, MoveFile, etc. barf if the path+filename+ext are > MAX_PATH chars.
+        lstrcpyW(m_waitstring.szText, m_pState->m_szDesc);			// initial string is the filename, minus the extension
+        wasabiApiLangString(IDS_SAVE_AS, m_waitstring.szPrompt, 512);
+        m_waitstring.szToolTip[0] = 0;
+        m_waitstring.nCursorPos = lstrlenW(m_waitstring.szText);	// set the starting edit position      
+      }
+      
       return 0;
     }
     break;
@@ -7294,6 +7310,33 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   }
 
   return 1;
+}
+
+void CPlugin::SaveCurrentPresetToQuicksave() {
+  // Ensure the "quicksave" folder exists under the presets directory
+  wchar_t quicksaveDir[MAX_PATH];
+  swprintf(quicksaveDir, MAX_PATH, L"%s\\quicksave", m_szPresetDir);
+
+  // Create the "quicksave" directory if it doesn't exist
+  CreateDirectoryW(quicksaveDir, NULL);
+
+  // Find the last occurrence of the path separator ('\\') in the full path
+  const wchar_t* presetFilename = wcsrchr(m_szCurrentPresetFile, L'\\');
+  if (presetFilename) {
+    // Move past the '\\' to get the filename
+    presetFilename++;
+  }
+  else {
+    // If no '\\' is found, assume the full path is just the filename
+    presetFilename = m_szCurrentPresetFile;
+  }
+
+  // Construct the full path for the quicksave preset
+  wchar_t quicksavePresetPath[MAX_PATH];
+  swprintf(quicksavePresetPath, MAX_PATH, L"%s\\%s", quicksaveDir, presetFilename);
+
+  // Save the current preset to the quicksave folder
+  QuicksavePresetAs(quicksavePresetPath);
 }
 
 wchar_t* FormImageCacheSizeString(wchar_t* itemStr, UINT sizeID) {
@@ -9437,6 +9480,19 @@ void CPlugin::SavePresetAs(wchar_t* szNewFile) {
 
     // refresh file listing
     UpdatePresetList(true, true);
+  }
+}
+
+void CPlugin::QuicksavePresetAs(wchar_t* szNewFile) {
+  // overwrites the file if it was already there,
+  // so you should check if the file exists first & prompt user to overwrite,
+  //   before calling this function
+
+  if (!m_pState->Export(szNewFile)) {
+    AddError(L"Quicksave failed", 5.0f, ERR_PRESET, true);
+  }
+  else {
+    AddError(L"Quicksave successful", 3.0f, ERR_NOTIFY, false);
   }
 }
 

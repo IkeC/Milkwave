@@ -595,7 +595,7 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
         if (!clickthrough) {
           ToggleClickThrough(hWnd);
         }
-        SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowBorderlessFullscreenClickthroughOpacity * 255), LWA_ALPHA);
+        SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowWatermarkModeOpacity * 255), LWA_ALPHA);
       }
 
       borderless = true;
@@ -1000,7 +1000,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   // window was closed in borderless fullscreen mode
   if (g_plugin.IsBorderlessFullscreen(hwnd)) {
-    g_plugin.fOpacity = g_plugin.m_WindowBorderlessFullscreenClickthroughOpacity;
+    g_plugin.fOpacity = g_plugin.m_WindowWatermarkModeOpacity;
     g_plugin.SetOpacity(hwnd);
     if (!clickthrough) ToggleClickThrough(hwnd);
     g_plugin.m_bAlwaysOnTop = true;

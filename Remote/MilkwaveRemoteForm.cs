@@ -315,6 +315,16 @@ namespace MilkwaveRemote {
             if (status.Length > 0) {
               SetStatusText(status);
             }
+          } else if (receivedString.StartsWith("OPACITY=")) {
+            string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
+              if (numOpacity.Value != parsedOpacity) {
+                // Temporarily detach the event handler
+                numOpacity.ValueChanged -= numOpacity_ValueChanged;
+                numOpacity.Value = parsedOpacity;
+                numOpacity.ValueChanged += numOpacity_ValueChanged;
+              }
+            }
           } else if (receivedString.StartsWith("DEVICE=")) {
             string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
             helper.SelectDeviceByName(cboAudioDevice, device);

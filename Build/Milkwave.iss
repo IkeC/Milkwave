@@ -2,7 +2,7 @@
 ; https://jrsoftware.org/isinfo.php
 
 [Setup]
-AppVersion=1.4
+AppVersion=1.5
 SetupIconFile=..\Remote\MilkwaveRemote.ico
 SourceDir=..\Release\
 AppName=Milkwave
@@ -43,7 +43,7 @@ Source: "resources\docs\*"; DestDir: "{app}\resources\docs"; Flags: recursesubdi
 Source: "resources\presets\*"; DestDir: "{app}\resources\presets"; Flags: recursesubdirs
 Source: "resources\sprites\*"; DestDir: "{app}\resources\sprites"; Flags: recursesubdirs
 Source: "resources\textures\*"; DestDir: "{app}\resources\textures"; Flags: recursesubdirs
-Source: "messages.ini"; DestDir: "{app}"
+Source: "messages.ini"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "MilkwaveRemote.dll"; DestDir: "{app}"
 Source: "MilkwaveRemote.exe"; DestDir: "{app}"
 Source: "MilkwaveRemote.runtimeconfig.json"; DestDir: "{app}"
@@ -51,9 +51,9 @@ Source: "MilkwaveVisualizer.exe"; DestDir: "{app}"
 Source: "NAudio.Wasapi.dll"; DestDir: "{app}"
 Source: "README.txt"; DestDir: "{app}"
 Source: "script-default.txt"; DestDir: "{app}"
-Source: "settings.ini"; DestDir: "{app}"
-Source: "settings-milkwave.json"; DestDir: "{app}"
-Source: "sprites.ini"; DestDir: "{app}"
+Source: "settings.ini"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "settings-remote.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "sprites.ini"; DestDir: "{app}"; Flags: onlyifdoesntexist
 
 [Icons]
 Name: "{group}\Milkwave Visualizer"; Filename: "{app}\MilkwaveVisualizer.exe"

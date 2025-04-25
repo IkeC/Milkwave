@@ -334,7 +334,7 @@ public:
   int     m_nTrebEnd = 20000;
 
   bool m_WindowBorderless = false;
-  float m_WindowBorderlessFullscreenClickthroughOpacity = 0.3f;
+  float m_WindowWatermarkModeOpacity = 0.3f;
   int m_WindowX = 850;
   int m_WindowY = 50;
   int m_WindowWidth = 640;
@@ -614,12 +614,14 @@ public:
   wchar_t* GetMsgIniFile() { return m_szMsgIniFile; };
   wchar_t* GetPresetDir() { return m_szPresetDir; };
   void		SavePresetAs(wchar_t* szNewFile);		// overwrites the file if it was already there.
+  void QuicksavePresetAs(wchar_t* szNewFile);
   void		DeletePresetFile(wchar_t* szDelFile);
   void		RenamePresetFile(wchar_t* szOldFile, wchar_t* szNewFile);
   void		SetCurrentPresetRating(float fNewRating);
   void		SeekToPreset(wchar_t cStartChar);
   bool		ReversePropagatePoint(float fx, float fy, float* fx2, float* fy2);
   int 		HandleRegularKey(WPARAM wParam);
+  void SaveCurrentPresetToQuicksave();
   bool		OnResizeGraphicsWindow();
   bool		OnResizeTextWindow();
   void		ClearGraphicsWindow();	// for windowed mode only

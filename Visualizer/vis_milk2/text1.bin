@@ -1,7 +1,6 @@
 ESC                  exit Milkwave Visualizer / menus
 ALT + ENTER          toggle fullscreen (or double-click)
 ALT + S              toggle multiple monitor stretch
-CTRL + T             instantly reset time variable
 SHIFT + UP / DOWN    increase/decrease window opacity (or mousewheel)
 
 SPACE / H            soft / hard cut to next preset
@@ -12,6 +11,7 @@ L                    load specific preset
 M                    show/hide preset-editing menu
 N                    show per-frame monitor
 S                    save new preset
+CTRL + S             quicksave to /presets/quicksave folder
 A                    do random mini-mash-up
 D                    toggle warp & comp shader locks
 !                    randomize warp shader
