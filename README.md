@@ -8,7 +8,7 @@ Milkwave is:
 
 ## Visualizer Features
  
-* Display current track information and artwork from Spotify, YouTube or Twitch
+* Display current track information and artwork from Spotify, YouTube, Twitch etc.
 * Change preset on track change
 * Set window transparency, borderless, and clickthrough ("watermark mode")
 * Customize font types and colors
