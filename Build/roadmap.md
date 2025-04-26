@@ -1,9 +1,7 @@
-# v1.5
+# v1.5+
 
-- song info + cover
-- file position synchronization
-- better opacity control
-- quicksave
+- B: Show Cover
+- Icon?
 
 # Backlog
 
