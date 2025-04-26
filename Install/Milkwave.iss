@@ -1,5 +1,6 @@
 ; -- Milkwave.iss: Inno Setup script
 ; https://jrsoftware.org/isinfo.php
+; Deprecated: Using NSIS now (Milkwave.nsi)
 
 [Setup]
 AppVersion=1.5

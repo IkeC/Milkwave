@@ -1,7 +1,6 @@
 # v1.5+
 
-- B: Show Cover
-- Icon?
+- B: Show Cover (config)
 
 # Backlog
 

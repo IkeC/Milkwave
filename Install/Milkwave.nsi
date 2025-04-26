@@ -1,4 +1,5 @@
-; Milkwave.nsi: NSIS script
+; Milkwave.nsi
+; NSIS installer script
 
 !include "MUI2.nsh"
 
