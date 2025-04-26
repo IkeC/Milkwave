@@ -1,12 +1,12 @@
 Milkwave is:
 - **Milkwave Visualizer**:
-  An advanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
+   An advanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
 - **Milkwave Remote**:
-  A standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
+   A standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
-![image](https://github.com/user-attachments/assets/d9628355-3ac7-4049-a37b-477a3a212e8d)
+![image](https://github.com/user-attachments/assets/055be5ff-b3b8-43fd-aca4-119bf189fbbb)
 
-## Milkwave Visualizer Features
+## Visualizer Features
  
 * Display current track information and artwork from Spotify, YouTube or Twitch
 * Change preset on track change
@@ -15,7 +15,7 @@ Milkwave is:
 * Over 5000 presets from artists all over the world
 * Use independently or in combination with Milkwave Remote
 
-## Milkwave Remote Features
+## Remote Features
 
 * Send custom message text, color, font size, position and other parameters
 * Save parameter definitions as named styles for quick access
@@ -27,8 +27,6 @@ Milkwave is:
 * Modify the currently playing preset's waveform type, color and alpha value
 * Send common key combinations using buttons
 * Customizable interface - show only what you need
-
-![image](https://github.com/user-attachments/assets/daa3752d-fb8b-4f07-b438-63c19ec07014)
 
 There are many tooltips explaining all features when you hover over the form elements.
 
