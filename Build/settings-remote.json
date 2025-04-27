@@ -24,5 +24,6 @@
   "DarkMode": true,
   "ShowMessagePanel": true,
   "ShowPresetPanel": true,
-  "ShowButtonPanel": true
+  "ShowButtonPanel": true,
+  "CloseVisualizerWithRemote": false
 }

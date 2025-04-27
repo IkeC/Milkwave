@@ -15,5 +15,6 @@
     public bool ShowMessagePanel { get; set; } = true;
     public bool ShowPresetPanel { get; set; } = true;
     public bool ShowButtonPanel { get; set; } = true;
+    public bool CloseVisualizerWithRemote { get; set; } = false;
   }
 }
