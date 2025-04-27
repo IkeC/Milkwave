@@ -1384,6 +1384,7 @@ void CPlugin::MyReadConfig() {
   m_ChangePresetWithSong = GetPrivateProfileBoolW(L"Milkwave", L"ChangePresetWithSong", m_ChangePresetWithSong, pIni);
   m_SongInfoDisplaySeconds = GetPrivateProfileFloatW(L"Milkwave", L"SongInfoDisplaySeconds", m_SongInfoDisplaySeconds, pIni);
   m_DisplayCover = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCover", m_DisplayCover, pIni);
+  m_DisplayCoverWhenPressingB = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCoverWhenPressingB", m_DisplayCoverWhenPressingB, pIni);
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
@@ -1510,6 +1511,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_SongInfoPollingEnabled, L"SongInfoPollingEnabled", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
+  //WritePrivateProfileIntW(m_DisplayCoverWhenPressingB, L"mDisplayCoverWhenPressingB", pIni, L"Milkwave");
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
   WritePrivateProfileFloatW(m_WindowWatermarkModeOpacity, L"WindowWatermarkModeOpacity", pIni, L"Milkwave");
@@ -5564,8 +5566,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   int nRepeat = 1;  //updated as appropriate
   int rep;
 
-  static bool rightMouseButtonHeld = false; // Track the state of the right mouse button
-
   switch (uMsg) {
   case WM_COPYDATA:
   {
@@ -5798,23 +5798,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     }
     return 1; // end case WM_CHAR
 
-  case WM_RBUTTONDOWN: // Right mouse button pressed
-    rightMouseButtonHeld = true;
-    break;
 
-  case WM_RBUTTONUP: // Right mouse button released
-    rightMouseButtonHeld = false;
-    break;
-
-  case WM_MBUTTONDOWN: // Middle mouse button clicked
-    if (rightMouseButtonHeld) {
-      // Open the MilkWave remote
-      g_plugin.OpenMilkwaveRemote();
-    }
-    else {
-      PostMessage(hWnd, WM_CLOSE, 0, 0); // Close the window
-    }
-   return 0;
 
    // Handle other messages here...
 
@@ -6506,7 +6490,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         // Don't close if esc pressed when vj window has focus
         if (GetFocus() == GetPluginWindow()) {
           bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-          if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(Press SHIFT + ESC to close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
+          if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(Press SHIFT+ESC or RIGHT+LEFT MOUSE BUTTON to close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
             PostMessage(hWnd, WM_CLOSE, 0, 0);
           }
           return 0;

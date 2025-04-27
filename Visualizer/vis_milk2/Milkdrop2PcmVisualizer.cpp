@@ -604,6 +604,9 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
 }
 
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
+  static bool rightMouseButtonHeld = false; // Track the state of the right mouse button
+
   switch (uMsg) {
   case WM_CLOSE:
   {
@@ -660,7 +663,6 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
     break;
   }
-
 
   case WM_KEYDOWN:
   {
@@ -761,13 +763,14 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         else if (y > rect.bottom - rect.top - BORDERWIDTH)
           return HTBOTTOM;
         return HTCAPTION;
+      }
+    break;
+  }
+
   case WM_NCLBUTTONDBLCLK:
   {
     if (borderless)
       ToggleFullScreen(hWnd);
-    break;
-  }
-      }
     break;
   }
 
@@ -787,6 +790,32 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
     break;
   }
+
+  case WM_RBUTTONDOWN, WM_NCRBUTTONDOWN: // Right mouse button pressed
+    rightMouseButtonHeld = true;
+    break;
+
+  case WM_RBUTTONUP, WM_NCRBUTTONUP: // Right mouse button released
+    rightMouseButtonHeld = false;
+    break;
+
+  case WM_LBUTTONDOWN, WM_NCLBUTTONDOWN: // Left mouse button pressed
+    if (rightMouseButtonHeld) {
+      // Right + Left
+      PostMessage(hWnd, WM_CLOSE, 0, 0); // Close the window
+    }
+    break;
+
+  case WM_MBUTTONDOWN, WM_NCMBUTTONDOWN: // Middle mouse button clicked
+    if (rightMouseButtonHeld) {
+      // Right + Middle
+      g_plugin.OpenMilkwaveRemote();
+    }
+    else {
+      // Middle only
+      milkwave.doPollExplicit = true;
+    }
+    break;
 
   case WM_LBUTTONDBLCLK:
   {
@@ -814,13 +843,19 @@ void RenderFrame() {
 
   milkwave.PollMediaInfo();
   if (milkwave.updated) {
-    if (g_plugin.m_ChangePresetWithSong && !milkwave.doPollExplicit && milkwave.isSongChange) {
-      g_plugin.NextPreset(g_plugin.m_fBlendTimeAuto);
-    }
-    if (g_plugin.m_DisplayCover && !milkwave.doPollExplicit && milkwave.isSongChange) {
-      g_plugin.LaunchSprite(0, -1);
+    if (milkwave.isSongChange && !milkwave.doPollExplicit) {
+      if (g_plugin.m_ChangePresetWithSong) {
+        g_plugin.NextPreset(g_plugin.m_fBlendTimeAuto);
+      }
+      if (g_plugin.m_DisplayCover) {
+        g_plugin.LaunchSprite(0, -1);
+      }
     }
 
+    if (milkwave.doPollExplicit && g_plugin.m_DisplayCoverWhenPressingB) {
+      g_plugin.LaunchSprite(0, -1);
+    }
+    
     milkwave.doPollExplicit = false;
     wchar_t buf[512];
 
@@ -959,11 +994,11 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   // printf("Number of existing BeatDrops (%d)\n", nBeatDrops);
   if (nBeatDrops > 0) {
     // swprintf_s(BeatDroptitle, L"Milkwave Visualizer %2.2d", nBeatDrops);
-    swprintf_s(BeatDroptitle, L"Milkwave Visualizer %d", nBeatDrops+1);
+    swprintf_s(BeatDroptitle, L"Milkwave Visualizer %d", nBeatDrops + 1);
     printf("New title [%S]\n", BeatDroptitle);
   }
   // ===============================================
-  
+
     // Create the render window
   HWND hwnd = CreateWindowW(
     L"Direct3DWindowClass",
