@@ -437,28 +437,47 @@ void ToggleFullScreen(HWND hwnd) {
 }
 
 void ToggleBorderlessWindow(HWND hwnd) {
-  if (!borderless) {
-    RECT rect;
-    GetWindowRect(hwnd, &rect);
-    int x = rect.left;
-    int y = rect.top;
-    int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top;
+  static RECT lastRect = { 0 }; // Store the previous window position and size
+  GetWindowRect(hwnd, &lastRect);
+  int x = lastRect.left;
+  int y = lastRect.top;
+  int width = lastRect.right - lastRect.left;
+  int height = lastRect.bottom - lastRect.top;
+  GetWindowRect(hwnd, &lastRect);
 
+  static bool wasTransparent = false; // Track if the window was transparent before toggling
+
+  // Check if the window currently has transparency
+  BYTE currentAlpha = 255; // Default to fully opaque
+  DWORD flags = 0;
+  COLORREF colorKey = 0;
+  if (GetLayeredWindowAttributes(hwnd, &colorKey, &currentAlpha, &flags)) {
+    wasTransparent = (flags & LWA_COLORKEY) != 0; // Check if LWA_COLORKEY is set
+  }
+
+  if (!borderless) {
+    // Save the current window position and size
+
+    // Set the window style to borderless
     SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+
+    // Reapply transparency only if it was present before
+    if (wasTransparent) {
+      SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
+    }
+
     SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
     borderless = true;
   }
   else {
-    RECT rect;
-    GetWindowRect(hwnd, &rect);
-    int x = rect.left;
-    int y = rect.top;
-    int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top;
-
+    // Restore the previous window style and position
     SetWindowLongW(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
-    SetWindowPos(hwnd, HWND_NOTOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
+
+    // Reapply transparency only if it was present before
+    if (wasTransparent) {
+      SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
+    }
+
     borderless = false;
   }
   g_plugin.m_WindowBorderless = borderless;
@@ -859,7 +878,7 @@ void RenderFrame() {
     if (milkwave.doPollExplicit && g_plugin.m_DisplayCoverWhenPressingB) {
       g_plugin.LaunchSprite(0, -1);
     }
-    
+
     milkwave.doPollExplicit = false;
     wchar_t buf[512];
 
