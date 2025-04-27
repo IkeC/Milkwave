@@ -791,22 +791,26 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     break;
   }
 
-  case WM_RBUTTONDOWN, WM_NCRBUTTONDOWN: // Right mouse button pressed
+  case WM_RBUTTONDOWN:
+  case WM_NCRBUTTONDOWN: // Right mouse button pressed
     rightMouseButtonHeld = true;
     break;
 
-  case WM_RBUTTONUP, WM_NCRBUTTONUP: // Right mouse button released
+  case WM_RBUTTONUP:
+  case WM_NCRBUTTONUP: // Right mouse button released
     rightMouseButtonHeld = false;
     break;
 
-  case WM_LBUTTONDOWN, WM_NCLBUTTONDOWN: // Left mouse button pressed
+  case WM_LBUTTONDOWN:
+  case WM_NCLBUTTONDOWN: // Left mouse button pressed
     if (rightMouseButtonHeld) {
       // Right + Left
       PostMessage(hWnd, WM_CLOSE, 0, 0); // Close the window
     }
     break;
 
-  case WM_MBUTTONDOWN, WM_NCMBUTTONDOWN: // Middle mouse button clicked
+  case WM_MBUTTONDOWN:
+  case WM_NCMBUTTONDOWN: // Middle mouse button clicked
     if (rightMouseButtonHeld) {
       // Right + Middle
       g_plugin.OpenMilkwaveRemote();

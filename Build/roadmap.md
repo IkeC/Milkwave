@@ -1,7 +1,9 @@
 # v1.5+
 
-- Middle-Click: Close Visualizer, Middle-Click+Right Mouse Button: Open Remote
-- B: Show Cover (config)
+- Middle Mouse Button: Song Info
+  Left + Right Mouse Button: Close Visualizer
+  Middle + Right Mouse Button: Open Remote
+- Explicit Poll: Show Cover (config)
 
 # Backlog
 

@@ -1,10 +1,10 @@
 Milkwave - Advanced MilkDrop2 Visualizer with Remote Control
 
 MilkwaveVisualizer.exe: 
-The Visualizer. You may run and use this independently without the Remote. You can press F8 anytime to start the Remote.
+The Visualizer. You may run and use this independently without the Remote. You can press F8 (or Right+Middle Mouse Button) anytime to start the Remote.
 
 MilkwaveRemote.exe: 
-The program to remotely control the Visualizer. When you start this, MilkwaveVisualizer.exe will be started automatically. If you hold Ctrl or Alt while closing this window, the Visualizer will not be closed.
+The program to remotely control the Visualizer. When you start this, Visualizer will be started automatically if it's not already running. If you hold Ctrl or Alt while closing this window, the Visualizer will not be closed.
 
 settings.ini:
 Settings for the Visualizer. Feel free to edit.
