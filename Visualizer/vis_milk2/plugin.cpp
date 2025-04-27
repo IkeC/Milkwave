@@ -5564,6 +5564,8 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   int nRepeat = 1;  //updated as appropriate
   int rep;
 
+  static bool rightMouseButtonHeld = false; // Track the state of the right mouse button
+
   switch (uMsg) {
   case WM_COPYDATA:
   {
@@ -5796,6 +5798,27 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     }
     return 1; // end case WM_CHAR
 
+  case WM_RBUTTONDOWN: // Right mouse button pressed
+    rightMouseButtonHeld = true;
+    break;
+
+  case WM_RBUTTONUP: // Right mouse button released
+    rightMouseButtonHeld = false;
+    break;
+
+  case WM_MBUTTONDOWN: // Middle mouse button clicked
+    if (rightMouseButtonHeld) {
+      // Open the MilkWave remote
+      g_plugin.OpenMilkwaveRemote();
+    }
+    else {
+      PostMessage(hWnd, WM_CLOSE, 0, 0); // Close the window
+    }
+   return 0;
+
+   // Handle other messages here...
+
+  
   case WM_MOUSEWHEEL:
 
     if (GET_WHEEL_DELTA_WPARAM(wParam) < 0 && !m_bPresetLockedByCode)
@@ -5821,6 +5844,8 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     return 0;
 
   case WM_KEYDOWN:    // virtual-key codes
+
+
 
     // Note that some keys will never reach this point, since they are
     //   intercepted by the plugin shell (see PluginShellWindowProc(),
