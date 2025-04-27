@@ -344,6 +344,8 @@ public:
   bool m_bAlwaysOnTop = false;
 
   bool m_SongInfoPollingEnabled = true;
+  int m_SongInfoDisplayCorner = 3;
+
   bool m_ChangePresetWithSong = true;
   float m_SongInfoDisplaySeconds = 5.0f;
   bool m_DisplayCover = true;
@@ -578,7 +580,7 @@ public:
 
   td_supertext m_supertext;	// **contains info about current Song Title or Custom Message.**
   bool m_blackmode = false;
-
+  
   IDirect3DTexture9* m_tracer_tex;
 
   int         m_nFramesSinceResize;

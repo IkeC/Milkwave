@@ -1380,6 +1380,7 @@ void CPlugin::MyReadConfig() {
   // Milkwave
   GetPrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);
   m_SongInfoPollingEnabled = GetPrivateProfileBoolW(L"Milkwave", L"SongInfoPollingEnabled", m_SongInfoPollingEnabled, pIni);
+  m_SongInfoDisplayCorner = GetPrivateProfileIntW(L"Milkwave", L"SongInfoDisplayCorner", m_SongInfoDisplayCorner, pIni);
   GetPrivateProfileStringW(L"Milkwave", L"SongInfoFormat", L"Artist;Title;Album", m_SongInfoFormat, sizeof(m_SongInfoFormat), pIni);
   m_ChangePresetWithSong = GetPrivateProfileBoolW(L"Milkwave", L"ChangePresetWithSong", m_ChangePresetWithSong, pIni);
   m_SongInfoDisplaySeconds = GetPrivateProfileFloatW(L"Milkwave", L"SongInfoDisplaySeconds", m_SongInfoDisplaySeconds, pIni);
@@ -1510,6 +1511,7 @@ void CPlugin::MyWriteConfig() {
   // Milkwave
   WritePrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, pIni);
   WritePrivateProfileIntW(m_SongInfoPollingEnabled, L"SongInfoPollingEnabled", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_SongInfoDisplayCorner, L"SongInfoDisplayCorner", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
   //WritePrivateProfileIntW(m_DisplayCoverWhenPressingB, L"mDisplayCoverWhenPressingB", pIni, L"Milkwave");
@@ -5329,7 +5331,19 @@ void CPlugin::MyRenderUI(
               alpha = 255;
             }
             DWORD z = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
-            MyTextOut_Color(buf, MTO_LOWER_LEFT, z);
+            if (m_SongInfoDisplayCorner == 1) {
+              MyTextOut_Color(buf, MTO_UPPER_LEFT, z);
+            }
+            else if (m_SongInfoDisplayCorner == 2) {
+              MyTextOut_Color(buf, MTO_UPPER_RIGHT, z);
+            }
+            else if (m_SongInfoDisplayCorner == 4) {
+              MyTextOut_Color(buf, MTO_LOWER_RIGHT, z);
+            }
+            else {
+              MyTextOut_Color(buf, MTO_LOWER_LEFT, z);
+            }
+            
           }
           else {
             int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
