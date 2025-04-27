@@ -31,6 +31,7 @@ CTRL + SHIFT + F9    toggle watermark mode (windowed fullscreen, clickthrough, o
 F10 / CTRL + Z       enable/disable spout output
 F11                  hardcut mode: normal/based of music
 F12                  transparency mode (removes the black background)
+CTRL + F12           toggle black mode (no preset rendering)
 
 Z                     previous track
 X                     play/pause track

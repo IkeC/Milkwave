@@ -4,6 +4,7 @@
   Left + Right Mouse Button: Close Visualizer
   Middle + Right Mouse Button: Open Remote
 - Explicit Poll: Show Cover (config)
+- Black Mode (Ctrl + F12)
 
 # Backlog
 

@@ -752,350 +752,369 @@ void CPlugin::RunPerFrameEquations(int code) {
 }
 
 void CPlugin::RenderFrame(int bRedraw) {
-  int i;
 
-  float fDeltaT = 1.0f / GetFps();
-
-  if (bRedraw) {
-    // pre-un-flip buffers, so we are redoing the same work as we did last frame...
-    IDirect3DTexture9* pTemp = m_lpVS[0];
-    m_lpVS[0] = m_lpVS[1];
-    m_lpVS[1] = pTemp;
-  }
-
-  if (GetFrame() == 0) {
-    m_fStartTime = GetTime();
-    m_fPresetStartTime = GetTime();
-  }
-
-  if (m_fNextPresetTime < 0) {
-    float dt = m_fTimeBetweenPresetsRand * (rand() % 1000) * 0.001f;
-    m_fNextPresetTime = GetTime() + m_fBlendTimeAuto + m_fTimeBetweenPresets + dt;
-  }
-
-  if (!bRedraw) {
-    m_rand_frame = D3DXVECTOR4(FRAND, FRAND, FRAND, FRAND);
-
-    // randomly change the preset, if it's time
-    if (m_fNextPresetTime < GetTime()) {
-      if (m_nLoadingPreset == 0) // don't start a load if one is already underway!
-        LoadRandomPreset(m_fBlendTimeAuto);
-    }
-
-    // randomly spawn Song Title, if time
-    if (m_fTimeBetweenRandomSongTitles > 0 &&
-      !m_supertext.bRedrawSuperText &&
-      GetTime() >= m_supertext.fStartTime + m_supertext.fDuration + 1.0f / GetFps()) {
-      int n = GetNumToSpawn(GetTime(), fDeltaT, 1.0f / m_fTimeBetweenRandomSongTitles, 0.5f, m_nSongTitlesSpawned);
-      if (n > 0) {
-        LaunchSongTitleAnim();
-        m_nSongTitlesSpawned += n;
-      }
-    }
-
-    // randomly spawn Custom Message, if time
-    if (m_fTimeBetweenRandomCustomMsgs > 0 &&
-      !m_supertext.bRedrawSuperText &&
-      GetTime() >= m_supertext.fStartTime + m_supertext.fDuration + 1.0f / GetFps()) {
-      int n = GetNumToSpawn(GetTime(), fDeltaT, 1.0f / m_fTimeBetweenRandomCustomMsgs, 0.5f, m_nCustMsgsSpawned);
-      if (n > 0) {
-        LaunchCustomMessage(-1);
-        m_nCustMsgsSpawned += n;
-      }
-    }
-
-    // update m_fBlendProgress;
-    if (m_pState->m_bBlending) {
-      m_pState->m_fBlendProgress = (GetTime() - m_pState->m_fBlendStartTime) / m_pState->m_fBlendDuration;
-      if (m_pState->m_fBlendProgress > 1.0f) {
-        m_pState->m_bBlending = false;
-      }
-    }
-
-    // handle hard cuts here (just after new sound analysis)
-    static float m_fHardCutThresh;
-    if (GetFrame() == 0)
-      m_fHardCutThresh = m_fHardCutLoudnessThresh * 2.0f;
-    if (GetFps() > 1.0f && !m_bHardCutsDisabled && !m_bPresetLockedByUser && !m_bPresetLockedByCode) {
-      if (mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2] > m_fHardCutThresh * 3.0f) {
-        if (m_nLoadingPreset == 0) // don't start a load if one is already underway!
-          LoadRandomPreset(0.0f);
-        m_fHardCutThresh *= 2.0f;
-      }
-      else {
-        /*
-        float halflife_modified = m_fHardCutHalflife*0.5f;
-        //thresh = (thresh - 1.5f)*0.99f + 1.5f;
-        float k = -0.69315f / halflife_modified;*/
-        float k = -1.3863f / (m_fHardCutHalflife * GetFps());
-        //float single_frame_multiplier = powf(2.7183f, k / GetFps());
-        float single_frame_multiplier = expf(k);
-        m_fHardCutThresh = (m_fHardCutThresh - m_fHardCutLoudnessThresh) * single_frame_multiplier + m_fHardCutLoudnessThresh;
-      }
-    }
-
-    // smooth & scale the audio data, according to m_state, for display purposes
-    float scale = m_pState->m_fWaveScale.eval(GetTime()) / 128.0f;
-    mysound.fWave[0][0] *= scale;
-    mysound.fWave[1][0] *= scale;
-    float mix2 = m_pState->m_fWaveSmoothing.eval(GetTime());
-    float mix1 = scale * (1.0f - mix2);
-    for (i = 1; i < 576; i++) {
-      mysound.fWave[0][i] = mysound.fWave[0][i] * mix1 + mysound.fWave[0][i - 1] * mix2;
-      mysound.fWave[1][i] = mysound.fWave[1][i] * mix1 + mysound.fWave[1][i - 1] * mix2;
-    }
-  }
-
-  bool bOldPresetUsesWarpShader = (m_pOldState->m_nWarpPSVersion > 0);
-  bool bNewPresetUsesWarpShader = (m_pState->m_nWarpPSVersion > 0);
-  bool bOldPresetUsesCompShader = (m_pOldState->m_nCompPSVersion > 0);
-  bool bNewPresetUsesCompShader = (m_pState->m_nCompPSVersion > 0);
-
-  // note: 'code' is only meaningful if we are BLENDING.
-  int code = (bOldPresetUsesWarpShader ? 8 : 0) |
-    (bOldPresetUsesCompShader ? 4 : 0) |
-    (bNewPresetUsesWarpShader ? 2 : 0) |
-    (bNewPresetUsesCompShader ? 1 : 0);
-
-  RunPerFrameEquations(code);
-
-  // restore any lost surfaces
-  //m_lpDD->RestoreAllSurfaces();
-
+  // Get the Direct3D device
   LPDIRECT3DDEVICE9 lpDevice = GetDevice();
-  if (!lpDevice)
-    return;
 
-  // Remember the original backbuffer and zbuffer
-  LPDIRECT3DSURFACE9 pBackBuffer = NULL;//, pZBuffer=NULL;
-  lpDevice->GetRenderTarget(0, &pBackBuffer);
-  //lpDevice->GetDepthStencilSurface( &pZBuffer );
-
-  // set up render state
-  {
-    DWORD texaddr = (*m_pState->var_pf_wrap > m_fSnapPoint) ? D3DTADDRESS_WRAP : D3DTADDRESS_CLAMP;
-    lpDevice->SetRenderState(D3DRS_WRAP0, 0);//D3DWRAPCOORD_0|D3DWRAPCOORD_1|D3DWRAPCOORD_2|D3DWRAPCOORD_3);
-    //lpDevice->SetRenderState(D3DRS_WRAP0, (*m_pState->var_pf_wrap) ? D3DWRAP_U|D3DWRAP_V|D3DWRAP_W : 0);
-    //lpDevice->SetRenderState(D3DRS_WRAP1, (*m_pState->var_pf_wrap) ? D3DWRAP_U|D3DWRAP_V|D3DWRAP_W : 0);
-    lpDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);//texaddr);
-    lpDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);//texaddr);
-    lpDevice->SetSamplerState(0, D3DSAMP_ADDRESSW, D3DTADDRESS_WRAP);//texaddr);
-    lpDevice->SetSamplerState(1, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
-    lpDevice->SetSamplerState(1, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
-    lpDevice->SetSamplerState(1, D3DSAMP_ADDRESSW, D3DTADDRESS_WRAP);
-
-    lpDevice->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
-    lpDevice->SetRenderState(D3DRS_SPECULARENABLE, FALSE);
-    lpDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-    lpDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-    lpDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
-    lpDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-    lpDevice->SetRenderState(D3DRS_COLORVERTEX, TRUE);
-    lpDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
-    lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-    lpDevice->SetRenderState(D3DRS_AMBIENT, 0xFFFFFFFF);  //?
-    lpDevice->SetRenderState(D3DRS_CLIPPING, TRUE);
-
-    // stages 0 and 1 always just use bilinear filtering.
-    lpDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-    lpDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-    lpDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
-    lpDevice->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-    lpDevice->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-    lpDevice->SetSamplerState(1, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
-
-    // note: this texture stage state setup works for 0 or 1 texture.
-    // if you set a texture, it will be modulated with the current diffuse color.
-    // if you don't set a texture, it will just use the current diffuse color.
-    lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-    lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-    lpDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_TEXTURE);
-    lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
-    lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
-    lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
-    lpDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
-
-    // NOTE: don't forget to call SetTexture and SetVertexShader before drawing!
-    // Examples:
-    //      SPRITEVERTEX verts[4];          // has texcoords
-    //   	lpDevice->SetTexture(0, m_sprite_tex);
-    //      lpDevice->SetVertexShader( SPRITEVERTEX_FORMAT );
-    //
-    //      WFVERTEX verts[4];              // no texcoords
-    //   	lpDevice->SetTexture(0, NULL);
-    //      lpDevice->SetVertexShader( WFVERTEX_FORMAT );
-  }
-
-  // render string to m_lpDDSTitle, if necessary
-  if (m_supertext.bRedrawSuperText) {
-    if (!RenderStringToTitleTexture())
-      m_supertext.fStartTime = -1.0f;
-    m_supertext.bRedrawSuperText = false;
-  }
-
-  // set up to render [from NULL] to VS0 (for motion vectors).
-  {
-    lpDevice->SetTexture(0, NULL);
-
-    IDirect3DSurface9* pNewTarget = NULL;
-    if (m_lpVS[0]->GetSurfaceLevel(0, &pNewTarget) != D3D_OK)
-      return;
-    lpDevice->SetRenderTarget(0, pNewTarget);
-    //lpDevice->SetDepthStencilSurface( NULL );
-    pNewTarget->Release();
-
-    lpDevice->SetTexture(0, NULL);
-  }
-
-  // draw motion vectors to VS0
-  DrawMotionVectors();
-
-  lpDevice->SetTexture(0, NULL);
-  lpDevice->SetTexture(1, NULL);
-
-  // on first frame, clear OLD VS.
-  if (m_nFramesSinceResize == 0) {
-    IDirect3DSurface9* pNewTarget = NULL;
-    if (m_lpVS[0]->GetSurfaceLevel(0, &pNewTarget) != D3D_OK)
-      return;
-    lpDevice->SetRenderTarget(0, pNewTarget);
-    //lpDevice->SetDepthStencilSurface( NULL );
-    pNewTarget->Release();
-
-    lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0);
-  }
-
-  // set up to render [from VS0] to VS1.
-  {
-    IDirect3DSurface9* pNewTarget = NULL;
-    if (m_lpVS[1]->GetSurfaceLevel(0, &pNewTarget) != D3D_OK)
-      return;
-    lpDevice->SetRenderTarget(0, pNewTarget);
-    //lpDevice->SetDepthStencilSurface( NULL );
-    pNewTarget->Release();
-  }
-
-  if (m_bAutoGamma && GetFrame() == 0) {
-    if (strstr(GetDriverDescription(), "nvidia") ||
-      strstr(GetDriverDescription(), "nVidia") ||
-      strstr(GetDriverDescription(), "NVidia") ||
-      strstr(GetDriverDescription(), "NVIDIA"))
-      m_n16BitGamma = 2;
-    else if (strstr(GetDriverDescription(), "ATI RAGE MOBILITY M"))
-      m_n16BitGamma = 2;
-    else
-      m_n16BitGamma = 0;
-  }
-
-  ComputeGridAlphaValues();
-
-  // do the warping for this frame [warp shader]
-  if (!m_pState->m_bBlending) {
-    // no blend
-    if (bNewPresetUsesWarpShader)
-      WarpedBlit_Shaders(1, false, false, false, false);
-    else
-      WarpedBlit_NoShaders(1, false, false, false, false);
+  // Check if black mode is enabled
+  if (m_blackmode) {
+    if (lpDevice) {
+      // Clear the screen to black
+      lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+      lpDevice->Present(NULL, NULL, NULL, NULL); // Present the black screen
+    }
   }
   else {
-    // blending
-    // WarpedBlit( nPass,  bAlphaBlend, bFlipAlpha, bCullTiles, bFlipCulling )
-    // note: alpha values go from 0..1 during a blend.
-    // note: bFlipCulling==false means tiles with alpha>0 will draw.
-    //       bFlipCulling==true  means tiles with alpha<255 will draw.
 
-    if (bOldPresetUsesWarpShader && bNewPresetUsesWarpShader) {
-      WarpedBlit_Shaders(0, false, false, true, true);
-      WarpedBlit_Shaders(1, true, false, true, false);
+    int i;
+
+    float fDeltaT = 1.0f / GetFps();
+
+    if (bRedraw) {
+      // pre-un-flip buffers, so we are redoing the same work as we did last frame...
+      IDirect3DTexture9* pTemp = m_lpVS[0];
+      m_lpVS[0] = m_lpVS[1];
+      m_lpVS[1] = pTemp;
     }
-    else if (!bOldPresetUsesWarpShader && bNewPresetUsesWarpShader) {
-      WarpedBlit_NoShaders(0, false, false, true, true);
-      WarpedBlit_Shaders(1, true, false, true, false);
+
+    if (GetFrame() == 0) {
+      m_fStartTime = GetTime();
+      m_fPresetStartTime = GetTime();
     }
-    else if (bOldPresetUsesWarpShader && !bNewPresetUsesWarpShader) {
-      WarpedBlit_Shaders(0, false, false, true, true);
-      WarpedBlit_NoShaders(1, true, false, true, false);
+
+    if (m_fNextPresetTime < 0) {
+      float dt = m_fTimeBetweenPresetsRand * (rand() % 1000) * 0.001f;
+      m_fNextPresetTime = GetTime() + m_fBlendTimeAuto + m_fTimeBetweenPresets + dt;
     }
-    else if (!bOldPresetUsesWarpShader && !bNewPresetUsesWarpShader) {
-      //WarpedBlit_NoShaders(0, false, false,   true, true);
-      //WarpedBlit_NoShaders(1, true,  false,   true, false);
 
-        // special case - all the blending just happens in the vertex UV's, so just pretend there's no blend.
-      WarpedBlit_NoShaders(1, false, false, false, false);
+    if (!bRedraw) {
+      m_rand_frame = D3DXVECTOR4(FRAND, FRAND, FRAND, FRAND);
+
+      // randomly change the preset, if it's time
+      if (m_fNextPresetTime < GetTime()) {
+        if (m_nLoadingPreset == 0) // don't start a load if one is already underway!
+          LoadRandomPreset(m_fBlendTimeAuto);
+      }
+
+      // randomly spawn Song Title, if time
+      if (m_fTimeBetweenRandomSongTitles > 0 &&
+        !m_supertext.bRedrawSuperText &&
+        GetTime() >= m_supertext.fStartTime + m_supertext.fDuration + 1.0f / GetFps()) {
+        int n = GetNumToSpawn(GetTime(), fDeltaT, 1.0f / m_fTimeBetweenRandomSongTitles, 0.5f, m_nSongTitlesSpawned);
+        if (n > 0) {
+          LaunchSongTitleAnim();
+          m_nSongTitlesSpawned += n;
+        }
+      }
+
+      // randomly spawn Custom Message, if time
+      if (m_fTimeBetweenRandomCustomMsgs > 0 &&
+        !m_supertext.bRedrawSuperText &&
+        GetTime() >= m_supertext.fStartTime + m_supertext.fDuration + 1.0f / GetFps()) {
+        int n = GetNumToSpawn(GetTime(), fDeltaT, 1.0f / m_fTimeBetweenRandomCustomMsgs, 0.5f, m_nCustMsgsSpawned);
+        if (n > 0) {
+          LaunchCustomMessage(-1);
+          m_nCustMsgsSpawned += n;
+        }
+      }
+
+      // update m_fBlendProgress;
+      if (m_pState->m_bBlending) {
+        m_pState->m_fBlendProgress = (GetTime() - m_pState->m_fBlendStartTime) / m_pState->m_fBlendDuration;
+        if (m_pState->m_fBlendProgress > 1.0f) {
+          m_pState->m_bBlending = false;
+        }
+      }
+
+      // handle hard cuts here (just after new sound analysis)
+      static float m_fHardCutThresh;
+      if (GetFrame() == 0)
+        m_fHardCutThresh = m_fHardCutLoudnessThresh * 2.0f;
+      if (GetFps() > 1.0f && !m_bHardCutsDisabled && !m_bPresetLockedByUser && !m_bPresetLockedByCode) {
+        if (mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2] > m_fHardCutThresh * 3.0f) {
+          if (m_nLoadingPreset == 0) // don't start a load if one is already underway!
+            LoadRandomPreset(0.0f);
+          m_fHardCutThresh *= 2.0f;
+        }
+        else {
+          /*
+          float halflife_modified = m_fHardCutHalflife*0.5f;
+          //thresh = (thresh - 1.5f)*0.99f + 1.5f;
+          float k = -0.69315f / halflife_modified;*/
+          float k = -1.3863f / (m_fHardCutHalflife * GetFps());
+          //float single_frame_multiplier = powf(2.7183f, k / GetFps());
+          float single_frame_multiplier = expf(k);
+          m_fHardCutThresh = (m_fHardCutThresh - m_fHardCutLoudnessThresh) * single_frame_multiplier + m_fHardCutLoudnessThresh;
+        }
+      }
+
+      // smooth & scale the audio data, according to m_state, for display purposes
+      float scale = m_pState->m_fWaveScale.eval(GetTime()) / 128.0f;
+      mysound.fWave[0][0] *= scale;
+      mysound.fWave[1][0] *= scale;
+      float mix2 = m_pState->m_fWaveSmoothing.eval(GetTime());
+      float mix1 = scale * (1.0f - mix2);
+      for (i = 1; i < 576; i++) {
+        mysound.fWave[0][i] = mysound.fWave[0][i] * mix1 + mysound.fWave[0][i - 1] * mix2;
+        mysound.fWave[1][i] = mysound.fWave[1][i] * mix1 + mysound.fWave[1][i - 1] * mix2;
+      }
     }
-  }
 
-  if (m_nMaxPSVersion > 0)
-    BlurPasses();
+    bool bOldPresetUsesWarpShader = (m_pOldState->m_nWarpPSVersion > 0);
+    bool bNewPresetUsesWarpShader = (m_pState->m_nWarpPSVersion > 0);
+    bool bOldPresetUsesCompShader = (m_pOldState->m_nCompPSVersion > 0);
+    bool bNewPresetUsesCompShader = (m_pState->m_nCompPSVersion > 0);
 
-  // draw audio data
-  DrawCustomShapes(); // draw these first; better for feedback if the waves draw *over* them.
-  DrawCustomWaves();
-  DrawWave(mysound.fWave[0], mysound.fWave[1]);
-  DrawSprites();
+    // note: 'code' is only meaningful if we are BLENDING.
+    int code = (bOldPresetUsesWarpShader ? 8 : 0) |
+      (bOldPresetUsesCompShader ? 4 : 0) |
+      (bNewPresetUsesWarpShader ? 2 : 0) |
+      (bNewPresetUsesCompShader ? 1 : 0);
 
-  float fProgress = (GetTime() - m_supertext.fStartTime) / m_supertext.fDuration;
+    RunPerFrameEquations(code);
 
-  // if song title animation just ended, burn it into the VS:
-  if (m_supertext.fStartTime >= 0 &&
-    fProgress >= 1.0f &&
-    !m_supertext.bRedrawSuperText) {
-    ShowSongTitleAnim(m_nTexSizeX, m_nTexSizeY, 1.0f);
-  }
+    // restore any lost surfaces
+    //m_lpDD->RestoreAllSurfaces();
 
-  // Change the rendertarget back to the original setup
-  lpDevice->SetTexture(0, NULL);
-  lpDevice->SetRenderTarget(0, pBackBuffer);
-  //lpDevice->SetDepthStencilSurface( pZBuffer );
-  SafeRelease(pBackBuffer);
-  //SafeRelease(pZBuffer);
+    LPDIRECT3DDEVICE9 lpDevice = GetDevice();
+    if (!lpDevice)
+      return;
 
-  // show it to the user [composite shader]
-  if (!m_pState->m_bBlending) {
-    // no blend
-    if (bNewPresetUsesCompShader)
-      ShowToUser_Shaders(1, false, false, false, false);
-    else
-      ShowToUser_NoShaders();//1, false, false, false, false);
-  }
-  else {
-    // blending
-    // ShowToUser( nPass,  bAlphaBlend, bFlipAlpha, bCullTiles, bFlipCulling )
-    // note: alpha values go from 0..1 during a blend.
-    // note: bFlipCulling==false means tiles with alpha>0 will draw.
-    //       bFlipCulling==true  means tiles with alpha<255 will draw.
+    // Remember the original backbuffer and zbuffer
+    LPDIRECT3DSURFACE9 pBackBuffer = NULL;//, pZBuffer=NULL;
+    lpDevice->GetRenderTarget(0, &pBackBuffer);
+    //lpDevice->GetDepthStencilSurface( &pZBuffer );
 
-    // NOTE: ShowToUser_NoShaders() must always come before ShowToUser_Shaders(),
-    //        because it always draws the full quad (it can't do tile culling or alpha blending).
-    //        [third case here]
+    // set up render state
+    {
+      DWORD texaddr = (*m_pState->var_pf_wrap > m_fSnapPoint) ? D3DTADDRESS_WRAP : D3DTADDRESS_CLAMP;
+      lpDevice->SetRenderState(D3DRS_WRAP0, 0);//D3DWRAPCOORD_0|D3DWRAPCOORD_1|D3DWRAPCOORD_2|D3DWRAPCOORD_3);
+      //lpDevice->SetRenderState(D3DRS_WRAP0, (*m_pState->var_pf_wrap) ? D3DWRAP_U|D3DWRAP_V|D3DWRAP_W : 0);
+      //lpDevice->SetRenderState(D3DRS_WRAP1, (*m_pState->var_pf_wrap) ? D3DWRAP_U|D3DWRAP_V|D3DWRAP_W : 0);
+      lpDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);//texaddr);
+      lpDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);//texaddr);
+      lpDevice->SetSamplerState(0, D3DSAMP_ADDRESSW, D3DTADDRESS_WRAP);//texaddr);
+      lpDevice->SetSamplerState(1, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
+      lpDevice->SetSamplerState(1, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
+      lpDevice->SetSamplerState(1, D3DSAMP_ADDRESSW, D3DTADDRESS_WRAP);
 
-    if (bOldPresetUsesCompShader && bNewPresetUsesCompShader) {
-      ShowToUser_Shaders(0, false, false, true, true);
-      ShowToUser_Shaders(1, true, false, true, false);
+      lpDevice->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
+      lpDevice->SetRenderState(D3DRS_SPECULARENABLE, FALSE);
+      lpDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+      lpDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+      lpDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+      lpDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+      lpDevice->SetRenderState(D3DRS_COLORVERTEX, TRUE);
+      lpDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
+      lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+      lpDevice->SetRenderState(D3DRS_AMBIENT, 0xFFFFFFFF);  //?
+      lpDevice->SetRenderState(D3DRS_CLIPPING, TRUE);
+
+      // stages 0 and 1 always just use bilinear filtering.
+      lpDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+      lpDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+      lpDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+      lpDevice->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+      lpDevice->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+      lpDevice->SetSamplerState(1, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+
+      // note: this texture stage state setup works for 0 or 1 texture.
+      // if you set a texture, it will be modulated with the current diffuse color.
+      // if you don't set a texture, it will just use the current diffuse color.
+      lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+      lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+      lpDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_TEXTURE);
+      lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+      lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+      lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+      lpDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+
+      // NOTE: don't forget to call SetTexture and SetVertexShader before drawing!
+      // Examples:
+      //      SPRITEVERTEX verts[4];          // has texcoords
+      //   	lpDevice->SetTexture(0, m_sprite_tex);
+      //      lpDevice->SetVertexShader( SPRITEVERTEX_FORMAT );
+      //
+      //      WFVERTEX verts[4];              // no texcoords
+      //   	lpDevice->SetTexture(0, NULL);
+      //      lpDevice->SetVertexShader( WFVERTEX_FORMAT );
     }
-    else if (!bOldPresetUsesCompShader && bNewPresetUsesCompShader) {
-      ShowToUser_NoShaders();
-      ShowToUser_Shaders(1, true, false, true, false);
-    }
-    else if (bOldPresetUsesCompShader && !bNewPresetUsesCompShader) {
-      // THA FUNKY REVERSAL
-    //ShowToUser_Shaders  (0);
-    //ShowToUser_NoShaders(1);
-      ShowToUser_NoShaders();
-      ShowToUser_Shaders(0, true, true, true, true);
-    }
-    else if (!bOldPresetUsesCompShader && !bNewPresetUsesCompShader) {
-      // special case - all the blending just happens in the blended state vars, so just pretend there's no blend.
-      ShowToUser_NoShaders();//1, false, false, false, false);
-    }
-  }
 
-  // finally, render song title animation to back buffer
-  if (m_supertext.fStartTime >= 0 &&
-    !m_supertext.bRedrawSuperText) {
-    ShowSongTitleAnim(GetWidth(), GetHeight(), min(fProgress, 0.9999f));
-    if (fProgress >= 1.0f)
-      m_supertext.fStartTime = -1.0f;	// 'off' state
+    // render string to m_lpDDSTitle, if necessary
+    if (m_supertext.bRedrawSuperText) {
+      if (!RenderStringToTitleTexture())
+        m_supertext.fStartTime = -1.0f;
+      m_supertext.bRedrawSuperText = false;
+    }
+
+    // set up to render [from NULL] to VS0 (for motion vectors).
+    {
+      lpDevice->SetTexture(0, NULL);
+
+      IDirect3DSurface9* pNewTarget = NULL;
+      if (m_lpVS[0]->GetSurfaceLevel(0, &pNewTarget) != D3D_OK)
+        return;
+      lpDevice->SetRenderTarget(0, pNewTarget);
+      //lpDevice->SetDepthStencilSurface( NULL );
+      pNewTarget->Release();
+
+      lpDevice->SetTexture(0, NULL);
+    }
+
+    // draw motion vectors to VS0
+    DrawMotionVectors();
+
+    lpDevice->SetTexture(0, NULL);
+    lpDevice->SetTexture(1, NULL);
+
+    // on first frame, clear OLD VS.
+    if (m_nFramesSinceResize == 0) {
+      IDirect3DSurface9* pNewTarget = NULL;
+      if (m_lpVS[0]->GetSurfaceLevel(0, &pNewTarget) != D3D_OK)
+        return;
+      lpDevice->SetRenderTarget(0, pNewTarget);
+      //lpDevice->SetDepthStencilSurface( NULL );
+      pNewTarget->Release();
+
+      lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0);
+    }
+
+
+    // set up to render [from VS0] to VS1.
+    {
+      IDirect3DSurface9* pNewTarget = NULL;
+      if (m_lpVS[1]->GetSurfaceLevel(0, &pNewTarget) != D3D_OK)
+        return;
+      lpDevice->SetRenderTarget(0, pNewTarget);
+      //lpDevice->SetDepthStencilSurface( NULL );
+      pNewTarget->Release();
+    }
+
+    if (m_bAutoGamma && GetFrame() == 0) {
+      if (strstr(GetDriverDescription(), "nvidia") ||
+        strstr(GetDriverDescription(), "nVidia") ||
+        strstr(GetDriverDescription(), "NVidia") ||
+        strstr(GetDriverDescription(), "NVIDIA"))
+        m_n16BitGamma = 2;
+      else if (strstr(GetDriverDescription(), "ATI RAGE MOBILITY M"))
+        m_n16BitGamma = 2;
+      else
+        m_n16BitGamma = 0;
+    }
+
+    ComputeGridAlphaValues();
+
+    // do the warping for this frame [warp shader]
+    if (!m_pState->m_bBlending) {
+      // no blend
+      if (bNewPresetUsesWarpShader)
+        WarpedBlit_Shaders(1, false, false, false, false);
+      else
+        WarpedBlit_NoShaders(1, false, false, false, false);
+    }
+    else {
+      // blending
+      // WarpedBlit( nPass,  bAlphaBlend, bFlipAlpha, bCullTiles, bFlipCulling )
+      // note: alpha values go from 0..1 during a blend.
+      // note: bFlipCulling==false means tiles with alpha>0 will draw.
+      //       bFlipCulling==true  means tiles with alpha<255 will draw.
+
+      if (bOldPresetUsesWarpShader && bNewPresetUsesWarpShader) {
+        WarpedBlit_Shaders(0, false, false, true, true);
+        WarpedBlit_Shaders(1, true, false, true, false);
+      }
+      else if (!bOldPresetUsesWarpShader && bNewPresetUsesWarpShader) {
+        WarpedBlit_NoShaders(0, false, false, true, true);
+        WarpedBlit_Shaders(1, true, false, true, false);
+      }
+      else if (bOldPresetUsesWarpShader && !bNewPresetUsesWarpShader) {
+        WarpedBlit_Shaders(0, false, false, true, true);
+        WarpedBlit_NoShaders(1, true, false, true, false);
+      }
+      else if (!bOldPresetUsesWarpShader && !bNewPresetUsesWarpShader) {
+        //WarpedBlit_NoShaders(0, false, false,   true, true);
+        //WarpedBlit_NoShaders(1, true,  false,   true, false);
+
+          // special case - all the blending just happens in the vertex UV's, so just pretend there's no blend.
+        WarpedBlit_NoShaders(1, false, false, false, false);
+      }
+    }
+
+
+    if (m_nMaxPSVersion > 0)
+      BlurPasses();
+
+    // draw audio data
+
+    DrawCustomShapes(); // draw these first; better for feedback if the waves draw *over* them.
+    DrawCustomWaves();
+    DrawWave(mysound.fWave[0], mysound.fWave[1]);
+
+    DrawSprites();
+
+    float fProgress = (GetTime() - m_supertext.fStartTime) / m_supertext.fDuration;
+
+    // if song title animation just ended, burn it into the VS:
+    if (m_supertext.fStartTime >= 0 &&
+      fProgress >= 1.0f &&
+      !m_supertext.bRedrawSuperText) {
+      ShowSongTitleAnim(m_nTexSizeX, m_nTexSizeY, 1.0f);
+    }
+
+    // Change the rendertarget back to the original setup
+    lpDevice->SetTexture(0, NULL);
+    lpDevice->SetRenderTarget(0, pBackBuffer);
+    //lpDevice->SetDepthStencilSurface( pZBuffer );
+    SafeRelease(pBackBuffer);
+    //SafeRelease(pZBuffer);
+
+
+      // show it to the user [composite shader]
+    if (!m_pState->m_bBlending) {
+      // no blend
+      if (bNewPresetUsesCompShader)
+        ShowToUser_Shaders(1, false, false, false, false);
+      else
+        ShowToUser_NoShaders();//1, false, false, false, false);
+    }
+    else {
+      // blending
+      // ShowToUser( nPass,  bAlphaBlend, bFlipAlpha, bCullTiles, bFlipCulling )
+      // note: alpha values go from 0..1 during a blend.
+      // note: bFlipCulling==false means tiles with alpha>0 will draw.
+      //       bFlipCulling==true  means tiles with alpha<255 will draw.
+
+      // NOTE: ShowToUser_NoShaders() must always come before ShowToUser_Shaders(),
+      //        because it always draws the full quad (it can't do tile culling or alpha blending).
+      //        [third case here]
+      if (bOldPresetUsesCompShader && bNewPresetUsesCompShader) {
+        ShowToUser_Shaders(0, false, false, true, true);
+        ShowToUser_Shaders(1, true, false, true, false);
+      }
+      else if (!bOldPresetUsesCompShader && bNewPresetUsesCompShader) {
+        ShowToUser_NoShaders();
+        ShowToUser_Shaders(1, true, false, true, false);
+      }
+      else if (bOldPresetUsesCompShader && !bNewPresetUsesCompShader) {
+        // THA FUNKY REVERSAL
+      //ShowToUser_Shaders  (0);
+      //ShowToUser_NoShaders(1);
+        ShowToUser_NoShaders();
+        ShowToUser_Shaders(0, true, true, true, true);
+      }
+      else if (!bOldPresetUsesCompShader && !bNewPresetUsesCompShader) {
+        // special case - all the blending just happens in the blended state vars, so just pretend there's no blend.
+        ShowToUser_NoShaders();//1, false, false, false, false);
+      }
+    }
+
+    // finally, render song title animation to back buffer
+    if (m_supertext.fStartTime >= 0 &&
+      !m_supertext.bRedrawSuperText) {
+      ShowSongTitleAnim(GetWidth(), GetHeight(), min(fProgress, 0.9999f));
+      if (fProgress >= 1.0f)
+        m_supertext.fStartTime = -1.0f;	// 'off' state
+    }
   }
 
   DrawUserSprites();

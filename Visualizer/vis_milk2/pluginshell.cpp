@@ -1359,44 +1359,6 @@ void CPluginShell::DrawAndDisplay(int redraw) {
   m_left_edge = TEXT_MARGIN + GetCanvasMarginX();
   m_right_edge = cx - TEXT_MARGIN - GetCanvasMarginX();
 
-  /*if (m_screenmode == DESKTOP || m_screenmode == FAKE_FULLSCREEN)
-  {
-      // check if taskbar is above plugin window;
-      // if so, scoot text & icons out of the way.
-      //     [...should always be true for Desktop Mode,
-      //         but it's like this for code simplicity.]
-      int taskbar_is_above_plugin_window = 1;
-      HWND h = FindWindow("Shell_TrayWnd", NULL);
-      while (h) //(..shouldn't be very many windows to iterate through here)
-      {
-          h = GetWindow(h, GW_HWNDPREV);
-          if (h == GetPluginWindow())
-          {
-              taskbar_is_above_plugin_window = 0;
-              break;
-          }
-      }
-
-      if (taskbar_is_above_plugin_window)
-      {
-          // respect the taskbar area; make sure the text, desktop icons, etc.
-          // don't appear underneath it.
-          //m_upper_left_corner_y  += m_lpDX->m_monitor_work_rect.top - m_lpDX->m_monitor_rect.top;
-          //m_upper_right_corner_y += m_lpDX->m_monitor_work_rect.top - m_lpDX->m_monitor_rect.top;
-          //m_lower_left_corner_y  -= m_lpDX->m_monitor_rect.bottom - m_lpDX->m_monitor_work_rect.bottom;
-          //m_lower_right_corner_y -= m_lpDX->m_monitor_rect.bottom - m_lpDX->m_monitor_work_rect.bottom;
-          //m_left_edge  += m_lpDX->m_monitor_work_rect.left - m_lpDX->m_monitor_rect.left;
-          //m_right_edge -= m_lpDX->m_monitor_rect.right - m_lpDX->m_monitor_work_rect.right;
-          m_lpDX->UpdateMonitorWorkRect();
-          m_upper_left_corner_y  = max(m_upper_left_corner_y , m_lpDX->m_monitor_work_rect.top - m_lpDX->m_monitor_rect.top + TEXT_MARGIN + GetCanvasMarginY());
-          m_upper_right_corner_y = max(m_upper_right_corner_y, m_lpDX->m_monitor_work_rect.top - m_lpDX->m_monitor_rect.top + TEXT_MARGIN + GetCanvasMarginY());
-          m_lower_left_corner_y  = min(m_lower_left_corner_y , m_lpDX->m_client_height - (m_lpDX->m_monitor_rect.bottom - m_lpDX->m_monitor_work_rect.bottom) - TEXT_MARGIN - GetCanvasMarginY());
-          m_lower_right_corner_y = min(m_lower_right_corner_y, m_lpDX->m_client_height - (m_lpDX->m_monitor_rect.bottom - m_lpDX->m_monitor_work_rect.bottom) - TEXT_MARGIN - GetCanvasMarginY());
-          m_left_edge  = max(m_left_edge , m_lpDX->m_monitor_work_rect.left - m_lpDX->m_monitor_rect.left + TEXT_MARGIN + GetCanvasMarginX() );
-          m_right_edge = min(m_right_edge, m_lpDX->m_client_width - (m_lpDX->m_monitor_rect.right - m_lpDX->m_monitor_work_rect.right) - TEXT_MARGIN + GetCanvasMarginX());
-      }
-  }*/
-
   if (D3D_OK == m_lpDX->m_lpDevice->BeginScene()) {
     MyRenderFn(redraw);
 

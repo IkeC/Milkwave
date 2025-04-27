@@ -1386,6 +1386,7 @@ void CPlugin::MyReadConfig() {
   m_DisplayCover = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCover", m_DisplayCover, pIni);
   m_DisplayCoverWhenPressingB = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCoverWhenPressingB", m_DisplayCoverWhenPressingB, pIni);
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
+  m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
   fOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowOpacity", fOpacity, pIni);
@@ -1512,6 +1513,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
   //WritePrivateProfileIntW(m_DisplayCoverWhenPressingB, L"mDisplayCoverWhenPressingB", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_blackmode, L"BlackMode", pIni, L"Milkwave");
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
   WritePrivateProfileFloatW(m_WindowWatermarkModeOpacity, L"WindowWatermarkModeOpacity", pIni, L"Milkwave");
@@ -4415,7 +4417,7 @@ void CPlugin::MyRenderUI(
   //                                        and it should be visible over everything else (usually an error msg)
   {
     // a) preset name
-    if (m_bShowPresetInfo) {
+    if (m_bShowPresetInfo && !m_blackmode) {
       SelectFont(DECORATIVE_FONT);
       swprintf(
         buf,
@@ -5953,19 +5955,35 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       }
       return 0;
     case VK_F12:
-      TranspaMode = !TranspaMode;
-      if (TranspaMode) {
-        ToggleTransparency(hWnd);
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Transparency Mode enabled", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+      if ((GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+        m_blackmode = !m_blackmode;
+        if (m_blackmode) {
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"Black Mode enabled", tmp, 64);
+          AddError(buf, 3.0f, ERR_NOTIFY, false);
+        }
+        else {
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"Black Mode disabled", tmp, 64);
+          AddError(buf, 3.0f, ERR_NOTIFY, false);
+        }
       }
       else {
-        ToggleTransparency(hWnd);
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Transparency Mode disabled", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        TranspaMode = !TranspaMode;
+        if (TranspaMode) {
+          ToggleTransparency(hWnd);
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"Transparency Mode enabled", tmp, 64);
+          AddError(buf, 3.0f, ERR_NOTIFY, false);
+        }
+        else {
+          ToggleTransparency(hWnd);
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"Transparency Mode disabled", tmp, 64);
+          AddError(buf, 3.0f, ERR_NOTIFY, false);
+        }
       }
+
       return 0;
     case VK_F8:
       OpenMilkwaveRemote();

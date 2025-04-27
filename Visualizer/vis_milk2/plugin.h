@@ -577,6 +577,7 @@ public:
   texmgr      m_texmgr;		// for user sprites
 
   td_supertext m_supertext;	// **contains info about current Song Title or Custom Message.**
+  bool m_blackmode = false;
 
   IDirect3DTexture9* m_tracer_tex;
 
