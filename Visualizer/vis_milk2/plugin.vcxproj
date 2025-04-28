@@ -255,7 +255,7 @@
     <None Include="text1_page2.bin" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="plugin_icon.ico" />
+    <Image Include="..\..\Remote\plugin_icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="manifest.xml" />

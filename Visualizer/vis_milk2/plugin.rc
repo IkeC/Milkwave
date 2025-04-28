@@ -75,8 +75,8 @@ IDR_TEXT1_PAGE2         TEXT                    "text1_page2.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1, 5, 0, 0
-PRODUCTVERSION 1, 5, 0, 0
+FILEVERSION 1, 6, 0, 0
+PRODUCTVERSION 1, 6, 0, 0
 FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
 FILEFLAGS 0x1L
@@ -93,12 +93,12 @@ BLOCK "040904b0"
 BEGIN
 VALUE "CompanyName", "Maxim Volskiy et al."
 VALUE "FileDescription", "Milkwave Visualizer"
-VALUE "FileVersion", "1.4.0.0"
+VALUE "FileVersion", "1.6.0.0"
 VALUE "InternalName", "Milkwave"
 VALUE "LegalCopyright", ""
 VALUE "OriginalFilename", "MilkwaveVisualizer.exe"
 VALUE "ProductName", "Milkwave Visualizer"
-VALUE "ProductVersion", "1.4.0.0"
+VALUE "ProductVersion", "1.6.0.0"
 END
 END
 BLOCK "VarFileInfo"

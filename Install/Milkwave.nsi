@@ -5,10 +5,10 @@
 
 !define MUI_ABORTWARNING
 
-!define MUI_ICON "..\Remote\MilkwaveRemote.ico"
-!define MUI_UNICON "..\Remote\MilkwaveRemote.ico"
+!define MUI_ICON "..\Resources\MilkwaveVisualizer.ico"
+!define MUI_UNICON "..\Resources\MilkwaveVisualizer.ico"
 
-!define VERSION "1.5"
+!define VERSION "1.6"
 !define RELDIR "..\Release\"
 
 Name "Milkwave ${VERSION}"

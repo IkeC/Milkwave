@@ -36,10 +36,11 @@ namespace MilkwaveRemote {
       // 
       textBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
       textBox.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      textBox.Location = new Point(12, 12);
+      textBox.Location = new Point(10, 9);
+      textBox.Margin = new Padding(3, 2, 3, 2);
       textBox.Name = "textBox";
       textBox.ReadOnly = true;
-      textBox.Size = new Size(548, 295);
+      textBox.Size = new Size(480, 222);
       textBox.TabIndex = 0;
       textBox.Text = "Hello";
       textBox.LinkClicked += textBox_LinkClicked;
@@ -47,9 +48,10 @@ namespace MilkwaveRemote {
       // btnClose
       // 
       btnClose.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      btnClose.Location = new Point(466, 278);
+      btnClose.Location = new Point(408, 208);
+      btnClose.Margin = new Padding(3, 2, 3, 2);
       btnClose.Name = "btnClose";
-      btnClose.Size = new Size(94, 29);
+      btnClose.Size = new Size(82, 22);
       btnClose.TabIndex = 1;
       btnClose.Text = "Close";
       btnClose.UseVisualStyleBackColor = true;
@@ -57,12 +59,13 @@ namespace MilkwaveRemote {
       // 
       // MilkwaveInfoForm
       // 
-      AutoScaleDimensions = new SizeF(8F, 20F);
+      AutoScaleDimensions = new SizeF(7F, 15F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(572, 319);
+      ClientSize = new Size(500, 239);
       Controls.Add(btnClose);
       Controls.Add(textBox);
       Icon = (Icon)resources.GetObject("$this.Icon");
+      Margin = new Padding(3, 2, 3, 2);
       MaximizeBox = false;
       MinimizeBox = false;
       Name = "MilkwaveInfoForm";
