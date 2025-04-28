@@ -121,6 +121,12 @@
     <ClCompile Include="milkwave.cpp">
       <Filter>musikcube</Filter>
     </ClCompile>
+    <ClCompile Include="config.cpp">
+      <Filter>musikcube</Filter>
+    </ClCompile>
+    <ClCompile Include="config2.cpp">
+      <Filter>musikcube</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="wasabi.h">
@@ -202,6 +208,7 @@
       <Filter>spoutDX9</Filter>
     </ClInclude>
     <ClInclude Include="milkwave.h" />
+    <ClInclude Include="api.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="text1.bin">
@@ -218,5 +225,8 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="plugin_icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="manifest.xml" />
   </ItemGroup>
 </Project>
