@@ -164,6 +164,7 @@ typedef struct _SIMPLEVERTEX {
 #define SIMPLE_VERTEX_FORMAT (D3DFVF_XYZ | D3DFVF_DIFFUSE)
 
 extern wchar_t* g_szHelp;
+extern wchar_t* g_szHelp_Page2;
 extern int g_szHelp_W;
 
 // resides in vms_desktop.dll/lib:
@@ -1799,36 +1800,95 @@ void CPluginShell::DrawDarkTranslucentBox(RECT* pr) {
   m_lpDX->m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 }
 
+void CPluginShell::DrawDarkTranslucentBoxFullWindow() {
+  if (!m_lpDX || !m_lpDX->m_lpDevice) return;
+
+  m_lpDX->m_lpDevice->SetVertexShader(NULL);
+  m_lpDX->m_lpDevice->SetPixelShader(NULL);
+  m_lpDX->m_lpDevice->SetFVF(SIMPLE_VERTEX_FORMAT);
+  m_lpDX->m_lpDevice->SetTexture(0, NULL);
+
+  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+  m_lpDX->m_lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+  m_lpDX->m_lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+  m_lpDX->m_lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+
+  // Set up a quad for the entire window
+  SIMPLEVERTEX verts[4];
+  verts[0].x = -m_lpDX->m_client_width / 2.0f; // Left
+  verts[0].y = -m_lpDX->m_client_height / 2.0f; // Bottom
+  verts[0].z = 0.0f;
+  verts[0].Diffuse = 0xD0000000; // Black with some translucency
+
+  verts[1].x = m_lpDX->m_client_width / 2.0f; // Right
+  verts[1].y = -m_lpDX->m_client_height / 2.0f; // Bottom
+  verts[1].z = 0.0f;
+  verts[1].Diffuse = 0xD0000000;
+
+  verts[2].x = -m_lpDX->m_client_width / 2.0f; // Left
+  verts[2].y = m_lpDX->m_client_height / 2.0f; // Top
+  verts[2].z = 0.0f;
+  verts[2].Diffuse = 0xD0000000;
+
+  verts[3].x = m_lpDX->m_client_width / 2.0f; // Right
+  verts[3].y = m_lpDX->m_client_height / 2.0f; // Top
+  verts[3].z = 0.0f;
+  verts[3].Diffuse = 0xD0000000;
+
+  m_lpDX->m_lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, verts, sizeof(SIMPLEVERTEX));
+
+  // Undo unusual state changes
+  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+}
+
 void CPluginShell::RenderBuiltInTextMsgs() {
-  int _show_press_f1_NOW = (m_show_press_f1_msg && m_time < PRESS_F1_DUR);
+  int _show_press_f1_NOW = (m_show_press_f1_msg & m_time < PRESS_F1_DUR);
   {
     RECT r;
 
-    if (m_show_help) {
+    if (m_show_help > 0) {
       int y = m_upper_left_corner_y;
 
       SetRect(&r, 0, 0, GetWidth(), GetHeight());
-      if (!g_szHelp_W)
-        m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-      else
-        m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+      if (m_show_help == 1) {
+        if (!g_szHelp_W)
+          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+        else
+          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+      }
+      else if (m_show_help == 2) {
+        if (!g_szHelp_W)
+          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+        else
+          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+      }
+      DrawDarkTranslucentBoxFullWindow();
 
       r.top += m_upper_left_corner_y;
       r.left += m_left_edge;
       r.right += m_left_edge + PLAYLIST_INNER_MARGIN * 2;
       r.bottom += m_upper_left_corner_y + PLAYLIST_INNER_MARGIN * 2;
-      DrawDarkTranslucentBox(&r);
 
-      r.top += PLAYLIST_INNER_MARGIN;
-      r.left += PLAYLIST_INNER_MARGIN;
-      r.right -= PLAYLIST_INNER_MARGIN;
-      r.bottom -= PLAYLIST_INNER_MARGIN;
-      if (!g_szHelp_W)
-        m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp, -1, &r, 0, 0xFFFFFFFF);
-      else
-        m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp, -1, &r, 0, 0xFFFFFFFF);
-
-      m_upper_left_corner_y += r.bottom - r.top + PLAYLIST_INNER_MARGIN * 3;
+      if (m_show_help == 1) {
+        if (!g_szHelp_W)
+          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp, -1, &r, 0, 0xFFFFFFFF);
+        else
+          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp, -1, &r, 0, 0xFFFFFFFF);
+      }
+      else if (m_show_help == 2) {
+        if (!g_szHelp_W)
+          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
+        else
+          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
+      }
+      // ??
+      // m_upper_left_corner_y += r.bottom - r.top + PLAYLIST_INNER_MARGIN * 3;
     }
 
     // render 'Press F1 for Help' message in lower-right corner:
@@ -2272,7 +2332,15 @@ LRESULT CPluginShell::PluginShellWindowProc(HWND hWnd, unsigned uMsg, WPARAM wPa
 }
 
 void CPluginShell::ToggleHelp() {
-  m_show_help = 1 - m_show_help;
+  if (m_show_help == 0) {
+    m_show_help = 1;
+  }
+  else if (m_show_help == 1) {
+    m_show_help = 2;
+  }
+  else if (m_show_help == 2) {
+    m_show_help = 0;
+  }
 }
 
 LRESULT CALLBACK CPluginShell::DesktopWndProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam) {

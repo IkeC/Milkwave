@@ -969,6 +969,7 @@ void OnUserEditedCompShaders(LPARAM param1, LPARAM param2) {
 // A good guideline: your entire help screen should be visible when fullscreen
 //   @ 640x480 and using the default help screen font.
 wchar_t* g_szHelp = 0;
+wchar_t* g_szHelp_Page2 = 0;
 int g_szHelp_W = 0;
 
 // this is for integrating modern skins (with their Random button)
@@ -1068,6 +1069,8 @@ void CPlugin::MyPreInitialize() {
   g_szHelp = (wchar_t*)GetTextResource(IDR_TEXT2, 1);
   if (!g_szHelp) g_szHelp = (wchar_t*)GetTextResource(IDR_TEXT1, 0);
   else g_szHelp_W = 1;
+  g_szHelp_Page2 = (wchar_t*)GetTextResource(IDR_TEXT2_PAGE2, 1);
+  if (!g_szHelp_Page2) g_szHelp_Page2 = (wchar_t*)GetTextResource(IDR_TEXT1_PAGE2, 0);
 
   // CONFIG PANEL SETTINGS THAT WE'VE ADDED (TAB #2)
   m_bFirstRun = true;
@@ -7258,7 +7261,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   case 's':				// SAVE PRESET
   case 'S':
     // SPOUT
-    m_show_help = false;
+    m_show_help = 0;
     if (m_UI_mode == UI_REGULAR) {
       bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
       if (isCtrlPressed) {
@@ -7302,7 +7305,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   case 'l': // LOAD PRESET
   case 'L':
     // SPOUT
-    m_show_help = false;
+    m_show_help = 0;
 
     if (m_UI_mode == UI_LOAD) {
       m_UI_mode = UI_REGULAR;
@@ -7325,7 +7328,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   case 'M':
 
     // SPOUT
-    m_show_help = false;
+    m_show_help = 0;
 
     if (m_UI_mode == UI_MENU)
       m_UI_mode = UI_REGULAR;

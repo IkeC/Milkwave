@@ -66,6 +66,7 @@ IDI_PLUGIN_ICON         ICON                    "plugin_icon.ico"
 // See http://www.geisswerks.com/hosted/milkdrop2/milkdrop.html
 //
 IDR_TEXT1               TEXT                    "text1.bin"
+IDR_TEXT1_PAGE2         TEXT                    "text1_page2.bin"
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -283,6 +283,8 @@ private:
 public:
   void DrawDarkTranslucentBox(RECT* pr);
 
+  void DrawDarkTranslucentBoxFullWindow();
+
 protected:
   void RenderPlaylist();
   void StuffParams(DXCONTEXT_PARAMS* pParams);

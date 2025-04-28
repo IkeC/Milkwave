@@ -1,54 +1,31 @@
-ESC                  close Milkwave Visualizer / menus
-ALT + ENTER          toggle fullscreen (or double-click)
-ALT + S              toggle multiple monitor stretch
-SHIFT + UP / DOWN    increase/decrease window opacity (or mousewheel)
+Milkwave Help - Page 1/2 - F1 to switch page/close
 
-SPACE / H             soft / hard cut to next preset
-BACKSPACE             go back to previous preset
-` / ~                 [un]lock current preset
-R                     toggle random/sequential preset order 
-L                     load specific preset
-M                     show/hide preset-editing menu
-N                     show per-frame monitor
-S                     save new preset
-CTRL + S              quicksave to /presets/quicksave folder
-A                     do random mini-mash-up
-D                     toggle warp & comp shader locks
-!                     randomize warp shader
-@                     randomize comp shader
-
-F1                   show/hide help
-F2                   toggle borderless window (unless in fullscreen/stretch mode)
-F3                   toggle fps to 30/60/90/120/144/240/360/Unlimited
-F4                   show/hide preset info
-F5                   show/hide fps
-F6                   show/hide rating
-F7                   always on top
-F8 / R+M MOUSEBUTTON open Milkwave Remote
-F9                   toggle clickthrough mode
-CTRL + F9            toggle windowed fullscreen mode (cover screen except taskbar)
-CTRL + SHIFT + F9    toggle watermark mode (windowed fullscreen, clickthrough, on top)
-F10 / CTRL + Z       enable/disable spout output
-F11                  hardcut mode: normal/based of music
-F12                  transparency mode (removes the black background)
-CTRL + F12           toggle black mode (no preset rendering)
-
-Z                     previous track
-X                     play/pause track
-C                     stop track
-V                     next track
-LEFT/RIGHT ARROW      fast forward/rewind track (5 seconds)
-B / MID MOUSEBUTTON   show track info
-SHIFT + A             toggle next preset when track changes
-SHIFT + B             toggle track info polling
-SHIFT + C             toggle cover display when track changes
-
-K                     toggle sprite/message mode
-SHIFT + K             enter sprite kill mode
-00-99                 invoke sprites/messages
-*                     clears the number of digits that you introduced
-DEL                   clear latest sprite from the slot/message
-SHIFT + DEL           clear oldest sprite from the slot/message
-SHIFT + CTRL + DEL    clear all the sprites/messages
-CTRL + K              kills all the sprites
-CTRL + T              kills custom messages/song titles
+ALT + ENTER             Toggle fullscreen (or double-click)
+ALT + S                 Toggle multiple monitor stretch
+SHIFT + UP / DOWN       Increase/decrease window opacity (or mousewheel)
+                        
+F1                      Show/hide help
+F2                      Toggle borderless window (unless in fullscreen/stretch mode)
+F3                      Set fps to 30/60/90/120/144/240/360/Unlimited
+F4                      Show/hide preset info
+F5                      Show/hide fps
+F6                      Show/hide rating
+F7                      Always on top
+F8 / R+M MOUSEBUTTON    Open Milkwave Remote
+F9                      Toggle clickthrough mode
+CTRL + F9               Toggle windowed fullscreen mode (cover screen except taskbar)
+CTRL + SHIFT + F9       Toggle watermark mode (windowed clickthrough fullscreen)
+F10 / CTRL + Z          Enable/disable spout output
+F11                     Hardcut mode: normal/based of music
+F12                     Transparency mode (removes the black background)
+CTRL + F12              Toggle black mode (no preset rendering)
+                        
+Z                       previous track
+X                       play/pause track
+C                       stop track
+V                       next track
+LEFT/RIGHT ARROW        fast forward/rewind track (5 seconds)
+B / MID MOUSEBUTTON     show track info
+SHIFT + A               toggle next preset when track changes
+SHIFT + B               toggle track info polling
+SHIFT + C               toggle cover display when track changes
