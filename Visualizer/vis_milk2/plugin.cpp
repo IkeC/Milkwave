@@ -6525,7 +6525,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         // Don't close if esc pressed when vj window has focus
         if (GetFocus() == GetPluginWindow()) {
           bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-          if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(Press SHIFT+ESC or RIGHT+LEFT MOUSE BUTTON to close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
+          if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(You may also use SHIFT+ESC or\nRIGHT+LEFT MOUSE BUTTON\nto close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
             PostMessage(hWnd, WM_CLOSE, 0, 0);
           }
           return 0;

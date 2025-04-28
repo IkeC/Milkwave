@@ -1053,10 +1053,6 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
   SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon);
 
-  if (g_plugin.m_WindowBorderless && !borderless) {
-    ToggleBorderlessWindow(hwnd);
-  }
-
   // window was closed in borderless fullscreen mode
   if (g_plugin.IsBorderlessFullscreen(hwnd)) {
     g_plugin.fOpacity = g_plugin.m_WindowWatermarkModeOpacity;
@@ -1073,6 +1069,9 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   ShowWindow(hwnd, SW_SHOW);
 
+  if (g_plugin.m_WindowBorderless && !borderless) {
+    ToggleBorderlessWindow(hwnd);
+  }
   milkwave.Init();
   milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
   milkwave.doSaveCover = g_plugin.m_DisplayCover;
