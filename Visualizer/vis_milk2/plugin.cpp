@@ -5425,6 +5425,10 @@ void ToggleTransparency(HWND hwnd) {
 }
 
 void CPlugin::SetOpacity(HWND hwnd) {
+  if (IsBorderlessFullscreen(hwnd)) {
+    g_plugin.m_WindowWatermarkModeOpacity = fOpacity;
+  }
+
   // Retrieve the current extended window style
   LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 

@@ -511,7 +511,7 @@ void ToggleClickThrough(HWND hWnd) {
 
 void ToggleBorderlessFullscreen(HWND hWnd) {
   static bool previousClickthrough = false; // Store the previous clickthrough state
-  static BYTE previousOpacity = 255;       // Store the previous opacity (fully opaque by default)
+  static float previousOpacity = 1.0f;       // Store the previous opacity (fully opaque by default)
 
   // Check if Shift is pressed
   bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
@@ -567,8 +567,11 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
         ToggleClickThrough(hWnd);
       }
 
+      g_plugin.fOpacity = previousOpacity;
+      g_plugin.SetOpacity(hWnd);
+
       // Restore the previous opacity
-      SetLayeredWindowAttributes(hWnd, 0, previousOpacity, LWA_ALPHA);
+      // SetLayeredWindowAttributes(hWnd, 0, previousOpacity, LWA_ALPHA);
 
       borderless = g_plugin.m_WindowBorderless; // Restore the borderless state
     }
@@ -583,14 +586,7 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
       g_plugin.m_WindowBorderless = borderless; // Save the current borderless state
 
       previousClickthrough = clickthrough; // Save the current clickthrough state
-
-      // Retrieve the current opacity
-      BYTE currentOpacity = 255; // Default to fully opaque
-      DWORD flags = 0;
-      COLORREF colorKey = 0;
-      if (GetLayeredWindowAttributes(hWnd, &colorKey, &currentOpacity, &flags)) {
-        previousOpacity = currentOpacity; // Save the current opacity
-      }
+      previousOpacity = g_plugin.fOpacity;
 
       // Set the window style to borderless
       LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
@@ -614,7 +610,9 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
         if (!clickthrough) {
           ToggleClickThrough(hWnd);
         }
-        SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowWatermarkModeOpacity * 255), LWA_ALPHA);
+        g_plugin.fOpacity = g_plugin.m_WindowWatermarkModeOpacity;
+        g_plugin.SetOpacity(hWnd);
+        //SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowWatermarkModeOpacity * 255), LWA_ALPHA);
       }
 
       borderless = true;

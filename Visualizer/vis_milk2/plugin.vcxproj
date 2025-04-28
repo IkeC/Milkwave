@@ -196,8 +196,6 @@
     <ClCompile Include="..\spoutDX9\SpoutSenderNames.cpp" />
     <ClCompile Include="..\spoutDX9\SpoutSharedMemory.cpp" />
     <ClCompile Include="..\spoutDX9\SpoutUtils.cpp" />
-    <ClCompile Include="config.cpp" />
-    <ClCompile Include="config2.cpp" />
     <ClCompile Include="dxcontext.cpp" />
     <ClCompile Include="fft.cpp" />
     <ClCompile Include="menu.cpp" />

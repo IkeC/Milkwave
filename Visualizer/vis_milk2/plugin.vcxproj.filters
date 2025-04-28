@@ -121,12 +121,6 @@
     <ClCompile Include="milkwave.cpp">
       <Filter>musikcube</Filter>
     </ClCompile>
-    <ClCompile Include="config.cpp">
-      <Filter>musikcube</Filter>
-    </ClCompile>
-    <ClCompile Include="config2.cpp">
-      <Filter>musikcube</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="wasabi.h">
