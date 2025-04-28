@@ -1389,6 +1389,8 @@ void CPlugin::MyReadConfig() {
   m_SongInfoDisplaySeconds = GetPrivateProfileFloatW(L"Milkwave", L"SongInfoDisplaySeconds", m_SongInfoDisplaySeconds, pIni);
   m_DisplayCover = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCover", m_DisplayCover, pIni);
   m_DisplayCoverWhenPressingB = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCoverWhenPressingB", m_DisplayCoverWhenPressingB, pIni);
+  m_HideNotificationsWhenRemoteActive = GetPrivateProfileBoolW(L"Milkwave", L"HideNotificationsWhenRemoteActive", m_HideNotificationsWhenRemoteActive, pIni);
+
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
   m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
 
@@ -5306,7 +5308,6 @@ void CPlugin::MyRenderUI(
     // e) custom timed message:
     if (!m_bWarningsDisabled2) {
       wchar_t buf[512] = { 0 };
-      SelectFont(SIMPLE_FONT);
       float t = GetTime();
       int N = m_errors.size();
       for (int i = 0; i < N; i++) {
@@ -5346,18 +5347,18 @@ void CPlugin::MyRenderUI(
             else {
               MyTextOut_Color(buf, MTO_LOWER_LEFT, z);
             }
-            
           }
           else {
             int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
-            if (res != 1) {
+            if (res != 1 || !m_HideNotificationsWhenRemoteActive) {
+              SelectFont(SIMPLE_FONT);
               swprintf(buf, L"%s ", m_errors[i].msg.c_str());
               float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);
               DWORD cr = (DWORD)(200 - 199 * powf(age_rel, 4));
               DWORD cg = 0;//(DWORD)(136 - 135*powf(age_rel,1));
               DWORD cb = 0;
               DWORD z = 0xFF000000 | (cr << 16) | (cg << 8) | cb;
-              MyTextOut_BGCOLOR(buf, MTO_UPPER_RIGHT, true, m_errors[i].bBold ? z : 0xFF000000);
+              MyTextOut_BGCOLOR(buf, MTO_UPPER_RIGHT, false, m_errors[i].bBold ? z : 0xFF000000);
             }
           }
         }

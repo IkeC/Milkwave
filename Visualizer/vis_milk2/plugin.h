@@ -350,6 +350,7 @@ public:
   float m_SongInfoDisplaySeconds = 5.0f;
   bool m_DisplayCover = true;
   bool m_DisplayCoverWhenPressingB = true;
+  bool m_HideNotificationsWhenRemoteActive = false;
 
   //bool		m_bAlways3D;
   //float       m_fStereoSep;
