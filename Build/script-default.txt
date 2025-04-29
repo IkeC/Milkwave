@@ -37,5 +37,6 @@ Boom
 # use any number of blank lines for delays
 
 BOOM
+PRESET=resources\presets\Milkwave\Geiss - Reaction Diffusion 2.milk
 STYLE=Style A|That's all folks!|STOP
 # if you don't STOP, autoplay will continue from the beginning (unless random play is enabled)

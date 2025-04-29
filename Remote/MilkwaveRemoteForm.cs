@@ -55,11 +55,9 @@ namespace MilkwaveRemote {
     private DarkModeCS dm;
 
     private System.Windows.Forms.Timer autoplayTimer;
-    private int currentLineIndex = 0;
+    private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
     private float autoplayRemainingBeats = 1;
-
-    private List<string> lines = new List<string>();
 
     private string lastScriptFileName = "script-default.txt";
     private string windowNotFound = "Milkwave Visualizer window not found";
@@ -160,9 +158,6 @@ namespace MilkwaveRemote {
       var fieVersionInfo = FileVersionInfo.GetVersionInfo(executingAssembly.Location);
       var version = fieVersionInfo.FileVersion;
       toolStripMenuItemHomepage.Text = $"Milkwave v{version}";
-
-      cboParameters.DropDownStyle = ComboBoxStyle.DropDown;
-      cboParameters.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
 
       // Initialize 'ofd' to avoid CS8618 error
       ofd = new OpenFileDialog();
@@ -487,7 +482,9 @@ namespace MilkwaveRemote {
         .Replace(" " + Environment.NewLine, Environment.NewLine)
         .Replace(Environment.NewLine + " ", Environment.NewLine)
         .Replace(Environment.NewLine, " // ").Trim();
-      statusBar.Text = text;
+      if (!text.Equals(statusBar.Text)) {
+        statusBar.Text = text;
+      }
     }
 
     private void btnSaveParam_Click(object sender, EventArgs e) {
@@ -551,12 +548,14 @@ namespace MilkwaveRemote {
     }
 
     private void AutoplayTimer_Tick(object? sender, EventArgs? e) {
+      SendAutoplayLine(false);
+    }
 
-      Debug.Print("" + ((start - DateTime.Now.Ticks) / 1000));
+    private void SendAutoplayLine(bool manualSend) {
 
-      if (lines.Count > 0) {
-        if (autoplayRemainingBeats == 0) {
-          string[] strings = lines[currentLineIndex].Split('|');
+      if (cboAutoplay.Items?.Count > 0) {
+        if (autoplayRemainingBeats == 0 || manualSend) {
+          string[] strings = cboAutoplay.Text.Split('|');
           foreach (string s in strings) {
             string token = s.Trim();
             string tokenUpper = token.ToUpper();
@@ -605,8 +604,9 @@ namespace MilkwaveRemote {
               if (fileName.Length > 0) {
                 LoadMessages(fileName);
                 lastScriptFileName = fileName;
-                txtAutoplay.Text = lines[currentLineIndex];
-                SetStatusText($"Next line in {autoplayRemainingBeats} beats");
+                if (!manualSend) {
+                  SetStatusText($"Next line in {autoplayRemainingBeats} beats");
+                }
               }
             } else if (tokenUpper.StartsWith("SEND=")) {
               string sendString = token.Substring(5);
@@ -618,29 +618,46 @@ namespace MilkwaveRemote {
             }
           }
 
-
-          try {
-            autoplayRemainingBeats = int.Parse(numBeats.Text) - 1;
-          } catch (Exception) {
-            autoplayRemainingBeats = 1;
-          }
-
-          if (autoplayRemainingBeats < 1) {
-            autoplayRemainingBeats = 1;
-          }
-          lastLineIndex = currentLineIndex;
-
-          if (chkFileRandom.Checked && lines.Count > 1) {
-            while (currentLineIndex == lastLineIndex) {
-              currentLineIndex = rnd.Next(0, lines.Count);
+          if (!manualSend) {
+            try {
+              autoplayRemainingBeats = int.Parse(numBeats.Text) - 1;
+            } catch (Exception) {
+              autoplayRemainingBeats = 1;
             }
-          } else {
-            currentLineIndex = (currentLineIndex + 1) % lines.Count;
+
+            if (autoplayRemainingBeats < 1) {
+              autoplayRemainingBeats = 1;
+            }
+            lastLineIndex = currentAutoplayIndex;
+
+            if (chkFileRandom.Checked && cboAutoplay.Items?.Count > 1) {
+              while (currentAutoplayIndex == lastLineIndex) {
+                currentAutoplayIndex = rnd.Next(0, cboAutoplay.Items.Count);
+                cboAutoplay.SelectedIndex = currentAutoplayIndex;
+              }
+            } else {
+              if (cboAutoplay.Items?.Count > 0) {
+                currentAutoplayIndex = (int)((currentAutoplayIndex + 1) % cboAutoplay.Items.Count);
+                cboAutoplay.SelectedIndex = currentAutoplayIndex;
+              }
+            }
           }
-        } else {
-          txtAutoplay.Text = lines[currentLineIndex];
+
+        } else if (!manualSend) {
+          // SelectNextAutoplayEntry();
           SetStatusText($"Next line in {autoplayRemainingBeats} beats");
           autoplayRemainingBeats--;
+        }
+      }
+    }
+
+    private void SelectNextAutoplayEntry() {
+      if (cboAutoplay.Items.Count > 0) {
+        // Move to the next item or loop back to the first
+        if (cboAutoplay.SelectedIndex < cboAutoplay.Items.Count - 1) {
+          cboAutoplay.SelectedIndex++;
+        } else {
+          cboAutoplay.SelectedIndex = 0;
         }
       }
     }
@@ -673,8 +690,8 @@ namespace MilkwaveRemote {
     }
 
     private void LoadMessages(string fileName) {
-      currentLineIndex = 0;
-      lines.Clear();
+      currentAutoplayIndex = 0;
+      cboAutoplay.Items.Clear();
       string filePath = fileName;
       if (!fileName.Contains("\\")) {
         filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
@@ -682,19 +699,24 @@ namespace MilkwaveRemote {
       if (File.Exists(filePath)) {
         string[] strings = File.ReadAllLines(filePath);
         foreach (string line in strings) {
-          if (line.Length > 0 && !line.StartsWith("#")) {
-            lines.Add(line);
+          if (!line.StartsWith("#")) {
+            cboAutoplay.Items.Add(line);
           }
         }
       }
 
-      if (lines?.Count > 0) {
-        if (lines.Count > 1 && chkFileRandom.Checked) {
-          currentLineIndex = rnd.Next(0, lines.Count);
+      if (cboAutoplay.Items.Count > 0) {
+        cboAutoplay.SelectedIndex = 0;
+        if (cboAutoplay.Items.Count > 1 && chkFileRandom.Checked) {
+          currentAutoplayIndex = rnd.Next(0, cboAutoplay.Items.Count);
+          try {
+            cboAutoplay.SelectedIndex = currentAutoplayIndex;
+          } catch (Exception) {
+            // ignore
+          }
+          toolTip1.SetToolTip(cboAutoplay, "Line from file " + fileName);
+          chkAutoplay.Enabled = true;
         }
-        txtAutoplay.Text = lines[currentLineIndex];
-        toolTip1.SetToolTip(txtAutoplay, "Next line from file " + fileName);
-        chkAutoplay.Enabled = true;
       } else {
         txtAutoplay.Text = "No messages in " + fileName;
         chkAutoplay.Enabled = false;
@@ -713,9 +735,15 @@ namespace MilkwaveRemote {
     }
 
     private const int VK_SHIFT = 0x10;
+    private const int VK_CTRL = 0x11;
     private const int VK_ALT = 0x12;
 
-    private void SendInput(int VKKey, string keyName, bool doShift, bool doAlt) {
+    // Add the missing constant for VK_B  
+    private const int VK_B = 0x42; // Virtual-Key code for the 'B' key
+    private const int VK_K = 0x4B; // Virtual-Key code for the 'K' key
+    private const int VK_N = 0x4E; // Virtual-Key code for the 'N' key
+
+    private void SendInput(int VKKey, string keyName, bool doShift, bool doAlt, bool doCtrl) {
       IntPtr currentWindow = GetForegroundWindow();
       IntPtr foundWindow = FindVisualizerWindow();
       if (foundWindow != IntPtr.Zero) {
@@ -723,7 +751,69 @@ namespace MilkwaveRemote {
 
         INPUT[] inputs;
 
-        if (doShift) {
+        if (doShift && doCtrl) {
+          inputs = new INPUT[6];
+
+          inputs[0] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = VK_SHIFT,
+                dwFlags = 0 // Key down
+              }
+            }
+          };
+
+          inputs[1] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = VK_CTRL,
+                dwFlags = 0 // Key down
+              }
+            }
+          };
+
+          inputs[2] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = (ushort)VKKey,
+                dwFlags = 0 // Key down
+              }
+            }
+          };
+
+          inputs[3] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = (ushort)VKKey,
+                dwFlags = 2 // Key up
+              }
+            }
+          };
+
+          inputs[4] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = VK_SHIFT,
+                dwFlags = 2 // Key up
+              }
+            }
+          };
+
+          inputs[5] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = VK_CTRL,
+                dwFlags = 2 // Key up
+              }
+            }
+          };
+        } else if (doShift) {
           inputs = new INPUT[4];
 
           inputs[0] = new INPUT {
@@ -903,11 +993,11 @@ namespace MilkwaveRemote {
     }
 
     private void btnAltEnter_Click(object sender, EventArgs e) {
-      SendInput(VK_ENTER, "Alt+Enter", false, true);
+      SendInput(VK_ENTER, "Alt+Enter", false, true, false);
     }
 
     private void btnN_Click(object sender, EventArgs e) {
-      SendUnicodeChars("n");
+      SendPostMessage(VK_N, "N");
     }
 
     private void btnF2_Click(object sender, EventArgs e) {
@@ -915,7 +1005,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnK_Click(object sender, EventArgs e) {
-      SendUnicodeChars("k");
+      SendPostMessage(VK_K, "K");
     }
 
     private void btnF10_Click(object sender, EventArgs e) {
@@ -954,6 +1044,14 @@ namespace MilkwaveRemote {
       SendUnicodeChars("77");
     }
 
+    private void btn88_Click(object sender, EventArgs e) {
+      SendUnicodeChars("88");
+    }
+
+    private void btn99_Click(object sender, EventArgs e) {
+      SendUnicodeChars("99");
+    }
+
     private void lblFromFile_DoubleClick(object sender, EventArgs e) {
       LoadMessages(lastScriptFileName);
     }
@@ -972,6 +1070,11 @@ namespace MilkwaveRemote {
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
           SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
+        } else if (e.KeyCode == Keys.X) {
+          btnSendFile_Click(null, null);
+          if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
+            SelectNextAutoplayEntry();
+          }
         } else if (e.KeyCode == Keys.Y) {
           chkAutoplay.Checked = !chkAutoplay.Checked;
         }
@@ -1009,7 +1112,11 @@ namespace MilkwaveRemote {
     }
 
     private void lblBPM_Click(object sender, EventArgs e) {
-      ResetAndStartTimer(true);
+      if (!chkAutoplay.Checked) {
+        chkAutoplay.Checked = true;
+      } else {
+        ResetAndStartTimer(true);
+      }
     }
 
     private void cboParameters_SelectedIndexChanged(object sender, EventArgs e) {
@@ -1235,8 +1342,8 @@ namespace MilkwaveRemote {
       if (chkPreview.Checked) {
         SetFormattedMessage();
       } else {
-        txtMessage.Font = txtAutoplay.Font;
-        txtMessage.ForeColor = txtAutoplay.ForeColor;
+        txtMessage.Font = cboAutoplay.Font;
+        txtMessage.ForeColor = cboAutoplay.ForeColor;
       }
     }
 
@@ -1668,6 +1775,29 @@ namespace MilkwaveRemote {
     private void lblAudioDevice_DoubleClick(object sender, EventArgs e) {
       helper.ReloadAudioDevices(cboAudioDevice);
       SetStatusText($"Audio device list reloaded");
+    }
+
+    private void btnSendFile_Click(object? sender, EventArgs e) {
+      SendAutoplayLine(true);
+    }
+
+    private void btnSendFile_MouseDown(object sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Right) {
+        SendAutoplayLine(true);
+        SelectNextAutoplayEntry();
+      }
+    }
+
+    private void btnB_Click(object sender, EventArgs e) {
+      SendPostMessage(VK_B, "B");
+    }
+
+    private void btnTransparency_Click(object sender, EventArgs e) {
+      SendPostMessage(VK_F12, "F12");
+    }
+
+    private void btnWatermark_Click(object sender, EventArgs e) {
+      SendInput(VK_F9, "F9", true, false, true);
     }
   }
 }

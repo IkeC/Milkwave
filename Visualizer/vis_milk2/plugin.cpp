@@ -5349,11 +5349,16 @@ void CPlugin::MyRenderUI(
             }
           }
           else {
-            int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
+            float age = t - m_errors[i].birthTime;
+            int res = 1;
+            if (age < 0.03f) {
+              // don't send more often than necessary
+              int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
+            }
             if (res != 1 || !m_HideNotificationsWhenRemoteActive) {
               SelectFont(SIMPLE_FONT);
               swprintf(buf, L"%s ", m_errors[i].msg.c_str());
-              float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);
+              float age_rel = (age) / (m_errors[i].expireTime - m_errors[i].birthTime);
               DWORD cr = (DWORD)(200 - 199 * powf(age_rel, 4));
               DWORD cg = 0;//(DWORD)(136 - 135*powf(age_rel,1));
               DWORD cb = 0;
@@ -6530,7 +6535,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         // Don't close if esc pressed when vj window has focus
         if (GetFocus() == GetPluginWindow()) {
           bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-          if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(You may also use SHIFT+ESC or\nRIGHT+LEFT MOUSE BUTTON\nto close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
+          if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(You may also use SHIFT+ESC or RIGHT+LEFT MOUSE BUTTON\nto close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
             PostMessage(hWnd, WM_CLOSE, 0, 0);
           }
           return 0;
@@ -6852,7 +6857,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
     case 'S':
       if (bCtrlHeldDown) {
-        g_plugin.SaveCurrentPresetToQuicksave();
+        g_plugin.SaveCurrentPresetToQuicksave(bShiftHeldDown);
         return 0;
       }
       break;
@@ -7363,14 +7368,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   return 1;
 }
 
-void CPlugin::SaveCurrentPresetToQuicksave() {
-  // Ensure the "quicksave" folder exists under the presets directory
-  wchar_t quicksaveDir[MAX_PATH];
-  swprintf(quicksaveDir, MAX_PATH, L"%s\\quicksave", m_szPresetDir);
-
-  // Create the "quicksave" directory if it doesn't exist
-  CreateDirectoryW(quicksaveDir, NULL);
-
+void CPlugin::SaveCurrentPresetToQuicksave(bool altDir) {
   // Find the last occurrence of the path separator ('\\') in the full path
   const wchar_t* presetFilename = wcsrchr(m_szCurrentPresetFile, L'\\');
   if (presetFilename) {
@@ -7386,8 +7384,11 @@ void CPlugin::SaveCurrentPresetToQuicksave() {
   GetModuleFileNameW(NULL, exePath, MAX_PATH);
   std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
 
-  // Construct the "resources/sprites/Quicksave" directory path relative to the executable
-  std::filesystem::path quicksavePresetPath = exeDir / "resources/presets/Quicksave";
+  std::string quicksaveDir = "resources/presets/Quicksave";
+  if (altDir) {
+    quicksaveDir = "resources/presets/Quicksave2";
+  }
+  std::filesystem::path quicksavePresetPath = exeDir / quicksaveDir;
   std::filesystem::create_directories(quicksavePresetPath);
 
   quicksavePresetPath.append(presetFilename);
@@ -10208,9 +10209,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     int display = std::ceil(100 * fOpacity);
     wchar_t buf[1024];
     swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
-    g_plugin.AddError(buf, 3.0f, ERR_NOTIFY, false);
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
-
     SendMessageToMilkwaveRemote((L"PRESET=" + std::wstring(m_szCurrentPresetFile)).c_str());
   }
 }

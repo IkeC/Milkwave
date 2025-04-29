@@ -1,8 +1,8 @@
 Milkwave is:
 - **Milkwave Visualizer**:
-   An advanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
+    An advanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
 - **Milkwave Remote**:
-   A standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
+    A standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
 ![image](https://github.com/user-attachments/assets/055be5ff-b3b8-43fd-aca4-119bf189fbbb)
 
@@ -29,6 +29,27 @@ Milkwave is:
 * Customizable interface - show only what you need
 
 There are many tooltips explaining all features when you hover over the form elements.
+
+## New in Milkwave 1.6
+
+- Black mode (Ctrl + F12)
+  - Hides all preset rendering
+  - Fonts, sprites and messages are still rendered
+  - Use in combination with transparency mode
+- Script file lines as list
+  - Select lines from default or custom script file
+  - Send timed, randomly or manually
+- Additional buttons
+  - Song info, transparency, watermark mode, 88, 99 (sprites)
+- Additional mouse controls
+  - Middle Mouse Button: Song Info
+  - Left + Right Mouse Button: Close Visualizer
+  - Middle + Right Mouse Button: Open Remote
+- New configuration options
+  - Show cover when requesting song info
+  - Choose corner for song info
+  - Close visualizer when closing remote
+  - Hide notifications in visualizer when remote is active
 
 ## History
 

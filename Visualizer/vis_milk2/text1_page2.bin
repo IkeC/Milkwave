@@ -8,7 +8,8 @@ L                       Load specific preset
 M                       Show/hide preset-editing menu
 N                       Show per-frame monitor
 S                       Save new preset
-CTRL + S                Quicksave to /presets/quicksave folder
+CTRL + S                Quicksave preset to /presets/Quicksave folder
+SHIFT + CTRL + S        Quicksave preset to /presets/Quicksave2 folder
 A                       Do random mini-mash-up
 D                       Toggle warp & comp shader locks
 !                       Randomize warp shader
