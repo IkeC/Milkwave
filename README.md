@@ -32,24 +32,26 @@ There are many tooltips explaining all features when you hover over the form ele
 
 ## New in Milkwave 1.6
 
-- Black mode (Ctrl + F12)
+- Black mode (Ctrl+F12)
   - Hides all preset rendering
   - Fonts, sprites and messages are still rendered
   - Use in combination with transparency mode
-- Script file lines as list
+- Script file lines as list in Remote
   - Select lines from default or custom script file
   - Send timed, randomly or manually
-- Additional buttons
+- New Remote buttons
   - Song info, transparency, watermark mode, 88, 99 (sprites)
-- Additional mouse controls
+- New Visualizer mouse controls
   - Middle Mouse Button: Song Info
   - Left + Right Mouse Button: Close Visualizer
   - Middle + Right Mouse Button: Open Remote
+- Additional quicksave folder
+  - Ctrl+Shift+S saves to presets\Quicksave2
 - New configuration options
   - Show cover when requesting song info
   - Choose corner for song info
-  - Close visualizer when closing remote
-  - Hide notifications in visualizer when remote is active
+  - Close Visualizer when closing remote
+  - Hide notifications in Visualizer when remote is active
 
 ## History
 
