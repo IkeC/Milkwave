@@ -21,10 +21,10 @@ Milkwave is:
 * Send custom message text, color, font size, position and other parameters
 * Save parameter definitions as named styles for quick access
 * Send messages, parameters, presets etc. automatically from a script file at configurable intervals
-* Select preset files and send them to the visualizer
+* Select preset files and send them to the Visualizer
 * Change the used audio device on the fly
-* Show the currently playing visualizer preset in the Remote window
-* Amplify the virtual audio signal to make the visualizer more (or less) responsive
+* Show the currently playing Visualizer preset in the Remote window
+* Amplify the virtual audio signal to make the Visualizer more (or less) responsive
 * Modify the currently playing preset's waveform type, color and alpha value
 * Send common key combinations using buttons
 * Customizable interface - show only what you need
