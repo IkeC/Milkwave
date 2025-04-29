@@ -622,7 +622,7 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
 
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
-  static bool rightMouseButtonHeld = false; // Track the state of the right mouse button
+  static bool rightMouseButtonHeld = false; // Track the state of the right mouse button  
 
   switch (uMsg) {
   case WM_CLOSE:
@@ -746,48 +746,55 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_NCHITTEST: //used for borderless window
   {
-    if (borderless)
-      if (!fullscreen && !stretch) {
-        //resizable borderless
-        //from https://stackoverflow.com/questions/19106047/winapi-c-reprogramming-window-resize
+    // if (borderless)
+    if (!fullscreen && !stretch) {
+      //resizable borderless
+      //from https://stackoverflow.com/questions/19106047/winapi-c-reprogramming-window-resize
 #define BORDERWIDTH  10
 #define TITLEBARWIDTH  30
-        RECT rect;
-        int x, y;
-        GetWindowRect(hWnd, &rect);
+      RECT rect;
+      int x, y;
+      GetWindowRect(hWnd, &rect);
 
-        x = GET_X_LPARAM(lParam) - rect.left;
-        y = GET_Y_LPARAM(lParam) - rect.top;
+      x = GET_X_LPARAM(lParam) - rect.left;
+      y = GET_Y_LPARAM(lParam) - rect.top;
 
-        if (x >= BORDERWIDTH && x <= rect.right - rect.left - BORDERWIDTH && y >= BORDERWIDTH && y <= TITLEBARWIDTH)
-          return HTCAPTION;
-
-        else if (x < BORDERWIDTH && y < BORDERWIDTH)
-          return HTTOPLEFT;
-        else if (x > rect.right - rect.left - BORDERWIDTH && y < BORDERWIDTH)
-          return HTTOPRIGHT;
-        else if (x > rect.right - rect.left - BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
-          return HTBOTTOMRIGHT;
-        else if (x < BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
-          return HTBOTTOMLEFT;
-
-        else if (x < BORDERWIDTH)
-          return HTLEFT;
-        else if (y < BORDERWIDTH)
-          return HTTOP;
-        else if (x > rect.right - rect.left - BORDERWIDTH)
-          return HTRIGHT;
-        else if (y > rect.bottom - rect.top - BORDERWIDTH)
-          return HTBOTTOM;
+      if (x >= BORDERWIDTH && x <= rect.right - rect.left - BORDERWIDTH && y >= BORDERWIDTH && y <= TITLEBARWIDTH)
         return HTCAPTION;
-      }
+
+      else if (x < BORDERWIDTH && y < BORDERWIDTH)
+        return HTTOPLEFT;
+      else if (x > rect.right - rect.left - BORDERWIDTH && y < BORDERWIDTH)
+        return HTTOPRIGHT;
+      else if (x > rect.right - rect.left - BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
+        return HTBOTTOMRIGHT;
+      else if (x < BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
+        return HTBOTTOMLEFT;
+
+      else if (x < BORDERWIDTH)
+        return HTLEFT;
+      else if (y < BORDERWIDTH)
+        return HTTOP;
+      else if (x > rect.right - rect.left - BORDERWIDTH)
+        return HTRIGHT;
+      else if (y > rect.bottom - rect.top - BORDERWIDTH)
+        return HTBOTTOM;
+      return HTCAPTION;
+    }
     break;
   }
 
   case WM_NCLBUTTONDBLCLK:
   {
-    if (borderless)
-      ToggleFullScreen(hWnd);
+    // if (borderless)
+    // only triggered when going INTO fullscreen
+    ToggleFullScreen(hWnd);
+    break;
+  }
+
+  case WM_NCRBUTTONDBLCLK:
+  {    
+    ToggleBorderlessWindow(hWnd);
     break;
   }
 
@@ -840,7 +847,14 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_LBUTTONDBLCLK:
   {
+    // only triggered when coming back from fullscreen
     ToggleFullScreen(hWnd);
+    break;
+  }
+
+  case WM_RBUTTONDBLCLK:
+  {
+    ToggleBorderlessWindow(hWnd);
     break;
   }
 
@@ -1211,7 +1225,7 @@ int StartAudioCaptureThread(HINSTANCE instance) {
     return -__LINE__;
   }
   CloseHandleOnExit closeStartedEvent(hStartedEvent);
-  
+
   // create a "stop capturing now" event
   HANDLE hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
   if (NULL == hStopEvent) {

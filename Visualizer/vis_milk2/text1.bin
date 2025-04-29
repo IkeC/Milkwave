@@ -5,7 +5,7 @@ ALT + S                 Toggle multiple monitor stretch
 SHIFT + UP / DOWN       Increase/decrease window opacity (or mousewheel)
                         
 F1                      Show/hide help
-F2                      Toggle borderless window (unless in fullscreen/stretch mode)
+F2 / 2xR MOUSEBUTTON    Toggle borderless window (unless in fullscreen/stretch mode)
 F3                      Set fps to 30/60/90/120/144/240/360/Unlimited
 F4                      Show/hide preset info
 F5                      Show/hide fps
@@ -25,7 +25,7 @@ X                       play/pause track
 C                       stop track
 V                       next track
 LEFT/RIGHT ARROW        fast forward/rewind track (5 seconds)
-B / MID MOUSEBUTTON     show track info
+B / M MOUSEBUTTON       show track info
 SHIFT + A               toggle next preset when track changes
 SHIFT + B               toggle track info polling
 SHIFT + C               toggle cover display when track changes
