@@ -442,6 +442,11 @@ namespace MilkwaveRemote {
             }
           }
 
+          // hard limit is 507 characters
+          if (messageToSend.Length > 500) {
+            messageToSend = messageToSend.Substring(0, 500);
+          }
+
           message = "MSG" +
             "|text=" + messageToSend;
           if (cboParameters.Text.Length > 0) {

@@ -5599,7 +5599,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   case WM_COPYDATA:
   {
     PCOPYDATASTRUCT pCopyData = (PCOPYDATASTRUCT)lParam;
-    if (pCopyData->dwData == 1) { // Custom identifier for the message          
+    if (pCopyData->dwData == 1) { // Custom identifier for the message
       wchar_t* receivedMessage = (wchar_t*)pCopyData->lpData;
 
       // Calculate the length in wchar_t units
