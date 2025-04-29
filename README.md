@@ -50,8 +50,8 @@ There are many tooltips explaining all features when you hover over the form ele
 - New configuration options
   - Show cover when requesting song info
   - Choose corner for song info
-  - Close Visualizer when closing remote
-  - Hide notifications in Visualizer when remote is active
+  - Close Visualizer when closing Remote
+  - Hide notifications in Visualizer when Remote is active
 
 ## History
 
