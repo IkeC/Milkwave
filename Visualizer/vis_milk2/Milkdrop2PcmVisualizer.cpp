@@ -1211,7 +1211,7 @@ int StartAudioCaptureThread(HINSTANCE instance) {
     return -__LINE__;
   }
   CloseHandleOnExit closeStartedEvent(hStartedEvent);
-
+  
   // create a "stop capturing now" event
   HANDLE hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
   if (NULL == hStopEvent) {
@@ -1296,6 +1296,9 @@ int StartAudioCaptureThread(HINSTANCE instance) {
         // audio device changed
         bKeepWaiting = false;
         g_plugin.m_AudioLoopState = 2;
+      }
+      else {
+        Sleep(100);
       }
     } // while
   } // naked scope

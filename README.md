@@ -1,6 +1,6 @@
 Milkwave is:
 - **Milkwave Visualizer**:
-    An advanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
+    An feature-enhanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
 - **Milkwave Remote**:
     A standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
@@ -8,11 +8,12 @@ Milkwave is:
 
 ## Visualizer Features
  
-* Display current track information and artwork from Spotify, YouTube, Twitch etc.
+* Display current track information and artwork from Spotify, YouTube or other media sources playing on your PC
 * Change preset on track change
 * Set window transparency, borderless, and clickthrough ("watermark mode")
 * Customize font types and colors
-* Over 5000 presets from artists all over the world
+* Over 5000 presets from skilled artists worldwide
+* Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
 
 ## Remote Features
@@ -28,10 +29,12 @@ Milkwave is:
 * Send common key combinations using buttons
 * Customizable interface - show only what you need
 
-There are many tooltips explaining all features when you hover over the form elements.
+There are many tooltips explaining all features when you hover over the form elements. If you have any questions, don't be afraid to [ask for support](#support)!
 
 ## New in Milkwave 1.6
 
+- Improved performance
+  - 30% -> 5% CPU usage on test system
 - Black mode (Ctrl+F12)
   - Hides all preset rendering
   - Fonts, sprites and messages are still rendered
@@ -43,8 +46,8 @@ There are many tooltips explaining all features when you hover over the form ele
   - Song info, transparency, watermark mode, 88, 99 (sprites)
 - New Visualizer mouse controls
   - Middle Mouse Button: Song Info
-  - Left + Right Mouse Button: Close Visualizer
-  - Middle + Right Mouse Button: Open Remote
+  - Right+Left Mouse Button: Close Visualizer
+  - Right+Middle Mouse Button: Open Remote
 - Additional quicksave folder
   - Ctrl+Shift+S saves to presets\Quicksave2
 - New configuration options
@@ -58,15 +61,16 @@ There are many tooltips explaining all features when you hover over the form ele
 The original MilkDrop 2 WinAMP plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) and [MilkDrop3](https://github.com/milkdrop2077/MilkDrop3) projects.
 
 ## System Requirements
+
 * Windows 7 or later
 * DirectX 9 or higher - compatible GPU
 * [Microsoft .NET Desktop Runtime 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) (for Remote)
 
 ## Support
 
-I may add new features or fix bugs if anyone is actually using this, so feel free to open an issue or join my [**Discord**](https://bit.ly/Ikes-Discord)! 
+I may add new features or fix bugs if people are actually using this, so feel free to [open an issue](https://github.com/IkeC/Milkwave/issues) or join my [**Discord**](https://bit.ly/Ikes-Discord)!
 
-This project incorporates the work of many different authors over the years, as listed below. Naturally, the entirety of this project is open source and there will never be a paid version of it.
+This project incorporates the work of many different authors over the years, as listed below. Naturally, the entirety of this project is Open Source and there will never be a paid version of it.
 
 However, if you're satisfied with the additions I made and you want to support my work, here's my [**PayPal account**](https://www.paypal.com/ncp/payment/5XMP3S69PJLCU). You'll be listed as a supporter within the next program release if you wish.
 
