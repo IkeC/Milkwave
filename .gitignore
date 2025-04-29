@@ -11,3 +11,5 @@ vis_milk2/bin
 /Install/_Archiv
 /Build/roadmap.md
 *.exe
+/Install/*.zip
+/.gitattributes
