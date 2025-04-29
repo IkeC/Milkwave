@@ -85,8 +85,28 @@ namespace MilkwaveRemote {
     private const int VK_F11 = 0x7A;
     private const int VK_F12 = 0x7B;
 
+    private const int VK_0 = 0x30;
+    private const int VK_1 = 0x31;
+    private const int VK_2 = 0x32;
+    private const int VK_3 = 0x33;
+    private const int VK_4 = 0x34;
+    private const int VK_5 = 0x35;
+    private const int VK_6 = 0x36;
+    private const int VK_7 = 0x37;
+    private const int VK_8 = 0x38;
+    private const int VK_9 = 0x39;
+
+    private const int VK_B = 0x42;
+    private const int VK_K = 0x4B;
+    private const int VK_N = 0x4E;
+
+    private const int VK_SHIFT = 0x10;
+    private const int VK_CTRL = 0x11;
+    private const int VK_ALT = 0x12;
+
     private const int VK_SPACE = 0x20;
     private const int VK_DELETE = 0x2E;
+
     private const int VK_ENTER = 0x0D;
     private const int VK_BACKSPACE = 0x08;
 
@@ -734,14 +754,63 @@ namespace MilkwaveRemote {
       }
     }
 
-    private const int VK_SHIFT = 0x10;
-    private const int VK_CTRL = 0x11;
-    private const int VK_ALT = 0x12;
+    private void SendInputTwoKeys(int VKKey, int VKKey2, string keyName) {
+      IntPtr currentWindow = GetForegroundWindow();
+      IntPtr foundWindow = FindVisualizerWindow();
+      if (foundWindow != IntPtr.Zero) {
+        SetForegroundWindow(foundWindow);
 
-    // Add the missing constant for VK_B  
-    private const int VK_B = 0x42; // Virtual-Key code for the 'B' key
-    private const int VK_K = 0x4B; // Virtual-Key code for the 'K' key
-    private const int VK_N = 0x4E; // Virtual-Key code for the 'N' key
+        INPUT[] inputs;
+        inputs = new INPUT[4];
+
+        inputs[0] = new INPUT {
+          type = 1, // Keyboard input
+          u = new InputUnion {
+            ki = new KEYBDINPUT {
+              wVk = (ushort)VKKey,
+              dwFlags = 0 // Key down
+            }
+          }
+        };
+
+        inputs[1] = new INPUT {
+          type = 1, // Keyboard input
+          u = new InputUnion {
+            ki = new KEYBDINPUT {
+              wVk = (ushort)VKKey,
+              dwFlags = 2 // Key up
+            }
+          }
+        };
+
+        inputs[2] = new INPUT {
+          type = 1, // Keyboard input
+          u = new InputUnion {
+            ki = new KEYBDINPUT {
+              wVk = (ushort)VKKey2,
+              dwFlags = 0 // Key down
+            }
+          }
+        };
+
+        inputs[3] = new INPUT {
+          type = 1, // Keyboard input
+          u = new InputUnion {
+            ki = new KEYBDINPUT {
+              wVk = (ushort)VKKey2,
+              dwFlags = 2 // Key up
+            }
+          }
+        };
+
+        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+        SetStatusText($"Pressed {keyName} in '{foundWindowTitle}'");
+
+        SetForegroundWindow(currentWindow);
+      } else {
+        SetStatusText(windowNotFound);
+      }
+    }
 
     private void SendInput(int VKKey, string keyName, bool doShift, bool doAlt, bool doCtrl) {
       IntPtr currentWindow = GetForegroundWindow();
@@ -1013,43 +1082,53 @@ namespace MilkwaveRemote {
     }
 
     private void btn00_Click(object sender, EventArgs e) {
-      SendUnicodeChars("00");
+      SendInputTwoKeys(VK_0, VK_0, "00");
+      // SendUnicodeChars("00");
     }
 
     private void btn11_Click(object sender, EventArgs e) {
-      SendUnicodeChars("11");
+      SendInputTwoKeys(VK_1, VK_1, "11");
+      // SendUnicodeChars("00");
     }
 
     private void btn22_Click(object sender, EventArgs e) {
-      SendUnicodeChars("22");
+      SendInputTwoKeys(VK_2, VK_2, "22");
+      // SendUnicodeChars("22");
     }
 
     private void btn33_Click(object sender, EventArgs e) {
-      SendUnicodeChars("33");
+      SendInputTwoKeys(VK_3, VK_3, "33");
+      // SendUnicodeChars("33");
     }
 
     private void btn44_Click(object sender, EventArgs e) {
-      SendUnicodeChars("44");
+      SendInputTwoKeys(VK_4, VK_4, "44");
+      // SendUnicodeChars("44");
     }
 
     private void btn55_Click(object sender, EventArgs e) {
-      SendUnicodeChars("55");
+      SendInputTwoKeys(VK_5, VK_5, "55");
+      // SendUnicodeChars("55");
     }
 
     private void btn66_Click(object sender, EventArgs e) {
-      SendUnicodeChars("66");
+      SendInputTwoKeys(VK_6, VK_6, "66");
+      // SendUnicodeChars("66");
     }
 
     private void btn77_Click(object sender, EventArgs e) {
-      SendUnicodeChars("77");
+      SendInputTwoKeys(VK_7, VK_7, "77");
+      // SendUnicodeChars("77");
     }
 
     private void btn88_Click(object sender, EventArgs e) {
-      SendUnicodeChars("88");
+      SendInputTwoKeys(VK_8, VK_8, "88");
+      // SendUnicodeChars("88");
     }
 
     private void btn99_Click(object sender, EventArgs e) {
-      SendUnicodeChars("99");
+      SendInputTwoKeys(VK_9, VK_9, "99");
+      // SendUnicodeChars("99");
     }
 
     private void lblFromFile_DoubleClick(object sender, EventArgs e) {
