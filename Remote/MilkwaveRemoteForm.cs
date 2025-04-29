@@ -1539,12 +1539,14 @@ namespace MilkwaveRemote {
 
     private void toolStripMenuItemSupporters_Click(object sender, EventArgs e) {
       string dialogtext =
-  "Such emptiness..." + Environment.NewLine +
   "Your name could be here!" + Environment.NewLine +
   "" + Environment.NewLine +
-  "Support my work: https://www.paypal.com/ncp/payment/5XMP3S69PJLCU" + Environment.NewLine +
+  "Milkwave is and will always be free software, being the collaborative effort of many diffent authors. " +
+  "If you like it and want to appreciate and support my share of the work, please consider donating." +
   "" + Environment.NewLine +
-  "Any amount appreciated. Thank you very much!";
+  "https://www.paypal.com/ncp/payment/5XMP3S69PJLCU" + Environment.NewLine +
+  "" + Environment.NewLine +
+  "Any amount is valued. You'll be listed on this page unless you do not want to. Thank you very much in advance!";
       new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Supporters", dialogtext);
     }
 
