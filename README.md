@@ -4,7 +4,7 @@ Milkwave is:
 - **Milkwave Remote**:
     A standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
-![image](https://github.com/user-attachments/assets/055be5ff-b3b8-43fd-aca4-119bf189fbbb)
+![image](https://github.com/user-attachments/assets/aa9da133-0cd2-4fb1-8eb6-3cbc1cd3530d)
 
 ## Visualizer Features
  
