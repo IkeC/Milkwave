@@ -229,9 +229,9 @@ namespace MilkwaveRemote {
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
 
       // hide tab panel for now
-      tabControl1.Appearance = TabAppearance.FlatButtons;
-      tabControl1.ItemSize = new Size(0, 1);
-      tabControl1.SizeMode = TabSizeMode.Fixed;
+      // tabControl.Appearance = TabAppearance.FlatButtons;
+      // tabControl.ItemSize = new Size(0, 1);
+      // tabControl.SizeMode = TabSizeMode.Fixed;
       //tabRemote.UseVisualStyleBackColor = false;
 
       Location = Settings.RemoteWindowLocation;
@@ -239,13 +239,11 @@ namespace MilkwaveRemote {
 
       try {
         splitContainer1.SplitterDistance = Settings.SplitterDistance1;
-        splitContainer2.SplitterDistance = Settings.SplitterDistance2;
       } catch (Exception) {
         // igonre
       }
 
-      toolStripMenuItemMessagePanel.Checked = Settings.ShowMessagePanel;
-      toolStripMenuItemVisualizerPanel.Checked = Settings.ShowPresetPanel;
+      toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
       SetPanelsVisibility();
 
@@ -1258,7 +1256,6 @@ namespace MilkwaveRemote {
         }
 
         Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
-        Settings.SplitterDistance2 = splitContainer2.SplitterDistance;
 
         string jsonString = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
         string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveSettingsFile);
@@ -1581,8 +1578,8 @@ namespace MilkwaveRemote {
     }
 
     private void toolStripMenuItemMessagePanel_Click(object sender, EventArgs e) {
-      toolStripMenuItemMessagePanel.Checked = !toolStripMenuItemMessagePanel.Checked;
-      Settings.ShowMessagePanel = toolStripMenuItemMessagePanel.Checked;
+      toolStripMenuItemTabsPanel.Checked = !toolStripMenuItemTabsPanel.Checked;
+      Settings.ShowTabsPanel = toolStripMenuItemTabsPanel.Checked;
       SetPanelsVisibility();
     }
 
@@ -1599,16 +1596,14 @@ namespace MilkwaveRemote {
     }
 
     private void SetPanelsVisibility() {
-      splitContainer1.Panel1Collapsed = !Settings.ShowMessagePanel;
+      splitContainer1.Panel1Collapsed = !Settings.ShowTabsPanel;
 
       if (!Settings.ShowPresetPanel && !Settings.ShowButtonPanel) {
         splitContainer1.Panel2Collapsed = true;
-        if (!Settings.ShowMessagePanel) {
-          toolStripMenuItemMessagePanel.Checked = true;
+        if (!Settings.ShowTabsPanel) {
+          toolStripMenuItemTabsPanel.Checked = true;
         }
       } else {
-        splitContainer2.Panel1Collapsed = !Settings.ShowPresetPanel;
-        splitContainer2.Panel2Collapsed = !Settings.ShowButtonPanel;
         splitContainer1.Panel2Collapsed = false;
       }
     }
@@ -1713,7 +1708,7 @@ namespace MilkwaveRemote {
       foreach (string fileName in Directory.GetFiles(dirToLoad)) {
         if (fileName.EndsWith(".milk") || fileName.EndsWith(".milk2")) {
           string fileNameOnlyNoExtension = Path.GetFileNameWithoutExtension(fileName);
-          if (txtDirFilter.Text.Length == 0 || fileNameOnlyNoExtension.Contains(txtDirFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
+          if (txtDirOrTagsFilter.Text.Length == 0 || fileNameOnlyNoExtension.Contains(txtDirOrTagsFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
             Preset newPreset = new Preset {
               DisplayName = fileNameOnlyNoExtension,
               FullPath = fileName
