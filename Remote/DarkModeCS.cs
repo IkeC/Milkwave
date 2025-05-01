@@ -1,9 +1,15 @@
 using Microsoft.Win32;
+using System.Drawing;
+using System;
 using System.ComponentModel;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using System.Diagnostics;
+using System.Xml.Linq;
 
 
 namespace DarkModeForms {
@@ -583,15 +589,14 @@ namespace DarkModeForms {
           }
         };
       }
-      //if (control is FlatTabControl)
-      //{
-      //	control.GetType().GetProperty("BackColor")?.SetValue(control, OScolors.Background);
-      //	control.GetType().GetProperty("TabColor")?.SetValue(control, OScolors.Surface);
-      //	control.GetType().GetProperty("SelectTabColor")?.SetValue(control, OScolors.Control);
-      //	control.GetType().GetProperty("SelectedForeColor")?.SetValue(control, OScolors.TextActive);
-      //	control.GetType().GetProperty("ForeColor")?.SetValue(control, OScolors.TextInactive);
-      //	control.GetType().GetProperty("LineColor")?.SetValue(control, OScolors.Background);
-      //}
+      if (control is FlatTabControl) {
+        control.GetType().GetProperty("BackColor")?.SetValue(control, OScolors.Background);
+        control.GetType().GetProperty("TabColor")?.SetValue(control, OScolors.Surface);
+        control.GetType().GetProperty("SelectTabColor")?.SetValue(control, OScolors.Control);
+        control.GetType().GetProperty("SelectedForeColor")?.SetValue(control, OScolors.TextActive);
+        control.GetType().GetProperty("ForeColor")?.SetValue(control, OScolors.TextInactive);
+        control.GetType().GetProperty("LineColor")?.SetValue(control, OScolors.Background);
+      }
       if (control is PictureBox) {
         control.GetType().GetProperty("BackColor")?.SetValue(control, control.Parent.BackColor);
         control.GetType().GetProperty("ForeColor")?.SetValue(control, OScolors.TextActive);

@@ -8,7 +8,6 @@ namespace MilkwaveRemote.Data {
   public class Tags {
     public Tags() {
     }
-
-    private Dictionary<String, TagEntry> TagEntries = new Dictionary<String, TagEntry>();
+    public Dictionary<string, TagEntry> TagEntries { get; set; } = new Dictionary<string, TagEntry>();
   }
 }

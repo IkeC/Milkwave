@@ -13,8 +13,8 @@
     public int SplitterDistance2 { get; set; } = Panel2DefaultHeight;
     public bool DarkMode { get; set; } = true;
     public bool ShowTabsPanel { get; set; } = true;
-    public bool ShowPresetPanel { get; set; } = true;
     public bool ShowButtonPanel { get; set; } = true;
     public bool CloseVisualizerWithRemote { get; set; } = false;
+    public int SelectedTabIndex { get; set; } = 0;
   }
 }

@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Windows.Forms;
 using static DarkModeForms.DarkModeCS;
 using static MilkwaveRemote.RemoteHelper;
 
@@ -58,15 +59,21 @@ namespace MilkwaveRemote {
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
     private float autoplayRemainingBeats = 1;
+    private long timerStart;
+
+    private string VisualizerPresetsFolder = AppDomain.CurrentDomain.BaseDirectory + "\\resources\\presets\\";
 
     private string lastScriptFileName = "script-default.txt";
     private string windowNotFound = "Milkwave Visualizer window not found";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
+
     private string milkwaveSettingsFile = "settings-remote.json";
+    private string milkwaveTagsFile = "tags-remote.json";
 
     Random rnd = new Random();
     private Settings Settings = new Settings();
+    private Tags Tags = new Tags();
     private RemoteHelper helper = new RemoteHelper();
 
     private OpenFileDialog ofd;
@@ -179,10 +186,8 @@ namespace MilkwaveRemote {
       var version = fieVersionInfo.FileVersion;
       toolStripMenuItemHomepage.Text = $"Milkwave v{version}";
 
-      // Initialize 'ofd' to avoid CS8618 error
       ofd = new OpenFileDialog();
 
-      // #if !DEBUG
       try {
         string jsonString = File.ReadAllText(milkwaveSettingsFile);
         Settings? loadedSettings = JsonSerializer.Deserialize<Settings>(jsonString, new JsonSerializerOptions {
@@ -191,10 +196,17 @@ namespace MilkwaveRemote {
         if (loadedSettings != null) {
           Settings = loadedSettings;
         }
+        jsonString = File.ReadAllText(milkwaveTagsFile);
+        Tags? loadedTags = JsonSerializer.Deserialize<Tags>(jsonString, new JsonSerializerOptions {
+          PropertyNameCaseInsensitive = true
+        });
+        if (loadedTags != null) {
+          Tags = loadedTags;
+        }
       } catch (Exception ex) {
         Settings = new Settings();
+        Tags = new Tags();
       }
-      // #endif
 
       dm = new DarkModeCS(this) {
         ColorMode = Settings.DarkMode ? DarkModeCS.DisplayMode.DarkMode : DarkModeCS.DisplayMode.ClearMode,
@@ -224,15 +236,11 @@ namespace MilkwaveRemote {
 
       autoplayTimer = new System.Windows.Forms.Timer();
       autoplayTimer.Tick += AutoplayTimer_Tick;
+
+      tabControl.SelectedIndex = Settings.SelectedTabIndex;
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
-
-      // hide tab panel for now
-      // tabControl.Appearance = TabAppearance.FlatButtons;
-      // tabControl.ItemSize = new Size(0, 1);
-      // tabControl.SizeMode = TabSizeMode.Fixed;
-      //tabRemote.UseVisualStyleBackColor = false;
 
       Location = Settings.RemoteWindowLocation;
       Size = Settings.RemoteWindowSize;
@@ -289,7 +297,6 @@ namespace MilkwaveRemote {
       }
       SetFormattedMessage();
 
-      string VisualizerPresetsFolder = AppDomain.CurrentDomain.BaseDirectory + "\\resources\\presets\\";
       if (Directory.Exists(VisualizerPresetsFolder)) {
         ofd.InitialDirectory = VisualizerPresetsFolder;
       } else {
@@ -316,7 +323,7 @@ namespace MilkwaveRemote {
           if (receivedString.StartsWith("PRESET=")) {
             string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
             if (receivedString.Length > 0) {
-              string findString = "RESOURCES\\";
+              string findString = "RESOURCES\\PRESETS\\";
               int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
               string displayText = receivedString;
               if (index > -1) {
@@ -324,7 +331,8 @@ namespace MilkwaveRemote {
               }
               // Process the received string
               txtVisRunning.Text = displayText;
-              toolTip1.SetToolTip(txtVisRunning, receivedString);
+              toolTip1.SetToolTip(txtVisRunning, presetFilePath);
+              UpdateTagsDisplay(false, true);
             }
           } else if (receivedString.StartsWith("STATUS=")) {
             string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
@@ -403,7 +411,8 @@ namespace MilkwaveRemote {
           statusMessage = $"Changed Wave in";
         } else if (type == MessageType.PresetFilePath) {
           message = "PRESET=" + messageToSend;
-          statusMessage = $"Sent preset {messageToSend} to";
+          string fileName = Path.GetFileNameWithoutExtension(messageToSend);
+          statusMessage = $"Sent preset {fileName} to";
         } else if (type == MessageType.Amplify) {
           message = "AMP" +
             "|l=" + numAmpLeft.Value.ToString(CultureInfo.InvariantCulture) +
@@ -550,13 +559,11 @@ namespace MilkwaveRemote {
           AutoplayTimer_Tick(null, null);
         }
         autoplayTimer.Start();
-        start = DateTime.Now.Ticks;
+        timerStart = DateTime.Now.Ticks;
       } else {
         SetStatusText("Invalid wait value");
       }
     }
-
-    long start;
 
     private void setTimerInterval() {
       if (autoplayTimer != null) {
@@ -1256,19 +1263,41 @@ namespace MilkwaveRemote {
         }
 
         Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
+        Settings.SelectedTabIndex = tabControl.SelectedIndex;
 
-        string jsonString = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
-        string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveSettingsFile);
-        try {
-          File.WriteAllText(settingsFile, jsonString);
-        } catch (UnauthorizedAccessException ex) {
-          MessageBox.Show($"Unable to save settings to {settingsFile}." +
-            Environment.NewLine + Environment.NewLine +
-            "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
-            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        } catch (Exception ex) {
-          Program.SaveErrorToFile(ex, "Error");
-        }
+        SaveSettingsToFile();
+
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Error");
+      }
+    }
+
+    private void SaveSettingsToFile() {
+      string jsonString = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
+      string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveSettingsFile);
+      try {
+        File.WriteAllText(settingsFile, jsonString);
+      } catch (UnauthorizedAccessException ex) {
+        MessageBox.Show($"Unable to save settings to {settingsFile}." +
+          Environment.NewLine + Environment.NewLine +
+          "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
+          "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Error");
+      }
+    }
+
+    private void SaveTagsToFile() {
+      string jsonString = JsonSerializer.Serialize(Tags, new JsonSerializerOptions { WriteIndented = true });
+      string tagsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveTagsFile);
+      try {
+        File.WriteAllText(tagsFile, jsonString);
+        SetStatusText($"Tags saved");
+      } catch (UnauthorizedAccessException ex) {
+        MessageBox.Show($"Unable to save Tags to {tagsFile}." +
+          Environment.NewLine + Environment.NewLine +
+          "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
+          "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       } catch (Exception ex) {
         Program.SaveErrorToFile(ex, "Error");
       }
@@ -1483,43 +1512,6 @@ namespace MilkwaveRemote {
       StartVisualizerIfNotFound();
     }
 
-    private void PaintContainerBorder(PaintEventArgs e) {
-      // var col = dm.Is§ ? Color.Silver : dm.OScolors.AccentDark;
-      // e.Graphics.DrawRectangle(new Pen(col, 1), 0, 0, e.ClipRectangle.Width - 1, e.ClipRectangle.Height - 1);
-    }
-
-    private void splitContainer2_Panel1_Paint(object sender, PaintEventArgs e) {
-      PaintContainerBorder(e);
-    }
-
-    private void splitContainer1_Panel1_Paint(object sender, PaintEventArgs e) {
-      PaintContainerBorder(e);
-    }
-
-    private void splitContainer2_Panel2_Paint(object sender, PaintEventArgs e) {
-      // doesn't work for some reason, so we draw the border on the containing element
-      // PaintPanelBorder(e);
-    }
-
-    private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e) {
-      PaintContainerBorder(e);
-    }
-
-    private void splitContainer1_SizeChanged(object sender, EventArgs e) {
-      SplitContainer1Changed();
-    }
-
-    private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e) {
-      SplitContainer1Changed();
-      splitContainer1.Refresh();
-    }
-
-    private void SplitContainer1Changed() {
-      // if (splitContainer1.Panel1.Height > Settings.Panel1DefaultHeight) {
-      //   splitContainer1.SplitterDistance = Settings.Panel1DefaultHeight;
-      // }
-    }
-
     private void toolStripMenuItemReleases_Click(object sender, EventArgs e) {
       string url = "https://github.com/IkeC/Milkwave/releases";
       Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
@@ -1577,44 +1569,43 @@ namespace MilkwaveRemote {
       SetFormattedMessage();
     }
 
-    private void toolStripMenuItemMessagePanel_Click(object sender, EventArgs e) {
+    private void toolStripMenuItemTabsPanel_Click(object sender, EventArgs e) {
       toolStripMenuItemTabsPanel.Checked = !toolStripMenuItemTabsPanel.Checked;
-      Settings.ShowTabsPanel = toolStripMenuItemTabsPanel.Checked;
-      SetPanelsVisibility();
-    }
-
-    private void toolStripMenuItemPresetPanel_Click(object sender, EventArgs e) {
-      toolStripMenuItemVisualizerPanel.Checked = !toolStripMenuItemVisualizerPanel.Checked;
-      Settings.ShowPresetPanel = toolStripMenuItemVisualizerPanel.Checked;
+      if (!toolStripMenuItemTabsPanel.Checked && !toolStripMenuItemButtonPanel.Checked) {
+        toolStripMenuItemButtonPanel.Checked = true;
+      }
       SetPanelsVisibility();
     }
 
     private void toolStripMenuItemButtonPanel_Click(object sender, EventArgs e) {
       toolStripMenuItemButtonPanel.Checked = !toolStripMenuItemButtonPanel.Checked;
-      Settings.ShowButtonPanel = toolStripMenuItemButtonPanel.Checked;
+      if (!toolStripMenuItemTabsPanel.Checked && !toolStripMenuItemButtonPanel.Checked) {
+        toolStripMenuItemTabsPanel.Checked = true;
+      }
       SetPanelsVisibility();
     }
 
     private void SetPanelsVisibility() {
+      Settings.ShowTabsPanel = toolStripMenuItemTabsPanel.Checked;
+      Settings.ShowButtonPanel = toolStripMenuItemButtonPanel.Checked;
       splitContainer1.Panel1Collapsed = !Settings.ShowTabsPanel;
-
-      if (!Settings.ShowPresetPanel && !Settings.ShowButtonPanel) {
-        splitContainer1.Panel2Collapsed = true;
-        if (!Settings.ShowTabsPanel) {
-          toolStripMenuItemTabsPanel.Checked = true;
-        }
-      } else {
-        splitContainer1.Panel2Collapsed = false;
-      }
+      splitContainer1.Panel2Collapsed = !Settings.ShowButtonPanel;
     }
 
-    private void btnPresetOpen_Click(object sender, EventArgs e) {
+    private void btnPresetLoadFile_Click(object sender, EventArgs e) {
       if (ofd.ShowDialog() == DialogResult.OK) {
         string fileName = ofd.FileName;
         if (fileName.EndsWith(".milk", StringComparison.CurrentCultureIgnoreCase) || ofd.FileName.EndsWith(".milk2", StringComparison.CurrentCultureIgnoreCase)) {
+
+          string findString = "RESOURCES\\PRESETS\\";
+          int index = fileName.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+          string maybeRelativePath = fileName;
+          if (index > -1) {
+            maybeRelativePath = fileName.Substring(index + findString.Length);
+          }
           Preset newPreset = new Preset {
             DisplayName = Path.GetFileNameWithoutExtension(fileName),
-            FullPath = fileName
+            MaybeRelativePath = maybeRelativePath
           };
           if (!cboPresets.Items.Contains(newPreset)) {
             cboPresets.Items.Insert(0, newPreset);
@@ -1639,18 +1630,20 @@ namespace MilkwaveRemote {
 
       if (cboPresets.Text.Length > 0) {
         Preset? preset = null; // Use nullable type to handle potential null values
-        try {
-          preset = cboPresets.SelectedItem as Preset; // Use 'as' operator to safely cast
-        } catch {
-          // ignore
-        }
-
+        preset = cboPresets.SelectedItem as Preset; // Use 'as' operator to safely cast
         if (preset != null) { // Check for null before accessing properties
-          if (preset.FullPath.Length > 0 && File.Exists(preset.FullPath)) {
-            SendToMilkwaveVisualizer(preset.FullPath, MessageType.PresetFilePath);
-            SetStatusText($"Sent '{preset.DisplayName}' to {foundWindowTitle}");
+          if (preset.MaybeRelativePath.Length > 0) {
+            string fullPath = preset.MaybeRelativePath;
+            if (!Path.IsPathRooted(fullPath)) {
+              fullPath = Path.Combine(VisualizerPresetsFolder, preset.MaybeRelativePath);
+            }
+            if (File.Exists(fullPath)) {
+              SendToMilkwaveVisualizer(fullPath, MessageType.PresetFilePath);
+            } else {
+              SetStatusText($"Preset file '{fullPath}' not found");
+            }
           } else {
-            SetStatusText($"Preset file '{preset.FullPath}' not found");
+            SetStatusText($"Preset file '{preset.MaybeRelativePath}' not found");
           }
         } else {
           SetStatusText("No valid preset selected");
@@ -1687,14 +1680,12 @@ namespace MilkwaveRemote {
 
     private void btnPresetLoadDirectory_Click(object? sender, EventArgs? e) {
       using (var fbd = new FolderBrowserDialog()) {
-        DialogResult result = fbd.ShowDialog();
-
-        string VisualizerPresetsFolder = AppDomain.CurrentDomain.BaseDirectory + "\\resources\\presets\\";
         if (Directory.Exists(VisualizerPresetsFolder)) {
           fbd.InitialDirectory = VisualizerPresetsFolder;
         } else {
           fbd.InitialDirectory = AppDomain.CurrentDomain.BaseDirectory;
         }
+        DialogResult result = fbd.ShowDialog();
 
         if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath)) {
           LoadPresetsFromDirectory(fbd.SelectedPath);
@@ -1705,13 +1696,22 @@ namespace MilkwaveRemote {
     private void LoadPresetsFromDirectory(string dirToLoad) {
       cboPresets.Items.Clear();
       cboPresets.Text = "";
+      int relIndex = -1;
+      string findString = "RESOURCES\\PRESETS\\";
       foreach (string fileName in Directory.GetFiles(dirToLoad)) {
-        if (fileName.EndsWith(".milk") || fileName.EndsWith(".milk2")) {
-          string fileNameOnlyNoExtension = Path.GetFileNameWithoutExtension(fileName);
+        if (relIndex == -1) {
+          relIndex = fileName.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+        }
+        string fileNameMaybeRelativePath = fileName;
+        if (relIndex > -1) {
+          fileNameMaybeRelativePath = fileName.Substring(relIndex + findString.Length);
+        }
+        if (fileNameMaybeRelativePath.EndsWith(".milk") || fileNameMaybeRelativePath.EndsWith(".milk2")) {
+          string fileNameOnlyNoExtension = Path.GetFileNameWithoutExtension(fileNameMaybeRelativePath);
           if (txtDirOrTagsFilter.Text.Length == 0 || fileNameOnlyNoExtension.Contains(txtDirOrTagsFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
             Preset newPreset = new Preset {
               DisplayName = fileNameOnlyNoExtension,
-              FullPath = fileName
+              MaybeRelativePath = fileNameMaybeRelativePath
             };
             cboPresets.Items.Add(newPreset);
           }
@@ -1734,12 +1734,12 @@ namespace MilkwaveRemote {
       if (cboPresets.SelectedItem != null) {
         try {
           Preset preset = (Preset)cboPresets.SelectedItem;
-          if (!string.IsNullOrEmpty(preset.FullPath)) {
-            Clipboard.SetText(preset.FullPath);
-            SetStatusText($"Copied '{preset.FullPath}' to clipboard");
+          if (!string.IsNullOrEmpty(preset.MaybeRelativePath)) {
+            Clipboard.SetText(preset.MaybeRelativePath);
+            SetStatusText($"Copied '{preset.MaybeRelativePath}' to clipboard");
           }
         } catch {
-          // Handle the case where the selected item is not a Preset  
+          // Handle the case where the selected item is not a Preset
           SetStatusText("No valid preset selected");
         }
       }
@@ -1750,6 +1750,26 @@ namespace MilkwaveRemote {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         // Trigger the Click event of btnPresetSend
         btnPresetSend.PerformClick();
+      }
+      UpdateTagsDisplay(false, false);
+    }
+
+    private void UpdateTagsDisplay(bool force, bool runningPresetChanged) {
+      string key = "";
+      if (!chkTagsFromRunning.Checked) {
+        if (force || !runningPresetChanged) {
+          Preset? preset = cboPresets.SelectedItem as Preset;
+          if (preset != null) {
+            key = preset.DisplayName.ToLower();
+          }
+        }
+      } else if (force || runningPresetChanged) {
+        key = Path.GetFileNameWithoutExtension(txtVisRunning.Text).ToLower();
+      }
+      if (key.Length > 0 &&  Tags.TagEntries.ContainsKey(key)) {
+        txtTags.Text = string.Join(", ", Tags.TagEntries[key].Tags);
+      } else {
+        txtTags.Text = string.Empty; // Clear the text if the key doesn't exist
       }
     }
 
@@ -1880,5 +1900,63 @@ namespace MilkwaveRemote {
     private void btnWatermark_Click(object sender, EventArgs e) {
       SendInput(VK_F9, "F9", true, false, true);
     }
-  }
-}
+
+    private void btnTagsSave_Click(object sender, EventArgs e) {
+      SaveTags();
+    }
+
+    private void SaveTags() {
+      string key = "";
+      string presetPath = "";
+
+      if (chkTagsFromRunning.Checked) {
+        key = Path.GetFileNameWithoutExtension(txtVisRunning.Text);
+        presetPath = txtVisRunning.Text;
+      } else {
+        Preset? preset = cboPresets.SelectedItem as Preset;
+        if (preset != null) {
+          key = preset.DisplayName;
+          presetPath = preset.MaybeRelativePath;
+        }
+      }
+
+      if (key.Length > 0) {
+        key = key.ToLower();
+        TagEntry? tagEntry = null;
+        if (Tags.TagEntries.ContainsKey(key)) {
+          tagEntry = Tags.TagEntries.GetValueOrDefault(key);
+        }
+        if (tagEntry == null) {
+          tagEntry = new TagEntry();
+          Tags.TagEntries.Add(key, tagEntry);
+        }
+        tagEntry.PresetPath = presetPath;
+        tagEntry.Tags.Clear();
+
+        // Process txtTags.Text
+        if (!string.IsNullOrWhiteSpace(txtTags.Text)) {
+          var uniqueTags = new HashSet<string>(
+              txtTags.Text
+                  .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) // Split by commas
+                  .Select(tag => tag.Trim().ToLower()) // Trim and lowercase each token
+                  .Where(tag => !string.IsNullOrWhiteSpace(tag)) // Remove empty or whitespace tokens
+          );
+
+          tagEntry.Tags = uniqueTags.OrderBy(tag => tag).ToList(); // Convert to a sorted list
+          SaveTagsToFile();
+        }
+      }
+    }
+
+    private void txtTags_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter && (Control.ModifierKeys & Keys.Shift) != Keys.Shift) {
+        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+        SaveTags();
+      }
+    }
+
+    private void chkTagsFromRunning_CheckedChanged(object sender, EventArgs e) {
+      UpdateTagsDisplay(true, false);
+    }
+  } // end class
+} // end namespace
