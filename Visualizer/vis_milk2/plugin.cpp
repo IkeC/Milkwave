@@ -1524,7 +1524,7 @@ void CPlugin::MyWriteConfig() {
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
   WritePrivateProfileFloatW(m_WindowWatermarkModeOpacity, L"WindowWatermarkModeOpacity", pIni, L"Milkwave");
-  WritePrivateProfileFloatW(fOpacity, L"WindowOpacity", pIni, L"Milkwave"); 
+  WritePrivateProfileFloatW(fOpacity, L"WindowOpacity", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
@@ -5829,9 +5829,9 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
 
 
-   // Handle other messages here...
+    // Handle other messages here...
 
-  
+
   case WM_MOUSEWHEEL:
 
     if (GET_WHEEL_DELTA_WPARAM(wParam) < 0 && !m_bPresetLockedByCode)
@@ -7674,6 +7674,10 @@ void CPlugin::dumpmsg(wchar_t* s) {
 }
 
 void CPlugin::PrevPreset(float fBlendTime) {
+  if (m_RemotePresetLink) {
+    if (SendMessageToMilkwaveRemote(L"LINKCMD=PREV")) return;
+  }
+
   if (m_bSequentialPresetOrder) {
     m_nCurrentPreset--;
     if (m_nCurrentPreset < m_nDirs)
@@ -7702,6 +7706,9 @@ void CPlugin::NextPreset(float fBlendTime)  // if not retracing our former steps
 }
 
 void CPlugin::LoadRandomPreset(float fBlendTime) {
+  if (m_RemotePresetLink) {
+    if (SendMessageToMilkwaveRemote(L"LINKCMD=NEXT")) return;
+  }
   // make sure file list is ok
   if (m_nPresets - m_nDirs == 0) {
     if (m_nPresets - m_nDirs == 0) {
@@ -10204,13 +10211,17 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 8);
     fOpacity = std::stof(message);
     SetOpacity(GetPluginWindow());
-  } 
+  }
   else if (wcsncmp(sMessage, L"STATE", 5) == 0) {
     int display = std::ceil(100 * fOpacity);
     wchar_t buf[1024];
     swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
     SendMessageToMilkwaveRemote((L"PRESET=" + std::wstring(m_szCurrentPresetFile)).c_str());
+  }
+  else if (wcsncmp(sMessage, L"LINK=", 5) == 0) {
+    std::wstring message(sMessage + 5);
+    m_RemotePresetLink = std::stoi(message);
   }
 }
 

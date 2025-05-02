@@ -469,7 +469,9 @@ namespace DarkModeForms {
 
       /* Here we Finetune individual Controls  */
       if (control is Label lbl) {
-        control.GetType().GetProperty("BackColor")?.SetValue(control, control.Parent.BackColor);
+        // control.GetType().GetProperty("BackColor")?.SetValue(control, control.Parent.BackColor);
+        control.GetType().GetProperty("BackColor")?.SetValue(control, Color.Transparent);
+
         control.GetType().GetProperty("BorderStyle")?.SetValue(control, BorderStyle.None);
         control.Paint += (sender, e) => {
           if (control.Enabled == false && IsDarkMode) {
@@ -590,7 +592,8 @@ namespace DarkModeForms {
         };
       }
       if (control is FlatTabControl) {
-        control.GetType().GetProperty("BackColor")?.SetValue(control, OScolors.Background);
+        //control.GetType().GetProperty("BackColor")?.SetValue(control, OScolors.Background);
+        control.GetType().GetProperty("BackColor")?.SetValue(control, OScolors.Surface);
         control.GetType().GetProperty("TabColor")?.SetValue(control, OScolors.Surface);
         control.GetType().GetProperty("SelectTabColor")?.SetValue(control, OScolors.Control);
         control.GetType().GetProperty("SelectedForeColor")?.SetValue(control, OScolors.TextActive);

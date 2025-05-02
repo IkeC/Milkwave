@@ -341,6 +341,7 @@ public:
   int m_WindowHeight = 360;
   
   float fOpacity = 1.0f; // 0.0f = 100% transparent, 1.0f = 100% opaque
+  bool m_RemotePresetLink = false;
   bool m_bAlwaysOnTop = false;
 
   bool m_SongInfoPollingEnabled = true;

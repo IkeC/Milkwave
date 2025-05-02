@@ -106,6 +106,15 @@ namespace MilkwaveRemote {
       }
     }
 
+    public void SelectDefaultDevice(ComboBox cbo) {
+      foreach (ComboBoxItemDevice item in cbo.Items) {
+        if (item.IsDefaultDevice) {
+          cbo.SelectedItem = item;
+          break;
+        }
+      }
+    }
+
     public class ComboBoxItemDevice {
 
       public ComboBoxItemDevice(string text, MMDevice device, bool isDefaultDevice) {

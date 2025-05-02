@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using Microsoft.VisualBasic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -152,8 +153,19 @@ namespace DarkModeForms {
             g.DrawRectangle(border, clientRectangle);
           }
         }
+
+        // Draw a 1 px white border around the tab content area
+        if (SelectedTab != null) {
+          Rectangle contentRectangle = DisplayRectangle;
+          contentRectangle.Inflate(1, 1); // Slightly expand to ensure the border is visible
+
+          using (Pen border = new Pen(SelectTabColor, 1)) {
+            g.DrawRectangle(border, contentRectangle);
+          }
+        }
       } catch { }
     }
+
 
     internal void DrawTab(Graphics g, TabPage customTabPage, int nIndex) {
       Rectangle tabRect = GetTabRect(nIndex);

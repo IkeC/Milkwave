@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using System.Windows.Forms;
 using static DarkModeForms.DarkModeCS;
 using static MilkwaveRemote.RemoteHelper;
 
@@ -170,6 +169,7 @@ namespace MilkwaveRemote {
       Direct,
       Message,
       PresetFilePath,
+      PresetLink,
       Amplify,
       Wave,
       AudioDevice,
@@ -202,6 +202,7 @@ namespace MilkwaveRemote {
         });
         if (loadedTags != null) {
           Tags = loadedTags;
+          SetTopTags();
         }
       } catch (Exception ex) {
         Settings = new Settings();
@@ -318,7 +319,7 @@ namespace MilkwaveRemote {
         // Extract the COPYDATASTRUCT from the message
         COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
         if (cds.lpData != IntPtr.Zero) {
-          // Convert the received data to a string          
+          // Convert the received data to a string
           string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
           if (receivedString.StartsWith("PRESET=")) {
             string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
@@ -328,7 +329,9 @@ namespace MilkwaveRemote {
               string displayText = receivedString;
               if (index > -1) {
                 displayText = receivedString.Substring(index + findString.Length);
+                displayText = Path.ChangeExtension(displayText, null);
               }
+
               // Process the received string
               txtVisRunning.Text = displayText;
               toolTip1.SetToolTip(txtVisRunning, presetFilePath);
@@ -352,6 +355,19 @@ namespace MilkwaveRemote {
           } else if (receivedString.StartsWith("DEVICE=")) {
             string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
             helper.SelectDeviceByName(cboAudioDevice, device);
+          } else if (receivedString.StartsWith("LINKCMD=")) {
+            string cmd = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            if (cmd.ToUpper().Equals("NEXT")) {
+              if (chkPresetRandom.Checked) {
+                SelectRandomPreset();
+              } else {
+                SelectNextPreset();
+              }
+              btnPresetSend_Click(null, null);
+            } else if (cmd.ToUpper().Equals("PREV")) {
+              SelectNextPreset();
+              btnPresetSend_Click(null, null);
+            }
           }
         }
       }
@@ -432,6 +448,8 @@ namespace MilkwaveRemote {
           message = "OPACITY=" + val.ToString(CultureInfo.InvariantCulture);
         } else if (type == MessageType.GetState) {
           message = "STATE";
+        } else if (type == MessageType.PresetLink) {
+          message = "LINK=" + messageToSend;
         } else if (type == MessageType.Message) {
           if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
             // try auto-wrap
@@ -1301,6 +1319,7 @@ namespace MilkwaveRemote {
       } catch (Exception ex) {
         Program.SaveErrorToFile(ex, "Error");
       }
+      SetTopTags();
     }
 
     private void cboParameters_KeyDown(object sender, KeyEventArgs e) {
@@ -1603,7 +1622,7 @@ namespace MilkwaveRemote {
           if (index > -1) {
             maybeRelativePath = fileName.Substring(index + findString.Length);
           }
-          Preset newPreset = new Preset {
+          Data.Preset newPreset = new Data.Preset {
             DisplayName = Path.GetFileNameWithoutExtension(fileName),
             MaybeRelativePath = maybeRelativePath
           };
@@ -1629,8 +1648,8 @@ namespace MilkwaveRemote {
     private void btnPresetSend_Click(object? sender, EventArgs? e) {
 
       if (cboPresets.Text.Length > 0) {
-        Preset? preset = null; // Use nullable type to handle potential null values
-        preset = cboPresets.SelectedItem as Preset; // Use 'as' operator to safely cast
+        Data.Preset? preset = null; // Use nullable type to handle potential null values
+        preset = cboPresets.SelectedItem as Data.Preset; // Use 'as' operator to safely cast
         if (preset != null) { // Check for null before accessing properties
           if (preset.MaybeRelativePath.Length > 0) {
             string fullPath = preset.MaybeRelativePath;
@@ -1673,6 +1692,13 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void SelectRandomPreset() {
+      // Select a random item from cboPresets
+      Random random = new Random();
+      int randomIndex = random.Next(cboPresets.Items.Count);
+      cboPresets.SelectedIndex = randomIndex;
+    }
+
     private void lblPreset_DoubleClick(object sender, EventArgs e) {
       cboPresets.Items.Clear();
       cboPresets.Text = "";
@@ -1709,7 +1735,7 @@ namespace MilkwaveRemote {
         if (fileNameMaybeRelativePath.EndsWith(".milk") || fileNameMaybeRelativePath.EndsWith(".milk2")) {
           string fileNameOnlyNoExtension = Path.GetFileNameWithoutExtension(fileNameMaybeRelativePath);
           if (txtDirOrTagsFilter.Text.Length == 0 || fileNameOnlyNoExtension.Contains(txtDirOrTagsFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
-            Preset newPreset = new Preset {
+            Data.Preset newPreset = new Data.Preset {
               DisplayName = fileNameOnlyNoExtension,
               MaybeRelativePath = fileNameMaybeRelativePath
             };
@@ -1720,6 +1746,7 @@ namespace MilkwaveRemote {
       SetStatusText($"Loaded {cboPresets.Items.Count} presets from '{dirToLoad}'");
       if (cboPresets.Items.Count > 0) {
         cboPresets.SelectedIndex = 0;
+        UpdateTagsDisplay(false, false);
       }
     }
 
@@ -1733,7 +1760,7 @@ namespace MilkwaveRemote {
     private void lblPreset_Click(object sender, EventArgs e) {
       if (cboPresets.SelectedItem != null) {
         try {
-          Preset preset = (Preset)cboPresets.SelectedItem;
+          Data.Preset preset = (Data.Preset)cboPresets.SelectedItem;
           if (!string.IsNullOrEmpty(preset.MaybeRelativePath)) {
             Clipboard.SetText(preset.MaybeRelativePath);
             SetStatusText($"Copied '{preset.MaybeRelativePath}' to clipboard");
@@ -1758,7 +1785,7 @@ namespace MilkwaveRemote {
       string key = "";
       if (!chkTagsFromRunning.Checked) {
         if (force || !runningPresetChanged) {
-          Preset? preset = cboPresets.SelectedItem as Preset;
+          Data.Preset? preset = cboPresets.SelectedItem as Data.Preset;
           if (preset != null) {
             key = preset.DisplayName.ToLower();
           }
@@ -1766,10 +1793,12 @@ namespace MilkwaveRemote {
       } else if (force || runningPresetChanged) {
         key = Path.GetFileNameWithoutExtension(txtVisRunning.Text).ToLower();
       }
-      if (key.Length > 0 &&  Tags.TagEntries.ContainsKey(key)) {
-        txtTags.Text = string.Join(", ", Tags.TagEntries[key].Tags);
-      } else {
-        txtTags.Text = string.Empty; // Clear the text if the key doesn't exist
+      if (key.Length > 0) {
+        if (Tags.TagEntries.ContainsKey(key)) {
+          txtTags.Text = string.Join(", ", Tags.TagEntries[key].Tags);
+        } else {
+          txtTags.Text = string.Empty; // Clear the text if the key doesn't exist
+        }
       }
     }
 
@@ -1854,7 +1883,7 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnSetAudioDevice_Click(object sender, EventArgs e) {
+    private void btnSetAudioDevice_Click(object? sender, EventArgs? e) {
       SendToMilkwaveVisualizer("", MessageType.AudioDevice);
     }
 
@@ -1913,7 +1942,7 @@ namespace MilkwaveRemote {
         key = Path.GetFileNameWithoutExtension(txtVisRunning.Text);
         presetPath = txtVisRunning.Text;
       } else {
-        Preset? preset = cboPresets.SelectedItem as Preset;
+        Data.Preset? preset = cboPresets.SelectedItem as Data.Preset;
         if (preset != null) {
           key = preset.DisplayName;
           presetPath = preset.MaybeRelativePath;
@@ -1949,14 +1978,244 @@ namespace MilkwaveRemote {
     }
 
     private void txtTags_KeyDown(object sender, KeyEventArgs e) {
-      if (e.KeyCode == Keys.Enter && (Control.ModifierKeys & Keys.Shift) != Keys.Shift) {
+      if (e.KeyCode == Keys.Enter) {
         e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
         SaveTags();
+        if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+          SendPostMessage(VK_SPACE, "Space");
+        }
       }
     }
 
     private void chkTagsFromRunning_CheckedChanged(object sender, EventArgs e) {
       UpdateTagsDisplay(true, false);
+    }
+
+    private void SetTopTags() {
+      // Dictionary to store tag counts
+      var tagCounts = new Dictionary<string, int>();
+
+      // Iterate over all TagEntries
+      foreach (var tagEntry in Tags.TagEntries.Values) {
+        foreach (var tag in tagEntry.Tags) {
+          if (tagCounts.ContainsKey(tag)) {
+            tagCounts[tag]++;
+          } else {
+            tagCounts[tag] = 1;
+          }
+        }
+      }
+
+      // Create a sorted list of tags by count in descending order
+      var sortedTags = tagCounts
+          .OrderByDescending(kvp => kvp.Value) // Sort by count (descending)
+          .ThenBy(kvp => kvp.Key) // Optional: Sort alphabetically for ties
+          .Select(kvp => (Tag: kvp.Key, Count: kvp.Value)) // Convert to tuple
+          .ToList();
+
+      if (sortedTags.Count > 0) {
+        SetButtonTagInfo(btnTagA, sortedTags[0]);
+      } else {
+        // Clear button if no tags
+        btnTagA.Tag = null;
+        btnTagA.Text = "";
+      }
+
+      if (sortedTags.Count > 1) {
+        SetButtonTagInfo(btnTagB, sortedTags[1]);
+      } else {
+        // Clear button if no tags
+        btnTagB.Tag = null;
+        btnTagB.Text = "";
+      }
+
+      if (sortedTags.Count > 2) {
+        SetButtonTagInfo(btnTagC, sortedTags[2]);
+      } else {
+        // Clear button if no tags
+        btnTagC.Tag = null;
+        btnTagC.Text = "";
+      }
+
+      if (sortedTags.Count > 3) {
+        SetButtonTagInfo(btnTagD, sortedTags[3]);
+      } else {
+        // Clear button if no tags
+        btnTagD.Tag = null;
+        btnTagD.Text = "";
+      }
+
+      if (sortedTags.Count > 4) {
+        SetButtonTagInfo(btnTagE, sortedTags[4]);
+      } else {
+        // Clear button if no tags
+        btnTagE.Tag = null;
+        btnTagE.Text = "";
+      }
+
+    }
+
+    private void SetButtonTagInfo(Button button, (string Tag, int Count) tagInfo) {
+      string text = "Add/remove '" + tagInfo.Tag + "' (used " + tagInfo.Count + " times)" +
+        Environment.NewLine + "Ctrl+Click: Add/remove in load filter (OR)" +
+        Environment.NewLine + "Shift+Click: Add/remove in load filter (AND)";
+      toolTip1.SetToolTip(button, text);
+      button.Tag = tagInfo.Tag;
+      button.Text = GetTagButtonCaption(tagInfo.Tag);
+    }
+
+    private string GetTagButtonCaption(string tag) {
+      if (tag.Length > 1) {
+        return tag.Substring(0, 3).ToUpper();
+      } else {
+        return tag.ToUpper();
+      }
+    }
+
+    private void btnTagA_Click(object sender, EventArgs e) {
+      AddOrRemoveTopTag(sender);
+    }
+
+    private void btnTagB_Click(object sender, EventArgs e) {
+      AddOrRemoveTopTag(sender);
+    }
+
+    private void btnTagC_Click(object sender, EventArgs e) {
+      AddOrRemoveTopTag(sender);
+    }
+
+    private void btnTagD_Click(object sender, EventArgs e) {
+      AddOrRemoveTopTag(sender);
+    }
+
+    private void btnTagE_Click(object sender, EventArgs e) {
+      AddOrRemoveTopTag(sender);
+    }
+
+    private void AddOrRemoveTopTag(object sender) {
+      TextBox srcTextbox = txtTags;
+      Char tokenChar = ',';
+      string joinSep = ", ";
+      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        srcTextbox = txtDirOrTagsFilter;
+      }
+      if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
+        srcTextbox = txtDirOrTagsFilter;
+        tokenChar = '&';
+        joinSep = " & ";
+      }
+      if (sender is Button button && button.Tag is string tag && tag.Length > 0) {
+
+        // Split txtTags.Text into tokens, trimming whitespace
+        var tokens = srcTextbox.Text
+            .Split(new[] { tokenChar }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(t => t.Trim())
+            .ToList();
+
+        if (tokens.Contains(tag)) {
+          // Remove the tag if it exists
+          tokens.Remove(tag);
+        } else {
+          // Add the tag if it does not exist
+          tokens.Add(tag);
+        }
+
+        tokens = tokens.OrderBy(tag => tag).ToList(); // Convert to a sorted list
+
+        // Update txtTags.Text with the updated tokens, joined by ", "
+        srcTextbox.Text = string.Join(joinSep, tokens);
+      }
+    }
+
+    private void lblAudioDevice_MouseClick(object sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Right) {
+        helper.SelectDefaultDevice(cboAudioDevice);
+        btnSetAudioDevice_Click(null, null);
+        SetStatusText($"Default audio device selected and set");
+      }
+    }
+
+    private void btnPresetLoadTags_Click(object sender, EventArgs e) {
+      cboPresets.Items.Clear();
+      var presetList = new List<Data.Preset>();
+      if (txtDirOrTagsFilter.Text.Length > 0) {
+        var filteredEntries = FilterTagEntries();
+        foreach (var entry in filteredEntries) {
+          Data.Preset newPreset = new Data.Preset {
+            DisplayName = entry.Key,
+            MaybeRelativePath = entry.Value.PresetPath
+          };
+          presetList.Add(newPreset);
+        }
+        presetList.Sort((x, y) => string.Compare(x.DisplayName, y.DisplayName, StringComparison.OrdinalIgnoreCase));
+
+        // Fix: Convert the Preset list to an object array before adding to Items
+        cboPresets.Items.AddRange(presetList.Cast<object>().ToArray());
+      }
+
+      SetStatusText($"Loaded {cboPresets.Items.Count} filtered presets");
+      if (cboPresets.Items.Count > 0) {
+        cboPresets.SelectedIndex = 0;
+        UpdateTagsDisplay(false, false);
+      }
+
+    }
+
+    private List<KeyValuePair<string, TagEntry>> FilterTagEntries() {
+      var filterText = txtDirOrTagsFilter.Text.Trim();
+
+      // Split the filter text into tokens based on ',' or '&'
+      var filters = filterText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                              .Select(f => f.Trim())
+                              .ToList();
+
+      var result = new List<KeyValuePair<string, TagEntry>>();
+
+      foreach (var entry in Tags.TagEntries) {
+        var tags = entry.Value.Tags;
+
+        // Check if the entry matches any of the filters
+        bool matches = filters.Any(filter => {
+          if (filter.Contains("&")) {
+            // Handle '&' (AND) condition
+            var andTokens = filter.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(t => t.Trim());
+            return andTokens.All(token => {
+              if (token.StartsWith("!")) {
+                // Negation: must not match
+                var negatedToken = token.Substring(1);
+                return !tags.Contains(negatedToken, StringComparer.OrdinalIgnoreCase);
+              } else {
+                // Must match
+                return tags.Contains(token, StringComparer.OrdinalIgnoreCase);
+              }
+            });
+          } else {
+            // Handle ',' (OR) condition
+            if (filter.StartsWith("!")) {
+              // Negation: must not match
+              var negatedToken = filter.Substring(1);
+              return !tags.Contains(negatedToken, StringComparer.OrdinalIgnoreCase);
+            } else {
+              // Must match
+              return tags.Contains(filter, StringComparer.OrdinalIgnoreCase);
+            }
+          }
+        });
+
+        if (matches) {
+          result.Add(entry);
+        }
+      }
+      return result;
+    }
+
+    private void chkPresetLink_CheckedChanged(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer(chkPresetLink.Checked ? "1" : "0", MessageType.PresetLink);
+    }
+
+    private void lblLoad_DoubleClick(object sender, EventArgs e) {
+      txtDirOrTagsFilter.Text = "";
     }
   } // end class
 } // end namespace
