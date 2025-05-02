@@ -104,8 +104,8 @@ namespace MilkwaveRemote
       lblWavemode = new Label();
       chkPresetRandom = new CheckBox();
       lblLoad = new Label();
+      lblTags = new Label();
       txtDirOrTagsFilter = new TextBox();
-      label3 = new Label();
       btnSpace = new Button();
       btnBackspace = new Button();
       colorDialogMessage = new ColorDialog();
@@ -1025,6 +1025,17 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblLoad, "Double-click: Clear filter");
       lblLoad.DoubleClick += lblLoad_DoubleClick;
       // 
+      // lblTags
+      // 
+      lblTags.AutoSize = true;
+      lblTags.Location = new Point(40, 98);
+      lblTags.Name = "lblTags";
+      lblTags.Size = new Size(30, 15);
+      lblTags.TabIndex = 122;
+      lblTags.Text = "Tags";
+      toolTip1.SetToolTip(lblTags, "Double-click: Clear tags");
+      lblTags.DoubleClick += lblTags_DoubleClick;
+      // 
       // txtDirOrTagsFilter
       // 
       txtDirOrTagsFilter.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -1033,15 +1044,6 @@ namespace MilkwaveRemote
       txtDirOrTagsFilter.PlaceholderText = "Directory or Tags filter";
       txtDirOrTagsFilter.Size = new Size(308, 23);
       txtDirOrTagsFilter.TabIndex = 117;
-      // 
-      // label3
-      // 
-      label3.AutoSize = true;
-      label3.Location = new Point(40, 98);
-      label3.Name = "label3";
-      label3.Size = new Size(30, 15);
-      label3.TabIndex = 122;
-      label3.Text = "Tags";
       // 
       // btnSpace
       // 
@@ -1531,7 +1533,7 @@ namespace MilkwaveRemote
       tabPreset.Controls.Add(chkTagsFromRunning);
       tabPreset.Controls.Add(btnTagsSave);
       tabPreset.Controls.Add(txtTags);
-      tabPreset.Controls.Add(label3);
+      tabPreset.Controls.Add(lblTags);
       tabPreset.Controls.Add(btnPresetLoadTags);
       tabPreset.Controls.Add(chkPresetRandom);
       tabPreset.Controls.Add(chkPresetLink);
@@ -1775,7 +1777,7 @@ namespace MilkwaveRemote
     private TextBox txtDirOrTagsFilter;
     private Label lblLoad;
     private TextBox txtTags;
-    private Label label3;
+    private Label lblTags;
     private Button btnPresetLoadTags;
     private CheckBox chkPresetRandom;
     private CheckBox chkPresetLink;

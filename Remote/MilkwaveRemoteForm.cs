@@ -365,7 +365,7 @@ namespace MilkwaveRemote {
               }
               btnPresetSend_Click(null, null);
             } else if (cmd.ToUpper().Equals("PREV")) {
-              SelectNextPreset();
+              SelectPreviousPreset();
               btnPresetSend_Click(null, null);
             }
           }
@@ -1972,8 +1972,8 @@ namespace MilkwaveRemote {
           );
 
           tagEntry.Tags = uniqueTags.OrderBy(tag => tag).ToList(); // Convert to a sorted list
-          SaveTagsToFile();
         }
+        SaveTagsToFile();
       }
     }
 
@@ -2056,7 +2056,7 @@ namespace MilkwaveRemote {
     }
 
     private void SetButtonTagInfo(Button button, (string Tag, int Count) tagInfo) {
-      string text = "Add/remove '" + tagInfo.Tag + "' (used " + tagInfo.Count + " times)" +
+      string text = "Add/remove '" + tagInfo.Tag + "' in tags (used " + tagInfo.Count + " times)" +
         Environment.NewLine + "Ctrl+Click: Add/remove in load filter (OR)" +
         Environment.NewLine + "Shift+Click: Add/remove in load filter (AND)";
       toolTip1.SetToolTip(button, text);
@@ -2216,6 +2216,10 @@ namespace MilkwaveRemote {
 
     private void lblLoad_DoubleClick(object sender, EventArgs e) {
       txtDirOrTagsFilter.Text = "";
+    }
+
+    private void lblTags_DoubleClick(object sender, EventArgs e) {
+      txtTags.Text = "";
     }
   } // end class
 } // end namespace

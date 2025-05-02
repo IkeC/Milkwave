@@ -20,11 +20,11 @@ F11                     Hardcut mode: normal/based of music
 F12                     Transparency mode (removes the black background)
 CTRL + F12              Toggle black mode (no preset rendering)
                         
-Z                       previous track
-X                       play/pause track
-C                       stop track
-V                       next track
-LEFT/RIGHT ARROW        fast forward/rewind track (5 seconds)
+LEFT ARROW / Z          previous track
+RIGHT ARROW / V         next track
+DOWN ARROW / X          play/pause track
+UP ARROW / C            stop track
+CTRL + L/R ARROW        fast forward/rewind track (5 seconds)
 B / M MOUSEBUTTON       show track info
 SHIFT + A               toggle next preset when track changes
 SHIFT + B               toggle track info polling
