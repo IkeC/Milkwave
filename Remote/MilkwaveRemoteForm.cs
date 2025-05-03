@@ -254,8 +254,6 @@ namespace MilkwaveRemote {
       helper.FillAudioDevices(cboAudioDevice);
     }
 
-
-
     private IntPtr StartVisualizerIfNotFound() {
       IntPtr result = FindVisualizerWindow();
       if (FindVisualizerWindow() == IntPtr.Zero) {
@@ -307,61 +305,82 @@ namespace MilkwaveRemote {
       const int WM_COPYDATA = 0x004A;
 
       if (m.Msg == WM_COPYDATA) {
-        // Extract the COPYDATASTRUCT from the message
-        COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
-        if (cds.lpData != IntPtr.Zero) {
-          // Convert the received data to a string
-          string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
-          if (receivedString.StartsWith("PRESET=")) {
-            string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            if (receivedString.Length > 0) {
-              string findString = "RESOURCES\\PRESETS\\";
-              int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
-              string displayText = receivedString;
-              if (index > -1) {
-                displayText = receivedString.Substring(index + findString.Length);
-                displayText = Path.ChangeExtension(displayText, null);
+          // Extract the COPYDATASTRUCT from the message
+          COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
+          if (cds.lpData != IntPtr.Zero) {
+            // Convert the received data to a string
+            string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
+            if (receivedString.StartsWith("WAVE|")) {
+              string waveInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
+              string[] waveParams = waveInfo.Split('|');
+              foreach (string param in waveParams) {
+                string[] keyValue = param.Split('=');
+                if (keyValue.Length == 2) {
+                  string key = keyValue[0].Trim();
+                  string value = keyValue[1].Trim();
+                  if (key.Equals("MODE", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveMode.Value = int.Parse(value);
+                  } else if (key.Equals("ALPHA", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveAlpha.Value = int.Parse(value);
+                  } else if (key.Equals("COLORR", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveR.Value = int.Parse(value);
+                  } else if (key.Equals("COLORG", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveG.Value = int.Parse(value);
+                  } else if (key.Equals("COLORB", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveB.Value = int.Parse(value);
+                  }
+                }
               }
+            } else if (receivedString.StartsWith("PRESET=")) {
+              string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              if (receivedString.Length > 0) {
+                string findString = "RESOURCES\\PRESETS\\";
+                int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+                string displayText = receivedString;
+                if (index > -1) {
+                  displayText = receivedString.Substring(index + findString.Length);
+                  displayText = Path.ChangeExtension(displayText, null);
+                }
 
-              // Process the received string
-              txtVisRunning.Text = displayText;
-              toolTip1.SetToolTip(txtVisRunning, presetFilePath);
-              UpdateTagsDisplay(false, true);
-            }
-          } else if (receivedString.StartsWith("STATUS=")) {
-            string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            if (status.Length > 0) {
-              SetStatusText(status);
-            }
-          } else if (receivedString.StartsWith("OPACITY=")) {
-            string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
-              if (numOpacity.Value != parsedOpacity) {
-                // Temporarily detach the event handler
-                numOpacity.ValueChanged -= numOpacity_ValueChanged;
-                numOpacity.Value = parsedOpacity;
-                numOpacity.ValueChanged += numOpacity_ValueChanged;
+                // Process the received string
+                txtVisRunning.Text = displayText;
+                toolTip1.SetToolTip(txtVisRunning, presetFilePath);
+                UpdateTagsDisplay(false, true);
               }
-            }
-          } else if (receivedString.StartsWith("DEVICE=")) {
-            string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            helper.SelectDeviceByName(cboAudioDevice, device);
-          } else if (receivedString.StartsWith("LINKCMD=")) {
-            string cmd = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            if (cmd.ToUpper().Equals("NEXT")) {
-              if (chkPresetRandom.Checked) {
-                SelectRandomPreset();
-              } else {
-                SelectNextPreset();
+            } else if (receivedString.StartsWith("STATUS=")) {
+              string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              if (status.Length > 0) {
+                SetStatusText(status);
               }
-              btnPresetSend_Click(null, null);
-            } else if (cmd.ToUpper().Equals("PREV")) {
-              SelectPreviousPreset();
-              btnPresetSend_Click(null, null);
+            } else if (receivedString.StartsWith("OPACITY=")) {
+              string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
+                if (numOpacity.Value != parsedOpacity) {
+                  // Temporarily detach the event handler
+                  numOpacity.ValueChanged -= numOpacity_ValueChanged;
+                  numOpacity.Value = parsedOpacity;
+                  numOpacity.ValueChanged += numOpacity_ValueChanged;
+                }
+              }
+            } else if (receivedString.StartsWith("DEVICE=")) {
+              string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              helper.SelectDeviceByName(cboAudioDevice, device);
+            } else if (receivedString.StartsWith("LINKCMD=")) {
+              string cmd = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              if (cmd.ToUpper().Equals("NEXT")) {
+                if (chkPresetRandom.Checked) {
+                  SelectRandomPreset();
+                } else {
+                  SelectNextPreset();
+                }
+                btnPresetSend_Click(null, null);
+              } else if (cmd.ToUpper().Equals("PREV")) {
+                SelectPreviousPreset();
+                btnPresetSend_Click(null, null);
+              }
             }
           }
         }
-      }
 
       base.WndProc(ref m);
     }
@@ -409,12 +428,13 @@ namespace MilkwaveRemote {
           message = messageToSend;
           statusMessage = $"Sent '{messageToSend}' to";
         } else if (type == MessageType.Wave) {
+          string alpha = (numWaveAlpha.Value / 255).ToString("F2", CultureInfo.InvariantCulture);
           message = "WAVE" +
-            "|mode=" + numWavemode.Value +
-            "|alpha=" + numAlpha.Value.ToString(CultureInfo.InvariantCulture) +
-            "|colorr=" + pnlColorWave.BackColor.R +
-            "|colorg=" + pnlColorWave.BackColor.G +
-            "|colorb=" + pnlColorWave.BackColor.B;
+            "|MODE=" + numWaveMode.Value +
+            "|ALPHA=" + alpha +
+            "|COLORR=" + pnlColorWave.BackColor.R +
+            "|COLORG=" + pnlColorWave.BackColor.G +
+            "|COLORB=" + pnlColorWave.BackColor.B;
           statusMessage = $"Changed Wave in";
         } else if (type == MessageType.PresetFilePath) {
           message = "PRESET=" + messageToSend;
@@ -716,6 +736,10 @@ namespace MilkwaveRemote {
     private void pnlColorWave_Click(object sender, EventArgs e) {
       if (colorDialogWave.ShowDialog() == DialogResult.OK) {
         pnlColorWave.BackColor = colorDialogWave.Color;
+        numWaveR.Value = colorDialogWave.Color.R;
+        numWaveG.Value = colorDialogWave.Color.G;
+        numWaveB.Value = colorDialogWave.Color.B;
+        SendWaveInfoIfLinked();
       }
     }
 
@@ -1829,12 +1853,18 @@ namespace MilkwaveRemote {
     }
 
     private void numWavemode_ValueChanged(object sender, EventArgs e) {
-      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        btnSendWave.PerformClick();
-      }
+      SendWaveInfoIfLinked();
     }
 
     private void btnSendWave_Click(object sender, EventArgs e) {
+      SendWaveInfo();
+    }
+
+    private void SendWaveInfoIfLinked() {
+      if (chkWaveLink.Checked) SendWaveInfo();
+    }
+
+    private void SendWaveInfo() {
       SendToMilkwaveVisualizer("", MessageType.Wave);
     }
 
@@ -2033,7 +2063,6 @@ namespace MilkwaveRemote {
         btnTagE.Tag = null;
         btnTagE.Text = "";
       }
-
     }
 
     private void SetButtonTagInfo(Button button, (string Tag, int Count) tagInfo) {
@@ -2226,9 +2255,36 @@ namespace MilkwaveRemote {
       }
       Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
-      Settings.DirOrTagsFilter = txtDirOrTagsFilter.Text; 
+      Settings.DirOrTagsFilter = txtDirOrTagsFilter.Text;
 
       SaveSettingsToFile();
+    }
+
+    private void numAlpha_ValueChanged(object sender, EventArgs e) {
+      SendWaveInfoIfLinked();
+    }
+
+    private void numWaveR_ValueChanged(object sender, EventArgs e) {
+      UpdateWaveColorPicker();
+      SendWaveInfoIfLinked();
+    }
+
+    private void numWaveG_ValueChanged(object sender, EventArgs e) {
+      UpdateWaveColorPicker();
+      SendWaveInfoIfLinked();
+    }
+
+    private void numWaveB_ValueChanged(object sender, EventArgs e) {
+      UpdateWaveColorPicker();
+      SendWaveInfoIfLinked();
+    }
+
+    private void UpdateWaveColorPicker() {
+      int r = (int)numWaveR.Value;
+      int g = (int)numWaveG.Value;
+      int b = (int)numWaveB.Value;
+      colorDialogWave.Color = Color.FromArgb(r, g, b);
+      pnlColorWave.BackColor = colorDialogWave.Color;
     }
 
   } // end class

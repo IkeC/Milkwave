@@ -10,10 +10,6 @@ N                       Show per-frame monitor
 S                       Save new preset
 CTRL + S                Quicksave preset to /presets/Quicksave folder
 SHIFT + CTRL + S        Quicksave preset to /presets/Quicksave2 folder
-A                       Do random mini-mash-up
-D                       Toggle warp & comp shader locks
-!                       Randomize warp shader
-@                       Randomize comp shader
                         
 K                       Toggle sprite/message mode
 SHIFT + K               Enter sprite kill mode
@@ -24,3 +20,13 @@ SHIFT + DEL             Clear oldest sprite from the slot/message
 SHIFT + CTRL + DEL      Clear all the sprites/messages
 CTRL + K                Kills all the sprites
 CTRL + T                Kills custom messages/song titles
+
+Q / q      Wave echo zoom +/-           [ / ]      X +/-
+W / w      Wave mode +/-                { / }      Y +/-
+E / e      Wave alpha +/-               < / >      Rotation +/-
+U / u      Wave warp scale +/-          A          Do random mini-mash-up   
+I / i      Wave zoom +/-                D          Toggle shader locks   
+O / o      Wave warp amount +/-         F          Tooggle echo orientation
+P / p      Video echo alpha +/-         !          Randomize warp shader
+G / g      Gamma adjustment +/-         @          Randomize comp shader   
+J / j      Wave scale +/-               

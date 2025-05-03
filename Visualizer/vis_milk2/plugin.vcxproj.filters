@@ -208,9 +208,11 @@
     <None Include="text1.bin">
       <Filter>library\resources</Filter>
     </None>
-    <None Include="text1_page2.bin" />
     <None Include="plugin.dsp" />
     <None Include="plugin.vcproj" />
+    <None Include="text1_page2.bin">
+      <Filter>library\resources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="plugin.rc">

@@ -7118,18 +7118,10 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
     return 0; // we processed (or absorbed) the key
 
-
-    //NOT NEEDED
-    //case 'u':
-    //case 'U':
-          //AddError(wasabiApiLangString(IDS_SHUFFLE_IS_NOW_ON), 3.0f, ERR_NOTIFY, false);
-      //return 0; // we processed (or absorbed) the key
-
-
   case 'u':	m_pState->m_fWarpScale /= 1.1f;			break;
   case 'U':	m_pState->m_fWarpScale *= 1.1f;			break;
-  case 'b':	m_pState->m_fWarpAnimSpeed /= 1.1f;		break;
-  case 'B':	m_pState->m_fWarpAnimSpeed *= 1.1f;		break;
+  // case 'b':	m_pState->m_fWarpAnimSpeed /= 1.1f;		break;
+  // case 'B':	m_pState->m_fWarpAnimSpeed *= 1.1f;		break;
 
   case 't':
   case 'T':
@@ -8774,7 +8766,7 @@ void CPlugin::OnFinishedLoadingPreset() {
   for (int mash = 0; mash < MASH_SLOTS; mash++)
     m_nMashPreset[mash] = m_nCurrentPreset;
 
-  SendMessageToMilkwaveRemote((L"PRESET=" + std::wstring(m_szCurrentPresetFile)).c_str());
+  SendPresetInfoToMilkwaveRemote();
 }
 
 int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
@@ -10187,56 +10179,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   }
   else if (wcsncmp(sMessage, L"WAVE|", 5) == 0) {
     std::wstring message(sMessage + 5);
-    std::wstringstream ss(message);
-    std::wstring token;
-    std::map<std::wstring, std::wstring> params;
-
-    // Parse key-value pairs
-    while (std::getline(ss, token, L'|')) {
-      size_t pos = token.find(L'=');
-      if (pos != std::wstring::npos) {
-        std::wstring key = token.substr(0, pos);
-        std::wstring value = token.substr(pos + 1);
-        params[key] = value;
-      }
-    }
-
-    if (params.find(L"mode") != params.end()) {
-      g_plugin.m_pState->m_nWaveMode = std::stoi(params[L"mode"]);
-    }
-    if (params.find(L"alpha") != params.end()) {
-      g_plugin.m_pState->m_fWaveAlpha = std::stof(params[L"alpha"]);
-    }
-    if (params.find(L"colorr") != params.end()) {
-      int colR = std::stoi(params[L"colorr"]);
-      double colRDbl = colR / 255.0;
-      g_plugin.m_pState->m_fWaveR = colR;
-      g_plugin.m_pState->m_fMvR = colR;
-      // g_plugin.m_pState->var_pf_wave_r = &colRDbl;
-      // g_plugin.m_pState->var_pf_ob_r = &colRDbl;
-      // g_plugin.m_pState->var_pf_mv_r = &colRDbl;
-      // g_plugin.m_pState->var_pf_ib_r = &colRDbl;
-    }
-    if (params.find(L"colorg") != params.end()) {
-      int colG = std::stoi(params[L"colorg"]);
-      double colGDbl = colG / 255.0;
-      g_plugin.m_pState->m_fWaveG = colG;
-      g_plugin.m_pState->m_fMvG = colG;
-      // g_plugin.m_pState->var_pf_wave_g = &colGDbl;
-      // g_plugin.m_pState->var_pf_ob_g = &colGDbl;
-      // g_plugin.m_pState->var_pf_mv_g = &colGDbl;
-      // g_plugin.m_pState->var_pf_ib_g = &colGDbl;
-    }
-    if (params.find(L"colorb") != params.end()) {
-      int colB = std::stoi(params[L"colorb"]);
-      double colBDbl = colB / 255.0;
-      g_plugin.m_pState->m_fWaveB = colB;
-      g_plugin.m_pState->m_fMvB = colB;
-      // g_plugin.m_pState->var_pf_wave_b = &colBDbl;
-      // g_plugin.m_pState->var_pf_ob_b = &colBDbl;
-      // g_plugin.m_pState->var_pf_mv_b = &colBDbl;
-      // g_plugin.m_pState->var_pf_ib_b = &colBDbl;
-    }
+    SetWaveParamsFromMessage(message);
   }
   else if (wcsncmp(sMessage, L"DEVICE=", 7) == 0) {
     std::wstring message(sMessage + 7);
@@ -10255,11 +10198,77 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     wchar_t buf[1024];
     swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
-    SendMessageToMilkwaveRemote((L"PRESET=" + std::wstring(m_szCurrentPresetFile)).c_str());
+    SendPresetInfoToMilkwaveRemote();
   }
   else if (wcsncmp(sMessage, L"LINK=", 5) == 0) {
     std::wstring message(sMessage + 5);
     m_RemotePresetLink = std::stoi(message);
+  }
+}
+
+void CPlugin::SendPresetInfoToMilkwaveRemote() {
+  std::wstring msg = L"PRESET=" + std::wstring(m_szCurrentPresetFile);
+  SendMessageToMilkwaveRemote(msg.c_str());
+  int alpha = std::ceil(g_plugin.m_pState->m_fWaveAlpha.eval(-1) * 255);
+  if (alpha > 255) alpha = 255;
+  msg = L"WAVE|COLORR=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveR.eval(0) * 255)))
+    + L"|COLORG=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveG.eval(0) * 255)))
+    + L"|COLORB=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveB.eval(0) * 255)))
+    + L"|ALPHA=" + std::to_wstring(alpha)
+    + L"|MODE=" + std::to_wstring(static_cast<int>(g_plugin.m_pState->m_nWaveMode));
+  SendMessageToMilkwaveRemote(msg.c_str());
+}
+
+void CPlugin::SetWaveParamsFromMessage(std::wstring& message) {
+  std::wstringstream ss(message);
+  std::wstring token;
+  std::map<std::wstring, std::wstring> params;
+
+  // Parse key-value pairs
+  while (std::getline(ss, token, L'|')) {
+    size_t pos = token.find(L'=');
+    if (pos != std::wstring::npos) {
+      std::wstring key = token.substr(0, pos);
+      std::wstring value = token.substr(pos + 1);
+      params[key] = value;
+    }
+  }
+
+  if (params.find(L"MODE") != params.end()) {
+    g_plugin.m_pState->m_nWaveMode = std::stoi(params[L"MODE"]);
+  }
+  if (params.find(L"ALPHA") != params.end()) {
+    g_plugin.m_pState->m_fWaveAlpha = std::stof(params[L"ALPHA"]);
+  }
+  if (params.find(L"COLORR") != params.end()) {
+    int colR = std::stoi(params[L"COLORR"]);
+    double colRDbl = colR / 255.0;
+    g_plugin.m_pState->m_fWaveR = colR;
+    g_plugin.m_pState->m_fMvR = colR;
+    // g_plugin.m_pState->var_pf_wave_r = &colRDbl;
+    // g_plugin.m_pState->var_pf_ob_r = &colRDbl;
+    // g_plugin.m_pState->var_pf_mv_r = &colRDbl;
+    // g_plugin.m_pState->var_pf_ib_r = &colRDbl;
+  }
+  if (params.find(L"COLORG") != params.end()) {
+    int colG = std::stoi(params[L"COLORG"]);
+    double colGDbl = colG / 255.0;
+    g_plugin.m_pState->m_fWaveG = colG;
+    g_plugin.m_pState->m_fMvG = colG;
+    // g_plugin.m_pState->var_pf_wave_g = &colGDbl;
+    // g_plugin.m_pState->var_pf_ob_g = &colGDbl;
+    // g_plugin.m_pState->var_pf_mv_g = &colGDbl;
+    // g_plugin.m_pState->var_pf_ib_g = &colGDbl;
+  }
+  if (params.find(L"COLORB") != params.end()) {
+    int colB = std::stoi(params[L"COLORB"]);
+    double colBDbl = colB / 255.0;
+    g_plugin.m_pState->m_fWaveB = colB;
+    g_plugin.m_pState->m_fMvB = colB;
+    // g_plugin.m_pState->var_pf_wave_b = &colBDbl;
+    // g_plugin.m_pState->var_pf_ob_b = &colBDbl;
+    // g_plugin.m_pState->var_pf_mv_b = &colBDbl;
+    // g_plugin.m_pState->var_pf_ib_b = &colBDbl;
   }
 }
 

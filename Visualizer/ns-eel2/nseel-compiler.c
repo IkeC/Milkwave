@@ -1680,7 +1680,13 @@ void NSEEL_code_execute(NSEEL_CODEHANDLE code)
   if (tabptr&31)
     tabptr += 32-((tabptr)&31);
   //printf("calling code!\n");
-  GLUE_CALL_CODE(tabptr,codeptr);
+  // GLUE_CALL_CODE(tabptr,codeptr);
+
+  unsigned int oldFPUState = _controlfp(0, 0);
+  _controlfp(_RC_CHOP, _MCW_RC); // Set rounding mode
+  GLUE_CALL_CODE(tabptr, codeptr);
+  _controlfp(oldFPUState, _MCW_RC); // Restore original state
+
 
 }
 
