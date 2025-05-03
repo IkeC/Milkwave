@@ -436,6 +436,42 @@ void ToggleFullScreen(HWND hwnd) {
   stretch = false;
 }
 
+void ResetWindow(HWND hwnd) {
+  // Get the screen dimensions
+  int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+  int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+  int windowWidth = screenWidth / 3;
+  int windowHeight = screenHeight / 3;
+
+  int windowX = screenWidth - windowWidth - windowWidth/4;
+  int windowY = windowHeight/4;
+
+  // Restore the window to a normal state if minimized or maximized
+  ShowWindow(hwnd, SW_RESTORE);
+
+  // Remove any transparency or click-through flags
+  LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+  exStyle &= ~(WS_EX_LAYERED | WS_EX_TRANSPARENT); // Remove transparency and click-through
+  SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+
+  // Reset the window style to a standard overlapped window
+  SetWindowLongW(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+
+  // Adjust the window size and position
+  SetWindowPos(hwnd, HWND_NOTOPMOST, windowX, windowY, windowWidth, windowHeight, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
+
+  // Ensure the window is fully opaque
+  SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+
+  g_plugin.fOpacity = 1.0f;
+  g_plugin.m_WindowBorderless = false;
+  borderless = false;
+  clickthrough = false;
+  fullscreen = false;
+}
+
+
 void ToggleBorderlessWindow(HWND hwnd) {
   static RECT lastRect = { 0 }; // Store the previous window position and size
   GetWindowRect(hwnd, &lastRect);
@@ -686,7 +722,11 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
   }
   if (wParam == VK_F2) {
-    if (!fullscreen && !stretch) {
+    bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    if (isCtrlPressed) {
+      ResetWindow(hWnd);
+    }
+    else if (!fullscreen && !stretch) {
       ToggleBorderlessWindow(hWnd);
     }
   }
@@ -793,7 +833,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   }
 
   case WM_NCRBUTTONDBLCLK:
-  {    
+  {
     ToggleBorderlessWindow(hWnd);
     break;
   }

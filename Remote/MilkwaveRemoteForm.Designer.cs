@@ -137,13 +137,13 @@ namespace MilkwaveRemote
       colorDialogWave = new ColorDialog();
       splitContainer1 = new SplitContainer();
       tabControl = new FlatTabControl();
-      tabMessage = new TabPage();
       tabPreset = new TabPage();
       btnTagE = new Button();
       btnTagD = new Button();
       btnTagB = new Button();
       btnTagC = new Button();
       btnTagA = new Button();
+      tabMessage = new TabPage();
       tabWave = new TabPage();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
@@ -161,8 +161,8 @@ namespace MilkwaveRemote
       splitContainer1.Panel2.SuspendLayout();
       splitContainer1.SuspendLayout();
       tabControl.SuspendLayout();
-      tabMessage.SuspendLayout();
       tabPreset.SuspendLayout();
+      tabMessage.SuspendLayout();
       tabWave.SuspendLayout();
       SuspendLayout();
       // 
@@ -1458,8 +1458,8 @@ namespace MilkwaveRemote
       // 
       tabControl.Appearance = TabAppearance.Buttons;
       tabControl.BorderColor = SystemColors.ControlLightLight;
-      tabControl.Controls.Add(tabMessage);
       tabControl.Controls.Add(tabPreset);
+      tabControl.Controls.Add(tabMessage);
       tabControl.Controls.Add(tabWave);
       tabControl.Dock = DockStyle.Fill;
       tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
@@ -1477,50 +1477,6 @@ namespace MilkwaveRemote
       tabControl.TabCloseColor = SystemColors.ControlText;
       tabControl.TabColor = SystemColors.ControlLight;
       tabControl.TabIndex = 0;
-      // 
-      // tabMessage
-      // 
-      tabMessage.BackColor = SystemColors.ControlLight;
-      tabMessage.BorderStyle = BorderStyle.FixedSingle;
-      tabMessage.Controls.Add(cboAutoplay);
-      tabMessage.Controls.Add(label2);
-      tabMessage.Controls.Add(btnSendFile);
-      tabMessage.Controls.Add(btnFontAppend);
-      tabMessage.Controls.Add(lblPercent);
-      tabMessage.Controls.Add(btnSaveParam);
-      tabMessage.Controls.Add(numOpacity);
-      tabMessage.Controls.Add(chkAutoplay);
-      tabMessage.Controls.Add(lblFont);
-      tabMessage.Controls.Add(label7);
-      tabMessage.Controls.Add(cboFonts);
-      tabMessage.Controls.Add(numBeats);
-      tabMessage.Controls.Add(lblFromFile);
-      tabMessage.Controls.Add(lblColor);
-      tabMessage.Controls.Add(lblParameters);
-      tabMessage.Controls.Add(btnAppendColor);
-      tabMessage.Controls.Add(cboParameters);
-      tabMessage.Controls.Add(pnlColorMessage);
-      tabMessage.Controls.Add(chkFileRandom);
-      tabMessage.Controls.Add(lblWindow);
-      tabMessage.Controls.Add(lblBPM);
-      tabMessage.Controls.Add(txtWindowTitle);
-      tabMessage.Controls.Add(numBPM);
-      tabMessage.Controls.Add(btnSend);
-      tabMessage.Controls.Add(txtStyle);
-      tabMessage.Controls.Add(txtMessage);
-      tabMessage.Controls.Add(lblStyle);
-      tabMessage.Controls.Add(numWrap);
-      tabMessage.Controls.Add(lblSize);
-      tabMessage.Controls.Add(chkWrap);
-      tabMessage.Controls.Add(numSize);
-      tabMessage.Controls.Add(chkPreview);
-      tabMessage.Controls.Add(btnAppendSize);
-      tabMessage.Location = new Point(4, 25);
-      tabMessage.Margin = new Padding(0);
-      tabMessage.Name = "tabMessage";
-      tabMessage.Size = new Size(620, 180);
-      tabMessage.TabIndex = 0;
-      tabMessage.Text = "Message";
       // 
       // tabPreset
       // 
@@ -1611,6 +1567,50 @@ namespace MilkwaveRemote
       btnTagA.UseVisualStyleBackColor = true;
       btnTagA.Click += btnTagA_Click;
       // 
+      // tabMessage
+      // 
+      tabMessage.BackColor = SystemColors.ControlLight;
+      tabMessage.BorderStyle = BorderStyle.FixedSingle;
+      tabMessage.Controls.Add(cboAutoplay);
+      tabMessage.Controls.Add(label2);
+      tabMessage.Controls.Add(btnSendFile);
+      tabMessage.Controls.Add(btnFontAppend);
+      tabMessage.Controls.Add(lblPercent);
+      tabMessage.Controls.Add(btnSaveParam);
+      tabMessage.Controls.Add(numOpacity);
+      tabMessage.Controls.Add(chkAutoplay);
+      tabMessage.Controls.Add(lblFont);
+      tabMessage.Controls.Add(label7);
+      tabMessage.Controls.Add(cboFonts);
+      tabMessage.Controls.Add(numBeats);
+      tabMessage.Controls.Add(lblFromFile);
+      tabMessage.Controls.Add(lblColor);
+      tabMessage.Controls.Add(lblParameters);
+      tabMessage.Controls.Add(btnAppendColor);
+      tabMessage.Controls.Add(cboParameters);
+      tabMessage.Controls.Add(pnlColorMessage);
+      tabMessage.Controls.Add(chkFileRandom);
+      tabMessage.Controls.Add(lblWindow);
+      tabMessage.Controls.Add(lblBPM);
+      tabMessage.Controls.Add(txtWindowTitle);
+      tabMessage.Controls.Add(numBPM);
+      tabMessage.Controls.Add(btnSend);
+      tabMessage.Controls.Add(txtStyle);
+      tabMessage.Controls.Add(txtMessage);
+      tabMessage.Controls.Add(lblStyle);
+      tabMessage.Controls.Add(numWrap);
+      tabMessage.Controls.Add(lblSize);
+      tabMessage.Controls.Add(chkWrap);
+      tabMessage.Controls.Add(numSize);
+      tabMessage.Controls.Add(chkPreview);
+      tabMessage.Controls.Add(btnAppendSize);
+      tabMessage.Location = new Point(4, 25);
+      tabMessage.Margin = new Padding(0);
+      tabMessage.Name = "tabMessage";
+      tabMessage.Size = new Size(620, 180);
+      tabMessage.TabIndex = 0;
+      tabMessage.Text = "Message";
+      // 
       // tabWave
       // 
       tabWave.BackColor = SystemColors.ControlLight;
@@ -1662,10 +1662,10 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
       splitContainer1.ResumeLayout(false);
       tabControl.ResumeLayout(false);
-      tabMessage.ResumeLayout(false);
-      tabMessage.PerformLayout();
       tabPreset.ResumeLayout(false);
       tabPreset.PerformLayout();
+      tabMessage.ResumeLayout(false);
+      tabMessage.PerformLayout();
       tabWave.ResumeLayout(false);
       tabWave.PerformLayout();
       ResumeLayout(false);

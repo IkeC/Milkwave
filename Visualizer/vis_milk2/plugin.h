@@ -342,6 +342,7 @@ public:
   
   float fOpacity = 1.0f; // 0.0f = 100% transparent, 1.0f = 100% opaque
   bool m_RemotePresetLink = false;
+  float m_MediaKeyNotifyTime = 1.0f;
   bool m_bAlwaysOnTop = false;
 
   bool m_SongInfoPollingEnabled = true;

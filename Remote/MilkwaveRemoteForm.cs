@@ -242,18 +242,7 @@ namespace MilkwaveRemote {
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
-
-      Location = Settings.RemoteWindowLocation;
-      Size = Settings.RemoteWindowSize;
-
-      try {
-        splitContainer1.SplitterDistance = Settings.SplitterDistance1;
-      } catch (Exception) {
-        // igonre
-      }
-
-      toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
-      toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
+      LoadAndSetSettings();
       SetPanelsVisibility();
 
       StartVisualizerIfNotFound();
@@ -264,6 +253,8 @@ namespace MilkwaveRemote {
 
       helper.FillAudioDevices(cboAudioDevice);
     }
+
+
 
     private IntPtr StartVisualizerIfNotFound() {
       IntPtr result = FindVisualizerWindow();
@@ -1264,13 +1255,8 @@ namespace MilkwaveRemote {
 
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
       try {
-        if (WindowState == FormWindowState.Normal) {
-          Settings.RemoteWindowLocation = Location;
-          Settings.RemoteWindowSize = Size;
-        } else {
-          Settings.RemoteWindowLocation = RestoreBounds.Location;
-          Settings.RemoteWindowSize = RestoreBounds.Size;
-        }
+
+        SetAndSaveSettings();
 
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
@@ -1279,11 +1265,6 @@ namespace MilkwaveRemote {
             PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
           }
         }
-
-        Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
-        Settings.SelectedTabIndex = tabControl.SelectedIndex;
-
-        SaveSettingsToFile();
 
       } catch (Exception ex) {
         Program.SaveErrorToFile(ex, "Error");
@@ -2221,5 +2202,34 @@ namespace MilkwaveRemote {
     private void lblTags_DoubleClick(object sender, EventArgs e) {
       txtTags.Text = "";
     }
+
+    private void LoadAndSetSettings() {
+      Location = Settings.RemoteWindowLocation;
+      Size = Settings.RemoteWindowSize;
+      toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
+      toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
+      txtDirOrTagsFilter.Text = Settings.DirOrTagsFilter;
+      try {
+        splitContainer1.SplitterDistance = Settings.SplitterDistance1;
+      } catch (Exception) {
+        // igonre
+      }
+    }
+
+    private void SetAndSaveSettings() {
+      if (WindowState == FormWindowState.Normal) {
+        Settings.RemoteWindowLocation = Location;
+        Settings.RemoteWindowSize = Size;
+      } else {
+        Settings.RemoteWindowLocation = RestoreBounds.Location;
+        Settings.RemoteWindowSize = RestoreBounds.Size;
+      }
+      Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
+      Settings.SelectedTabIndex = tabControl.SelectedIndex;
+      Settings.DirOrTagsFilter = txtDirOrTagsFilter.Text; 
+
+      SaveSettingsToFile();
+    }
+
   } // end class
 } // end namespace

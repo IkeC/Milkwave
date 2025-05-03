@@ -16,5 +16,6 @@
     public bool ShowButtonPanel { get; set; } = true;
     public bool CloseVisualizerWithRemote { get; set; } = false;
     public int SelectedTabIndex { get; set; } = 0;
+    public string DirOrTagsFilter { get; set; } = string.Empty;
   }
 }

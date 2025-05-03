@@ -6489,11 +6489,11 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     case VK_LEFT:
       if (m_UI_mode == UI_REGULAR) {
         if (bCtrlHeldDown) {
-          AddError(L"Rewind", 2.0f, ERR_NOTIFY, false);
+          AddError(L"Rewind", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
           SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_REWIND));
         }
         else {
-          AddError(L"Previous", 2.0f, ERR_NOTIFY, false);
+          AddError(L"Previous", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
           keybd_event(VK_MEDIA_PREV_TRACK, 0, 0, 0);
           keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_KEYUP, 0);
         }
@@ -6518,11 +6518,11 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       }
       else if (m_UI_mode == UI_REGULAR) {
         if (bCtrlHeldDown) {
-          AddError(L"Fast Forward", 2.0f, ERR_NOTIFY, false);
+          AddError(L"Fast Forward", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
           SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_FAST_FORWARD));
         }
         else {
-          AddError(L"Next", 2.0f, ERR_NOTIFY, false);
+          AddError(L"Next", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
           keybd_event(VK_MEDIA_NEXT_TRACK, 0, 0, 0);
           keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_KEYUP, 0);
         }
@@ -6589,7 +6589,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         ToggleWindowOpacity(hWnd, false);
       }
       else {
-        AddError(L"Stop", 2.0f, ERR_NOTIFY, false);
+        AddError(L"Stop", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
         keybd_event(VK_MEDIA_STOP, 0, 0, 0);
         keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
       }
@@ -6615,7 +6615,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         ToggleWindowOpacity(hWnd, true);
       }
       else {
-        AddError(L"Play/Pause", 2.0f, ERR_NOTIFY, false);
+        AddError(L"Play/Pause", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
         keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 0, 0);
         keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, 0);
       }
@@ -6623,7 +6623,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
     case 'X':
       if (m_UI_mode == UI_REGULAR) {
-        AddError(L"Play/Pause", 2.0f, ERR_NOTIFY, false);
+        AddError(L"Play/Pause", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
         keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 0, 0);
         keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, 0);
         /*
@@ -6645,7 +6645,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           return 0; // we processed (or absorbed) the key
         }
         else {
-          AddError(L"Stop", 2.0f, ERR_NOTIFY, false);
+          AddError(L"Stop", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
           keybd_event(VK_MEDIA_STOP, 0, 0, 0);
           keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
         }
@@ -6661,7 +6661,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           // TODO
         }
         else {
-          AddError(L"Stop", 2.0f, ERR_NOTIFY, false);
+          AddError(L"Stop", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
           keybd_event(VK_MEDIA_STOP, 0, 0, 0);
           keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
         }
@@ -6673,7 +6673,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       break;
     case 'V':
       if (m_UI_mode == UI_REGULAR) {
-        AddError(L"Next", 2.0f, ERR_NOTIFY, false);
+        AddError(L"Next", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
         keybd_event(VK_MEDIA_NEXT_TRACK, 0, 0, 0);
         keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_KEYUP, 0);
         /*
@@ -6887,7 +6887,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         ToggleSpout();
       }
       else {
-        AddError(L"Previous", 2.0f, ERR_NOTIFY, false);
+        AddError(L"Previous", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
         keybd_event(VK_MEDIA_PREV_TRACK, 0, 0, 0);
         keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_KEYUP, 0);
       }

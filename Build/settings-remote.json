@@ -16,14 +16,14 @@
   },
   "RemoteWindowSize": {
     "IsEmpty": false,
-    "Width": 788,
-    "Height": 740
+    "Width": 791,
+    "Height": 560
   },
-  "SplitterDistance1": 226,
-  "SplitterDistance2": 152,
+  "SplitterDistance1": 254,
   "DarkMode": true,
   "ShowMessagePanel": true,
   "ShowPresetPanel": true,
   "ShowButtonPanel": true,
   "CloseVisualizerWithRemote": false
+  "SelectedTabIndex": 0
 }
