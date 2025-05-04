@@ -7427,6 +7427,8 @@ void CPlugin::SaveCurrentPresetToQuicksave(bool altDir) {
     AddError(L"Quicksave failed", 5.0f, ERR_PRESET, true);
   }
   else {
+    RemoveAngleBrackets(m_pState->m_szDesc);
+    // lstrcpyW(m_pState->m_szDesc, m_szCurrentPresetFile);
     AddError(L"Quicksave successful", 3.0f, ERR_NOTIFY, false);
   }
 }
@@ -8666,6 +8668,44 @@ void CPlugin::GenPlasma(int x0, int x1, int y0, int y1, float dt) {
   }
 }
 
+void CPlugin::ClearPreset() {
+  
+  m_pState->Default(STATE_ALL);
+  wcscpy(m_szCurrentPresetFile, m_pState->m_szDesc);
+  RemoveAngleBrackets(m_szCurrentPresetFile);
+
+  // Append ".milk" to m_szCurrentPresetFile
+  if (wcslen(m_szCurrentPresetFile) + wcslen(L".milk") < MAX_PATH) {
+    wcscat_s(m_szCurrentPresetFile, MAX_PATH, L".milk");
+  }
+
+  // release stuff from m_OldShaders, then move m_shaders to m_OldShaders, then load the new shaders.
+  SafeRelease(m_OldShaders.comp.ptr);
+  SafeRelease(m_OldShaders.warp.ptr);
+  SafeRelease(m_OldShaders.comp.CT);
+  SafeRelease(m_OldShaders.warp.CT);
+  m_OldShaders = m_shaders;
+  ZeroMemory(&m_shaders, sizeof(PShaderSet));
+
+  LoadShaders(&m_shaders, m_pState, false);
+  NumTotalPresetsLoaded++;
+  OnFinishedLoadingPreset();
+}
+
+void CPlugin::RemoveAngleBrackets(wchar_t* str) {
+  wchar_t cleaned[MAX_PATH] = { 0 }; // Temporary buffer for the cleaned string
+  int j = 0;
+
+  for (int i = 0; str[i] != L'\0'; i++) {
+    if (str[i] != L'<' && str[i] != L'>') {
+      cleaned[j++] = str[i];
+    }
+  }
+
+  cleaned[j] = L'\0'; // Null-terminate the cleaned string
+  wcscpy_s(str, MAX_PATH, cleaned); // Copy the cleaned string back to the original
+}
+
 void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
   // clear old error msg...
   if (m_nFramesSinceResize > 4)
@@ -8699,7 +8739,7 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
   }
 
   // if no preset was valid before, make sure there is no blend, because there is nothing valid to blend from.
-  if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC))
+  if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC) || m_pState->m_szDesc[0] == L'<') 
     fBlendTime = 0;
 
   if (fBlendTime == 0) {
@@ -10204,17 +10244,18 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 5);
     m_RemotePresetLink = std::stoi(message);
   }
+  else if (wcsncmp(sMessage, L"CLEAR", 5) == 0) {
+    ClearPreset();
+  }
 }
 
 void CPlugin::SendPresetInfoToMilkwaveRemote() {
   std::wstring msg = L"PRESET=" + std::wstring(m_szCurrentPresetFile);
   SendMessageToMilkwaveRemote(msg.c_str());
-  int alpha = std::ceil(g_plugin.m_pState->m_fWaveAlpha.eval(-1) * 255);
-  if (alpha > 255) alpha = 255;
   msg = L"WAVE|COLORR=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveR.eval(0) * 255)))
     + L"|COLORG=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveG.eval(0) * 255)))
     + L"|COLORB=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveB.eval(0) * 255)))
-    + L"|ALPHA=" + std::to_wstring(alpha)
+    + L"|ALPHA=" + std::to_wstring(g_plugin.m_pState->m_fWaveAlpha.eval(0))
     + L"|MODE=" + std::to_wstring(static_cast<int>(g_plugin.m_pState->m_nWaveMode));
   SendMessageToMilkwaveRemote(msg.c_str());
 }
@@ -10243,32 +10284,20 @@ void CPlugin::SetWaveParamsFromMessage(std::wstring& message) {
   if (params.find(L"COLORR") != params.end()) {
     int colR = std::stoi(params[L"COLORR"]);
     double colRDbl = colR / 255.0;
-    g_plugin.m_pState->m_fWaveR = colR;
-    g_plugin.m_pState->m_fMvR = colR;
-    // g_plugin.m_pState->var_pf_wave_r = &colRDbl;
-    // g_plugin.m_pState->var_pf_ob_r = &colRDbl;
-    // g_plugin.m_pState->var_pf_mv_r = &colRDbl;
-    // g_plugin.m_pState->var_pf_ib_r = &colRDbl;
+    g_plugin.m_pState->m_fWaveR = colRDbl;
+    g_plugin.m_pState->m_fMvR = colRDbl;
   }
   if (params.find(L"COLORG") != params.end()) {
     int colG = std::stoi(params[L"COLORG"]);
     double colGDbl = colG / 255.0;
-    g_plugin.m_pState->m_fWaveG = colG;
-    g_plugin.m_pState->m_fMvG = colG;
-    // g_plugin.m_pState->var_pf_wave_g = &colGDbl;
-    // g_plugin.m_pState->var_pf_ob_g = &colGDbl;
-    // g_plugin.m_pState->var_pf_mv_g = &colGDbl;
-    // g_plugin.m_pState->var_pf_ib_g = &colGDbl;
+    g_plugin.m_pState->m_fWaveG = colGDbl;
+    g_plugin.m_pState->m_fMvG = colGDbl;
   }
   if (params.find(L"COLORB") != params.end()) {
     int colB = std::stoi(params[L"COLORB"]);
     double colBDbl = colB / 255.0;
-    g_plugin.m_pState->m_fWaveB = colB;
-    g_plugin.m_pState->m_fMvB = colB;
-    // g_plugin.m_pState->var_pf_wave_b = &colBDbl;
-    // g_plugin.m_pState->var_pf_ob_b = &colBDbl;
-    // g_plugin.m_pState->var_pf_mv_b = &colBDbl;
-    // g_plugin.m_pState->var_pf_ib_b = &colBDbl;
+    g_plugin.m_pState->m_fWaveB = colBDbl;
+    g_plugin.m_pState->m_fMvB = colBDbl;
   }
 }
 

@@ -59,8 +59,9 @@ namespace MilkwaveRemote {
     private int lastLineIndex = 0;
     private float autoplayRemainingBeats = 1;
     private long timerStart;
+    private bool updatingWaveParams = false;
 
-    private string VisualizerPresetsFolder = AppDomain.CurrentDomain.BaseDirectory + "\\resources\\presets\\";
+    private string VisualizerPresetsFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resources\\presets\\");
 
     private string lastScriptFileName = "script-default.txt";
     private string windowNotFound = "Milkwave Visualizer window not found";
@@ -172,6 +173,7 @@ namespace MilkwaveRemote {
       PresetLink,
       Amplify,
       Wave,
+      WaveClear,
       AudioDevice,
       Opacity,
       GetState
@@ -305,23 +307,26 @@ namespace MilkwaveRemote {
       const int WM_COPYDATA = 0x004A;
 
       if (m.Msg == WM_COPYDATA) {
-          // Extract the COPYDATASTRUCT from the message
-          COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
-          if (cds.lpData != IntPtr.Zero) {
-            // Convert the received data to a string
-            string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
-            if (receivedString.StartsWith("WAVE|")) {
-              string waveInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
-              string[] waveParams = waveInfo.Split('|');
-              foreach (string param in waveParams) {
-                string[] keyValue = param.Split('=');
-                if (keyValue.Length == 2) {
-                  string key = keyValue[0].Trim();
-                  string value = keyValue[1].Trim();
+        // Extract the COPYDATASTRUCT from the message
+        COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
+        if (cds.lpData != IntPtr.Zero) {
+          // Convert the received data to a string
+          string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
+          if (receivedString.StartsWith("WAVE|")) {
+
+            string waveInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
+            string[] waveParams = waveInfo.Split('|');
+            updatingWaveParams = true;
+            foreach (string param in waveParams) {
+              string[] keyValue = param.Split('=');
+              if (keyValue.Length == 2) {
+                string key = keyValue[0].Trim();
+                string value = keyValue[1].Trim();
+                try {
                   if (key.Equals("MODE", StringComparison.OrdinalIgnoreCase)) {
                     numWaveMode.Value = int.Parse(value);
                   } else if (key.Equals("ALPHA", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveAlpha.Value = int.Parse(value);
+                    numWaveAlpha.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
                   } else if (key.Equals("COLORR", StringComparison.OrdinalIgnoreCase)) {
                     numWaveR.Value = int.Parse(value);
                   } else if (key.Equals("COLORG", StringComparison.OrdinalIgnoreCase)) {
@@ -329,58 +334,62 @@ namespace MilkwaveRemote {
                   } else if (key.Equals("COLORB", StringComparison.OrdinalIgnoreCase)) {
                     numWaveB.Value = int.Parse(value);
                   }
+                } catch (Exception ex) {
+                  // ignore
                 }
               }
-            } else if (receivedString.StartsWith("PRESET=")) {
-              string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              if (receivedString.Length > 0) {
-                string findString = "RESOURCES\\PRESETS\\";
-                int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
-                string displayText = receivedString;
-                if (index > -1) {
-                  displayText = receivedString.Substring(index + findString.Length);
-                  displayText = Path.ChangeExtension(displayText, null);
-                }
+            }
+            updatingWaveParams = false;
+          } else if (receivedString.StartsWith("PRESET=")) {
+            string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            if (receivedString.Length > 0) {
+              string findString = "RESOURCES\\PRESETS\\";
+              int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+              string displayText = receivedString;
+              if (index > -1) {
+                displayText = receivedString.Substring(index + findString.Length);
+                displayText = Path.ChangeExtension(displayText, null);
+              }
 
-                // Process the received string
-                txtVisRunning.Text = displayText;
-                toolTip1.SetToolTip(txtVisRunning, presetFilePath);
-                UpdateTagsDisplay(false, true);
+              // Process the received string
+              txtVisRunning.Text = displayText;
+              toolTip1.SetToolTip(txtVisRunning, presetFilePath);
+              UpdateTagsDisplay(false, true);
+            }
+          } else if (receivedString.StartsWith("STATUS=")) {
+            string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            if (status.Length > 0) {
+              SetStatusText(status);
+            }
+          } else if (receivedString.StartsWith("OPACITY=")) {
+            string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
+              if (numOpacity.Value != parsedOpacity) {
+                // Temporarily detach the event handler
+                numOpacity.ValueChanged -= numOpacity_ValueChanged;
+                numOpacity.Value = parsedOpacity;
+                numOpacity.ValueChanged += numOpacity_ValueChanged;
               }
-            } else if (receivedString.StartsWith("STATUS=")) {
-              string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              if (status.Length > 0) {
-                SetStatusText(status);
+            }
+          } else if (receivedString.StartsWith("DEVICE=")) {
+            string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            helper.SelectDeviceByName(cboAudioDevice, device);
+          } else if (receivedString.StartsWith("LINKCMD=")) {
+            string cmd = receivedString.Substring(receivedString.IndexOf("=") + 1);
+            if (cmd.ToUpper().Equals("NEXT")) {
+              if (chkPresetRandom.Checked) {
+                SelectRandomPreset();
+              } else {
+                SelectNextPreset();
               }
-            } else if (receivedString.StartsWith("OPACITY=")) {
-              string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
-                if (numOpacity.Value != parsedOpacity) {
-                  // Temporarily detach the event handler
-                  numOpacity.ValueChanged -= numOpacity_ValueChanged;
-                  numOpacity.Value = parsedOpacity;
-                  numOpacity.ValueChanged += numOpacity_ValueChanged;
-                }
-              }
-            } else if (receivedString.StartsWith("DEVICE=")) {
-              string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              helper.SelectDeviceByName(cboAudioDevice, device);
-            } else if (receivedString.StartsWith("LINKCMD=")) {
-              string cmd = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              if (cmd.ToUpper().Equals("NEXT")) {
-                if (chkPresetRandom.Checked) {
-                  SelectRandomPreset();
-                } else {
-                  SelectNextPreset();
-                }
-                btnPresetSend_Click(null, null);
-              } else if (cmd.ToUpper().Equals("PREV")) {
-                SelectPreviousPreset();
-                btnPresetSend_Click(null, null);
-              }
+              btnPresetSend_Click(null, null);
+            } else if (cmd.ToUpper().Equals("PREV")) {
+              SelectPreviousPreset();
+              btnPresetSend_Click(null, null);
             }
           }
         }
+      }
 
       base.WndProc(ref m);
     }
@@ -428,10 +437,9 @@ namespace MilkwaveRemote {
           message = messageToSend;
           statusMessage = $"Sent '{messageToSend}' to";
         } else if (type == MessageType.Wave) {
-          string alpha = (numWaveAlpha.Value / 255).ToString("F2", CultureInfo.InvariantCulture);
           message = "WAVE" +
             "|MODE=" + numWaveMode.Value +
-            "|ALPHA=" + alpha +
+            "|ALPHA=" + numWaveAlpha.Value.ToString(CultureInfo.InvariantCulture) +
             "|COLORR=" + pnlColorWave.BackColor.R +
             "|COLORG=" + pnlColorWave.BackColor.G +
             "|COLORB=" + pnlColorWave.BackColor.B;
@@ -459,6 +467,8 @@ namespace MilkwaveRemote {
           message = "OPACITY=" + val.ToString(CultureInfo.InvariantCulture);
         } else if (type == MessageType.GetState) {
           message = "STATE";
+        } else if (type == MessageType.WaveClear) {
+          message = "CLEAR";
         } else if (type == MessageType.PresetLink) {
           message = "LINK=" + messageToSend;
         } else if (type == MessageType.Message) {
@@ -1620,12 +1630,10 @@ namespace MilkwaveRemote {
       if (ofd.ShowDialog() == DialogResult.OK) {
         string fileName = ofd.FileName;
         if (fileName.EndsWith(".milk", StringComparison.CurrentCultureIgnoreCase) || ofd.FileName.EndsWith(".milk2", StringComparison.CurrentCultureIgnoreCase)) {
-
-          string findString = "RESOURCES\\PRESETS\\";
-          int index = fileName.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+          int index = fileName.IndexOf(VisualizerPresetsFolder, StringComparison.CurrentCultureIgnoreCase);
           string maybeRelativePath = fileName;
           if (index > -1) {
-            maybeRelativePath = fileName.Substring(index + findString.Length);
+            maybeRelativePath = fileName.Substring(index + VisualizerPresetsFolder.Length);
           }
           Data.Preset newPreset = new Data.Preset {
             DisplayName = Path.GetFileNameWithoutExtension(fileName),
@@ -1728,14 +1736,13 @@ namespace MilkwaveRemote {
       cboPresets.Items.Clear();
       cboPresets.Text = "";
       int relIndex = -1;
-      string findString = "RESOURCES\\PRESETS\\";
       foreach (string fileName in Directory.GetFiles(dirToLoad)) {
         if (relIndex == -1) {
-          relIndex = fileName.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+          relIndex = fileName.IndexOf(VisualizerPresetsFolder, StringComparison.CurrentCultureIgnoreCase);
         }
         string fileNameMaybeRelativePath = fileName;
         if (relIndex > -1) {
-          fileNameMaybeRelativePath = fileName.Substring(relIndex + findString.Length);
+          fileNameMaybeRelativePath = fileName.Substring(relIndex + VisualizerPresetsFolder.Length);
         }
         if (fileNameMaybeRelativePath.EndsWith(".milk") || fileNameMaybeRelativePath.EndsWith(".milk2")) {
           string fileNameOnlyNoExtension = Path.GetFileNameWithoutExtension(fileNameMaybeRelativePath);
@@ -1865,7 +1872,9 @@ namespace MilkwaveRemote {
     }
 
     private void SendWaveInfo() {
-      SendToMilkwaveVisualizer("", MessageType.Wave);
+      if (!updatingWaveParams) {
+        SendToMilkwaveVisualizer("", MessageType.Wave);
+      }
     }
 
     private void lblWaveColor_DoubleClick(object sender, EventArgs e) {
@@ -2287,5 +2296,8 @@ namespace MilkwaveRemote {
       pnlColorWave.BackColor = colorDialogWave.Color;
     }
 
+    private void btnWaveClear_Click(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.WaveClear);
+    }
   } // end class
 } // end namespace

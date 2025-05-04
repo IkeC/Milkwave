@@ -608,14 +608,16 @@ public:
   void        DrawTooltip(wchar_t* str, int xR, int yB);
   void        RandomizeBlendPattern();
   void        GenPlasma(int x0, int x1, int y0, int y1, float dt);
+  void        ClearPreset();
+  void        RemoveAngleBrackets(wchar_t* str);
   void        LoadPerFrameEvallibVars(CState* pState);
   void        LoadCustomWavePerFrameEvallibVars(CState* pState, int i);
   void        LoadCustomShapePerFrameEvallibVars(CState* pState, int i, int instance);
-  void		WriteRealtimeConfig();	// called on Finish()
-  void		dumpmsg(wchar_t* s);
-  void		Randomize();
-  void		LoadRandomPreset(float fBlendTime);
-  void		LoadPreset(const wchar_t* szPresetFilename, float fBlendTime);
+  void        WriteRealtimeConfig();	// called on Finish()
+  void        dumpmsg(wchar_t* s);
+  void        Randomize();
+  void        LoadRandomPreset(float fBlendTime);
+  void        LoadPreset(const wchar_t* szPresetFilename, float fBlendTime);
   void        LoadPresetTick();
   void        FindValidPresetDir();
   wchar_t* GetMsgIniFile() { return m_szMsgIniFile; };

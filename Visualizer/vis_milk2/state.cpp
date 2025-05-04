@@ -483,8 +483,13 @@ void CState::Default(DWORD ApplyFlags) {
     (ApplyFlags & STATE_MOTION) &&     // so a preset switch w/ warp/comp lock
     (ApplyFlags & STATE_WAVE)        // updates the name, but mash-ups don't.
     ) {
-    lstrcpyW(m_szDesc, INVALID_PRESET_DESC);
-    //lstrcpy(m_szSection, "n/a");
+
+    // Set m_szDesc to the current timestamp
+    std::time_t now = std::time(nullptr);
+    std::tm localTime;
+    localtime_s(&localTime, &now); // Use localtime_s for thread safety
+
+    std::wcsftime(m_szDesc, sizeof(m_szDesc) / sizeof(wchar_t), L"<%Y-%m-%d_%H-%M-%S>", &localTime);
 
     m_fPresetStartTime = -1;
   }
@@ -497,7 +502,8 @@ void CState::Default(DWORD ApplyFlags) {
   // general:
   if (ApplyFlags & STATE_GENERAL) {
     m_fRating = 3.0f;
-    m_fDecay = 0.98f;	// 1.0 = none, 0.95 = heavy decay
+    // m_fDecay = 0.98f;	// 1.0 = none, 0.95 = heavy decay
+    m_fDecay = 0;
     m_fGammaAdj = 2.0f;		// 1.0 = reg; +2.0 = double, +3.0 = triple...
     m_fVideoEchoZoom = 2.0f;
     m_fVideoEchoAlpha = 0.0f;
@@ -522,29 +528,29 @@ void CState::Default(DWORD ApplyFlags) {
 
   // wave:
   if (ApplyFlags & STATE_WAVE) {
-    m_nWaveMode = 0;
+    m_nWaveMode = 14;
     m_nOldWaveMode = -1;
     m_bAdditiveWaves = false;
     m_bWaveDots = false;
     m_bWaveThick = false;
-    m_fWaveAlpha = 0.8f;
+    m_fWaveAlpha = 0.5f;
     m_fWaveScale = 1.0f;
     m_fWaveSmoothing = 0.75f;	// 0 = no smoothing, 0.9 = HEAVY smoothing
     m_fWaveParam = 0.0f;
     m_bModWaveAlphaByVolume = false;
     m_fModWaveAlphaStart = 0.75f;		// when relative volume hits this level, alpha -> 0
     m_fModWaveAlphaEnd = 0.95f;		// when relative volume hits this level, alpha -> 1
-    m_fWaveR = 1.0f;
+    m_fWaveR = 0.0f;
     m_fWaveG = 1.0f;
-    m_fWaveB = 1.0f;
+    m_fWaveB = 0.0f;
     m_fWaveX = 0.5f;
     m_fWaveY = 0.5f;
-    m_bMaximizeWaveColor = true;
-    m_fMvX = 12.0f;
-    m_fMvY = 9.0f;
+    m_bMaximizeWaveColor = false;
+    m_fMvX = 0.0f;
+    m_fMvY = 0.0f;
     m_fMvDX = 0.0f;
     m_fMvDY = 0.0f;
-    m_fMvL = 0.9f;
+    m_fMvL = 0.0f;
     m_fMvR = 1.0f;
     m_fMvG = 1.0f;
     m_fMvB = 1.0f;

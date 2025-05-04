@@ -106,9 +106,10 @@ namespace MilkwaveRemote
       lblTags = new Label();
       label1 = new Label();
       chkWaveLink = new CheckBox();
-      lblRGB = new Label();
       numWaveR = new NumericUpDown();
       numWaveB = new NumericUpDown();
+      numWaveG = new NumericUpDown();
+      lblRGB = new Label();
       numWaveMode = new NumericUpDown();
       txtDirOrTagsFilter = new TextBox();
       btnSpace = new Button();
@@ -150,7 +151,7 @@ namespace MilkwaveRemote
       btnTagA = new Button();
       tabMessage = new TabPage();
       tabWave = new TabPage();
-      numWaveG = new NumericUpDown();
+      btnWaveClear = new Button();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -162,6 +163,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveAlpha).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveR).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveB).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveG).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).BeginInit();
       tableLayoutPanel1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -172,7 +174,6 @@ namespace MilkwaveRemote
       tabPreset.SuspendLayout();
       tabMessage.SuspendLayout();
       tabWave.SuspendLayout();
-      ((System.ComponentModel.ISupportInitialize)numWaveG).BeginInit();
       SuspendLayout();
       // 
       // statusStrip1
@@ -954,12 +955,13 @@ namespace MilkwaveRemote
       // lblWaveColor
       // 
       lblWaveColor.AutoSize = true;
-      lblWaveColor.Location = new Point(124, 9);
+      lblWaveColor.Location = new Point(125, 9);
       lblWaveColor.Name = "lblWaveColor";
       lblWaveColor.Size = new Size(36, 15);
       lblWaveColor.TabIndex = 118;
       lblWaveColor.Text = "Color";
       toolTip1.SetToolTip(lblWaveColor, "Wave color\r\nDouble-click: Copy R,G,B to clipboard\r\nAlt+Double-click: Copy R,G,B as float values (0..1)");
+      lblWaveColor.DoubleClick += lblWaveColor_DoubleClick;
       // 
       // pnlColorWave
       // 
@@ -973,16 +975,17 @@ namespace MilkwaveRemote
       // 
       // numWaveAlpha
       // 
-      numWaveAlpha.Increment = new decimal(new int[] { 5, 0, 0, 0 });
+      numWaveAlpha.DecimalPlaces = 2;
+      numWaveAlpha.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
       numWaveAlpha.Location = new Point(457, 7);
       numWaveAlpha.Margin = new Padding(3, 2, 3, 2);
-      numWaveAlpha.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
+      numWaveAlpha.Maximum = new decimal(new int[] { 9999, 0, 0, 0 });
       numWaveAlpha.Name = "numWaveAlpha";
-      numWaveAlpha.Size = new Size(50, 23);
+      numWaveAlpha.Size = new Size(56, 23);
       numWaveAlpha.TabIndex = 115;
       numWaveAlpha.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numWaveAlpha, "Alpha (opacity)");
-      numWaveAlpha.Value = new decimal(new int[] { 255, 0, 0, 0 });
+      numWaveAlpha.Value = new decimal(new int[] { 10, 0, 0, 65536 });
       numWaveAlpha.ValueChanged += numAlpha_ValueChanged;
       // 
       // lblWavemode
@@ -1061,16 +1064,6 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(chkWaveLink, "Link amp for both channels");
       chkWaveLink.UseVisualStyleBackColor = true;
       // 
-      // lblRGB
-      // 
-      lblRGB.AutoSize = true;
-      lblRGB.Location = new Point(208, 9);
-      lblRGB.Name = "lblRGB";
-      lblRGB.Size = new Size(29, 15);
-      lblRGB.TabIndex = 122;
-      lblRGB.Text = "RGB";
-      toolTip1.SetToolTip(lblRGB, "Wave Mode (0-15)");
-      // 
       // numWaveR
       // 
       numWaveR.Increment = new decimal(new int[] { 5, 0, 0, 0 });
@@ -1081,6 +1074,7 @@ namespace MilkwaveRemote
       numWaveR.Size = new Size(50, 23);
       numWaveR.TabIndex = 121;
       numWaveR.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numWaveR, "R");
       numWaveR.Value = new decimal(new int[] { 255, 0, 0, 0 });
       numWaveR.ValueChanged += numWaveR_ValueChanged;
       // 
@@ -1094,8 +1088,32 @@ namespace MilkwaveRemote
       numWaveB.Size = new Size(50, 23);
       numWaveB.TabIndex = 124;
       numWaveB.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numWaveB, "B");
       numWaveB.Value = new decimal(new int[] { 255, 0, 0, 0 });
       numWaveB.ValueChanged += numWaveB_ValueChanged;
+      // 
+      // numWaveG
+      // 
+      numWaveG.Increment = new decimal(new int[] { 5, 0, 0, 0 });
+      numWaveG.Location = new Point(299, 7);
+      numWaveG.Margin = new Padding(3, 2, 3, 2);
+      numWaveG.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
+      numWaveG.Name = "numWaveG";
+      numWaveG.Size = new Size(50, 23);
+      numWaveG.TabIndex = 125;
+      numWaveG.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numWaveG, "G");
+      numWaveG.Value = new decimal(new int[] { 255, 0, 0, 0 });
+      numWaveG.ValueChanged += numWaveG_ValueChanged;
+      // 
+      // lblRGB
+      // 
+      lblRGB.AutoSize = true;
+      lblRGB.Location = new Point(208, 9);
+      lblRGB.Name = "lblRGB";
+      lblRGB.Size = new Size(29, 15);
+      lblRGB.TabIndex = 122;
+      lblRGB.Text = "RGB";
       // 
       // numWaveMode
       // 
@@ -1687,6 +1705,7 @@ namespace MilkwaveRemote
       // tabWave
       // 
       tabWave.BackColor = SystemColors.ControlLight;
+      tabWave.Controls.Add(btnWaveClear);
       tabWave.Controls.Add(numWaveG);
       tabWave.Controls.Add(numWaveB);
       tabWave.Controls.Add(lblRGB);
@@ -1707,18 +1726,18 @@ namespace MilkwaveRemote
       tabWave.TabIndex = 2;
       tabWave.Text = "Wave";
       // 
-      // numWaveG
+      // btnWaveClear
       // 
-      numWaveG.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numWaveG.Location = new Point(299, 7);
-      numWaveG.Margin = new Padding(3, 2, 3, 2);
-      numWaveG.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
-      numWaveG.Name = "numWaveG";
-      numWaveG.Size = new Size(50, 23);
-      numWaveG.TabIndex = 125;
-      numWaveG.TextAlign = HorizontalAlignment.Center;
-      numWaveG.Value = new decimal(new int[] { 255, 0, 0, 0 });
-      numWaveG.ValueChanged += numWaveG_ValueChanged;
+      btnWaveClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnWaveClear.FlatStyle = FlatStyle.System;
+      btnWaveClear.Location = new Point(540, 92);
+      btnWaveClear.Name = "btnWaveClear";
+      btnWaveClear.Size = new Size(70, 22);
+      btnWaveClear.TabIndex = 126;
+      btnWaveClear.Text = "Clear";
+      toolTip1.SetToolTip(btnWaveClear, "Send to Visualizer\r\n(only alters wave already defined in preset)");
+      btnWaveClear.UseVisualStyleBackColor = true;
+      btnWaveClear.Click += btnWaveClear_Click;
       // 
       // MilkwaveRemoteForm
       // 
@@ -1749,6 +1768,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveAlpha).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveR).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveB).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveG).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).EndInit();
       tableLayoutPanel1.ResumeLayout(false);
       splitContainer1.Panel1.ResumeLayout(false);
@@ -1762,7 +1782,6 @@ namespace MilkwaveRemote
       tabMessage.PerformLayout();
       tabWave.ResumeLayout(false);
       tabWave.PerformLayout();
-      ((System.ComponentModel.ISupportInitialize)numWaveG).EndInit();
       ResumeLayout(false);
       PerformLayout();
     }
@@ -1896,5 +1915,6 @@ namespace MilkwaveRemote
     private NumericUpDown numWaveR;
     private NumericUpDown numWaveB;
     private NumericUpDown numWaveG;
+    private Button btnWaveClear;
   }
 }

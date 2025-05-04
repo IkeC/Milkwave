@@ -1928,7 +1928,7 @@ void CPlugin::WarpedBlit_NoShaders(int nPass, bool bAlphaBlend, bool bFlipAlpha,
   if (!lpDevice)
     return;
 
-  if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC)) {
+  if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC) || m_pState->m_szDesc[0] == L'<') {
     // if no valid preset loaded, clear the target to black, and return
     lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0);
     return;
@@ -2145,7 +2145,7 @@ void CPlugin::WarpedBlit_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, b
   if (!lpDevice)
     return;
 
-  if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC)) {
+  if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC) || m_pState->m_szDesc[0] == L'<') {
     // if no valid preset loaded, clear the target to black, and return
     lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0);
     return;
