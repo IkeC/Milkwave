@@ -174,6 +174,7 @@ namespace MilkwaveRemote {
       Amplify,
       Wave,
       WaveClear,
+      WaveQuickSave,
       AudioDevice,
       Opacity,
       GetState
@@ -333,6 +334,18 @@ namespace MilkwaveRemote {
                     numWaveG.Value = int.Parse(value);
                   } else if (key.Equals("COLORB", StringComparison.OrdinalIgnoreCase)) {
                     numWaveB.Value = int.Parse(value);
+                  } else if (key.Equals("PUSHX", StringComparison.OrdinalIgnoreCase)) {
+                    numWavePushX.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("PUSHY", StringComparison.OrdinalIgnoreCase)) {
+                    numWavePushY.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("ZOOM", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveZoom.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("WARP", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveWarp.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("ROTATION", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveRotation.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("DECAY", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveDecay.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
                   }
                 } catch (Exception ex) {
                   // ignore
@@ -442,7 +455,13 @@ namespace MilkwaveRemote {
             "|ALPHA=" + numWaveAlpha.Value.ToString(CultureInfo.InvariantCulture) +
             "|COLORR=" + pnlColorWave.BackColor.R +
             "|COLORG=" + pnlColorWave.BackColor.G +
-            "|COLORB=" + pnlColorWave.BackColor.B;
+            "|COLORB=" + pnlColorWave.BackColor.B +
+            "|PUSHX=" + numWavePushX.Value.ToString(CultureInfo.InvariantCulture) +
+            "|PUSHY=" + numWavePushY.Value.ToString(CultureInfo.InvariantCulture) +
+            "|ZOOM=" + numWaveZoom.Value.ToString(CultureInfo.InvariantCulture) +
+            "|WARP=" + numWaveWarp.Value.ToString(CultureInfo.InvariantCulture) +
+            "|ROTATION=" + numWaveRotation.Value.ToString(CultureInfo.InvariantCulture) +
+            "|DECAY=" + numWaveDecay.Value.ToString(CultureInfo.InvariantCulture);
           statusMessage = $"Changed Wave in";
         } else if (type == MessageType.PresetFilePath) {
           message = "PRESET=" + messageToSend;
@@ -469,6 +488,8 @@ namespace MilkwaveRemote {
           message = "STATE";
         } else if (type == MessageType.WaveClear) {
           message = "CLEAR";
+        } else if (type == MessageType.WaveQuickSave) {
+          message = "QUICKSAVE";
         } else if (type == MessageType.PresetLink) {
           message = "LINK=" + messageToSend;
         } else if (type == MessageType.Message) {
@@ -746,9 +767,16 @@ namespace MilkwaveRemote {
     private void pnlColorWave_Click(object sender, EventArgs e) {
       if (colorDialogWave.ShowDialog() == DialogResult.OK) {
         pnlColorWave.BackColor = colorDialogWave.Color;
+        // detach event handlers
+        numWaveR.ValueChanged -= numWaveR_ValueChanged;
+        numWaveG.ValueChanged -= numWaveG_ValueChanged;
+        numWaveB.ValueChanged -= numWaveB_ValueChanged;
         numWaveR.Value = colorDialogWave.Color.R;
         numWaveG.Value = colorDialogWave.Color.G;
         numWaveB.Value = colorDialogWave.Color.B;
+        numWaveR.ValueChanged += numWaveR_ValueChanged;
+        numWaveG.ValueChanged += numWaveG_ValueChanged;
+        numWaveB.ValueChanged += numWaveB_ValueChanged;
         SendWaveInfoIfLinked();
       }
     }
@@ -2269,21 +2297,17 @@ namespace MilkwaveRemote {
       SaveSettingsToFile();
     }
 
-    private void numAlpha_ValueChanged(object sender, EventArgs e) {
-      SendWaveInfoIfLinked();
-    }
-
-    private void numWaveR_ValueChanged(object sender, EventArgs e) {
+    private void numWaveR_ValueChanged(object? sender, EventArgs e) {
       UpdateWaveColorPicker();
       SendWaveInfoIfLinked();
     }
 
-    private void numWaveG_ValueChanged(object sender, EventArgs e) {
+    private void numWaveG_ValueChanged(object? sender, EventArgs e) {
       UpdateWaveColorPicker();
       SendWaveInfoIfLinked();
     }
 
-    private void numWaveB_ValueChanged(object sender, EventArgs e) {
+    private void numWaveB_ValueChanged(object? sender, EventArgs e) {
       UpdateWaveColorPicker();
       SendWaveInfoIfLinked();
     }
@@ -2298,6 +2322,45 @@ namespace MilkwaveRemote {
 
     private void btnWaveClear_Click(object sender, EventArgs e) {
       SendToMilkwaveVisualizer("", MessageType.WaveClear);
+    }
+
+    private void lblPushX_DoubleClick(object sender, EventArgs e) {
+      numWavePushX.Value = 0;
+    }
+
+    private void lblPushY_DoubleClick(object sender, EventArgs e) {
+      numWavePushY.Value = 0;
+    }
+
+    private void lblZoom_DoubleClick(object sender, EventArgs e) {
+      numWaveZoom.Value = 1;
+    }
+
+    private void lblWarp_DoubleClick(object sender, EventArgs e) {
+      numWaveWarp.Value = 0;
+    }
+
+    private void lblRotation_DoubleClick(object sender, EventArgs e) {
+      numWaveRotation.Value = 0;
+    }
+
+    private void lblDecay_DoubleClick(object sender, EventArgs e) {
+      numWaveDecay.Value = 0;
+    }
+
+    private void numWave_ValueChanged(object sender, EventArgs e) {
+      SendWaveInfoIfLinked();
+    }
+
+    private void numWave_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter) {
+        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+        SendWaveInfoIfLinked();
+      }
+    }
+
+    private void btnWaveQuicksave_Click(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.WaveQuickSave);
     }
   } // end class
 } // end namespace

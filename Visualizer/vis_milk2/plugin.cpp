@@ -7120,8 +7120,8 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
   case 'u':	m_pState->m_fWarpScale /= 1.1f;			break;
   case 'U':	m_pState->m_fWarpScale *= 1.1f;			break;
-  // case 'b':	m_pState->m_fWarpAnimSpeed /= 1.1f;		break;
-  // case 'B':	m_pState->m_fWarpAnimSpeed *= 1.1f;		break;
+    // case 'b':	m_pState->m_fWarpAnimSpeed /= 1.1f;		break;
+    // case 'B':	m_pState->m_fWarpAnimSpeed *= 1.1f;		break;
 
   case 't':
   case 'T':
@@ -7400,7 +7400,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
 void CPlugin::SaveCurrentPresetToQuicksave(bool altDir) {
   // Find the last occurrence of the path separator ('\\') in the full path
-  const wchar_t* presetFilename = wcsrchr(m_szCurrentPresetFile, L'\\');
+  wchar_t* presetFilename = wcsrchr(m_szCurrentPresetFile, L'\\');
   if (presetFilename) {
     // Move past the '\\' to get the filename
     presetFilename++;
@@ -7409,6 +7409,14 @@ void CPlugin::SaveCurrentPresetToQuicksave(bool altDir) {
     // If no '\\' is found, assume the full path is just the filename
     presetFilename = m_szCurrentPresetFile;
   }
+
+  if (presetFilename[0] == L'\0') { // Check if presetFilename is empty
+    RemoveAngleBrackets(m_pState->m_szDesc);
+    presetFilename = m_pState->m_szDesc; // Default filename if empty
+    // append ".milk" extension
+    presetFilename = wcscat(presetFilename, L".milk");
+  }
+
   // Get the executable's directory
   wchar_t exePath[MAX_PATH];
   GetModuleFileNameW(NULL, exePath, MAX_PATH);
@@ -8669,7 +8677,7 @@ void CPlugin::GenPlasma(int x0, int x1, int y0, int y1, float dt) {
 }
 
 void CPlugin::ClearPreset() {
-  
+
   m_pState->Default(STATE_ALL);
   wcscpy(m_szCurrentPresetFile, m_pState->m_szDesc);
   RemoveAngleBrackets(m_szCurrentPresetFile);
@@ -8739,7 +8747,7 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
   }
 
   // if no preset was valid before, make sure there is no blend, because there is nothing valid to blend from.
-  if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC) || m_pState->m_szDesc[0] == L'<') 
+  if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC))
     fBlendTime = 0;
 
   if (fBlendTime == 0) {
@@ -10247,16 +10255,25 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"CLEAR", 5) == 0) {
     ClearPreset();
   }
+  else if (wcsncmp(sMessage, L"QUICKSAVE", 9) == 0) {
+    g_plugin.SaveCurrentPresetToQuicksave(false);
+  }
 }
 
 void CPlugin::SendPresetInfoToMilkwaveRemote() {
   std::wstring msg = L"PRESET=" + std::wstring(m_szCurrentPresetFile);
   SendMessageToMilkwaveRemote(msg.c_str());
-  msg = L"WAVE|COLORR=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveR.eval(0) * 255)))
-    + L"|COLORG=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveG.eval(0) * 255)))
-    + L"|COLORB=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveB.eval(0) * 255)))
-    + L"|ALPHA=" + std::to_wstring(g_plugin.m_pState->m_fWaveAlpha.eval(0))
-    + L"|MODE=" + std::to_wstring(static_cast<int>(g_plugin.m_pState->m_nWaveMode));
+  msg = L"WAVE|COLORR=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveR.eval(-1) * 255)))
+    + L"|COLORG=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveG.eval(-1) * 255)))
+    + L"|COLORB=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveB.eval(-1) * 255)))
+    + L"|ALPHA=" + std::to_wstring(g_plugin.m_pState->m_fWaveAlpha.eval(-1))
+    + L"|MODE=" + std::to_wstring(static_cast<int>(g_plugin.m_pState->m_nWaveMode))
+    + L"|PUSHX=" + std::to_wstring(g_plugin.m_pState->m_fXPush.eval(-1))
+    + L"|PUSHY=" + std::to_wstring(g_plugin.m_pState->m_fYPush.eval(-1))
+    + L"|ZOOM=" + std::to_wstring(g_plugin.m_pState->m_fZoom.eval(-1))
+    + L"|WARP=" + std::to_wstring(g_plugin.m_pState->m_fWarpAmount.eval(-1))
+    + L"|ROTATION=" + std::to_wstring(g_plugin.m_pState->m_fRot.eval(-1))
+    + L"|DECAY=" + std::to_wstring(g_plugin.m_pState->m_fDecay.eval(-1));
   SendMessageToMilkwaveRemote(msg.c_str());
 }
 
@@ -10298,6 +10315,24 @@ void CPlugin::SetWaveParamsFromMessage(std::wstring& message) {
     double colBDbl = colB / 255.0;
     g_plugin.m_pState->m_fWaveB = colBDbl;
     g_plugin.m_pState->m_fMvB = colBDbl;
+  }
+  if (params.find(L"PUSHX") != params.end()) {
+    g_plugin.m_pState->m_fXPush = std::stof(params[L"PUSHX"]);
+  }
+  if (params.find(L"PUSHY") != params.end()) {
+    g_plugin.m_pState->m_fYPush = std::stof(params[L"PUSHY"]);
+  }
+  if (params.find(L"ZOOM") != params.end()) {
+    g_plugin.m_pState->m_fZoom = std::stof(params[L"ZOOM"]);
+  }
+  if (params.find(L"WARP") != params.end()) {
+    g_plugin.m_pState->m_fWarpAmount = std::stof(params[L"WARP"]);
+  }
+  if (params.find(L"ROTATION") != params.end()) {
+    g_plugin.m_pState->m_fRot = std::stof(params[L"ROTATION"]);
+  }
+  if (params.find(L"DECAY") != params.end()) {
+    g_plugin.m_pState->m_fDecay = std::stof(params[L"DECAY"]);
   }
 }
 
