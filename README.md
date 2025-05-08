@@ -62,7 +62,7 @@ The original MilkDrop 2 WinAMP plugin created by Ryan Geiss was turned into a Wi
 
 ## System Requirements
 
-* Windows 7 or later
+* Windows 10 or later
 * DirectX 9 or higher - compatible GPU
 * [Microsoft .NET Desktop Runtime 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) (for Remote)
 
