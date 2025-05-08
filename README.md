@@ -21,10 +21,10 @@ Milkwave is:
 * Send custom message text, color, font size, position and other parameters
 * Save parameter definitions as named styles for quick access
 * Send messages, parameters, presets etc. automatically from a script file at configurable intervals
-* Select preset files and send them to the visualizer
+* Select preset files and send them to the Visualizer
 * Change the used audio device on the fly
-* Show the currently playing visualizer preset in the Remote window
-* Amplify the virtual audio signal to make the visualizer more (or less) responsive
+* Show the currently playing Visualizer preset in the Remote window
+* Amplify the virtual audio signal to make the Visualizer more (or less) responsive
 * Modify the currently playing preset's waveform type, color and alpha value
 * Send common key combinations using buttons
 * Customizable interface - show only what you need
@@ -62,7 +62,7 @@ The original MilkDrop 2 WinAMP plugin created by Ryan Geiss was turned into a Wi
 
 ## System Requirements
 
-* Windows 7 or later
+* Windows 10 or later
 * DirectX 9 or higher - compatible GPU
 * [Microsoft .NET Desktop Runtime 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) (for Remote)
 
