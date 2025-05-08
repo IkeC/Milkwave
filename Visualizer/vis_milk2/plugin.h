@@ -308,7 +308,7 @@ public:
   int			m_nGridX;
   int			m_nGridY;
 
-  bool		m_bShowPressF1ForHelp;
+  // bool		m_bShowPressF1ForHelp;
   //char		m_szMonitorName[256];
   bool		m_bShowMenuToolTips;
   int			m_n16BitGamma;

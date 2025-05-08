@@ -21,9 +21,9 @@
   },
   "SplitterDistance1": 254,
   "DarkMode": true,
-  "ShowMessagePanel": true,
-  "ShowPresetPanel": true,
+  "ShowTabsPanel": true,
   "ShowButtonPanel": true,
-  "CloseVisualizerWithRemote": false
-  "SelectedTabIndex": 0
+  "CloseVisualizerWithRemote": false,
+  "SelectedTabIndex": 0,
+  "DirOrTagsFilter": ""
 }

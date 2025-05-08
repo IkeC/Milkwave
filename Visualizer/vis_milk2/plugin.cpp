@@ -1093,7 +1093,7 @@ void CPlugin::MyPreInitialize() {
   m_nGridX = 64;//32;
   m_nGridY = 48;//24;
 
-  m_bShowPressF1ForHelp = true;
+  // m_bShowPressF1ForHelp = true;
   //lstrcpy(m_szMonitorName, "[don't use multimon]");
   m_bShowMenuToolTips = true;	// NOTE: THIS IS CURRENTLY HARDWIRED TO TRUE - NO OPTION TO CHANGE
   m_n16BitGamma = 2;
@@ -1310,7 +1310,7 @@ void CPlugin::MyReadConfig() {
   g_bDebugOutput = GetPrivateProfileBoolW(L"Settings", L"bDebugOutput", g_bDebugOutput, pIni);
   //m_bShowSongInfo = GetPrivateProfileBool("settings","bShowSongInfo",m_bShowSongInfo,pIni);
   //m_bShowPresetInfo=GetPrivateProfileBool("settings","bShowPresetInfo",m_bShowPresetInfo,pIni);
-  m_bShowPressF1ForHelp = GetPrivateProfileBoolW(L"Settings", L"bShowPressF1ForHelp", m_bShowPressF1ForHelp, pIni);
+  // m_bShowPressF1ForHelp = GetPrivateProfileBoolW(L"Settings", L"bShowPressF1ForHelp", m_bShowPressF1ForHelp, pIni);
   //m_bShowMenuToolTips = GetPrivateProfileBool("settings","bShowMenuToolTips",m_bShowMenuToolTips,pIni);
   m_bSongTitleAnims = GetPrivateProfileBoolW(L"Settings", L"bSongTitleAnims", m_bSongTitleAnims, pIni);
   m_bEnablePresetStartup = GetPrivateProfileBoolW(L"Settings", L"bEnablePresetStartup", m_bEnablePresetStartup, pIni);
@@ -1461,7 +1461,7 @@ void CPlugin::MyWriteConfig() {
   //itePrivateProfileInt(m_bShowSongInfo, 		"bShowSongInfo",        pIni, "settings");
   //itePrivateProfileInt(m_bFixPinkBug, 		    "bFixPinkBug",			pIni, "settings");
 
-  WritePrivateProfileIntW(m_bShowPressF1ForHelp, L"bShowPressF1ForHelp", pIni, L"Settings");
+  //WritePrivateProfileIntW(m_bShowPressF1ForHelp, L"bShowPressF1ForHelp", pIni, L"Settings");
   //itePrivateProfileInt(m_bShowMenuToolTips, 	"bShowMenuToolTips",    pIni, "settings");
   WritePrivateProfileIntW(m_n16BitGamma, L"n16BitGamma", pIni, L"Settings");
   WritePrivateProfileIntW(m_bAutoGamma, L"bAutoGamma", pIni, L"Settings");
@@ -1512,6 +1512,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_bShowFPS, L"bShowFPS", GetConfigIniFile(), L"Settings");
   WritePrivateProfileIntW(m_bShowRating, L"bShowRating", GetConfigIniFile(), L"Settings");
   WritePrivateProfileIntW(m_bShowPresetInfo, L"bShowPresetInfo", GetConfigIniFile(), L"Settings");
+  WritePrivateProfileIntW(m_show_press_f1_msg, L"show_press_f1_msg", GetConfigIniFile(), L"Settings");
 
   // Milkwave
   WritePrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, pIni);
@@ -5884,7 +5885,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       ToggleHelp();
       return 0;
     }
-
 
     switch (wParam) {
       //case VK_F9:

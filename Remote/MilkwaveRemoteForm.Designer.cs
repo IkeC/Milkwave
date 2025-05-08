@@ -1123,7 +1123,7 @@ namespace MilkwaveRemote
       btnWaveClear.Size = new Size(83, 22);
       btnWaveClear.TabIndex = 126;
       btnWaveClear.Text = "Clear";
-      toolTip1.SetToolTip(btnWaveClear, "Clear the current wave definition");
+      toolTip1.SetToolTip(btnWaveClear, "Clear the current preset");
       btnWaveClear.UseVisualStyleBackColor = true;
       btnWaveClear.Click += btnWaveClear_Click;
       // 
@@ -1197,7 +1197,7 @@ namespace MilkwaveRemote
       // 
       btnWaveQuicksave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnWaveQuicksave.FlatStyle = FlatStyle.System;
-      btnWaveQuicksave.Location = new Point(438, 96);
+      btnWaveQuicksave.Location = new Point(527, 124);
       btnWaveQuicksave.Name = "btnWaveQuicksave";
       btnWaveQuicksave.Size = new Size(83, 22);
       btnWaveQuicksave.TabIndex = 139;
