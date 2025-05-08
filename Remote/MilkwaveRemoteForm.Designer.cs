@@ -944,6 +944,8 @@ namespace MilkwaveRemote
       // 
       chkTagsFromRunning.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkTagsFromRunning.Appearance = Appearance.Button;
+      chkTagsFromRunning.Checked = true;
+      chkTagsFromRunning.CheckState = CheckState.Checked;
       chkTagsFromRunning.FlatStyle = FlatStyle.System;
       chkTagsFromRunning.Location = new Point(462, 94);
       chkTagsFromRunning.Margin = new Padding(3, 2, 3, 2);
@@ -953,7 +955,7 @@ namespace MilkwaveRemote
       chkTagsFromRunning.Text = "Running";
       chkTagsFromRunning.TextAlign = ContentAlignment.MiddleCenter;
       chkTagsFromRunning.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkTagsFromRunning, "Get tags from (and save to) currently running preset");
+      toolTip1.SetToolTip(chkTagsFromRunning, "Checked: Get tags from (and save to) currently running preset\r\nUnchecked: Get tags from (and save to) selected preset above\r\n");
       chkTagsFromRunning.UseVisualStyleBackColor = true;
       chkTagsFromRunning.CheckedChanged += chkTagsFromRunning_CheckedChanged;
       // 
