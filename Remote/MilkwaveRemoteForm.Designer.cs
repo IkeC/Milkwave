@@ -625,7 +625,7 @@ namespace MilkwaveRemote
       // 
       btnPresetLoadFile.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnPresetLoadFile.FlatStyle = FlatStyle.System;
-      btnPresetLoadFile.Location = new Point(464, 37);
+      btnPresetLoadFile.Location = new Point(462, 37);
       btnPresetLoadFile.Name = "btnPresetLoadFile";
       btnPresetLoadFile.Size = new Size(70, 23);
       btnPresetLoadFile.TabIndex = 23;
@@ -638,7 +638,7 @@ namespace MilkwaveRemote
       // 
       btnPresetSend.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnPresetSend.FlatStyle = FlatStyle.System;
-      btnPresetSend.Location = new Point(540, 6);
+      btnPresetSend.Location = new Point(538, 6);
       btnPresetSend.Name = "btnPresetSend";
       btnPresetSend.Size = new Size(70, 23);
       btnPresetSend.TabIndex = 25;
@@ -652,7 +652,7 @@ namespace MilkwaveRemote
       // 
       btnPresetLoadDirectory.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnPresetLoadDirectory.FlatStyle = FlatStyle.System;
-      btnPresetLoadDirectory.Location = new Point(540, 37);
+      btnPresetLoadDirectory.Location = new Point(538, 37);
       btnPresetLoadDirectory.Name = "btnPresetLoadDirectory";
       btnPresetLoadDirectory.Size = new Size(70, 23);
       btnPresetLoadDirectory.TabIndex = 24;
@@ -667,7 +667,7 @@ namespace MilkwaveRemote
       txtVisRunning.Location = new Point(74, 66);
       txtVisRunning.Name = "txtVisRunning";
       txtVisRunning.ReadOnly = true;
-      txtVisRunning.Size = new Size(537, 23);
+      txtVisRunning.Size = new Size(535, 23);
       txtVisRunning.TabIndex = 96;
       toolTip1.SetToolTip(txtVisRunning, "Currently running Visualizer preset");
       // 
@@ -680,7 +680,7 @@ namespace MilkwaveRemote
       cboPresets.FormattingEnabled = true;
       cboPresets.Location = new Point(74, 7);
       cboPresets.Name = "cboPresets";
-      cboPresets.Size = new Size(308, 23);
+      cboPresets.Size = new Size(306, 23);
       cboPresets.TabIndex = 22;
       toolTip1.SetToolTip(cboPresets, "Alt+Mousewheel: Send to Visualizer");
       cboPresets.SelectedIndexChanged += cboPresets_SelectedIndexChanged;
@@ -691,7 +691,7 @@ namespace MilkwaveRemote
       numAmpLeft.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numAmpLeft.DecimalPlaces = 2;
       numAmpLeft.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numAmpLeft.Location = new Point(388, 125);
+      numAmpLeft.Location = new Point(386, 125);
       numAmpLeft.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numAmpLeft.Name = "numAmpLeft";
       numAmpLeft.Size = new Size(70, 23);
@@ -705,7 +705,7 @@ namespace MilkwaveRemote
       // 
       lblAmp.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       lblAmp.AutoSize = true;
-      lblAmp.Location = new Point(328, 127);
+      lblAmp.Location = new Point(326, 127);
       lblAmp.Name = "lblAmp";
       lblAmp.Size = new Size(54, 15);
       lblAmp.TabIndex = 104;
@@ -718,7 +718,7 @@ namespace MilkwaveRemote
       numAmpRight.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numAmpRight.DecimalPlaces = 2;
       numAmpRight.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numAmpRight.Location = new Point(464, 125);
+      numAmpRight.Location = new Point(462, 125);
       numAmpRight.Margin = new Padding(3, 2, 3, 2);
       numAmpRight.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numAmpRight.Name = "numAmpRight";
@@ -747,7 +747,7 @@ namespace MilkwaveRemote
       chkAmpLinked.Checked = true;
       chkAmpLinked.CheckState = CheckState.Checked;
       chkAmpLinked.FlatStyle = FlatStyle.System;
-      chkAmpLinked.Location = new Point(540, 124);
+      chkAmpLinked.Location = new Point(538, 124);
       chkAmpLinked.Margin = new Padding(3, 2, 3, 2);
       chkAmpLinked.Name = "chkAmpLinked";
       chkAmpLinked.Size = new Size(70, 23);
@@ -793,7 +793,7 @@ namespace MilkwaveRemote
       // btnSetAudioDevice
       // 
       btnSetAudioDevice.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnSetAudioDevice.Location = new Point(540, 152);
+      btnSetAudioDevice.Location = new Point(538, 152);
       btnSetAudioDevice.Name = "btnSetAudioDevice";
       btnSetAudioDevice.Size = new Size(70, 23);
       btnSetAudioDevice.TabIndex = 35;
@@ -809,7 +809,7 @@ namespace MilkwaveRemote
       cboAudioDevice.FormattingEnabled = true;
       cboAudioDevice.Location = new Point(74, 153);
       cboAudioDevice.Name = "cboAudioDevice";
-      cboAudioDevice.Size = new Size(460, 23);
+      cboAudioDevice.Size = new Size(458, 23);
       cboAudioDevice.TabIndex = 34;
       toolTip1.SetToolTip(cboAudioDevice, "Alt+Mousewheel: Set in Visualizer");
       cboAudioDevice.SelectedIndexChanged += cboAudioDevice_SelectedIndexChanged;
@@ -892,7 +892,7 @@ namespace MilkwaveRemote
       chkPresetLink.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkPresetLink.Appearance = Appearance.Button;
       chkPresetLink.FlatStyle = FlatStyle.System;
-      chkPresetLink.Location = new Point(388, 6);
+      chkPresetLink.Location = new Point(386, 6);
       chkPresetLink.Margin = new Padding(3, 2, 3, 2);
       chkPresetLink.Name = "chkPresetLink";
       chkPresetLink.Size = new Size(70, 23);
@@ -908,7 +908,7 @@ namespace MilkwaveRemote
       // 
       btnPresetLoadTags.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnPresetLoadTags.FlatStyle = FlatStyle.System;
-      btnPresetLoadTags.Location = new Point(388, 37);
+      btnPresetLoadTags.Location = new Point(386, 37);
       btnPresetLoadTags.Name = "btnPresetLoadTags";
       btnPresetLoadTags.Size = new Size(71, 23);
       btnPresetLoadTags.TabIndex = 121;
@@ -922,7 +922,7 @@ namespace MilkwaveRemote
       txtTags.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       txtTags.Location = new Point(74, 95);
       txtTags.Name = "txtTags";
-      txtTags.Size = new Size(385, 23);
+      txtTags.Size = new Size(383, 23);
       txtTags.TabIndex = 123;
       toolTip1.SetToolTip(txtTags, "Enter: Save\r\nCtrl+Enter: Save and select next preset");
       txtTags.KeyDown += txtTags_KeyDown;
@@ -931,7 +931,7 @@ namespace MilkwaveRemote
       // 
       btnTagsSave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnTagsSave.FlatStyle = FlatStyle.System;
-      btnTagsSave.Location = new Point(540, 94);
+      btnTagsSave.Location = new Point(538, 94);
       btnTagsSave.Name = "btnTagsSave";
       btnTagsSave.Size = new Size(70, 23);
       btnTagsSave.TabIndex = 124;
@@ -945,7 +945,7 @@ namespace MilkwaveRemote
       chkTagsFromRunning.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkTagsFromRunning.Appearance = Appearance.Button;
       chkTagsFromRunning.FlatStyle = FlatStyle.System;
-      chkTagsFromRunning.Location = new Point(464, 94);
+      chkTagsFromRunning.Location = new Point(462, 94);
       chkTagsFromRunning.Margin = new Padding(3, 2, 3, 2);
       chkTagsFromRunning.Name = "chkTagsFromRunning";
       chkTagsFromRunning.Size = new Size(70, 23);
@@ -961,9 +961,9 @@ namespace MilkwaveRemote
       // 
       btnSendWave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnSendWave.FlatStyle = FlatStyle.System;
-      btnSendWave.Location = new Point(540, 6);
+      btnSendWave.Location = new Point(527, 6);
       btnSendWave.Name = "btnSendWave";
-      btnSendWave.Size = new Size(70, 53);
+      btnSendWave.Size = new Size(83, 53);
       btnSendWave.TabIndex = 116;
       btnSendWave.Text = "Send";
       toolTip1.SetToolTip(btnSendWave, "Send to Visualizer\r\n(only alters wave already defined in preset)");
@@ -973,7 +973,7 @@ namespace MilkwaveRemote
       // lblWaveColor
       // 
       lblWaveColor.AutoSize = true;
-      lblWaveColor.Location = new Point(412, 8);
+      lblWaveColor.Location = new Point(423, 9);
       lblWaveColor.Name = "lblWaveColor";
       lblWaveColor.Size = new Size(36, 15);
       lblWaveColor.TabIndex = 118;
@@ -984,7 +984,7 @@ namespace MilkwaveRemote
       // pnlColorWave
       // 
       pnlColorWave.BorderStyle = BorderStyle.FixedSingle;
-      pnlColorWave.Location = new Point(452, 6);
+      pnlColorWave.Location = new Point(465, 7);
       pnlColorWave.Name = "pnlColorWave";
       pnlColorWave.Size = new Size(37, 23);
       pnlColorWave.TabIndex = 114;
@@ -995,7 +995,7 @@ namespace MilkwaveRemote
       // 
       numWaveAlpha.DecimalPlaces = 2;
       numWaveAlpha.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numWaveAlpha.Location = new Point(183, 7);
+      numWaveAlpha.Location = new Point(184, 7);
       numWaveAlpha.Margin = new Padding(3, 2, 3, 2);
       numWaveAlpha.Maximum = new decimal(new int[] { 9999, 0, 0, 0 });
       numWaveAlpha.Name = "numWaveAlpha";
@@ -1010,7 +1010,7 @@ namespace MilkwaveRemote
       // lblWavemode
       // 
       lblWavemode.AutoSize = true;
-      lblWavemode.Location = new Point(29, 9);
+      lblWavemode.Location = new Point(30, 9);
       lblWavemode.Name = "lblWavemode";
       lblWavemode.Size = new Size(38, 15);
       lblWavemode.TabIndex = 117;
@@ -1022,7 +1022,7 @@ namespace MilkwaveRemote
       chkPresetRandom.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkPresetRandom.Appearance = Appearance.Button;
       chkPresetRandom.FlatStyle = FlatStyle.System;
-      chkPresetRandom.Location = new Point(464, 6);
+      chkPresetRandom.Location = new Point(462, 6);
       chkPresetRandom.Margin = new Padding(3, 2, 3, 2);
       chkPresetRandom.Name = "chkPresetRandom";
       chkPresetRandom.Size = new Size(71, 23);
@@ -1062,21 +1062,20 @@ namespace MilkwaveRemote
       chkWaveLink.Checked = true;
       chkWaveLink.CheckState = CheckState.Checked;
       chkWaveLink.FlatStyle = FlatStyle.System;
-      chkWaveLink.Location = new Point(540, 64);
-      chkWaveLink.Margin = new Padding(3, 2, 3, 2);
+      chkWaveLink.Location = new Point(527, 67);
       chkWaveLink.Name = "chkWaveLink";
-      chkWaveLink.Size = new Size(70, 23);
+      chkWaveLink.Size = new Size(83, 23);
       chkWaveLink.TabIndex = 120;
       chkWaveLink.Text = "Link";
       chkWaveLink.TextAlign = ContentAlignment.MiddleCenter;
       chkWaveLink.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkWaveLink, "Link amp for both channels");
+      toolTip1.SetToolTip(chkWaveLink, "Send and receive values from/to running preset instantly");
       chkWaveLink.UseVisualStyleBackColor = true;
       // 
       // numWaveR
       // 
       numWaveR.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numWaveR.Location = new Point(245, 7);
+      numWaveR.Location = new Point(246, 7);
       numWaveR.Margin = new Padding(3, 2, 3, 2);
       numWaveR.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
       numWaveR.Name = "numWaveR";
@@ -1090,7 +1089,7 @@ namespace MilkwaveRemote
       // numWaveB
       // 
       numWaveB.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numWaveB.Location = new Point(357, 7);
+      numWaveB.Location = new Point(358, 7);
       numWaveB.Margin = new Padding(3, 2, 3, 2);
       numWaveB.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
       numWaveB.Name = "numWaveB";
@@ -1104,7 +1103,7 @@ namespace MilkwaveRemote
       // numWaveG
       // 
       numWaveG.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numWaveG.Location = new Point(301, 7);
+      numWaveG.Location = new Point(302, 7);
       numWaveG.Margin = new Padding(3, 2, 3, 2);
       numWaveG.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
       numWaveG.Name = "numWaveG";
@@ -1119,19 +1118,19 @@ namespace MilkwaveRemote
       // 
       btnWaveClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnWaveClear.FlatStyle = FlatStyle.System;
-      btnWaveClear.Location = new Point(540, 92);
+      btnWaveClear.Location = new Point(527, 96);
       btnWaveClear.Name = "btnWaveClear";
-      btnWaveClear.Size = new Size(70, 22);
+      btnWaveClear.Size = new Size(83, 22);
       btnWaveClear.TabIndex = 126;
       btnWaveClear.Text = "Clear";
-      toolTip1.SetToolTip(btnWaveClear, "Send to Visualizer\r\n(only alters wave already defined in preset)");
+      toolTip1.SetToolTip(btnWaveClear, "Clear the current wave definition");
       btnWaveClear.UseVisualStyleBackColor = true;
       btnWaveClear.Click += btnWaveClear_Click;
       // 
       // lblPushX
       // 
       lblPushX.AutoSize = true;
-      lblPushX.Location = new Point(24, 36);
+      lblPushX.Location = new Point(26, 36);
       lblPushX.Name = "lblPushX";
       lblPushX.Size = new Size(43, 15);
       lblPushX.TabIndex = 128;
@@ -1142,7 +1141,7 @@ namespace MilkwaveRemote
       // lblPushY
       // 
       lblPushY.AutoSize = true;
-      lblPushY.Location = new Point(134, 36);
+      lblPushY.Location = new Point(136, 36);
       lblPushY.Name = "lblPushY";
       lblPushY.Size = new Size(43, 15);
       lblPushY.TabIndex = 130;
@@ -1153,7 +1152,7 @@ namespace MilkwaveRemote
       // lblZoom
       // 
       lblZoom.AutoSize = true;
-      lblZoom.Location = new Point(28, 63);
+      lblZoom.Location = new Point(30, 63);
       lblZoom.Name = "lblZoom";
       lblZoom.Size = new Size(39, 15);
       lblZoom.TabIndex = 132;
@@ -1164,7 +1163,7 @@ namespace MilkwaveRemote
       // lblRotation
       // 
       lblRotation.AutoSize = true;
-      lblRotation.Location = new Point(15, 90);
+      lblRotation.Location = new Point(17, 90);
       lblRotation.Name = "lblRotation";
       lblRotation.Size = new Size(52, 15);
       lblRotation.TabIndex = 134;
@@ -1175,7 +1174,7 @@ namespace MilkwaveRemote
       // lblWarp
       // 
       lblWarp.AutoSize = true;
-      lblWarp.Location = new Point(142, 63);
+      lblWarp.Location = new Point(144, 63);
       lblWarp.Name = "lblWarp";
       lblWarp.Size = new Size(35, 15);
       lblWarp.TabIndex = 136;
@@ -1186,7 +1185,7 @@ namespace MilkwaveRemote
       // lblDecay
       // 
       lblDecay.AutoSize = true;
-      lblDecay.Location = new Point(138, 90);
+      lblDecay.Location = new Point(140, 90);
       lblDecay.Name = "lblDecay";
       lblDecay.Size = new Size(39, 15);
       lblDecay.TabIndex = 138;
@@ -1198,19 +1197,19 @@ namespace MilkwaveRemote
       // 
       btnWaveQuicksave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnWaveQuicksave.FlatStyle = FlatStyle.System;
-      btnWaveQuicksave.Location = new Point(540, 120);
+      btnWaveQuicksave.Location = new Point(438, 96);
       btnWaveQuicksave.Name = "btnWaveQuicksave";
-      btnWaveQuicksave.Size = new Size(70, 22);
+      btnWaveQuicksave.Size = new Size(83, 22);
       btnWaveQuicksave.TabIndex = 139;
       btnWaveQuicksave.Text = "Quicksave";
-      toolTip1.SetToolTip(btnWaveQuicksave, "Send to Visualizer\r\n(only alters wave already defined in preset)");
+      toolTip1.SetToolTip(btnWaveQuicksave, "Quicksave the current preset");
       btnWaveQuicksave.UseVisualStyleBackColor = true;
       btnWaveQuicksave.Click += btnWaveQuicksave_Click;
       // 
       // lblRGB
       // 
       lblRGB.AutoSize = true;
-      lblRGB.Location = new Point(140, 9);
+      lblRGB.Location = new Point(141, 9);
       lblRGB.Name = "lblRGB";
       lblRGB.Size = new Size(37, 15);
       lblRGB.TabIndex = 122;
@@ -1218,7 +1217,7 @@ namespace MilkwaveRemote
       // 
       // numWaveMode
       // 
-      numWaveMode.Location = new Point(73, 7);
+      numWaveMode.Location = new Point(74, 7);
       numWaveMode.Margin = new Padding(3, 2, 3, 2);
       numWaveMode.Maximum = new decimal(new int[] { 16, 0, 0, 0 });
       numWaveMode.Name = "numWaveMode";
@@ -1234,7 +1233,7 @@ namespace MilkwaveRemote
       txtDirOrTagsFilter.Location = new Point(74, 37);
       txtDirOrTagsFilter.Name = "txtDirOrTagsFilter";
       txtDirOrTagsFilter.PlaceholderText = "Directory or Tags filter";
-      txtDirOrTagsFilter.Size = new Size(308, 23);
+      txtDirOrTagsFilter.Size = new Size(306, 23);
       txtDirOrTagsFilter.TabIndex = 117;
       // 
       // btnSpace
@@ -1673,6 +1672,7 @@ namespace MilkwaveRemote
       // tabPreset
       // 
       tabPreset.BackColor = SystemColors.ControlLight;
+      tabPreset.BorderStyle = BorderStyle.FixedSingle;
       tabPreset.Controls.Add(btnTagE);
       tabPreset.Controls.Add(btnTagD);
       tabPreset.Controls.Add(btnTagB);
@@ -1806,6 +1806,7 @@ namespace MilkwaveRemote
       // tabWave
       // 
       tabWave.BackColor = SystemColors.ControlLight;
+      tabWave.BorderStyle = BorderStyle.FixedSingle;
       tabWave.Controls.Add(btnWaveQuicksave);
       tabWave.Controls.Add(lblDecay);
       tabWave.Controls.Add(numWaveDecay);
@@ -1834,7 +1835,6 @@ namespace MilkwaveRemote
       tabWave.Location = new Point(4, 25);
       tabWave.Margin = new Padding(0);
       tabWave.Name = "tabWave";
-      tabWave.Padding = new Padding(3);
       tabWave.Size = new Size(620, 180);
       tabWave.TabIndex = 2;
       tabWave.Text = "Wave";
@@ -1843,7 +1843,7 @@ namespace MilkwaveRemote
       // 
       numWaveDecay.DecimalPlaces = 3;
       numWaveDecay.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveDecay.Location = new Point(183, 88);
+      numWaveDecay.Location = new Point(185, 88);
       numWaveDecay.Margin = new Padding(3, 2, 3, 2);
       numWaveDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWaveDecay.Name = "numWaveDecay";
@@ -1856,7 +1856,7 @@ namespace MilkwaveRemote
       // 
       numWaveWarp.DecimalPlaces = 3;
       numWaveWarp.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveWarp.Location = new Point(183, 61);
+      numWaveWarp.Location = new Point(185, 61);
       numWaveWarp.Margin = new Padding(3, 2, 3, 2);
       numWaveWarp.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveWarp.Name = "numWaveWarp";
@@ -1870,7 +1870,7 @@ namespace MilkwaveRemote
       // 
       numWaveRotation.DecimalPlaces = 3;
       numWaveRotation.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveRotation.Location = new Point(73, 88);
+      numWaveRotation.Location = new Point(75, 88);
       numWaveRotation.Margin = new Padding(3, 2, 3, 2);
       numWaveRotation.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveRotation.Minimum = new decimal(new int[] { 9999, 0, 0, -2147287040 });
@@ -1885,7 +1885,7 @@ namespace MilkwaveRemote
       // 
       numWaveZoom.DecimalPlaces = 3;
       numWaveZoom.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveZoom.Location = new Point(73, 61);
+      numWaveZoom.Location = new Point(75, 61);
       numWaveZoom.Margin = new Padding(3, 2, 3, 2);
       numWaveZoom.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveZoom.Name = "numWaveZoom";
@@ -1900,7 +1900,7 @@ namespace MilkwaveRemote
       // 
       numWavePushY.DecimalPlaces = 3;
       numWavePushY.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWavePushY.Location = new Point(183, 34);
+      numWavePushY.Location = new Point(185, 34);
       numWavePushY.Margin = new Padding(3, 2, 3, 2);
       numWavePushY.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWavePushY.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
@@ -1915,7 +1915,7 @@ namespace MilkwaveRemote
       // 
       numWavePushX.DecimalPlaces = 3;
       numWavePushX.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWavePushX.Location = new Point(73, 34);
+      numWavePushX.Location = new Point(75, 34);
       numWavePushX.Margin = new Padding(3, 2, 3, 2);
       numWavePushX.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWavePushX.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });

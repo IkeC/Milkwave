@@ -1237,6 +1237,15 @@ namespace MilkwaveRemote {
           }
         } else if (e.KeyCode == Keys.Y) {
           chkAutoplay.Checked = !chkAutoplay.Checked;
+        } else if (e.KeyCode == Keys.Tab) {
+          if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
+            // Switch to the previous tab
+            int previousIndex = (tabControl.SelectedIndex - 1 + tabControl.TabPages.Count) % tabControl.TabPages.Count; // Loop back to the last tab if at the first
+            tabControl.SelectedIndex = previousIndex;
+          } else {
+            int nextIndex = (tabControl.SelectedIndex + 1) % tabControl.TabPages.Count; // Loop back to the first tab if at the last
+            tabControl.SelectedIndex = nextIndex;
+          }
         }
       }
 
