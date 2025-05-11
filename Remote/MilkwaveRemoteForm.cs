@@ -738,8 +738,18 @@ namespace MilkwaveRemote {
           chkAutoplay.Enabled = true;
         }
       } else {
-        txtAutoplay.Text = "No messages in " + fileName;
-        chkAutoplay.Enabled = false;
+                if (txtAutoplay == null)
+                {
+                    txtAutoplay = new TextBox
+                    {
+                        Name = "txtAutoplay",
+                        Location = new Point(10, 10),
+                        Size = new Size(200, 20)
+                    };
+                    this.Controls.Add(txtAutoplay);
+                }
+                txtAutoplay.Text = "No messages in " + fileName;
+            chkAutoplay.Enabled = false;
       }
     }
 
