@@ -170,7 +170,8 @@ namespace MilkwaveRemote {
       GetState
     }
 
-    public MilkwaveRemoteForm() {
+
+      public MilkwaveRemoteForm() {
       InitializeComponent();
       FixNumericUpDownMouseWheel(this);
 
@@ -1891,4 +1892,5 @@ namespace MilkwaveRemote {
       SendInput(VK_F9, "F9", true, false, true);
     }
   }
+
 }
