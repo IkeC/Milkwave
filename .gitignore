@@ -13,3 +13,5 @@ vis_milk2/bin
 *.exe
 /Install/*.zip
 /.gitattributes
+/.idea/.idea.Milkwave/.idea
+/Remote/.idea/.idea.Remote.dir/.idea
