@@ -109,6 +109,15 @@
 #define _CRTDBG_MAP_ALLOC
 #endif
 
+// Define VK_B if it is not already defined
+#ifndef VK_B
+#define VK_B 0x42 // ASCII code for 'B'
+#endif
+
+// Define VK_C if it is not already defined
+#ifndef VK_C
+#define VK_C 0x43 // ASCII code for 'C'
+#endif
 #include <stdlib.h>
 #include <malloc.h>
 #include <crtdbg.h>
