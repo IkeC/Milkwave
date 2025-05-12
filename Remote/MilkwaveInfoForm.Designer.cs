@@ -40,7 +40,7 @@ namespace MilkwaveRemote {
       textBox.Margin = new Padding(3, 2, 3, 2);
       textBox.Name = "textBox";
       textBox.ReadOnly = true;
-      textBox.Size = new Size(480, 222);
+      textBox.Size = new Size(480, 246);
       textBox.TabIndex = 0;
       textBox.Text = "Hello";
       textBox.LinkClicked += textBox_LinkClicked;
@@ -48,7 +48,7 @@ namespace MilkwaveRemote {
       // btnClose
       // 
       btnClose.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      btnClose.Location = new Point(408, 208);
+      btnClose.Location = new Point(408, 232);
       btnClose.Margin = new Padding(3, 2, 3, 2);
       btnClose.Name = "btnClose";
       btnClose.Size = new Size(82, 22);
@@ -61,7 +61,7 @@ namespace MilkwaveRemote {
       // 
       AutoScaleDimensions = new SizeF(7F, 15F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(500, 239);
+      ClientSize = new Size(500, 263);
       Controls.Add(btnClose);
       Controls.Add(textBox);
       Icon = (Icon)resources.GetObject("$this.Icon");

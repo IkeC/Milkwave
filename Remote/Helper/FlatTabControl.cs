@@ -250,7 +250,7 @@ namespace MilkwaveRemote.Helper {
 
       // Draws the Title of the Tab:
       Rectangle rectangleF = tabTextRect;
-      rectangleF.Y += 2; // Horizontally Centered
+      rectangleF.Y += 1; // Horizontally Centered
       TextRenderer.DrawText(g, customTabPage.Text, Font, rectangleF, isSelected ? SelectedForeColor : ForeColor);
     }
   }
