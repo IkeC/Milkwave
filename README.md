@@ -33,7 +33,16 @@ There are many tooltips explaining all features when you hover over the form ele
 
 ## New in Milkwave 2.0 (unreleased)
 
+### Visualizer
+
+- Use cursor keys for media playback control
+- Set Min./Max. pixel shader version in settings.ini
+  - Indicate upgraded version with Up Arrow before preset name(configurable)
+- Extended help display (F1)
+  - Now two pages with new and previously undocumented features
+
 ### Remote
+
 - Preset tagging
   - Tag your presets with any number of words of your choice
   - Automatic buttons for your most used tags
@@ -46,14 +55,6 @@ There are many tooltips explaining all features when you hover over the form ele
   - Set Zoom, Warp, Rotation etc. in the running preset
   - Clear preset and start with a plain wave
 - Improved accessibility when using large Windows fonts
-
-### Visualizer
-
-- Use cursor keys for media playback control
-- Set Min./Max. pixel shader version in settings.ini
-  - Indicate upgraded version with Up Arrow before preset name(configurable)
-- Extended help display (F1)
-  - Now two pages with new and previously undocumented features
 
 ## History
 
