@@ -37,7 +37,7 @@ There are many tooltips explaining all features when you hover over the form ele
 
 - Use cursor keys for media playback control
 - Set Min./Max. pixel shader version in settings.ini
-  - Indicate upgraded version with Up Arrow before preset name(configurable)
+  - Indicate upgraded version with Up Arrow before preset name (configurable)
 - Extended help display (F1)
   - Now two pages with new and previously undocumented features
 
