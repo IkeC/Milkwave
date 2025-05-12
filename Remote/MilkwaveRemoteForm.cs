@@ -64,7 +64,7 @@ namespace MilkwaveRemote {
     private string VisualizerPresetsFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resources\\presets\\");
 
     private string lastScriptFileName = "script-default.txt";
-    private string windowNotFound = "Milkwave Visualizer window not found";
+    private string windowNotFound = "Milkwave Visualizer Window not found";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
 
@@ -242,6 +242,7 @@ namespace MilkwaveRemote {
       autoplayTimer.Tick += AutoplayTimer_Tick;
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
+      cboWindowTitle.SelectedIndex = 0;
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
@@ -416,7 +417,7 @@ namespace MilkwaveRemote {
         StringBuilder windowTitle = new StringBuilder(length + 1);
         GetWindowText(hWnd, windowTitle, windowTitle.Capacity);
 
-        if (windowTitle.ToString().Contains(txtWindowTitle.Text)) {
+        if (windowTitle.ToString().Equals(cboWindowTitle.Text, StringComparison.InvariantCultureIgnoreCase)) {
           foundWindow = hWnd;
           foundWindowTitle = windowTitle.ToString();
           return false; // Stop enumeration
@@ -441,7 +442,7 @@ namespace MilkwaveRemote {
 
     private void SendToMilkwaveVisualizer(string messageToSend, MessageType type) {
       SetStatusText("");
-      string partialTitle = txtWindowTitle.Text;
+      string partialTitle = cboWindowTitle.Text;
       string statusMessage = "";
       IntPtr foundWindow = FindVisualizerWindow();
       if (foundWindow != IntPtr.Zero) {
@@ -819,8 +820,10 @@ namespace MilkwaveRemote {
           chkAutoplay.Enabled = true;
         }
       } else {
-        txtAutoplay.Text = "No messages in " + fileName;
-        chkAutoplay.Enabled = false;
+        if (txtAutoplay != null) {
+          txtAutoplay.Text = "No messages in " + fileName;
+          chkAutoplay.Enabled = false;
+        }
       }
     }
 
@@ -1604,14 +1607,17 @@ namespace MilkwaveRemote {
 
     private void toolStripMenuItemSupporters_Click(object sender, EventArgs e) {
       string dialogtext =
-  "Your name could be here!" + Environment.NewLine +
-  "" + Environment.NewLine +
+  "Supporters:" + Environment.NewLine +
+  Environment.NewLine +
+  "Shanev — Thank you very much!" +
+  Environment.NewLine +
+  Environment.NewLine +
   "Milkwave is and will always be free software, being the collaborative effort of many diffent authors. " +
   "If you like it and want to appreciate and support my share of the work, please consider donating." +
   "" + Environment.NewLine +
   "https://www.paypal.com/ncp/payment/5XMP3S69PJLCU" + Environment.NewLine +
   "" + Environment.NewLine +
-  "Any amount is valued. You'll be listed on this page unless you do not want to. Thank you very much in advance!";
+  "Any amount is valued. You'll be listed on this page unless you do not want to.";
       new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Supporters", dialogtext);
     }
 
@@ -2370,6 +2376,10 @@ namespace MilkwaveRemote {
 
     private void btnWaveQuicksave_Click(object sender, EventArgs e) {
       SendToMilkwaveVisualizer("", MessageType.WaveQuickSave);
+    }
+
+    private void lblAudioDevice_Click(object sender, EventArgs e) {
+
     }
   } // end class
 } // end namespace

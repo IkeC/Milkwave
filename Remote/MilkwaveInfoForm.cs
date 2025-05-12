@@ -16,7 +16,6 @@ namespace MilkwaveRemote {
     }
 
     public void ShowDialog(string title, string text) {
-
       Text = title;
       textBox.Text = text;
       ShowDialog();
