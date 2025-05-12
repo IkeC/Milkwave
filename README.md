@@ -33,15 +33,28 @@ There are many tooltips explaining all features when you hover over the form ele
 
 ## New in Milkwave 2.0 (unreleased)
 
-- Tag your presets
+### Remote
+- Preset tagging
+  - Tag your presets with any number of words of your choice
   - Automatic buttons for your most used tags
   - Load preset lists based on tags
-- Tabbed interface in Remote
-  - Messaging, Presets, Wave Manipulation
+  - Saved in human-readable json file for easy sharing or backup
+- Tabbed interface
+  - Presets, Messaging, Wave manipulation
+  - Use mouse or Ctrl-Tab to switch between tabs
 - More wave manipulation options
-  - Zoom, Warp, Rotation, etc.
-  - Load and save wave parameters on the fly
-  - 
+  - Set Zoom, Warp, Rotation etc. in the running preset
+  - Clear preset and start with a plain wave
+- Improved accessibility when using large Windows fonts
+
+### Visualizer
+
+- Use cursor keys for media playback control
+- Set Min./Max. pixel shader version in settings.ini
+  - Indicate upgraded version with Up Arrow before preset name(configurable)
+- Extended help display (F1)
+  - Now two pages with new and previously undocumented features
+
 ## History
 
 The original MilkDrop 2 WinAmp plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) and [MilkDrop3](https://github.com/milkdrop2077/MilkDrop3) projects.

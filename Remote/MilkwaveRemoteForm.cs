@@ -187,7 +187,7 @@ namespace MilkwaveRemote {
       Assembly executingAssembly = Assembly.GetExecutingAssembly();
       var fieVersionInfo = FileVersionInfo.GetVersionInfo(executingAssembly.Location);
       var version = fieVersionInfo.FileVersion;
-      toolStripMenuItemHomepage.Text = $"Milkwave v{version}";
+      toolStripMenuItemHomepage.Text = $"Milkwave {version}";
 
       ofd = new OpenFileDialog();
 
