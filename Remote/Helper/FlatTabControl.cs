@@ -1,9 +1,6 @@
-﻿using Microsoft.VisualBasic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Windows.Forms;
+﻿using System.ComponentModel;
 
-namespace DarkModeForms {
+namespace MilkwaveRemote.Helper {
   public class FlatTabControl : TabControl {
     #region Public Properties
 
@@ -45,7 +42,7 @@ namespace DarkModeForms {
         SizeMode = TabSizeMode.Fixed;
 
         PreRemoveTabPage = null;
-        this.DrawMode = TabDrawMode.OwnerDrawFixed;
+        DrawMode = TabDrawMode.OwnerDrawFixed;
       } catch { }
     }
 
@@ -57,7 +54,7 @@ namespace DarkModeForms {
       SetStyle(ControlStyles.UserPaint, true);
       base.InitLayout();
 
-      TabCloseColor = this.ForeColor;
+      TabCloseColor = ForeColor;
     }
 
     protected override void OnPaint(PaintEventArgs e) {
@@ -98,10 +95,10 @@ namespace DarkModeForms {
           OverCloseTab = r.Contains(p); //<- Mouse is over the Close button
 
           if (OverCloseTab) {
-            DrawTab(this.CreateGraphics(), this.TabPages[i], i);
+            DrawTab(CreateGraphics(), TabPages[i], i);
           } else {
             if (TabCloseColor == Color.Red) {
-              DrawTab(this.CreateGraphics(), this.TabPages[i], i);
+              DrawTab(CreateGraphics(), TabPages[i], i);
             }
           }
         }
@@ -135,12 +132,14 @@ namespace DarkModeForms {
 
         for (int i = 0; i < TabCount; i++) {
           DrawTab(g, TabPages[i], i);
+          // tab content
           TabPages[i].BackColor = TabColor;
         }
 
         g.Clip = region;
 
         using (Pen border = new Pen(BorderColor)) {
+          // does nothing??
           g.DrawRectangle(border, clientRectangle);
 
           if (SelectedTab != null) {
@@ -157,9 +156,14 @@ namespace DarkModeForms {
         // Draw a 1 px white border around the tab content area
         if (SelectedTab != null) {
           Rectangle contentRectangle = DisplayRectangle;
-          contentRectangle.Inflate(1, 1); // Slightly expand to ensure the border is visible
 
-          using (Pen border = new Pen(SelectTabColor, 1)) {
+          // Milkwave customization
+          contentRectangle.X -= 3;
+          contentRectangle.Y -= 1;
+          contentRectangle.Width += 5;
+          contentRectangle.Height += 3;
+
+          using (Pen border = new Pen(BorderColor, 1)) {
             g.DrawRectangle(border, contentRectangle);
           }
         }
@@ -170,12 +174,13 @@ namespace DarkModeForms {
     internal void DrawTab(Graphics g, TabPage customTabPage, int nIndex) {
       Rectangle tabRect = GetTabRect(nIndex);
       Rectangle tabTextRect = GetTabRect(nIndex);
-      bool isSelected = (SelectedIndex == nIndex);
+      bool isSelected = SelectedIndex == nIndex;
       Point[] points;
 
       if (Alignment == TabAlignment.Top) {
         points = new[]
         {
+          
           new Point(tabRect.Left+3, tabRect.Bottom),
           new Point(tabRect.Left+3, tabRect.Top + 0),
           new Point(tabRect.Left + 0, tabRect.Top),
@@ -200,14 +205,28 @@ namespace DarkModeForms {
       // Draws the Tab Header:
       Color HeaderColor = isSelected ? SelectTabColor : BackColor;
       using (Brush brush = new SolidBrush(HeaderColor)) {
-        g.FillPolygon(brush, points);
-        g.DrawPolygon(new Pen(HeaderColor), points);
-
+        // g.FillPolygon(brush, points);
+        // g.DrawPolygon(new Pen(HeaderColor), points);
+        tabRect.Height += 1;
+        tabRect.Width -= 1;
+        g.FillRectangle(brush, tabRect);
         if (isSelected) {
+          Point TopLeft = new Point(tabRect.Left-1, tabRect.Top);
+          Point TopRight = new Point(tabRect.Left-1 + tabRect.Width, tabRect.Top);
+          Point BottomLeft = new Point(tabRect.Left-1, tabRect.Top + tabRect.Height);
+          Point BottomRight = new Point(tabRect.Left-1 + tabRect.Width, tabRect.Top + tabRect.Height);
+
+          //g.DrawRectangle(new Pen(BorderColor), tabRect);
+          g.DrawLine(new Pen(BorderColor), TopLeft, TopRight);
+          g.DrawLine(new Pen(BorderColor), TopLeft, BottomLeft);
+          g.DrawLine(new Pen(BorderColor), TopRight, BottomRight);
+
+          /*
           g.DrawLine(new Pen(BackColor),
             new Point(tabRect.Left, tabRect.Top), new Point(tabRect.Left + 3, tabRect.Top));
           g.DrawLine(new Pen(Color.DodgerBlue),
             new Point(tabRect.Left + 3, tabRect.Top), new Point(tabRect.Left + tabRect.Width, tabRect.Top));
+          */
         }
       }
 
@@ -220,7 +239,7 @@ namespace DarkModeForms {
         r.Width = 5;
 
         // If Mouse is over the CloseButton, it Draws it in Red, otherwise uses default Color:
-        TabCloseColor = OverCloseTab ? Color.Red : this.ForeColor;
+        TabCloseColor = OverCloseTab ? Color.Red : ForeColor;
         Brush b = new SolidBrush(TabCloseColor);
         Pen p = new Pen(b);
 

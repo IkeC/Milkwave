@@ -1,4 +1,4 @@
-﻿using DarkModeForms;
+﻿using MilkwaveRemote.Helper;
 
 namespace MilkwaveRemote {
   partial class MilkwaveInfoForm {

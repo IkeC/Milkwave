@@ -1,5 +1,5 @@
-using DarkModeForms;
 using MilkwaveRemote.Data;
+using MilkwaveRemote.Helper;
 using System.Diagnostics;
 using System.Drawing.Text;
 using System.Globalization;
@@ -7,8 +7,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using static DarkModeForms.DarkModeCS;
-using static MilkwaveRemote.RemoteHelper;
+using static MilkwaveRemote.Helper.DarkModeCS;
+using static MilkwaveRemote.Helper.RemoteHelper;
 
 namespace MilkwaveRemote {
   public partial class MilkwaveRemoteForm : Form {

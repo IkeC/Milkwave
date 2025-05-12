@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MilkwaveRemote {
+namespace MilkwaveRemote.Helper {
 
   public class RemoteHelper {
     public RemoteHelper() {
@@ -99,7 +99,7 @@ namespace MilkwaveRemote {
 
     public void SelectDeviceByName(ComboBox cbo, string deviceName) {
       foreach (ComboBoxItemDevice item in cbo.Items) {
-        if (item.Device.FriendlyName.Equals(deviceName) || (deviceName.Length == 0 && item.IsDefaultDevice)) {
+        if (item.Device.FriendlyName.Equals(deviceName) || deviceName.Length == 0 && item.IsDefaultDevice) {
           cbo.SelectedItem = item;
           break;
         }
