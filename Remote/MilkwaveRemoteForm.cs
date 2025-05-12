@@ -265,8 +265,8 @@ namespace MilkwaveRemote {
       ofd = new OpenFileDialog();
       ofd.Filter = "MilkDrop Presets|*.milk;*.milk2|All files (*.*)|*.*";
       ofd.RestoreDirectory = true;
-            SetAllControlFontSizes(this, 9f); // Sets all controls to font size 9
-            helper.FillAudioDevices(cboAudioDevice);
+      SetAllControlFontSizes(this, 9f); // Sets all controls to font size 9
+      helper.FillAudioDevices(cboAudioDevice);
     }
 
     private IntPtr StartVisualizerIfNotFound() {
