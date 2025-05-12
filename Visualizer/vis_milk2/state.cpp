@@ -1376,9 +1376,35 @@ bool CState::Import(const wchar_t* szIniFile, float fTime, CState* pOldState, DW
     m_nCompPSVersion = nCompPSVersionInFile;
   }
 
+
+  // U + 2191
+  boolean autoUpdate = false;
+  if (nMilkdropPresetVersion > 100) {
+    if (m_nWarpPSVersion < g_plugin.m_MinPSVersionConfig) {
+      m_nWarpPSVersion = g_plugin.m_MinPSVersionConfig;
+      autoUpdate = true;
+    }
+    else if (m_nWarpPSVersion > g_plugin.m_MaxPSVersionConfig) {
+      m_nWarpPSVersion = g_plugin.m_MaxPSVersionConfig;
+    }
+    if (m_nCompPSVersion < g_plugin.m_MinPSVersionConfig) {
+      m_nCompPSVersion = g_plugin.m_MinPSVersionConfig;
+      autoUpdate = true;
+    }
+    else if (m_nCompPSVersion > g_plugin.m_MaxPSVersionConfig) {
+      m_nCompPSVersion = g_plugin.m_MaxPSVersionConfig;
+    }
+  }
+
+  if (autoUpdate && g_plugin.m_ShowUpArrowInDescriptionIfPSMinVersionForced) {
+    // Prepend the Unicode up arrow (U+2191) and a blank space to m_szDesc
+    wchar_t temp[512];
+    wcsncpy_s(temp, m_szDesc, _countof(temp)); // Copy the current content of m_szDesc to a temporary buffer
+    swprintf_s(m_szDesc, _countof(m_szDesc), L"\u2191 %s", temp); // Prepend the arrow and space
+  }
+
   m_nMaxPSVersion = max(m_nWarpPSVersion, m_nCompPSVersion);
   m_nMinPSVersion = min(m_nWarpPSVersion, m_nCompPSVersion);
-
 
   RecompileExpressions();
 

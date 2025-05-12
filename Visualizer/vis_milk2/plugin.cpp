@@ -1392,7 +1392,15 @@ void CPlugin::MyReadConfig() {
   m_HideNotificationsWhenRemoteActive = GetPrivateProfileBoolW(L"Milkwave", L"HideNotificationsWhenRemoteActive", m_HideNotificationsWhenRemoteActive, pIni);
 
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
-  m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
+  m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);  
+
+  // We'll put these in the settings section since other MilkDrop forks use similar settings
+  m_MinPSVersionConfig = GetPrivateProfileIntW(L"Settings", L"MinPSVersion", m_MinPSVersionConfig, pIni);
+  if (m_MinPSVersionConfig < 0) m_MinPSVersionConfig = 2;
+  m_MaxPSVersionConfig = GetPrivateProfileIntW(L"Settings", L"MaxPSVersion", m_MaxPSVersionConfig, pIni);
+  if (m_MaxPSVersionConfig < 0) m_MaxPSVersionConfig = 4;
+  
+  m_ShowUpArrowInDescriptionIfPSMinVersionForced = GetPrivateProfileBoolW(L"Milkwave", L"ShowUpArrowInDescriptionIfPSMinVersionForced", m_ShowUpArrowInDescriptionIfPSMinVersionForced, pIni);
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
   fOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowOpacity", fOpacity, pIni);

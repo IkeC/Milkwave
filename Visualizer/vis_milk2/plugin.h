@@ -354,6 +354,10 @@ public:
   bool m_DisplayCoverWhenPressingB = true;
   bool m_HideNotificationsWhenRemoteActive = false;
 
+  int m_MinPSVersionConfig = 2;
+  int m_MaxPSVersionConfig = 4;
+  bool m_ShowUpArrowInDescriptionIfPSMinVersionForced = true;
+
   //bool		m_bAlways3D;
   //float       m_fStereoSep;
   //bool		m_bAlwaysOnTop;
