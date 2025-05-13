@@ -1372,7 +1372,14 @@ namespace MilkwaveRemote {
     }
 
     private void SaveTagsToFile() {
-      string jsonString = JsonSerializer.Serialize(Tags, new JsonSerializerOptions { WriteIndented = true });
+
+      var sortedTags = new Tags {
+        TagEntries = Tags.TagEntries
+            .OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
+      };
+
+      string jsonString = JsonSerializer.Serialize(sortedTags, new JsonSerializerOptions { WriteIndented = true });
       string tagsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveTagsFile);
       try {
         File.WriteAllText(tagsFile, jsonString);
@@ -1857,7 +1864,8 @@ namespace MilkwaveRemote {
           }
         }
       } else if (force || runningPresetChanged) {
-        key = Path.GetFileNameWithoutExtension(txtVisRunning.Text).ToLower();
+        // may contain path info (without file extension), so use only the file name
+        key = Path.GetFileName(txtVisRunning.Text).ToLower();
       }
       if (key.Length > 0) {
         if (Tags.TagEntries.ContainsKey(key)) {
@@ -1951,7 +1959,7 @@ namespace MilkwaveRemote {
 
     private void lblCurrentPreset_DoubleClick(object sender, EventArgs e) {
       string? text = toolTip1.GetToolTip(txtVisRunning);
-      if (text != null && text.Length > 0) {
+      if (!string.IsNullOrEmpty(text)) {
         Clipboard.SetText(text);
         SetStatusText($"Copied '{text}' to clipboard");
       }
@@ -2013,8 +2021,11 @@ namespace MilkwaveRemote {
       string presetPath = "";
 
       if (chkTagsFromRunning.Checked) {
-        key = Path.GetFileNameWithoutExtension(txtVisRunning.Text);
-        presetPath = txtVisRunning.Text;
+        key = Path.GetFileName(txtVisRunning.Text);
+        string? fullPath = toolTip1.GetToolTip(txtVisRunning);
+        if (fullPath != null) {
+          presetPath = fullPath;
+        }
       } else {
         Data.Preset? preset = cboPresets.SelectedItem as Data.Preset;
         if (preset != null) {
@@ -2023,7 +2034,14 @@ namespace MilkwaveRemote {
         }
       }
 
-      if (key.Length > 0) {
+      if (key.Length > 0 && presetPath.Length > 0) {
+
+        // save relative path if preset is somewhere within the default presets folder
+        int index = presetPath.IndexOf(VisualizerPresetsFolder, StringComparison.CurrentCultureIgnoreCase);
+        if (index > -1) {
+          presetPath = presetPath.Substring(index + VisualizerPresetsFolder.Length);
+        }
+
         key = key.ToLower();
         TagEntry? tagEntry = null;
         if (Tags.TagEntries.ContainsKey(key)) {
@@ -2138,7 +2156,7 @@ namespace MilkwaveRemote {
     }
 
     private string GetTagButtonCaption(string tag) {
-      if (tag.Length > 1) {
+      if (tag.Length > 2) {
         return tag.Substring(0, 3).ToUpper();
       } else {
         return tag.ToUpper();

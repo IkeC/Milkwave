@@ -201,12 +201,14 @@ namespace MilkwaveRemote
       statusStrip1.Location = new Point(0, 401);
       statusStrip1.Name = "statusStrip1";
       statusStrip1.Padding = new Padding(1, 0, 12, 0);
+      statusStrip1.ShowItemToolTips = true;
       statusStrip1.Size = new Size(628, 26);
       statusStrip1.TabIndex = 5;
       statusStrip1.Text = "statusStrip1";
       // 
       // statusBar
       // 
+      statusBar.AutoToolTip = true;
       statusBar.Margin = new Padding(7, 4, 0, 2);
       statusBar.Name = "statusBar";
       statusBar.Size = new Size(527, 20);
@@ -293,7 +295,7 @@ namespace MilkwaveRemote
       chkPreview.Checked = true;
       chkPreview.CheckState = CheckState.Checked;
       chkPreview.FlatStyle = FlatStyle.System;
-      chkPreview.Location = new Point(527, 67);
+      chkPreview.Location = new Point(527, 66);
       chkPreview.Margin = new Padding(3, 2, 3, 2);
       chkPreview.Name = "chkPreview";
       chkPreview.Size = new Size(83, 23);
@@ -755,7 +757,7 @@ namespace MilkwaveRemote
       chkWrap.Checked = true;
       chkWrap.CheckState = CheckState.Checked;
       chkWrap.FlatStyle = FlatStyle.System;
-      chkWrap.Location = new Point(474, 67);
+      chkWrap.Location = new Point(474, 66);
       chkWrap.Margin = new Padding(3, 2, 3, 2);
       chkWrap.Name = "chkWrap";
       chkWrap.Size = new Size(46, 23);
@@ -1038,7 +1040,7 @@ namespace MilkwaveRemote
       // 
       // lblTags
       // 
-      lblTags.Location = new Point(0, 94);
+      lblTags.Location = new Point(0, 93);
       lblTags.Name = "lblTags";
       lblTags.Size = new Size(70, 23);
       lblTags.TabIndex = 122;
@@ -1054,7 +1056,7 @@ namespace MilkwaveRemote
       chkWaveLink.Checked = true;
       chkWaveLink.CheckState = CheckState.Checked;
       chkWaveLink.FlatStyle = FlatStyle.System;
-      chkWaveLink.Location = new Point(527, 67);
+      chkWaveLink.Location = new Point(527, 66);
       chkWaveLink.Name = "chkWaveLink";
       chkWaveLink.Size = new Size(83, 23);
       chkWaveLink.TabIndex = 120;
