@@ -542,7 +542,7 @@ namespace MilkwaveRemote
       // 
       // lblParameters
       // 
-      lblParameters.Location = new Point(4, 95);
+      lblParameters.Location = new Point(4, 94);
       lblParameters.Name = "lblParameters";
       lblParameters.Size = new Size(66, 23);
       lblParameters.TabIndex = 91;
@@ -694,7 +694,7 @@ namespace MilkwaveRemote
       // lblAmp
       // 
       lblAmp.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      lblAmp.Location = new Point(304, 125);
+      lblAmp.Location = new Point(304, 124);
       lblAmp.Name = "lblAmp";
       lblAmp.Size = new Size(76, 23);
       lblAmp.TabIndex = 104;
@@ -721,7 +721,7 @@ namespace MilkwaveRemote
       // 
       // lblCurrentPreset
       // 
-      lblCurrentPreset.Location = new Point(0, 66);
+      lblCurrentPreset.Location = new Point(0, 64);
       lblCurrentPreset.Name = "lblCurrentPreset";
       lblCurrentPreset.Size = new Size(70, 23);
       lblCurrentPreset.TabIndex = 95;
@@ -831,7 +831,7 @@ namespace MilkwaveRemote
       // 
       // lblAudioDevice
       // 
-      lblAudioDevice.Location = new Point(0, 152);
+      lblAudioDevice.Location = new Point(0, 153);
       lblAudioDevice.Name = "lblAudioDevice";
       lblAudioDevice.Size = new Size(70, 23);
       lblAudioDevice.TabIndex = 115;
@@ -964,7 +964,7 @@ namespace MilkwaveRemote
       // 
       // lblWaveColor
       // 
-      lblWaveColor.Location = new Point(409, 7);
+      lblWaveColor.Location = new Point(410, 6);
       lblWaveColor.Name = "lblWaveColor";
       lblWaveColor.Size = new Size(50, 23);
       lblWaveColor.TabIndex = 118;
@@ -1001,7 +1001,7 @@ namespace MilkwaveRemote
       // 
       // lblWavemode
       // 
-      lblWavemode.Location = new Point(3, 6);
+      lblWavemode.Location = new Point(4, 5);
       lblWavemode.Name = "lblWavemode";
       lblWavemode.Size = new Size(65, 24);
       lblWavemode.TabIndex = 117;
@@ -1027,7 +1027,7 @@ namespace MilkwaveRemote
       // 
       // lblLoad
       // 
-      lblLoad.Location = new Point(0, 37);
+      lblLoad.Location = new Point(0, 35);
       lblLoad.Name = "lblLoad";
       lblLoad.Size = new Size(70, 23);
       lblLoad.TabIndex = 116;
@@ -1038,7 +1038,7 @@ namespace MilkwaveRemote
       // 
       // lblTags
       // 
-      lblTags.Location = new Point(0, 95);
+      lblTags.Location = new Point(0, 94);
       lblTags.Name = "lblTags";
       lblTags.Size = new Size(70, 23);
       lblTags.TabIndex = 122;
@@ -1121,7 +1121,7 @@ namespace MilkwaveRemote
       // 
       // lblPushX
       // 
-      lblPushX.Location = new Point(3, 34);
+      lblPushX.Location = new Point(4, 33);
       lblPushX.Name = "lblPushX";
       lblPushX.Size = new Size(66, 23);
       lblPushX.TabIndex = 128;
@@ -1132,7 +1132,7 @@ namespace MilkwaveRemote
       // 
       // lblPushY
       // 
-      lblPushY.Location = new Point(130, 34);
+      lblPushY.Location = new Point(131, 33);
       lblPushY.Name = "lblPushY";
       lblPushY.Size = new Size(48, 23);
       lblPushY.TabIndex = 130;
@@ -1143,7 +1143,7 @@ namespace MilkwaveRemote
       // 
       // lblZoom
       // 
-      lblZoom.Location = new Point(3, 61);
+      lblZoom.Location = new Point(4, 60);
       lblZoom.Name = "lblZoom";
       lblZoom.Size = new Size(65, 23);
       lblZoom.TabIndex = 132;
@@ -1154,7 +1154,7 @@ namespace MilkwaveRemote
       // 
       // lblRotation
       // 
-      lblRotation.Location = new Point(3, 88);
+      lblRotation.Location = new Point(4, 87);
       lblRotation.Name = "lblRotation";
       lblRotation.Size = new Size(65, 23);
       lblRotation.TabIndex = 134;
@@ -1165,7 +1165,7 @@ namespace MilkwaveRemote
       // 
       // lblWarp
       // 
-      lblWarp.Location = new Point(132, 61);
+      lblWarp.Location = new Point(133, 60);
       lblWarp.Name = "lblWarp";
       lblWarp.Size = new Size(46, 23);
       lblWarp.TabIndex = 136;
@@ -1176,7 +1176,7 @@ namespace MilkwaveRemote
       // 
       // lblDecay
       // 
-      lblDecay.Location = new Point(130, 88);
+      lblDecay.Location = new Point(131, 87);
       lblDecay.Name = "lblDecay";
       lblDecay.Size = new Size(48, 23);
       lblDecay.TabIndex = 138;
@@ -1214,7 +1214,7 @@ namespace MilkwaveRemote
       // 
       // lblRGB
       // 
-      lblRGB.Location = new Point(130, 6);
+      lblRGB.Location = new Point(131, 5);
       lblRGB.Name = "lblRGB";
       lblRGB.Size = new Size(48, 24);
       lblRGB.TabIndex = 122;
@@ -1277,7 +1277,7 @@ namespace MilkwaveRemote
       // 
       // label2
       // 
-      label2.Location = new Point(4, 6);
+      label2.Location = new Point(4, 4);
       label2.Name = "label2";
       label2.Size = new Size(66, 24);
       label2.TabIndex = 90;
