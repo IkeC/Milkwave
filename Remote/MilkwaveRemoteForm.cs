@@ -179,7 +179,17 @@ namespace MilkwaveRemote {
       Opacity,
       GetState
     }
-
+    private void SetAllControlFontSizes(Control parent, float fontSize)
+    {
+        foreach (Control ctrl in parent.Controls)
+        {
+            ctrl.Font = new Font(ctrl.Font.FontFamily, fontSize, ctrl.Font.Style);
+            if (ctrl.HasChildren)
+            {
+                SetAllControlFontSizes(ctrl, fontSize);
+            }
+        }
+    }
     public MilkwaveRemoteForm() {
       InitializeComponent();
       FixNumericUpDownMouseWheel(this);
@@ -243,6 +253,7 @@ namespace MilkwaveRemote {
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
       cboWindowTitle.SelectedIndex = 0;
+
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
@@ -254,7 +265,7 @@ namespace MilkwaveRemote {
       ofd = new OpenFileDialog();
       ofd.Filter = "MilkDrop Presets|*.milk;*.milk2|All files (*.*)|*.*";
       ofd.RestoreDirectory = true;
-
+      SetAllControlFontSizes(this, 9f); // Sets all controls to font size 9
       helper.FillAudioDevices(cboAudioDevice);
     }
 
