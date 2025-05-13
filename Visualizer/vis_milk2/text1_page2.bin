@@ -29,4 +29,4 @@ I / i    Wave zoom +/-              D        Toggle shader locks
 O / o    Wave warp amount +/-       F        Tooggle echo orientation
 P / p    Video echo alpha +/-       !        Randomize warp shader
 G / g    Gamma adjustment +/-       @        Randomize comp shader   
-J / j    Wave scale +/-             
+J / j    Wave scale +/-                                              

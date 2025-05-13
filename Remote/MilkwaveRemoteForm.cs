@@ -179,16 +179,13 @@ namespace MilkwaveRemote {
       Opacity,
       GetState
     }
-    private void SetAllControlFontSizes(Control parent, float fontSize)
-    {
-        foreach (Control ctrl in parent.Controls)
-        {
-            ctrl.Font = new Font(ctrl.Font.FontFamily, fontSize, ctrl.Font.Style);
-            if (ctrl.HasChildren)
-            {
-                SetAllControlFontSizes(ctrl, fontSize);
-            }
+    private void SetAllControlFontSizes(Control parent, float fontSize) {
+      foreach (Control ctrl in parent.Controls) {
+        ctrl.Font = new Font(ctrl.Font.FontFamily, fontSize, ctrl.Font.Style);
+        if (ctrl.HasChildren) {
+          SetAllControlFontSizes(ctrl, fontSize);
         }
+      }
     }
     public MilkwaveRemoteForm() {
       InitializeComponent();
@@ -358,6 +355,26 @@ namespace MilkwaveRemote {
                     numWaveRotation.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
                   } else if (key.Equals("DECAY", StringComparison.OrdinalIgnoreCase)) {
                     numWaveDecay.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("SCALE", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveScale.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("ECHO", StringComparison.OrdinalIgnoreCase)) {
+                    numWaveEcho.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("BRIGHTEN", StringComparison.OrdinalIgnoreCase)) {
+                    chkWaveBrighten.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("DARKEN", StringComparison.OrdinalIgnoreCase)) {
+                    chkWaveDarken.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("SOLARIZE", StringComparison.OrdinalIgnoreCase)) {
+                    chkWaveSolarize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("INVERT", StringComparison.OrdinalIgnoreCase)) {
+                    chkWaveInvert.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("ADDITIVE", StringComparison.OrdinalIgnoreCase)) {
+                    chkWaveAdditive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("DOTTED", StringComparison.OrdinalIgnoreCase)) {
+                    chkWaveDotted.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("THICK", StringComparison.OrdinalIgnoreCase)) {
+                    chkWaveThick.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("VOLALPHA", StringComparison.OrdinalIgnoreCase)) {
+                    chkWaveVolAlpha.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                   }
                 } catch (Exception ex) {
                   // ignore
@@ -473,7 +490,17 @@ namespace MilkwaveRemote {
             "|ZOOM=" + numWaveZoom.Value.ToString(CultureInfo.InvariantCulture) +
             "|WARP=" + numWaveWarp.Value.ToString(CultureInfo.InvariantCulture) +
             "|ROTATION=" + numWaveRotation.Value.ToString(CultureInfo.InvariantCulture) +
-            "|DECAY=" + numWaveDecay.Value.ToString(CultureInfo.InvariantCulture);
+            "|DECAY=" + numWaveDecay.Value.ToString(CultureInfo.InvariantCulture) +
+            "|SCALE=" + numWaveScale.Value.ToString(CultureInfo.InvariantCulture) +
+            "|ECHO=" + numWaveEcho.Value.ToString(CultureInfo.InvariantCulture) +
+            "|BRIGHTEN=" + (chkWaveBrighten.Checked ? "1" : "0") +
+            "|DARKEN=" + (chkWaveDarken.Checked ? "1" : "0") +
+            "|SOLARIZE=" + (chkWaveSolarize.Checked ? "1" : "0") +
+            "|INVERT=" + (chkWaveInvert.Checked ? "1" : "0") +
+            "|ADDITIVE=" + (chkWaveAdditive.Checked ? "1" : "0") +
+            "|DOTTED=" + (chkWaveDotted.Checked ? "1" : "0") +
+            "|THICK=" + (chkWaveThick.Checked ? "1" : "0") +
+            "|VOLALPHA=" + (chkWaveVolAlpha.Checked ? "1" : "0");
           statusMessage = $"Changed Wave in";
         } else if (type == MessageType.PresetFilePath) {
           message = "PRESET=" + messageToSend;
@@ -2392,7 +2419,7 @@ namespace MilkwaveRemote {
       numWaveDecay.Value = 0;
     }
 
-    private void numWave_ValueChanged(object sender, EventArgs e) {
+    private void ctrlWave_ValueChanged(object sender, EventArgs e) {
       SendWaveInfoIfLinked();
     }
 
@@ -2407,8 +2434,13 @@ namespace MilkwaveRemote {
       SendToMilkwaveVisualizer("", MessageType.WaveQuickSave);
     }
 
-    private void lblAudioDevice_Click(object sender, EventArgs e) {
-
+    private void lblEcho_DoubleClick(object sender, EventArgs e) {
+      numWaveEcho.Value = 2;
     }
+
+    private void lblScale_DoubleClick(object sender, EventArgs e) {
+      numWaveScale.Value = 1;
+    }
+
   } // end class
 } // end namespace

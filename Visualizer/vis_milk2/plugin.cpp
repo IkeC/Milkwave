@@ -6653,11 +6653,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           }
           return 0; // we processed (or absorbed) the key
         }
-        else {
-          AddError(L"Stop", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-          keybd_event(VK_MEDIA_STOP, 0, 0, 0);
-          keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
-        }
         /*
         SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_STOP));
         Sleep(200);
@@ -7080,29 +7075,41 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   // row 1 keys
   case 'q':
     m_pState->m_fVideoEchoZoom /= 1.05f;
+    SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
   case 'Q':
     m_pState->m_fVideoEchoZoom *= 1.05f;
+    SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
   case 'w':
     m_pState->m_nWaveMode++;
     if (m_pState->m_nWaveMode >= NUM_WAVES) m_pState->m_nWaveMode = 0;
+    SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
   case 'W':
     m_pState->m_nWaveMode--;
     if (m_pState->m_nWaveMode < 0) m_pState->m_nWaveMode = NUM_WAVES - 1;
+    SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
   case 'e':
     m_pState->m_fWaveAlpha -= 0.1f;
     if (m_pState->m_fWaveAlpha.eval(-1) < 0.0f) m_pState->m_fWaveAlpha = 0.0f;
+    SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
   case 'E':
     m_pState->m_fWaveAlpha += 0.1f;
+    SendPresetWaveInfoToMilkwaveRemote();
     //if (m_pState->m_fWaveAlpha.eval(-1) > 1.0f) m_pState->m_fWaveAlpha = 1.0f;
     return 0; // we processed (or absorbed) the key
 
-  case 'I':	m_pState->m_fZoom -= 0.01f;		return 0; // we processed (or absorbed) the key
-  case 'i':	m_pState->m_fZoom += 0.01f;		return 0; // we processed (or absorbed) the key
+  case 'I':	
+    m_pState->m_fZoom -= 0.01f;
+    SendPresetWaveInfoToMilkwaveRemote();
+    return 0; // we processed (or absorbed) the key
+  case 'i':	
+    m_pState->m_fZoom += 0.01f;
+    SendPresetWaveInfoToMilkwaveRemote();
+    return 0; // we processed (or absorbed) the key
 
   case 'n':
   case 'N':
@@ -7136,8 +7143,14 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   case 'T':
     LaunchSongTitleAnim();
     return 0; // we processed (or absorbed) the key
-  case 'o':	m_pState->m_fWarpAmount /= 1.1f;	return 0; // we processed (or absorbed) the key
-  case 'O':	m_pState->m_fWarpAmount *= 1.1f;	return 0; // we processed (or absorbed) the key
+  case 'o':	
+    m_pState->m_fWarpAmount /= 1.1f;
+    SendPresetWaveInfoToMilkwaveRemote();
+    return 0; // we processed (or absorbed) the key
+  case 'O':	
+    m_pState->m_fWarpAmount *= 1.1f;
+    SendPresetWaveInfoToMilkwaveRemote();
+    return 0; // we processed (or absorbed) the key
 
   case '!':
     // randomize warp shader
@@ -7260,9 +7273,11 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     return 0; // we processed (or absorbed) the key
   case 'j':
     m_pState->m_fWaveScale *= 0.9f;
+    SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
   case 'J':
     m_pState->m_fWaveScale /= 0.9f;
+    SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
   case 'k':
   case 'K':
@@ -8823,7 +8838,7 @@ void CPlugin::OnFinishedLoadingPreset() {
   for (int mash = 0; mash < MASH_SLOTS; mash++)
     m_nMashPreset[mash] = m_nCurrentPreset;
 
-  SendPresetInfoToMilkwaveRemote();
+  SendPresetChangedInfoToMilkwaveRemote();
 }
 
 int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
@@ -10255,7 +10270,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     wchar_t buf[1024];
     swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
-    SendPresetInfoToMilkwaveRemote();
+    SendPresetChangedInfoToMilkwaveRemote();
   }
   else if (wcsncmp(sMessage, L"LINK=", 5) == 0) {
     std::wstring message(sMessage + 5);
@@ -10269,10 +10284,14 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   }
 }
 
-void CPlugin::SendPresetInfoToMilkwaveRemote() {
+void CPlugin::SendPresetChangedInfoToMilkwaveRemote() {
   std::wstring msg = L"PRESET=" + std::wstring(m_szCurrentPresetFile);
   SendMessageToMilkwaveRemote(msg.c_str());
-  msg = L"WAVE|COLORR=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveR.eval(-1) * 255)))
+  SendPresetWaveInfoToMilkwaveRemote();
+}
+
+void CPlugin::SendPresetWaveInfoToMilkwaveRemote() {
+  std::wstring msg = L"WAVE|COLORR=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveR.eval(-1) * 255)))
     + L"|COLORG=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveG.eval(-1) * 255)))
     + L"|COLORB=" + std::to_wstring(static_cast<int>(std::ceil(g_plugin.m_pState->m_fWaveB.eval(-1) * 255)))
     + L"|ALPHA=" + std::to_wstring(g_plugin.m_pState->m_fWaveAlpha.eval(-1))
@@ -10280,9 +10299,19 @@ void CPlugin::SendPresetInfoToMilkwaveRemote() {
     + L"|PUSHX=" + std::to_wstring(g_plugin.m_pState->m_fXPush.eval(-1))
     + L"|PUSHY=" + std::to_wstring(g_plugin.m_pState->m_fYPush.eval(-1))
     + L"|ZOOM=" + std::to_wstring(g_plugin.m_pState->m_fZoom.eval(-1))
-    + L"|WARP=" + std::to_wstring(g_plugin.m_pState->m_fWarpAmount.eval(-1))
+    + L"|WARP=" + std::to_wstring(g_plugin.m_pState->m_fWarpScale.eval(-1))
     + L"|ROTATION=" + std::to_wstring(g_plugin.m_pState->m_fRot.eval(-1))
-    + L"|DECAY=" + std::to_wstring(g_plugin.m_pState->m_fDecay.eval(-1));
+    + L"|DECAY=" + std::to_wstring(g_plugin.m_pState->m_fDecay.eval(-1))
+    + L"|SCALE=" + std::to_wstring(g_plugin.m_pState->m_fWaveScale.eval(-1))
+    + L"|ECHO=" + std::to_wstring(g_plugin.m_pState->m_fVideoEchoZoom.eval(-1))
+    + L"|BRIGHTEN=" + (g_plugin.m_pState->m_bBrighten ? L"1" : L"0")
+    + L"|DARKEN=" + (g_plugin.m_pState->m_bDarken ? L"1" : L"0")
+    + L"|SOLARIZE=" + (g_plugin.m_pState->m_bSolarize ? L"1" : L"0")
+    + L"|INVERT=" + (g_plugin.m_pState->m_bInvert ? L"1" : L"0")
+    + L"|ADDITIVE=" + (g_plugin.m_pState->m_bAdditiveWaves ? L"1" : L"0")
+    + L"|DOTTED=" + (g_plugin.m_pState->m_bWaveDots ? L"1" : L"0")
+    + L"|THICK=" + (g_plugin.m_pState->m_bWaveThick ? L"1" : L"0")
+    + L"|VOLALPHA=" + (g_plugin.m_pState->m_bModWaveAlphaByVolume ? L"1" : L"0");
   SendMessageToMilkwaveRemote(msg.c_str());
 }
 
@@ -10342,6 +10371,36 @@ void CPlugin::SetWaveParamsFromMessage(std::wstring& message) {
   }
   if (params.find(L"DECAY") != params.end()) {
     g_plugin.m_pState->m_fDecay = std::stof(params[L"DECAY"]);
+  }
+  if (params.find(L"SCALE") != params.end()) {
+    g_plugin.m_pState->m_fWaveScale = std::stof(params[L"SCALE"]);
+  }
+  if (params.find(L"ECHO") != params.end()) {
+    g_plugin.m_pState->m_fVideoEchoZoom = std::stof(params[L"ECHO"]);
+  }
+  if (params.find(L"BRIGHTEN") != params.end()) {
+    g_plugin.m_pState->m_bBrighten = params[L"BRIGHTEN"] == L"1";
+  }
+  if (params.find(L"DARKEN") != params.end()) {
+    g_plugin.m_pState->m_bDarken = params[L"DARKEN"] == L"1";
+  }
+  if (params.find(L"SOLARIZE") != params.end()) {
+    g_plugin.m_pState->m_bSolarize = params[L"SOLARIZE"] == L"1";
+  }
+  if (params.find(L"INVERT") != params.end()) {
+    g_plugin.m_pState->m_bInvert = params[L"INVERT"] == L"1";
+  }
+  if (params.find(L"ADDITIVE") != params.end()) {
+    g_plugin.m_pState->m_bAdditiveWaves = params[L"ADDITIVE"] == L"1";
+  }
+  if (params.find(L"DOTTED") != params.end()) {
+    g_plugin.m_pState->m_bWaveDots = params[L"DOTTED"] == L"1";
+  }
+  if (params.find(L"THICK") != params.end()) {
+    g_plugin.m_pState->m_bWaveThick = params[L"THICK"] == L"1";
+  }
+  if (params.find(L"VOLALPHA") != params.end()) {
+    g_plugin.m_pState->m_bModWaveAlphaByVolume = params[L"VOLALPHA"] == L"1";
   }
 }
 

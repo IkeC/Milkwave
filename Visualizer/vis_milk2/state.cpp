@@ -503,7 +503,7 @@ void CState::Default(DWORD ApplyFlags) {
   if (ApplyFlags & STATE_GENERAL) {
     m_fRating = 3.0f;
     // m_fDecay = 0.98f;	// 1.0 = none, 0.95 = heavy decay
-    m_fDecay = 0.5f;
+    m_fDecay = 0.75f;
     m_fGammaAdj = 2.0f;		// 1.0 = reg; +2.0 = double, +3.0 = triple...
     m_fVideoEchoZoom = 2.0f;
     m_fVideoEchoAlpha = 0.0f;

@@ -96,7 +96,6 @@ namespace MilkwaveRemote
       btnTagsSave = new Button();
       chkTagsFromRunning = new CheckBox();
       btnSendWave = new Button();
-      lblWaveColor = new Label();
       pnlColorWave = new Panel();
       numWaveAlpha = new NumericUpDown();
       lblWavemode = new Label();
@@ -116,6 +115,16 @@ namespace MilkwaveRemote
       lblDecay = new Label();
       btnWaveQuicksave = new Button();
       cboWindowTitle = new ComboBox();
+      chkWaveVolAlpha = new CheckBox();
+      lblScale = new Label();
+      lblEcho = new Label();
+      chkWaveBrighten = new CheckBox();
+      chkWaveDarken = new CheckBox();
+      chkWaveSolarize = new CheckBox();
+      chkWaveInvert = new CheckBox();
+      chkWaveAdditive = new CheckBox();
+      chkWaveDotted = new CheckBox();
+      chkWaveThick = new CheckBox();
       lblRGB = new Label();
       numWaveMode = new NumericUpDown();
       txtDirOrTagsFilter = new TextBox();
@@ -158,6 +167,8 @@ namespace MilkwaveRemote
       btnTagA = new Button();
       tabMessage = new TabPage();
       tabWave = new TabPage();
+      numWaveEcho = new NumericUpDown();
+      numWaveScale = new NumericUpDown();
       numWaveDecay = new NumericUpDown();
       numWaveWarp = new NumericUpDown();
       numWaveRotation = new NumericUpDown();
@@ -186,6 +197,8 @@ namespace MilkwaveRemote
       tabPreset.SuspendLayout();
       tabMessage.SuspendLayout();
       tabWave.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)numWaveEcho).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveScale).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveDecay).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveWarp).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveRotation).BeginInit();
@@ -964,23 +977,12 @@ namespace MilkwaveRemote
       btnSendWave.UseVisualStyleBackColor = true;
       btnSendWave.Click += btnSendWave_Click;
       // 
-      // lblWaveColor
-      // 
-      lblWaveColor.Location = new Point(410, 6);
-      lblWaveColor.Name = "lblWaveColor";
-      lblWaveColor.Size = new Size(50, 23);
-      lblWaveColor.TabIndex = 118;
-      lblWaveColor.Text = "Color";
-      lblWaveColor.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblWaveColor, "Wave color\r\nDouble-click: Copy R,G,B to clipboard\r\nAlt+Double-click: Copy R,G,B as float values (0..1)");
-      lblWaveColor.DoubleClick += lblWaveColor_DoubleClick;
-      // 
       // pnlColorWave
       // 
       pnlColorWave.BorderStyle = BorderStyle.FixedSingle;
-      pnlColorWave.Location = new Point(465, 7);
+      pnlColorWave.Location = new Point(416, 6);
       pnlColorWave.Name = "pnlColorWave";
-      pnlColorWave.Size = new Size(37, 23);
+      pnlColorWave.Size = new Size(50, 23);
       pnlColorWave.TabIndex = 114;
       toolTip1.SetToolTip(pnlColorWave, "Wave color");
       pnlColorWave.Click += pnlColorWave_Click;
@@ -989,7 +991,7 @@ namespace MilkwaveRemote
       // 
       numWaveAlpha.DecimalPlaces = 2;
       numWaveAlpha.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numWaveAlpha.Location = new Point(184, 7);
+      numWaveAlpha.Location = new Point(186, 7);
       numWaveAlpha.Margin = new Padding(3, 2, 3, 2);
       numWaveAlpha.Maximum = new decimal(new int[] { 9999, 0, 0, 0 });
       numWaveAlpha.Name = "numWaveAlpha";
@@ -998,7 +1000,7 @@ namespace MilkwaveRemote
       numWaveAlpha.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numWaveAlpha, "Alpha (opacity)");
       numWaveAlpha.Value = new decimal(new int[] { 10, 0, 0, 65536 });
-      numWaveAlpha.ValueChanged += numWave_ValueChanged;
+      numWaveAlpha.ValueChanged += ctrlWave_ValueChanged;
       numWaveAlpha.KeyDown += numWave_KeyDown;
       // 
       // lblWavemode
@@ -1069,7 +1071,7 @@ namespace MilkwaveRemote
       // numWaveR
       // 
       numWaveR.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numWaveR.Location = new Point(246, 7);
+      numWaveR.Location = new Point(248, 7);
       numWaveR.Margin = new Padding(3, 2, 3, 2);
       numWaveR.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
       numWaveR.Name = "numWaveR";
@@ -1083,7 +1085,7 @@ namespace MilkwaveRemote
       // numWaveB
       // 
       numWaveB.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numWaveB.Location = new Point(358, 7);
+      numWaveB.Location = new Point(360, 7);
       numWaveB.Margin = new Padding(3, 2, 3, 2);
       numWaveB.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
       numWaveB.Name = "numWaveB";
@@ -1097,7 +1099,7 @@ namespace MilkwaveRemote
       // numWaveG
       // 
       numWaveG.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numWaveG.Location = new Point(302, 7);
+      numWaveG.Location = new Point(304, 7);
       numWaveG.Margin = new Padding(3, 2, 3, 2);
       numWaveG.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
       numWaveG.Name = "numWaveG";
@@ -1123,7 +1125,7 @@ namespace MilkwaveRemote
       // 
       // lblPushX
       // 
-      lblPushX.Location = new Point(4, 33);
+      lblPushX.Location = new Point(4, 35);
       lblPushX.Name = "lblPushX";
       lblPushX.Size = new Size(66, 23);
       lblPushX.TabIndex = 128;
@@ -1134,7 +1136,7 @@ namespace MilkwaveRemote
       // 
       // lblPushY
       // 
-      lblPushY.Location = new Point(131, 33);
+      lblPushY.Location = new Point(132, 35);
       lblPushY.Name = "lblPushY";
       lblPushY.Size = new Size(48, 23);
       lblPushY.TabIndex = 130;
@@ -1145,9 +1147,9 @@ namespace MilkwaveRemote
       // 
       // lblZoom
       // 
-      lblZoom.Location = new Point(4, 60);
+      lblZoom.Location = new Point(248, 35);
       lblZoom.Name = "lblZoom";
-      lblZoom.Size = new Size(65, 23);
+      lblZoom.Size = new Size(48, 23);
       lblZoom.TabIndex = 132;
       lblZoom.Text = "Zoom";
       lblZoom.TextAlign = ContentAlignment.MiddleRight;
@@ -1156,7 +1158,7 @@ namespace MilkwaveRemote
       // 
       // lblRotation
       // 
-      lblRotation.Location = new Point(4, 87);
+      lblRotation.Location = new Point(4, 66);
       lblRotation.Name = "lblRotation";
       lblRotation.Size = new Size(65, 23);
       lblRotation.TabIndex = 134;
@@ -1167,7 +1169,7 @@ namespace MilkwaveRemote
       // 
       // lblWarp
       // 
-      lblWarp.Location = new Point(133, 60);
+      lblWarp.Location = new Point(248, 66);
       lblWarp.Name = "lblWarp";
       lblWarp.Size = new Size(46, 23);
       lblWarp.TabIndex = 136;
@@ -1178,7 +1180,7 @@ namespace MilkwaveRemote
       // 
       // lblDecay
       // 
-      lblDecay.Location = new Point(131, 87);
+      lblDecay.Location = new Point(133, 66);
       lblDecay.Name = "lblDecay";
       lblDecay.Size = new Size(48, 23);
       lblDecay.TabIndex = 138;
@@ -1214,9 +1216,144 @@ namespace MilkwaveRemote
       cboWindowTitle.TabIndex = 108;
       toolTip1.SetToolTip(cboWindowTitle, "Target window title");
       // 
+      // chkWaveVolAlpha
+      // 
+      chkWaveVolAlpha.Appearance = Appearance.Button;
+      chkWaveVolAlpha.FlatStyle = FlatStyle.System;
+      chkWaveVolAlpha.Location = new Point(360, 123);
+      chkWaveVolAlpha.Name = "chkWaveVolAlpha";
+      chkWaveVolAlpha.Size = new Size(106, 23);
+      chkWaveVolAlpha.TabIndex = 147;
+      chkWaveVolAlpha.Text = "Alpha";
+      chkWaveVolAlpha.TextAlign = ContentAlignment.MiddleCenter;
+      chkWaveVolAlpha.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkWaveVolAlpha, "Change Alpha With Volume");
+      chkWaveVolAlpha.UseVisualStyleBackColor = true;
+      chkWaveVolAlpha.CheckedChanged += ctrlWave_ValueChanged;
+      // 
+      // lblScale
+      // 
+      lblScale.Location = new Point(360, 35);
+      lblScale.Name = "lblScale";
+      lblScale.Size = new Size(48, 23);
+      lblScale.TabIndex = 149;
+      lblScale.Text = "Scale";
+      lblScale.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblScale, "Double-click: Set 1");
+      lblScale.DoubleClick += lblScale_DoubleClick;
+      // 
+      // lblEcho
+      // 
+      lblEcho.Location = new Point(360, 66);
+      lblEcho.Name = "lblEcho";
+      lblEcho.Size = new Size(48, 23);
+      lblEcho.TabIndex = 151;
+      lblEcho.Text = "Echo";
+      lblEcho.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblEcho, "Double-click: Set 2");
+      lblEcho.DoubleClick += lblEcho_DoubleClick;
+      // 
+      // chkWaveBrighten
+      // 
+      chkWaveBrighten.Appearance = Appearance.Button;
+      chkWaveBrighten.FlatStyle = FlatStyle.System;
+      chkWaveBrighten.Location = new Point(25, 96);
+      chkWaveBrighten.Name = "chkWaveBrighten";
+      chkWaveBrighten.Size = new Size(106, 23);
+      chkWaveBrighten.TabIndex = 140;
+      chkWaveBrighten.Text = "Brighten";
+      chkWaveBrighten.TextAlign = ContentAlignment.MiddleCenter;
+      chkWaveBrighten.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkWaveBrighten.UseVisualStyleBackColor = true;
+      chkWaveBrighten.CheckedChanged += ctrlWave_ValueChanged;
+      // 
+      // chkWaveDarken
+      // 
+      chkWaveDarken.Appearance = Appearance.Button;
+      chkWaveDarken.FlatStyle = FlatStyle.System;
+      chkWaveDarken.Location = new Point(136, 96);
+      chkWaveDarken.Name = "chkWaveDarken";
+      chkWaveDarken.Size = new Size(106, 23);
+      chkWaveDarken.TabIndex = 141;
+      chkWaveDarken.Text = "Darken";
+      chkWaveDarken.TextAlign = ContentAlignment.MiddleCenter;
+      chkWaveDarken.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkWaveDarken.UseVisualStyleBackColor = true;
+      chkWaveDarken.CheckedChanged += ctrlWave_ValueChanged;
+      // 
+      // chkWaveSolarize
+      // 
+      chkWaveSolarize.Appearance = Appearance.Button;
+      chkWaveSolarize.FlatStyle = FlatStyle.System;
+      chkWaveSolarize.Location = new Point(25, 123);
+      chkWaveSolarize.Name = "chkWaveSolarize";
+      chkWaveSolarize.Size = new Size(106, 23);
+      chkWaveSolarize.TabIndex = 142;
+      chkWaveSolarize.Text = "Solarize";
+      chkWaveSolarize.TextAlign = ContentAlignment.MiddleCenter;
+      chkWaveSolarize.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkWaveSolarize.UseVisualStyleBackColor = true;
+      chkWaveSolarize.CheckedChanged += ctrlWave_ValueChanged;
+      // 
+      // chkWaveInvert
+      // 
+      chkWaveInvert.Appearance = Appearance.Button;
+      chkWaveInvert.FlatStyle = FlatStyle.System;
+      chkWaveInvert.Location = new Point(136, 123);
+      chkWaveInvert.Name = "chkWaveInvert";
+      chkWaveInvert.Size = new Size(106, 23);
+      chkWaveInvert.TabIndex = 143;
+      chkWaveInvert.Text = "Invert";
+      chkWaveInvert.TextAlign = ContentAlignment.MiddleCenter;
+      chkWaveInvert.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkWaveInvert.UseVisualStyleBackColor = true;
+      chkWaveInvert.CheckedChanged += ctrlWave_ValueChanged;
+      // 
+      // chkWaveAdditive
+      // 
+      chkWaveAdditive.Appearance = Appearance.Button;
+      chkWaveAdditive.FlatStyle = FlatStyle.System;
+      chkWaveAdditive.Location = new Point(248, 96);
+      chkWaveAdditive.Name = "chkWaveAdditive";
+      chkWaveAdditive.Size = new Size(106, 23);
+      chkWaveAdditive.TabIndex = 144;
+      chkWaveAdditive.Text = "Additive";
+      chkWaveAdditive.TextAlign = ContentAlignment.MiddleCenter;
+      chkWaveAdditive.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkWaveAdditive.UseVisualStyleBackColor = true;
+      chkWaveAdditive.CheckedChanged += ctrlWave_ValueChanged;
+      // 
+      // chkWaveDotted
+      // 
+      chkWaveDotted.Appearance = Appearance.Button;
+      chkWaveDotted.FlatStyle = FlatStyle.System;
+      chkWaveDotted.Location = new Point(360, 96);
+      chkWaveDotted.Name = "chkWaveDotted";
+      chkWaveDotted.Size = new Size(106, 23);
+      chkWaveDotted.TabIndex = 145;
+      chkWaveDotted.Text = "Dotted";
+      chkWaveDotted.TextAlign = ContentAlignment.MiddleCenter;
+      chkWaveDotted.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkWaveDotted.UseVisualStyleBackColor = true;
+      chkWaveDotted.CheckedChanged += ctrlWave_ValueChanged;
+      // 
+      // chkWaveThick
+      // 
+      chkWaveThick.Appearance = Appearance.Button;
+      chkWaveThick.FlatStyle = FlatStyle.System;
+      chkWaveThick.Location = new Point(248, 123);
+      chkWaveThick.Name = "chkWaveThick";
+      chkWaveThick.Size = new Size(106, 23);
+      chkWaveThick.TabIndex = 146;
+      chkWaveThick.Text = "Thick";
+      chkWaveThick.TextAlign = ContentAlignment.MiddleCenter;
+      chkWaveThick.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkWaveThick.UseVisualStyleBackColor = true;
+      chkWaveThick.CheckedChanged += ctrlWave_ValueChanged;
+      // 
       // lblRGB
       // 
-      lblRGB.Location = new Point(131, 5);
+      lblRGB.Location = new Point(133, 5);
       lblRGB.Name = "lblRGB";
       lblRGB.Size = new Size(48, 24);
       lblRGB.TabIndex = 122;
@@ -1815,6 +1952,18 @@ namespace MilkwaveRemote
       // 
       tabWave.BackColor = SystemColors.ControlLight;
       tabWave.BorderStyle = BorderStyle.FixedSingle;
+      tabWave.Controls.Add(numWaveEcho);
+      tabWave.Controls.Add(lblEcho);
+      tabWave.Controls.Add(numWaveScale);
+      tabWave.Controls.Add(lblScale);
+      tabWave.Controls.Add(chkWaveVolAlpha);
+      tabWave.Controls.Add(chkWaveThick);
+      tabWave.Controls.Add(chkWaveDotted);
+      tabWave.Controls.Add(chkWaveAdditive);
+      tabWave.Controls.Add(chkWaveInvert);
+      tabWave.Controls.Add(chkWaveSolarize);
+      tabWave.Controls.Add(chkWaveDarken);
+      tabWave.Controls.Add(chkWaveBrighten);
       tabWave.Controls.Add(btnWaveQuicksave);
       tabWave.Controls.Add(numWaveDecay);
       tabWave.Controls.Add(numWaveWarp);
@@ -1838,7 +1987,6 @@ namespace MilkwaveRemote
       tabWave.Controls.Add(lblPushY);
       tabWave.Controls.Add(lblPushX);
       tabWave.Controls.Add(lblRGB);
-      tabWave.Controls.Add(lblWaveColor);
       tabWave.Controls.Add(lblWavemode);
       tabWave.Location = new Point(4, 25);
       tabWave.Margin = new Padding(0);
@@ -1847,38 +1995,66 @@ namespace MilkwaveRemote
       tabWave.TabIndex = 2;
       tabWave.Text = "Wave";
       // 
+      // numWaveEcho
+      // 
+      numWaveEcho.DecimalPlaces = 3;
+      numWaveEcho.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWaveEcho.Location = new Point(410, 68);
+      numWaveEcho.Margin = new Padding(3, 2, 3, 2);
+      numWaveEcho.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
+      numWaveEcho.Name = "numWaveEcho";
+      numWaveEcho.Size = new Size(56, 23);
+      numWaveEcho.TabIndex = 150;
+      numWaveEcho.TextAlign = HorizontalAlignment.Center;
+      numWaveEcho.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numWaveEcho.ValueChanged += ctrlWave_ValueChanged;
+      // 
+      // numWaveScale
+      // 
+      numWaveScale.DecimalPlaces = 3;
+      numWaveScale.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWaveScale.Location = new Point(410, 37);
+      numWaveScale.Margin = new Padding(3, 2, 3, 2);
+      numWaveScale.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
+      numWaveScale.Name = "numWaveScale";
+      numWaveScale.Size = new Size(56, 23);
+      numWaveScale.TabIndex = 148;
+      numWaveScale.TextAlign = HorizontalAlignment.Center;
+      numWaveScale.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numWaveScale.ValueChanged += ctrlWave_ValueChanged;
+      // 
       // numWaveDecay
       // 
       numWaveDecay.DecimalPlaces = 3;
       numWaveDecay.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveDecay.Location = new Point(185, 88);
+      numWaveDecay.Location = new Point(186, 67);
       numWaveDecay.Margin = new Padding(3, 2, 3, 2);
       numWaveDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWaveDecay.Name = "numWaveDecay";
       numWaveDecay.Size = new Size(56, 23);
       numWaveDecay.TabIndex = 137;
       numWaveDecay.TextAlign = HorizontalAlignment.Center;
-      numWaveDecay.ValueChanged += numWave_ValueChanged;
+      numWaveDecay.ValueChanged += ctrlWave_ValueChanged;
       // 
       // numWaveWarp
       // 
       numWaveWarp.DecimalPlaces = 3;
       numWaveWarp.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveWarp.Location = new Point(185, 61);
+      numWaveWarp.Location = new Point(298, 67);
       numWaveWarp.Margin = new Padding(3, 2, 3, 2);
       numWaveWarp.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveWarp.Name = "numWaveWarp";
       numWaveWarp.Size = new Size(56, 23);
       numWaveWarp.TabIndex = 135;
       numWaveWarp.TextAlign = HorizontalAlignment.Center;
-      numWaveWarp.ValueChanged += numWave_ValueChanged;
+      numWaveWarp.ValueChanged += ctrlWave_ValueChanged;
       numWaveWarp.KeyDown += numWave_KeyDown;
       // 
       // numWaveRotation
       // 
       numWaveRotation.DecimalPlaces = 3;
       numWaveRotation.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveRotation.Location = new Point(75, 88);
+      numWaveRotation.Location = new Point(75, 67);
       numWaveRotation.Margin = new Padding(3, 2, 3, 2);
       numWaveRotation.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveRotation.Minimum = new decimal(new int[] { 9999, 0, 0, -2147287040 });
@@ -1886,14 +2062,14 @@ namespace MilkwaveRemote
       numWaveRotation.Size = new Size(56, 23);
       numWaveRotation.TabIndex = 133;
       numWaveRotation.TextAlign = HorizontalAlignment.Center;
-      numWaveRotation.ValueChanged += numWave_ValueChanged;
+      numWaveRotation.ValueChanged += ctrlWave_ValueChanged;
       numWaveRotation.KeyDown += numWave_KeyDown;
       // 
       // numWaveZoom
       // 
       numWaveZoom.DecimalPlaces = 3;
       numWaveZoom.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveZoom.Location = new Point(75, 61);
+      numWaveZoom.Location = new Point(298, 37);
       numWaveZoom.Margin = new Padding(3, 2, 3, 2);
       numWaveZoom.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveZoom.Name = "numWaveZoom";
@@ -1901,14 +2077,14 @@ namespace MilkwaveRemote
       numWaveZoom.TabIndex = 131;
       numWaveZoom.TextAlign = HorizontalAlignment.Center;
       numWaveZoom.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numWaveZoom.ValueChanged += numWave_ValueChanged;
+      numWaveZoom.ValueChanged += ctrlWave_ValueChanged;
       numWaveZoom.KeyDown += numWave_KeyDown;
       // 
       // numWavePushY
       // 
       numWavePushY.DecimalPlaces = 3;
       numWavePushY.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWavePushY.Location = new Point(185, 34);
+      numWavePushY.Location = new Point(186, 37);
       numWavePushY.Margin = new Padding(3, 2, 3, 2);
       numWavePushY.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWavePushY.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
@@ -1916,14 +2092,14 @@ namespace MilkwaveRemote
       numWavePushY.Size = new Size(56, 23);
       numWavePushY.TabIndex = 129;
       numWavePushY.TextAlign = HorizontalAlignment.Center;
-      numWavePushY.ValueChanged += numWave_ValueChanged;
+      numWavePushY.ValueChanged += ctrlWave_ValueChanged;
       numWavePushY.KeyDown += numWave_KeyDown;
       // 
       // numWavePushX
       // 
       numWavePushX.DecimalPlaces = 3;
       numWavePushX.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWavePushX.Location = new Point(75, 34);
+      numWavePushX.Location = new Point(75, 37);
       numWavePushX.Margin = new Padding(3, 2, 3, 2);
       numWavePushX.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWavePushX.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
@@ -1931,7 +2107,7 @@ namespace MilkwaveRemote
       numWavePushX.Size = new Size(56, 23);
       numWavePushX.TabIndex = 127;
       numWavePushX.TextAlign = HorizontalAlignment.Center;
-      numWavePushX.ValueChanged += numWave_ValueChanged;
+      numWavePushX.ValueChanged += ctrlWave_ValueChanged;
       numWavePushX.KeyDown += numWave_KeyDown;
       // 
       // MilkwaveRemoteForm
@@ -1976,6 +2152,8 @@ namespace MilkwaveRemote
       tabMessage.ResumeLayout(false);
       tabMessage.PerformLayout();
       tabWave.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)numWaveEcho).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveScale).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveDecay).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveWarp).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveRotation).EndInit();
@@ -2086,7 +2264,7 @@ namespace MilkwaveRemote
     private TabPage tabMessage;
     private TabPage tabPreset;
     private CheckBox chkTagsFromRunning;
-    private CheckBox checkBox2;
+    private CheckBox chkWaveDarken;
     private TextBox txtDirOrTagsFilter;
     private Label lblLoad;
     private TextBox txtTags;
@@ -2102,7 +2280,6 @@ namespace MilkwaveRemote
     private TabPage tabWave;
     private NumericUpDown numWaveMode;
     private Button btnSendWave;
-    private Label lblWaveColor;
     private Panel pnlColorWave;
     private NumericUpDown numWaveAlpha;
     private Label lblWavemode;
@@ -2128,5 +2305,16 @@ namespace MilkwaveRemote
     private NumericUpDown numWaveZoom;
     private Button btnWaveQuicksave;
     private ComboBox cboWindowTitle;
+    private CheckBox chkWaveInvert;
+    private CheckBox chkWaveSolarize;
+    private CheckBox chkWaveBrighten;
+    private CheckBox chkWaveVolAlpha;
+    private CheckBox chkWaveThick;
+    private CheckBox chkWaveDotted;
+    private CheckBox chkWaveAdditive;
+    private NumericUpDown numWaveEcho;
+    private Label lblEcho;
+    private NumericUpDown numWaveScale;
+    private Label lblScale;
   }
 }

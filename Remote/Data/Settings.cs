@@ -3,7 +3,7 @@
     public Settings() {
     }
 
-    public static int Panel1DefaultHeight = 254;
+    public static int Panel1DefaultHeight = 256;
 
     public List<Style> Styles { get; set; } = new List<Style>();
     public Point RemoteWindowLocation { get; set; } = new Point(50, 50);

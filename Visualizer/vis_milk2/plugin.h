@@ -639,8 +639,9 @@ public:
   void		ClearGraphicsWindow();	// for windowed mode only
   void		LaunchCustomMessage(int nMsgNum);
   void		LaunchMessage(wchar_t* sMessage);
-  void SendPresetInfoToMilkwaveRemote();
-  void SetWaveParamsFromMessage(std::wstring& message);
+  void    SendPresetChangedInfoToMilkwaveRemote();
+  void    SendPresetWaveInfoToMilkwaveRemote();
+  void    SetWaveParamsFromMessage(std::wstring& message);
   void		ReadCustomMessages();
   void		LaunchSongTitleAnim();
 
