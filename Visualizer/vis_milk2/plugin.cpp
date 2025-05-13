@@ -10299,7 +10299,7 @@ void CPlugin::SendPresetWaveInfoToMilkwaveRemote() {
     + L"|PUSHX=" + std::to_wstring(g_plugin.m_pState->m_fXPush.eval(-1))
     + L"|PUSHY=" + std::to_wstring(g_plugin.m_pState->m_fYPush.eval(-1))
     + L"|ZOOM=" + std::to_wstring(g_plugin.m_pState->m_fZoom.eval(-1))
-    + L"|WARP=" + std::to_wstring(g_plugin.m_pState->m_fWarpScale.eval(-1))
+    + L"|WARP=" + std::to_wstring(g_plugin.m_pState->m_fWarpAmount.eval(-1))
     + L"|ROTATION=" + std::to_wstring(g_plugin.m_pState->m_fRot.eval(-1))
     + L"|DECAY=" + std::to_wstring(g_plugin.m_pState->m_fDecay.eval(-1))
     + L"|SCALE=" + std::to_wstring(g_plugin.m_pState->m_fWaveScale.eval(-1))
