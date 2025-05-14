@@ -1,0 +1,684 @@
+{
+  "TagEntries": {
+    "01 - martin - blue haze": {
+      "PresetPath": "Milkwave\\01 - Martin - blue haze.milk",
+      "Tags": [
+        "calm",
+        "top"
+      ]
+    },
+    "11 - ikec - wave 7": {
+      "PresetPath": "Milkwave\\11 - IkeC - wave 7.milk",
+      "Tags": [
+        "retro",
+        "simple",
+        "top"
+      ]
+    },
+    "aderrasi \u002B geiss - airhandler (kali mix) - painterly kaleidoscope 2": {
+      "PresetPath": "Milkwave\\Aderrasi \u002B Geiss - Airhandler (Kali Mix) - Painterly Kaleidoscope 2.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "aderrasi - potion of spirits": {
+      "PresetPath": "Milkwave\\Aderrasi - Potion of Spirits.milk",
+      "Tags": [
+        "bright",
+        "colorful",
+        "top"
+      ]
+    },
+    "brainstain-re entry": {
+      "PresetPath": "Milkwave\\BrainStain-re entry.milk",
+      "Tags": [
+        "calm",
+        "simple"
+      ]
+    },
+    "eo.s. \u002B geiss - glowsticks v2 02 (relief mix)": {
+      "PresetPath": "Milkwave\\Eo.S. \u002B Geiss - glowsticks v2 02 (Relief Mix).milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "eo.s. \u002B geiss - glowsticks v2 03 music shifter edit b (water mix)": {
+      "PresetPath": "Milkwave\\Eo.S. \u002B Geiss - glowsticks v2 03 music shifter edit b (water mix).milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "eo.s. \u002B phat - cubetrace - v2": {
+      "PresetPath": "Milkwave\\Eo.S. \u002B Phat - cubetrace - v2.milk",
+      "Tags": [
+        "dark",
+        "retro"
+      ]
+    },
+    "eo.s. - glowsticks v2 03 music": {
+      "PresetPath": "Milkwave\\Eo.S. - glowsticks v2 03 music.milk",
+      "Tags": [
+        "dark",
+        "simple",
+        "vibrant"
+      ]
+    },
+    "eo.s. - glowsticks v2 03 music shifter edit b": {
+      "PresetPath": "Milkwave\\Eo.S. - glowsticks v2 03 music shifter edit b.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "eo.s. - glowsticks v2 04 music minimal": {
+      "PresetPath": "Milkwave\\Eo.S. - glowsticks v2 04 music minimal.milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "simple",
+        "vibrant"
+      ]
+    },
+    "eo.s. - multisphere 01 b_phat_ra_mix": {
+      "PresetPath": "Milkwave\\Eo.S. - multisphere 01 B_Phat_Ra_mix.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
+    "eo.s. - nematodes e daemon": {
+      "PresetPath": "Milkwave\\Eo.S. - nematodes E daemon.milk",
+      "Tags": [
+        "calm",
+        "dark"
+      ]
+    },
+    "eo.s.\u002Bphat emergent factors - bitcore tweak": {
+      "PresetPath": "Milkwave\\Eo.S.\u002BPhat Emergent factors - Bitcore Tweak.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "fishbrain \u002B flexi - stitchcraft": {
+      "PresetPath": "Milkwave\\fiShbRaiN \u002B Flexi - stitchcraft.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
+    "fishbrain \u002B flexi - witchcraft 2": {
+      "PresetPath": "Milkwave\\fiShbRaiN \u002B Flexi - witchcraft 2.0.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "top"
+      ]
+    },
+    "fishbrain \u002B flexi - witchcraft 2.0": {
+      "PresetPath": "Milkwave\\fiShbRaiN \u002B Flexi - witchcraft 2.0.milk",
+      "Tags": [
+        "top",
+        "watermark"
+      ]
+    },
+    "fishbrain \u002B flexi - witchcraft [graffitti attack]": {
+      "PresetPath": "Milkwave\\fiShbRaiN \u002B Flexi - witchcraft [graffitti attack].milk",
+      "Tags": [
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
+    "fishbrain \u002B geiss - witchcraft (stahl\u0027s mirror crossfire mix)": {
+      "PresetPath": "Milkwave\\fiShbRaiN \u002B geiss - witchcraft (Stahl\u0027s Mirror Crossfire Mix).milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "fishbrain - witchcraft": {
+      "PresetPath": "Milkwave\\fiShbRaiN - witchcraft.milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "vibrant"
+      ]
+    },
+    "flexi \u002B fishbrain - operation fatcap i": {
+      "PresetPath": "Milkwave\\Flexi \u002B fiShbRaiN - operation fatcap I.milk",
+      "Tags": [
+        "vibrant",
+        "watermark"
+      ]
+    },
+    "flexi \u002B fishbrain - operation fatcap ii": {
+      "PresetPath": "Milkwave\\Flexi \u002B fiShbRaiN - operation fatcap II.milk",
+      "Tags": [
+        "vibrant",
+        "watermark"
+      ]
+    },
+    "flexi \u002B geiss - pogo cubes vs. tokamak vs. game of life": {
+      "PresetPath": "Milkwave\\Flexi \u002B Geiss - pogo cubes vs. tokamak vs. game of life.milk",
+      "Tags": [
+        "dark",
+        "watermark"
+      ]
+    },
+    "flexi \u002B geiss - pogo-cubes on tokamak matter": {
+      "PresetPath": "Milkwave\\Flexi \u002B Geiss - pogo-cubes on tokamak matter.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
+    "flexi - bouncing icecubes [good morning edit]": {
+      "PresetPath": "Milkwave\\Flexi - bouncing icecubes [good morning edit].milk",
+      "Tags": [
+        "bright",
+        "calm"
+      ]
+    },
+    "flexi - color strike": {
+      "PresetPath": "Milkwave\\Flexi - color strike.milk",
+      "Tags": [
+        "vibrant",
+        "watermark"
+      ]
+    },
+    "flexi - dawn has broken": {
+      "PresetPath": "Milkwave\\Flexi - dawn has broken.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
+    "flexi - fractal jellyfish [moebius mix]": {
+      "PresetPath": "Milkwave\\Flexi - fractal jellyfish [moebius mix].milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "flexi - gold plated maelstrom of chaos": {
+      "PresetPath": "Milkwave\\Flexi - gold plated maelstrom of chaos.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
+    "flexi - hue burst": {
+      "PresetPath": "Milkwave\\Flexi - hue burst.milk",
+      "Tags": [
+        "calm",
+        "retro"
+      ]
+    },
+    "flexi - intention focus": {
+      "PresetPath": "Milkwave\\Flexi - intention focus.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "flexi - jellyfish jam": {
+      "PresetPath": "Milkwave\\Flexi - jellyfish jam.milk",
+      "Tags": [
+        "calm",
+        "watermark"
+      ]
+    },
+    "flexi - lorenz attractor": {
+      "PresetPath": "Milkwave\\Flexi - lorenz attractor.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "simple"
+      ]
+    },
+    "flexi - meta4free": {
+      "PresetPath": "Milkwave\\Flexi - meta4free.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
+    "flexi - moebius transformation [random texture mix]": {
+      "PresetPath": "Milkwave\\Flexi - moebius transformation [random texture mix].milk",
+      "Tags": [
+        "calm",
+        "texture"
+      ]
+    },
+    "flexi - oldschool tree": {
+      "PresetPath": "Milkwave\\Flexi - oldschool tree.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "simple"
+      ]
+    },
+    "flexi - predator-prey-spirals": {
+      "PresetPath": "Milkwave\\Flexi - predator-prey-spirals.milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    },
+    "flexi - reality tunnel": {
+      "PresetPath": "Milkwave\\Flexi - reality tunnel.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "flexi - smashing fractals [acid etching mix]": {
+      "PresetPath": "Milkwave\\Flexi - smashing fractals [acid etching mix].milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "flexi - smashing fractals [geiss\u0027 bas relief finish]": {
+      "PresetPath": "Milkwave\\Flexi - smashing fractals [Geiss\u0027 bas relief finish].milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "simple"
+      ]
+    },
+    "flexi - smouldering": {
+      "PresetPath": "Milkwave\\Flexi - smouldering.milk",
+      "Tags": [
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
+    "flexi - swing out on the spiral": {
+      "PresetPath": "Milkwave\\Flexi - swing out on the spiral.milk",
+      "Tags": [
+        "calm",
+        "colorful",
+        "top"
+      ]
+    },
+    "flexi - the distant point between": {
+      "PresetPath": "Milkwave\\Flexi - the distant point between.milk",
+      "Tags": [
+        "colorful",
+        "watermark"
+      ]
+    },
+    "flexi - truly soft piece of software - this is generic texturing (jelly) ": {
+      "PresetPath": "Milkwave\\Flexi - truly soft piece of software - this is generic texturing (Jelly) .milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
+    "flexi, fishbrain, geiss \u002B martin - tokamak witchery": {
+      "PresetPath": "Milkwave\\Flexi, fishbrain, Geiss \u002B Martin - tokamak witchery.milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    },
+    "forum collaboration thread - second try #4 [goody(2), stahlregen (2)]": {
+      "PresetPath": "Milkwave\\Forum collaboration thread - second try #4 [Goody(2), Stahlregen (2)].milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "geiss \u002B stahlregen - reaction diffusion 3 [rippling islands]": {
+      "PresetPath": "Milkwave\\Geiss \u002B Stahlregen - Reaction Diffusion 3 [Rippling Islands].milk",
+      "Tags": [
+        "zoom"
+      ]
+    },
+    "geiss - cauldron - painterly 5": {
+      "PresetPath": "Milkwave\\Geiss - Cauldron - painterly 5.milk",
+      "Tags": [
+        "dark",
+        "watermark"
+      ]
+    },
+    "geiss - cosmic dust 2 - tiny reaction diffusion mix": {
+      "PresetPath": "Milkwave\\Geiss - Cosmic Dust 2 - Tiny Reaction Diffusion Mix.milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "simple"
+      ]
+    },
+    "geiss - cosmic dust 2 - trails 5b": {
+      "PresetPath": "Milkwave\\Geiss - Cosmic Dust 2 - Trails 5b.milk",
+      "Tags": [
+        "dark",
+        "simple",
+        "watermark"
+      ]
+    },
+    "geiss - explosion 2": {
+      "PresetPath": "Milkwave\\Geiss - Explosion 2.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "geiss - reaction diffusion 2": {
+      "PresetPath": "Milkwave\\Geiss - Reaction Diffusion 2.milk",
+      "Tags": [
+        "vibrant",
+        "zoom"
+      ]
+    },
+    "geiss - reaction diffusion 3 (lichen mix)": {
+      "PresetPath": "Milkwave\\Geiss - Reaction Diffusion 3 (Lichen Mix).milk",
+      "Tags": [
+        "colorful",
+        "zoom"
+      ]
+    },
+    "geiss - spiral artifact": {
+      "PresetPath": "Milkwave\\Geiss - Spiral Artifact.milk",
+      "Tags": [
+        "colorful",
+        "vibrant",
+        "zoom"
+      ]
+    },
+    "goody \u002B martin - crystal palace - aqua lumens": {
+      "PresetPath": "Milkwave\\Goody \u002B martin - crystal palace - Aqua Lumens.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "goody - lights in the sky": {
+      "PresetPath": "Milkwave\\Goody - Lights in the Sky.milk",
+      "Tags": [
+        "dark",
+        "simple",
+        "zoom"
+      ]
+    },
+    "goody - need": {
+      "PresetPath": "Milkwave\\Goody - Need.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
+    "goody - need - desire remix": {
+      "PresetPath": "Milkwave\\Goody - Need - Desire remix.milk",
+      "Tags": [
+        "calm",
+        "simple"
+      ]
+    },
+    "illusion \u0026 rovastar - clouded bottle": {
+      "PresetPath": "Milkwave\\Illusion \u0026 Rovastar - Clouded Bottle.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "krash \u0026 rovastar - cerebral demons - phat \u002B eo.s. killer death bunny remix": {
+      "PresetPath": "Milkwave\\Krash \u0026 Rovastar - Cerebral Demons - Phat \u002B Eo.S. Killer Death Bunny Remix.milk",
+      "Tags": [
+        "dark"
+      ]
+    },
+    "martin - axon3": {
+      "PresetPath": "Milkwave\\martin - axon3.milk",
+      "Tags": [
+        "dark",
+        "vibrant"
+      ]
+    },
+    "martin - castle in the air": {
+      "PresetPath": "Milkwave\\martin - castle in the air.milk",
+      "Tags": [
+        "calm",
+        "top",
+        "watermark"
+      ]
+    },
+    "martin - chain breaker": {
+      "PresetPath": "Milkwave\\martin - chain breaker.milk",
+      "Tags": [
+        "dark",
+        "simple"
+      ]
+    },
+    "martin - deep blue": {
+      "PresetPath": "Milkwave\\martin - deep blue.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
+    "martin - first try": {
+      "PresetPath": "Milkwave\\martin - first try.milk",
+      "Tags": [
+        "dark",
+        "zoom"
+      ]
+    },
+    "martin - ghost city": {
+      "PresetPath": "Milkwave\\martin - ghost city.milk",
+      "Tags": [
+        "calm",
+        "watermark"
+      ]
+    },
+    "martin - moonlight splash": {
+      "PresetPath": "Milkwave\\martin - moonlight splash.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "martin - simple spectrum": {
+      "PresetPath": "Milkwave\\martin - simple spectrum.milk",
+      "Tags": [
+        "retro",
+        "simple"
+      ]
+    },
+    "martin - this beautiful planet": {
+      "PresetPath": "Milkwave\\martin - this beautiful planet.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
+    "milkdrop2077 - circle of life": {
+      "PresetPath": "Milkwave\\MilkDrop2077 - circle of life.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "nil - disco comet": {
+      "PresetPath": "Milkwave\\nil - Disco Comet.milk",
+      "Tags": [
+        "dark",
+        "simple"
+      ]
+    },
+    "orb - dark omen": {
+      "PresetPath": "Milkwave\\ORB - Dark Omen.milk",
+      "Tags": [
+        "dark",
+        "watermark"
+      ]
+    },
+    "orb - fireworks - fusion": {
+      "PresetPath": "Milkwave\\ORB - fireworks - fusion.milk",
+      "Tags": [
+        "simple",
+        "vibrant"
+      ]
+    },
+    "orb - fireworks sparkle": {
+      "PresetPath": "Milkwave\\ORB - Fireworks Sparkle.milk",
+      "Tags": [
+        "simple",
+        "vibrant"
+      ]
+    },
+    "orb - planetary alignment acid burn": {
+      "PresetPath": "Milkwave\\ORB - Planetary Alignment Acid Burn.milk",
+      "Tags": [
+        "retro",
+        "vibrant"
+      ]
+    },
+    "orb - sandblade": {
+      "PresetPath": "Milkwave\\ORB - Sandblade.milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "top",
+        "watermark"
+      ]
+    },
+    "phat_eo.s. rainbow bubble_mid3-fuck me dood": {
+      "PresetPath": "Milkwave\\Phat_Eo.S. rainbow bubble_mid3-fuck me dood.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "pieturp - equalizer": {
+      "PresetPath": "Milkwave\\PieturP - Equalizer.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "simple",
+        "watermark"
+      ]
+    },
+    "pieturp - triptrap_(ultimate-trip-mix)": {
+      "PresetPath": "Milkwave\\PieturP - triptrap_(ultimate-trip-mix).milk",
+      "Tags": [
+        "bright",
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "reenen geiss - soft triple feedback": {
+      "PresetPath": "Milkwave\\Reenen Geiss - Soft Triple Feedback.milk",
+      "Tags": [
+        "retro",
+        "simple"
+      ]
+    },
+    "royal - mashup (113)": {
+      "PresetPath": "Milkwave\\Royal - Mashup (113).milk",
+      "Tags": [
+        "simple",
+        "vibrant"
+      ]
+    },
+    "royal - mashup (13)": {
+      "PresetPath": "Milkwave\\Royal - Mashup (13).milk",
+      "Tags": [
+        "calm",
+        "colorful",
+        "top"
+      ]
+    },
+    "shifter - dark tides (eo.s\u002Bphat_whisps of doom mix)": {
+      "PresetPath": "Milkwave\\shifter - dark tides (eo.s\u002Bphat_whisps of doom mix).milk",
+      "Tags": [
+        "simple"
+      ]
+    },
+    "shifter - digi": {
+      "PresetPath": "Milkwave\\shifter - digi.milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "simple"
+      ]
+    },
+    "shifter - escape the worm - eo.s. \u002B phat - before_it_eats_your_brain_mix_v2": {
+      "PresetPath": "Milkwave\\shifter - escape the worm - Eo.S. \u002B Phat - Before_It_Eats_Your_Brain_Mix_v2.milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "vibrant"
+      ]
+    },
+    "shifter - liquid circuitry": {
+      "PresetPath": "Milkwave\\shifter - liquid circuitry.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "shifter - tumbling cubes": {
+      "PresetPath": "Milkwave\\shifter - tumbling cubes.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "simple"
+      ]
+    },
+    "shifter - tumbling cubes (ripples)": {
+      "PresetPath": "Milkwave\\shifter - tumbling cubes (ripples).milk",
+      "Tags": [
+        "simple",
+        "watermark"
+      ]
+    },
+    "stahlregen \u0026 fishbrain \u002B flexi \u002B geiss - the machine that conquered the aether": {
+      "PresetPath": "Milkwave\\Stahlregen \u0026 fishbrain \u002B flexi \u002B geiss - The Machine that conquered the Aether.milk",
+      "Tags": [
+        "retro"
+      ]
+    },
+    "stahlregen \u0026 geiss \u002B tobiaswolfboi - space gelatin (color xplosion)": {
+      "PresetPath": "Milkwave\\Stahlregen \u0026 Geiss \u002B TobiasWolfBoi - Space Gelatin (Color Xplosion).milk",
+      "Tags": [
+        "calm",
+        "simple",
+        "watermark"
+      ]
+    },
+    "stahlregen \u002B flexi - psychotic flower gelatine burst": {
+      "PresetPath": "Milkwave\\Stahlregen \u002B Flexi - psychotic flower gelatine burst.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "yin - 250 - artificial poles of the continuum_phat\u0027s_orbit_mix": {
+      "PresetPath": "Milkwave\\yin - 250 - Artificial poles of the continuum_Phat\u0027s_Orbit_mix.milk",
+      "Tags": [
+        "calm",
+        "retro"
+      ]
+    },
+    "zachjukamashi - waves of sound": {
+      "PresetPath": "Milkwave\\ZachjuKamashi - Waves of sound.milk",
+      "Tags": [
+        "colorful",
+        "simple"
+      ]
+    },
+    "zylot - spiral (hypnotic)_phat_double_spiral_mix": {
+      "PresetPath": "Milkwave\\Zylot - Spiral (Hypnotic)_Phat_Double_Spiral_Mix.milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    }
+  }
+}
