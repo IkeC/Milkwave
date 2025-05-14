@@ -8,7 +8,7 @@
 !define MUI_ICON "..\Resources\MilkwaveVisualizer.ico"
 !define MUI_UNICON "..\Resources\MilkwaveVisualizer.ico"
 
-!define VERSION "1.6"
+!define VERSION "2.0"
 !define RELDIR "..\Release\"
 
 Name "Milkwave ${VERSION}"
@@ -74,12 +74,15 @@ Section "Milkwave" SecMilkwave
   File "${RELDIR}MilkwaveVisualizer.exe"
   File "${RELDIR}NAudio.Wasapi.dll"
   File "${RELDIR}README.txt"
+  SetOverwrite off
   File "${RELDIR}script-default.txt"
   File "${RELDIR}settings-remote.json"
+  File "${RELDIR}tags-remote.json"
   File "${RELDIR}messages.ini"
   File "${RELDIR}settings.ini"
   File "${RELDIR}sprites.ini"
-    
+  SetOverwrite on
+  
   ;Store installation folder
   WriteRegStr HKCU "Software\Milkwave" "" $INSTDIR
   
@@ -137,6 +140,7 @@ Section "Uninstall"
   Delete "$INSTDIR\README.txt"
   Delete "$INSTDIR\script-default.txt"
   Delete "$INSTDIR\settings-remote.json"
+  Delete "$INSTDIR\tags-remote.json"
   Delete "$INSTDIR\messages.ini"
   Delete "$INSTDIR\settings.ini"
   Delete "$INSTDIR\sprites.ini"
