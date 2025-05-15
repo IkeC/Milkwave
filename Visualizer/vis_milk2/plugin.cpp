@@ -7408,6 +7408,8 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     return 0; // we processed (or absorbed) the key
 
   case '*':
+    ReadCustomMessages();
+    g_plugin.AddError(L"Messages reloaded", 3.0f, ERR_NOTIFY, false);
     m_nNumericInputDigits = 0;
     m_nNumericInputNum = 0;
     return 0;

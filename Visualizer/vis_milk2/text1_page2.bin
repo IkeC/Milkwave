@@ -14,7 +14,7 @@ SHIFT + CTRL + S        Quicksave preset to /presets/Quicksave2 folder
 K                       Toggle sprite/message mode
 SHIFT + K               Enter sprite kill mode
 00-99                   Invoke sprites/messages
-*                       Clears the number of digits that you introduced
+*                       Clear digits and reload messages.ini
 DEL                     Clear latest sprite from the slot/message
 SHIFT + DEL             Clear oldest sprite from the slot/message
 SHIFT + CTRL + DEL      Clear all the sprites/messages
