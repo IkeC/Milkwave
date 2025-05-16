@@ -12,7 +12,7 @@ Milkwave is:
 * Change preset on track change
 * Set window transparency, borderless, and clickthrough ("watermark mode")
 * Customize font types and colors
-* Over 5000 presets from skilled artists worldwide
+* Over 5000 presets from skilled artists (more presets [here](https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets))
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
 

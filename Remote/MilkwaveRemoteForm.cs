@@ -1640,11 +1640,12 @@ namespace MilkwaveRemote {
       string dialogtext =
   "There are many tooltips explaining all features when you move your mouse over all the form elements." + Environment.NewLine +
   "" + Environment.NewLine +
-  "More help resources:" + Environment.NewLine +
+  "Additional resources:" + Environment.NewLine +
   "" + Environment.NewLine +
   "GitHub homepage: https://github.com/IkeC/Milkwave" + Environment.NewLine +
   "GitHub issues: https://github.com/IkeC/Milkwave/issues" + Environment.NewLine +
   "Ikes Discord: https://bit.ly/Ikes-Discord" + Environment.NewLine +
+  "Presets: https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets" + Environment.NewLine +
   "" + Environment.NewLine +
   "and the README.txt in the program folder.";
       new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Help", dialogtext);

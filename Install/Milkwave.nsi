@@ -95,11 +95,16 @@ Section "Milkwave" SecMilkwave
   
   WriteRegStr HKLM "${REG_UNINST_KEY}" "DisplayName" "Milkwave"
   WriteRegStr HKLM "${REG_UNINST_KEY}" "DisplayIcon" "$INSTDIR\MilkwaveVisualizer.exe,0"
+  
+  WriteRegStr HKLM "${REG_UNINST_KEY}" "DisplayVersion" "${VERSION}"
+  WriteRegStr HKLM "${REG_UNINST_KEY}" "Publisher" "Milkwave Development Team"
+  WriteRegStr HKLM "${REG_UNINST_KEY}" "URLInfoAbout" "https://github.com/IkeC/Milkwave"
+
   WriteRegStr HKLM "${REG_UNINST_KEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
   WriteRegStr HKLM "${REG_UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
   WriteRegDWORD HKLM "${REG_UNINST_KEY}" "NoModify" 1
   WriteRegDWORD HKLM "${REG_UNINST_KEY}" "NoRepair" 1
-  
+    
   SetOutPath "$INSTDIR"
 SectionEnd
 
