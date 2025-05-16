@@ -11,9 +11,12 @@
 !define VERSION "2.0"
 !define RELDIR "..\Release\"
 
+!define REG_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Milkwave"
+
 Name "Milkwave ${VERSION}"
 OutFile "Milkwave-${VERSION}-Installer.exe"
 InstallDir "C:\Tools\Milkwave"
+InstallDirRegKey HKLM "${REG_UNINST_KEY}" "UninstallString"
 
 RequestExecutionLevel user
 
@@ -83,11 +86,19 @@ Section "Milkwave" SecMilkwave
   File "${RELDIR}sprites.ini"
   SetOverwrite on
   
+
   ;Store installation folder
   WriteRegStr HKCU "Software\Milkwave" "" $INSTDIR
   
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
+  
+  WriteRegStr HKLM "${REG_UNINST_KEY}" "DisplayName" "Milkwave"
+  WriteRegStr HKLM "${REG_UNINST_KEY}" "DisplayIcon" "$INSTDIR\MilkwaveVisualizer.exe,0"
+  WriteRegStr HKLM "${REG_UNINST_KEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
+  WriteRegStr HKLM "${REG_UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
+  WriteRegDWORD HKLM "${REG_UNINST_KEY}" "NoModify" 1
+  WriteRegDWORD HKLM "${REG_UNINST_KEY}" "NoRepair" 1
   
   SetOutPath "$INSTDIR"
 SectionEnd
@@ -152,4 +163,5 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\Milkwave*.lnk"
   
   DeleteRegKey /ifempty HKCU "Software\Milkwave"
+  DeleteRegKey HKLM "${REG_UNINST_KEY}"
 SectionEnd

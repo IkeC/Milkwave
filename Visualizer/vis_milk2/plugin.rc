@@ -143,7 +143,7 @@ IDS_LOAD_FROM_FILE      "Load from file:  [note: preset's wave scaling, as well 
 IDS_SAVE_TO_FILE        "Save to file:  [note: preset's wave scaling, as well as q1-q8, will not be exported]"
 IDS_ENTER_THE_NEW_STRING
 "Enter the new string; hit CTRL+ENTER to apply or ESC to cancel."
-IDS_MILKDROP_ERROR      "MILKDROP ERROR"
+IDS_MILKDROP_ERROR      "Milkwave Error"
 END
 
 STRINGTABLE
@@ -977,7 +977,7 @@ IDS_USE_TOP_SCREEN_ONLY "use top screen only"
 IDS_USE_BOTTOM_SCREEN_ONLY "use bottom screen only"
 IDS_COULD_NOT_FIND_FILE_FOR_DESKTOP_MODE_X
 "Could not find the following file:\n\n     %s\n\n...which is required for this plug-in to work properly in Desktop Mode.\nPlease reinstall the plug-in."
-IDS_MILKDROP_ERROR_FILE_MISSING "MILKDROP ERROR - FILE MISSING"
+IDS_MILKDROP_ERROR_FILE_MISSING "Milkwave Error - File Missing"
 IDS_ERROR_CREATING_GDI_DESKTOP_FONT "Error creating GDI desktop font"
 IDS_ERROR_CREATING_DESKTOP_FONT "Error creating desktop font"
 END
