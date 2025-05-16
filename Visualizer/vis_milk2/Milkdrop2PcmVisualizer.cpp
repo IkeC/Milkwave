@@ -1073,14 +1073,32 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   // ===============================================
   // Enumerate other instances of BeatDrop to increment the title
   WCHAR BeatDroptitle[256];
-  lstrcpyW(BeatDroptitle, L"Milkwave Visualizer"); // default render window title
-  EnumWindows((WNDENUMPROC)&GetWindowNames, NULL);
   // printf("Number of existing BeatDrops (%d)\n", nBeatDrops);
-  if (nBeatDrops > 0) {
-    // swprintf_s(BeatDroptitle, L"Milkwave Visualizer %2.2d", nBeatDrops);
-    swprintf_s(BeatDroptitle, L"Milkwave Visualizer %d", nBeatDrops + 1);
-    printf("New title [%S]\n", BeatDroptitle);
+
+  bool freeTitleFound = false;
+  nBeatDrops = 0;
+
+  while (!freeTitleFound && nBeatDrops < 100) {
+    if (nBeatDrops == 0) {
+      lstrcpyW(BeatDroptitle, L"Milkwave Visualizer");
+    }
+    else {
+      swprintf_s(BeatDroptitle, L"Milkwave Visualizer %d", nBeatDrops + 1);
+    }
+
+    // Check if a window with this title already exists
+    HWND existing = FindWindowW(L"Direct3DWindowClass", BeatDroptitle);
+    if (existing != NULL) {
+      nBeatDrops++;
+      // Try next title
+    }
+    else {
+      // No window with this title, so we can use it
+      printf("New title [%S]\n", BeatDroptitle);
+      freeTitleFound = true;
+    }
   }
+
   // ===============================================
 
     // Create the render window

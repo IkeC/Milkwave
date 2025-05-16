@@ -17,9 +17,9 @@
   "RemoteWindowSize": {
     "IsEmpty": false,
     "Width": 791,
-    "Height": 560
+    "Height": 573
   },
-  "SplitterDistance1": 256,
+  "SplitterDistance1": 257,
   "DarkMode": true,
   "ShowTabsPanel": true,
   "ShowButtonPanel": true,
