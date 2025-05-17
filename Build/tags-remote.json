@@ -1,5 +1,34 @@
 {
   "TagEntries": {
+    "$$$ royal - mashup (197)": {
+      "PresetPath": "Butterchurn\\$$$ Royal - Mashup (197).milk",
+      "Tags": [
+        "colorful"
+      ]
+    },
+    "$$$ royal - mashup (220)": {
+      "PresetPath": "Butterchurn\\$$$ Royal - Mashup (220).milk",
+      "Tags": [
+        "bright",
+        "colorful"
+      ]
+    },
+    "$$$ royal - mashup (431)": {
+      "PresetPath": "Butterchurn\\$$$ Royal - Mashup (431).milk",
+      "Tags": [
+        "dark",
+        "zoom"
+      ]
+    },
+    "00 flexi - truly soft piece of software - this is generic texturing (jelly) ": {
+      "PresetPath": "Butterchurn\\00 Flexi - truly soft piece of software - this is generic texturing (Jelly) .milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
     "01 - martin - blue haze": {
       "PresetPath": "Milkwave\\01 - Martin - blue haze.milk",
       "Tags": [
@@ -8,11 +37,24 @@
       ]
     },
     "11 - ikec - wave 7": {
-      "PresetPath": "Milkwave\\11 - IkeC - wave 7.milk",
+      "PresetPath": "resources\\presets\\Milkwave\\11 - IkeC - wave 7.milk",
       "Tags": [
         "retro",
         "simple",
         "top"
+      ]
+    },
+    "adamfx 2 geiss, zylot and flexi - reaction diffusion 3 (overload mix 2) eatit4 hypno": {
+      "PresetPath": "Butterchurn\\AdamFx 2 Geiss, Zylot and Flexi - Reaction Diffusion 3 (Overload Mix 2) EATIT4 hypno.milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    },
+    "aderrasi \u002B geiss - airhandler (kali mix) - canvas mix": {
+      "PresetPath": "Butterchurn\\Aderrasi \u002B Geiss - Airhandler (Kali Mix) - Canvas Mix.milk",
+      "Tags": [
+        "dark"
       ]
     },
     "aderrasi \u002B geiss - airhandler (kali mix) - painterly kaleidoscope 2": {
@@ -29,11 +71,42 @@
         "top"
       ]
     },
+    "aderrasi - storm of the eye (thunder) - mash0000 - quasi pseudo meta concentrics": {
+      "PresetPath": "Butterchurn\\Aderrasi - Storm of the Eye (Thunder) - mash0000 - quasi pseudo meta concentrics.milk",
+      "Tags": [
+        "disturbing"
+      ]
+    },
+    "an adamfx n martin infusion 2 flexi - why the sky looks diffrent today - adamfx n martin infusion - tack tile disfunction b": {
+      "PresetPath": "Butterchurn\\An AdamFX n Martin Infusion 2 flexi - Why The Sky Looks Diffrent Today - AdamFx n Martin Infusion - Tack Tile Disfunction B.milk",
+      "Tags": [
+        "dark",
+        "zoom"
+      ]
+    },
     "brainstain-re entry": {
       "PresetPath": "Milkwave\\BrainStain-re entry.milk",
       "Tags": [
         "calm",
         "simple"
+      ]
+    },
+    "cope \u002B flexi - colorful marble (ghost mix)": {
+      "PresetPath": "Butterchurn\\cope \u002B flexi - colorful marble (ghost mix).milk",
+      "Tags": [
+        "zoom"
+      ]
+    },
+    "cope \u002B martin - mother-of-pearl": {
+      "PresetPath": "Butterchurn\\cope \u002B martin - mother-of-pearl.milk",
+      "Tags": [
+        "rich"
+      ]
+    },
+    "cope - the neverending explosion of red liquid fire": {
+      "PresetPath": "Butterchurn\\Cope - The Neverending Explosion of Red Liquid Fire.milk",
+      "Tags": [
+        "vibrant"
       ]
     },
     "eo.s. \u002B geiss - glowsticks v2 02 (relief mix)": {
@@ -58,6 +131,13 @@
         "retro"
       ]
     },
+    "eo.s. \u002B zylot - skylight (stained glass majesty mix)": {
+      "PresetPath": "Butterchurn\\Eo.S. \u002B Zylot - skylight (Stained Glass Majesty mix).milk",
+      "Tags": [
+        "bright",
+        "vibrant"
+      ]
+    },
     "eo.s. - glowsticks v2 03 music": {
       "PresetPath": "Milkwave\\Eo.S. - glowsticks v2 03 music.milk",
       "Tags": [
@@ -79,6 +159,12 @@
         "retro",
         "simple",
         "vibrant"
+      ]
+    },
+    "eo.s. - glowsticks v2 05 and proton lights (\u002Bkrash\u2032s beat code) _phat_remix02b": {
+      "PresetPath": "Butterchurn\\Eo.S. - glowsticks v2 05 and proton lights (\u002BKrash\u2032s beat code) _Phat_remix02b.milk",
+      "Tags": [
+        "zoom"
       ]
     },
     "eo.s. - multisphere 01 b_phat_ra_mix": {
@@ -143,6 +229,30 @@
         "vibrant"
       ]
     },
+    "flexi \u002B amandio c - organic12-3d-2": {
+      "PresetPath": "Butterchurn\\flexi \u002B amandio c - organic12-3d-2.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "fly",
+        "top"
+      ]
+    },
+    "flexi \u002B amandio c - piercing 05 - kopie (2) - kopie": {
+      "PresetPath": "Butterchurn\\Flexi \u002B amandio c - piercing 05 - Kopie (2) - Kopie.milk",
+      "Tags": [
+        "colorful",
+        "top"
+      ]
+    },
+    "flexi \u002B fishbrain - neon mindblob grafitti": {
+      "PresetPath": "Butterchurn\\flexi \u002B fishbrain - neon mindblob grafitti.milk",
+      "Tags": [
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
     "flexi \u002B fishbrain - operation fatcap i": {
       "PresetPath": "Milkwave\\Flexi \u002B fiShbRaiN - operation fatcap I.milk",
       "Tags": [
@@ -164,8 +274,60 @@
         "watermark"
       ]
     },
+    "flexi \u002B geiss - pogo cubes vs. tokamak vs. game of life [stahls jelly 4.5 finish]": {
+      "PresetPath": "Butterchurn\\flexi \u002B geiss - pogo cubes vs. tokamak vs. game of life [stahls jelly 4.5 finish].milk",
+      "Tags": [
+        "calm",
+        "cubes",
+        "dark",
+        "watermark"
+      ]
+    },
     "flexi \u002B geiss - pogo-cubes on tokamak matter": {
       "PresetPath": "Milkwave\\Flexi \u002B Geiss - pogo-cubes on tokamak matter.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
+    "flexi \u002B martin - astral projection": {
+      "PresetPath": "Butterchurn\\Flexi \u002B Martin - astral projection.milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    },
+    "flexi \u002B martin - cascading decay swing": {
+      "PresetPath": "Butterchurn\\Flexi \u002B Martin - cascading decay swing.milk",
+      "Tags": [
+        "calm",
+        "colorful",
+        "top",
+        "watermark"
+      ]
+    },
+    "flexi \u002B stahlregen - jelly showoff parade": {
+      "PresetPath": "Butterchurn\\Flexi \u002B stahlregen - jelly showoff parade.milk",
+      "Tags": [
+        "calm",
+        "colorful",
+        "top",
+        "watermark"
+      ]
+    },
+    "flexi - alien fish pond": {
+      "PresetPath": "Butterchurn\\Flexi - alien fish pond.milk",
+      "Tags": [
+        "calm",
+        "colorful",
+        "top",
+        "watermark"
+      ]
+    },
+    "flexi - bouncing balls [double mindblob neon mix]": {
+      "PresetPath": "Butterchurn\\flexi - bouncing balls [double mindblob neon mix].milk",
       "Tags": [
         "calm",
         "dark",
@@ -214,6 +376,14 @@
         "retro"
       ]
     },
+    "flexi - infused with the spiral": {
+      "PresetPath": "Butterchurn\\Flexi - infused with the spiral.milk",
+      "Tags": [
+        "bright",
+        "calm",
+        "top"
+      ]
+    },
     "flexi - intention focus": {
       "PresetPath": "Milkwave\\Flexi - intention focus.milk",
       "Tags": [
@@ -243,11 +413,33 @@
         "calm"
       ]
     },
+    "flexi - mindblob mix": {
+      "PresetPath": "Butterchurn\\Flexi - mindblob mix.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "flexi - mindblob [shiny mix]": {
+      "PresetPath": "Butterchurn\\Flexi - mindblob [shiny mix].milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
     "flexi - moebius transformation [random texture mix]": {
       "PresetPath": "Milkwave\\Flexi - moebius transformation [random texture mix].milk",
       "Tags": [
         "calm",
         "texture"
+      ]
+    },
+    "flexi - mom, why the sky looks different today": {
+      "PresetPath": "Butterchurn\\flexi - mom, why the sky looks different today.milk",
+      "Tags": [
+        "vibrant",
+        "zoom"
       ]
     },
     "flexi - oldschool tree": {
@@ -258,11 +450,19 @@
         "simple"
       ]
     },
+    "flexi - patternton, district of media, capitol of the united abstractions of fractopia": {
+      "PresetPath": "Butterchurn\\flexi - patternton, district of media, capitol of the united abstractions of fractopia.milk",
+      "Tags": [
+        "retro",
+        "vibrant"
+      ]
+    },
     "flexi - predator-prey-spirals": {
-      "PresetPath": "Milkwave\\Flexi - predator-prey-spirals.milk",
+      "PresetPath": "Butterchurn\\Flexi - predator-prey-spirals.milk",
       "Tags": [
         "calm",
-        "colorful"
+        "colorful",
+        "watermark"
       ]
     },
     "flexi - reality tunnel": {
@@ -274,8 +474,10 @@
       ]
     },
     "flexi - smashing fractals [acid etching mix]": {
-      "PresetPath": "Milkwave\\Flexi - smashing fractals [acid etching mix].milk",
+      "PresetPath": "Butterchurn\\Flexi - smashing fractals [acid etching mix].milk",
       "Tags": [
+        "colorful",
+        "top",
         "vibrant"
       ]
     },
@@ -320,9 +522,16 @@
       ]
     },
     "flexi, fishbrain, geiss \u002B martin - tokamak witchery": {
-      "PresetPath": "Milkwave\\Flexi, fishbrain, Geiss \u002B Martin - tokamak witchery.milk",
+      "PresetPath": "Butterchurn\\Flexi, fishbrain, Geiss \u002B Martin - tokamak witchery.milk",
       "Tags": [
         "calm",
+        "colorful",
+        "top"
+      ]
+    },
+    "flexi, martin \u002B geiss - dedicated to the sherwin maxawow": {
+      "PresetPath": "Butterchurn\\Flexi, martin \u002B geiss - dedicated to the sherwin maxawow.milk",
+      "Tags": [
         "colorful"
       ]
     },
@@ -332,10 +541,33 @@
         "vibrant"
       ]
     },
+    "fumbling_foo \u002B en d \u0026 martin - mandelverse": {
+      "PresetPath": "Butterchurn\\Fumbling_Foo \u002B En D \u0026 Martin - Mandelverse.milk",
+      "Tags": [
+        "colorful",
+        "hypnotic"
+      ]
+    },
+    "geiss \u002B flexi \u002B martin - disconnected": {
+      "PresetPath": "Butterchurn\\Geiss \u002B Flexi \u002B Martin - disconnected.milk",
+      "Tags": [
+        "retro",
+        "strobo"
+      ]
+    },
     "geiss \u002B stahlregen - reaction diffusion 3 [rippling islands]": {
       "PresetPath": "Milkwave\\Geiss \u002B Stahlregen - Reaction Diffusion 3 [Rippling Islands].milk",
       "Tags": [
         "zoom"
+      ]
+    },
+    "geiss - cauldron - painterly 2 (saturation remix)": {
+      "PresetPath": "Butterchurn\\Geiss - Cauldron - painterly 2 (saturation remix).milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "top",
+        "watermark"
       ]
     },
     "geiss - cauldron - painterly 5": {
@@ -383,11 +615,28 @@
       ]
     },
     "geiss - spiral artifact": {
-      "PresetPath": "Milkwave\\Geiss - Spiral Artifact.milk",
+      "PresetPath": "Butterchurn\\Geiss - Spiral Artifact.milk",
       "Tags": [
         "colorful",
+        "hypnotic",
+        "top",
         "vibrant",
         "zoom"
+      ]
+    },
+    "geiss - thumb drum": {
+      "PresetPath": "Butterchurn\\Geiss - Thumb Drum.milk",
+      "Tags": [
+        "bright",
+        "calm",
+        "hypnotic"
+      ]
+    },
+    "geiss, flexi \u002B stahlregen - thumbdrum tokamak [crossfiring aftermath jelly mashup]": {
+      "PresetPath": "Butterchurn\\Geiss, Flexi \u002B Stahlregen - Thumbdrum Tokamak [crossfiring aftermath jelly mashup].milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
       ]
     },
     "goody \u002B martin - crystal palace - aqua lumens": {
@@ -419,6 +668,49 @@
         "simple"
       ]
     },
+    "goody - the wild vort": {
+      "PresetPath": "Butterchurn\\Goody - The Wild Vort.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "gunthry is out back bloodying up the pine trees - adm atomising (v) the disintigrate (n)": {
+      "PresetPath": "Butterchurn\\gunthry is out back bloodying up the pine trees - adm atomising (v) the disintigrate (n).milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "halfbreak - funny madness": {
+      "PresetPath": "Butterchurn\\Halfbreak - Funny Madness.milk",
+      "Tags": [
+        "colorful",
+        "hypnotic",
+        "vibrant"
+      ]
+    },
+    "halfbreak - light of breakers": {
+      "PresetPath": "Butterchurn\\Halfbreak - Light of Breakers.milk",
+      "Tags": [
+        "calm",
+        "watermark"
+      ]
+    },
+    "hexcollie, pieturp, orb, flexi, geiss n demon lord - premeditative urination clause": {
+      "PresetPath": "Butterchurn\\Hexcollie, Pieturp, Orb, Flexi, Geiss n Demon Lord - Premeditative Urination Clause.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "high-altitude basket unraveling - singh grooves nitrogen argon nz\u002B": {
+      "PresetPath": "Butterchurn\\high-altitude basket unraveling - singh grooves nitrogen argon nz\u002B.milk",
+      "Tags": [
+        "calm",
+        "dark"
+      ]
+    },
     "illusion \u0026 rovastar - clouded bottle": {
       "PresetPath": "Milkwave\\Illusion \u0026 Rovastar - Clouded Bottle.milk",
       "Tags": [
@@ -433,6 +725,40 @@
         "dark"
       ]
     },
+    "luxxx - play v3 (the war within all of us)": {
+      "PresetPath": "Butterchurn\\LuxXx - Play v3 (the war within all of us).milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "martin \u002B flexi - diamond cutter [prismaticvortex.com] - camille - i wish i wish i wish i was constrained": {
+      "PresetPath": "Butterchurn\\martin \u002B flexi - diamond cutter [prismaticvortex.com] - camille - i wish i wish i wish i was constrained.milk",
+      "Tags": [
+        "simple"
+      ]
+    },
+    "martin - acid wiring": {
+      "PresetPath": "Butterchurn\\Martin - acid wiring.milk",
+      "Tags": [
+        "vibrant",
+        "zoom"
+      ]
+    },
+    "martin - angel flight": {
+      "PresetPath": "Butterchurn\\martin - angel flight.milk",
+      "Tags": [
+        "fly",
+        "vibrant"
+      ]
+    },
+    "martin - another kind of groove": {
+      "PresetPath": "Butterchurn\\martin - another kind of groove.milk",
+      "Tags": [
+        "dark",
+        "vibrant"
+      ]
+    },
     "martin - axon3": {
       "PresetPath": "Milkwave\\martin - axon3.milk",
       "Tags": [
@@ -440,10 +766,18 @@
         "vibrant"
       ]
     },
+    "martin - bombyx mori": {
+      "PresetPath": "Butterchurn\\martin - bombyx mori.milk",
+      "Tags": [
+        "dark",
+        "fly"
+      ]
+    },
     "martin - castle in the air": {
-      "PresetPath": "Milkwave\\martin - castle in the air.milk",
+      "PresetPath": "Butterchurn\\martin - castle in the air.milk",
       "Tags": [
         "calm",
+        "fly",
         "top",
         "watermark"
       ]
@@ -455,6 +789,13 @@
         "simple"
       ]
     },
+    "martin - charisma": {
+      "PresetPath": "Butterchurn\\Martin - charisma.milk",
+      "Tags": [
+        "fly",
+        "vibrant"
+      ]
+    },
     "martin - deep blue": {
       "PresetPath": "Milkwave\\martin - deep blue.milk",
       "Tags": [
@@ -464,11 +805,44 @@
         "watermark"
       ]
     },
+    "martin - disco mix 4": {
+      "PresetPath": "Butterchurn\\martin - disco mix 4.milk",
+      "Tags": [
+        "beat",
+        "fly",
+        "retro"
+      ]
+    },
+    "martin - extreme heat": {
+      "PresetPath": "Butterchurn\\martin - extreme heat.milk",
+      "Tags": [
+        "calm",
+        "cave",
+        "dark",
+        "top",
+        "water"
+      ]
+    },
     "martin - first try": {
       "PresetPath": "Milkwave\\martin - first try.milk",
       "Tags": [
         "dark",
         "zoom"
+      ]
+    },
+    "martin - frosty caves 2": {
+      "PresetPath": "Butterchurn\\martin - frosty caves 2.milk",
+      "Tags": [
+        "beat",
+        "calm",
+        "fly"
+      ]
+    },
+    "martin - fruit machine": {
+      "PresetPath": "Butterchurn\\martin - fruit machine.milk",
+      "Tags": [
+        "strobo",
+        "vibrant"
       ]
     },
     "martin - ghost city": {
@@ -478,10 +852,47 @@
         "watermark"
       ]
     },
+    "martin - glass corridor": {
+      "PresetPath": "Butterchurn\\martin - glass corridor.milk",
+      "Tags": [
+        "calm",
+        "fly"
+      ]
+    },
+    "martin - liquid arrows": {
+      "PresetPath": "Butterchurn\\Martin - liquid arrows.milk",
+      "Tags": [
+        "hypnotic",
+        "vibrant"
+      ]
+    },
+    "martin - mandelbox explorer - high speed demo version": {
+      "PresetPath": "Butterchurn\\martin - mandelbox explorer - high speed demo version.milk",
+      "Tags": [
+        "calm",
+        "fly",
+        "top"
+      ]
+    },
     "martin - moonlight splash": {
       "PresetPath": "Milkwave\\martin - moonlight splash.milk",
       "Tags": [
         "vibrant"
+      ]
+    },
+    "martin - mucus cervix": {
+      "PresetPath": "Butterchurn\\martin - mucus cervix.milk",
+      "Tags": [
+        "liquid"
+      ]
+    },
+    "martin - reflections on black tiles": {
+      "PresetPath": "Butterchurn\\martin - reflections on black tiles.milk",
+      "Tags": [
+        "beat",
+        "dark",
+        "simple",
+        "top"
       ]
     },
     "martin - simple spectrum": {
@@ -491,16 +902,84 @@
         "simple"
       ]
     },
+    "martin - stormy sea (2010 update)": {
+      "PresetPath": "Butterchurn\\martin - stormy sea (2010 update).milk",
+      "Tags": [
+        "water"
+      ]
+    },
+    "martin - the bridge of khazad-dum": {
+      "PresetPath": "Butterchurn\\martin - The Bridge of Khazad-Dum.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "fire"
+      ]
+    },
     "martin - this beautiful planet": {
       "PresetPath": "Milkwave\\martin - this beautiful planet.milk",
       "Tags": [
         "calm"
       ]
     },
+    "martin - witchcraft reloaded": {
+      "PresetPath": "Butterchurn\\martin - witchcraft reloaded.milk",
+      "Tags": [
+        "simple",
+        "top",
+        "vibrant"
+      ]
+    },
+    "martin [shadow harlequins shape code] - fata morgana": {
+      "PresetPath": "Butterchurn\\martin [shadow harlequins shape code] - fata morgana.milk",
+      "Tags": [
+        "colorful",
+        "fly",
+        "water"
+      ]
+    },
+    "martin, flexi, fishbrain \u002B sto - enterstate [random mashup]": {
+      "PresetPath": "Butterchurn\\martin, flexi, fishbrain \u002B sto - enterstate [random mashup].milk",
+      "Tags": [
+        "calm",
+        "dark"
+      ]
+    },
+    "mig_049": {
+      "PresetPath": "Milkwave\\Mig_049.milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "top",
+        "watermark"
+      ]
+    },
+    "milk artist at our best - fed - slowfast ft adamfx n martin - hd cosmofx": {
+      "PresetPath": "Butterchurn\\Milk Artist At our Best - FED - SlowFast Ft AdamFX n Martin - HD CosmoFX.milk",
+      "Tags": [
+        "bright",
+        "zoom"
+      ]
+    },
     "milkdrop2077 - circle of life": {
       "PresetPath": "Milkwave\\MilkDrop2077 - circle of life.milk",
       "Tags": [
         "vibrant"
+      ]
+    },
+    "milkdrop2077.r002": {
+      "PresetPath": "Butterchurn\\MilkDrop2077.R002.milk",
+      "Tags": [
+        "bright",
+        "vibrant",
+        "watermark"
+      ]
+    },
+    "milkdrop2077.r033": {
+      "PresetPath": "Butterchurn\\MilkDrop2077.R033.milk",
+      "Tags": [
+        "dark",
+        "retro"
       ]
     },
     "nil - disco comet": {
@@ -547,6 +1026,13 @@
         "watermark"
       ]
     },
+    "orb - waaa": {
+      "PresetPath": "Butterchurn\\ORB - Waaa.milk",
+      "Tags": [
+        "beat",
+        "vibrant"
+      ]
+    },
     "phat_eo.s. rainbow bubble_mid3-fuck me dood": {
       "PresetPath": "Milkwave\\Phat_Eo.S. rainbow bubble_mid3-fuck me dood.milk",
       "Tags": [
@@ -578,6 +1064,20 @@
         "simple"
       ]
     },
+    "rovastar \u002B loadus \u002B geiss - fractaldrop (triple mix)": {
+      "PresetPath": "Butterchurn\\Rovastar \u002B Loadus \u002B Geiss - FractalDrop (Triple Mix).milk",
+      "Tags": [
+        "beat",
+        "simple"
+      ]
+    },
+    "rovastar - oozing resistance": {
+      "PresetPath": "Butterchurn\\Rovastar - Oozing Resistance.milk",
+      "Tags": [
+        "colorful",
+        "watermark"
+      ]
+    },
     "royal - mashup (113)": {
       "PresetPath": "Milkwave\\Royal - Mashup (113).milk",
       "Tags": [
@@ -593,10 +1093,33 @@
         "top"
       ]
     },
+    "sawtooth grin roam": {
+      "PresetPath": "Butterchurn\\sawtooth grin roam.milk",
+      "Tags": [
+        "colorful",
+        "hypnotic",
+        "vibrant"
+      ]
+    },
+    "shadowharlequin - lovelyshinysquares [ liquid starburst rmx ] - unchained \u002B rovaster - luckless - martin - starfield sector": {
+      "PresetPath": "Butterchurn\\ShadowHarlequin - LovelyShinySquares [ liquid starburst rmx ] - unchained \u002B rovaster - luckless - martin - starfield sector.milk",
+      "Tags": [
+        "bright",
+        "calm"
+      ]
+    },
     "shifter - dark tides (eo.s\u002Bphat_whisps of doom mix)": {
       "PresetPath": "Milkwave\\shifter - dark tides (eo.s\u002Bphat_whisps of doom mix).milk",
       "Tags": [
         "simple"
+      ]
+    },
+    "shifter - dark tides bdrv mix 2": {
+      "PresetPath": "Butterchurn\\shifter - dark tides bdrv mix 2.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
       ]
     },
     "shifter - digi": {
@@ -604,6 +1127,14 @@
       "Tags": [
         "dark",
         "retro",
+        "simple"
+      ]
+    },
+    "shifter - escape (sigur ros)": {
+      "PresetPath": "Butterchurn\\shifter - escape (sigur ros).milk",
+      "Tags": [
+        "beat",
+        "calm",
         "simple"
       ]
     },
@@ -621,6 +1152,13 @@
         "calm",
         "dark",
         "watermark"
+      ]
+    },
+    "shifter - liquid circuitry - conjugoth": {
+      "PresetPath": "Butterchurn\\shifter - liquid circuitry - conjugoth.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
       ]
     },
     "shifter - tumbling cubes": {
@@ -659,11 +1197,97 @@
         "vibrant"
       ]
     },
+    "suksma - ed geining hateops - squeakers": {
+      "PresetPath": "Butterchurn\\suksma - ed geining hateops - squeakers.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "suksma - heretical crosscut playpen": {
+      "PresetPath": "Butterchurn\\suksma - heretical crosscut playpen.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "retro",
+        "top"
+      ]
+    },
+    "suksma - hexcollie - julian carnival - shimmy dumb grid": {
+      "PresetPath": "Butterchurn\\suksma - Hexcollie - Julian Carnival - shimmy dumb grid.milk",
+      "Tags": [
+        "retro",
+        "top",
+        "vibrant"
+      ]
+    },
+    "suksma - rovastar - sunflower passion (enlightment mix)_phat_edit \u002B flexi und martin shaders - circumflex in character classes in regular expression": {
+      "PresetPath": "Butterchurn\\suksma - Rovastar - Sunflower Passion (Enlightment Mix)_Phat_edit \u002B flexi und martin shaders - circumflex in character classes in regular expression.milk",
+      "Tags": [
+        "fly",
+        "vibrant"
+      ]
+    },
+    "suksma - uninitialized variabowl (hydroponic chronic)": {
+      "PresetPath": "Butterchurn\\suksma - uninitialized variabowl (hydroponic chronic).milk",
+      "Tags": [
+        "colorful"
+      ]
+    },
+    "suksma - vector exp 1 - couldn\u2032t not": {
+      "PresetPath": "Butterchurn\\suksma - vector exp 1 - couldn\u2032t not.milk",
+      "Tags": [
+        "colorful",
+        "complex"
+      ]
+    },
+    "tonymilkdrop - leonardo da vinci\u0027s balloon [flexi - merry-go-round \u002B techstyle]": {
+      "PresetPath": "Butterchurn\\TonyMilkdrop - Leonardo Da Vinci\u0027s Balloon [Flexi - merry-go-round \u002B techstyle].milk",
+      "Tags": [
+        "complex"
+      ]
+    },
+    "tonymilkdrop - magellan\u0027s nebula [flexi - you enter first \u002B multiverse]": {
+      "PresetPath": "Butterchurn\\TonyMilkdrop - Magellan\u0027s Nebula [Flexi - you enter first \u002B multiverse].milk",
+      "Tags": [
+        "colorful",
+        "hypnotic"
+      ]
+    },
+    "unchained - rewop": {
+      "PresetPath": "Butterchurn\\Unchained - Rewop.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "unchained - unified drag 2": {
+      "PresetPath": "Butterchurn\\Unchained - Unified Drag 2.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "yin - 191 - temporal singularities": {
+      "PresetPath": "Butterchurn\\yin - 191 - Temporal singularities.milk",
+      "Tags": [
+        "fly",
+        "vibrant"
+      ]
+    },
     "yin - 250 - artificial poles of the continuum_phat\u0027s_orbit_mix": {
       "PresetPath": "Milkwave\\yin - 250 - Artificial poles of the continuum_Phat\u0027s_Orbit_mix.milk",
       "Tags": [
         "calm",
         "retro"
+      ]
+    },
+    "yin - 393 - artificial inspiration (music driven - outward)": {
+      "PresetPath": "Butterchurn\\yin - 393 - Artificial Inspiration (music driven - outward).milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "top",
+        "watermark"
       ]
     },
     "zachjukamashi - waves of sound": {
@@ -673,11 +1297,79 @@
         "simple"
       ]
     },
+    "zylot - paint spill (music reactive paint mix)": {
+      "PresetPath": "Butterchurn\\Zylot - Paint Spill (Music Reactive Paint Mix).milk",
+      "Tags": [
+        "liquid",
+        "vibrant"
+      ]
+    },
     "zylot - spiral (hypnotic)_phat_double_spiral_mix": {
       "PresetPath": "Milkwave\\Zylot - Spiral (Hypnotic)_Phat_Double_Spiral_Mix.milk",
       "Tags": [
         "calm",
         "colorful"
+      ]
+    },
+    "zylot - star ornament": {
+      "PresetPath": "Butterchurn\\Zylot - Star Ornament.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "simple"
+      ]
+    },
+    "zylot - true visionary (final mix)": {
+      "PresetPath": "Butterchurn\\Zylot - True Visionary (Final Mix).milk",
+      "Tags": [
+        "hypnotic",
+        "vibrant"
+      ]
+    },
+    "_aderrasi - wanderer in curved space - mash0000 - faclempt kibitzing meshuggana schmaltz (geiss color mix)": {
+      "PresetPath": "Butterchurn\\_Aderrasi - Wanderer in Curved Space - mash0000 - faclempt kibitzing meshuggana schmaltz (Geiss color mix).milk",
+      "Tags": [
+        "bright",
+        "colorful",
+        "zoom"
+      ]
+    },
+    "_geiss - artifact 01": {
+      "PresetPath": "Butterchurn\\_Geiss - Artifact 01.milk",
+      "Tags": [
+        "beat"
+      ]
+    },
+    "_geiss - desert rose 2": {
+      "PresetPath": "Butterchurn\\_Geiss - Desert Rose 2.milk",
+      "Tags": [
+        "bright",
+        "hypnotic"
+      ]
+    },
+    "_geiss - untitled": {
+      "PresetPath": "Butterchurn\\_Geiss - untitled.milk",
+      "Tags": [
+        "beat",
+        "vibrant",
+        "zoom"
+      ]
+    },
+    "_mig_085": {
+      "PresetPath": "Butterchurn\\_Mig_085.milk",
+      "Tags": [
+        "dark",
+        "retro",
+        "simple",
+        "watermark"
+      ]
+    },
+    "_rovastar \u002B geiss - hurricane nightmare (posterize mix)": {
+      "PresetPath": "Butterchurn\\_Rovastar \u002B Geiss - Hurricane Nightmare (Posterize Mix).milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
       ]
     }
   }

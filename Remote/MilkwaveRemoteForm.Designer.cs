@@ -119,7 +119,7 @@ namespace MilkwaveRemote
       lblScale = new Label();
       lblEcho = new Label();
       cboDirOrTagsFilter = new ComboBox();
-      label1 = new Label();
+      lblMostUsed = new Label();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
       chkWaveSolarize = new CheckBox();
@@ -702,7 +702,7 @@ namespace MilkwaveRemote
       numAmpLeft.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numAmpLeft.DecimalPlaces = 2;
       numAmpLeft.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numAmpLeft.Location = new Point(419, 152);
+      numAmpLeft.Location = new Point(419, 153);
       numAmpLeft.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numAmpLeft.Name = "numAmpLeft";
       numAmpLeft.Size = new Size(52, 23);
@@ -729,7 +729,7 @@ namespace MilkwaveRemote
       numAmpRight.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numAmpRight.DecimalPlaces = 2;
       numAmpRight.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numAmpRight.Location = new Point(477, 152);
+      numAmpRight.Location = new Point(477, 153);
       numAmpRight.Margin = new Padding(3, 2, 3, 2);
       numAmpRight.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numAmpRight.Name = "numAmpRight";
@@ -936,7 +936,9 @@ namespace MilkwaveRemote
       txtTags.Size = new Size(455, 23);
       txtTags.TabIndex = 123;
       toolTip1.SetToolTip(txtTags, "Enter: Save\r\nCtrl+Enter: Save and select next preset");
+      txtTags.Enter += txtTags_Enter;
       txtTags.KeyDown += txtTags_KeyDown;
+      txtTags.Leave += txtTags_Leave;
       // 
       // btnTagsSave
       // 
@@ -1270,14 +1272,16 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(cboDirOrTagsFilter, "Tags or directory filter");
       cboDirOrTagsFilter.KeyDown += cboDirOrTagsFilter_KeyDown;
       // 
-      // label1
+      // lblMostUsed
       // 
-      label1.Location = new Point(0, 123);
-      label1.Name = "label1";
-      label1.Size = new Size(70, 23);
-      label1.TabIndex = 136;
-      label1.Text = "Most used";
-      label1.TextAlign = ContentAlignment.MiddleRight;
+      lblMostUsed.Location = new Point(0, 123);
+      lblMostUsed.Name = "lblMostUsed";
+      lblMostUsed.Size = new Size(70, 23);
+      lblMostUsed.TabIndex = 136;
+      lblMostUsed.Text = "Most used";
+      lblMostUsed.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblMostUsed, "Double-click: Show tag statistics");
+      lblMostUsed.DoubleClick += lblMostUsed_DoubleClick;
       // 
       // chkWaveBrighten
       // 
@@ -1836,7 +1840,7 @@ namespace MilkwaveRemote
       tabPreset.BackColor = SystemColors.ControlLight;
       tabPreset.BorderStyle = BorderStyle.FixedSingle;
       tabPreset.Controls.Add(cboDirOrTagsFilter);
-      tabPreset.Controls.Add(label1);
+      tabPreset.Controls.Add(lblMostUsed);
       tabPreset.Controls.Add(btnTagsSave);
       tabPreset.Controls.Add(btnTag10);
       tabPreset.Controls.Add(btnTag9);
@@ -2393,7 +2397,7 @@ namespace MilkwaveRemote
     private Button btnTag9;
     private Button btnTag8;
     private Button btnTag7;
-    private Label label1;
+    private Label lblMostUsed;
     private ComboBox cboDirOrTagsFilter;
   }
 }

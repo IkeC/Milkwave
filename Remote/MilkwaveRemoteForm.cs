@@ -509,7 +509,7 @@ namespace MilkwaveRemote {
         } else if (type == MessageType.PresetFilePath) {
           message = "PRESET=" + messageToSend;
           string fileName = Path.GetFileNameWithoutExtension(messageToSend);
-          statusMessage = $"Sent preset {fileName} to";
+          statusMessage = $"Sent preset \"{fileName}\" to";
         } else if (type == MessageType.Amplify) {
           message = "AMP" +
             "|l=" + numAmpLeft.Value.ToString(CultureInfo.InvariantCulture) +
@@ -2132,26 +2132,7 @@ namespace MilkwaveRemote {
     }
 
     private void SetTopTags() {
-      // Dictionary to store tag counts
-      var tagCounts = new Dictionary<string, int>();
-
-      // Iterate over all TagEntries
-      foreach (var tagEntry in Tags.TagEntries.Values) {
-        foreach (var tag in tagEntry.Tags) {
-          if (tagCounts.ContainsKey(tag)) {
-            tagCounts[tag]++;
-          } else {
-            tagCounts[tag] = 1;
-          }
-        }
-      }
-
-      // Create a sorted list of tags by count in descending order
-      var sortedTags = tagCounts
-          .OrderByDescending(kvp => kvp.Value) // Sort by count (descending)
-          .ThenBy(kvp => kvp.Key) // Optional: Sort alphabetically for ties
-          .Select(kvp => (Tag: kvp.Key, Count: kvp.Value)) // Convert to tuple
-          .ToList();
+      List<(string Tag, int Count)> sortedTags = GetTagsListSortedByCount();
 
       if (sortedTags.Count > 0) {
         SetButtonTagInfo(btnTag1, sortedTags[0]);
@@ -2224,6 +2205,30 @@ namespace MilkwaveRemote {
       }
     }
 
+    private List<(string Tag, int Count)> GetTagsListSortedByCount() {
+      // Dictionary to store tag counts
+      var tagCounts = new Dictionary<string, int>();
+
+      // Iterate over all TagEntries
+      foreach (var tagEntry in Tags.TagEntries.Values) {
+        foreach (var tag in tagEntry.Tags) {
+          if (tagCounts.ContainsKey(tag)) {
+            tagCounts[tag]++;
+          } else {
+            tagCounts[tag] = 1;
+          }
+        }
+      }
+
+      // Create a sorted list of tags by count in descending order
+      var sortedTags = tagCounts
+          .OrderByDescending(kvp => kvp.Value) // Sort by count (descending)
+          .ThenBy(kvp => kvp.Key) // Optional: Sort alphabetically for ties
+          .Select(kvp => (Tag: kvp.Key, Count: kvp.Value)) // Convert to tuple
+          .ToList();
+      return sortedTags;
+    }
+
     private void SetButtonTagInfo(Button button, (string Tag, int Count) tagInfo) {
       string text = "Add/remove " + tagInfo.Tag.ToUpper() +
         Environment.NewLine + "Used " + tagInfo.Count + " times" +
@@ -2247,7 +2252,7 @@ namespace MilkwaveRemote {
     }
 
     private void AddOrRemoveTopTag(object sender) {
-      ComboBox srcCombobox = cboDirOrTagsFilter;
+      Control srcCombobox = txtTags;
       Char tokenChar = ',';
       string joinSep = ", ";
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
@@ -2490,5 +2495,32 @@ namespace MilkwaveRemote {
         btnPresetLoadTags_Click(null, null);
       }
     }
+
+    private void txtTags_Enter(object sender, EventArgs e) {
+      if (txtTags.Text.Length > 0 && !txtTags.Text.Trim().EndsWith(",")) {
+        txtTags.Text = txtTags.Text.Trim() + ", ";
+      }
+    }
+
+    private void txtTags_Leave(object sender, EventArgs e) {
+      if (txtTags.Text.Length > 0 && txtTags.Text.Trim().EndsWith(",")) {
+        txtTags.Text = txtTags.Text.Trim().Substring(0, txtTags.Text.Trim().Length - 1);
+      }
+    }
+
+    private void lblMostUsed_DoubleClick(object sender, EventArgs e) {
+      string dialogtext = "";
+      List<(string Tag, int Count)> sortedTags = GetTagsListSortedByCount();
+      foreach ((string Tag, int Count) tagInfo in sortedTags) {
+        dialogtext += tagInfo.Tag.ToUpper() + 
+          " used " + tagInfo.Count + 
+          " time" + (tagInfo.Count > 1 ? "s" : "") + Environment.NewLine;
+      }
+      if (dialogtext.EndsWith(Environment.NewLine)) {
+        dialogtext = dialogtext.Substring(0, dialogtext.Length - Environment.NewLine.Length);
+      }
+      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Tag Statistics", dialogtext);
+    }
+
   } // end class
 } // end namespace
