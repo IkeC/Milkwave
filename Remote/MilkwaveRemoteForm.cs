@@ -232,6 +232,10 @@ namespace MilkwaveRemote {
         cboParameters.Text = "size=25|time=5.0|x=0.5|y=0.5|growth=2";
       }
 
+      if (Settings.LoadFilters?.Count > 0) {
+        ReloadLoadFiltersList(false);
+      }
+
       // Fill cboFonts with available system fonts and add a blank first entry  
       cboFonts.Items.Add(""); // Add a blank first entry  
       using (InstalledFontCollection fontsCollection = new InstalledFontCollection()) {
@@ -1271,6 +1275,8 @@ namespace MilkwaveRemote {
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
           SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
+        } else if (e.KeyCode == Keys.T) {
+          btnTagsSave_Click(null, null);
         } else if (e.KeyCode == Keys.X) {
           btnSendFile_Click(null, null);
           if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
@@ -1356,6 +1362,18 @@ namespace MilkwaveRemote {
       cboParameters.Items.Clear();
       cboParameters.Items.AddRange(Settings.Styles.OrderBy(x => x.Name).ToArray());
       cboParameters.Refresh();
+    }
+
+    private void ReloadLoadFiltersList(bool addCuurent) {
+      if (addCuurent && cboDirOrTagsFilter.Text.Length > 0 && !Settings.LoadFilters.Contains(cboDirOrTagsFilter.Text)) {
+        Settings.LoadFilters.Insert(0, cboDirOrTagsFilter.Text);
+        if (Settings.LoadFilters.Count > 5) {
+          Settings.LoadFilters.RemoveAt(5);
+        }
+      }
+      cboDirOrTagsFilter.Items.Clear();
+      cboDirOrTagsFilter.Items.AddRange(Settings.LoadFilters.ToArray());
+      cboDirOrTagsFilter.Refresh();
     }
 
     private void txtStyle_KeyDown(object sender, KeyEventArgs e) {
@@ -1716,6 +1734,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnPresetLoadFile_Click(object sender, EventArgs e) {
+      ReloadLoadFiltersList(true);
       if (ofd.ShowDialog() == DialogResult.OK) {
         string fileName = ofd.FileName;
         if (fileName.EndsWith(".milk", StringComparison.CurrentCultureIgnoreCase) || ofd.FileName.EndsWith(".milk2", StringComparison.CurrentCultureIgnoreCase)) {
@@ -1807,6 +1826,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnPresetLoadDirectory_Click(object? sender, EventArgs? e) {
+      ReloadLoadFiltersList(true);
       using (var fbd = new FolderBrowserDialog()) {
         if (Directory.Exists(VisualizerPresetsFolder)) {
           fbd.InitialDirectory = VisualizerPresetsFolder;
@@ -1835,7 +1855,7 @@ namespace MilkwaveRemote {
         }
         if (fileNameMaybeRelativePath.EndsWith(".milk") || fileNameMaybeRelativePath.EndsWith(".milk2")) {
           string fileNameOnlyNoExtension = Path.GetFileNameWithoutExtension(fileNameMaybeRelativePath);
-          if (txtDirOrTagsFilter.Text.Length == 0 || fileNameOnlyNoExtension.Contains(txtDirOrTagsFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
+          if (cboDirOrTagsFilter.Text.Length == 0 || fileNameOnlyNoExtension.Contains(cboDirOrTagsFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
             Data.Preset newPreset = new Data.Preset {
               DisplayName = fileNameOnlyNoExtension,
               MaybeRelativePath = fileNameMaybeRelativePath
@@ -2040,7 +2060,7 @@ namespace MilkwaveRemote {
       SendInput(VK_F9, "F9", true, false, true);
     }
 
-    private void btnTagsSave_Click(object sender, EventArgs e) {
+    private void btnTagsSave_Click(object? sender, EventArgs? e) {
       SaveTags();
     }
 
@@ -2134,48 +2154,79 @@ namespace MilkwaveRemote {
           .ToList();
 
       if (sortedTags.Count > 0) {
-        SetButtonTagInfo(btnTagA, sortedTags[0]);
+        SetButtonTagInfo(btnTag1, sortedTags[0]);
       } else {
-        // Clear button if no tags
-        btnTagA.Tag = null;
-        btnTagA.Text = "";
+        btnTag1.Tag = null;
+        btnTag1.Text = "";
       }
 
       if (sortedTags.Count > 1) {
-        SetButtonTagInfo(btnTagB, sortedTags[1]);
+        SetButtonTagInfo(btnTag2, sortedTags[1]);
       } else {
-        // Clear button if no tags
-        btnTagB.Tag = null;
-        btnTagB.Text = "";
+        btnTag2.Tag = null;
+        btnTag2.Text = "";
       }
 
       if (sortedTags.Count > 2) {
-        SetButtonTagInfo(btnTagC, sortedTags[2]);
+        SetButtonTagInfo(btnTag3, sortedTags[2]);
       } else {
-        // Clear button if no tags
-        btnTagC.Tag = null;
-        btnTagC.Text = "";
+        btnTag3.Tag = null;
+        btnTag3.Text = "";
       }
 
       if (sortedTags.Count > 3) {
-        SetButtonTagInfo(btnTagD, sortedTags[3]);
+        SetButtonTagInfo(btnTag4, sortedTags[3]);
       } else {
-        // Clear button if no tags
-        btnTagD.Tag = null;
-        btnTagD.Text = "";
+        btnTag4.Tag = null;
+        btnTag4.Text = "";
       }
 
       if (sortedTags.Count > 4) {
-        SetButtonTagInfo(btnTagE, sortedTags[4]);
+        SetButtonTagInfo(btnTag5, sortedTags[4]);
       } else {
-        // Clear button if no tags
-        btnTagE.Tag = null;
-        btnTagE.Text = "";
+        btnTag5.Tag = null;
+        btnTag5.Text = "";
+      }
+
+      if (sortedTags.Count > 5) {
+        SetButtonTagInfo(btnTag6, sortedTags[5]);
+      } else {
+        btnTag6.Tag = null;
+        btnTag6.Text = "";
+      }
+
+      if (sortedTags.Count > 6) {
+        SetButtonTagInfo(btnTag7, sortedTags[6]);
+      } else {
+        btnTag7.Tag = null;
+        btnTag7.Text = "";
+      }
+
+      if (sortedTags.Count > 7) {
+        SetButtonTagInfo(btnTag8, sortedTags[7]);
+      } else {
+        btnTag8.Tag = null;
+        btnTag8.Text = "";
+      }
+
+      if (sortedTags.Count > 8) {
+        SetButtonTagInfo(btnTag9, sortedTags[8]);
+      } else {
+        btnTag9.Tag = null;
+        btnTag9.Text = "";
+      }
+
+      if (sortedTags.Count > 9) {
+        SetButtonTagInfo(btnTag10, sortedTags[9]);
+      } else {
+        btnTag10.Tag = null;
+        btnTag10.Text = "";
       }
     }
 
     private void SetButtonTagInfo(Button button, (string Tag, int Count) tagInfo) {
-      string text = "Add/remove '" + tagInfo.Tag + "' in tags (used " + tagInfo.Count + " times)" +
+      string text = "Add/remove " + tagInfo.Tag.ToUpper() +
+        Environment.NewLine + "Used " + tagInfo.Count + " times" +
         Environment.NewLine + "Ctrl+Click: Add/remove in load filter (OR)" +
         Environment.NewLine + "Shift+Click: Add/remove in load filter (AND)";
       toolTip1.SetToolTip(button, text);
@@ -2191,42 +2242,26 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnTagA_Click(object sender, EventArgs e) {
-      AddOrRemoveTopTag(sender);
-    }
-
-    private void btnTagB_Click(object sender, EventArgs e) {
-      AddOrRemoveTopTag(sender);
-    }
-
-    private void btnTagC_Click(object sender, EventArgs e) {
-      AddOrRemoveTopTag(sender);
-    }
-
-    private void btnTagD_Click(object sender, EventArgs e) {
-      AddOrRemoveTopTag(sender);
-    }
-
-    private void btnTagE_Click(object sender, EventArgs e) {
+    private void btnTag_Click(object sender, EventArgs e) {
       AddOrRemoveTopTag(sender);
     }
 
     private void AddOrRemoveTopTag(object sender) {
-      TextBox srcTextbox = txtTags;
+      ComboBox srcCombobox = cboDirOrTagsFilter;
       Char tokenChar = ',';
       string joinSep = ", ";
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-        srcTextbox = txtDirOrTagsFilter;
+        srcCombobox = cboDirOrTagsFilter;
       }
       if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
-        srcTextbox = txtDirOrTagsFilter;
+        srcCombobox = cboDirOrTagsFilter;
         tokenChar = '&';
         joinSep = " & ";
       }
       if (sender is Button button && button.Tag is string tag && tag.Length > 0) {
 
         // Split txtTags.Text into tokens, trimming whitespace
-        var tokens = srcTextbox.Text
+        var tokens = srcCombobox.Text
             .Split(new[] { tokenChar }, StringSplitOptions.RemoveEmptyEntries)
             .Select(t => t.Trim())
             .ToList();
@@ -2242,7 +2277,7 @@ namespace MilkwaveRemote {
         tokens = tokens.OrderBy(tag => tag).ToList(); // Convert to a sorted list
 
         // Update txtTags.Text with the updated tokens, joined by ", "
-        srcTextbox.Text = string.Join(joinSep, tokens);
+        srcCombobox.Text = string.Join(joinSep, tokens);
       }
     }
 
@@ -2254,10 +2289,11 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnPresetLoadTags_Click(object sender, EventArgs e) {
+    private void btnPresetLoadTags_Click(object? sender, EventArgs? e) {
+      ReloadLoadFiltersList(true);
       cboPresets.Items.Clear();
       var presetList = new List<Data.Preset>();
-      if (txtDirOrTagsFilter.Text.Length > 0) {
+      if (cboDirOrTagsFilter.Text.Length > 0) {
         var filteredEntries = FilterTagEntries();
         foreach (var entry in filteredEntries) {
           Data.Preset newPreset = new Data.Preset {
@@ -2281,7 +2317,7 @@ namespace MilkwaveRemote {
     }
 
     private List<KeyValuePair<string, TagEntry>> FilterTagEntries() {
-      var filterText = txtDirOrTagsFilter.Text.Trim();
+      var filterText = cboDirOrTagsFilter.Text.Trim();
 
       // Split the filter text into tokens based on ',' or '&'
       var filters = filterText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
@@ -2334,7 +2370,7 @@ namespace MilkwaveRemote {
     }
 
     private void lblLoad_DoubleClick(object sender, EventArgs e) {
-      txtDirOrTagsFilter.Text = "";
+      cboDirOrTagsFilter.Text = "";
     }
 
     private void lblTags_DoubleClick(object sender, EventArgs e) {
@@ -2346,7 +2382,6 @@ namespace MilkwaveRemote {
       Size = Settings.RemoteWindowSize;
       toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
-      txtDirOrTagsFilter.Text = Settings.DirOrTagsFilter;
       try {
         splitContainer1.SplitterDistance = Settings.SplitterDistance1;
       } catch (Exception) {
@@ -2364,7 +2399,6 @@ namespace MilkwaveRemote {
       }
       Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
-      Settings.DirOrTagsFilter = txtDirOrTagsFilter.Text;
 
       SaveSettingsToFile();
     }
@@ -2443,5 +2477,18 @@ namespace MilkwaveRemote {
       numWaveScale.Value = 1;
     }
 
+    private void lblLoad_MouseDown(object sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Right) {
+        Settings.LoadFilters.Clear();
+        ReloadLoadFiltersList(false);
+      }
+    }
+
+    private void cboDirOrTagsFilter_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter) {
+        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+        btnPresetLoadTags_Click(null, null);
+      }
+    }
   } // end class
 } // end namespace

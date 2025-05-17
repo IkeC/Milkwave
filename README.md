@@ -36,8 +36,9 @@ There are many tooltips explaining all features when you hover over the form ele
 ### Visualizer
 
 - Use cursor keys for media playback control
-- Set Min./Max. pixel shader version in settings.ini
-  - Indicate upgraded version with Up Arrow before preset name (configurable)
+- Set minimum/maximum pixel shader version in settings.ini
+  - Indicate upgraded version with Up-Arrow before preset name (configurable)
+- Reload messages.ini using asterisk key (*)
 - Extended help display (F1)
   - Now two pages with new and previously undocumented features
 
@@ -45,7 +46,7 @@ There are many tooltips explaining all features when you hover over the form ele
 
 - Preset tagging
   - Tag your presets with any number of words of your choice
-  - Automatic buttons for your most used tags
+  - Dynamic buttons for your most used tags
   - Load preset lists based on tags
   - Saved in human-readable json file for easy sharing or backup
 - Tabbed interface
