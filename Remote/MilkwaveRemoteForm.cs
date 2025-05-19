@@ -1665,7 +1665,7 @@ namespace MilkwaveRemote {
   "Ikes Discord: https://bit.ly/Ikes-Discord" + Environment.NewLine +
   "Presets: https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets" + Environment.NewLine +
   "" + Environment.NewLine +
-  "and the README.txt in the program folder.";
+  "To uninstall Milkwave, run Uninstall.exe from the Milkwave folder.";
       new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Help", dialogtext);
     }
 
@@ -1677,7 +1677,7 @@ namespace MilkwaveRemote {
   Environment.NewLine +
   Environment.NewLine +
   "Milkwave is and will always be free software, being the collaborative effort of many diffent authors. " +
-  "If you like it and want to appreciate and support my share of the work, please consider donating." +
+  "If you like it and want to appreciate and support our share of the work, please consider donating." +
   "" + Environment.NewLine +
   "https://www.paypal.com/ncp/payment/5XMP3S69PJLCU" + Environment.NewLine +
   "" + Environment.NewLine +
