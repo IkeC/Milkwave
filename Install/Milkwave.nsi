@@ -135,6 +135,7 @@ Section "Start menu items"
   ;Create shortcuts
   CreateShortcut "$SMPROGRAMS\Milkwave Remote.lnk" "$INSTDIR\MilkwaveRemote.exe"
   CreateShortcut "$SMPROGRAMS\Milkwave Visualizer.lnk" "$INSTDIR\MilkwaveVisualizer.exe"
+  CreateShortcut "$SMPROGRAMS\Milkwave Uninstall.lnk" "$INSTDIR\Uninstall.exe"
 SectionEnd
 
 Section "Desktop shortcuts"

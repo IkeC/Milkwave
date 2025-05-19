@@ -1657,14 +1657,13 @@ namespace MilkwaveRemote {
     private void toolStripMenuItemHelp_Click(object sender, EventArgs e) {
       string dialogtext =
   "There are many tooltips explaining all features when you move your mouse over all the form elements." + Environment.NewLine +
-  "" + Environment.NewLine +
-  "Additional resources:" + Environment.NewLine +
-  "" + Environment.NewLine +
+   Environment.NewLine +
   "GitHub homepage: https://github.com/IkeC/Milkwave" + Environment.NewLine +
   "GitHub issues: https://github.com/IkeC/Milkwave/issues" + Environment.NewLine +
-  "Ikes Discord: https://bit.ly/Ikes-Discord" + Environment.NewLine +
-  "Presets: https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets" + Environment.NewLine +
-  "" + Environment.NewLine +
+  "Discord: https://bit.ly/Ikes-Discord" + Environment.NewLine +
+  Environment.NewLine +
+  "More Presets: https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets" + Environment.NewLine +
+  Environment.NewLine +
   "To uninstall Milkwave, run Uninstall.exe from the Milkwave folder.";
       new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Help", dialogtext);
     }
@@ -2512,8 +2511,8 @@ namespace MilkwaveRemote {
       string dialogtext = "";
       List<(string Tag, int Count)> sortedTags = GetTagsListSortedByCount();
       foreach ((string Tag, int Count) tagInfo in sortedTags) {
-        dialogtext += tagInfo.Tag.ToUpper() + 
-          " used " + tagInfo.Count + 
+        dialogtext += tagInfo.Tag.ToUpper() +
+          " used " + tagInfo.Count +
           " time" + (tagInfo.Count > 1 ? "s" : "") + Environment.NewLine;
       }
       if (dialogtext.EndsWith(Environment.NewLine)) {
