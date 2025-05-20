@@ -12,7 +12,7 @@
 !define RELDIR "..\Release\"
 
 !define REG_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Milkwave"
-
+                 
 Name "Milkwave ${VERSION}"
 OutFile "Milkwave-${VERSION}-Installer.exe"
 InstallDir "C:\Tools\Milkwave"
@@ -102,6 +102,8 @@ Section "Milkwave" SecMilkwave
 
   WriteRegStr HKLM "${REG_UNINST_KEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
   WriteRegStr HKLM "${REG_UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
+  WriteRegStr HKLM "${REG_UNINST_KEY}" "InstallLocation" "$INSTDIR"
+  
   WriteRegDWORD HKLM "${REG_UNINST_KEY}" "NoModify" 1
   WriteRegDWORD HKLM "${REG_UNINST_KEY}" "NoRepair" 1
     
@@ -167,7 +169,9 @@ Section "Uninstall"
   RMDir $INSTDIR
       
   Delete "$SMPROGRAMS\Milkwave*.lnk"
+  Delete "$Desktop\Milkwave Remote.lnk"
+  Delete "$Desktop\Milkwave Visualizer.lnk"
   
-  DeleteRegKey /ifempty HKCU "Software\Milkwave"
+  DeleteRegKey HKCU "Software\Milkwave"
   DeleteRegKey HKLM "${REG_UNINST_KEY}"
 SectionEnd
