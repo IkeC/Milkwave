@@ -20,7 +20,7 @@ Name "Milkwave ${VERSION}"
 OutFile "Milkwave-${VERSION}-Installer.exe"
 InstallDir "C:\Tools\Milkwave"
 
-RequestExecutionLevel admin
+RequestExecutionLevel user
 
 ; Page defines
 !define MUI_COMPONENTSPAGE_NODESC
@@ -91,26 +91,26 @@ Section "Milkwave" SecMilkwave
   SetOutPath $INSTDIR
 
   ;Store installation folder
-  WriteRegStr HKLM "Software\Milkwave" "" $INSTDIR
+  WriteRegStr HKCU "Software\Milkwave" "" $INSTDIR
 
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "InstallLocation" "$INSTDIR"
   
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "DisplayName" "Milkwave Visualizer"
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "DisplayIcon" "$INSTDIR\MilkwaveVisualizer.exe"
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "DisplayName" "Milkwave Visualizer"
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "DisplayIcon" "$INSTDIR\MilkwaveVisualizer.exe"
   
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "DisplayVersion" "${VERSION}"
-  WriteRegDWORD HKLM "${REG_UNINST_KEY}" "VersionMajor" "${VER_MAJOR}"
-  WriteRegDWORD HKLM "${REG_UNINST_KEY}" "VersionMinor" "${VER_MINOR}"
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "DisplayVersion" "${VERSION}"
+  WriteRegDWORD HKCU "${REG_UNINST_KEY}" "VersionMajor" "${VER_MAJOR}"
+  WriteRegDWORD HKCU "${REG_UNINST_KEY}" "VersionMinor" "${VER_MINOR}"
 
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "Publisher" "IkeC and Contributors"
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "URLInfoAbout" "https://github.com/IkeC/Milkwave"
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "Publisher" "IkeC and Contributors"
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "URLInfoAbout" "https://github.com/IkeC/Milkwave"
 
-  WriteRegDWORD HKLM "${REG_UNINST_KEY}" "NoModify" 1
-  WriteRegDWORD HKLM "${REG_UNINST_KEY}" "NoRepair" 1
+  WriteRegDWORD HKCU "${REG_UNINST_KEY}" "NoModify" 1
+  WriteRegDWORD HKCU "${REG_UNINST_KEY}" "NoRepair" 1
   ${MakeARPInstallDate} $1
-  WriteRegStr HKLM "${REG_UNINST_KEY}" "InstallDate" $1
+  WriteRegStr HKCU "${REG_UNINST_KEY}" "InstallDate" $1
   
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -179,7 +179,7 @@ Section Uninstall
   Delete "$Desktop\Milkwave Visualizer.lnk"
   
   
-  DeleteRegKey HKLM "${REG_UNINST_KEY}"
-  DeleteRegKey HKLM "Software\Milkwave"
+  DeleteRegKey HKCU "${REG_UNINST_KEY}"
+  DeleteRegKey HKCU "Software\Milkwave"
   
 SectionEnd
