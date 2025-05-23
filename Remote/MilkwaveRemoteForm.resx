@@ -576,8 +576,8 @@ randb={int:0..255}  // Randomization for the blue component (b will be bumped wi
     <value>Load presets based on tags filter
 Examples:
 "calm, chill, dark" -&gt; match any of these tags
-"calm AND dark" -&gt; must match both of there tags
-"calm AND !colorful" -&gt; must match first tag and may not contain second</value>
+"calm &amp; dark" -&gt; must match both of there tags
+"calm &amp; !colorful" -&gt; must match first tag and may not contain second</value>
   </data>
   <metadata name="colorDialogMessage.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>420, 0</value>
