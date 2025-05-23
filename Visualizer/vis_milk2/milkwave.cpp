@@ -1,7 +1,8 @@
 #include "milkwave.h"
+#include <locale>
+#include <codecvt>
 
-Milkwave::Milkwave() {
-}
+Milkwave::Milkwave() {}
 
 void Milkwave::Init() {
   winrt::init_apartment(); // Initialize the WinRT runtime
@@ -11,47 +12,51 @@ void Milkwave::Init() {
 void Milkwave::PollMediaInfo() {
 
   if (!doPoll && !doPollExplicit) return;
-  
-  // Get the current time
-  auto current_time = std::chrono::steady_clock::now();
 
-  // Calculate the elapsed time in seconds
-  auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
+  try {
+    // Get the current time
+    auto current_time = std::chrono::steady_clock::now();
 
-  // Check if 2 seconds have passed or manual poll requested
-  if (elapsed_seconds >= 2 || doPollExplicit) {
+    // Calculate the elapsed time in seconds
+    auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
 
-    auto smtcManager = winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
-    auto currentSession = smtcManager.GetCurrentSession();
-    updated = false;
-    if (currentSession) {
-      auto properties = currentSession.TryGetMediaPropertiesAsync().get();
-      if (properties) {
-        if (doPollExplicit || properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum) {          
-          isSongChange = currentAlbum.length() || currentArtist.length() || currentTitle.length();
-          currentArtist = properties.Artist().c_str();
-          currentTitle = properties.Title().c_str();
-          currentAlbum = properties.AlbumTitle().c_str();
+    // Check if 2 seconds have passed or manual poll requested
+    if (elapsed_seconds >= 2 || doPollExplicit) {
 
-          if ((doPollExplicit || doSaveCover) && properties.Thumbnail()) {
-            SaveThumbnailToFile(properties);
+      auto smtcManager = winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+      auto currentSession = smtcManager.GetCurrentSession();
+      updated = false;
+      if (currentSession) {
+        auto properties = currentSession.TryGetMediaPropertiesAsync().get();
+        if (properties) {
+          if (doPollExplicit || properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum) {
+            isSongChange = currentAlbum.length() || currentArtist.length() || currentTitle.length();
+            currentArtist = properties.Artist().c_str();
+            currentTitle = properties.Title().c_str();
+            currentAlbum = properties.AlbumTitle().c_str();
+
+            if ((doPollExplicit || doSaveCover) && properties.Thumbnail()) {
+              SaveThumbnailToFile(properties);
+            }
+
+            updated = true;
           }
-
+        }
+      }
+      else {
+        if (currentArtist.length() || currentTitle.length() || currentAlbum.length()) {
+          currentArtist = L"";
+          currentTitle = L"";
+          currentAlbum = L"";
           updated = true;
         }
       }
-    }
-    else {
-      if (currentArtist.length() || currentTitle.length() || currentAlbum.length()) {
-        currentArtist = L"";
-        currentTitle = L"";
-        currentAlbum = L"";
-        updated = true;
-      }
-    }
 
-    // Reset the start time to the current time
-    start_time = current_time;
+      // Reset the start time to the current time
+      start_time = current_time;
+    }
+  } catch (const std::exception& e) {
+    LogException(L"PollMediaInfo", e, false);
   }
 }
 
@@ -106,12 +111,58 @@ void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
 
     std::wcout << L"Thumbnail saved to: " << filePath.wstring() << std::endl;
   } catch (const std::exception& e) {
-    LogException(L"SaveThumbnailToFile", e);
+    LogException(L"SaveThumbnailToFile", e, false);
   }
 }
 
+void Milkwave::LogInfo(const wchar_t* info) {
+  if (!infoLogEnabled) return;
 
-void Milkwave::LogException(const wchar_t* context, const std::exception& e) {
+  // Ensure the "log" directory exists  
+  const char* logDir = "log";
+  if (_mkdir(logDir) != 0 && errno != EEXIST) {
+    std::cerr << "Failed to create or access log directory: " << logDir << std::endl;
+    return;
+  }
+
+  // Get the current timestamp
+  std::time_t now = std::time(nullptr);
+  std::tm localTime;
+  localtime_s(&localTime, &now);
+
+  char datestring[20];
+  char timestring[20];
+
+  std::strftime(datestring, sizeof(datestring), "%Y-%m-%d", &localTime);
+  std::strftime(timestring, sizeof(timestring), "%H:%M:%S", &localTime);
+
+  // Construct the log file path
+  std::ostringstream logFilePath;
+  logFilePath << logDir << "\\info." << datestring << ".visualizer.log";
+
+  // Open the log file in append mode
+  std::ofstream logFile(logFilePath.str(), std::ios::app);
+  if (logFile.is_open()) {
+    // Convert wchar_t* to UTF-8 std::string
+    std::wstring ws(info);
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+    std::string utf8info = conv.to_bytes(ws);
+
+    logFile << timestring << "> " << utf8info << std::endl;
+    logFile.close();
+  }
+  else {
+    std::cerr << "Failed to open log file: " << logFilePath.str() << std::endl;
+  }
+}
+
+void Milkwave::LogException(const wchar_t* context, const std::exception& e, bool showMessage) {
+
+  std::wstring ws(context);
+  std::wstring info = L"caught exception: ";
+  info += ws;
+  LogInfo(info.c_str());
+
   std::string exceptionMessage = e.what();
 
   // Ensure the "log" directory exists  
@@ -136,7 +187,10 @@ void Milkwave::LogException(const wchar_t* context, const std::exception& e) {
   // Write the exception details to the log file
   std::ofstream logFile(logFilePath.str());
   if (logFile.is_open()) {
-    logFile << "Exception occurred: " << context << "\n" << exceptionMessage << std::endl;
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+    std::string utf8info = conv.to_bytes(ws);
+
+    logFile << "Exception occurred: " << utf8info << "\n" << exceptionMessage << std::endl;
 
     // Capture and log the stack trace
     logFile << "\nStack trace:\n";
@@ -169,10 +223,12 @@ void Milkwave::LogException(const wchar_t* context, const std::exception& e) {
     std::cerr << "Failed to open log file: " << logFilePath.str() << std::endl;
   }
 
-  // Show a message box with the error details
-  std::wstring message = L"An unexpected error occurred:\n\n";
-  message += std::wstring(exceptionMessage.begin(), exceptionMessage.end());
-  message += L"\n\nDetails have been written to the log directory.\n\nDouble-click 'Window' in the Remote to restart Visualizer.";
+  if (showMessage) {
+    // Show a message box with the error details
+    std::wstring message = L"An unexpected error occurred:\n\n";
+    message += std::wstring(exceptionMessage.begin(), exceptionMessage.end());
+    message += L"\n\nDetails have been written to the log directory.\n\nDouble-click 'Window' in the Remote to restart Visualizer.";
 
-  MessageBoxW(NULL, message.c_str(), L"Milkwave Error", MB_OK | MB_ICONERROR);
+    MessageBoxW(NULL, message.c_str(), L"Milkwave Error", MB_OK | MB_ICONERROR);
+  }
 }

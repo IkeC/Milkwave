@@ -648,7 +648,7 @@ static void freeBlocks(llBlock **start)
 {
   llBlock *s=*start;
   *start=0;
-  while (s)
+  while (s != (void*)0xdddddddd && s)
   {
     llBlock *llB = s->next;
 #ifdef _WIN32
@@ -1731,14 +1731,18 @@ void NSEEL_VM_resetvars(NSEEL_VMCTX _ctx)
       if (ctx->varTable_Values) free(ctx->varTable_Values[x]);
     }
 
-    if (ctx->varTable_Values) {
+    if (ctx->varTable_Values && ctx->varTable_Values != (void*)0xdddddddd) {
       free(ctx->varTable_Values);
+      ctx->varTable_Values = NULL;
     }
-    if (ctx->varTable_Names) {
+
+    if (ctx->varTable_Names && ctx->varTable_Names != (void*)0xdddddddd) {
       free(ctx->varTable_Names);
+      ctx->varTable_Names = NULL;
     }
-    ctx->varTable_Values = 0;
-    ctx->varTable_Names = 0;
+
+    // ctx->varTable_Values = 0;
+    // ctx->varTable_Names = 0;
 
     ctx->varTable_numBlocks = 0;
   }
@@ -1762,8 +1766,13 @@ void NSEEL_VM_free(NSEEL_VMCTX _ctx) // free when done with a VM and ALL of its 
 
     freeBlocks((llBlock **)&ctx->tmpblocks_head);  // free blocks
     freeBlocks((llBlock **)&ctx->blocks_head);  // free blocks
-    free(ctx->compileLineRecs);
-    free(ctx);
+    if (ctx != (void*)0xdddddddd && ctx->compileLineRecs != (void*)0xdddddddd) {
+      free(ctx->compileLineRecs);
+    }
+    if (ctx != (void*)0xdddddddd) {
+      //free(ctx);
+      ctx = NULL;
+    }
   }
 
 }

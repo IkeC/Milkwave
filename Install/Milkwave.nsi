@@ -156,6 +156,7 @@ Section Uninstall
     
   RMDir /r "$INSTDIR\resources"
   RMDir /r "$INSTDIR\backup"
+  RMDir /r "$INSTDIR\log"
   
   Delete "$INSTDIR\MilkwaveRemote.dll"
   Delete "$INSTDIR\MilkwaveRemote.exe"

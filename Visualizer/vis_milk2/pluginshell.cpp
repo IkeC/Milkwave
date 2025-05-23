@@ -647,7 +647,7 @@ void CPluginShell::CleanUpDX9Stuff(int final_cleanup) {
     for (int i = 0; i < 16; i++)
       m_lpDX->m_lpDevice->SetTexture(i, NULL);
   }
-
+  
   if (!m_vj_mode) {
     for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
       SafeRelease(m_d3dx_font[i]);
@@ -698,6 +698,7 @@ void CPluginShell::OnUserResizeTextWindow() {
 }
 
 void CPluginShell::OnUserResizeWindow() {
+  
   // Update window properties
   RECT w, c;
   GetWindowRect(m_lpDX->GetHwnd(), &w);
@@ -728,7 +729,9 @@ void CPluginShell::OnUserResizeWindow() {
     if (m_lpDX->m_REAL_client_width != new_REAL_client_w ||
       m_lpDX->m_REAL_client_height != new_REAL_client_h) {
       //CleanUpVJStuff();
+            
       CleanUpDX9Stuff(0);
+      
       if (!m_lpDX->OnUserResizeWindow(&w, &c)) {
         // note: a basic warning messagebox will have already been given.
         // now suggest specific advice on how to regain more video memory:

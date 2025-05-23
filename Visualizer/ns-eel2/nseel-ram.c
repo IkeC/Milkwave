@@ -279,18 +279,20 @@ void NSEEL_VM_freeRAM(NSEEL_VMCTX ctx)
     if (c->ram_blocks)
     {
       EEL_F **blocks = (EEL_F **)c->ram_blocks;
-      for (x = 0; x < NSEEL_RAM_BLOCKS; x ++)
-      {
-	      if (blocks[x])
-	      {
-		      if (NSEEL_RAM_memused >= sizeof(EEL_F) * NSEEL_RAM_ITEMSPERBLOCK) 
-			      NSEEL_RAM_memused -= sizeof(EEL_F) * NSEEL_RAM_ITEMSPERBLOCK;
-		      else NSEEL_RAM_memused_errors++;
-	      }
-        free(blocks[x]);
-        blocks[x]=0;
+      if (blocks != (void*)0xdddddddd) {
+        for (x = 0; x < NSEEL_RAM_BLOCKS; x++) {
+          if (blocks[x]) {
+            if (NSEEL_RAM_memused >= sizeof(EEL_F) * NSEEL_RAM_ITEMSPERBLOCK)
+              NSEEL_RAM_memused -= sizeof(EEL_F) * NSEEL_RAM_ITEMSPERBLOCK;
+            else NSEEL_RAM_memused_errors++;
+          }
+          if (blocks != (void*)0xdddddddd && blocks[x]) {
+            free(blocks[x]);
+            blocks[x] = 0;
+          }
+        }
+        free(blocks);
       }
-      free(blocks);
       c->ram_blocks=0;
     }
     c->ram_needfree=0; // no need to free anymore

@@ -31,7 +31,7 @@ Milkwave is:
 
 There are many tooltips explaining all features when you hover over the form elements. If you have any questions, don't be afraid to [ask for support](#support)!
 
-## New in Milkwave 2.0 (unreleased)
+## New in Milkwave 2.0
 
 ### Visualizer
 
@@ -41,6 +41,7 @@ There are many tooltips explaining all features when you hover over the form ele
 - Reload messages.ini using asterisk key (*)
 - Extended help display (F1)
   - Now two pages with new and previously undocumented features
+- Improved stability on window resize or mode changes
 
 ### Remote
 

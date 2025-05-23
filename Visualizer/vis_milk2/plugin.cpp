@@ -6926,9 +6926,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     case 'K':
       if (bCtrlHeldDown)      // kill all sprites
       {
-        for (int x = 0; x < NUM_TEX; x++)
-          if (m_texmgr.m_tex[x].pSurface)
-            m_texmgr.KillTex(x);
+        KillAllSprites();
         return 0;
       }
       break;
@@ -6960,7 +6958,13 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   }
 
   return 0;
-};
+}
+
+void CPlugin::KillAllSprites() {
+  for (int x = 0; x < NUM_TEX; x++)
+    if (m_texmgr.m_tex[x].pSurface)
+      m_texmgr.KillTex(x);
+}
 
 bool CPlugin::ChangePresetDir(wchar_t* newDir, wchar_t* oldDir) {
   // change dir
@@ -10847,4 +10851,5 @@ void CPlugin::OpenMilkwaveRemote() {
       CloseHandle(pi.hThread);
     }
   }
+
 }

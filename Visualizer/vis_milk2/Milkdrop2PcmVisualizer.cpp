@@ -453,8 +453,8 @@ void ResetWindow(HWND hwnd) {
   int windowWidth = screenWidth / 3;
   int windowHeight = screenHeight / 3;
 
-  int windowX = screenWidth - windowWidth - windowWidth/4;
-  int windowY = windowHeight/4;
+  int windowX = screenWidth - windowWidth - windowWidth / 4;
+  int windowY = windowHeight / 4;
 
   // Restore the window to a normal state if minimized or maximized
   ShowWindow(hwnd, SW_RESTORE);
@@ -479,7 +479,6 @@ void ResetWindow(HWND hwnd) {
   clickthrough = false;
   fullscreen = false;
 }
-
 
 void ToggleBorderlessWindow(HWND hwnd) {
   static RECT lastRect = { 0 }; // Store the previous window position and size
@@ -529,139 +528,152 @@ void ToggleBorderlessWindow(HWND hwnd) {
 }
 
 void ToggleClickThrough(HWND hWnd) {
-  // Retrieve the current alpha value
-  BYTE currentAlpha = 255; // Default to fully opaque
-  DWORD flags = 0;
-  COLORREF colorKey = 0;
-  if (GetLayeredWindowAttributes(hWnd, &colorKey, &currentAlpha, &flags)) {
-    // Successfully retrieved the current alpha value
-  }
+  try {
 
-  if (clickthrough) {
-    // Make the window normal while retaining WS_EX_LAYERED
-    LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
-    style &= ~WS_EX_TRANSPARENT; // Remove click-through
-    SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
-    SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+
+    // Retrieve the current alpha value
+    BYTE currentAlpha = 255; // Default to fully opaque
+    DWORD flags = 0;
+    COLORREF colorKey = 0;
+    if (GetLayeredWindowAttributes(hWnd, &colorKey, &currentAlpha, &flags)) {
+      // Successfully retrieved the current alpha value
+    }
+
+    if (clickthrough) {
+      // Make the window normal while retaining WS_EX_LAYERED
+      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+      style &= ~WS_EX_TRANSPARENT; // Remove click-through
+      SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
+      SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+    }
+    else {
+      // Make the window click-through
+      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+      style |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
+      SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
+      SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+    }
+    clickthrough = !clickthrough;
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"ToggleClickThrough", e, true);
   }
-  else {
-    // Make the window click-through
-    LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
-    style |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
-    SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
-    SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
-  }
-  clickthrough = !clickthrough;
 }
 
 void ToggleBorderlessFullscreen(HWND hWnd) {
-  static bool previousClickthrough = false; // Store the previous clickthrough state
-  static float previousOpacity = 1.0f;       // Store the previous opacity (fully opaque by default)
+  try {
+    // may crash otherwise for some reason
+    g_plugin.KillAllSprites();
 
-  // Check if Shift is pressed
-  bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    static bool previousClickthrough = false; // Store the previous clickthrough state
+    static float previousOpacity = 1.0f; // Store the previous opacity (fully opaque by default)
 
-  // Get the work area of the monitor (excluding the taskbar)
-  MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
-  HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
-  if (GetMonitorInfo(hMonitor, &monitorInfo)) {
-    RECT workArea = monitorInfo.rcWork;
+    // Check if Shift is pressed
+    bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
 
-    // Check if the window is already in borderless fullscreen mode
-    RECT currentRect;
-    GetWindowRect(hWnd, &currentRect);
+    // Get the work area of the monitor (excluding the taskbar)
+    MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
+    HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+    if (GetMonitorInfo(hMonitor, &monitorInfo)) {
+      RECT workArea = monitorInfo.rcWork;
 
-    if (currentRect.left == workArea.left &&
-      currentRect.top == workArea.top &&
-      currentRect.right == workArea.right &&
-      currentRect.bottom == workArea.bottom) {
-      // Restore the previous window dimensions, borderless state, clickthrough state, and opacity
-      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
-      if (g_plugin.m_WindowBorderless) {
-        style = WS_POPUP | WS_VISIBLE; // Restore borderless style
-      }
-      else {
-        style = WS_OVERLAPPEDWINDOW | WS_VISIBLE; // Restore normal window style
-      }
-      SetWindowLongPtr(hWnd, GWL_STYLE, style);
+      // Check if the window is already in borderless fullscreen mode
+      RECT currentRect;
+      GetWindowRect(hWnd, &currentRect);
 
-      // Check if the saved dimensions are the same as the current dimensions
-      if (g_plugin.m_WindowWidth == (currentRect.right - currentRect.left) &&
-        g_plugin.m_WindowHeight == (currentRect.bottom - currentRect.top)) {
-        // Reduce the dimensions by 50%
-        g_plugin.m_WindowWidth /= 2;
-        g_plugin.m_WindowHeight /= 2;
+      if (currentRect.left == workArea.left &&
+        currentRect.top == workArea.top &&
+        currentRect.right == workArea.right &&
+        currentRect.bottom == workArea.bottom) {
+        // Restore the previous window dimensions, borderless state, clickthrough state, and opacity
+        LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
+        if (g_plugin.m_WindowBorderless) {
+          style = WS_POPUP | WS_VISIBLE; // Restore borderless style
+        }
+        else {
+          style = WS_OVERLAPPEDWINDOW | WS_VISIBLE; // Restore normal window style
+        }
+        SetWindowLongPtr(hWnd, GWL_STYLE, style);
 
-        // Center the window
-        g_plugin.m_WindowX = (workArea.right - workArea.left - g_plugin.m_WindowWidth) / 2;
-        g_plugin.m_WindowY = (workArea.bottom - workArea.top - g_plugin.m_WindowHeight) / 2;
-      }
+        // Check if the saved dimensions are the same as the current dimensions
+        if (g_plugin.m_WindowWidth == (currentRect.right - currentRect.left) &&
+          g_plugin.m_WindowHeight == (currentRect.bottom - currentRect.top)) {
+          // Reduce the dimensions by 50%
+          g_plugin.m_WindowWidth /= 2;
+          g_plugin.m_WindowHeight /= 2;
 
-      SetWindowPos(
-        hWnd,
-        g_plugin.m_WindowBorderless ? HWND_TOPMOST : HWND_NOTOPMOST,
-        g_plugin.m_WindowX,
-        g_plugin.m_WindowY,
-        g_plugin.m_WindowWidth,
-        g_plugin.m_WindowHeight,
-        SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
-      );
+          // Center the window
+          g_plugin.m_WindowX = (workArea.right - workArea.left - g_plugin.m_WindowWidth) / 2;
+          g_plugin.m_WindowY = (workArea.bottom - workArea.top - g_plugin.m_WindowHeight) / 2;
+        }
 
-      // Restore the previous clickthrough state
-      if (clickthrough != previousClickthrough) {
-        ToggleClickThrough(hWnd);
-      }
+        SetWindowPos(
+          hWnd,
+          g_plugin.m_WindowBorderless ? HWND_TOPMOST : HWND_NOTOPMOST,
+          g_plugin.m_WindowX,
+          g_plugin.m_WindowY,
+          g_plugin.m_WindowWidth,
+          g_plugin.m_WindowHeight,
+          SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
+        );
 
-      g_plugin.fOpacity = previousOpacity;
-      g_plugin.SetOpacity(hWnd);
-
-      // Restore the previous opacity
-      // SetLayeredWindowAttributes(hWnd, 0, previousOpacity, LWA_ALPHA);
-
-      borderless = g_plugin.m_WindowBorderless; // Restore the borderless state
-    }
-    else {
-      // Save the current window dimensions, borderless state, clickthrough state, and opacity
-      RECT currentWindowRect;
-      GetWindowRect(hWnd, &currentWindowRect);
-      g_plugin.m_WindowX = currentWindowRect.left;
-      g_plugin.m_WindowY = currentWindowRect.top;
-      g_plugin.m_WindowWidth = currentWindowRect.right - currentWindowRect.left;
-      g_plugin.m_WindowHeight = currentWindowRect.bottom - currentWindowRect.top;
-      g_plugin.m_WindowBorderless = borderless; // Save the current borderless state
-
-      previousClickthrough = clickthrough; // Save the current clickthrough state
-      previousOpacity = g_plugin.fOpacity;
-
-      // Set the window style to borderless
-      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
-      style &= ~(WS_OVERLAPPEDWINDOW); // Remove standard window styles
-      style |= WS_POPUP; // Add popup style for borderless
-      SetWindowLongPtr(hWnd, GWL_STYLE, style);
-
-      // Set the window position and size to fit the work area
-      SetWindowPos(
-        hWnd,
-        isShiftPressed ? HWND_TOPMOST : HWND_NOTOPMOST,
-        workArea.left,
-        workArea.top,
-        workArea.right - workArea.left,
-        workArea.bottom - workArea.top,
-        SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
-      );
-
-      // If Shift is pressed, enable clickthrough
-      if (isShiftPressed) {
-        if (!clickthrough) {
+        // Restore the previous clickthrough state
+        if (clickthrough != previousClickthrough) {
           ToggleClickThrough(hWnd);
         }
-        g_plugin.fOpacity = g_plugin.m_WindowWatermarkModeOpacity;
-        g_plugin.SetOpacity(hWnd);
-        //SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowWatermarkModeOpacity * 255), LWA_ALPHA);
-      }
 
-      borderless = true;
+        g_plugin.fOpacity = previousOpacity;
+        g_plugin.SetOpacity(hWnd);
+
+        // Restore the previous opacity
+        // SetLayeredWindowAttributes(hWnd, 0, previousOpacity, LWA_ALPHA);
+
+        borderless = g_plugin.m_WindowBorderless; // Restore the borderless state
+      }
+      else {
+        // Save the current window dimensions, borderless state, clickthrough state, and opacity
+        RECT currentWindowRect;
+        GetWindowRect(hWnd, &currentWindowRect);
+        g_plugin.m_WindowX = currentWindowRect.left;
+        g_plugin.m_WindowY = currentWindowRect.top;
+        g_plugin.m_WindowWidth = currentWindowRect.right - currentWindowRect.left;
+        g_plugin.m_WindowHeight = currentWindowRect.bottom - currentWindowRect.top;
+        g_plugin.m_WindowBorderless = borderless; // Save the current borderless state
+
+        previousClickthrough = clickthrough; // Save the current clickthrough state
+        previousOpacity = g_plugin.fOpacity;
+
+        // Set the window style to borderless
+        LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
+        style &= ~(WS_OVERLAPPEDWINDOW); // Remove standard window styles
+        style |= WS_POPUP; // Add popup style for borderless
+        SetWindowLongPtr(hWnd, GWL_STYLE, style);
+
+        // Set the window position and size to fit the work area
+        SetWindowPos(
+          hWnd,
+          isShiftPressed ? HWND_TOPMOST : HWND_NOTOPMOST,
+          workArea.left,
+          workArea.top,
+          workArea.right - workArea.left,
+          workArea.bottom - workArea.top,
+          SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
+        );
+
+        // If Shift is pressed, enable clickthrough
+        if (isShiftPressed) {
+          if (!clickthrough) {
+            ToggleClickThrough(hWnd);
+          }
+          g_plugin.fOpacity = g_plugin.m_WindowWatermarkModeOpacity;
+          g_plugin.SetOpacity(hWnd);
+          //SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowWatermarkModeOpacity * 255), LWA_ALPHA);
+        }
+
+        borderless = true;
+      }
     }
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"ToggleBorderlessFullscreen", e, true);
   }
 }
 
@@ -1212,7 +1224,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
       ////////////////////////////////////////////////////////////////////////////////////////////////
     }
   } catch (const std::exception& e) {
-    milkwave.LogException(L"Exception in main loop", e);
+    milkwave.LogException(L"Exception in main loop", e, true);
   }
 
   g_plugin.MyWriteConfig();
@@ -1222,6 +1234,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   threadRender = nullptr;
   threadId = 0;
+
+  milkwave.LogInfo(L"CreateWindowAndRun ended");
 
   return 1;
 }
@@ -1238,199 +1252,210 @@ void StartRenderThread(HINSTANCE instance) {
 
 int StartAudioCaptureThread(HINSTANCE instance) {
 
-  HRESULT hr = S_OK;
+  try {
 
-  hr = CoInitialize(NULL);
-  if (FAILED(hr)) {
-    ERR(L"CoInitialize failed: hr = 0x%08x", hr);
-    return -__LINE__;
-  }
-  CoUninitializeOnExit cuoe;
+    HRESULT hr = S_OK;
 
-  // argc==1 No additional params. Output disabled.
-  // argc==3 Two additional params. Output file enabled (32bit IEEE 754 FLOAT).
-  // argc==4 Three additional params. Output file enabled (LITTLE ENDIAN PCM).
-  int argc = 1;
-  // LPCWSTR argv[4] = { L"", L"--file", L"loopback-capture.wav", L"--int-16" };
-  LPCWSTR argv[4] = { L"", L"", L"", L"" };
+    hr = CoInitialize(NULL);
+    if (FAILED(hr)) {
+      ERR(L"CoInitialize failed: hr = 0x%08x", hr);
+      return -__LINE__;
+    }
+    CoUninitializeOnExit cuoe;
 
-  if (wcslen(g_plugin.m_szAudioDevice) > 0) {
-    argc = 3;
-    argv[1] = L"--device";
-    argv[2] = g_plugin.m_szAudioDevice;
-  };
+    // argc==1 No additional params. Output disabled.
+    // argc==3 Two additional params. Output file enabled (32bit IEEE 754 FLOAT).
+    // argc==4 Three additional params. Output file enabled (LITTLE ENDIAN PCM).
+    int argc = 1;
+    // LPCWSTR argv[4] = { L"", L"--file", L"loopback-capture.wav", L"--int-16" };
+    LPCWSTR argv[4] = { L"", L"", L"", L"" };
 
-  /*
-  L"%ls [--device \"Device long name\"] [--file \"file name\"] [--int-16]\n"
-    L"\n"
-    L"    -? prints this message.\n"
-    L"    --list-devices displays the long names of all active playback devices.\n"
-    L"    --device captures from the specified device (default if omitted)\n"
-    L"    --file saves the output to a file (%ls if omitted)\n"
-    L"    --int-16 attempts to coerce data to 16-bit integer format",
-   */
-
-  hr = S_OK;
-
-
-  // parse command line
-  CPrefs prefs(argc, argv, hr);
-  if (FAILED(hr)) {
-    ERR(L"CPrefs::CPrefs constructor failed: hr = 0x%08x", hr);
-    return -__LINE__;
-  }
-  if (S_FALSE == hr) {
-    // nothing to do
-    return 0;
-  }
-
-
-  // create a "loopback capture has started" event
-  HANDLE hStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-  if (NULL == hStartedEvent) {
-    ERR(L"CreateEvent failed: last error is %u", GetLastError());
-    return -__LINE__;
-  }
-  CloseHandleOnExit closeStartedEvent(hStartedEvent);
-
-  // create a "stop capturing now" event
-  HANDLE hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-  if (NULL == hStopEvent) {
-    ERR(L"CreateEvent failed: last error is %u", GetLastError());
-    return -__LINE__;
-  }
-  CloseHandleOnExit closeStopEvent(hStopEvent);
-
-  // create arguments for loopback capture thread
-  LoopbackCaptureThreadFunctionArguments threadArgs;
-  threadArgs.hr = E_UNEXPECTED; // thread will overwrite this
-  threadArgs.pMMDevice = prefs.m_pMMDevice;
-  threadArgs.bInt16 = prefs.m_bInt16;
-  threadArgs.hFile = prefs.m_hFile;
-  threadArgs.hStartedEvent = hStartedEvent;
-  threadArgs.hStopEvent = hStopEvent;
-  threadArgs.nFrames = 0;
-
-  hThreadLoopbackCapture = CreateThread(
-    NULL, 0,
-    LoopbackCaptureThreadFunction, &threadArgs,
-    0, NULL
-  );
-  if (NULL == hThreadLoopbackCapture) {
-    ERR(L"CreateThread failed: last error is %u", GetLastError());
-    return -__LINE__;
-  }
-  CloseHandleOnExit closeThread(hThreadLoopbackCapture);
-
-  // wait for either capture to start or the thread to end
-  HANDLE waitArray[2] = { hStartedEvent, hThreadLoopbackCapture };
-  DWORD dwWaitResult;
-  dwWaitResult = WaitForMultipleObjects(
-    ARRAYSIZE(waitArray), waitArray,
-    FALSE, INFINITE
-  );
-
-  if (WAIT_OBJECT_0 + 1 == dwWaitResult) {
-    ERR(L"Thread aborted before starting to loopback capture: hr = 0x%08x", threadArgs.hr);
-    return -__LINE__;
-  }
-
-  if (WAIT_OBJECT_0 != dwWaitResult) {
-    ERR(L"Unexpected WaitForMultipleObjects return value %u", dwWaitResult);
-    return -__LINE__;
-  }
-
-  // at this point capture is running
-  // wait for the user to press a key or for capture to error out
-
-  // /*HANDLE thread =*/ 
-  // StartRenderThread(instance);
-  // WaitForSingleObject(threadRender, INFINITE);
-
-  //NEED TO STOP CAPTURE
-  // at this point capture is running
-  // wait for the user to press a key or for capture to error out
-  {
-    WaitForSingleObjectOnExit waitForThread(hThreadLoopbackCapture);
-    SetEventOnExit setStopEvent(hStopEvent);
+    if (wcslen(g_plugin.m_szAudioDevice) > 0) {
+      argc = 3;
+      argv[1] = L"--device";
+      argv[2] = g_plugin.m_szAudioDevice;
+    };
 
     /*
-    HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+    L"%ls [--device \"Device long name\"] [--file \"file name\"] [--int-16]\n"
+      L"\n"
+      L"    -? prints this message.\n"
+      L"    --list-devices displays the long names of all active playback devices.\n"
+      L"    --device captures from the specified device (default if omitted)\n"
+      L"    --file saves the output to a file (%ls if omitted)\n"
+      L"    --int-16 attempts to coerce data to 16-bit integer format",
+     */
 
-    if (INVALID_HANDLE_VALUE == hStdIn) {
-        ERR(L"GetStdHandle returned INVALID_HANDLE_VALUE: last error is %u", GetLastError());
-        return -__LINE__;
+    hr = S_OK;
+
+
+    // parse command line
+    CPrefs prefs(argc, argv, hr);
+    if (FAILED(hr)) {
+      ERR(L"CPrefs::CPrefs constructor failed: hr = 0x%08x", hr);
+      return -__LINE__;
+    }
+    if (S_FALSE == hr) {
+      // nothing to do
+      return 0;
     }
 
-    LOG(L"%s", L"Press Enter to quit...");
 
-    HANDLE rhHandles[2] = { hThreadLoopbackCapture, hStdIn };
-    */
-    g_plugin.m_AudioLoopState = 0;
-    bool bKeepWaiting = true;
-    while (bKeepWaiting) {
-      if (threadRender == nullptr) {
-        // render thread stopped
-        bKeepWaiting = false;
-      }
-      else if (g_plugin.m_AudioLoopState == 1) {
-        // audio device changed
-        bKeepWaiting = false;
-        g_plugin.m_AudioLoopState = 2;
-      }
-      else {
-        Sleep(100);
-      }
-    } // while
-  } // naked scope
-
-  // at this point the thread is definitely finished
-
-// MessageBoxA(NULL, "capture loop finished", "loopback", MB_OK);
-
-  DWORD exitCode;
-  if (!GetExitCodeThread(hThreadLoopbackCapture, &exitCode)) {
-    ERR(L"GetExitCodeThread failed: last error is %u", GetLastError());
-    return -__LINE__;
-  }
-
-  if (0 != exitCode) {
-    ERR(L"Loopback capture thread exit code is %u; expected 0", exitCode);
-    return -__LINE__;
-  }
-
-  if (S_OK != threadArgs.hr) {
-    ERR(L"Thread HRESULT is 0x%08x", threadArgs.hr);
-    return -__LINE__;
-  }
-  // let prefs' destructor call mmioClose
-
-  if (g_plugin.m_AudioLoopState == 2) {
-    // pauseRender = true;
-    int result = StartAudioCaptureThread(instance);
-    if (result != 0) {
-      ERR(L"StartAudioCaptureThread failed: %d", result);
-      std::wstring statusMessage = L"STATUS=Device init failed, reverting to previous device";
-      g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
-
-      statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevicePrevious);
-      g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
-
-      wcscpy_s(g_plugin.m_szAudioDevice, g_plugin.m_szAudioDevicePrevious);
-      result = StartAudioCaptureThread(instance);
+    // create a "loopback capture has started" event
+    HANDLE hStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (NULL == hStartedEvent) {
+      ERR(L"CreateEvent failed: last error is %u", GetLastError());
+      return -__LINE__;
     }
+    CloseHandleOnExit closeStartedEvent(hStartedEvent);
+
+    // create a "stop capturing now" event
+    HANDLE hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (NULL == hStopEvent) {
+      ERR(L"CreateEvent failed: last error is %u", GetLastError());
+      return -__LINE__;
+    }
+    CloseHandleOnExit closeStopEvent(hStopEvent);
+
+    // create arguments for loopback capture thread
+    LoopbackCaptureThreadFunctionArguments threadArgs;
+    threadArgs.hr = E_UNEXPECTED; // thread will overwrite this
+    threadArgs.pMMDevice = prefs.m_pMMDevice;
+    threadArgs.bInt16 = prefs.m_bInt16;
+    threadArgs.hFile = prefs.m_hFile;
+    threadArgs.hStartedEvent = hStartedEvent;
+    threadArgs.hStopEvent = hStopEvent;
+    threadArgs.nFrames = 0;
+
+    hThreadLoopbackCapture = CreateThread(
+      NULL, 0,
+      LoopbackCaptureThreadFunction, &threadArgs,
+      0, NULL
+    );
+    if (NULL == hThreadLoopbackCapture) {
+      ERR(L"CreateThread failed: last error is %u", GetLastError());
+      return -__LINE__;
+    }
+    CloseHandleOnExit closeThread(hThreadLoopbackCapture);
+
+    // wait for either capture to start or the thread to end
+    HANDLE waitArray[2] = { hStartedEvent, hThreadLoopbackCapture };
+    DWORD dwWaitResult;
+    dwWaitResult = WaitForMultipleObjects(
+      ARRAYSIZE(waitArray), waitArray,
+      FALSE, INFINITE
+    );
+
+    if (WAIT_OBJECT_0 + 1 == dwWaitResult) {
+      ERR(L"Thread aborted before starting to loopback capture: hr = 0x%08x", threadArgs.hr);
+      return -__LINE__;
+    }
+
+    if (WAIT_OBJECT_0 != dwWaitResult) {
+      ERR(L"Unexpected WaitForMultipleObjects return value %u", dwWaitResult);
+      return -__LINE__;
+    }
+
+    // at this point capture is running
+    // wait for the user to press a key or for capture to error out
+
+    // /*HANDLE thread =*/ 
+    // StartRenderThread(instance);
+    // WaitForSingleObject(threadRender, INFINITE);
+
+    //NEED TO STOP CAPTURE
+    // at this point capture is running
+    // wait for the user to press a key or for capture to error out
+    {
+      WaitForSingleObjectOnExit waitForThread(hThreadLoopbackCapture);
+      SetEventOnExit setStopEvent(hStopEvent);
+
+      /*
+      HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+
+      if (INVALID_HANDLE_VALUE == hStdIn) {
+          ERR(L"GetStdHandle returned INVALID_HANDLE_VALUE: last error is %u", GetLastError());
+          return -__LINE__;
+      }
+
+      LOG(L"%s", L"Press Enter to quit...");
+
+      HANDLE rhHandles[2] = { hThreadLoopbackCapture, hStdIn };
+      */
+      g_plugin.m_AudioLoopState = 0;
+      bool bKeepWaiting = true;
+      while (bKeepWaiting) {
+        if (threadRender == nullptr) {
+          // render thread stopped
+          bKeepWaiting = false;
+        }
+        else if (g_plugin.m_AudioLoopState == 1) {
+          // audio device changed
+          bKeepWaiting = false;
+          g_plugin.m_AudioLoopState = 2;
+        }
+        else {
+          Sleep(100);
+        }
+      } // while
+    } // naked scope
+
+    // at this point the thread is definitely finished
+
+  // MessageBoxA(NULL, "capture loop finished", "loopback", MB_OK);
+
+    DWORD exitCode;
+    if (!GetExitCodeThread(hThreadLoopbackCapture, &exitCode)) {
+      ERR(L"GetExitCodeThread failed: last error is %u", GetLastError());
+      return -__LINE__;
+    }
+
+    if (0 != exitCode) {
+      ERR(L"Loopback capture thread exit code is %u; expected 0", exitCode);
+      return -__LINE__;
+    }
+
+    if (S_OK != threadArgs.hr) {
+      ERR(L"Thread HRESULT is 0x%08x", threadArgs.hr);
+      return -__LINE__;
+    }
+    // let prefs' destructor call mmioClose
+
+    if (g_plugin.m_AudioLoopState == 2) {
+      // pauseRender = true;
+      int result = StartAudioCaptureThread(instance);
+      if (result != 0) {
+        ERR(L"StartAudioCaptureThread failed: %d", result);
+        std::wstring statusMessage = L"STATUS=Device init failed, reverting to previous device";
+        g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
+
+        statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevicePrevious);
+        g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
+
+        wcscpy_s(g_plugin.m_szAudioDevice, g_plugin.m_szAudioDevicePrevious);
+        result = StartAudioCaptureThread(instance);
+      }
+    }
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"StartAudioCaptureThread", e, true);
   }
 }
 
 int StartThreads(HINSTANCE instance) {
+  try {
+    // Milkwave: early init so we can read audio device from settings
+    g_plugin.PluginPreInitialize(0, 0);
 
-  // Milkwave: early init so we can read audio device from settings
-  g_plugin.PluginPreInitialize(0, 0);
+    StartRenderThread(instance);
+    // WaitForSingleObject(threadRender, INFINITE);
 
-  StartRenderThread(instance);
-  // WaitForSingleObject(threadRender, INFINITE);
+    StartAudioCaptureThread(instance);
 
-  StartAudioCaptureThread(instance);
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"StartThreads", e, true);
+  }
+
+  milkwave.LogInfo(L"StartThreads ended");
 
   return 0;
 }
@@ -1468,14 +1493,31 @@ bool CheckForDirectX9c() {
 
 }
 
-#ifdef COMPILE_AS_DLL
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
-  module = hModule;
-  api_orig_hinstance = hModule;
-  return true;
+void MilkwaveTerminateHandler() {
+  try {
+    // Re-throw the current exception to get its type/info
+    std::exception_ptr exptr = std::current_exception();
+    if (exptr) {
+      try {
+        std::rethrow_exception(exptr);
+      } catch (const std::exception& e) {
+        milkwave.LogException(L"Unhandled exception (std::terminate)", e, true);
+      } catch (...) {
+        milkwave.LogInfo(L"Unhandled non-std::exception in std::terminate");
+      }
+    }
+    else {
+      milkwave.LogInfo(L"std::terminate called with no active exception");
+    }
+  } catch (...) {
+    // If logging itself throws, do nothing
+  }
+  std::abort(); // Ensure abnormal termination
 }
-#else
+
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
+  std::set_terminate(MilkwaveTerminateHandler);
   api_orig_hinstance = hInstance;
   try {
     // test error logging
@@ -1485,10 +1527,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     else
       return false;
   } catch (const std::exception& e) {
-    milkwave.LogException(L"WinMain", e);
+    milkwave.LogException(L"WinMain", e, true);
   }
+  milkwave.LogInfo(L"WinMain ended");
 }
-#endif
+
 
 static std::string title;
 
