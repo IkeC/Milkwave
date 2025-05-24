@@ -51,11 +51,13 @@ There are many tooltips explaining all features when you hover over the form ele
   - Load preset lists based on tags
   - Saved in human-readable json file for easy sharing or backup
 - Tabbed interface
-  - Presets, Messaging, Wave manipulation
+  - Presets, Messaging, Wave, Fonts
   - Use mouse or Ctrl-Tab to switch between tabs
 - More wave manipulation options
   - Set Zoom, Warp, Rotation etc. in the running preset
   - Clear preset and start with a plain wave
+- Font manipulation
+  - Change and preview font face, style and size instantly
 - Improved accessibility when using large Windows fonts
 
 ## History
