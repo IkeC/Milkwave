@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using Windows.Devices.PointOfService;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
 
@@ -177,7 +178,9 @@ namespace MilkwaveRemote {
       WaveQuickSave,
       AudioDevice,
       Opacity,
-      GetState
+      GetState,
+      Config,
+      TestFonts
     }
     private void SetAllControlFontSizes(Control parent, float fontSize) {
       foreach (Control ctrl in parent.Controls) {
@@ -241,6 +244,11 @@ namespace MilkwaveRemote {
       using (InstalledFontCollection fontsCollection = new InstalledFontCollection()) {
         foreach (FontFamily font in fontsCollection.Families) {
           cboFonts.Items.Add(font.Name);
+          cboFont1.Items.Add(font.Name);
+          cboFont2.Items.Add(font.Name);
+          cboFont3.Items.Add(font.Name);
+          cboFont4.Items.Add(font.Name);
+          cboFont5.Items.Add(font.Name);
         }
         if (cboFonts.Items.Contains(defaultFontName)) {
           cboFonts.SelectedItem = defaultFontName;
@@ -254,7 +262,6 @@ namespace MilkwaveRemote {
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
       cboWindowTitle.SelectedIndex = 0;
-
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
@@ -313,6 +320,8 @@ namespace MilkwaveRemote {
       if (Directory.Exists(MilkwavePresetsFolder)) {
         LoadPresetsFromDirectory(MilkwavePresetsFolder);
       }
+
+      LoadVisualizerSettings();
 
       SendToMilkwaveVisualizer("", MessageType.GetState);
     }
@@ -533,6 +542,10 @@ namespace MilkwaveRemote {
           message = "CLEAR";
         } else if (type == MessageType.WaveQuickSave) {
           message = "QUICKSAVE";
+        } else if (type == MessageType.Config) {
+          message = "CONFIG";
+        } else if (type == MessageType.TestFonts) {
+          message = "TESTFONTS";
         } else if (type == MessageType.PresetLink) {
           message = "LINK=" + messageToSend;
         } else if (type == MessageType.Message) {
@@ -2521,5 +2534,315 @@ namespace MilkwaveRemote {
       new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Tag Statistics", dialogtext);
     }
 
+    private void LoadVisualizerSettings() {
+      try {
+        // Notify
+        string fontFace1 = helper.GetIniValueFonts("FontFace1", "Bahnschrift");
+        cboFont1.SelectedItem = fontFace1;
+        string fontSize1 = helper.GetIniValueFonts("FontSize1", "20");
+        numFont1.Value = int.Parse(fontSize1);
+
+        string fontBold1 = helper.GetIniValueFonts("FontBold1", "0");
+        chkFontBold1.Checked = !fontBold1.Equals("0");
+        string fontItalic1 = helper.GetIniValueFonts("FontItalic1", "0");
+        chkFontItalic1.Checked = !fontItalic1.Equals("0");
+        string fontAA1 = helper.GetIniValueFonts("FontAA1", "0");
+        chkFontAA1.Checked = !fontAA1.Equals("0");
+
+        string fontColorR1 = helper.GetIniValueFonts("FontColorR1", "255");
+        int fontColorR1Val = int.Parse(fontColorR1);
+        string fontColorG1 = helper.GetIniValueFonts("FontColorG1", "255");
+        int fontColorG1Val = int.Parse(fontColorG1);
+        string fontColorB1 = helper.GetIniValueFonts("FontColorB1", "255");
+        int fontColorB1Val = int.Parse(fontColorB1);
+        pnlColorFont1.BackColor = Color.FromArgb(fontColorR1Val, fontColorG1Val, fontColorB1Val);
+
+        // Preset
+        string fontFace2 = helper.GetIniValueFonts("FontFace2", "Bahnschrift");
+        cboFont2.SelectedItem = fontFace2;
+        string fontSize2 = helper.GetIniValueFonts("FontSize2", "25");
+        numFont2.Value = int.Parse(fontSize2);
+
+        string fontBold2 = helper.GetIniValueFonts("FontBold2", "0");
+        chkFontBold2.Checked = !fontBold2.Equals("0");
+        string fontItalic2 = helper.GetIniValueFonts("FontItalic2", "0");
+        chkFontItalic2.Checked = !fontItalic2.Equals("0");
+        string fontAA2 = helper.GetIniValueFonts("FontAA2", "1");
+        chkFontAA2.Checked = !fontAA2.Equals("0");
+
+        string fontColorR2 = helper.GetIniValueFonts("FontColorR2", "255");
+        int fontColorR2Val = int.Parse(fontColorR2);
+        string fontColorG2 = helper.GetIniValueFonts("FontColorG2", "86");
+        int fontColorG2Val = int.Parse(fontColorG2);
+        string fontColorB2 = helper.GetIniValueFonts("FontColorB2", "0");
+        int fontColorB2Val = int.Parse(fontColorB2);
+        pnlColorFont2.BackColor = Color.FromArgb(fontColorR2Val, fontColorG2Val, fontColorB2Val);
+
+        // Artist: Ini-Index is 5!
+        string fontFace3 = helper.GetIniValueFonts("FontFace5", "Bahnschrift");
+        cboFont3.SelectedItem = fontFace3;
+        string fontSize3 = helper.GetIniValueFonts("FontSize5", "30");
+        numFont3.Value = int.Parse(fontSize3);
+
+        string fontBold3 = helper.GetIniValueFonts("FontBold5", "0");
+        chkFontBold3.Checked = !fontBold3.Equals("0");
+        string fontItalic3 = helper.GetIniValueFonts("FontItalic5", "0");
+        chkFontItalic3.Checked = !fontItalic3.Equals("0");
+        string fontAA3 = helper.GetIniValueFonts("FontAA5", "1");
+        chkFontAA3.Checked = !fontAA3.Equals("0");
+
+        string fontColorR3 = helper.GetIniValueFonts("FontColorR5", "211");
+        int fontColorR3Val = int.Parse(fontColorR3);
+        string fontColorG3 = helper.GetIniValueFonts("FontColorG5", "0");
+        int fontColorG3Val = int.Parse(fontColorG3);
+        string fontColorB3 = helper.GetIniValueFonts("FontColorB5", "9");
+        int fontColorB3Val = int.Parse(fontColorB3);
+        pnlColorFont3.BackColor = Color.FromArgb(fontColorR3Val, fontColorG3Val, fontColorB3Val);
+
+        // Title: Ini-Index is 6!
+        string fontFace4 = helper.GetIniValueFonts("FontFace6", "Bahnschrift");
+        cboFont4.SelectedItem = fontFace4;
+        string fontSize4 = helper.GetIniValueFonts("FontSize6", "40");
+        numFont4.Value = int.Parse(fontSize4);
+
+        string fontBold4 = helper.GetIniValueFonts("FontBold6", "1");
+        chkFontBold4.Checked = !fontBold4.Equals("0");
+        string fontItalic4 = helper.GetIniValueFonts("FontItalic6", "0");
+        chkFontItalic4.Checked = !fontItalic4.Equals("0");
+        string fontAA4 = helper.GetIniValueFonts("FontAA6", "1");
+        chkFontAA4.Checked = !fontAA4.Equals("0");
+
+        string fontColorR4 = helper.GetIniValueFonts("FontColorR6", "255");
+        int fontColorR4Val = int.Parse(fontColorR4);
+        string fontColorG4 = helper.GetIniValueFonts("FontColorG6", "86");
+        int fontColorG4Val = int.Parse(fontColorG4);
+        string fontColorB4 = helper.GetIniValueFonts("FontColorB6", "0");
+        int fontColorB4Val = int.Parse(fontColorB4);
+        pnlColorFont4.BackColor = Color.FromArgb(fontColorR4Val, fontColorG4Val, fontColorB4Val);
+
+        // Album: Ini-Index is 7!
+        string fontFace5 = helper.GetIniValueFonts("FontFace7", "Bahnschrift");
+        cboFont5.SelectedItem = fontFace5;
+        string fontSize5 = helper.GetIniValueFonts("FontSize7", "25");
+        numFont5.Value = int.Parse(fontSize5);
+
+        string fontBold5 = helper.GetIniValueFonts("FontBold7", "0");
+        chkFontBold5.Checked = !fontBold5.Equals("0");
+        string fontItalic5 = helper.GetIniValueFonts("FontItalic7", "0");
+        chkFontItalic5.Checked = !fontItalic5.Equals("0");
+        string fontAA5 = helper.GetIniValueFonts("FontAA7", "1");
+        chkFontAA5.Checked = !fontAA5.Equals("0");
+
+        string fontColorR5 = helper.GetIniValueFonts("FontColorR7", "211");
+        int fontColorR5Val = int.Parse(fontColorR5);
+        string fontColorG5 = helper.GetIniValueFonts("FontColorG7", "0");
+        int fontColorG5Val = int.Parse(fontColorG5);
+        string fontColorB5 = helper.GetIniValueFonts("FontColorB7", "9");
+        int fontColorB5Val = int.Parse(fontColorB5);
+        pnlColorFont5.BackColor = Color.FromArgb(fontColorR5Val, fontColorG5Val, fontColorB5Val);
+
+      } catch (Exception) {
+        // ignore
+      }
+    }
+
+    private void btnSettingsSave_Click(object? sender, EventArgs? e) {
+
+      // Notify
+      helper.SetIniValueFonts("FontFace1", cboFont1.Text);
+      helper.SetIniValueFonts("FontSize1", numFont1.Value.ToString());
+      helper.SetIniValueFonts("FontBold1", chkFontBold1.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontItalic1", chkFontItalic1.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontAA1", chkFontAA1.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontColorR1", pnlColorFont1.BackColor.R.ToString());
+      helper.SetIniValueFonts("FontColorG1", pnlColorFont1.BackColor.G.ToString());
+      helper.SetIniValueFonts("FontColorB1", pnlColorFont1.BackColor.B.ToString());
+
+      // Preset
+      helper.SetIniValueFonts("FontFace2", cboFont2.Text);
+      helper.SetIniValueFonts("FontSize2", numFont2.Value.ToString());
+      helper.SetIniValueFonts("FontBold2", chkFontBold2.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontItalic2", chkFontItalic2.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontAA2", chkFontAA2.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontColorR2", pnlColorFont2.BackColor.R.ToString());
+      helper.SetIniValueFonts("FontColorG2", pnlColorFont2.BackColor.G.ToString());
+      helper.SetIniValueFonts("FontColorB2", pnlColorFont2.BackColor.B.ToString());
+
+      // Artist: Ini-Index is 5!
+      helper.SetIniValueFonts("FontFace5", cboFont3.Text);
+      helper.SetIniValueFonts("FontSize5", numFont3.Value.ToString());
+      helper.SetIniValueFonts("FontBold5", chkFontBold3.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontItalic5", chkFontItalic3.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontAA5", chkFontAA3.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontColorR5", pnlColorFont3.BackColor.R.ToString());
+      helper.SetIniValueFonts("FontColorG5", pnlColorFont3.BackColor.G.ToString());
+      helper.SetIniValueFonts("FontColorB5", pnlColorFont3.BackColor.B.ToString());
+
+      // Title: Ini-Index is 6!
+      helper.SetIniValueFonts("FontFace6", cboFont4.Text);
+      helper.SetIniValueFonts("FontSize6", numFont4.Value.ToString());
+      helper.SetIniValueFonts("FontBold6", chkFontBold4.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontItalic6", chkFontItalic4.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontAA6", chkFontAA4.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontColorR6", pnlColorFont4.BackColor.R.ToString());
+      helper.SetIniValueFonts("FontColorG6", pnlColorFont4.BackColor.G.ToString());
+      helper.SetIniValueFonts("FontColorB6", pnlColorFont4.BackColor.B.ToString());
+
+      // Album: Ini-Index is 7!
+      helper.SetIniValueFonts("FontFace7", cboFont5.Text);
+      helper.SetIniValueFonts("FontSize7", numFont5.Value.ToString());
+      helper.SetIniValueFonts("FontBold7", chkFontBold5.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontItalic7", chkFontItalic5.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontAA7", chkFontAA5.Checked ? "1" : "0");
+      helper.SetIniValueFonts("FontColorR7", pnlColorFont5.BackColor.R.ToString());
+      helper.SetIniValueFonts("FontColorG7", pnlColorFont5.BackColor.G.ToString());
+      helper.SetIniValueFonts("FontColorB7", pnlColorFont5.BackColor.B.ToString());
+
+      SendToMilkwaveVisualizer("", MessageType.Config);
+      SendToMilkwaveVisualizer("", MessageType.TestFonts);
+    }
+
+    private void btnSettingsLoad_Click(object sender, EventArgs e) {
+      LoadVisualizerSettings();
+    }
+
+    private void pnlColorFont_Click(object sender, EventArgs e) {
+      ColorDialog dlg = new ColorDialog();
+      dlg.FullOpen = true;
+      Panel pnlColorFont = (Panel)sender;
+      dlg.Color = pnlColorFont.BackColor;
+      if (dlg.ShowDialog(this) == DialogResult.OK) {
+        pnlColorFont.BackColor = dlg.Color;
+      }
+    }
+
+    private void btnTestFonts_Click(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.TestFonts);
+    }
+
+    private void lblFont1_DoubleClick(object sender, EventArgs e) {
+      cboFont1.SelectedItem = "Bahnschrift";
+      numFont1.Value = 20;
+      chkFontBold1.Checked = false;
+      chkFontItalic1.Checked = false;
+      chkFontAA1.Checked = false;
+      pnlColorFont1.BackColor = Color.FromArgb(255, 255, 255);
+    }
+
+    private void lblFont2_DoubleClick(object sender, EventArgs e) {
+      cboFont2.SelectedItem = "Bahnschrift";
+      numFont2.Value = 25;
+      chkFontBold2.Checked = false;
+      chkFontItalic2.Checked = false;
+      chkFontAA2.Checked = true;
+      pnlColorFont2.BackColor = Color.FromArgb(255, 86, 0);
+    }
+
+    private void lblFont3_DoubleClick(object sender, EventArgs e) {
+      cboFont3.SelectedItem = "Bahnschrift";
+      numFont3.Value = 30;
+      chkFontBold3.Checked = false;
+      chkFontItalic3.Checked = false;
+      chkFontAA3.Checked = true;
+      pnlColorFont3.BackColor = Color.FromArgb(211, 0, 9);
+    }
+
+    private void lblFont4_DoubleClick(object sender, EventArgs e) {
+      cboFont4.SelectedItem = "Bahnschrift";
+      numFont4.Value = 40;
+      chkFontBold4.Checked = true;
+      chkFontItalic4.Checked = false;
+      chkFontAA4.Checked = true;
+      pnlColorFont4.BackColor = Color.FromArgb(255, 86, 0);
+    }
+
+    private void lblFont5_DoubleClick(object sender, EventArgs e) {
+      cboFont5.SelectedItem = "Bahnschrift";
+      numFont5.Value = 25;
+      chkFontBold5.Checked = false;
+      chkFontItalic5.Checked = false;
+      chkFontAA5.Checked = true;
+      pnlColorFont5.BackColor = Color.FromArgb(211, 0, 9);
+    }
+
+    private void cboFont1_SelectedIndexChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontFace1", cboFont1.Text);
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void cboFont2_SelectedIndexChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontFace2", cboFont2.Text);
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void cboFont3_SelectedIndexChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontFace5", cboFont3.Text);
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void cboFont4_SelectedIndexChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontFace6", cboFont4.Text);
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void cboFont5_SelectedIndexChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontFace7", cboFont5.Text);
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void numFont1_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontSize1", numFont1.Value.ToString());
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void numFont2_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontSize2", numFont2.Value.ToString());
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void numFont3_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontSize5", numFont3.Value.ToString());
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void numFont4_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontSize6", numFont4.Value.ToString());
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void numFont5_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        helper.SetIniValueFonts("FontSize7", numFont5.Value.ToString());
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
   } // end class
 } // end namespace

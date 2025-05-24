@@ -4376,7 +4376,7 @@ void CPlugin::OnAltK() {
 void CPlugin::AddError(wchar_t* szMsg, float fDuration, int category, bool bBold) {
   if (category == ERR_NOTIFY)
     ClearErrors(category);
-
+  
   assert(category != ERR_ALL);
   ErrorMsg x;
   x.msg = szMsg;
@@ -4481,14 +4481,21 @@ void CPlugin::MyRenderUI(
     // d) debug information
     if (m_bShowDebugInfo) {
       SelectFont(SIMPLE_FONT);
+      DWORD color = GetFontColor(SIMPLE_FONT);
+
       swprintf(buf, L" %s: %6.4f ", wasabiApiLangString(IDS_PF_MONITOR), (float)(*m_pState->var_pf_monitor));
-      MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      //MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
       swprintf(buf, L"%s %s %6.4f ", ((double)mysound.imm_rel[0] >= 1.3) ? L"+" : L" ", L"bass:", (float)(*m_pState->var_pf_bass));
-      MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      //MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
       swprintf(buf, L"%s %s %6.4f ", ((double)mysound.imm_rel[1] >= 1.3) ? L"+" : L" ", L"mid:", (float)(*m_pState->var_pf_mid));
-      MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      //MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
       swprintf(buf, L"%s %s %6.4f ", ((double)mysound.imm_rel[2] >= 1.3) ? L"+" : L" ", L"treb:", (float)(*m_pState->var_pf_treb));
-      MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      //MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
+
       // swprintf(buf, L"BeatDrop v1.3.2.2 RC1");
       // MyTextOut_Shadow(buf, MTO_LOWER_RIGHT);
     }
@@ -5379,12 +5386,18 @@ void CPlugin::MyRenderUI(
             if (res != 1 || !m_HideNotificationsWhenRemoteActive) {
               SelectFont(SIMPLE_FONT);
               swprintf(buf, L"%s ", m_errors[i].msg.c_str());
+              DWORD col = GetFontColor(SIMPLE_FONT);
+              MyTextOut_Color(buf, MTO_UPPER_RIGHT, col);
+              
+              /*
               float age_rel = (age) / (m_errors[i].expireTime - m_errors[i].birthTime);
               DWORD cr = (DWORD)(200 - 199 * powf(age_rel, 4));
               DWORD cg = 0;//(DWORD)(136 - 135*powf(age_rel,1));
               DWORD cb = 0;
               DWORD z = 0xFF000000 | (cr << 16) | (cg << 8) | cb;
               MyTextOut_BGCOLOR(buf, MTO_UPPER_RIGHT, false, m_errors[i].bBold ? z : 0xFF000000);
+              */
+
             }
           }
         }
@@ -10299,6 +10312,22 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"QUICKSAVE", 9) == 0) {
     g_plugin.SaveCurrentPresetToQuicksave(false);
   }
+  else if (wcsncmp(sMessage, L"CONFIG", 6) == 0) {
+    ReadConfig();
+    // to update fonts
+    AllocateDX9Stuff();
+  }
+  else if (wcsncmp(sMessage, L"TESTFONTS", 9) == 0) {
+    ClearErrors(ERR_MSG_BOTTOM_EXTRA_1);
+    ClearErrors(ERR_MSG_BOTTOM_EXTRA_2);
+    ClearErrors(ERR_MSG_BOTTOM_EXTRA_3);
+    // Send text to appear at the bottom first, assuming a bottom corner is used
+    g_plugin.AddError(L"Finally the Album", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_3, false);
+    g_plugin.AddError(L"Here goes the Title", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_2, false);
+    g_plugin.AddError(L"This is the Artist", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
+    if (!g_plugin.m_bShowPresetInfo) g_plugin.m_bShowPresetInfo = true;
+    g_plugin.AddError(L"This is a notification", 3.0F, ERR_NOTIFY, false);
+  }
 }
 
 void CPlugin::SendPresetChangedInfoToMilkwaveRemote() {
@@ -10851,5 +10880,4 @@ void CPlugin::OpenMilkwaveRemote() {
       CloseHandle(pi.hThread);
     }
   }
-
 }

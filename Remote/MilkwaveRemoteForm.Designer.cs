@@ -120,11 +120,33 @@ namespace MilkwaveRemote
       lblEcho = new Label();
       cboDirOrTagsFilter = new ComboBox();
       lblMostUsed = new Label();
-      cboFont1 = new ComboBox();
-      panColorFont1 = new Panel();
+      pnlColorFont1 = new Panel();
       numFont1 = new NumericUpDown();
-      chkFont1AA = new CheckBox();
-      button1 = new Button();
+      chkFontAA1 = new CheckBox();
+      btnSettingsSave = new Button();
+      lblFont1 = new Label();
+      btnSettingsLoad = new Button();
+      chkFontAA2 = new CheckBox();
+      lblFont2 = new Label();
+      numFont2 = new NumericUpDown();
+      pnlColorFont2 = new Panel();
+      chkFontAA3 = new CheckBox();
+      lblFont3 = new Label();
+      numFont3 = new NumericUpDown();
+      pnlColorFont3 = new Panel();
+      chkFontAA4 = new CheckBox();
+      lblFont4 = new Label();
+      numFont4 = new NumericUpDown();
+      pnlColorFont4 = new Panel();
+      chkFontAA5 = new CheckBox();
+      lblFont5 = new Label();
+      numFont5 = new NumericUpDown();
+      pnlColorFont5 = new Panel();
+      cboFont1 = new ComboBox();
+      cboFont5 = new ComboBox();
+      cboFont4 = new ComboBox();
+      cboFont3 = new ComboBox();
+      cboFont2 = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
       chkWaveSolarize = new CheckBox();
@@ -186,10 +208,18 @@ namespace MilkwaveRemote
       numWaveZoom = new NumericUpDown();
       numWavePushY = new NumericUpDown();
       numWavePushX = new NumericUpDown();
-      tabSettings = new TabPage();
-      chkFont1Italic = new CheckBox();
-      chkFont1Bold = new CheckBox();
-      lblFont1 = new Label();
+      tabFonts = new TabPage();
+      btnTestFonts = new Button();
+      chkFontItalic5 = new CheckBox();
+      chkFontBold5 = new CheckBox();
+      chkFontItalic4 = new CheckBox();
+      chkFontBold4 = new CheckBox();
+      chkFontItalic3 = new CheckBox();
+      chkFontBold3 = new CheckBox();
+      chkFontItalic2 = new CheckBox();
+      chkFontBold2 = new CheckBox();
+      chkFontItalic1 = new CheckBox();
+      chkFontBold1 = new CheckBox();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -203,6 +233,10 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveB).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveG).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFont1).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFont2).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFont3).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFont4).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFont5).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).BeginInit();
       tableLayoutPanel1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -221,7 +255,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveZoom).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushY).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).BeginInit();
-      tabSettings.SuspendLayout();
+      tabFonts.SuspendLayout();
       SuspendLayout();
       // 
       // statusStrip1
@@ -330,7 +364,7 @@ namespace MilkwaveRemote
       chkPreview.Name = "chkPreview";
       chkPreview.Size = new Size(83, 23);
       chkPreview.TabIndex = 6;
-      chkPreview.Text = "Preview";
+      chkPreview.Text = "TestFonts";
       chkPreview.TextAlign = ContentAlignment.MiddleCenter;
       chkPreview.TextImageRelation = TextImageRelation.ImageAboveText;
       toolTip1.SetToolTip(chkPreview, "Apply style to message box");
@@ -1134,7 +1168,7 @@ namespace MilkwaveRemote
       // 
       btnWaveClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnWaveClear.FlatStyle = FlatStyle.System;
-      btnWaveClear.Location = new Point(524, 96);
+      btnWaveClear.Location = new Point(524, 95);
       btnWaveClear.Name = "btnWaveClear";
       btnWaveClear.Size = new Size(83, 22);
       btnWaveClear.TabIndex = 126;
@@ -1145,7 +1179,7 @@ namespace MilkwaveRemote
       // 
       // lblPushX
       // 
-      lblPushX.Location = new Point(4, 35);
+      lblPushX.Location = new Point(4, 33);
       lblPushX.Name = "lblPushX";
       lblPushX.Size = new Size(66, 23);
       lblPushX.TabIndex = 128;
@@ -1156,7 +1190,7 @@ namespace MilkwaveRemote
       // 
       // lblPushY
       // 
-      lblPushY.Location = new Point(132, 35);
+      lblPushY.Location = new Point(132, 33);
       lblPushY.Name = "lblPushY";
       lblPushY.Size = new Size(48, 23);
       lblPushY.TabIndex = 130;
@@ -1167,7 +1201,7 @@ namespace MilkwaveRemote
       // 
       // lblZoom
       // 
-      lblZoom.Location = new Point(248, 35);
+      lblZoom.Location = new Point(248, 33);
       lblZoom.Name = "lblZoom";
       lblZoom.Size = new Size(48, 23);
       lblZoom.TabIndex = 132;
@@ -1178,7 +1212,7 @@ namespace MilkwaveRemote
       // 
       // lblRotation
       // 
-      lblRotation.Location = new Point(4, 66);
+      lblRotation.Location = new Point(4, 63);
       lblRotation.Name = "lblRotation";
       lblRotation.Size = new Size(65, 23);
       lblRotation.TabIndex = 134;
@@ -1189,7 +1223,7 @@ namespace MilkwaveRemote
       // 
       // lblWarp
       // 
-      lblWarp.Location = new Point(248, 66);
+      lblWarp.Location = new Point(248, 63);
       lblWarp.Name = "lblWarp";
       lblWarp.Size = new Size(46, 23);
       lblWarp.TabIndex = 136;
@@ -1200,7 +1234,7 @@ namespace MilkwaveRemote
       // 
       // lblDecay
       // 
-      lblDecay.Location = new Point(133, 66);
+      lblDecay.Location = new Point(133, 63);
       lblDecay.Name = "lblDecay";
       lblDecay.Size = new Size(48, 23);
       lblDecay.TabIndex = 138;
@@ -1253,7 +1287,7 @@ namespace MilkwaveRemote
       // 
       // lblScale
       // 
-      lblScale.Location = new Point(360, 35);
+      lblScale.Location = new Point(360, 33);
       lblScale.Name = "lblScale";
       lblScale.Size = new Size(48, 23);
       lblScale.TabIndex = 149;
@@ -1264,7 +1298,7 @@ namespace MilkwaveRemote
       // 
       // lblEcho
       // 
-      lblEcho.Location = new Point(360, 66);
+      lblEcho.Location = new Point(360, 63);
       lblEcho.Name = "lblEcho";
       lblEcho.Size = new Size(48, 23);
       lblEcho.TabIndex = 151;
@@ -1294,6 +1328,292 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblMostUsed, "Double-click: Show tag statistics");
       lblMostUsed.DoubleClick += lblMostUsed_DoubleClick;
       // 
+      // pnlColorFont1
+      // 
+      pnlColorFont1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      pnlColorFont1.BorderStyle = BorderStyle.FixedSingle;
+      pnlColorFont1.Location = new Point(313, 7);
+      pnlColorFont1.Name = "pnlColorFont1";
+      pnlColorFont1.Size = new Size(38, 23);
+      pnlColorFont1.TabIndex = 119;
+      toolTip1.SetToolTip(pnlColorFont1, "Font color");
+      pnlColorFont1.Click += pnlColorFont_Click;
+      // 
+      // numFont1
+      // 
+      numFont1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numFont1.Location = new Point(261, 7);
+      numFont1.Margin = new Padding(3, 2, 3, 2);
+      numFont1.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+      numFont1.Name = "numFont1";
+      numFont1.Size = new Size(46, 23);
+      numFont1.TabIndex = 121;
+      numFont1.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numFont1, "Font size\r\nAlt+Mousewheel: Save and preview instantly");
+      numFont1.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      numFont1.ValueChanged += numFont1_ValueChanged;
+      // 
+      // chkFontAA1
+      // 
+      chkFontAA1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontAA1.Appearance = Appearance.Button;
+      chkFontAA1.FlatStyle = FlatStyle.System;
+      chkFontAA1.Location = new Point(467, 7);
+      chkFontAA1.Margin = new Padding(3, 2, 3, 2);
+      chkFontAA1.Name = "chkFontAA1";
+      chkFontAA1.Size = new Size(49, 23);
+      chkFontAA1.TabIndex = 127;
+      chkFontAA1.Text = "AA";
+      chkFontAA1.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontAA1.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkFontAA1, "Anti-Aliased");
+      chkFontAA1.UseVisualStyleBackColor = true;
+      // 
+      // btnSettingsSave
+      // 
+      btnSettingsSave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnSettingsSave.FlatStyle = FlatStyle.System;
+      btnSettingsSave.Location = new Point(524, 6);
+      btnSettingsSave.Name = "btnSettingsSave";
+      btnSettingsSave.Size = new Size(83, 53);
+      btnSettingsSave.TabIndex = 128;
+      btnSettingsSave.Text = "Save";
+      toolTip1.SetToolTip(btnSettingsSave, "Save values to settings.ini and reload settings in Visualizer\r\n");
+      btnSettingsSave.UseVisualStyleBackColor = true;
+      btnSettingsSave.Click += btnSettingsSave_Click;
+      // 
+      // lblFont1
+      // 
+      lblFont1.Location = new Point(1, 6);
+      lblFont1.Name = "lblFont1";
+      lblFont1.Size = new Size(67, 24);
+      lblFont1.TabIndex = 124;
+      lblFont1.Text = "Notify";
+      lblFont1.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblFont1, "Simple Font: Most messages and notifications\r\nDouble-click: Set default values\r\n");
+      lblFont1.DoubleClick += lblFont1_DoubleClick;
+      // 
+      // btnSettingsLoad
+      // 
+      btnSettingsLoad.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnSettingsLoad.FlatStyle = FlatStyle.System;
+      btnSettingsLoad.Location = new Point(524, 66);
+      btnSettingsLoad.Name = "btnSettingsLoad";
+      btnSettingsLoad.Size = new Size(83, 53);
+      btnSettingsLoad.TabIndex = 130;
+      btnSettingsLoad.Text = "Load";
+      toolTip1.SetToolTip(btnSettingsLoad, "Load values from settings.ini");
+      btnSettingsLoad.UseVisualStyleBackColor = true;
+      btnSettingsLoad.Click += btnSettingsLoad_Click;
+      // 
+      // chkFontAA2
+      // 
+      chkFontAA2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontAA2.Appearance = Appearance.Button;
+      chkFontAA2.FlatStyle = FlatStyle.System;
+      chkFontAA2.Location = new Point(467, 36);
+      chkFontAA2.Margin = new Padding(3, 2, 3, 2);
+      chkFontAA2.Name = "chkFontAA2";
+      chkFontAA2.Size = new Size(49, 23);
+      chkFontAA2.TabIndex = 137;
+      chkFontAA2.Text = "AA";
+      chkFontAA2.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontAA2.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkFontAA2, "Anti-Aliased");
+      chkFontAA2.UseVisualStyleBackColor = true;
+      // 
+      // lblFont2
+      // 
+      lblFont2.Location = new Point(1, 35);
+      lblFont2.Name = "lblFont2";
+      lblFont2.Size = new Size(67, 24);
+      lblFont2.TabIndex = 134;
+      lblFont2.Text = "Preset";
+      lblFont2.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblFont2, "Decorative Font: Preset name\r\nDouble-click: Set default values");
+      lblFont2.DoubleClick += lblFont2_DoubleClick;
+      // 
+      // numFont2
+      // 
+      numFont2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numFont2.Location = new Point(261, 36);
+      numFont2.Margin = new Padding(3, 2, 3, 2);
+      numFont2.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+      numFont2.Name = "numFont2";
+      numFont2.Size = new Size(46, 23);
+      numFont2.TabIndex = 133;
+      numFont2.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numFont2, "Font size\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      numFont2.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      numFont2.ValueChanged += numFont2_ValueChanged;
+      // 
+      // pnlColorFont2
+      // 
+      pnlColorFont2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      pnlColorFont2.BorderStyle = BorderStyle.FixedSingle;
+      pnlColorFont2.Location = new Point(313, 36);
+      pnlColorFont2.Name = "pnlColorFont2";
+      pnlColorFont2.Size = new Size(38, 23);
+      pnlColorFont2.TabIndex = 132;
+      toolTip1.SetToolTip(pnlColorFont2, "Font color");
+      pnlColorFont2.Click += pnlColorFont_Click;
+      // 
+      // chkFontAA3
+      // 
+      chkFontAA3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontAA3.Appearance = Appearance.Button;
+      chkFontAA3.FlatStyle = FlatStyle.System;
+      chkFontAA3.Location = new Point(467, 65);
+      chkFontAA3.Margin = new Padding(3, 2, 3, 2);
+      chkFontAA3.Name = "chkFontAA3";
+      chkFontAA3.Size = new Size(49, 23);
+      chkFontAA3.TabIndex = 144;
+      chkFontAA3.Text = "AA";
+      chkFontAA3.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontAA3.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkFontAA3, "Anti-Aliased");
+      chkFontAA3.UseVisualStyleBackColor = true;
+      // 
+      // lblFont3
+      // 
+      lblFont3.Location = new Point(1, 64);
+      lblFont3.Name = "lblFont3";
+      lblFont3.Size = new Size(67, 24);
+      lblFont3.TabIndex = 141;
+      lblFont3.Text = "Artist";
+      lblFont3.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblFont3, "Extra Font 1: Artist\r\nDouble-click: Set default values");
+      lblFont3.DoubleClick += lblFont3_DoubleClick;
+      // 
+      // numFont3
+      // 
+      numFont3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numFont3.Location = new Point(261, 65);
+      numFont3.Margin = new Padding(3, 2, 3, 2);
+      numFont3.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+      numFont3.Name = "numFont3";
+      numFont3.Size = new Size(46, 23);
+      numFont3.TabIndex = 140;
+      numFont3.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numFont3, "Font size\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      numFont3.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      numFont3.ValueChanged += numFont3_ValueChanged;
+      // 
+      // pnlColorFont3
+      // 
+      pnlColorFont3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      pnlColorFont3.BorderStyle = BorderStyle.FixedSingle;
+      pnlColorFont3.Location = new Point(313, 65);
+      pnlColorFont3.Name = "pnlColorFont3";
+      pnlColorFont3.Size = new Size(38, 23);
+      pnlColorFont3.TabIndex = 139;
+      toolTip1.SetToolTip(pnlColorFont3, "Font color");
+      pnlColorFont3.Click += pnlColorFont_Click;
+      // 
+      // chkFontAA4
+      // 
+      chkFontAA4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontAA4.Appearance = Appearance.Button;
+      chkFontAA4.FlatStyle = FlatStyle.System;
+      chkFontAA4.Location = new Point(467, 94);
+      chkFontAA4.Margin = new Padding(3, 2, 3, 2);
+      chkFontAA4.Name = "chkFontAA4";
+      chkFontAA4.Size = new Size(49, 23);
+      chkFontAA4.TabIndex = 151;
+      chkFontAA4.Text = "AA";
+      chkFontAA4.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontAA4.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkFontAA4, "Anti-Aliased");
+      chkFontAA4.UseVisualStyleBackColor = true;
+      // 
+      // lblFont4
+      // 
+      lblFont4.Location = new Point(1, 93);
+      lblFont4.Name = "lblFont4";
+      lblFont4.Size = new Size(67, 24);
+      lblFont4.TabIndex = 148;
+      lblFont4.Text = "Title";
+      lblFont4.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblFont4, "Extra Font 2: Title\r\nDouble-click: Set default values\r\n");
+      lblFont4.DoubleClick += lblFont4_DoubleClick;
+      // 
+      // numFont4
+      // 
+      numFont4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numFont4.Location = new Point(261, 94);
+      numFont4.Margin = new Padding(3, 2, 3, 2);
+      numFont4.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+      numFont4.Name = "numFont4";
+      numFont4.Size = new Size(46, 23);
+      numFont4.TabIndex = 147;
+      numFont4.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numFont4, "Font size\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      numFont4.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      numFont4.ValueChanged += numFont4_ValueChanged;
+      // 
+      // pnlColorFont4
+      // 
+      pnlColorFont4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      pnlColorFont4.BorderStyle = BorderStyle.FixedSingle;
+      pnlColorFont4.Location = new Point(313, 94);
+      pnlColorFont4.Name = "pnlColorFont4";
+      pnlColorFont4.Size = new Size(38, 23);
+      pnlColorFont4.TabIndex = 146;
+      toolTip1.SetToolTip(pnlColorFont4, "Font color");
+      pnlColorFont4.Click += pnlColorFont_Click;
+      // 
+      // chkFontAA5
+      // 
+      chkFontAA5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontAA5.Appearance = Appearance.Button;
+      chkFontAA5.FlatStyle = FlatStyle.System;
+      chkFontAA5.Location = new Point(467, 123);
+      chkFontAA5.Margin = new Padding(3, 2, 3, 2);
+      chkFontAA5.Name = "chkFontAA5";
+      chkFontAA5.Size = new Size(49, 23);
+      chkFontAA5.TabIndex = 158;
+      chkFontAA5.Text = "AA";
+      chkFontAA5.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontAA5.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkFontAA5, "Anti-Aliased");
+      chkFontAA5.UseVisualStyleBackColor = true;
+      // 
+      // lblFont5
+      // 
+      lblFont5.Location = new Point(1, 122);
+      lblFont5.Name = "lblFont5";
+      lblFont5.Size = new Size(67, 24);
+      lblFont5.TabIndex = 155;
+      lblFont5.Text = "Album";
+      lblFont5.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblFont5, "Extra Font 3: Album\r\nDouble-click: Set default values");
+      lblFont5.DoubleClick += lblFont5_DoubleClick;
+      // 
+      // numFont5
+      // 
+      numFont5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numFont5.Location = new Point(261, 123);
+      numFont5.Margin = new Padding(3, 2, 3, 2);
+      numFont5.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+      numFont5.Name = "numFont5";
+      numFont5.Size = new Size(46, 23);
+      numFont5.TabIndex = 154;
+      numFont5.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numFont5, "Font size\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      numFont5.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      numFont5.ValueChanged += numFont5_ValueChanged;
+      // 
+      // pnlColorFont5
+      // 
+      pnlColorFont5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      pnlColorFont5.BorderStyle = BorderStyle.FixedSingle;
+      pnlColorFont5.Location = new Point(313, 123);
+      pnlColorFont5.Name = "pnlColorFont5";
+      pnlColorFont5.Size = new Size(38, 23);
+      pnlColorFont5.TabIndex = 153;
+      toolTip1.SetToolTip(pnlColorFont5, "Font color");
+      pnlColorFont5.Click += pnlColorFont_Click;
+      // 
       // cboFont1
       // 
       cboFont1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -1305,63 +1625,70 @@ namespace MilkwaveRemote
       cboFont1.Name = "cboFont1";
       cboFont1.Size = new Size(184, 23);
       cboFont1.TabIndex = 118;
+      toolTip1.SetToolTip(cboFont1, "Font face\r\nAlt+Mousewheel: Save and preview instantly");
+      cboFont1.SelectedIndexChanged += cboFont1_SelectedIndexChanged;
       // 
-      // panColorFont1
+      // cboFont5
       // 
-      panColorFont1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      panColorFont1.BorderStyle = BorderStyle.FixedSingle;
-      panColorFont1.Location = new Point(313, 7);
-      panColorFont1.Name = "panColorFont1";
-      panColorFont1.Size = new Size(38, 23);
-      panColorFont1.TabIndex = 119;
-      toolTip1.SetToolTip(panColorFont1, "Font color");
+      cboFont5.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      cboFont5.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboFont5.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboFont5.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboFont5.FormattingEnabled = true;
+      cboFont5.Location = new Point(71, 123);
+      cboFont5.Name = "cboFont5";
+      cboFont5.Size = new Size(184, 23);
+      cboFont5.TabIndex = 152;
+      toolTip1.SetToolTip(cboFont5, "Font face\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      cboFont5.SelectedIndexChanged += cboFont5_SelectedIndexChanged;
       // 
-      // numFont1
+      // cboFont4
       // 
-      numFont1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numFont1.Location = new Point(261, 7);
-      numFont1.Margin = new Padding(3, 2, 3, 2);
-      numFont1.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
-      numFont1.Name = "numFont1";
-      numFont1.Size = new Size(46, 23);
-      numFont1.TabIndex = 121;
-      numFont1.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numFont1, "Font size");
-      numFont1.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      cboFont4.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      cboFont4.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboFont4.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboFont4.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboFont4.FormattingEnabled = true;
+      cboFont4.Location = new Point(71, 94);
+      cboFont4.Name = "cboFont4";
+      cboFont4.Size = new Size(184, 23);
+      cboFont4.TabIndex = 145;
+      toolTip1.SetToolTip(cboFont4, "Font face\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      cboFont4.SelectedIndexChanged += cboFont4_SelectedIndexChanged;
       // 
-      // chkFont1AA
+      // cboFont3
       // 
-      chkFont1AA.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFont1AA.Appearance = Appearance.Button;
-      chkFont1AA.FlatStyle = FlatStyle.System;
-      chkFont1AA.Location = new Point(467, 7);
-      chkFont1AA.Margin = new Padding(3, 2, 3, 2);
-      chkFont1AA.Name = "chkFont1AA";
-      chkFont1AA.Size = new Size(49, 23);
-      chkFont1AA.TabIndex = 127;
-      chkFont1AA.Text = "AA";
-      chkFont1AA.TextAlign = ContentAlignment.MiddleCenter;
-      chkFont1AA.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkFont1AA, "Anti-Aliased");
-      chkFont1AA.UseVisualStyleBackColor = true;
+      cboFont3.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      cboFont3.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboFont3.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboFont3.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboFont3.FormattingEnabled = true;
+      cboFont3.Location = new Point(71, 65);
+      cboFont3.Name = "cboFont3";
+      cboFont3.Size = new Size(184, 23);
+      cboFont3.TabIndex = 138;
+      toolTip1.SetToolTip(cboFont3, "Font face\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      cboFont3.SelectedIndexChanged += cboFont3_SelectedIndexChanged;
       // 
-      // button1
+      // cboFont2
       // 
-      button1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      button1.FlatStyle = FlatStyle.System;
-      button1.Location = new Point(524, 6);
-      button1.Name = "button1";
-      button1.Size = new Size(83, 53);
-      button1.TabIndex = 128;
-      button1.Text = "Send";
-      toolTip1.SetToolTip(button1, "Send to Visualizer\r\n(only alters wave already defined in preset)");
-      button1.UseVisualStyleBackColor = true;
+      cboFont2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      cboFont2.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboFont2.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboFont2.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboFont2.FormattingEnabled = true;
+      cboFont2.Location = new Point(71, 36);
+      cboFont2.Name = "cboFont2";
+      cboFont2.Size = new Size(184, 23);
+      cboFont2.TabIndex = 131;
+      toolTip1.SetToolTip(cboFont2, "Font face\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      cboFont2.SelectedIndexChanged += cboFont2_SelectedIndexChanged;
       // 
       // chkWaveBrighten
       // 
       chkWaveBrighten.Appearance = Appearance.Button;
       chkWaveBrighten.FlatStyle = FlatStyle.System;
-      chkWaveBrighten.Location = new Point(25, 96);
+      chkWaveBrighten.Location = new Point(25, 94);
       chkWaveBrighten.Name = "chkWaveBrighten";
       chkWaveBrighten.Size = new Size(106, 23);
       chkWaveBrighten.TabIndex = 140;
@@ -1375,7 +1702,7 @@ namespace MilkwaveRemote
       // 
       chkWaveDarken.Appearance = Appearance.Button;
       chkWaveDarken.FlatStyle = FlatStyle.System;
-      chkWaveDarken.Location = new Point(136, 96);
+      chkWaveDarken.Location = new Point(136, 94);
       chkWaveDarken.Name = "chkWaveDarken";
       chkWaveDarken.Size = new Size(106, 23);
       chkWaveDarken.TabIndex = 141;
@@ -1417,7 +1744,7 @@ namespace MilkwaveRemote
       // 
       chkWaveAdditive.Appearance = Appearance.Button;
       chkWaveAdditive.FlatStyle = FlatStyle.System;
-      chkWaveAdditive.Location = new Point(248, 96);
+      chkWaveAdditive.Location = new Point(248, 94);
       chkWaveAdditive.Name = "chkWaveAdditive";
       chkWaveAdditive.Size = new Size(106, 23);
       chkWaveAdditive.TabIndex = 144;
@@ -1431,7 +1758,7 @@ namespace MilkwaveRemote
       // 
       chkWaveDotted.Appearance = Appearance.Button;
       chkWaveDotted.FlatStyle = FlatStyle.System;
-      chkWaveDotted.Location = new Point(360, 96);
+      chkWaveDotted.Location = new Point(360, 94);
       chkWaveDotted.Name = "chkWaveDotted";
       chkWaveDotted.Size = new Size(106, 23);
       chkWaveDotted.TabIndex = 145;
@@ -1892,7 +2219,7 @@ namespace MilkwaveRemote
       tabControl.Controls.Add(tabPreset);
       tabControl.Controls.Add(tabMessage);
       tabControl.Controls.Add(tabWave);
-      tabControl.Controls.Add(tabSettings);
+      tabControl.Controls.Add(tabFonts);
       tabControl.Dock = DockStyle.Fill;
       tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
       tabControl.LineColor = SystemColors.ControlDark;
@@ -2150,7 +2477,7 @@ namespace MilkwaveRemote
       // 
       numWaveEcho.DecimalPlaces = 3;
       numWaveEcho.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveEcho.Location = new Point(410, 68);
+      numWaveEcho.Location = new Point(410, 65);
       numWaveEcho.Margin = new Padding(3, 2, 3, 2);
       numWaveEcho.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveEcho.Name = "numWaveEcho";
@@ -2164,7 +2491,7 @@ namespace MilkwaveRemote
       // 
       numWaveScale.DecimalPlaces = 3;
       numWaveScale.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveScale.Location = new Point(410, 37);
+      numWaveScale.Location = new Point(410, 35);
       numWaveScale.Margin = new Padding(3, 2, 3, 2);
       numWaveScale.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveScale.Name = "numWaveScale";
@@ -2178,7 +2505,7 @@ namespace MilkwaveRemote
       // 
       numWaveDecay.DecimalPlaces = 3;
       numWaveDecay.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveDecay.Location = new Point(186, 67);
+      numWaveDecay.Location = new Point(186, 64);
       numWaveDecay.Margin = new Padding(3, 2, 3, 2);
       numWaveDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWaveDecay.Name = "numWaveDecay";
@@ -2191,7 +2518,7 @@ namespace MilkwaveRemote
       // 
       numWaveWarp.DecimalPlaces = 3;
       numWaveWarp.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveWarp.Location = new Point(298, 67);
+      numWaveWarp.Location = new Point(298, 64);
       numWaveWarp.Margin = new Padding(3, 2, 3, 2);
       numWaveWarp.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveWarp.Name = "numWaveWarp";
@@ -2205,7 +2532,7 @@ namespace MilkwaveRemote
       // 
       numWaveRotation.DecimalPlaces = 3;
       numWaveRotation.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveRotation.Location = new Point(75, 67);
+      numWaveRotation.Location = new Point(75, 64);
       numWaveRotation.Margin = new Padding(3, 2, 3, 2);
       numWaveRotation.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveRotation.Minimum = new decimal(new int[] { 9999, 0, 0, -2147287040 });
@@ -2220,7 +2547,7 @@ namespace MilkwaveRemote
       // 
       numWaveZoom.DecimalPlaces = 3;
       numWaveZoom.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveZoom.Location = new Point(298, 37);
+      numWaveZoom.Location = new Point(298, 35);
       numWaveZoom.Margin = new Padding(3, 2, 3, 2);
       numWaveZoom.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveZoom.Name = "numWaveZoom";
@@ -2235,7 +2562,7 @@ namespace MilkwaveRemote
       // 
       numWavePushY.DecimalPlaces = 3;
       numWavePushY.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWavePushY.Location = new Point(186, 37);
+      numWavePushY.Location = new Point(186, 35);
       numWavePushY.Margin = new Padding(3, 2, 3, 2);
       numWavePushY.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWavePushY.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
@@ -2250,7 +2577,7 @@ namespace MilkwaveRemote
       // 
       numWavePushX.DecimalPlaces = 3;
       numWavePushX.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWavePushX.Location = new Point(75, 37);
+      numWavePushX.Location = new Point(75, 35);
       numWavePushX.Margin = new Padding(3, 2, 3, 2);
       numWavePushX.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWavePushX.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
@@ -2261,64 +2588,216 @@ namespace MilkwaveRemote
       numWavePushX.ValueChanged += ctrlWave_ValueChanged;
       numWavePushX.KeyDown += numWave_KeyDown;
       // 
-      // tabSettings
+      // tabFonts
       // 
-      tabSettings.BackColor = SystemColors.ControlLight;
-      tabSettings.BorderStyle = BorderStyle.FixedSingle;
-      tabSettings.Controls.Add(button1);
-      tabSettings.Controls.Add(chkFont1AA);
-      tabSettings.Controls.Add(chkFont1Italic);
-      tabSettings.Controls.Add(chkFont1Bold);
-      tabSettings.Controls.Add(lblFont1);
-      tabSettings.Controls.Add(numFont1);
-      tabSettings.Controls.Add(cboFont1);
-      tabSettings.Controls.Add(panColorFont1);
-      tabSettings.Location = new Point(4, 25);
-      tabSettings.Margin = new Padding(0);
-      tabSettings.Name = "tabSettings";
-      tabSettings.Size = new Size(617, 182);
-      tabSettings.TabIndex = 3;
-      tabSettings.Text = "Settings";
+      tabFonts.BackColor = SystemColors.ControlLight;
+      tabFonts.BorderStyle = BorderStyle.FixedSingle;
+      tabFonts.Controls.Add(btnTestFonts);
+      tabFonts.Controls.Add(chkFontAA5);
+      tabFonts.Controls.Add(chkFontItalic5);
+      tabFonts.Controls.Add(chkFontBold5);
+      tabFonts.Controls.Add(lblFont5);
+      tabFonts.Controls.Add(numFont5);
+      tabFonts.Controls.Add(cboFont5);
+      tabFonts.Controls.Add(pnlColorFont5);
+      tabFonts.Controls.Add(chkFontAA4);
+      tabFonts.Controls.Add(chkFontItalic4);
+      tabFonts.Controls.Add(chkFontBold4);
+      tabFonts.Controls.Add(lblFont4);
+      tabFonts.Controls.Add(numFont4);
+      tabFonts.Controls.Add(cboFont4);
+      tabFonts.Controls.Add(pnlColorFont4);
+      tabFonts.Controls.Add(chkFontAA3);
+      tabFonts.Controls.Add(chkFontItalic3);
+      tabFonts.Controls.Add(chkFontBold3);
+      tabFonts.Controls.Add(lblFont3);
+      tabFonts.Controls.Add(numFont3);
+      tabFonts.Controls.Add(cboFont3);
+      tabFonts.Controls.Add(pnlColorFont3);
+      tabFonts.Controls.Add(chkFontAA2);
+      tabFonts.Controls.Add(chkFontItalic2);
+      tabFonts.Controls.Add(chkFontBold2);
+      tabFonts.Controls.Add(lblFont2);
+      tabFonts.Controls.Add(numFont2);
+      tabFonts.Controls.Add(cboFont2);
+      tabFonts.Controls.Add(pnlColorFont2);
+      tabFonts.Controls.Add(btnSettingsSave);
+      tabFonts.Controls.Add(chkFontAA1);
+      tabFonts.Controls.Add(chkFontItalic1);
+      tabFonts.Controls.Add(chkFontBold1);
+      tabFonts.Controls.Add(lblFont1);
+      tabFonts.Controls.Add(numFont1);
+      tabFonts.Controls.Add(cboFont1);
+      tabFonts.Controls.Add(pnlColorFont1);
+      tabFonts.Controls.Add(btnSettingsLoad);
+      tabFonts.Location = new Point(4, 25);
+      tabFonts.Margin = new Padding(0);
+      tabFonts.Name = "tabFonts";
+      tabFonts.Size = new Size(617, 182);
+      tabFonts.TabIndex = 3;
+      tabFonts.Text = "Fonts";
       // 
-      // chkFont1Italic
+      // btnTestFonts
       // 
-      chkFont1Italic.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFont1Italic.Appearance = Appearance.Button;
-      chkFont1Italic.FlatStyle = FlatStyle.System;
-      chkFont1Italic.Location = new Point(412, 7);
-      chkFont1Italic.Margin = new Padding(3, 2, 3, 2);
-      chkFont1Italic.Name = "chkFont1Italic";
-      chkFont1Italic.Size = new Size(49, 23);
-      chkFont1Italic.TabIndex = 126;
-      chkFont1Italic.Text = "Italic";
-      chkFont1Italic.TextAlign = ContentAlignment.MiddleCenter;
-      chkFont1Italic.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFont1Italic.UseVisualStyleBackColor = true;
+      btnTestFonts.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnTestFonts.FlatStyle = FlatStyle.System;
+      btnTestFonts.Location = new Point(524, 124);
+      btnTestFonts.Name = "btnTestFonts";
+      btnTestFonts.Size = new Size(83, 22);
+      btnTestFonts.TabIndex = 159;
+      btnTestFonts.Text = "Test";
+      btnTestFonts.UseVisualStyleBackColor = true;
+      btnTestFonts.Click += btnTestFonts_Click;
       // 
-      // chkFont1Bold
+      // chkFontItalic5
       // 
-      chkFont1Bold.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFont1Bold.Appearance = Appearance.Button;
-      chkFont1Bold.FlatStyle = FlatStyle.System;
-      chkFont1Bold.Location = new Point(357, 7);
-      chkFont1Bold.Margin = new Padding(3, 2, 3, 2);
-      chkFont1Bold.Name = "chkFont1Bold";
-      chkFont1Bold.Size = new Size(49, 23);
-      chkFont1Bold.TabIndex = 125;
-      chkFont1Bold.Text = "Bold";
-      chkFont1Bold.TextAlign = ContentAlignment.MiddleCenter;
-      chkFont1Bold.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFont1Bold.UseVisualStyleBackColor = true;
+      chkFontItalic5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic5.Appearance = Appearance.Button;
+      chkFontItalic5.FlatStyle = FlatStyle.System;
+      chkFontItalic5.Location = new Point(412, 123);
+      chkFontItalic5.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic5.Name = "chkFontItalic5";
+      chkFontItalic5.Size = new Size(49, 23);
+      chkFontItalic5.TabIndex = 157;
+      chkFontItalic5.Text = "Italic";
+      chkFontItalic5.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic5.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic5.UseVisualStyleBackColor = true;
       // 
-      // lblFont1
+      // chkFontBold5
       // 
-      lblFont1.Location = new Point(1, 6);
-      lblFont1.Name = "lblFont1";
-      lblFont1.Size = new Size(67, 24);
-      lblFont1.TabIndex = 124;
-      lblFont1.Text = "Font 1";
-      lblFont1.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFont1, "Simple Font: Most messages and notifications");
+      chkFontBold5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold5.Appearance = Appearance.Button;
+      chkFontBold5.FlatStyle = FlatStyle.System;
+      chkFontBold5.Location = new Point(357, 123);
+      chkFontBold5.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold5.Name = "chkFontBold5";
+      chkFontBold5.Size = new Size(49, 23);
+      chkFontBold5.TabIndex = 156;
+      chkFontBold5.Text = "Bold";
+      chkFontBold5.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold5.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold5.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic4
+      // 
+      chkFontItalic4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic4.Appearance = Appearance.Button;
+      chkFontItalic4.FlatStyle = FlatStyle.System;
+      chkFontItalic4.Location = new Point(412, 94);
+      chkFontItalic4.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic4.Name = "chkFontItalic4";
+      chkFontItalic4.Size = new Size(49, 23);
+      chkFontItalic4.TabIndex = 150;
+      chkFontItalic4.Text = "Italic";
+      chkFontItalic4.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic4.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic4.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold4
+      // 
+      chkFontBold4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold4.Appearance = Appearance.Button;
+      chkFontBold4.FlatStyle = FlatStyle.System;
+      chkFontBold4.Location = new Point(357, 94);
+      chkFontBold4.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold4.Name = "chkFontBold4";
+      chkFontBold4.Size = new Size(49, 23);
+      chkFontBold4.TabIndex = 149;
+      chkFontBold4.Text = "Bold";
+      chkFontBold4.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold4.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold4.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic3
+      // 
+      chkFontItalic3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic3.Appearance = Appearance.Button;
+      chkFontItalic3.FlatStyle = FlatStyle.System;
+      chkFontItalic3.Location = new Point(412, 65);
+      chkFontItalic3.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic3.Name = "chkFontItalic3";
+      chkFontItalic3.Size = new Size(49, 23);
+      chkFontItalic3.TabIndex = 143;
+      chkFontItalic3.Text = "Italic";
+      chkFontItalic3.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic3.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic3.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold3
+      // 
+      chkFontBold3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold3.Appearance = Appearance.Button;
+      chkFontBold3.FlatStyle = FlatStyle.System;
+      chkFontBold3.Location = new Point(357, 65);
+      chkFontBold3.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold3.Name = "chkFontBold3";
+      chkFontBold3.Size = new Size(49, 23);
+      chkFontBold3.TabIndex = 142;
+      chkFontBold3.Text = "Bold";
+      chkFontBold3.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold3.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold3.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic2
+      // 
+      chkFontItalic2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic2.Appearance = Appearance.Button;
+      chkFontItalic2.FlatStyle = FlatStyle.System;
+      chkFontItalic2.Location = new Point(412, 36);
+      chkFontItalic2.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic2.Name = "chkFontItalic2";
+      chkFontItalic2.Size = new Size(49, 23);
+      chkFontItalic2.TabIndex = 136;
+      chkFontItalic2.Text = "Italic";
+      chkFontItalic2.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic2.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic2.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold2
+      // 
+      chkFontBold2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold2.Appearance = Appearance.Button;
+      chkFontBold2.FlatStyle = FlatStyle.System;
+      chkFontBold2.Location = new Point(357, 36);
+      chkFontBold2.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold2.Name = "chkFontBold2";
+      chkFontBold2.Size = new Size(49, 23);
+      chkFontBold2.TabIndex = 135;
+      chkFontBold2.Text = "Bold";
+      chkFontBold2.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold2.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold2.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic1
+      // 
+      chkFontItalic1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic1.Appearance = Appearance.Button;
+      chkFontItalic1.FlatStyle = FlatStyle.System;
+      chkFontItalic1.Location = new Point(412, 7);
+      chkFontItalic1.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic1.Name = "chkFontItalic1";
+      chkFontItalic1.Size = new Size(49, 23);
+      chkFontItalic1.TabIndex = 126;
+      chkFontItalic1.Text = "Italic";
+      chkFontItalic1.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic1.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic1.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold1
+      // 
+      chkFontBold1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold1.Appearance = Appearance.Button;
+      chkFontBold1.FlatStyle = FlatStyle.System;
+      chkFontBold1.Location = new Point(357, 7);
+      chkFontBold1.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold1.Name = "chkFontBold1";
+      chkFontBold1.Size = new Size(49, 23);
+      chkFontBold1.TabIndex = 125;
+      chkFontBold1.Text = "Bold";
+      chkFontBold1.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold1.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold1.UseVisualStyleBackColor = true;
       // 
       // MilkwaveRemoteForm
       // 
@@ -2351,6 +2830,10 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveB).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveG).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFont1).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFont2).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFont3).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFont4).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFont5).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).EndInit();
       tableLayoutPanel1.ResumeLayout(false);
       splitContainer1.Panel1.ResumeLayout(false);
@@ -2371,7 +2854,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveZoom).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushY).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).EndInit();
-      tabSettings.ResumeLayout(false);
+      tabFonts.ResumeLayout(false);
       ResumeLayout(false);
       PerformLayout();
     }
@@ -2534,14 +3017,44 @@ namespace MilkwaveRemote
     private Button btnTag7;
     private Label lblMostUsed;
     private ComboBox cboDirOrTagsFilter;
-    private TabPage tabSettings;
+    private TabPage tabFonts;
     private ComboBox cboFont1;
-    private Panel panColorFont1;
+    private Panel pnlColorFont1;
     private NumericUpDown numFont1;
     private Label lblFont1;
-    private CheckBox chkFont1Bold;
-    private CheckBox chkFont1AA;
-    private CheckBox chkFont1Italic;
-    private Button button1;
+    private CheckBox chkFontBold1;
+    private CheckBox chkFontAA1;
+    private CheckBox chkFontItalic1;
+    private Button btnSettingsLoad;
+    private Button btnSettingsSave;
+    private CheckBox chkFontAA5;
+    private CheckBox chkFontItalic5;
+    private CheckBox chkFontBold5;
+    private Label lblFont5;
+    private NumericUpDown numFont5;
+    private ComboBox cboFont5;
+    private Panel pnlColorFont5;
+    private CheckBox chkFontAA4;
+    private CheckBox chkFontItalic4;
+    private CheckBox chkFontBold4;
+    private Label lblFont4;
+    private NumericUpDown numFont4;
+    private ComboBox cboFont4;
+    private Panel pnlColorFont4;
+    private CheckBox chkFontAA3;
+    private CheckBox chkFontItalic3;
+    private CheckBox chkFontBold3;
+    private Label lblFont3;
+    private NumericUpDown numFont3;
+    private ComboBox cboFont3;
+    private Panel pnlColorFont3;
+    private CheckBox chkFontAA2;
+    private CheckBox chkFontItalic2;
+    private CheckBox chkFontBold2;
+    private Label lblFont2;
+    private NumericUpDown numFont2;
+    private ComboBox cboFont2;
+    private Panel pnlColorFont2;
+    private Button btnTestFonts;
   }
 }

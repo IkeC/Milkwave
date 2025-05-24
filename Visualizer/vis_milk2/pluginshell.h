@@ -241,6 +241,12 @@ public:
   void READ_FONT(int n);
   void WRITE_FONT(int n);
 
+  void ReadConfig();
+  void WriteConfig();
+
+  int  AllocateDX9Stuff();
+  DWORD GetFontColor(int fontIndex);
+
   // config panel / windows messaging processes:
   static LRESULT CALLBACK WindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
   static LRESULT CALLBACK DesktopWndProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
@@ -253,8 +259,6 @@ public:
 
 private:
   void DrawAndDisplay(int redraw);
-  void ReadConfig();
-  void WriteConfig();
   void DoTime();
   void AnalyzeNewSound(unsigned char* pWaveL, unsigned char* pWaveR);
   void AlignWaves();
@@ -265,7 +269,6 @@ private:
   void CleanUpDirectX();
   int  InitGDIStuff();
   void CleanUpGDIStuff();
-  int  AllocateDX9Stuff();
   void CleanUpDX9Stuff(int final_cleanup);
   int  InitNondx9Stuff();
   void CleanUpNondx9Stuff();

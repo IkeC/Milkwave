@@ -647,7 +647,7 @@ void CPluginShell::CleanUpDX9Stuff(int final_cleanup) {
     for (int i = 0; i < 16; i++)
       m_lpDX->m_lpDevice->SetTexture(i, NULL);
   }
-  
+
   if (!m_vj_mode) {
     for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
       SafeRelease(m_d3dx_font[i]);
@@ -698,7 +698,7 @@ void CPluginShell::OnUserResizeTextWindow() {
 }
 
 void CPluginShell::OnUserResizeWindow() {
-  
+
   // Update window properties
   RECT w, c;
   GetWindowRect(m_lpDX->GetHwnd(), &w);
@@ -729,9 +729,9 @@ void CPluginShell::OnUserResizeWindow() {
     if (m_lpDX->m_REAL_client_width != new_REAL_client_w ||
       m_lpDX->m_REAL_client_height != new_REAL_client_h) {
       //CleanUpVJStuff();
-            
+
       CleanUpDX9Stuff(0);
-      
+
       if (!m_lpDX->OnUserResizeWindow(&w, &c)) {
         // note: a basic warning messagebox will have already been given.
         // now suggest specific advice on how to regain more video memory:
@@ -842,19 +842,19 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   m_fontinfo[SIMPLE_FONT].bBold = SIMPLE_FONT_DEFAULT_BOLD;
   m_fontinfo[SIMPLE_FONT].bItalic = SIMPLE_FONT_DEFAULT_ITAL;
   m_fontinfo[SIMPLE_FONT].bAntiAliased = SIMPLE_FONT_DEFAULT_AA;
-  
+
   wcscpy(m_fontinfo[DECORATIVE_FONT].szFace, DECORATIVE_FONT_DEFAULT_FACE);
   m_fontinfo[DECORATIVE_FONT].nSize = DECORATIVE_FONT_DEFAULT_SIZE;
   m_fontinfo[DECORATIVE_FONT].bBold = DECORATIVE_FONT_DEFAULT_BOLD;
   m_fontinfo[DECORATIVE_FONT].bItalic = DECORATIVE_FONT_DEFAULT_ITAL;
   m_fontinfo[DECORATIVE_FONT].bAntiAliased = DECORATIVE_FONT_DEFAULT_AA;
-  
+
   wcscpy(m_fontinfo[HELPSCREEN_FONT].szFace, HELPSCREEN_FONT_DEFAULT_FACE);
   m_fontinfo[HELPSCREEN_FONT].nSize = HELPSCREEN_FONT_DEFAULT_SIZE;
   m_fontinfo[HELPSCREEN_FONT].bBold = HELPSCREEN_FONT_DEFAULT_BOLD;
   m_fontinfo[HELPSCREEN_FONT].bItalic = HELPSCREEN_FONT_DEFAULT_ITAL;
   m_fontinfo[HELPSCREEN_FONT].bAntiAliased = HELPSCREEN_FONT_DEFAULT_AA;
-  
+
   wcscpy(m_fontinfo[PLAYLIST_FONT].szFace, PLAYLIST_FONT_DEFAULT_FACE);
   m_fontinfo[PLAYLIST_FONT].nSize = PLAYLIST_FONT_DEFAULT_SIZE;
   m_fontinfo[PLAYLIST_FONT].bBold = PLAYLIST_FONT_DEFAULT_BOLD;
@@ -1063,7 +1063,13 @@ void CPluginShell::READ_FONT(int n) {
   m_fontinfo[n].bBold = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontBold", iniIndex), m_fontinfo[n].bBold, m_szConfigIniFile);
   m_fontinfo[n].bItalic = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontItalic", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
   m_fontinfo[n].bAntiAliased = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontAA", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
-  if (n == DECORATIVE_FONT) {
+
+  if (n == SIMPLE_FONT) {
+    m_fontinfo[n].R = SIMPLE_FONT_DEFAULT_COLOR_R;
+    m_fontinfo[n].G = SIMPLE_FONT_DEFAULT_COLOR_G;
+    m_fontinfo[n].B = SIMPLE_FONT_DEFAULT_COLOR_B;
+  }
+  else if (n == DECORATIVE_FONT) {
     m_fontinfo[n].R = DECORATIVE_FONT_DEFAULT_COLOR_R;
     m_fontinfo[n].G = DECORATIVE_FONT_DEFAULT_COLOR_G;
     m_fontinfo[n].B = DECORATIVE_FONT_DEFAULT_COLOR_B;
@@ -1083,6 +1089,7 @@ void CPluginShell::READ_FONT(int n) {
     m_fontinfo[n].G = EXTRA_FONT_3_DEFAULT_COLOR_G;
     m_fontinfo[n].B = EXTRA_FONT_3_DEFAULT_COLOR_B;
   }
+
   m_fontinfo[n].R = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorR", iniIndex), m_fontinfo[n].R, m_szConfigIniFile);
   m_fontinfo[n].G = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorG", iniIndex), m_fontinfo[n].G, m_szConfigIniFile);
   m_fontinfo[n].B = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontColorB", iniIndex), m_fontinfo[n].B, m_szConfigIniFile);
@@ -2575,4 +2582,14 @@ LRESULT CPluginShell::PluginShellVJModeWndProc(HWND hwnd, UINT message, WPARAM w
   }
 
   return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
+DWORD CPluginShell::GetFontColor(int fontIndex) {
+  DWORD cr = m_fontinfo[fontIndex].R;
+  DWORD cg = m_fontinfo[fontIndex].G;
+  DWORD cb = m_fontinfo[fontIndex].B;
+  DWORD alpha = 255;
+  alpha = 255;
+  DWORD z = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
+  return z;
 }

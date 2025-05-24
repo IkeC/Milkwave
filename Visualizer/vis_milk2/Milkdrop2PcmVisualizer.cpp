@@ -378,23 +378,23 @@ void ToggleFullScreen(HWND hwnd) {
       switch (hr) {
       case D3DERR_DEVICELOST:
         // Device is lost, cannot reset now. Retry later.
-        g_plugin.AddError(L"Direct3D device is lost. Retry later.", 5.0f, ERR_NOTIFY, false);
+        g_plugin.AddError(L"Direct3D device is lost, retry later", 5.0f, ERR_NOTIFY, false);
         break;
 
       case D3DERR_DEVICENOTRESET:
         // Device is ready to be reset but failed. Consider releasing resources.
-        g_plugin.AddError(L"Direct3D device could not be reset. Releasing resources.", 5.0f, ERR_NOTIFY, false);
+        g_plugin.AddError(L"Direct3D device could not be reset, releasing resources", 5.0f, ERR_NOTIFY, false);
         // Add code to release and recreate resources if necessary.
         break;
 
       case D3DERR_OUTOFVIDEOMEMORY:
         // Out of video memory.
-        g_plugin.AddError(L"Out of video memory. Reduce resource usage.", 5.0f, ERR_NOTIFY, false);
+        g_plugin.AddError(L"Out of video memory - Reduce resource usage", 5.0f, ERR_NOTIFY, false);
         break;
 
       case E_OUTOFMEMORY:
         // General memory allocation failure.
-        g_plugin.AddError(L"Out of memory. Unable to reset device.", 5.0f, ERR_NOTIFY, false);
+        g_plugin.AddError(L"Out of memory - Unable to reset device", 5.0f, ERR_NOTIFY, false);
         break;
 
       default:
@@ -967,6 +967,11 @@ void RenderFrame() {
       tokens.push_back(token);
     }
 
+    // remove existing song info display
+    g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_1);
+    g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_2);
+    g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_3);
+
     // Iterate over tokens in reverse order
     for (auto it = tokens.rbegin(); it != tokens.rend(); ++it) {
       std::string currentToken = *it;
@@ -976,8 +981,8 @@ void RenderFrame() {
 
       if (currentToken == "artist") {
         if (milkwave.currentArtist.length() > 0) {
-          wcscpy(buf, milkwave.currentArtist.c_str());
-          g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
+            wcscpy(buf, milkwave.currentArtist.c_str());
+            g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
         }
       }
       else if (currentToken == "title") {

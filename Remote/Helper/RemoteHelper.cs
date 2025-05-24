@@ -5,7 +5,15 @@ using System.Text;
 namespace MilkwaveRemote.Helper {
 
   public class RemoteHelper {
+
+    private string iniFile;
+
     public RemoteHelper() {
+#if DEBUG
+      iniFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\Visualizer\\vis_milk2\\Debug\\settings.ini");
+#else
+      iniFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
+#endif
     }
 
     [DllImport("kernel32")]
@@ -13,13 +21,33 @@ namespace MilkwaveRemote.Helper {
        string section, string key, string defaultValue,
        StringBuilder returnValue, int size, string filePath);
 
-    public string ReadMilkwaveAudioDevice() {
+    [DllImport("kernel32")]
+    private static extern long WritePrivateProfileString(
+      string section, string key, string val, string filePath);
+
+
+    public string GetIniValue(string section, string key, string defaultValue) {
       StringBuilder returnValue = new StringBuilder(256);
-      string iniFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
       if (File.Exists(iniFile)) {
-        int result = GetPrivateProfileString("Milkwave", "AudioDevice", string.Empty, returnValue, 256, iniFile);
+        int result = GetPrivateProfileString(section, key, defaultValue, returnValue, 256, iniFile);
       }
       return returnValue.ToString();
+    }
+
+    public long SetIniValue(string section, string key, string value) {
+      return WritePrivateProfileString(section, key, value, iniFile);
+    }
+
+    public string GetIniValueFonts(string key, string defaultValue) {
+      return GetIniValue("Fonts", key, defaultValue);
+    }
+
+    public long SetIniValueFonts(string key, string value) {
+      return SetIniValue("Fonts", key, value);
+    }
+
+    public string ReadMilkwaveAudioDevice() {
+      return GetIniValue("Milkwave", "AudioDevice", "");
     }
 
     public void FillAudioDevices(ComboBox cbo) {
