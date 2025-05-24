@@ -4370,7 +4370,11 @@ void CPlugin::DrawTooltip(wchar_t* str, int xR, int yB) {
 }
 
 void CPlugin::OnAltK() {
-  AddError(wasabiApiLangString(IDS_PLEASE_EXIT_VIS_BEFORE_RUNNING_CONFIG_PANEL), 3.0f, ERR_NOTIFY, true);
+  AddNotification(wasabiApiLangString(IDS_PLEASE_EXIT_VIS_BEFORE_RUNNING_CONFIG_PANEL));
+}
+
+void CPlugin::AddNotification(wchar_t* szMsg) {  
+  g_plugin.AddError(szMsg, 3.0F, ERR_NOTIFY, m_fontinfo[SIMPLE_FONT].bBold);
 }
 
 void CPlugin::AddError(wchar_t* szMsg, float fDuration, int category, bool bBold) {
@@ -5508,7 +5512,7 @@ void CPlugin::SetOpacity(HWND hwnd) {
   int display = std::ceil(100 * fOpacity);
   wchar_t buf[1024];
   swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
-  g_plugin.AddError(buf, 3.0f, ERR_NOTIFY, false);
+  g_plugin.AddNotification(buf);
 
   SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
 }
@@ -5935,7 +5939,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_w = 60;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"60 fps", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       else if (ToggleFPSNumPressed == 2) {
         m_max_fps_fs = 90;
@@ -5943,7 +5947,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_w = 90;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"90 fps", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       else if (ToggleFPSNumPressed == 3) {
         m_max_fps_fs = 120;
@@ -5951,7 +5955,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_w = 120;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"120 fps", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       else if (ToggleFPSNumPressed == 4) {
         m_max_fps_fs = 144;
@@ -5959,7 +5963,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_w = 144;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"144 fps", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       else if (ToggleFPSNumPressed == 5) {
         m_max_fps_fs = 240;
@@ -5967,7 +5971,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_w = 240;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"240 fps", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       else if (ToggleFPSNumPressed == 6) {
         m_max_fps_fs = 360;
@@ -5975,7 +5979,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_w = 360;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"360 fps", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       else if (ToggleFPSNumPressed == 7) {
         m_max_fps_fs = 0;
@@ -5983,7 +5987,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_w = 0;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Unlimited fps", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       else if (ToggleFPSNumPressed == 8) {
         ToggleFPSNumPressed = 0;
@@ -5992,7 +5996,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_max_fps_w = 30;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"30 fps", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
     }
     return 0; // we processed (or absorbed) the key
@@ -6005,13 +6009,13 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         ToggleAlwaysOnTop(hWnd);
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Always On Top enabled", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       else {
         ToggleAlwaysOnTop(hWnd);
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Always On Top disabled", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       return 0;
     case VK_F12:
@@ -6020,12 +6024,12 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         if (m_blackmode) {
           wchar_t buf[1024], tmp[64];
           swprintf(buf, L"Black Mode enabled", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
+          AddNotification(buf);
         }
         else {
           wchar_t buf[1024], tmp[64];
           swprintf(buf, L"Black Mode disabled", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
+          AddNotification(buf);
         }
       }
       else {
@@ -6034,13 +6038,13 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           ToggleTransparency(hWnd);
           wchar_t buf[1024], tmp[64];
           swprintf(buf, L"Transparency Mode enabled", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
+          AddNotification(buf);
         }
         else {
           ToggleTransparency(hWnd);
           wchar_t buf[1024], tmp[64];
           swprintf(buf, L"Transparency Mode disabled", tmp, 64);
-          AddError(buf, 3.0f, ERR_NOTIFY, false);
+          AddNotification(buf);
         }
       }
 
@@ -6060,76 +6064,76 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_bHardCutsDisabled = false;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Normal", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       if (HardcutMode == 2) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Bass Blend", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
 
       if (HardcutMode == 3) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Bass", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       if (HardcutMode == 4) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Middle", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       if (HardcutMode == 5) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Treble", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       if (HardcutMode == 6) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Bass Fast Blend", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       if (HardcutMode == 7) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Treble Fast Blend", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       if (HardcutMode == 8) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Bass Blend and Hardcut Treble", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       if (HardcutMode == 9) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Rhythmic Hardcut", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
       if (HardcutMode == 10) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: 2 beats", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
         beatcount = -1;
       }
       if (HardcutMode == 11) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: 4 beats", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
         beatcount = -1;
       }
       if (HardcutMode == 12) {
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: Kinetronix (Vizikord)", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
         beatcount = -1;
       }
       if (HardcutMode == 13) {
@@ -6137,7 +6141,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_bHardCutsDisabled = true;
         wchar_t buf[1024], tmp[64];
         swprintf(buf, L"Hard cut Mode: OFF", tmp, 64);
-        AddError(buf, 3.0f, ERR_NOTIFY, false);
+        AddNotification(buf);
       }
     }
     return 0; // we processed (or absorbed) the key
@@ -7025,14 +7029,14 @@ int CPlugin::ToggleSpout() {
     wchar_t buf[1024], tmp[64];
     swprintf(buf, L"Spout output enabled.", tmp, 64);
     SendMessageToMilkwaveRemote(L"STATUS=Spout output enabled");
-    // AddError(buf, 3.0f, ERR_NOTIFY, false);
+    // AddNotification(buf);
   }
   else {
     // Stop Spout
     wchar_t buf[1024], tmp[64];
     swprintf(buf, L"Spout output disabled.", tmp, 64);
     SendMessageToMilkwaveRemote(L"STATUS=Spout output disabled");
-    // AddError(buf, 3.0f, ERR_NOTIFY, false);
+    // AddNotification(buf);
   }
   if (bInitialized) {
     spoutsender.ReleaseDX9sender();
@@ -7151,7 +7155,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
       wchar_t buf[1024], tmp[64];
       swprintf(buf, wasabiApiLangString(IDS_PRESET_ORDER_IS_NOW_X),
         wasabiApiLangString((m_bSequentialPresetOrder) ? IDS_SEQUENTIAL : IDS_RANDOM, tmp, 64));
-      AddError(buf, 3.0f, ERR_NOTIFY, false);
+      AddNotification(buf);
     }
 
     // erase all history, too:
@@ -7232,19 +7236,19 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   case 'D':
     if (!m_bCompShaderLock && !m_bWarpShaderLock) {
       m_bCompShaderLock = true; m_bWarpShaderLock = false;
-      AddError(wasabiApiLangString(IDS_COMPSHADER_LOCKED), 3.0f, ERR_NOTIFY, false);
+      AddNotification(wasabiApiLangString(IDS_COMPSHADER_LOCKED));
     }
     else if (m_bCompShaderLock && !m_bWarpShaderLock) {
       m_bCompShaderLock = false; m_bWarpShaderLock = true;
-      AddError(wasabiApiLangString(IDS_WARPSHADER_LOCKED), 3.0f, ERR_NOTIFY, false);
+      AddNotification(wasabiApiLangString(IDS_WARPSHADER_LOCKED));
     }
     else if (!m_bCompShaderLock && m_bWarpShaderLock) {
       m_bCompShaderLock = true; m_bWarpShaderLock = true;
-      AddError(wasabiApiLangString(IDS_ALLSHADERS_LOCKED), 3.0f, ERR_NOTIFY, false);
+      AddNotification(wasabiApiLangString(IDS_ALLSHADERS_LOCKED));
     }
     else {
       m_bCompShaderLock = false; m_bWarpShaderLock = false;
-      AddError(wasabiApiLangString(IDS_ALLSHADERS_UNLOCKED), 3.0f, ERR_NOTIFY, false);
+      AddNotification(wasabiApiLangString(IDS_ALLSHADERS_UNLOCKED));
     }
     break;
 
@@ -7385,12 +7389,12 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     if (m_bPresetLockedByUser) {
       wchar_t buf[1024], tmp[64];
       swprintf(buf, L"Preset locked", tmp, 64);
-      AddError(buf, 3.0f, ERR_NOTIFY, false);
+      AddNotification(buf);
     }
     else {
       wchar_t buf[1024], tmp[64];
       swprintf(buf, L"Preset unlocked", tmp, 64);
-      AddError(buf, 3.0f, ERR_NOTIFY, false);
+      AddNotification(buf);
     }
     return 0;
 
@@ -7437,7 +7441,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
   case '*':
     ReadCustomMessages();
-    g_plugin.AddError(L"Messages reloaded", 3.0f, ERR_NOTIFY, false);
+    g_plugin.AddNotification(L"Messages reloaded");
     m_nNumericInputDigits = 0;
     m_nNumericInputNum = 0;
     return 0;
@@ -7491,7 +7495,7 @@ void CPlugin::SaveCurrentPresetToQuicksave(bool altDir) {
   else {
     RemoveAngleBrackets(m_pState->m_szDesc);
     // lstrcpyW(m_pState->m_szDesc, m_szCurrentPresetFile);
-    AddError(L"Quicksave successful", 3.0f, ERR_NOTIFY, false);
+    AddNotification(L"Quicksave successful");
   }
 }
 
@@ -9674,7 +9678,7 @@ void CPlugin::SavePresetAs(wchar_t* szNewFile) {
   }
   else {
     // pop up confirmation
-    AddError(wasabiApiLangString(IDS_SAVE_SUCCESSFUL), 3.0f, ERR_NOTIFY, false);
+    AddNotification(wasabiApiLangString(IDS_SAVE_SUCCESSFUL));
 
     // update m_pState->m_szDesc with the new name
     lstrcpyW(m_pState->m_szDesc, m_waitstring.szText);
@@ -9697,7 +9701,7 @@ void CPlugin::DeletePresetFile(wchar_t* szDelFile) {
     // pop up confirmation
     wchar_t buf[1024];
     swprintf(buf, wasabiApiLangString(IDS_PRESET_X_DELETED), m_presets[m_nPresetListCurPos].szFilename.c_str());
-    AddError(buf, 3.0f, ERR_NOTIFY, false);
+    AddNotification(buf);
 
     // refresh file listing & re-select the next file after the one deleted
     int newPos = m_nPresetListCurPos;
@@ -10326,7 +10330,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     g_plugin.AddError(L"Here goes the Title", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_2, false);
     g_plugin.AddError(L"This is the Artist", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
     if (!g_plugin.m_bShowPresetInfo) g_plugin.m_bShowPresetInfo = true;
-    g_plugin.AddError(L"This is a notification", 3.0F, ERR_NOTIFY, false);
+    g_plugin.AddNotification(L"This is a notification");
   }
 }
 
@@ -10875,7 +10879,7 @@ void CPlugin::OpenMilkwaveRemote() {
       g_plugin.AddError(L"Could not start Milkwave Remote", 3.0f, ERR_MISC, false);
     }
     else {
-      g_plugin.AddError(L"Starting Milkwave Remote", 3.0f, ERR_NOTIFY, false);
+      g_plugin.AddNotification(L"Starting Milkwave Remote");
       CloseHandle(pi.hProcess);
       CloseHandle(pi.hThread);
     }

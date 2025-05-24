@@ -2546,14 +2546,14 @@ namespace MilkwaveRemote {
         chkFontBold1.Checked = !fontBold1.Equals("0");
         string fontItalic1 = helper.GetIniValueFonts("FontItalic1", "0");
         chkFontItalic1.Checked = !fontItalic1.Equals("0");
-        string fontAA1 = helper.GetIniValueFonts("FontAA1", "0");
+        string fontAA1 = helper.GetIniValueFonts("FontAA1", "1");
         chkFontAA1.Checked = !fontAA1.Equals("0");
 
         string fontColorR1 = helper.GetIniValueFonts("FontColorR1", "255");
         int fontColorR1Val = int.Parse(fontColorR1);
         string fontColorG1 = helper.GetIniValueFonts("FontColorG1", "255");
         int fontColorG1Val = int.Parse(fontColorG1);
-        string fontColorB1 = helper.GetIniValueFonts("FontColorB1", "255");
+        string fontColorB1 = helper.GetIniValueFonts("FontColorB1", "0");
         int fontColorB1Val = int.Parse(fontColorB1);
         pnlColorFont1.BackColor = Color.FromArgb(fontColorR1Val, fontColorG1Val, fontColorB1Val);
 
@@ -2726,7 +2726,7 @@ namespace MilkwaveRemote {
       chkFontBold1.Checked = false;
       chkFontItalic1.Checked = false;
       chkFontAA1.Checked = false;
-      pnlColorFont1.BackColor = Color.FromArgb(255, 255, 255);
+      pnlColorFont1.BackColor = Color.FromArgb(255, 255, 0);
     }
 
     private void lblFont2_DoubleClick(object sender, EventArgs e) {
