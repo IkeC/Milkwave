@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using Windows.Devices.PointOfService;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
 
@@ -232,11 +231,7 @@ namespace MilkwaveRemote {
       if (Settings.Styles?.Count > 0) {
         ReloadStylesList();
       } else {
-        cboParameters.Text = "size=25|time=5.0|x=0.5|y=0.5|growth=2";
-      }
-
-      if (Settings.LoadFilters?.Count > 0) {
-        ReloadLoadFiltersList(false);
+        cboParameters.Text = "size=20|time=5.0|x=0.5|y=0.5|growth=2";
       }
 
       // Fill cboFonts with available system fonts and add a blank first entry  
@@ -319,6 +314,11 @@ namespace MilkwaveRemote {
       string MilkwavePresetsFolder = Path.Combine(VisualizerPresetsFolder, "Milkwave");
       if (Directory.Exists(MilkwavePresetsFolder)) {
         LoadPresetsFromDirectory(MilkwavePresetsFolder);
+      }
+
+      if (Settings.LoadFilters?.Count > 0) {
+        ReloadLoadFiltersList(false);
+        cboTagsFilter.SelectedIndex = 0;
       }
 
       LoadVisualizerSettings();
@@ -1306,6 +1306,12 @@ namespace MilkwaveRemote {
             int nextIndex = (tabControl.SelectedIndex + 1) % tabControl.TabPages.Count; // Loop back to the first tab if at the last
             tabControl.SelectedIndex = nextIndex;
           }
+        } else if (e.KeyCode == Keys.Space) {
+          if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
+            SendPostMessage(VK_BACKSPACE, "Backspace");
+          } else {
+            SendPostMessage(VK_SPACE, "Space");
+          }
         }
       }
 
@@ -1378,15 +1384,15 @@ namespace MilkwaveRemote {
     }
 
     private void ReloadLoadFiltersList(bool addCuurent) {
-      if (addCuurent && cboDirOrTagsFilter.Text.Length > 0 && !Settings.LoadFilters.Contains(cboDirOrTagsFilter.Text)) {
-        Settings.LoadFilters.Insert(0, cboDirOrTagsFilter.Text);
+      if (addCuurent && cboTagsFilter.Text.Length > 0 && !Settings.LoadFilters.Contains(cboTagsFilter.Text)) {
+        Settings.LoadFilters.Insert(0, cboTagsFilter.Text);
         if (Settings.LoadFilters.Count > 5) {
           Settings.LoadFilters.RemoveAt(5);
         }
       }
-      cboDirOrTagsFilter.Items.Clear();
-      cboDirOrTagsFilter.Items.AddRange(Settings.LoadFilters.ToArray());
-      cboDirOrTagsFilter.Refresh();
+      cboTagsFilter.Items.Clear();
+      cboTagsFilter.Items.AddRange(Settings.LoadFilters.ToArray());
+      cboTagsFilter.Refresh();
     }
 
     private void txtStyle_KeyDown(object sender, KeyEventArgs e) {
@@ -1867,13 +1873,11 @@ namespace MilkwaveRemote {
         }
         if (fileNameMaybeRelativePath.EndsWith(".milk") || fileNameMaybeRelativePath.EndsWith(".milk2")) {
           string fileNameOnlyNoExtension = Path.GetFileNameWithoutExtension(fileNameMaybeRelativePath);
-          if (cboDirOrTagsFilter.Text.Length == 0 || fileNameOnlyNoExtension.Contains(cboDirOrTagsFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
-            Data.Preset newPreset = new Data.Preset {
-              DisplayName = fileNameOnlyNoExtension,
-              MaybeRelativePath = fileNameMaybeRelativePath
-            };
-            cboPresets.Items.Add(newPreset);
-          }
+          Data.Preset newPreset = new Data.Preset {
+            DisplayName = fileNameOnlyNoExtension,
+            MaybeRelativePath = fileNameMaybeRelativePath
+          };
+          cboPresets.Items.Add(newPreset);
         }
       }
       SetStatusText($"Loaded {cboPresets.Items.Count} presets from '{dirToLoad}'");
@@ -2268,10 +2272,10 @@ namespace MilkwaveRemote {
       Char tokenChar = ',';
       string joinSep = ", ";
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-        srcCombobox = cboDirOrTagsFilter;
+        srcCombobox = cboTagsFilter;
       }
       if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
-        srcCombobox = cboDirOrTagsFilter;
+        srcCombobox = cboTagsFilter;
         tokenChar = '&';
         joinSep = " & ";
       }
@@ -2310,7 +2314,7 @@ namespace MilkwaveRemote {
       ReloadLoadFiltersList(true);
       cboPresets.Items.Clear();
       var presetList = new List<Data.Preset>();
-      if (cboDirOrTagsFilter.Text.Length > 0) {
+      if (cboTagsFilter.Text.Length > 0) {
         var filteredEntries = FilterTagEntries();
         foreach (var entry in filteredEntries) {
           Data.Preset newPreset = new Data.Preset {
@@ -2334,7 +2338,7 @@ namespace MilkwaveRemote {
     }
 
     private List<KeyValuePair<string, TagEntry>> FilterTagEntries() {
-      var filterText = cboDirOrTagsFilter.Text.Trim();
+      var filterText = cboTagsFilter.Text.Trim();
 
       // Split the filter text into tokens based on ',' or '&'
       var filters = filterText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
@@ -2387,7 +2391,7 @@ namespace MilkwaveRemote {
     }
 
     private void lblLoad_DoubleClick(object sender, EventArgs e) {
-      cboDirOrTagsFilter.Text = "";
+      cboTagsFilter.Text = "";
     }
 
     private void lblTags_DoubleClick(object sender, EventArgs e) {
@@ -2709,6 +2713,13 @@ namespace MilkwaveRemote {
     private void pnlColorFont_Click(object sender, EventArgs e) {
       ColorDialog dlg = new ColorDialog();
       dlg.FullOpen = true;
+      dlg.CustomColors = new int[] {
+        ColorTranslator.ToOle(pnlColorFont1.BackColor),
+        ColorTranslator.ToOle(pnlColorFont2.BackColor),
+        ColorTranslator.ToOle(pnlColorFont3.BackColor),
+        ColorTranslator.ToOle(pnlColorFont4.BackColor),
+        ColorTranslator.ToOle(pnlColorFont5.BackColor)
+      };
       Panel pnlColorFont = (Panel)sender;
       dlg.Color = pnlColorFont.BackColor;
       if (dlg.ShowDialog(this) == DialogResult.OK) {

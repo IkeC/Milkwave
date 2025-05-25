@@ -4,7 +4,7 @@ MilkwaveVisualizer.exe:
 The Visualizer. You may run and use this independently without the Remote. You can press F8 (or Right+Middle Mouse Button) anytime to start the Remote.
 
 MilkwaveRemote.exe: 
-The program to remotely control the Visualizer. When you start this, Visualizer will be started automatically if it's not already running. If you hold Ctrl or Alt while closing this window, the Visualizer will not be closed.
+The program to remotely control the Visualizer. When you start this, Visualizer will be started automatically if it's not already running.
 
 settings.ini:
 Settings for the Visualizer. Feel free to edit.
@@ -13,7 +13,7 @@ settings-remote.json:
 Settings for the Remote. Feel free to edit.
 
 tags-remote.json:
-Tags for presets. Use the Remote to tag your presets. You may also share this file with others, or delete the file to reset all tags.
+Use the Remote to tag your presets. You may also share this file with others, or delete the file to reset all existing tags.
 
 sprites.ini:
 Sprites definition file for the Visualizer. To display your own images, you must add a definition in this file and put the image in resources\sprites. You can trigger them by typing 00..99 in the Visualizer window when Sprite Mode is selected, or using the number buttons on the Remote.

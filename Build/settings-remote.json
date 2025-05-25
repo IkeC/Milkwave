@@ -9,6 +9,11 @@
       "Value": "size=23|time=5.0|growth=2.0|randx=0.1|randy=0.1|r=0|g=191|b=0"
     }
   ],
+  "LoadFilters": [
+    "calm \u0026 dark",
+    "watermark \u0026 !colorful",
+    "vibrant, colorful"
+  ],
   "RemoteWindowLocation": {
     "IsEmpty": false,
     "X": 54,
