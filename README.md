@@ -15,10 +15,10 @@
 * Over 5000 presets from skilled artists (more presets [here](https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets))
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
-
-* ![Milkwave-2 0-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
-* 
+ 
 ## Remote Features
+
+![Milkwave-2 0-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
 
 * Tabbed interface
   - Presets, Messaging, Wave, Fonts
@@ -32,7 +32,7 @@
   - Set color, font size, position and other parameters
   - Save parameter definitions as named styles for quick access
   - Send messages, parameters, presets etc. automatically from a script file at configurable intervals based on BPM setting
-- Wave manipulation
+* Wave manipulation
   - Set wave type, zoom, warp, rotation etc. in the running preset
   - Clear preset and start with a plain wave
 * Font manipulation
