@@ -440,8 +440,10 @@ static void ToggleBorderlessFullscreen(HWND hWnd) {
           ToggleClickThrough(hWnd);
         }
 
-        g_plugin.fOpacity = previousOpacity;
-        g_plugin.SetOpacity(hWnd);
+        if (g_plugin.fOpacity != previousOpacity) {
+          g_plugin.fOpacity = previousOpacity;
+          g_plugin.SetOpacity(hWnd);
+        }
 
         // Restore the previous opacity
         // SetLayeredWindowAttributes(hWnd, 0, previousOpacity, LWA_ALPHA);
