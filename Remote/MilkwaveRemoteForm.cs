@@ -2074,7 +2074,11 @@ namespace MilkwaveRemote {
     }
 
     private void btnWatermark_Click(object sender, EventArgs e) {
-      SendInput(VK_F9, "F9", true, false, true);
+      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        SendPostMessage(VK_F9, "F9");
+      } else {
+        SendInput(VK_F9, "F9", true, false, true);
+      }
     }
 
     private void btnTagsSave_Click(object? sender, EventArgs? e) {

@@ -149,6 +149,7 @@ namespace MilkwaveRemote
       cboFont2 = new ComboBox();
       btnSpace = new Button();
       btnBackspace = new Button();
+      btnWatermark = new Button();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
       chkWaveSolarize = new CheckBox();
@@ -164,7 +165,6 @@ namespace MilkwaveRemote
       tableLayoutPanel1 = new TableLayoutPanel();
       btn99 = new Button();
       btn88 = new Button();
-      btnWatermark = new Button();
       btnTransparency = new Button();
       btnB = new Button();
       btn77 = new Button();
@@ -1712,6 +1712,20 @@ namespace MilkwaveRemote
       btnBackspace.UseVisualStyleBackColor = true;
       btnBackspace.Click += btnBackspace_Click;
       // 
+      // btnWatermark
+      // 
+      tableLayoutPanel1.SetColumnSpan(btnWatermark, 2);
+      btnWatermark.Dock = DockStyle.Fill;
+      btnWatermark.Location = new Point(373, 94);
+      btnWatermark.Margin = new Padding(3, 2, 3, 2);
+      btnWatermark.Name = "btnWatermark";
+      btnWatermark.Size = new Size(116, 40);
+      btnWatermark.TabIndex = 22;
+      btnWatermark.Text = "Watermark Mode \r\n(Ctrl+Shift+F9)";
+      toolTip1.SetToolTip(btnWatermark, "Hold Ctrl while clicking:\r\nSwitch to Desktop Mode instead (Ctrl+F9)");
+      btnWatermark.UseVisualStyleBackColor = true;
+      btnWatermark.Click += btnWatermark_Click;
+      // 
       // chkWaveBrighten
       // 
       chkWaveBrighten.Appearance = Appearance.Button;
@@ -1933,19 +1947,6 @@ namespace MilkwaveRemote
       btn88.Text = "88";
       btn88.UseVisualStyleBackColor = true;
       btn88.Click += btn88_Click;
-      // 
-      // btnWatermark
-      // 
-      tableLayoutPanel1.SetColumnSpan(btnWatermark, 2);
-      btnWatermark.Dock = DockStyle.Fill;
-      btnWatermark.Location = new Point(373, 94);
-      btnWatermark.Margin = new Padding(3, 2, 3, 2);
-      btnWatermark.Name = "btnWatermark";
-      btnWatermark.Size = new Size(116, 40);
-      btnWatermark.TabIndex = 22;
-      btnWatermark.Text = "Watermark Mode \r\n(Ctrl+Shift+F9)";
-      btnWatermark.UseVisualStyleBackColor = true;
-      btnWatermark.Click += btnWatermark_Click;
       // 
       // btnTransparency
       // 

@@ -656,7 +656,7 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
           workArea.top,
           workArea.right - workArea.left,
           workArea.bottom - workArea.top,
-          SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
+          SWP_FRAMECHANGED | SWP_NOACTIVATE
         );
 
         // If Shift is pressed, enable clickthrough
@@ -669,6 +669,7 @@ void ToggleBorderlessFullscreen(HWND hWnd) {
           //SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowWatermarkModeOpacity * 255), LWA_ALPHA);
         }
 
+        g_plugin.m_bAlwaysOnTop = isShiftPressed; // Set always on top based on Shift key state
         borderless = true;
       }
     }
