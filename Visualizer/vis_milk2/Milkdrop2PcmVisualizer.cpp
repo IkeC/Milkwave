@@ -345,8 +345,166 @@ void ToggleStretch(HWND hwnd) {
   fullscreen = false;
 }
 
-void ToggleFullScreen(HWND hwnd) {
-  if (!fullscreen) {
+static void ToggleClickThrough(HWND hWnd) {
+  try {
+
+
+    // Retrieve the current alpha value
+    BYTE currentAlpha = 255; // Default to fully opaque
+    DWORD flags = 0;
+    COLORREF colorKey = 0;
+    if (GetLayeredWindowAttributes(hWnd, &colorKey, &currentAlpha, &flags)) {
+      // Successfully retrieved the current alpha value
+    }
+
+    if (clickthrough) {
+      // Make the window normal while retaining WS_EX_LAYERED
+      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+      style &= ~WS_EX_TRANSPARENT; // Remove click-through
+      SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
+      SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+    }
+    else {
+      // Make the window click-through
+      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+      style |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
+      SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
+      SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+    }
+    clickthrough = !clickthrough;
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"ToggleClickThrough", e, true);
+  }
+}
+
+static void ToggleBorderlessFullscreen(HWND hWnd) {
+  try {
+    // may crash otherwise for some reason
+    g_plugin.KillAllSprites();
+
+    static bool previousClickthrough = false; // Store the previous clickthrough state
+    static float previousOpacity = 1.0f; // Store the previous opacity (fully opaque by default)
+
+    // Check if Shift is pressed
+    bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+    // Get the work area of the monitor (excluding the taskbar)
+    MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
+    HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+    if (GetMonitorInfo(hMonitor, &monitorInfo)) {
+      RECT workArea = monitorInfo.rcWork;
+
+      // Check if the window is already in borderless fullscreen mode
+      RECT currentRect;
+      GetWindowRect(hWnd, &currentRect);
+
+      if (currentRect.left == workArea.left &&
+        currentRect.top == workArea.top &&
+        currentRect.right == workArea.right &&
+        currentRect.bottom == workArea.bottom) {
+        // window appears to be borderless fullscreen
+        // Restore the previous window dimensions, borderless state, clickthrough state, and opacity
+        LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
+        if (g_plugin.m_WindowBorderless) {
+          style = WS_POPUP | WS_VISIBLE; // Restore borderless style
+        }
+        else {
+          style = WS_OVERLAPPEDWINDOW | WS_VISIBLE; // Restore normal window style
+        }
+        SetWindowLongPtr(hWnd, GWL_STYLE, style);
+
+        // Check if the saved dimensions are the same as the current dimensions
+        if (g_plugin.m_WindowWidth == (currentRect.right - currentRect.left) &&
+          g_plugin.m_WindowHeight == (currentRect.bottom - currentRect.top)) {
+          // Reduce the dimensions by 50%
+          g_plugin.m_WindowWidth /= 2;
+          g_plugin.m_WindowHeight /= 2;
+
+          // Center the window
+          g_plugin.m_WindowX = (workArea.right - workArea.left - g_plugin.m_WindowWidth) / 2;
+          g_plugin.m_WindowY = (workArea.bottom - workArea.top - g_plugin.m_WindowHeight) / 2;
+        }
+
+        SetWindowPos(
+          hWnd,
+          g_plugin.m_WindowBorderless ? HWND_TOPMOST : HWND_NOTOPMOST,
+          g_plugin.m_WindowX,
+          g_plugin.m_WindowY,
+          g_plugin.m_WindowWidth,
+          g_plugin.m_WindowHeight,
+          SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
+        );
+
+        // Restore the previous clickthrough state
+        if (clickthrough != previousClickthrough) {
+          ToggleClickThrough(hWnd);
+        }
+
+        g_plugin.fOpacity = previousOpacity;
+        g_plugin.SetOpacity(hWnd);
+
+        // Restore the previous opacity
+        // SetLayeredWindowAttributes(hWnd, 0, previousOpacity, LWA_ALPHA);
+
+        borderless = g_plugin.m_WindowBorderless; // Restore the borderless state
+        fullscreen = false;
+      }
+      else {
+        // not in borderless fullscreen mode, so toggle to it
+        // Save the current window dimensions, borderless state, clickthrough state, and opacity
+        RECT currentWindowRect;
+        GetWindowRect(hWnd, &currentWindowRect);
+        g_plugin.m_WindowX = currentWindowRect.left;
+        g_plugin.m_WindowY = currentWindowRect.top;
+        g_plugin.m_WindowWidth = currentWindowRect.right - currentWindowRect.left;
+        g_plugin.m_WindowHeight = currentWindowRect.bottom - currentWindowRect.top;
+        g_plugin.m_WindowBorderless = borderless; // Save the current borderless state
+
+        previousClickthrough = clickthrough; // Save the current clickthrough state
+        previousOpacity = g_plugin.fOpacity;
+
+        // Set the window style to borderless
+        LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
+        style &= ~(WS_OVERLAPPEDWINDOW); // Remove standard window styles
+        style |= WS_POPUP; // Add popup style for borderless
+        SetWindowLongPtr(hWnd, GWL_STYLE, style);
+
+        // Set the window position and size to fit the work area
+        SetWindowPos(
+          hWnd,
+          isShiftPressed ? HWND_TOPMOST : HWND_NOTOPMOST,
+          workArea.left,
+          workArea.top,
+          workArea.right - workArea.left,
+          workArea.bottom - workArea.top,
+          SWP_FRAMECHANGED | SWP_NOACTIVATE
+        );
+
+        // If Shift is pressed, enable clickthrough
+        if (isShiftPressed) {
+          if (!clickthrough) {
+            ToggleClickThrough(hWnd);
+          }
+          g_plugin.fOpacity = g_plugin.m_WindowWatermarkModeOpacity;
+          g_plugin.SetOpacity(hWnd);
+          //SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowWatermarkModeOpacity * 255), LWA_ALPHA);
+        }
+
+        g_plugin.m_bAlwaysOnTop = isShiftPressed; // Set always on top based on Shift key state
+        borderless = true;
+      }
+    }
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"ToggleBorderlessFullscreen", e, true);
+  }
+}
+
+static void ToggleFullScreen(HWND hwnd) {
+  if (g_plugin.IsBorderlessFullscreen(hwnd)) {
+    // ShowCursor(TRUE);
+    ToggleBorderlessFullscreen(hwnd);
+  } 
+  else if (!fullscreen) {
     ShowCursor(FALSE);
 
     if (!stretch) {
@@ -480,7 +638,7 @@ void ResetWindow(HWND hwnd) {
   fullscreen = false;
 }
 
-void ToggleBorderlessWindow(HWND hwnd) {
+static void ToggleBorderlessWindow(HWND hwnd) {
   static RECT lastRect = { 0 }; // Store the previous window position and size
   GetWindowRect(hwnd, &lastRect);
   int x = lastRect.left;
@@ -525,157 +683,6 @@ void ToggleBorderlessWindow(HWND hwnd) {
     borderless = false;
   }
   g_plugin.m_WindowBorderless = borderless;
-}
-
-void ToggleClickThrough(HWND hWnd) {
-  try {
-
-
-    // Retrieve the current alpha value
-    BYTE currentAlpha = 255; // Default to fully opaque
-    DWORD flags = 0;
-    COLORREF colorKey = 0;
-    if (GetLayeredWindowAttributes(hWnd, &colorKey, &currentAlpha, &flags)) {
-      // Successfully retrieved the current alpha value
-    }
-
-    if (clickthrough) {
-      // Make the window normal while retaining WS_EX_LAYERED
-      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
-      style &= ~WS_EX_TRANSPARENT; // Remove click-through
-      SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
-      SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
-    }
-    else {
-      // Make the window click-through
-      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
-      style |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
-      SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
-      SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
-    }
-    clickthrough = !clickthrough;
-  } catch (const std::exception& e) {
-    milkwave.LogException(L"ToggleClickThrough", e, true);
-  }
-}
-
-void ToggleBorderlessFullscreen(HWND hWnd) {
-  try {
-    // may crash otherwise for some reason
-    g_plugin.KillAllSprites();
-
-    static bool previousClickthrough = false; // Store the previous clickthrough state
-    static float previousOpacity = 1.0f; // Store the previous opacity (fully opaque by default)
-
-    // Check if Shift is pressed
-    bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-
-    // Get the work area of the monitor (excluding the taskbar)
-    MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
-    HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
-    if (GetMonitorInfo(hMonitor, &monitorInfo)) {
-      RECT workArea = monitorInfo.rcWork;
-
-      // Check if the window is already in borderless fullscreen mode
-      RECT currentRect;
-      GetWindowRect(hWnd, &currentRect);
-
-      if (currentRect.left == workArea.left &&
-        currentRect.top == workArea.top &&
-        currentRect.right == workArea.right &&
-        currentRect.bottom == workArea.bottom) {
-        // Restore the previous window dimensions, borderless state, clickthrough state, and opacity
-        LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
-        if (g_plugin.m_WindowBorderless) {
-          style = WS_POPUP | WS_VISIBLE; // Restore borderless style
-        }
-        else {
-          style = WS_OVERLAPPEDWINDOW | WS_VISIBLE; // Restore normal window style
-        }
-        SetWindowLongPtr(hWnd, GWL_STYLE, style);
-
-        // Check if the saved dimensions are the same as the current dimensions
-        if (g_plugin.m_WindowWidth == (currentRect.right - currentRect.left) &&
-          g_plugin.m_WindowHeight == (currentRect.bottom - currentRect.top)) {
-          // Reduce the dimensions by 50%
-          g_plugin.m_WindowWidth /= 2;
-          g_plugin.m_WindowHeight /= 2;
-
-          // Center the window
-          g_plugin.m_WindowX = (workArea.right - workArea.left - g_plugin.m_WindowWidth) / 2;
-          g_plugin.m_WindowY = (workArea.bottom - workArea.top - g_plugin.m_WindowHeight) / 2;
-        }
-
-        SetWindowPos(
-          hWnd,
-          g_plugin.m_WindowBorderless ? HWND_TOPMOST : HWND_NOTOPMOST,
-          g_plugin.m_WindowX,
-          g_plugin.m_WindowY,
-          g_plugin.m_WindowWidth,
-          g_plugin.m_WindowHeight,
-          SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE
-        );
-
-        // Restore the previous clickthrough state
-        if (clickthrough != previousClickthrough) {
-          ToggleClickThrough(hWnd);
-        }
-
-        g_plugin.fOpacity = previousOpacity;
-        g_plugin.SetOpacity(hWnd);
-
-        // Restore the previous opacity
-        // SetLayeredWindowAttributes(hWnd, 0, previousOpacity, LWA_ALPHA);
-
-        borderless = g_plugin.m_WindowBorderless; // Restore the borderless state
-      }
-      else {
-        // Save the current window dimensions, borderless state, clickthrough state, and opacity
-        RECT currentWindowRect;
-        GetWindowRect(hWnd, &currentWindowRect);
-        g_plugin.m_WindowX = currentWindowRect.left;
-        g_plugin.m_WindowY = currentWindowRect.top;
-        g_plugin.m_WindowWidth = currentWindowRect.right - currentWindowRect.left;
-        g_plugin.m_WindowHeight = currentWindowRect.bottom - currentWindowRect.top;
-        g_plugin.m_WindowBorderless = borderless; // Save the current borderless state
-
-        previousClickthrough = clickthrough; // Save the current clickthrough state
-        previousOpacity = g_plugin.fOpacity;
-
-        // Set the window style to borderless
-        LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
-        style &= ~(WS_OVERLAPPEDWINDOW); // Remove standard window styles
-        style |= WS_POPUP; // Add popup style for borderless
-        SetWindowLongPtr(hWnd, GWL_STYLE, style);
-
-        // Set the window position and size to fit the work area
-        SetWindowPos(
-          hWnd,
-          isShiftPressed ? HWND_TOPMOST : HWND_NOTOPMOST,
-          workArea.left,
-          workArea.top,
-          workArea.right - workArea.left,
-          workArea.bottom - workArea.top,
-          SWP_FRAMECHANGED | SWP_NOACTIVATE
-        );
-
-        // If Shift is pressed, enable clickthrough
-        if (isShiftPressed) {
-          if (!clickthrough) {
-            ToggleClickThrough(hWnd);
-          }
-          g_plugin.fOpacity = g_plugin.m_WindowWatermarkModeOpacity;
-          g_plugin.SetOpacity(hWnd);
-          //SetLayeredWindowAttributes(hWnd, 0, (BYTE)(g_plugin.m_WindowWatermarkModeOpacity * 255), LWA_ALPHA);
-        }
-
-        g_plugin.m_bAlwaysOnTop = isShiftPressed; // Set always on top based on Shift key state
-        borderless = true;
-      }
-    }
-  } catch (const std::exception& e) {
-    milkwave.LogException(L"ToggleBorderlessFullscreen", e, true);
-  }
 }
 
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -851,7 +858,8 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     // if (borderless)
     // only triggered when going INTO fullscreen
     ToggleFullScreen(hWnd);
-    break;
+    return 0;
+    // break;
   }
 
   case WM_NCRBUTTONDBLCLK:

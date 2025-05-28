@@ -952,7 +952,7 @@ void CPlugin::RenderFrame(int bRedraw) {
       lpDevice->SetTexture(0, NULL);
 
       IDirect3DSurface9* pNewTarget = NULL;
-      if (m_lpVS[0]->GetSurfaceLevel(0, &pNewTarget) != D3D_OK)
+      if (m_lpVS == NULL || m_lpVS[0] == NULL || m_lpVS[0]->GetSurfaceLevel(0, &pNewTarget) != D3D_OK)
         return;
       lpDevice->SetRenderTarget(0, pNewTarget);
       //lpDevice->SetDepthStencilSurface( NULL );
