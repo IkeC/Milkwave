@@ -1,68 +1,53 @@
-Milkwave is:
+﻿Milkwave is:
 - **Milkwave Visualizer**:
     A feature-enhanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
 - **Milkwave Remote**:
     A standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
-![image](https://github.com/user-attachments/assets/aa9da133-0cd2-4fb1-8eb6-3cbc1cd3530d)
+![Milkwave-2 0](https://github.com/user-attachments/assets/1aab1226-1294-40af-ae51-4c2829a66036)
 
 ## Visualizer Features
  
 * Display current track information and artwork from Spotify, YouTube or other media sources playing on your PC
 * Change preset on track change
 * Set window transparency, borderless, and clickthrough ("watermark mode")
-* Customize font types and colors
+* Use cursor keys for media playback control
 * Over 5000 presets from skilled artists (more presets [here](https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets))
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
 
+* ![Milkwave-2 0-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
+* 
 ## Remote Features
 
-* Send custom message text, color, font size, position and other parameters
-* Save parameter definitions as named styles for quick access
-* Send messages, parameters, presets etc. automatically from a script file at configurable intervals
-* Select preset files and send them to the Visualizer
-* Change the used audio device on the fly
-* Show the currently playing Visualizer preset in the Remote window
-* Amplify the virtual audio signal to make the Visualizer more (or less) responsive
-* Modify the currently playing preset's waveform type, color and alpha value
-* Send common key combinations using buttons
-* Customizable interface - show only what you need
-
-There are many tooltips explaining all features when you hover over the form elements. If you have any questions, don't be afraid to [ask for support](#support)!
-
-## New in Milkwave 2.0
-
-### Visualizer
-
-- Use cursor keys for media playback control
-- Set minimum/maximum pixel shader version in settings.ini
-  - Indicate upgraded version with Up-Arrow before preset name (configurable)
-- Reload messages.ini using asterisk key (*)
-- Extended help display (F1)
-  - Now two pages with new and previously undocumented features
-- Improved stability on window resize or mode changes
-
-### Remote
-
-- Preset tagging
+* Tabbed interface
+  - Presets, Messaging, Wave, Fonts
+* Preset tagging
   - Tag your presets with any number of words of your choice
   - Dynamic buttons for your most used tags
   - Load preset lists based on tags
   - Saved in human-readable json file for easy sharing or backup
-- Tabbed interface
-  - Presets, Messaging, Wave, Fonts
-  - Use mouse or Ctrl-Tab to switch between tabs
-- More wave manipulation options
-  - Set Zoom, Warp, Rotation etc. in the running preset
+* Messaging
+  - Send text to Visualizer window
+  - Set color, font size, position and other parameters
+  - Save parameter definitions as named styles for quick access
+  - Send messages, parameters, presets etc. automatically from a script file at configurable intervals based on BPM setting
+- Wave manipulation
+  - Set wave type, zoom, warp, rotation etc. in the running preset
   - Clear preset and start with a plain wave
-- Font manipulation
+* Font manipulation
+  - Customize display of song information, preset name and notifications
   - Change and preview font face, style and size instantly
-- Improved accessibility when using large Windows fonts
+* Send common key combinations using buttons
+* Customizable interface - show only what you need
+* Change the used audio device on the fly
+* Amplify the virtual audio signal to make the Visualizer more (or less) responsive
+
+There are many tooltips explaining all features when you hover over the form elements. If you have any questions, don't be afraid to [ask for support](#support)!
 
 ## History
 
-The original MilkDrop 2 WinAmp plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) and [MilkDrop3](https://github.com/milkdrop2077/MilkDrop3) projects.
+The original [MilkDrop2](https://www.geisswerks.com/milkdrop/) WinAmp plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and has since been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) and [MilkDrop3](https://github.com/milkdrop2077/MilkDrop3) projects.
 
 ## System Requirements
 
@@ -73,11 +58,13 @@ The original MilkDrop 2 WinAmp plugin created by Ryan Geiss was turned into a Wi
 
 ## Support
 
-I may add new features or fix bugs if people are actually using this, so feel free to [open an issue](https://github.com/IkeC/Milkwave/issues) or join my [**Discord**](https://bit.ly/Ikes-Discord)!
-
 This project incorporates the work of many different authors over the years, as listed below. Naturally, the entirety of this project is Open Source and there will never be a paid version of it.
 
-However, if you're satisfied with the additions I made and you want to support my work, here's my [**PayPal account**](https://www.paypal.com/ncp/payment/5XMP3S69PJLCU). You'll be listed as a supporter within the next program release if you wish.
+However, if you're satisfied with the additions I made and you want to support my work, you may do so using [**Ko-fi**](https://ko-fi.com/ikeserver) or [**PayPal**](https://www.paypal.com/ncp/payment/5XMP3S69PJLCU). You'll be listed as a supporter within the next program release unless you don't want to.
+
+Many thanks to **Shanev** and  **Salvo Caruso** for supporting the development of Milkwave. ❤️
+
+I may add new features or fix bugs if people are actually using this, so don't be shy to [open an issue](https://github.com/IkeC/Milkwave/issues) or join my [**Discord**](https://bit.ly/Ikes-Discord)!
 
 ## Acknowledgements
 

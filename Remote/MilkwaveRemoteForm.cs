@@ -1,4 +1,4 @@
-using MilkwaveRemote.Data;
+﻿using MilkwaveRemote.Data;
 using MilkwaveRemote.Helper;
 using System.Diagnostics;
 using System.Drawing.Text;
@@ -1689,18 +1689,19 @@ namespace MilkwaveRemote {
 
     private void toolStripMenuItemSupporters_Click(object sender, EventArgs e) {
       string dialogtext =
-  "Supporters:" + Environment.NewLine +
+  "Milkwave Supporters — Thank you very much!  ❤️" + Environment.NewLine +
   Environment.NewLine +
-  "Shanev � Thank you very much!" +
-  Environment.NewLine +
+  "• Shanev" + Environment.NewLine +
+  "• Salvo Caruso" + Environment.NewLine +
   Environment.NewLine +
   "Milkwave is and will always be free software, being the collaborative effort of many diffent authors. " +
-  "If you like it and want to appreciate and support our share of the work, please consider donating." +
+  "If you like it and want to appreciate and support our share of the work, please consider donating." + Environment.NewLine +
+  Environment.NewLine +
+  "Ko-fi: https://ko-fi.com/ikeserver" + Environment.NewLine +
+  "PayPal: https://www.paypal.com/ncp/payment/5XMP3S69PJLCU" + Environment.NewLine +
   "" + Environment.NewLine +
-  "https://www.paypal.com/ncp/payment/5XMP3S69PJLCU" + Environment.NewLine +
-  "" + Environment.NewLine +
-  "Any amount is valued. You'll be listed on this page unless you do not want to.";
-      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Supporters", dialogtext);
+  "Any amount is valued! You'll be listed on this page unless you do not want to.";
+      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Supporters", dialogtext);
     }
 
     private void SetBarIcon(bool isDarkMode) {
