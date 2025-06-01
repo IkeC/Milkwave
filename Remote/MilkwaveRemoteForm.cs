@@ -58,10 +58,15 @@ namespace MilkwaveRemote {
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
     private float autoplayRemainingBeats = 1;
-    private long timerStart;
     private bool updatingWaveParams = false;
 
-    private string VisualizerPresetsFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resources\\presets\\");
+#if DEBUG
+    private string BaseDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\Release"));
+#else
+    private string BaseDir = AppDomain.CurrentDomain.BaseDirectory;
+#endif
+
+    private string VisualizerPresetsFolder = "";
 
     private string lastScriptFileName = "script-default.txt";
     private string windowNotFound = "Milkwave Visualizer Window not found";
@@ -70,7 +75,7 @@ namespace MilkwaveRemote {
 
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
-
+    
     Random rnd = new Random();
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
@@ -179,7 +184,9 @@ namespace MilkwaveRemote {
       Opacity,
       GetState,
       Config,
-      TestFonts
+      TestFonts,
+      ClearSprites,
+      ClearTexts
     }
     private void SetAllControlFontSizes(Control parent, float fontSize) {
       foreach (Control ctrl in parent.Controls) {
@@ -191,6 +198,9 @@ namespace MilkwaveRemote {
     }
     public MilkwaveRemoteForm() {
       InitializeComponent();
+      
+      VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
+
       FixNumericUpDownMouseWheel(this);
 
       Assembly executingAssembly = Assembly.GetExecutingAssembly();
@@ -201,7 +211,7 @@ namespace MilkwaveRemote {
       ofd = new OpenFileDialog();
 
       try {
-        string jsonString = File.ReadAllText(milkwaveSettingsFile);
+        string jsonString = File.ReadAllText(Path.Combine(BaseDir, milkwaveSettingsFile));
         Settings? loadedSettings = JsonSerializer.Deserialize<Settings>(jsonString, new JsonSerializerOptions {
           PropertyNameCaseInsensitive = true
         });
@@ -276,7 +286,7 @@ namespace MilkwaveRemote {
       IntPtr result = FindVisualizerWindow();
       if (FindVisualizerWindow() == IntPtr.Zero) {
         // Try to run MilkwaveVisualizer.exe from the same directory as the assembly
-        string visualizerPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MilkwaveVisualizer.exe");
+        string visualizerPath = Path.Combine(BaseDir, "MilkwaveVisualizer.exe");
         if (File.Exists(visualizerPath)) {
           Process.Start(new ProcessStartInfo(visualizerPath) { UseShellExecute = true });
         }
@@ -308,7 +318,7 @@ namespace MilkwaveRemote {
       if (Directory.Exists(VisualizerPresetsFolder)) {
         ofd.InitialDirectory = VisualizerPresetsFolder;
       } else {
-        ofd.InitialDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        ofd.InitialDirectory = BaseDir;
       }
 
       string MilkwavePresetsFolder = Path.Combine(VisualizerPresetsFolder, "Milkwave");
@@ -539,13 +549,17 @@ namespace MilkwaveRemote {
         } else if (type == MessageType.GetState) {
           message = "STATE";
         } else if (type == MessageType.WaveClear) {
-          message = "CLEAR";
+          message = "CLEARPRESET";
         } else if (type == MessageType.WaveQuickSave) {
           message = "QUICKSAVE";
         } else if (type == MessageType.Config) {
           message = "CONFIG";
         } else if (type == MessageType.TestFonts) {
           message = "TESTFONTS";
+        } else if (type == MessageType.ClearSprites) {
+          message = "CLEARSPRITES";
+        } else if (type == MessageType.ClearTexts) {
+          message = "CLEARTEXTS";
         } else if (type == MessageType.PresetLink) {
           message = "LINK=" + messageToSend;
         } else if (type == MessageType.Message) {
@@ -675,7 +689,6 @@ namespace MilkwaveRemote {
           AutoplayTimer_Tick(null, null);
         }
         autoplayTimer.Start();
-        timerStart = DateTime.Now.Ticks;
       } else {
         SetStatusText("Invalid wait value");
       }
@@ -740,7 +753,7 @@ namespace MilkwaveRemote {
             } else if (tokenUpper.StartsWith("PRESET=")) {
               string presetFilePath = token.Substring(7);
               if (!File.Exists(presetFilePath)) {
-                presetFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, presetFilePath);
+                presetFilePath = Path.Combine(BaseDir, presetFilePath);
               }
               if (File.Exists(presetFilePath)) {
                 SendToMilkwaveVisualizer(presetFilePath, MessageType.PresetFilePath);
@@ -759,6 +772,10 @@ namespace MilkwaveRemote {
               if (sendString.Length > 0) {
                 SendUnicodeChars(sendString);
               }
+            } else if (tokenUpper.Equals("CLEARSPRITES")) {
+              SendToMilkwaveVisualizer("", MessageType.ClearSprites);
+            } else if (tokenUpper.Equals("CLEARTEXTS")) {
+              SendToMilkwaveVisualizer("", MessageType.ClearTexts);
             } else { // no known command, send as message
               SendToMilkwaveVisualizer(token, MessageType.Message);
             }
@@ -851,7 +868,7 @@ namespace MilkwaveRemote {
       cboAutoplay.Items.Clear();
       string filePath = fileName;
       if (!fileName.Contains("\\")) {
-        filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
+        filePath = Path.Combine(BaseDir, fileName);
       }
       if (File.Exists(filePath)) {
         string[] strings = File.ReadAllLines(filePath);
@@ -1422,7 +1439,7 @@ namespace MilkwaveRemote {
 
     private void SaveSettingsToFile() {
       string jsonString = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
-      string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveSettingsFile);
+      string settingsFile = Path.Combine(BaseDir, milkwaveSettingsFile);
       try {
         File.WriteAllText(settingsFile, jsonString);
       } catch (UnauthorizedAccessException ex) {
@@ -1444,7 +1461,7 @@ namespace MilkwaveRemote {
       };
 
       string jsonString = JsonSerializer.Serialize(sortedTags, new JsonSerializerOptions { WriteIndented = true });
-      string tagsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, milkwaveTagsFile);
+      string tagsFile = Path.Combine(BaseDir, milkwaveTagsFile);
       try {
         File.WriteAllText(tagsFile, jsonString);
         SetStatusText($"Tags saved");
@@ -1633,7 +1650,7 @@ namespace MilkwaveRemote {
         OpenFileDialog ofdScriptFile = new OpenFileDialog();
         ofdScriptFile.Filter = "Milkwave script files|*.txt|All files (*.*)|*.*";
         ofdScriptFile.RestoreDirectory = true;
-        ofdScriptFile.InitialDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        ofdScriptFile.InitialDirectory = BaseDir;
 
         if (ofdScriptFile.ShowDialog() == DialogResult.OK) {
           lastScriptFileName = ofdScriptFile.FileName;
@@ -1850,7 +1867,7 @@ namespace MilkwaveRemote {
         if (Directory.Exists(VisualizerPresetsFolder)) {
           fbd.InitialDirectory = VisualizerPresetsFolder;
         } else {
-          fbd.InitialDirectory = AppDomain.CurrentDomain.BaseDirectory;
+          fbd.InitialDirectory = BaseDir;
         }
         DialogResult result = fbd.ShowDialog();
 

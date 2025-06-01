@@ -133,6 +133,7 @@ typedef struct {
 td_custom_msg;
 
 typedef struct {
+  float	fStartTime = -1.0f; // off state
   int 	bRedrawSuperText;	// true if it needs redraw
   int 	bIsSongTitle;		// false for custom message, true for song title
   //char	szText[256];
@@ -140,12 +141,14 @@ typedef struct {
   wchar_t	nFontFace[128];
   int 	bBold;
   int 	bItal;
+  float fMoveTime = 0;
+  float	fStartX = - 100;
+  float fStartY = - 100;
   float	fX;
   float fY;
   float	fFontSize;			// [0..100] for custom messages, [0..4] for song titles
   float fGrowth;			// applies to custom messages only
   int		nFontSizeUsed;		// height IN PIXELS
-  float	fStartTime;
   float	fDuration;
   float	fFadeTime;			// applies to custom messages only; song title fade times are handled specially
   int  	nColorR;
@@ -554,7 +557,7 @@ public:
   int               m_nBlurTexH[NUM_BLUR_TEX];
 #endif
   int m_nHighestBlurTexUsedThisFrame;
-  IDirect3DTexture9* m_lpDDSTitle;    // CAREFUL: MIGHT BE NULL (if not enough mem)!
+  IDirect3DTexture9* m_lpDDSTitle[1];    // CAREFUL: MIGHT BE NULL (if not enough mem)!
   int               m_nTitleTexSizeX, m_nTitleTexSizeY;
   UINT              m_adapterId;
   MYVERTEX* m_verts;
@@ -586,7 +589,9 @@ public:
 
   texmgr      m_texmgr;		// for user sprites
 
-  td_supertext m_supertext;	// **contains info about current Song Title or Custom Message.**
+#define NUM_SUPERTEXTS 10
+  td_supertext m_supertexts[NUM_SUPERTEXTS];	// **contains info about current Song Title or Custom Message.**
+  
   bool m_blackmode = false;
   
   IDirect3DTexture9* m_tracer_tex;
@@ -644,10 +649,10 @@ public:
   void    SendPresetWaveInfoToMilkwaveRemote();
   void    SetWaveParamsFromMessage(std::wstring& message);
   void		ReadCustomMessages();
-  void		LaunchSongTitleAnim();
+  void		LaunchSongTitleAnim(int supertextIndex);
 
-  bool		RenderStringToTitleTexture();
-  void		ShowSongTitleAnim(/*IDirect3DTexture9* lpRenderTarget,*/ int w, int h, float fProgress);
+  bool		RenderStringToTitleTexture(int supertextIndex);
+  void		ShowSongTitleAnim(/*IDirect3DTexture9* lpRenderTarget,*/ int w, int h, float fProgress, int supertextIndex);
   void		DrawWave(float* fL, float* fR);
   void        DrawCustomWaves();
   void        DrawCustomShapes();
@@ -669,6 +674,7 @@ public:
   //void  ResetWindowSizeOnDisk();
   bool		LaunchSprite(int nSpriteNum, int nSlot);
   void		KillSprite(int iSlot);
+  int         GetNextFreeSupertextIndex();
   void        DoCustomSoundAnalysis();
   void        DrawMotionVectors();
 
@@ -698,6 +704,7 @@ public:
   bool IsBorderlessFullscreen(HWND hWnd);
   virtual LRESULT MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
   void KillAllSprites();
+  void KillAllSupertexts();
   bool ChangePresetDir(wchar_t* newDir, wchar_t* oldDir);
   int ToggleSpout();
   virtual void OnAltK();

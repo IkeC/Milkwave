@@ -928,7 +928,7 @@ namespace MilkwaveRemote
       btnSendFile.Size = new Size(83, 22);
       btnSendFile.TabIndex = 21;
       btnSendFile.Text = "Send";
-      toolTip1.SetToolTip(btnSendFile, "Send to Visualizer \r\n(Ctrl+X)\r\nSend to Visualizer and select next\r\n(Shift+Ctrl+X)\r\n\r\n");
+      toolTip1.SetToolTip(btnSendFile, "Send to Visualizer \r\n(Ctrl+X)\r\nRight-click: Send to Visualizer and select next\r\n(Shift+Ctrl+X)\r\n\r\n");
       btnSendFile.UseVisualStyleBackColor = true;
       btnSendFile.Click += btnSendFile_Click;
       btnSendFile.MouseDown += btnSendFile_MouseDown;

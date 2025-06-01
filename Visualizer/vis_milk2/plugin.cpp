@@ -1229,7 +1229,10 @@ void CPlugin::MyPreInitialize() {
   for (i = 0; i < NUM_BLUR_TEX; i++)
     m_lpBlur[i] = NULL;
 #endif
-  m_lpDDSTitle = NULL;
+  
+  m_lpDDSTitle[0] = NULL;
+  m_lpDDSTitle[1] = NULL;
+
   m_nTitleTexSizeX = 0;
   m_nTitleTexSizeY = 0;
   m_verts = NULL;
@@ -1251,10 +1254,7 @@ void CPlugin::MyPreInitialize() {
   //td_custom_msg        m_CustomMessage[MAX_CUSTOM_MESSAGES];
 
   texmgr      m_texmgr;		// for user sprites
-
-  m_supertext.bRedrawSuperText = false;
-  m_supertext.fStartTime = -1.0f;
-
+  KillAllSupertexts();
   // --------------------other init--------------------
 
   g_bDebugOutput = false;
@@ -1392,14 +1392,14 @@ void CPlugin::MyReadConfig() {
   m_HideNotificationsWhenRemoteActive = GetPrivateProfileBoolW(L"Milkwave", L"HideNotificationsWhenRemoteActive", m_HideNotificationsWhenRemoteActive, pIni);
 
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
-  m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);  
+  m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
 
   // We'll put these in the settings section since other MilkDrop forks use similar settings
   m_MinPSVersionConfig = GetPrivateProfileIntW(L"Settings", L"MinPSVersion", m_MinPSVersionConfig, pIni);
   if (m_MinPSVersionConfig < 0) m_MinPSVersionConfig = 2;
   m_MaxPSVersionConfig = GetPrivateProfileIntW(L"Settings", L"MaxPSVersion", m_MaxPSVersionConfig, pIni);
   if (m_MaxPSVersionConfig < 0) m_MaxPSVersionConfig = 4;
-  
+
   m_ShowUpArrowInDescriptionIfPSMinVersionForced = GetPrivateProfileBoolW(L"Milkwave", L"ShowUpArrowInDescriptionIfPSMinVersionForced", m_ShowUpArrowInDescriptionIfPSMinVersionForced, pIni);
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
@@ -2367,7 +2367,7 @@ int CPlugin::AllocateMyDX9Stuff() {
 
     //dumpmsg("Init: [re]allocating title surface");
 
-        // [DEPRECATED as of transition to dx9:]
+    // [DEPRECATED as of transition to dx9:]
     // We could just create one title surface, but this is a problem because many
     // systems can only call DrawText on DDSCAPS_OFFSCREENPLAIN surfaces, and can NOT
     // draw text on a DDSCAPS_TEXTURE surface (it comes out garbled).
@@ -2378,7 +2378,9 @@ int CPlugin::AllocateMyDX9Stuff() {
     HRESULT hr;
 
     do {
-      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSTitle);
+      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSTitle[0]);
+      // D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSTitle[1]);
+
       if (hr != D3D_OK) {
         if (m_nTitleTexSizeY < m_nTitleTexSizeX) {
           m_nTitleTexSizeY *= 2;
@@ -2392,14 +2394,19 @@ int CPlugin::AllocateMyDX9Stuff() {
 
     if (hr != D3D_OK) {
       //dumpmsg("Init: -WARNING-: Title texture could not be created!");
-      m_lpDDSTitle = NULL;
+      m_lpDDSTitle[0] = NULL;      
+      m_lpDDSTitle[1] = NULL;
       //SafeRelease(m_lpDDSTitle);
-//return true;
+      //return true;
     }
     else {
       //sprintf(buf, "Init: title texture size is %dx%d (ideal size was %dx%d)", m_nTitleTexSizeX, m_nTitleTexSizeY, m_nTexSize, m_nTexSize/4);
       //dumpmsg(buf);
-      m_supertext.bRedrawSuperText = true;
+      for (int i = 0; i < NUM_SUPERTEXTS; i++) {
+        if (m_supertexts[i].fStartTime != -1.0f) {
+          m_supertexts[i].bRedrawSuperText = true;
+        }
+      }
     }
   }
 
@@ -3789,7 +3796,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
 
   if (failed) {
     wchar_t temp[1024];
-    
+
     // "error compiling ps_2_0_shader:"
     // swprintf(temp, wasabiApiLangString(IDS_ERROR_COMPILING_X_X_SHADER), szProfile, szWhichShader);
 
@@ -3944,7 +3951,8 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // 2. release stuff
   SafeRelease(m_lpVS[0]);
   SafeRelease(m_lpVS[1]);
-  SafeRelease(m_lpDDSTitle);
+  SafeRelease(m_lpDDSTitle[0]);
+  // SafeRelease(m_lpDDSTitle[1]);
   SafeRelease(m_d3dx_title_font_doublesize);
 
   // NOTE: THIS CODE IS IN THE RIGHT PLACE.
@@ -4227,7 +4235,7 @@ void CPlugin::MyRenderFn(int redraw) {
     if (wcscmp(m_szSongTitle, m_szSongTitlePrev)) {
       lstrcpynW(m_szSongTitlePrev, m_szSongTitle, 512);
       if (m_bSongTitleAnims)
-        LaunchSongTitleAnim();
+        LaunchSongTitleAnim(-1);
     }
   }
 
@@ -4373,14 +4381,14 @@ void CPlugin::OnAltK() {
   AddNotification(wasabiApiLangString(IDS_PLEASE_EXIT_VIS_BEFORE_RUNNING_CONFIG_PANEL));
 }
 
-void CPlugin::AddNotification(wchar_t* szMsg) {  
+void CPlugin::AddNotification(wchar_t* szMsg) {
   g_plugin.AddError(szMsg, 3.0F, ERR_NOTIFY, m_fontinfo[SIMPLE_FONT].bBold);
 }
 
 void CPlugin::AddError(wchar_t* szMsg, float fDuration, int category, bool bBold) {
   if (category == ERR_NOTIFY)
     ClearErrors(category);
-  
+
   assert(category != ERR_ALL);
   ErrorMsg x;
   x.msg = szMsg;
@@ -5392,7 +5400,7 @@ void CPlugin::MyRenderUI(
               swprintf(buf, L"%s ", m_errors[i].msg.c_str());
               DWORD col = GetFontColor(SIMPLE_FONT);
               MyTextOut_Color(buf, MTO_UPPER_RIGHT, col);
-              
+
               /*
               float age_rel = (age) / (m_errors[i].expireTime - m_errors[i].birthTime);
               DWORD cr = (DWORD)(200 - 199 * powf(age_rel, 4));
@@ -6778,8 +6786,9 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           m_nNumericInputDigits = 0;
           m_nNumericInputNum = 0;
 
-          // stop display of text message.
-          m_supertext.fStartTime = -1.0f;
+          // stop display of text messages
+          KillAllSupertexts();
+
           return 0; // we processed (or absorbed) the key
         }
         else if (m_nNumericInputMode == NUMERIC_INPUT_MODE_SPRITE) {
@@ -6935,7 +6944,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     case 'T':
       if (bCtrlHeldDown) {
         // stop display of custom message or song title.
-        m_supertext.fStartTime = -1.0f;
+        KillAllSupertexts();
         return 0;
       }
       break;
@@ -6959,7 +6968,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     {
       if (bCtrlHeldDown)      // stop display of custom message or song title.
       {
-        m_supertext.fStartTime = -1.0f;
+        KillAllSupertexts();
         return 0;
       }
     }
@@ -6981,6 +6990,13 @@ void CPlugin::KillAllSprites() {
   for (int x = 0; x < NUM_TEX; x++)
     if (m_texmgr.m_tex[x].pSurface)
       m_texmgr.KillTex(x);
+}
+
+void CPlugin::KillAllSupertexts() {
+  for (int x = 0; x < NUM_SUPERTEXTS; x++) {
+    m_supertexts[x].fStartTime = -1.0f;
+    m_supertexts[x].bRedrawSuperText = false;
+  }
 }
 
 bool CPlugin::ChangePresetDir(wchar_t* newDir, wchar_t* oldDir) {
@@ -7134,11 +7150,11 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     //if (m_pState->m_fWaveAlpha.eval(-1) > 1.0f) m_pState->m_fWaveAlpha = 1.0f;
     return 0; // we processed (or absorbed) the key
 
-  case 'I':	
+  case 'I':
     m_pState->m_fZoom -= 0.01f;
     SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
-  case 'i':	
+  case 'i':
     m_pState->m_fZoom += 0.01f;
     SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
@@ -7173,13 +7189,13 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
   case 't':
   case 'T':
-    LaunchSongTitleAnim();
+    LaunchSongTitleAnim(-1);
     return 0; // we processed (or absorbed) the key
-  case 'o':	
+  case 'o':
     m_pState->m_fWarpAmount /= 1.1f;
     SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
-  case 'O':	
+  case 'O':
     m_pState->m_fWarpAmount *= 1.1f;
     SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
@@ -9977,81 +9993,94 @@ void CPlugin::LaunchCustomMessage(int nMsgNum) {
 
   int fontID = m_CustomMessage[nMsgNum].nFont;
 
-  m_supertext.bRedrawSuperText = true;
-  m_supertext.bIsSongTitle = false;
-  lstrcpyW(m_supertext.szTextW, m_CustomMessage[nMsgNum].szText);
+  int nextFreeSupertextIndex = GetNextFreeSupertextIndex();
+  if (nextFreeSupertextIndex > 0) {
+    m_supertexts[nextFreeSupertextIndex].bRedrawSuperText = true;
+    m_supertexts[nextFreeSupertextIndex].bIsSongTitle = false;
+    lstrcpyW(m_supertexts[nextFreeSupertextIndex].szTextW, m_CustomMessage[nMsgNum].szText);
 
-  // regular properties:
-  m_supertext.fFontSize = m_CustomMessage[nMsgNum].fSize;
-  m_supertext.fX = m_CustomMessage[nMsgNum].x + m_CustomMessage[nMsgNum].randx * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
-  m_supertext.fY = m_CustomMessage[nMsgNum].y + m_CustomMessage[nMsgNum].randy * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
-  m_supertext.fGrowth = m_CustomMessage[nMsgNum].growth;
-  m_supertext.fDuration = m_CustomMessage[nMsgNum].fTime;
-  m_supertext.fFadeTime = m_CustomMessage[nMsgNum].fFade;
+    // regular properties:
+    m_supertexts[nextFreeSupertextIndex].fFontSize = m_CustomMessage[nMsgNum].fSize;
+    m_supertexts[nextFreeSupertextIndex].fX = m_CustomMessage[nMsgNum].x + m_CustomMessage[nMsgNum].randx * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
+    m_supertexts[nextFreeSupertextIndex].fY = m_CustomMessage[nMsgNum].y + m_CustomMessage[nMsgNum].randy * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
+    m_supertexts[nextFreeSupertextIndex].fGrowth = m_CustomMessage[nMsgNum].growth;
+    m_supertexts[nextFreeSupertextIndex].fDuration = m_CustomMessage[nMsgNum].fTime;
+    m_supertexts[nextFreeSupertextIndex].fFadeTime = m_CustomMessage[nMsgNum].fFade;
 
-  // overrideables:
-  if (m_CustomMessage[nMsgNum].bOverrideFace)
-    lstrcpyW(m_supertext.nFontFace, m_CustomMessage[nMsgNum].szFace);
-  else
-    lstrcpyW(m_supertext.nFontFace, m_CustomMessageFont[fontID].szFace);
-  m_supertext.bItal = (m_CustomMessage[nMsgNum].bOverrideItal) ? (m_CustomMessage[nMsgNum].bItal != 0) : (m_CustomMessageFont[fontID].bItal != 0);
-  m_supertext.bBold = (m_CustomMessage[nMsgNum].bOverrideBold) ? (m_CustomMessage[nMsgNum].bBold != 0) : (m_CustomMessageFont[fontID].bBold != 0);
-  m_supertext.nColorR = (m_CustomMessage[nMsgNum].bOverrideColorR) ? m_CustomMessage[nMsgNum].nColorR : m_CustomMessageFont[fontID].nColorR;
-  m_supertext.nColorG = (m_CustomMessage[nMsgNum].bOverrideColorG) ? m_CustomMessage[nMsgNum].nColorG : m_CustomMessageFont[fontID].nColorG;
-  m_supertext.nColorB = (m_CustomMessage[nMsgNum].bOverrideColorB) ? m_CustomMessage[nMsgNum].nColorB : m_CustomMessageFont[fontID].nColorB;
+    // overrideables:
+    if (m_CustomMessage[nMsgNum].bOverrideFace)
+      lstrcpyW(m_supertexts[nextFreeSupertextIndex].nFontFace, m_CustomMessage[nMsgNum].szFace);
+    else
+      lstrcpyW(m_supertexts[nextFreeSupertextIndex].nFontFace, m_CustomMessageFont[fontID].szFace);
+    m_supertexts[nextFreeSupertextIndex].bItal = (m_CustomMessage[nMsgNum].bOverrideItal) ? (m_CustomMessage[nMsgNum].bItal != 0) : (m_CustomMessageFont[fontID].bItal != 0);
+    m_supertexts[nextFreeSupertextIndex].bBold = (m_CustomMessage[nMsgNum].bOverrideBold) ? (m_CustomMessage[nMsgNum].bBold != 0) : (m_CustomMessageFont[fontID].bBold != 0);
+    m_supertexts[nextFreeSupertextIndex].nColorR = (m_CustomMessage[nMsgNum].bOverrideColorR) ? m_CustomMessage[nMsgNum].nColorR : m_CustomMessageFont[fontID].nColorR;
+    m_supertexts[nextFreeSupertextIndex].nColorG = (m_CustomMessage[nMsgNum].bOverrideColorG) ? m_CustomMessage[nMsgNum].nColorG : m_CustomMessageFont[fontID].nColorG;
+    m_supertexts[nextFreeSupertextIndex].nColorB = (m_CustomMessage[nMsgNum].bOverrideColorB) ? m_CustomMessage[nMsgNum].nColorB : m_CustomMessageFont[fontID].nColorB;
 
-  // randomize color
-  m_supertext.nColorR += (int)(m_CustomMessage[nMsgNum].nRandR * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
-  m_supertext.nColorG += (int)(m_CustomMessage[nMsgNum].nRandG * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
-  m_supertext.nColorB += (int)(m_CustomMessage[nMsgNum].nRandB * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
-  if (m_supertext.nColorR < 0) m_supertext.nColorR = 0;
-  if (m_supertext.nColorG < 0) m_supertext.nColorG = 0;
-  if (m_supertext.nColorB < 0) m_supertext.nColorB = 0;
-  if (m_supertext.nColorR > 255) m_supertext.nColorR = 255;
-  if (m_supertext.nColorG > 255) m_supertext.nColorG = 255;
-  if (m_supertext.nColorB > 255) m_supertext.nColorB = 255;
+    // randomize color
+    m_supertexts[nextFreeSupertextIndex].nColorR += (int)(m_CustomMessage[nMsgNum].nRandR * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
+    m_supertexts[nextFreeSupertextIndex].nColorG += (int)(m_CustomMessage[nMsgNum].nRandG * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
+    m_supertexts[nextFreeSupertextIndex].nColorB += (int)(m_CustomMessage[nMsgNum].nRandB * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
+    if (m_supertexts[nextFreeSupertextIndex].nColorR < 0) m_supertexts[nextFreeSupertextIndex].nColorR = 0;
+    if (m_supertexts[nextFreeSupertextIndex].nColorG < 0) m_supertexts[nextFreeSupertextIndex].nColorG = 0;
+    if (m_supertexts[nextFreeSupertextIndex].nColorB < 0) m_supertexts[nextFreeSupertextIndex].nColorB = 0;
+    if (m_supertexts[nextFreeSupertextIndex].nColorR > 255) m_supertexts[nextFreeSupertextIndex].nColorR = 255;
+    if (m_supertexts[nextFreeSupertextIndex].nColorG > 255) m_supertexts[nextFreeSupertextIndex].nColorG = 255;
+    if (m_supertexts[nextFreeSupertextIndex].nColorB > 255) m_supertexts[nextFreeSupertextIndex].nColorB = 255;
 
-  // fix &'s for display:
-  /*
-  {
-    int pos = 0;
-    int len = lstrlen(m_supertext.szText);
-    while (m_supertext.szText[pos] && pos<255)
+    // fix &'s for display:
+    /*
     {
-      if (m_supertext.szText[pos] == '&')
+      int pos = 0;
+      int len = lstrlen(m_supertext[nextFreeSupertextIndex].szText);
+      while (m_supertext[nextFreeSupertextIndex].szText[pos] && pos<255)
       {
-        for (int x=len; x>=pos; x--)
-          m_supertext.szText[x+1] = m_supertext.szText[x];
-        len++;
+        if (m_supertext[nextFreeSupertextIndex].szText[pos] == '&')
+        {
+          for (int x=len; x>=pos; x--)
+            m_supertext[nextFreeSupertextIndex].szText[x+1] = m_supertext[nextFreeSupertextIndex].szText[x];
+          len++;
+          pos++;
+        }
         pos++;
       }
-      pos++;
-    }
-  }*/
+    }*/
 
-  m_supertext.fStartTime = GetTime();
+    m_supertexts[nextFreeSupertextIndex].fStartTime = GetTime();
+
+  }
+  // no free supertext slots available
+  return;
+
 }
 
+void CPlugin::LaunchSongTitleAnim(int supertextIndex) {
 
+  wchar_t debugMsg[128];
+  swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"LaunchSongTitleAnim: supertextIndex=%d\n", supertextIndex);
+  OutputDebugStringW(debugMsg);
 
-void CPlugin::LaunchSongTitleAnim() {
-  m_supertext.bRedrawSuperText = true;
-  m_supertext.bIsSongTitle = true;
-  lstrcpyW(m_supertext.szTextW, m_szSongTitle);
-  //lstrcpy(m_supertext.szText, " ");
-  lstrcpyW(m_supertext.nFontFace, m_fontinfo[SONGTITLE_FONT].szFace);
-  m_supertext.fFontSize = (float)m_fontinfo[SONGTITLE_FONT].nSize;
-  m_supertext.bBold = m_fontinfo[SONGTITLE_FONT].bBold;
-  m_supertext.bItal = m_fontinfo[SONGTITLE_FONT].bItalic;
-  m_supertext.fX = 0.5f;
-  m_supertext.fY = 0.5f;
-  m_supertext.fGrowth = 1.0f;
-  m_supertext.fDuration = m_fSongTitleAnimDuration;
-  m_supertext.nColorR = 255;
-  m_supertext.nColorG = 255;
-  m_supertext.nColorB = 255;
+  if (supertextIndex == -1) {
+    supertextIndex = GetNextFreeSupertextIndex();
+  }
+  m_supertexts[supertextIndex].bRedrawSuperText = true;
+  m_supertexts[supertextIndex].bIsSongTitle = true;
+  lstrcpyW(m_supertexts[supertextIndex].szTextW, m_szSongTitle);
+  //lstrcpy(m_supertext[supertextIndex].szText, " ");
+  lstrcpyW(m_supertexts[supertextIndex].nFontFace, m_fontinfo[SONGTITLE_FONT].szFace);
+  m_supertexts[supertextIndex].fFontSize = (float)m_fontinfo[SONGTITLE_FONT].nSize;
+  m_supertexts[supertextIndex].bBold = m_fontinfo[SONGTITLE_FONT].bBold;
+  m_supertexts[supertextIndex].bItal = m_fontinfo[SONGTITLE_FONT].bItalic;
+  m_supertexts[supertextIndex].fX = 0.5f;
+  m_supertexts[supertextIndex].fY = 0.5f;
+  m_supertexts[supertextIndex].fGrowth = 1.0f;
+  m_supertexts[supertextIndex].fDuration = m_fSongTitleAnimDuration;
+  m_supertexts[supertextIndex].nColorR = 255;
+  m_supertexts[supertextIndex].nColorG = 255;
+  m_supertexts[supertextIndex].nColorB = 255;
 
-  m_supertext.fStartTime = GetTime();
+  m_supertexts[supertextIndex].fStartTime = GetTime();
 }
 
 
@@ -10078,138 +10107,139 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       }
     }
 
+    int nextFreeSupertextIndex = GetNextFreeSupertextIndex();
     // Set m_supertext properties
     if (params.find(L"text") != params.end()) {
-      lstrcpyW(m_supertext.szTextW, ConvertToLPCWSTR(params[L"text"]));
+      lstrcpyW(m_supertexts[nextFreeSupertextIndex].szTextW, ConvertToLPCWSTR(params[L"text"]));
     }
     else {
       return; // 'text' parameter is required
     }
 
-    m_supertext.bRedrawSuperText = true;
-    m_supertext.bIsSongTitle = false;
+    m_supertexts[nextFreeSupertextIndex].bRedrawSuperText = true;
+    m_supertexts[nextFreeSupertextIndex].bIsSongTitle = false;
 
     if (params.find(L"font") != params.end()) {
-      lstrcpyW(m_supertext.nFontFace, ConvertToLPCWSTR(params[L"font"]));
+      lstrcpyW(m_supertexts[nextFreeSupertextIndex].nFontFace, ConvertToLPCWSTR(params[L"font"]));
     }
     else {
       // Default font
-      lstrcpyW(m_supertext.nFontFace, L"Segoe UI");
+      lstrcpyW(m_supertexts[nextFreeSupertextIndex].nFontFace, L"Segoe UI");
     }
 
     if (params.find(L"size") != params.end()) {
-      m_supertext.fFontSize = std::stof(params[L"size"]);
+      m_supertexts[nextFreeSupertextIndex].fFontSize = std::stof(params[L"size"]);
     }
     else {
-      m_supertext.fFontSize = 30.0f; // Default size
+      m_supertexts[nextFreeSupertextIndex].fFontSize = 30.0f; // Default size
     }
 
     if (params.find(L"x") != params.end()) {
-      m_supertext.fX = std::stof(params[L"x"]);
+      m_supertexts[nextFreeSupertextIndex].fX = std::stof(params[L"x"]);
     }
     else {
-      m_supertext.fX = 0.49f; // Default x position
+      m_supertexts[nextFreeSupertextIndex].fX = 0.49f; // Default x position
     }
 
     if (params.find(L"y") != params.end()) {
-      m_supertext.fY = std::stof(params[L"y"]);
+      m_supertexts[nextFreeSupertextIndex].fY = std::stof(params[L"y"]);
     }
     else {
-      m_supertext.fY = 0.5f; // Default y position
+      m_supertexts[nextFreeSupertextIndex].fY = 0.5f; // Default y position
     }
 
     if (params.find(L"randx") != params.end()) {
-      m_supertext.fX += std::stof(params[L"randx"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
+      m_supertexts[nextFreeSupertextIndex].fX += std::stof(params[L"randx"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
     }
 
     if (params.find(L"randy") != params.end()) {
-      m_supertext.fY += std::stof(params[L"randy"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
+      m_supertexts[nextFreeSupertextIndex].fY += std::stof(params[L"randy"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
     }
 
     if (params.find(L"growth") != params.end()) {
-      m_supertext.fGrowth = std::stof(params[L"growth"]);
+      m_supertexts[nextFreeSupertextIndex].fGrowth = std::stof(params[L"growth"]);
     }
     else {
-      m_supertext.fGrowth = 1.0f; // Default growth
+      m_supertexts[nextFreeSupertextIndex].fGrowth = 1.0f; // Default growth
     }
 
     if (params.find(L"time") != params.end()) {
-      m_supertext.fDuration = std::stof(params[L"time"]);
+      m_supertexts[nextFreeSupertextIndex].fDuration = std::stof(params[L"time"]);
     }
     else {
-      m_supertext.fDuration = 5.0f; // Default duration
+      m_supertexts[nextFreeSupertextIndex].fDuration = 5.0f; // Default duration
     }
 
     if (params.find(L"fade") != params.end()) {
-      m_supertext.fFadeTime = std::stof(params[L"fade"]);
+      m_supertexts[nextFreeSupertextIndex].fFadeTime = std::stof(params[L"fade"]);
     }
     else {
       // The percentage of time (0..1) spent fading in the text
-      m_supertext.fFadeTime = 0.2f; // Default fade time
+      m_supertexts[nextFreeSupertextIndex].fFadeTime = 0.2f; // Default fade time
     }
 
     if (params.find(L"bold") != params.end()) {
-      m_supertext.bBold = std::stoi(params[L"bold"]);
+      m_supertexts[nextFreeSupertextIndex].bBold = std::stoi(params[L"bold"]);
     }
     else {
-      m_supertext.bBold = 0; // Default bold
+      m_supertexts[nextFreeSupertextIndex].bBold = 0; // Default bold
     }
 
     if (params.find(L"ital") != params.end()) {
-      m_supertext.bItal = std::stoi(params[L"ital"]);
+      m_supertexts[nextFreeSupertextIndex].bItal = std::stoi(params[L"ital"]);
     }
     else {
-      m_supertext.bItal = 0; // Default italic
+      m_supertexts[nextFreeSupertextIndex].bItal = 0; // Default italic
     }
 
     if (params.find(L"r") != params.end()) {
-      m_supertext.nColorR = std::stoi(params[L"r"]);
+      m_supertexts[nextFreeSupertextIndex].nColorR = std::stoi(params[L"r"]);
     }
     else {
-      m_supertext.nColorR = 255; // Default red color
+      m_supertexts[nextFreeSupertextIndex].nColorR = 255; // Default red color
     }
 
     if (params.find(L"g") != params.end()) {
-      m_supertext.nColorG = std::stoi(params[L"g"]);
+      m_supertexts[nextFreeSupertextIndex].nColorG = std::stoi(params[L"g"]);
     }
     else {
-      m_supertext.nColorG = 255; // Default green color
+      m_supertexts[nextFreeSupertextIndex].nColorG = 255; // Default green color
     }
 
     if (params.find(L"b") != params.end()) {
-      m_supertext.nColorB = std::stoi(params[L"b"]);
+      m_supertexts[nextFreeSupertextIndex].nColorB = std::stoi(params[L"b"]);
     }
     else {
-      m_supertext.nColorB = 255; // Default blue color
+      m_supertexts[nextFreeSupertextIndex].nColorB = 255; // Default blue color
     }
 
     if (params.find(L"b") != params.end()) {
-      m_supertext.nColorB = std::stoi(params[L"b"]);
+      m_supertexts[nextFreeSupertextIndex].nColorB = std::stoi(params[L"b"]);
     }
     else {
-      m_supertext.nColorB = 255; // Default blue color
+      m_supertexts[nextFreeSupertextIndex].nColorB = 255; // Default blue color
     }
 
     if (params.find(L"randr") != params.end()) {
-      m_supertext.nColorR += (int)(std::stof(params[L"randr"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
+      m_supertexts[nextFreeSupertextIndex].nColorR += (int)(std::stof(params[L"randr"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
     }
 
     if (params.find(L"randg") != params.end()) {
-      m_supertext.nColorG += (int)(std::stof(params[L"randg"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
+      m_supertexts[nextFreeSupertextIndex].nColorG += (int)(std::stof(params[L"randg"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
     }
 
     if (params.find(L"randb") != params.end()) {
-      m_supertext.nColorB += (int)(std::stof(params[L"randb"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
+      m_supertexts[nextFreeSupertextIndex].nColorB += (int)(std::stof(params[L"randb"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
     }
 
-    if (m_supertext.nColorR < 0) m_supertext.nColorR = 0;
-    if (m_supertext.nColorG < 0) m_supertext.nColorG = 0;
-    if (m_supertext.nColorB < 0) m_supertext.nColorB = 0;
-    if (m_supertext.nColorR > 255) m_supertext.nColorR = 255;
-    if (m_supertext.nColorG > 255) m_supertext.nColorG = 255;
-    if (m_supertext.nColorB > 255) m_supertext.nColorB = 255;
+    if (m_supertexts[nextFreeSupertextIndex].nColorR < 0) m_supertexts[nextFreeSupertextIndex].nColorR = 0;
+    if (m_supertexts[nextFreeSupertextIndex].nColorG < 0) m_supertexts[nextFreeSupertextIndex].nColorG = 0;
+    if (m_supertexts[nextFreeSupertextIndex].nColorB < 0) m_supertexts[nextFreeSupertextIndex].nColorB = 0;
+    if (m_supertexts[nextFreeSupertextIndex].nColorR > 255) m_supertexts[nextFreeSupertextIndex].nColorR = 255;
+    if (m_supertexts[nextFreeSupertextIndex].nColorG > 255) m_supertexts[nextFreeSupertextIndex].nColorG = 255;
+    if (m_supertexts[nextFreeSupertextIndex].nColorB > 255) m_supertexts[nextFreeSupertextIndex].nColorB = 255;
 
-    m_supertext.fStartTime = GetTime();
+    m_supertexts[nextFreeSupertextIndex].fStartTime = GetTime();
   }
   else if (wcsncmp(sMessage, L"AMP|", 4) == 0) {
     // EQ message
@@ -10310,9 +10340,6 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 5);
     m_RemotePresetLink = std::stoi(message);
   }
-  else if (wcsncmp(sMessage, L"CLEAR", 5) == 0) {
-    ClearPreset();
-  }
   else if (wcsncmp(sMessage, L"QUICKSAVE", 9) == 0) {
     g_plugin.SaveCurrentPresetToQuicksave(false);
   }
@@ -10331,6 +10358,15 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     g_plugin.AddError(L"This is the Artist", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
     if (!g_plugin.m_bShowPresetInfo) g_plugin.m_bShowPresetInfo = true;
     g_plugin.AddNotification(L"This is a notification");
+  }
+  else if (wcsncmp(sMessage, L"CLEARPRESET", 11) == 0) {
+    ClearPreset();
+  }
+  else if (wcsncmp(sMessage, L"CLEARSPRITES", 12) == 0) {
+    g_plugin.KillAllSprites();
+  }
+  else if (wcsncmp(sMessage, L"CLEARTEXTS", 10) == 0) {
+    g_plugin.KillAllSupertexts();
   }
 }
 
@@ -10640,6 +10676,15 @@ Cleanup:
   CoUninitialize();
 
   return hr;
+}
+
+int CPlugin::GetNextFreeSupertextIndex() {
+  for (int i = 0; i < NUM_SUPERTEXTS; i++) {
+    if (m_supertexts[i].fStartTime == -1.0f) {
+      return i;
+    }
+  }
+  return -1; // No free index found
 }
 
 void CPlugin::DoCustomSoundAnalysis() {

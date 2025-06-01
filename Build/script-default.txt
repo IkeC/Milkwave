@@ -22,6 +22,8 @@
 #   depending on the set BPM, beats and your computer. This command resets the 
 #   timer. The same can be achieved by double-clicking the "BPM"-label in the 
 #   Remote window.
+# CLEARSPRITES: Clear all sprites
+# CLEARTEXTS: Clear all texts
 #
 Welcome to Milkwave!
 SEND=11|A wild sprite appears!
