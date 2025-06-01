@@ -589,7 +589,7 @@ public:
 
   texmgr      m_texmgr;		// for user sprites
 
-#define NUM_SUPERTEXTS 10
+#define NUM_SUPERTEXTS 1
   td_supertext m_supertexts[NUM_SUPERTEXTS];	// **contains info about current Song Title or Custom Message.**
   
   bool m_blackmode = false;

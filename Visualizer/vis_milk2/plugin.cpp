@@ -1229,7 +1229,7 @@ void CPlugin::MyPreInitialize() {
   for (i = 0; i < NUM_BLUR_TEX; i++)
     m_lpBlur[i] = NULL;
 #endif
-  
+
   m_lpDDSTitle[0] = NULL;
   m_lpDDSTitle[1] = NULL;
 
@@ -2376,11 +2376,8 @@ int CPlugin::AllocateMyDX9Stuff() {
     // (m_lpDDSTitle[0]), which can then be drawn onto the screen on polys.
 
     HRESULT hr;
-
     do {
       hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSTitle[0]);
-      // D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSTitle[1]);
-
       if (hr != D3D_OK) {
         if (m_nTitleTexSizeY < m_nTitleTexSizeX) {
           m_nTitleTexSizeY *= 2;
@@ -2392,9 +2389,24 @@ int CPlugin::AllocateMyDX9Stuff() {
       }
     } while (hr != D3D_OK && m_nTitleTexSizeX > 16);
 
+    /*
+    do {
+      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSTitle[1]);
+      if (hr != D3D_OK) {
+        if (m_nTitleTexSizeY < m_nTitleTexSizeX) {
+          m_nTitleTexSizeY *= 2;
+        }
+        else {
+          m_nTitleTexSizeX /= 2;
+          m_nTitleTexSizeY /= 2;
+        }
+      }
+    } while (hr != D3D_OK && m_nTitleTexSizeX > 16);
+    */
+
     if (hr != D3D_OK) {
       //dumpmsg("Init: -WARNING-: Title texture could not be created!");
-      m_lpDDSTitle[0] = NULL;      
+      m_lpDDSTitle[0] = NULL;
       m_lpDDSTitle[1] = NULL;
       //SafeRelease(m_lpDDSTitle);
       //return true;
@@ -10684,7 +10696,8 @@ int CPlugin::GetNextFreeSupertextIndex() {
       return i;
     }
   }
-  return -1; // No free index found
+
+  return 0; // No free index found - return (and possibly cancel) first
 }
 
 void CPlugin::DoCustomSoundAnalysis() {

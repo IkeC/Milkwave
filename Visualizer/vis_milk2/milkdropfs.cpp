@@ -5102,7 +5102,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   if (!lpDevice)
     return;
 
-  m_lpDDSTitle[texIndex]->GetSurfaceLevel(0, &pSurface);
   lpDevice->SetTexture(stage, m_lpDDSTitle[texIndex]);
   lpDevice->SetVertexShader(NULL);
   lpDevice->SetFVF(SPRITEVERTEX_FORMAT);
