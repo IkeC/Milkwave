@@ -557,7 +557,11 @@ public:
   int               m_nBlurTexH[NUM_BLUR_TEX];
 #endif
   int m_nHighestBlurTexUsedThisFrame;
-  IDirect3DTexture9* m_lpDDSTitle[1];    // CAREFUL: MIGHT BE NULL (if not enough mem)!
+
+#define NUM_SUPERTEXTS 10
+  IDirect3DTexture9* m_lpDDSTitle[NUM_SUPERTEXTS];
+  td_supertext m_supertexts[NUM_SUPERTEXTS];
+
   int               m_nTitleTexSizeX, m_nTitleTexSizeY;
   UINT              m_adapterId;
   MYVERTEX* m_verts;
@@ -588,9 +592,6 @@ public:
   td_custom_msg        m_CustomMessage[MAX_CUSTOM_MESSAGES];
 
   texmgr      m_texmgr;		// for user sprites
-
-#define NUM_SUPERTEXTS 1
-  td_supertext m_supertexts[NUM_SUPERTEXTS];	// **contains info about current Song Title or Custom Message.**
   
   bool m_blackmode = false;
   

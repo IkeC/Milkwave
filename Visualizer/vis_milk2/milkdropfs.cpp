@@ -233,7 +233,7 @@ bool CPlugin::RenderStringToTitleTexture(int supertextIndex)	// m_szSongMessage
   swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"RenderStringToTitleTexture: supertextIndex=%d\n", supertextIndex);
   OutputDebugStringW(debugMsg);
   
-  int texIndex = 0;
+  int texIndex = supertextIndex;
   int stage = 0;
 
   if (!m_lpDDSTitle[texIndex])  // this *can* be NULL, if not much video mem!
@@ -259,7 +259,7 @@ bool CPlugin::RenderStringToTitleTexture(int supertextIndex)	// m_szSongMessage
   // set render target to m_lpDDSTitle
   {
     // lpDevice->SetTexture(0, NULL);
-    lpDevice->SetTexture(stage, NULL);
+    // lpDevice->SetTexture(stage, NULL);
 
     IDirect3DSurface9* pNewTarget = NULL;
     // if (m_lpDDSTitle->GetSurfaceLevel(0, &pNewTarget) != D3D_OK) {
@@ -283,7 +283,7 @@ bool CPlugin::RenderStringToTitleTexture(int supertextIndex)	// m_szSongMessage
     lpDevice->SetFVF(WFVERTEX_FORMAT);
     
     // lpDevice->SetTexture(0, NULL);
-    lpDevice->SetTexture(stage, NULL);
+    // lpDevice->SetTexture(stage, NULL);
 
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 
@@ -5092,7 +5092,7 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: supertextIndex=%d w=%d h=%d fProgress=%.2f\n", supertextIndex, w, h, fProgress);
   OutputDebugStringW(debugMsg);
 
-  int texIndex = 0;
+  int texIndex = supertextIndex;
   int stage = 0;
 
   if (!m_lpDDSTitle[texIndex])  // this *can* be NULL, if not much video mem!
@@ -5315,7 +5315,20 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
       lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
     }
 
-    lpDevice->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 128, 15 * 7 * 6 / 3, indices, D3DFMT_INDEX16, v3, sizeof(SPRITEVERTEX));
+    /*
+    LPDIRECT3DSURFACE9 pBackBuffer = nullptr;
+    lpDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+    lpDevice->SetRenderTarget(0, pBackBuffer);
+    pBackBuffer->Release();
+    */
+
+    HRESULT hr = lpDevice->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 128, 15 * 7 * 6 / 3, indices, D3DFMT_INDEX16, v3, sizeof(SPRITEVERTEX));
+    if (FAILED(hr)) {
+      wchar_t errMsg[256];
+      swprintf(errMsg, sizeof(errMsg) / sizeof(errMsg[0]), L"DrawIndexedPrimitiveUP failed\n");
+      OutputDebugStringW(errMsg);
+      return;
+    }
   }
 
   lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);

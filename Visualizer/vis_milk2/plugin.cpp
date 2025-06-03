@@ -1230,8 +1230,9 @@ void CPlugin::MyPreInitialize() {
     m_lpBlur[i] = NULL;
 #endif
 
-  m_lpDDSTitle[0] = NULL;
-  m_lpDDSTitle[1] = NULL;
+  for (i = 0; i < NUM_SUPERTEXTS; i++) {
+    m_lpDDSTitle[i] = NULL;
+  }
 
   m_nTitleTexSizeX = 0;
   m_nTitleTexSizeY = 0;
@@ -2365,6 +2366,9 @@ int CPlugin::AllocateMyDX9Stuff() {
     m_nTitleTexSizeX = max(m_nTexSizeX, m_nTexSizeY);
     m_nTitleTexSizeY = m_nTitleTexSizeX / 4;
 
+    // int sizeX = m_nTitleTexSizeX;
+    // int sizeY = m_nTitleTexSizeY;
+
     //dumpmsg("Init: [re]allocating title surface");
 
     // [DEPRECATED as of transition to dx9:]
@@ -2377,7 +2381,10 @@ int CPlugin::AllocateMyDX9Stuff() {
 
     HRESULT hr;
     do {
-      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSTitle[0]);
+      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_lpDDSTitle[0]);
+      if (FAILED(hr)) {
+        int i = 0;
+      }
       if (hr != D3D_OK) {
         if (m_nTitleTexSizeY < m_nTitleTexSizeX) {
           m_nTitleTexSizeY *= 2;
@@ -2389,25 +2396,18 @@ int CPlugin::AllocateMyDX9Stuff() {
       }
     } while (hr != D3D_OK && m_nTitleTexSizeX > 16);
 
-    /*
-    do {
-      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSTitle[1]);
+    for (int i = 1; i < NUM_SUPERTEXTS; i++) {
+      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_lpDDSTitle[i]);
       if (hr != D3D_OK) {
-        if (m_nTitleTexSizeY < m_nTitleTexSizeX) {
-          m_nTitleTexSizeY *= 2;
-        }
-        else {
-          m_nTitleTexSizeX /= 2;
-          m_nTitleTexSizeY /= 2;
-        }
+        break;
       }
-    } while (hr != D3D_OK && m_nTitleTexSizeX > 16);
-    */
+    }
 
     if (hr != D3D_OK) {
       //dumpmsg("Init: -WARNING-: Title texture could not be created!");
-      m_lpDDSTitle[0] = NULL;
-      m_lpDDSTitle[1] = NULL;
+      for (int i = 0; i < NUM_SUPERTEXTS; i++) {
+        m_lpDDSTitle[i] = NULL;
+      }
       //SafeRelease(m_lpDDSTitle);
       //return true;
     }
@@ -3963,8 +3963,11 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // 2. release stuff
   SafeRelease(m_lpVS[0]);
   SafeRelease(m_lpVS[1]);
-  SafeRelease(m_lpDDSTitle[0]);
-  // SafeRelease(m_lpDDSTitle[1]);
+  
+  for (int i = 0; i < NUM_SUPERTEXTS; i++) {
+    SafeRelease(m_lpDDSTitle[i]);
+  }
+
   SafeRelease(m_d3dx_title_font_doublesize);
 
   // NOTE: THIS CODE IS IN THE RIGHT PLACE.
