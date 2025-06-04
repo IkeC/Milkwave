@@ -1076,13 +1076,22 @@ void CPlugin::RenderFrame(int bRedraw) {
 
     for (int i = 0; i < NUM_SUPERTEXTS; i++) {
       float fProgress = (GetTime() - m_supertexts[i].fStartTime) / m_supertexts[i].fDuration;
-      // float fProgress = (GetTime() - m_supertext[i].fStartTime);
 
       // if song title animation just ended, burn it into the VS:
       if (m_supertexts[i].fStartTime >= 0 &&
         fProgress >= 1.0f &&
         !m_supertexts[i].bRedrawSuperText) {
-        ShowSongTitleAnim(m_nTexSizeX, m_nTexSizeY, 1.0f, i);
+        
+        float fTimeAfterFullDuration = GetTime() - m_supertexts[i].fStartTime - m_supertexts[i].fDuration;
+        ShowSongTitleAnim(m_nTexSizeX, m_nTexSizeY, fProgress, i);
+        
+        wchar_t debugMsg[128];
+        swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"RenderFrame: fTimeAfterFullDuration=%.2f\n", fTimeAfterFullDuration);
+        OutputDebugStringW(debugMsg);
+
+        if (fTimeAfterFullDuration >= m_supertexts[i].fBurnTime) {
+          m_supertexts[i].fStartTime = -1.0f;	// 'off' state
+        }
       }
     }
 
@@ -1137,13 +1146,15 @@ void CPlugin::RenderFrame(int bRedraw) {
       float fProgress = (GetTime() - m_supertexts[i].fStartTime) / m_supertexts[i].fDuration;
       // finally, render song title animation to back buffer
       if (m_supertexts[i].fStartTime >= 0 &&
-        !m_supertexts[i].bRedrawSuperText) {
+        !m_supertexts[i].bRedrawSuperText
+        && fProgress <= 1.0f 
+        ) {
         ShowSongTitleAnim(GetWidth(), GetHeight(), 
           min(fProgress, 0.9999f), 
           i);
         // TODO accentuate
-        if (fProgress >= 1.0f)
-          m_supertexts[i].fStartTime = -1.0f;	// 'off' state
+        // if (fProgress >= 1.5f)
+        //   m_supertexts[i].fStartTime = -1.0f;	// 'off' state
       }
     }
   }
@@ -5255,12 +5266,21 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   for (int it = 0; it < 2; it++) {
     // colors
     {
-      float t;
+      float t = 0;
 
       if (m_supertexts[supertextIndex].bIsSongTitle)
         t = powf(fProgress, 0.3f) * 1.0f;
-      else
+      else if (fProgress <= 1.0f)
         t = CosineInterp(min(1.0f, (fProgress / m_supertexts[supertextIndex].fFadeTime)));
+      else {
+        float fTimeAfterFullDuration = GetTime() - m_supertexts[supertextIndex].fStartTime - m_supertexts[supertextIndex].fDuration;
+        t = 1 - (fTimeAfterFullDuration / m_supertexts[supertextIndex].fBurnTime);
+      }
+      if (t < 0) {
+        t = 0;
+      }
+      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: t=%.2f\n", t);
+      OutputDebugStringW(debugMsg);
 
       if (it == 0)
         v3[0].Diffuse = D3DCOLOR_RGBA_01(t, t, t, t);

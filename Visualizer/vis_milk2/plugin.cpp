@@ -10276,6 +10276,10 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       m_supertexts[nextFreeSupertextIndex].fShadowOffset = std::stof(params[L"shadowoffset"]);
     }
 
+    if (params.find(L"burntime") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fBurnTime = std::stof(params[L"burntime"]);
+    }
+
     m_supertexts[nextFreeSupertextIndex].fStartTime = GetTime();
 
     for (int i = 0; i < NUM_SUPERTEXTS; i++) {

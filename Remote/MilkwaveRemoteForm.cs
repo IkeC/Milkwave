@@ -1437,7 +1437,9 @@ namespace MilkwaveRemote {
           "movetime={float}  // The duration (in seconds) the text will move from startx/starty to x/y" + Environment.NewLine +
           "easemode={int:0|1|2}  // Moving animation smoothing: 0=linear, 1=ease-in, 2=ease-out (default=2)" + Environment.NewLine +
           "easefactor={float:1..5}  // Smoothing strengh (default=2.0)" + Environment.NewLine +
-          "shadowoffset={float}  // Text drop shadow offset: 0=no shadow (default=2.0)";
+          "shadowoffset={float}  // Text drop shadow offset: 0=no shadow (default=2.0)" + Environment.NewLine +
+          "burntime={float}  // The duration (in seconds) the text will \"burn in\" at the end (default=0.5)" + Environment.NewLine;
+
         new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Parameters", helpText, 9, 800, 600);
       }
     }
