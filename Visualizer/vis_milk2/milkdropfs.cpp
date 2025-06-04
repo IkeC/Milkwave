@@ -1138,7 +1138,10 @@ void CPlugin::RenderFrame(int bRedraw) {
       // finally, render song title animation to back buffer
       if (m_supertexts[i].fStartTime >= 0 &&
         !m_supertexts[i].bRedrawSuperText) {
-        ShowSongTitleAnim(GetWidth(), GetHeight(), min(fProgress, 0.9999f), i);
+        ShowSongTitleAnim(GetWidth(), GetHeight(), 
+          min(fProgress, 0.9999f), 
+          i);
+        // TODO accentuate
         if (fProgress >= 1.0f)
           m_supertexts[i].fStartTime = -1.0f;	// 'off' state
       }
@@ -5217,20 +5220,38 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     }
 
     // apply 'growth' factor and move to user-specified (x,y)
-    //if (fabsf(m_supertext[supertextIndex].fGrowth-1.0f) > 0.001f)
     {
       float t = (1.0f) * (1 - fProgress) + (fProgress) * (m_supertexts[supertextIndex].fGrowth);
+      if (m_supertexts[supertextIndex].fMoveTime == -1) {
+        m_supertexts[supertextIndex].fMoveTime = m_supertexts[supertextIndex].fDuration;
+      }
       
-      
-      float dx = (m_supertexts[supertextIndex].fX * 2 - 1);
-      if (m_supertexts[supertextIndex].fStartX != -100) {
-        
+      float startTimeProgress = 1;
+      if (m_supertexts[supertextIndex].fMoveTime > 0) {
+        startTimeProgress = (GetTime() - m_supertexts[supertextIndex].fStartTime) / m_supertexts[supertextIndex].fMoveTime;
       }
 
-      float dy = (m_supertexts[supertextIndex].fY * 2 - 1);
-      if (m_supertexts[supertextIndex].fStartY != -100) {
-
+      float tFactor = startTimeProgress;
+      if (m_supertexts[supertextIndex].nEaseMode == 1) {
+        // Ease in: start slow, speed up
+        tFactor = powf(tFactor, m_supertexts[supertextIndex].fEaseFactor);
       }
+      else if (m_supertexts[supertextIndex].nEaseMode == 2) {
+        // Ease out: slow down towards the end
+        tFactor = 1.0f - powf(1.0f - tFactor, m_supertexts[supertextIndex].fEaseFactor);
+      }
+
+      float currentX = m_supertexts[supertextIndex].fX;
+      if (startTimeProgress < 1 && m_supertexts[supertextIndex].fStartX != -100 && m_supertexts[supertextIndex].fStartX != m_supertexts[supertextIndex].fX) {
+        currentX -= (m_supertexts[supertextIndex].fX - m_supertexts[supertextIndex].fStartX) * (1 - tFactor);
+      }
+      float dx = (currentX * 2 - 1);
+
+      float currentY = m_supertexts[supertextIndex].fY;
+      if (startTimeProgress < 1 && m_supertexts[supertextIndex].fStartY != -100 && m_supertexts[supertextIndex].fStartY != m_supertexts[supertextIndex].fY) {
+        currentY -= (m_supertexts[supertextIndex].fY - m_supertexts[supertextIndex].fStartY) * (1 - tFactor);
+      }
+      float dy = (currentY * 2 - 1);
 
       if (w != h)	// regular render-to-backbuffer
       {
@@ -5314,13 +5335,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
       lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);//SRCALPHA);
       lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
     }
-
-    /*
-    LPDIRECT3DSURFACE9 pBackBuffer = nullptr;
-    lpDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-    lpDevice->SetRenderTarget(0, pBackBuffer);
-    pBackBuffer->Release();
-    */
 
     HRESULT hr = lpDevice->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 128, 15 * 7 * 6 / 3, indices, D3DFMT_INDEX16, v3, sizeof(SPRITEVERTEX));
     if (FAILED(hr)) {

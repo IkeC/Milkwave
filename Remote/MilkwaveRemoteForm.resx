@@ -553,25 +553,6 @@
   <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>783, 0</value>
   </metadata>
-  <data name="cboParameters.ToolTip" xml:space="preserve">
-    <value>font={fontname}  // The font name to use
-size={int:0..100}  // The font size (0=tiny, 100=enormous, 40-60=normal range)
-growth={float:0.25..4.0}  // The factor to grow or shrink over time (0.5=shrink to half-size, 2.0=grow to double size)
-x={float:0..1}  // The x-position of the center of the text (0.0=left side, 1.0=right side)
-y={float:0..1}  // The y-position of the center of the text (0.0=top, 1.0=bottom)
-randx={float:0..1}  // X-randomization: x will be bumped within +/- this value
-randy={float:0..1}  // Y-randomization: y will be bumped within +/- this value
-time={float:0..999}  // The duration (in seconds) the text will display
-fade={float:0..1}  // The percentage of time (0..1) spent fading in the text
-ital={0|1}  // Font italics override (0=off, 1=on)
-bold={0|1}  // Font bold override (0=off, 1=on)
-r={int:0..255}  // Red color component for the font
-g={int:0..255}  // Green color component for the font
-b={int:0..255}  // Blue color component for the font
-randr={int:0..255}  // Randomization for the red component (r will be bumped within +/- this value)
-randg={int:0..255}  // Randomization for the green component (g will be bumped within +/- this value)
-randb={int:0..255}  // Randomization for the blue component (b will be bumped within +/- this value)</value>
-  </data>
   <data name="btnPresetLoadTags.ToolTip" xml:space="preserve">
     <value>Load presets based on tags filter
 Examples:

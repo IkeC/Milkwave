@@ -12,6 +12,8 @@
 # PREV: Previous preset (like pressing the Backspace key in the Visualizer)
 # STYLE=My Style: Switch to saved messenger style named "My Style"
 # FONT=Arial: Set font in Remote to Arial
+# SIZE=20: Set font size in Remote to 20
+# COLOR=255,0,0: Set Color in Remote to the given R,G,B value
 # BPM=123: Set BPM to 123
 # BEATS=8: Set Beats to 8
 # STOP: Stop autoplay
@@ -24,6 +26,9 @@
 #   Remote window.
 # CLEARSPRITES: Clear all sprites
 # CLEARTEXTS: Clear all texts
+# MSG=time=5.0;growth=1.5;text=This is the message
+#   Raw message sending: Send message using parameters. If font facce, size and color
+#   are not set, the current Remote settings are used.
 #
 Welcome to Milkwave!
 SEND=11|A wild sprite appears!
@@ -33,6 +38,9 @@ Switched to next preset|NEXT
 FONT=Courier New|Everybody likes Courier!
 FONT=Arial|Let's try//doubleline text!
 PRESET=resources\presets\Milkwave\Flexi - lorenz attractor.milk|I like this preset!
+MSG=time=2.0;growth=2.5;y=0.3;text=Some more text!
+MSG=time=2.0;growth=2.5;y=0.5;text=And more!
+MSG=time=2.0;growth=2.5;y=0.7;text=And even more!
 BPM=180|BEATS=4|Let's go faster!
 RESET|Boom
 Boom

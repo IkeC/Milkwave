@@ -21,6 +21,15 @@ namespace MilkwaveRemote {
       ShowDialog();
     }
 
+    public void ShowDialog(string title, string text, float fontSize, int width, int height) {
+      Text = title;
+      textBox.Font = new Font(textBox.Font.FontFamily, fontSize);
+      textBox.Text = text;
+      this.Width = width;
+      this.Height = height;
+      ShowDialog();
+    }
+
     private void MilkwaveInfoForm_Shown(object sender, EventArgs e) {
       btnClose.Focus();
     }

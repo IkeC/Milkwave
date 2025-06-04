@@ -2,6 +2,7 @@
 using MilkwaveRemote.Helper;
 using System.Diagnostics;
 using System.Drawing.Text;
+using System.Formats.Tar;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -75,7 +76,7 @@ namespace MilkwaveRemote {
 
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
-    
+
     Random rnd = new Random();
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
@@ -172,7 +173,7 @@ namespace MilkwaveRemote {
     }
 
     private enum MessageType {
-      Direct,
+      Raw,
       Message,
       PresetFilePath,
       PresetLink,
@@ -198,7 +199,7 @@ namespace MilkwaveRemote {
     }
     public MilkwaveRemoteForm() {
       InitializeComponent();
-      
+
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
 
       FixNumericUpDownMouseWheel(this);
@@ -482,7 +483,7 @@ namespace MilkwaveRemote {
     private void btnSend_Click(object sender, EventArgs e) {
 
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-        SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Direct);
+        SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Raw);
       } else {
         SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
       }
@@ -498,10 +499,7 @@ namespace MilkwaveRemote {
       IntPtr foundWindow = FindVisualizerWindow();
       if (foundWindow != IntPtr.Zero) {
         string message = "";
-        if (type == MessageType.Direct) {
-          message = messageToSend;
-          statusMessage = $"Sent '{messageToSend}' to";
-        } else if (type == MessageType.Wave) {
+        if (type == MessageType.Wave) {
           message = "WAVE" +
             "|MODE=" + numWaveMode.Value +
             "|ALPHA=" + numWaveAlpha.Value.ToString(CultureInfo.InvariantCulture) +
@@ -589,6 +587,14 @@ namespace MilkwaveRemote {
           if (cboParameters.Text.Length > 0) {
             message += "|" + cboParameters.Text;
           }
+          statusMessage = $"Sent '{messageToSend}' to";
+        } else if (type == MessageType.Raw) {
+          message = messageToSend;
+          statusMessage = $"Sent '{messageToSend}' to";
+        }
+
+        // if line doesn't contain font face, size or color, use form-defined values
+        if (type == MessageType.Message || type == MessageType.Raw) {
           if (!message.Contains("font=")) {
             message += "|font=" + cboFonts.Text;
           }
@@ -613,8 +619,6 @@ namespace MilkwaveRemote {
               message = message.Replace("size=" + size, "size=" + newSize);
             }
           }
-
-          statusMessage = $"Sent '{messageToSend}' to";
         }
 
         byte[] messageBytes = Encoding.Unicode.GetBytes(message);
@@ -740,6 +744,20 @@ namespace MilkwaveRemote {
             } else if (tokenUpper.StartsWith("FONT=")) {
               string font = token.Substring(5);
               cboFonts.Text = font;
+            } else if (tokenUpper.StartsWith("SIZE=")) {
+              string size = token.Substring(5);
+              if (float.TryParse(size, out float parsedSize)) {
+                numSize.Value = (decimal)parsedSize;
+              }
+            } else if (tokenUpper.StartsWith("COLOR=")) {
+              string colorRGB = token.Substring(6);
+              string[] valuesRGB = colorRGB.Split(",");
+              if (valuesRGB.Length == 3 &&
+                  int.TryParse(valuesRGB[0], out int r) &&
+                  int.TryParse(valuesRGB[1], out int g) &&
+                  int.TryParse(valuesRGB[2], out int b)) {
+                pnlColorMessage.BackColor = Color.FromArgb(r, g, b);
+              }
             } else if (tokenUpper.StartsWith("STYLE=")) {
               string preset = tokenUpper.Substring(6);
               var foundItem = from item in cboParameters.Items.Cast<Style>()
@@ -772,6 +790,9 @@ namespace MilkwaveRemote {
               if (sendString.Length > 0) {
                 SendUnicodeChars(sendString);
               }
+            } else if (tokenUpper.StartsWith("MSG=")) {
+              string sendString = "MSG|" + token.Substring(4).Replace(";", "|");
+              SendToMilkwaveVisualizer(sendString, MessageType.Raw);
             } else if (tokenUpper.Equals("CLEARSPRITES")) {
               SendToMilkwaveVisualizer("", MessageType.ClearSprites);
             } else if (tokenUpper.Equals("CLEARTEXTS")) {
@@ -877,6 +898,7 @@ namespace MilkwaveRemote {
             cboAutoplay.Items.Add(line);
           }
         }
+        SetStatusText("Loaded " + cboAutoplay.Items.Count + " lines from " + fileName);
       }
 
       if (cboAutoplay.Items.Count > 0) {
@@ -1379,9 +1401,44 @@ namespace MilkwaveRemote {
     }
 
     private void lblParameters_DoubleClick(object sender, EventArgs e) {
-      Settings.Styles.Clear();
-      ReloadStylesList();
-      SetStatusText($"Saved presets cleared");
+      if (MessageBox.Show(this, "Really remove all saved styles?",
+          "Please Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1)
+          == DialogResult.Yes) {
+        Settings.Styles.Clear();
+        ReloadStylesList();
+        SetStatusText($"Saved presets cleared");
+      }
+
+    }
+
+    private void lblParameters_MouseDown(object sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Right) {
+        string helpText = "font={fontname}  // The font name to use" + Environment.NewLine +
+          "size={int:0..100}  // The font size (0=tiny, 100=enormous, 40-60=normal range)" + Environment.NewLine +
+          "growth={float:0.25..4.0}  // The factor to grow or shrink over time (0.5=shrink to half-size, 2.0=grow to double size)" + Environment.NewLine +
+          "x={float:0..1}  // The x-position of the center of the text (0.0=left side, 1.0=right side)" + Environment.NewLine +
+          "y={float:0..1}  // The y-position of the center of the text (0.0=top, 1.0=bottom)" + Environment.NewLine +
+          "randx={float:0..1}  // X-randomization: x will be bumped within +/- this value" + Environment.NewLine +
+          "randy={float:0..1}  // Y-randomization: y will be bumped within +/- this value" + Environment.NewLine +
+          "time={float:0..999}  // The duration (in seconds) the text will display" + Environment.NewLine +
+          "fade={float:0..1}  // The percentage of time (0..1) spent fading in the text" + Environment.NewLine +
+          "ital={0|1}  // Font italics override (0=off, 1=on)" + Environment.NewLine +
+          "bold={0|1}  // Font bold override (0=off, 1=on)" + Environment.NewLine +
+          "r={int:0..255}  // Red color component for the font" + Environment.NewLine +
+          "g={int:0..255}  // Green color component for the font" + Environment.NewLine +
+          "b={int:0..255}  // Blue color component for the font" + Environment.NewLine +
+          "randr={int:0..255}  // Randomization for the red component (r will be bumped within +/- this value)" + Environment.NewLine +
+          "randg={int:0..255}  // Randomization for the green component (g will be bumped within +/- this value)" + Environment.NewLine +
+          "randb={int:0..255}  // Randomization for the blue component (b will be bumped within +/- this value)" + Environment.NewLine +
+          "" + Environment.NewLine +
+          "New in Milkwave:" + Environment.NewLine +
+          "startx={float}  // x-position for text moving animation (can be negative)" + Environment.NewLine +
+          "starty={float}  // y-position for text moving animation (can be negative)" + Environment.NewLine +
+          "movetime={float}  // The duration (in seconds) the text will move from startx/starty to x/y" + Environment.NewLine +
+          "easemode={int:0..2}  // moving animation smoothing: 0=linear, 1=ease-in, 2=ease-out (default)" + Environment.NewLine +
+          "easefactor={float:1..5}  // smoothing strengh (default=2.0)";
+        new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Parameters", helpText, 9, 800, 600);
+      }
     }
 
     private void lblStyle_DoubleClick(object sender, EventArgs e) {

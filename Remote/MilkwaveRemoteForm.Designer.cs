@@ -614,8 +614,9 @@ namespace MilkwaveRemote
       lblParameters.TabIndex = 91;
       lblParameters.Text = "Parameters";
       lblParameters.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblParameters, "Double-click to clear all saved styles");
+      toolTip1.SetToolTip(lblParameters, "Double-click: Clear all saved styles\r\nRight-click: Open window showing all possible parameters");
       lblParameters.DoubleClick += lblParameters_DoubleClick;
+      lblParameters.MouseDown += lblParameters_MouseDown;
       // 
       // cboParameters
       // 
@@ -625,7 +626,6 @@ namespace MilkwaveRemote
       cboParameters.Name = "cboParameters";
       cboParameters.Size = new Size(312, 23);
       cboParameters.TabIndex = 7;
-      toolTip1.SetToolTip(cboParameters, resources.GetString("cboParameters.ToolTip"));
       cboParameters.SelectedIndexChanged += cboParameters_SelectedIndexChanged;
       cboParameters.TextChanged += cboParameters_TextChanged;
       cboParameters.KeyDown += cboParameters_KeyDown;

@@ -10163,6 +10163,26 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       m_supertexts[nextFreeSupertextIndex].fY = 0.5f; // Default y position
     }
 
+    if (params.find(L"startx") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fStartX = std::stof(params[L"startx"]);
+    }
+
+    if (params.find(L"starty") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fStartY = std::stof(params[L"starty"]);
+    }
+
+    if (params.find(L"movetime") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fMoveTime = std::stof(params[L"movetime"]);
+    }
+
+    if (params.find(L"easemode") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].nEaseMode = std::stoi(params[L"easemode"]);
+    }
+
+    if (params.find(L"easefactor") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fEaseFactor = std::stoi(params[L"easefactor"]);
+    }
+
     if (params.find(L"randx") != params.end()) {
       m_supertexts[nextFreeSupertextIndex].fX += std::stof(params[L"randx"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
     }
@@ -10255,6 +10275,18 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     if (m_supertexts[nextFreeSupertextIndex].nColorB > 255) m_supertexts[nextFreeSupertextIndex].nColorB = 255;
 
     m_supertexts[nextFreeSupertextIndex].fStartTime = GetTime();
+
+    for (int i = 0; i < NUM_SUPERTEXTS; i++) {
+      if (i != nextFreeSupertextIndex
+        && m_supertexts[i].fStartTime != -1.0f
+        && m_supertexts[i].fStartX != -100
+        && m_supertexts[i].fStartY != -100
+        && m_supertexts[i].fX == m_supertexts[nextFreeSupertextIndex].fX
+        && m_supertexts[i].fY == m_supertexts[nextFreeSupertextIndex].fY) {
+        // If the new supertext overlaps with an existing non-animated one, stop it
+        m_supertexts[i].fStartTime = -1.0f; // Mark it as stopped
+      }
+    }
   }
   else if (wcsncmp(sMessage, L"AMP|", 4) == 0) {
     // EQ message
