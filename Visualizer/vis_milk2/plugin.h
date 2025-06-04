@@ -156,6 +156,7 @@ typedef struct {
   int  	nColorB;
   int   nEaseMode = 2;	// 0 = linear, 1 = ease-in, 2 = ease-out (default)
   float fEaseFactor = 2.0f; // 1.0f = linear, 2.0f = ease-in/out, 3.0f = more pronounced ease-in/out
+  float fShadowOffset = 2.0f;
 }
 td_supertext;
 

@@ -2365,6 +2365,9 @@ int CPlugin::AllocateMyDX9Stuff() {
   {
     m_nTitleTexSizeX = max(m_nTexSizeX, m_nTexSizeY);
     m_nTitleTexSizeY = m_nTitleTexSizeX / 4;
+    
+    // m_nTitleTexSizeX = max(m_nTexSizeX, m_nTexSizeY);
+    // m_nTitleTexSizeY = m_nTitleTexSizeX / 4;
 
     // int sizeX = m_nTitleTexSizeX;
     // int sizeY = m_nTitleTexSizeY;
@@ -2380,27 +2383,21 @@ int CPlugin::AllocateMyDX9Stuff() {
     // (m_lpDDSTitle[0]), which can then be drawn onto the screen on polys.
 
     HRESULT hr;
-    do {
-      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_lpDDSTitle[0]);
-      if (FAILED(hr)) {
-        int i = 0;
-      }
-      if (hr != D3D_OK) {
-        if (m_nTitleTexSizeY < m_nTitleTexSizeX) {
-          m_nTitleTexSizeY *= 2;
+    for (int i = 0; i < NUM_SUPERTEXTS; i++) {
+      m_nTitleTexSizeX = max(m_nTexSizeX, m_nTexSizeY);
+      m_nTitleTexSizeY = m_nTitleTexSizeX / 4;
+      do {
+        hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_lpDDSTitle[i]);
+        if (hr != D3D_OK) {
+          if (m_nTitleTexSizeY < m_nTitleTexSizeX) {
+            m_nTitleTexSizeY *= 2;
+          }
+          else {
+            m_nTitleTexSizeX /= 2;
+            m_nTitleTexSizeY /= 2;
+          }
         }
-        else {
-          m_nTitleTexSizeX /= 2;
-          m_nTitleTexSizeY /= 2;
-        }
-      }
-    } while (hr != D3D_OK && m_nTitleTexSizeX > 16);
-
-    for (int i = 1; i < NUM_SUPERTEXTS; i++) {
-      hr = D3DXCreateTexture(GetDevice(), m_nTitleTexSizeX, m_nTitleTexSizeY, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_lpDDSTitle[i]);
-      if (hr != D3D_OK) {
-        break;
-      }
+      } while (hr != D3D_OK && m_nTitleTexSizeX > 16);
     }
 
     if (hr != D3D_OK) {
@@ -10163,26 +10160,6 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       m_supertexts[nextFreeSupertextIndex].fY = 0.5f; // Default y position
     }
 
-    if (params.find(L"startx") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].fStartX = std::stof(params[L"startx"]);
-    }
-
-    if (params.find(L"starty") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].fStartY = std::stof(params[L"starty"]);
-    }
-
-    if (params.find(L"movetime") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].fMoveTime = std::stof(params[L"movetime"]);
-    }
-
-    if (params.find(L"easemode") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].nEaseMode = std::stoi(params[L"easemode"]);
-    }
-
-    if (params.find(L"easefactor") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].fEaseFactor = std::stoi(params[L"easefactor"]);
-    }
-
     if (params.find(L"randx") != params.end()) {
       m_supertexts[nextFreeSupertextIndex].fX += std::stof(params[L"randx"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
     }
@@ -10274,13 +10251,38 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     if (m_supertexts[nextFreeSupertextIndex].nColorG > 255) m_supertexts[nextFreeSupertextIndex].nColorG = 255;
     if (m_supertexts[nextFreeSupertextIndex].nColorB > 255) m_supertexts[nextFreeSupertextIndex].nColorB = 255;
 
+
+    if (params.find(L"startx") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fStartX = std::stof(params[L"startx"]);
+    }
+
+    if (params.find(L"starty") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fStartY = std::stof(params[L"starty"]);
+    }
+
+    if (params.find(L"movetime") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fMoveTime = std::stof(params[L"movetime"]);
+    }
+
+    if (params.find(L"easemode") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].nEaseMode = std::stoi(params[L"easemode"]);
+    }
+
+    if (params.find(L"easefactor") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fEaseFactor = std::stoi(params[L"easefactor"]);
+    }
+
+    if (params.find(L"shadowoffset") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fShadowOffset = std::stof(params[L"shadowoffset"]);
+    }
+
     m_supertexts[nextFreeSupertextIndex].fStartTime = GetTime();
 
     for (int i = 0; i < NUM_SUPERTEXTS; i++) {
       if (i != nextFreeSupertextIndex
         && m_supertexts[i].fStartTime != -1.0f
-        && m_supertexts[i].fStartX != -100
-        && m_supertexts[i].fStartY != -100
+        && m_supertexts[i].fStartX == -100
+        && m_supertexts[i].fStartY == -100
         && m_supertexts[i].fX == m_supertexts[nextFreeSupertextIndex].fX
         && m_supertexts[i].fY == m_supertexts[nextFreeSupertextIndex].fY) {
         // If the new supertext overlaps with an existing non-animated one, stop it
@@ -10726,13 +10728,16 @@ Cleanup:
 }
 
 int CPlugin::GetNextFreeSupertextIndex() {
+  int index = 0;
   for (int i = 0; i < NUM_SUPERTEXTS; i++) {
     if (m_supertexts[i].fStartTime == -1.0f) {
-      return i;
+      index = i;
+      break;
     }
   }
-
-  return 0; // No free index found - return (and possibly cancel) first
+  // if no text is free, we'll reset and use index=0
+  m_supertexts[index] = td_supertext(); // Reset the supertext at this index
+  return index;
 }
 
 void CPlugin::DoCustomSoundAnalysis() {

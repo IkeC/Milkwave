@@ -1414,7 +1414,7 @@ namespace MilkwaveRemote {
     private void lblParameters_MouseDown(object sender, MouseEventArgs e) {
       if (e.Button == MouseButtons.Right) {
         string helpText = "font={fontname}  // The font name to use" + Environment.NewLine +
-          "size={int:0..100}  // The font size (0=tiny, 100=enormous, 40-60=normal range)" + Environment.NewLine +
+          "size={int:0..100}  // The font size (0=tiny, 100=enormous, 20-60=normal range)" + Environment.NewLine +
           "growth={float:0.25..4.0}  // The factor to grow or shrink over time (0.5=shrink to half-size, 2.0=grow to double size)" + Environment.NewLine +
           "x={float:0..1}  // The x-position of the center of the text (0.0=left side, 1.0=right side)" + Environment.NewLine +
           "y={float:0..1}  // The y-position of the center of the text (0.0=top, 1.0=bottom)" + Environment.NewLine +
@@ -1432,11 +1432,12 @@ namespace MilkwaveRemote {
           "randb={int:0..255}  // Randomization for the blue component (b will be bumped within +/- this value)" + Environment.NewLine +
           "" + Environment.NewLine +
           "New in Milkwave:" + Environment.NewLine +
-          "startx={float}  // x-position for text moving animation (can be negative)" + Environment.NewLine +
-          "starty={float}  // y-position for text moving animation (can be negative)" + Environment.NewLine +
+          "startx={float}  // The x-position for text moving animation (can be negative)" + Environment.NewLine +
+          "starty={float}  // The y-position for text moving animation (can be negative)" + Environment.NewLine +
           "movetime={float}  // The duration (in seconds) the text will move from startx/starty to x/y" + Environment.NewLine +
-          "easemode={int:0..2}  // moving animation smoothing: 0=linear, 1=ease-in, 2=ease-out (default)" + Environment.NewLine +
-          "easefactor={float:1..5}  // smoothing strengh (default=2.0)";
+          "easemode={int:0|1|2}  // Moving animation smoothing: 0=linear, 1=ease-in, 2=ease-out (default=2)" + Environment.NewLine +
+          "easefactor={float:1..5}  // Smoothing strengh (default=2.0)" + Environment.NewLine +
+          "shadowoffset={float}  // Text drop shadow offset: 0=no shadow (default=2.0)";
         new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Parameters", helpText, 9, 800, 600);
       }
     }

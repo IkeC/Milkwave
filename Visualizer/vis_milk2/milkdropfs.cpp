@@ -5126,26 +5126,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
       fSizeX = 0.88f;
     }
 
-    //fixme
-    if (fProgress < 1.0f)//(w!=h)	// regular render-to-backbuffer
-    {
-      //float aspect = w/(float)(h*4.0f/3.0f);
-  //fSizeY *= aspect;
-    }
-    else 	// final render-to-VS0
-    {
-      //float aspect = GetWidth()/(float)(GetHeight()*4.0f/3.0f);
-      //if (aspect < 1.0f)
-      //{
-      //	fSizeX *= aspect;
-      //	fSizeY *= aspect;
-      //}
-
-            //fSizeY *= -1;
-    }
-
-    //if (fSizeX > 0.92f) fSizeX = 0.92f;
-    //if (fSizeY > 0.92f) fSizeY = 0.92f;
     i = 0;
     float vert_clip = VERT_CLIP;//1.0f;//0.45f;	// warning: visible clipping has been observed at 0.4!
     for (y = 0; y < 8; y++) {
@@ -5187,24 +5167,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     float fSizeX = (float)m_nTexSizeX / 1024.0f * 100.0f / (float)m_supertexts[supertextIndex].nFontSizeUsed * powf(1.033f, m_supertexts[supertextIndex].fFontSize - 50.0f);
     float fSizeY = fSizeX * m_nTitleTexSizeY / (float)m_nTitleTexSizeX;
 
-    //fixme
-    if (fProgress < 1.0f)//w!=h)	// regular render-to-backbuffer
-    {
-      //float aspect = w/(float)(h*4.0f/3.0f);
-      //fSizeY *= aspect;
-    }
-    else 	// final render-to-VS0
-    {
-      //float aspect = GetWidth()/(float)(GetHeight()*4.0f/3.0f);
-      //if (aspect < 1.0f)
-      //{
-      //	fSizeX *= aspect;
-      //	fSizeY *= aspect;
-      //}
-            //fSizeY *= -1;
-    }
-
-    //if (fSize > 0.92f) fSize = 0.92f;
     i = 0;
     float vert_clip = VERT_CLIP;//0.67f;	// warning: visible clipping has been observed at 0.5 (for very short strings) and even 0.6 (for wingdings)!
     for (y = 0; y < 8; y++) {
@@ -5311,14 +5273,17 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
 
     // nudge down & right for shadow, up & left for solid text
     float offset_x = 0, offset_y = 0;
+
+    float baseOffsetX = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeX * (m_supertexts[supertextIndex].fFontSize / 40);
+    float baseOffsetY = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeY * (m_supertexts[supertextIndex].fFontSize / 40);
     switch (it) {
     case 0:
-      offset_x = 2.0f / (float)m_nTitleTexSizeX;
-      offset_y = 2.0f / (float)m_nTitleTexSizeY;
+      offset_x = baseOffsetX;
+      offset_y = baseOffsetY;
       break;
     case 1:
-      offset_x = -4.0f / (float)m_nTitleTexSizeX;
-      offset_y = -4.0f / (float)m_nTitleTexSizeY;
+      offset_x = -2 * baseOffsetX;
+      offset_y = -2 * baseOffsetY;
       break;
     }
 
