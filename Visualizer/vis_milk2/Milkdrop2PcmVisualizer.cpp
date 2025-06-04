@@ -1535,6 +1535,17 @@ void MilkwaveTerminateHandler() {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
   std::set_terminate(MilkwaveTerminateHandler);
   api_orig_hinstance = hInstance;
+
+#ifdef _DEBUG
+  // Set the current directory to the Release folder for debugging
+  SetCurrentDirectoryW(L"../../Release");
+  wchar_t fullPath[MAX_PATH];
+  GetCurrentDirectoryW(MAX_PATH, fullPath);
+  // swprintf(cwd, sizeof(cwd) / sizeof(cwd[0]), L"WinMain: WorkingDir=%s\n", cwd);
+  OutputDebugStringW(fullPath);
+  OutputDebugStringW(L"\n");
+#endif
+
   try {
     // test error logging
     // throw std::runtime_error("An example exception occurred.");

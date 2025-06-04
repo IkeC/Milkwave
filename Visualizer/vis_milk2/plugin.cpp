@@ -8808,11 +8808,18 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
   // make sure preset still exists.  (might not if they are using the "back"/fwd buttons
   //  in RANDOM preset order and a file was renamed or deleted!)
   if (GetFileAttributesW(szPresetFilename) == 0xFFFFFFFF) {
-    const wchar_t* p = wcsrchr(szPresetFilename, L'\\');
-    p = (p) ? p + 1 : szPresetFilename;
+
+    wchar_t fullPath[MAX_PATH];
+    GetFullPathNameW(szPresetFilename, MAX_PATH, fullPath, NULL);
+    // Log the full path (to debugger or console)
+    OutputDebugStringW(fullPath);
+    OutputDebugStringW(L"\n");
+   
     wchar_t buf[1024];
-    swprintf(buf, wasabiApiLangString(IDS_ERROR_PRESET_NOT_FOUND_X), p);
+    swprintf(buf, wasabiApiLangString(IDS_ERROR_PRESET_NOT_FOUND_X), fullPath);
     AddError(buf, 6.0f, ERR_PRESET, true);
+    m_fPresetStartTime = GetTime();
+    m_fNextPresetTime = -1.0f;		// flags UpdateTime() to recompute this
     return;
   }
 
