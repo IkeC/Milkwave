@@ -1261,10 +1261,8 @@ void CPlugin::MyPreInitialize() {
   g_bDebugOutput = false;
   g_bDumpFileCleared = false;
 
-  wchar_t buffer[MAX_PATH];
-  GetModuleFileNameW(NULL, buffer, MAX_PATH);
-  std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
-  std::wstring dir = std::wstring(buffer).substr(0, pos);
+  std::wstring::size_type pos = std::wstring(m_szBaseDir).find_last_of(L"\\/");
+  std::wstring dir = std::wstring(m_szBaseDir).substr(0, pos);
 
   swprintf(m_szMilkdrop2Path, L"%s\\%s", dir.c_str(), SUBDIR);
   swprintf(m_szPresetDir, L"%spresets\\", m_szMilkdrop2Path);
@@ -1276,7 +1274,6 @@ void CPlugin::MyPreInitialize() {
   if (p) *(p + 1) = 0;
   swprintf(m_szMsgIniFile, L"%s%s", szConfigDir, MSG_INIFILE);
   swprintf(m_szImgIniFile, L"%s%s", szConfigDir, IMG_INIFILE);
-
 }
 
 //----------------------------------------------------------------------
@@ -7504,9 +7501,7 @@ void CPlugin::SaveCurrentPresetToQuicksave(bool altDir) {
   }
 
   // Get the executable's directory
-  wchar_t exePath[MAX_PATH];
-  GetModuleFileNameW(NULL, exePath, MAX_PATH);
-  std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
+  std::filesystem::path exeDir = std::filesystem::path(m_szBaseDir).parent_path();
 
   std::string quicksaveDir = "resources/presets/Quicksave";
   if (altDir) {
@@ -10296,8 +10291,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         && m_supertexts[i].fStartY == -100
         && m_supertexts[i].fX == m_supertexts[nextFreeSupertextIndex].fX
         && m_supertexts[i].fY == m_supertexts[nextFreeSupertextIndex].fY) {
-        // If the new supertext overlaps with an existing non-animated one, stop it
-        m_supertexts[i].fStartTime = -1.0f; // Mark it as stopped
+        // If the new supertext overlaps with an existing non-animated one, end it
+        // set duration to the elapsed time, so burn-in is still applied
+        m_supertexts[i].fDuration = GetTime() - m_supertexts[i].fStartTime;
       }
     }
   }

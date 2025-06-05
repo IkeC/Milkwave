@@ -33,6 +33,8 @@ public:
   std::wstring currentAlbum;
 
   std::chrono::steady_clock::time_point start_time;
+  
+  std::filesystem::path coverSpriteFilePath;
 
   bool updated = false;
   bool doPoll = false;
@@ -43,7 +45,7 @@ public:
   bool infoLogEnabled = false;
 
   Milkwave();
-  void Init();
+  void Init(wchar_t* exePath);
   void LogInfo(const wchar_t* info);
   void LogException(const wchar_t* context, const std::exception& e, bool showMessage);
   void PollMediaInfo();

@@ -219,7 +219,8 @@ namespace MilkwaveRemote {
         if (loadedSettings != null) {
           Settings = loadedSettings;
         }
-        jsonString = File.ReadAllText(milkwaveTagsFile);
+        string tagsFile = Path.Combine(BaseDir, milkwaveTagsFile);
+        jsonString = File.ReadAllText(tagsFile);
         Tags? loadedTags = JsonSerializer.Deserialize<Tags>(jsonString, new JsonSerializerOptions {
           PropertyNameCaseInsensitive = true
         });
@@ -998,6 +999,11 @@ namespace MilkwaveRemote {
 
         INPUT[] inputs;
 
+        // Supported combos:
+        // Shift + Ctrl
+        // Shift
+        // Alt
+        // Ctrl
         if (doShift && doCtrl) {
           inputs = new INPUT[6];
 
@@ -1140,6 +1146,48 @@ namespace MilkwaveRemote {
             u = new InputUnion {
               ki = new KEYBDINPUT {
                 wVk = VK_ALT,
+                dwFlags = 2 // Key up
+              }
+            }
+          };
+        } else if (doCtrl) {
+          inputs = new INPUT[4];
+
+          inputs[0] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = VK_CTRL,
+                dwFlags = 0 // Key down
+              }
+            }
+          };
+
+          inputs[1] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = (ushort)VKKey,
+                dwFlags = 0 // Key down
+              }
+            }
+          };
+
+          inputs[2] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = (ushort)VKKey,
+                dwFlags = 2 // Key up
+              }
+            }
+          };
+
+          inputs[3] = new INPUT {
+            type = 1, // Keyboard input
+            u = new InputUnion {
+              ki = new KEYBDINPUT {
+                wVk = VK_CTRL,
                 dwFlags = 2 // Key up
               }
             }
@@ -1438,7 +1486,7 @@ namespace MilkwaveRemote {
           "easemode={int:0|1|2}  // Moving animation smoothing: 0=linear, 1=ease-in, 2=ease-out (default=2)" + Environment.NewLine +
           "easefactor={float:1..5}  // Smoothing strengh (default=2.0)" + Environment.NewLine +
           "shadowoffset={float}  // Text drop shadow offset: 0=no shadow (default=2.0)" + Environment.NewLine +
-          "burntime={float}  // The duration (in seconds) the text will \"burn in\" at the end (default=0.5)" + Environment.NewLine;
+          "burntime={float}  // The duration (in seconds) the text will \"burn in\" at the end (default=0.1)" + Environment.NewLine;
 
         new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Parameters", helpText, 9, 800, 600);
       }
@@ -2151,10 +2199,12 @@ namespace MilkwaveRemote {
     }
 
     private void btnWatermark_Click(object sender, EventArgs e) {
-      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-        SendPostMessage(VK_F9, "F9");
-      } else {
-        SendInput(VK_F9, "F9", true, false, true);
+      SendInput(VK_F9, "F9", true, false, true);
+    }
+
+    private void btnWatermark_MouseDown(object sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Right) {
+        SendInput(VK_F9, "F9", false, false, true);
       }
     }
 
@@ -2937,5 +2987,6 @@ namespace MilkwaveRemote {
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
     }
+
   } // end class
 } // end namespace

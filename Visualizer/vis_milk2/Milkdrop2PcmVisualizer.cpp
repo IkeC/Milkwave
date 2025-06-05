@@ -1179,9 +1179,10 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   if (g_plugin.m_WindowBorderless && !borderless) {
     ToggleBorderlessWindow(hwnd);
   }
-  milkwave.Init();
+  milkwave.Init(g_plugin.m_szBaseDir);
   milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
   milkwave.doSaveCover = g_plugin.m_DisplayCover;
+  
   unsigned int frame = 0;
 
   // SPOUT - defaults if no GUI
@@ -1531,19 +1532,29 @@ void MilkwaveTerminateHandler() {
   std::abort(); // Ensure abnormal termination
 }
 
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
   std::set_terminate(MilkwaveTerminateHandler);
   api_orig_hinstance = hInstance;
 
 #ifdef _DEBUG
-  // Set the current directory to the Release folder for debugging
+  // Set the current directory to the Release folder for debugging,
+  // which is expected to be at the project root level.
   SetCurrentDirectoryW(L"../../Release");
   wchar_t fullPath[MAX_PATH];
-  GetCurrentDirectoryW(MAX_PATH, fullPath);
+  GetCurrentDirectoryW(MAX_PATH, g_plugin.m_szBaseDir);
   // swprintf(cwd, sizeof(cwd) / sizeof(cwd[0]), L"WinMain: WorkingDir=%s\n", cwd);
-  OutputDebugStringW(fullPath);
+  // Append backslash if not present
+  size_t len = wcslen(g_plugin.m_szBaseDir);
+  if (len > 0 && g_plugin.m_szBaseDir[len - 1] != L'\\') {
+    if (len < MAX_PATH - 1) { // Ensure space for backslash and null terminator
+      g_plugin.m_szBaseDir[len] = L'\\';
+      g_plugin.m_szBaseDir[len + 1] = L'\0';
+    }
+  }
+  OutputDebugStringW(g_plugin.m_szBaseDir);
   OutputDebugStringW(L"\n");
+#else
+  GetModuleFileNameW(NULL, g_plugin.m_szBaseDir, MAX_PATH);
 #endif
 
   try {

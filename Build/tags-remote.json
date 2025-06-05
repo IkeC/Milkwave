@@ -114,6 +114,12 @@
         "vibrant"
       ]
     },
+    "amandio c - embrace 07 y": {
+      "PresetPath": "Milkdrop2077\\amandio c - embrace 07 y.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
     "amandio c - photo warp (random texture mix)": {
       "PresetPath": "Incubo_\\amandio c - photo warp (random texture mix).milk",
       "Tags": [
@@ -144,6 +150,246 @@
       "PresetPath": "Incubo_\\Anandamide - Capitalist_Cathedral_Esper (Se7enSlasher\u0027s Composition Fix).milk",
       "Tags": [
         "photo"
+      ]
+    },
+    "beatdrop2077.001 fire wave": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.001 Fire Wave.milk",
+      "Tags": [
+        "calm",
+        "simple"
+      ]
+    },
+    "beatdrop2077.003 martin - kings cross": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.003 martin - kings cross.milk",
+      "Tags": [
+        "beat"
+      ]
+    },
+    "beatdrop2077.003 martin - kings cross 2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.003 martin - kings cross 2.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.003 martin - kings cross 3 line": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.003 martin - kings cross 3 line.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "beatdrop2077.003 martin - kings cross 3 lines": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.003 martin - kings cross 3 lines.milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    },
+    "beatdrop2077.003 martin - kings cross 4 cercle": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.003 martin - kings cross 4 cercle.milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    },
+    "beatdrop2077.003 martin - kings cross 4 cercle pixelated": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.003 martin - kings cross 4 cercle pixelated.milk",
+      "Tags": [
+        "fly"
+      ]
+    },
+    "beatdrop2077.004 lamersass - the vortex": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.004 LamersAss - The Vortex.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.004 lamersass - the vortex (v1.1 patch)": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.004 LamersAss - The Vortex (V1.1 Patch).milk",
+      "Tags": [
+        "beat",
+        "retro",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.005 martin - cascade": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.005 martin - cascade.milk",
+      "Tags": [
+        "beat",
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.006 isosceles river": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.006 Isosceles River.milk",
+      "Tags": [
+        "calm",
+        "dark",
+        "watermark"
+      ]
+    },
+    "beatdrop2077.0064xxxgx": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.0064XXXgX.milk",
+      "Tags": [
+        "calm",
+        "watermark"
+      ]
+    },
+    "beatdrop2077.008 the rainbow spider": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.008 The rainbow spider.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.009 the purple montains": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.009 The purple montains.milk",
+      "Tags": [
+        "twitch"
+      ]
+    },
+    "beatdrop2077.009 the red montains": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.009 The red montains.milk",
+      "Tags": [
+        "twitch"
+      ]
+    },
+    "beatdrop2077.009 the yellow montains": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.009 The yellow montains.milk",
+      "Tags": [
+        "twitch"
+      ]
+    },
+    "beatdrop2077.010 tv\u0027s eye": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.010 TV\u0027s eye.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.010 tv\u0027s eye2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.010 TV\u0027s eye2.milk",
+      "Tags": [
+        "beat",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.011 flexi orange fan": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.011 Flexi Orange Fan.milk",
+      "Tags": [
+        "twitch",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.011 flexi orange fan 2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.011 Flexi Orange Fan 2.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.011 flexi orange fan2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.011 Flexi Orange Fan2.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.011 flexi red fan": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.011 Flexi Red Fan.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.012 purple lava": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.012 Purple lava.milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    },
+    "beatdrop2077.012 red lava": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.012 Red lava.milk",
+      "Tags": [
+        "colorful",
+        "top",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.012 white lava": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.012 White lava.milk",
+      "Tags": [
+        "bright",
+        "calm"
+      ]
+    },
+    "beatdrop2077.012 white lava b": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.012 White lava b.milk",
+      "Tags": [
+        "bright",
+        "calm"
+      ]
+    },
+    "beatdrop2077.013 octopus": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.013 Octopus.milk",
+      "Tags": [
+        "colorful",
+        "twitch"
+      ]
+    },
+    "beatdrop2077.013 octopus 2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.013 Octopus 2.milk",
+      "Tags": [
+        "beat",
+        "colorful"
+      ]
+    },
+    "beatdrop2077.013 octopus fractal 2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.013 Octopus Fractal 2.milk",
+      "Tags": [
+        "beat",
+        "colorful",
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.014 utopia": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.014 Utopia.milk",
+      "Tags": [
+        "twitch"
+      ]
+    },
+    "beatdrop2077.014 utopia 2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.014 Utopia 2.milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "beatdrop2077.014 utopia slow neon": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.014 Utopia slow NEON.milk",
+      "Tags": [
+        "beat"
+      ]
+    },
+    "beatdrop2077.014 utopia slow neon2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.014 Utopia slow NEON2.milk",
+      "Tags": [
+        "colorful",
+        "top"
+      ]
+    },
+    "beatdrop2077.015 gum": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.015 Gum.milk",
+      "Tags": [
+        "twitch"
+      ]
+    },
+    "beatdrop2077.015 gum2": {
+      "PresetPath": "Milkdrop2077\\Beatdrop2077.015 Gum2.milk",
+      "Tags": [
+        "colorful",
+        "vibrant"
       ]
     },
     "brainstain-re entry": {
@@ -1126,15 +1372,6 @@
         "vibrant"
       ]
     },
-    "pieturp - equalizer": {
-      "PresetPath": "Milkwave\\PieturP - Equalizer.milk",
-      "Tags": [
-        "calm",
-        "dark",
-        "simple",
-        "watermark"
-      ]
-    },
     "pieturp - triptrap_(ultimate-trip-mix)": {
       "PresetPath": "Milkwave\\PieturP - triptrap_(ultimate-trip-mix).milk",
       "Tags": [
@@ -1451,6 +1688,146 @@
         "random"
       ]
     },
+    "se7enslasher - texture distortion 2000 nz": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 nz.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (dancing wave mix)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Dancing Wave Mix).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (dancing wave mix) nz": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Dancing Wave Mix) nz.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (even more distortion \u002B dancing wave mix)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Even More Distortion \u002B Dancing Wave Mix).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (even more distortion \u002B dancing wave mix) nz": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Even More Distortion \u002B Dancing Wave Mix) nz.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (even more distortion mix)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Even More Distortion Mix).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (even more distortion mix) nz": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Even More Distortion Mix) nz.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (horizontal and vertical wave mix)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Horizontal and Vertical Wave Mix).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (horizontal and vertical wave mix) nz": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Horizontal and Vertical Wave Mix) nz.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (vertical wave mix)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Vertical Wave Mix).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 (vertical wave mix) nz": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 (Vertical Wave Mix) nz.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - texture distortion 2000 v2 nz": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Texture Distortion 2000 v2 nz.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - the stem player": {
+      "PresetPath": "Incubo_\\Se7enSlasher - The Stem Player.milk",
+      "Tags": [
+        "simple"
+      ]
+    },
+    "se7enslasher - the stem player (the sparkling tunnel mix)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - The Stem Player (The Sparkling Tunnel Mix).milk",
+      "Tags": [
+        "vibrant"
+      ]
+    },
+    "se7enslasher - trippin\u0027 lissajous squares": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Trippin\u0027 Lissajous Squares.milk",
+      "Tags": [
+        "retro",
+        "vibrant"
+      ]
+    },
+    "se7enslasher - trippin\u0027 lissajous squares (rhythmic edition)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Trippin\u0027 Lissajous Squares (Rhythmic Edition).milk",
+      "Tags": [
+        "retro",
+        "vibrant"
+      ]
+    },
+    "se7enslasher - voosh!": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Voosh!.milk",
+      "Tags": [
+        "circle"
+      ]
+    },
+    "se7enslasher - wave ride (random texture edit \u002B blurry composition)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Wave Ride (random texture edit \u002B blurry composition).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - wave ride (random texture edit)": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Wave Ride (random texture edit).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "se7enslasher - wiggling, sparkling and pulsing texture": {
+      "PresetPath": "Incubo_\\Se7enSlasher - Wiggling, Sparkling and Pulsing Texture.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "sensorial random texture in the lightwater": {
+      "PresetPath": "Incubo_\\sensorial random texture in the lightwater.milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "sensorial random texture in the lightwater v2": {
+      "PresetPath": "Incubo_\\sensorial random texture in the lightwater v2.milk",
+      "Tags": [
+        "random"
+      ]
+    },
     "shadowharlequin - lovelyshinysquares [ liquid starburst rmx ] - unchained \u002B rovaster - luckless - martin - starfield sector": {
       "PresetPath": "Butterchurn\\ShadowHarlequin - LovelyShinySquares [ liquid starburst rmx ] - unchained \u002B rovaster - luckless - martin - starfield sector.milk",
       "Tags": [
@@ -1532,6 +1909,30 @@
         "retro"
       ]
     },
+    "stahlregen \u0026 fishbrain \u002B geiss \u002B martin \u002B se7enslasher  - flowercraft (random texture edit \u002B aprox. centered)": {
+      "PresetPath": "Incubo_\\Stahlregen \u0026 fishbrain \u002B geiss \u002B martin \u002B Se7enSlasher  - Flowercraft (random texture edit \u002B aprox. centered).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "stahlregen \u0026 fishbrain \u002B geiss \u002B martin \u002B se7enslasher  - flowercraft (random texture edit \u002B perfectly centered \u002B aspect ratio fix)": {
+      "PresetPath": "Incubo_\\Stahlregen \u0026 fishbrain \u002B geiss \u002B martin \u002B Se7enSlasher  - Flowercraft (random texture edit \u002B perfectly centered \u002B aspect ratio fix).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "stahlregen \u0026 fishbrain \u002B geiss \u002B martin \u002B se7enslasher  - flowercraft (random texture edit)": {
+      "PresetPath": "Incubo_\\Stahlregen \u0026 fishbrain \u002B geiss \u002B martin \u002B Se7enSlasher  - Flowercraft (random texture edit).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "stahlregen \u0026 geiss \u002B tobiaswolfboi \u002B se7enslasher - space gelatin (random texture edit)": {
+      "PresetPath": "Incubo_\\Stahlregen \u0026 Geiss \u002B TobiasWolfBoi \u002B Se7enSlasher - Space Gelatin (random texture edit).milk",
+      "Tags": [
+        "random"
+      ]
+    },
     "stahlregen \u0026 geiss \u002B tobiaswolfboi - space gelatin (color xplosion)": {
       "PresetPath": "Milkwave\\Stahlregen \u0026 Geiss \u002B TobiasWolfBoi - Space Gelatin (Color Xplosion).milk",
       "Tags": [
@@ -1547,6 +1948,18 @@
         "vibrant"
       ]
     },
+    "suksma \u002B se7enslasher - clouded (2) (but hell yeah, random textures)": {
+      "PresetPath": "Incubo_\\suksma \u002B Se7enSlasher - clouded (2) (but hell yeah, random textures).milk",
+      "Tags": [
+        "random"
+      ]
+    },
+    "suksma \u002B se7enslasher - justifying horrible acts by far worse acts, though only drempt (random texture edit)": {
+      "PresetPath": "Incubo_\\suksma \u002B Se7enSlasher - justifying horrible acts by far worse acts, though only drempt (random texture edit).milk",
+      "Tags": [
+        "random"
+      ]
+    },
     "suksma - ed geining hateops - squeakers": {
       "PresetPath": "Butterchurn\\suksma - ed geining hateops - squeakers.milk",
       "Tags": [
@@ -1560,6 +1973,12 @@
         "dark",
         "retro",
         "top"
+      ]
+    },
+    "suksma - hexcollie - hexcollie actually tryin funky version - mash0000 - fertilize (se7enslasher\u0027s per-vertex fix)": {
+      "PresetPath": "Incubo_\\suksma - Hexcollie - Hexcollie actually tryin funky version - mash0000 - fertilize (Se7enSlasher\u0027s per-vertex fix).milk",
+      "Tags": [
+        "noise"
       ]
     },
     "suksma - hexcollie - julian carnival - shimmy dumb grid": {
@@ -1603,6 +2022,13 @@
         "hypnotic"
       ]
     },
+    "totetmatt \u002B se7enslasher - tunnel cable": {
+      "PresetPath": "Incubo_\\totetmatt \u002B Se7enSlasher - Tunnel Cable.milk",
+      "Tags": [
+        "fly",
+        "top"
+      ]
+    },
     "unchained - rewop": {
       "PresetPath": "Butterchurn\\Unchained - Rewop.milk",
       "Tags": [
@@ -1617,6 +2043,55 @@
         "vibrant"
       ]
     },
+    "xemantic - twisting color rose (se7enslasher\u0027s milkdrop version \u002B music reactive \u002B random texture edit)": {
+      "PresetPath": "Incubo_\\xemantic - twisting color rose (Se7enSlasher\u0027s MilkDrop Version \u002B Music Reactive \u002B Random Texture Edit).milk",
+      "Tags": [
+        "disturbing",
+        "hypnotic",
+        "random"
+      ]
+    },
+    "xemantic - twisting color rose (se7enslasher\u0027s milkdrop version \u002B music reactive)": {
+      "PresetPath": "Incubo_\\xemantic - twisting color rose (Se7enSlasher\u0027s MilkDrop Version \u002B Music Reactive).milk",
+      "Tags": [
+        "disturbing",
+        "hypnotic"
+      ]
+    },
+    "xemantic - twisting color rose (se7enslasher\u0027s milkdrop version \u002B my rgb splitting effect \u002B music reactive)": {
+      "PresetPath": "Incubo_\\xemantic - twisting color rose (Se7enSlasher\u0027s MilkDrop Version \u002B My RGB Splitting Effect \u002B Music Reactive).milk",
+      "Tags": [
+        "disturbing",
+        "hypnotic"
+      ]
+    },
+    "xemantic - twisting color rose (se7enslasher\u0027s milkdrop version \u002B my rgb splitting effect)": {
+      "PresetPath": "Incubo_\\xemantic - twisting color rose (Se7enSlasher\u0027s MilkDrop Version \u002B My RGB Splitting Effect).milk",
+      "Tags": [
+        "disturbing",
+        "hypnotic"
+      ]
+    },
+    "xemantic - twisting color rose (se7enslasher\u0027s milkdrop version \u002B random texture edit)": {
+      "PresetPath": "Incubo_\\xemantic - twisting color rose (Se7enSlasher\u0027s MilkDrop Version \u002B Random Texture Edit).milk",
+      "Tags": [
+        "disturbing",
+        "hypnotic"
+      ]
+    },
+    "xemantic - twisting color rose (se7enslasher\u0027s milkdrop version)": {
+      "PresetPath": "Incubo_\\xemantic - twisting color rose (Se7enSlasher\u0027s MilkDrop Version).milk",
+      "Tags": [
+        "disturbing",
+        "hypnotic"
+      ]
+    },
+    "yin \u002B se7enslasher - 382 - magic ride (wavy) (absolutely destroyed by pressing a)": {
+      "PresetPath": "Incubo_\\yin \u002B Se7enSlasher - 382 - Magic ride (wavy) (absolutely destroyed by pressing A).milk",
+      "Tags": [
+        "random"
+      ]
+    },
     "yin - 191 - temporal singularities": {
       "PresetPath": "Butterchurn\\yin - 191 - Temporal singularities.milk",
       "Tags": [
@@ -1629,6 +2104,13 @@
       "Tags": [
         "calm",
         "retro"
+      ]
+    },
+    "yin - 280 - coming home (se7enslasher\u0027s aspect ratio fix)": {
+      "PresetPath": "Incubo_\\yin - 280 - Coming Home (Se7enSlasher\u0027s Aspect Ratio Fix).milk",
+      "Tags": [
+        "calm",
+        "fly"
       ]
     },
     "yin - 393 - artificial inspiration (music driven - outward)": {
@@ -1647,11 +2129,24 @@
         "simple"
       ]
     },
+    "zylot \u002B se7enslasher - the infection spreads (infected random texture mix)": {
+      "PresetPath": "Incubo_\\Zylot \u002B Se7enSlasher - The Infection Spreads (Infected Random Texture Mix).milk",
+      "Tags": [
+        "random"
+      ]
+    },
     "zylot - paint spill (music reactive paint mix)": {
       "PresetPath": "Butterchurn\\Zylot - Paint Spill (Music Reactive Paint Mix).milk",
       "Tags": [
         "liquid",
         "vibrant"
+      ]
+    },
+    "zylot - snake game god dangit my life you crapped": {
+      "PresetPath": "Incubo_\\Zylot - Snake Game god dangit my life you crapped.milk",
+      "Tags": [
+        "calm",
+        "watermark"
       ]
     },
     "zylot - spiral (hypnotic)_phat_double_spiral_mix": {

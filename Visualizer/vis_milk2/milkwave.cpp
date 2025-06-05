@@ -4,9 +4,19 @@
 
 Milkwave::Milkwave() {}
 
-void Milkwave::Init() {
+void Milkwave::Init(wchar_t* exePath) {
   winrt::init_apartment(); // Initialize the WinRT runtime
   start_time = std::chrono::steady_clock::now();
+
+  // Get the executable's directory
+  std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
+
+  // Construct the "resources/sprites/" directory path relative to the executable
+  std::filesystem::path spritesDir = exeDir / "resources/sprites";
+  std::filesystem::create_directories(spritesDir);
+
+  // Construct the file path
+  coverSpriteFilePath = spritesDir / "cover.png";
 }
 
 void Milkwave::PollMediaInfo() {
@@ -73,18 +83,6 @@ void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
     auto thumbnailStream = thumbnailRef.OpenReadAsync().get();
     auto decoder = winrt::Windows::Graphics::Imaging::BitmapDecoder::CreateAsync(thumbnailStream).get();
 
-    // Get the executable's directory
-    wchar_t exePath[MAX_PATH];
-    GetModuleFileNameW(NULL, exePath, MAX_PATH);
-    std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
-
-    // Construct the "resources/sprites/" directory path relative to the executable
-    std::filesystem::path spritesDir = exeDir / "resources/sprites";
-    std::filesystem::create_directories(spritesDir);
-
-    // Construct the file path
-    std::filesystem::path filePath = spritesDir / "cover.png";
-
     // Encode the image as a PNG and save it to the file
     auto fileStream = winrt::Windows::Storage::Streams::InMemoryRandomAccessStream();
     auto encoder = winrt::Windows::Graphics::Imaging::BitmapEncoder::CreateAsync(
@@ -94,9 +92,9 @@ void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
     encoder.FlushAsync().get();
 
     // Write the encoded image to the file
-    std::ofstream outputFile(filePath, std::ios::binary);
+    std::ofstream outputFile(coverSpriteFilePath, std::ios::binary);
     if (!outputFile.is_open()) {
-      std::wcerr << L"Failed to open file for writing: " << filePath << std::endl;
+      std::wcerr << L"Failed to open file for writing: " << coverSpriteFilePath << std::endl;
       return;
     }
 
@@ -109,7 +107,7 @@ void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
     outputFile.write(reinterpret_cast<const char*>(buffer.data()), buffer.Length());
     outputFile.close();
 
-    std::wcout << L"Thumbnail saved to: " << filePath.wstring() << std::endl;
+    std::wcout << L"Thumbnail saved to: " << coverSpriteFilePath.wstring() << std::endl;
   } catch (const std::exception& e) {
     LogException(L"SaveThumbnailToFile", e, false);
   }

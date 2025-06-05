@@ -65,7 +65,6 @@ namespace MilkwaveRemote
       chkAutoplay = new CheckBox();
       btnSaveParam = new Button();
       lblParameters = new Label();
-      cboParameters = new ComboBox();
       lblWindow = new Label();
       btnSend = new Button();
       txtMessage = new TextBox();
@@ -150,6 +149,7 @@ namespace MilkwaveRemote
       btnSpace = new Button();
       btnBackspace = new Button();
       btnWatermark = new Button();
+      cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
       chkWaveSolarize = new CheckBox();
@@ -617,18 +617,6 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblParameters, "Double-click: Clear all saved styles\r\nRight-click: Open window showing all possible parameters");
       lblParameters.DoubleClick += lblParameters_DoubleClick;
       lblParameters.MouseDown += lblParameters_MouseDown;
-      // 
-      // cboParameters
-      // 
-      cboParameters.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      cboParameters.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-      cboParameters.Location = new Point(74, 95);
-      cboParameters.Name = "cboParameters";
-      cboParameters.Size = new Size(312, 23);
-      cboParameters.TabIndex = 7;
-      cboParameters.SelectedIndexChanged += cboParameters_SelectedIndexChanged;
-      cboParameters.TextChanged += cboParameters_TextChanged;
-      cboParameters.KeyDown += cboParameters_KeyDown;
       // 
       // lblWindow
       // 
@@ -1722,9 +1710,22 @@ namespace MilkwaveRemote
       btnWatermark.Size = new Size(116, 40);
       btnWatermark.TabIndex = 22;
       btnWatermark.Text = "Watermark Mode \r\n(Ctrl+Shift+F9)";
-      toolTip1.SetToolTip(btnWatermark, "Hold Ctrl while clicking:\r\nSwitch to Desktop Mode instead (Ctrl+F9)");
+      toolTip1.SetToolTip(btnWatermark, "Right-click:\r\nSwitch to Desktop Mode instead (Ctrl+F9)");
       btnWatermark.UseVisualStyleBackColor = true;
       btnWatermark.Click += btnWatermark_Click;
+      btnWatermark.MouseDown += btnWatermark_MouseDown;
+      // 
+      // cboParameters
+      // 
+      cboParameters.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      cboParameters.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboParameters.Location = new Point(74, 95);
+      cboParameters.Name = "cboParameters";
+      cboParameters.Size = new Size(312, 23);
+      cboParameters.TabIndex = 7;
+      cboParameters.SelectedIndexChanged += cboParameters_SelectedIndexChanged;
+      cboParameters.TextChanged += cboParameters_TextChanged;
+      cboParameters.KeyDown += cboParameters_KeyDown;
       // 
       // chkWaveBrighten
       // 

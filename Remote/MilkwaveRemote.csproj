@@ -7,8 +7,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>MilkwaveRemote.ico</ApplicationIcon>
-    <AssemblyVersion>2.0.1</AssemblyVersion>
-    <FileVersion>2.0.1</FileVersion>
+    <AssemblyVersion>2.1</AssemblyVersion>
+    <FileVersion>2.1</FileVersion>
     <Authors>IkeC</Authors>
     <Product>Milkwave Remote</Product>
     <PackageId>Milkwave Remote</PackageId>
