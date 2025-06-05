@@ -15,6 +15,9 @@ Settings for the Remote. Feel free to edit.
 tags-remote.json:
 Use the Remote to tag your presets. You may also share this file with others, or delete the file to reset all existing tags.
 
+script-default.txt:
+An example script file that can be automatically run by the Remote line by line using the "Autoplay"-button, showcasing many of the possibilites regarding messaging and automation. You can edit this file to create your own scripts, or create new ones and load them by right-clicking the "From file"-label on the "Messages"-Tab.
+
 sprites.ini:
 Sprites definition file for the Visualizer. To display your own images, you must add a definition in this file and put the image in resources\sprites. You can trigger them by typing 00..99 in the Visualizer window when Sprite Mode is selected, or using the number buttons on the Remote.
 

@@ -10292,6 +10292,11 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         && m_supertexts[i].fX == m_supertexts[nextFreeSupertextIndex].fX
         && m_supertexts[i].fY == m_supertexts[nextFreeSupertextIndex].fY) {
         // If the new supertext overlaps with an existing non-animated one, end it
+        float fProgress = (GetTime() - m_supertexts[i].fStartTime) / m_supertexts[i].fDuration;
+        // If text was growing, try keeping the current size
+        if (m_supertexts[i].fGrowth != 1) {
+          m_supertexts[i].fGrowth *= fProgress;
+        }
         // set duration to the elapsed time, so burn-in is still applied
         m_supertexts[i].fDuration = GetTime() - m_supertexts[i].fStartTime;
       }

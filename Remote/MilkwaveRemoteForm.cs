@@ -798,6 +798,8 @@ namespace MilkwaveRemote {
               SendToMilkwaveVisualizer("", MessageType.ClearSprites);
             } else if (tokenUpper.Equals("CLEARTEXTS")) {
               SendToMilkwaveVisualizer("", MessageType.ClearTexts);
+            } else if (tokenUpper.Equals("CLEARPARAMS")) {
+              cboParameters.Text = "";
             } else { // no known command, send as message
               SendToMilkwaveVisualizer(token, MessageType.Message);
             }
@@ -911,9 +913,9 @@ namespace MilkwaveRemote {
           } catch (Exception) {
             // ignore
           }
-          toolTip1.SetToolTip(cboAutoplay, "Line from file " + fileName);
           chkAutoplay.Enabled = true;
         }
+        toolTip1.SetToolTip(cboAutoplay, cboAutoplay.Text);
       } else {
         if (txtAutoplay != null) {
           txtAutoplay.Text = "No messages in " + fileName;
@@ -1804,12 +1806,13 @@ namespace MilkwaveRemote {
    Environment.NewLine +
   "GitHub homepage: https://github.com/IkeC/Milkwave" + Environment.NewLine +
   "GitHub issues: https://github.com/IkeC/Milkwave/issues" + Environment.NewLine +
+  "Readme: https://github.com/IkeC/Milkwave/blob/main/Build/README.txt" + Environment.NewLine +
   "Discord: https://bit.ly/Ikes-Discord" + Environment.NewLine +
   Environment.NewLine +
   "More Presets: https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets" + Environment.NewLine +
   Environment.NewLine +
   "To uninstall Milkwave, run Uninstall.exe from the Milkwave folder.";
-      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Help", dialogtext);
+      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Help", dialogtext, 10, 800, 400);
     }
 
     private void toolStripMenuItemSupporters_Click(object sender, EventArgs e) {
@@ -1817,7 +1820,7 @@ namespace MilkwaveRemote {
   "Milkwave Supporters — Thank you very much!  ❤️" + Environment.NewLine +
   Environment.NewLine +
   "• Shanev" + Environment.NewLine +
-  "• Salvo Caruso" + Environment.NewLine +
+  "• Tures1955" + Environment.NewLine +
   Environment.NewLine +
   "Milkwave is and will always be free software, being the collaborative effort of many diffent authors. " +
   "If you like it and want to appreciate and support our share of the work, please consider donating." + Environment.NewLine +
@@ -2988,5 +2991,8 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void cboAutoplay_SelectedIndexChanged(object sender, EventArgs e) {
+      toolTip1.SetToolTip(cboAutoplay, cboAutoplay.Text);
+    }
   } // end class
 } // end namespace

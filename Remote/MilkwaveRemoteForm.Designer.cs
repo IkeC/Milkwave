@@ -395,7 +395,7 @@ namespace MilkwaveRemote
       numSize.TabIndex = 12;
       numSize.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numSize, "Font size");
-      numSize.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      numSize.Value = new decimal(new int[] { 25, 0, 0, 0 });
       numSize.TextChanged += txtSize_TextChanged;
       numSize.KeyDown += txtSize_KeyDown;
       // 
@@ -927,9 +927,10 @@ namespace MilkwaveRemote
       cboAutoplay.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
       cboAutoplay.Location = new Point(74, 153);
       cboAutoplay.Name = "cboAutoplay";
-      cboAutoplay.Size = new Size(203, 23);
+      cboAutoplay.Size = new Size(218, 23);
       cboAutoplay.TabIndex = 107;
       toolTip1.SetToolTip(cboAutoplay, "From file");
+      cboAutoplay.SelectedIndexChanged += cboAutoplay_SelectedIndexChanged;
       // 
       // chkPresetLink
       // 

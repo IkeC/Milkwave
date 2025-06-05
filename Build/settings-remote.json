@@ -2,11 +2,11 @@
   "Styles": [
     {
       "Name": "Style A",
-      "Value": "time=5.0|growth=2.5"
+      "Value": "time=5.0|growth=2.0"
     },
     {
       "Name": "Style B",
-      "Value": "size=23|time=5.0|growth=2.0|randx=0.1|randy=0.1|r=0|g=191|b=0"
+      "Value": "size=23|time=4.0|growth=2.0|randx=0.2|randy=0.2|r=0|g=195|b=0"
     }
   ],
   "LoadFilters": [

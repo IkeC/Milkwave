@@ -26,27 +26,31 @@
 #   Remote window.
 # CLEARSPRITES: Clear all sprites
 # CLEARTEXTS: Clear all texts
+# CLEARPARAMS: Clears the parameters definition in Remote
 # MSG=time=5.0;growth=1.5;text=This is the message
-#   Raw message sending: Send message using parameters. If font facce, size and color
-#   are not set, the current Remote settings are used.
+#   Raw message sending: Send message using parameters separated by semicolon (;). 
+#   If font face, size and color parameters are not included, the current Remote settings 
+#   are used.
 #
-Welcome to Milkwave!
-SEND=11|A wild sprite appears!
-STYLE=Style B|Switch to "Style B"
-Here's another line
+BPM=120|BEATS=8|STYLE=Style A|PRESET=resources\presets\Milkwave\01 - Martin - blue haze.milk|Welcome to Milkwave!
+STYLE=Style B|Switched to "Style B"
+This style uses random coordinates
 Switched to next preset|NEXT
+STYLE=Style A|COLOR=255, 102, 0|Back to "Style A" but changing color
+SEND=99|Triggering Sprite 99
 FONT=Courier New|Everybody likes Courier!
-FONT=Arial|Let's try//doubleline text!
-PRESET=resources\presets\Milkwave\Flexi - lorenz attractor.milk|I like this preset!
-MSG=time=2.0;growth=2.5;y=0.3;text=Some more text!
-MSG=time=2.0;growth=2.5;y=0.5;text=And more!
-MSG=time=2.0;growth=2.5;y=0.7;text=And even more!
-BPM=180|BEATS=4|Let's go faster!
-RESET|Boom
-Boom
+FONT=Arial|Some Arial//doubleline text!
+PRESET=resources\presets\Milkwave\Geiss - Reaction Diffusion 3 (Lichen Mix).milk|COLOR=255,255,0|I like this preset!
+MSG=size=25;time=3.0;growth=1.5;startx=0;y=0.4;movetime=1.0;easemode=1;shadowoffset=0;text=Some shadowless text from the left
+MSG=size=25;time=3.0;growth=1.5;startx=1;y=0.5;movetime=1.0;text=With shadow from the right, easing in
+MSG=size=25;time=3.0;growth=1.5;starty=1;y=0.6;movetime=1.0;burntime=5;text=Some text with long burntime
+
+PRESET=resources\presets\Milkwave\Flexi - lorenz attractor.milk|BPM=180|BEATS=4|Let's go faster!
+RESET|CLEARPARAMS|SIZE=30|Boom
+SIZE=40|Boom
 # use any number of blank lines for delays
 
-BOOM
-PRESET=resources\presets\Milkwave\Geiss - Reaction Diffusion 2.milk
-STYLE=Style A|That's all folks!|STOP
+SIZE=60|BOOM
+
+STYLE=Style A|COLOR=200,0,200|SIZE=25|PRESET=resources\presets\Milkwave\Geiss - Reaction Diffusion 2.milk|That's all folks!|STOP
 # if you don't STOP, autoplay will continue from the beginning (unless random play is enabled)
