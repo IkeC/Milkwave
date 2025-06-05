@@ -2,7 +2,7 @@
   "Styles": [
     {
       "Name": "Style A",
-      "Value": "size=20|time=5.0|growth=2.0"
+      "Value": "time=5.0|growth=2.5"
     },
     {
       "Name": "Style B",
