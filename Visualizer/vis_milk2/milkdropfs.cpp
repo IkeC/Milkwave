@@ -5226,9 +5226,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
       }
       float dy = (currentY * 2 - 1);
 
+      float aspect = w / (float)(h * 4.0f / 3.0f);
       if (w != h)	// regular render-to-backbuffer
       {
-        float aspect = w / (float)(h * 4.0f / 3.0f);
         if (aspect < 1)
           dx /= aspect;
         else
@@ -5240,6 +5240,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
         v3[i].x = (v3[i].x) * t + dx;
         v3[i].y = (v3[i].y) * t + dy;
       }
+
+      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: aspect=%.2f dx=%.2f dy=%.2f\n", aspect, dx, dy);
+      OutputDebugStringW(debugMsg);
     }
   }
 
@@ -5263,25 +5266,31 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     //v3[i].y /= ASPECT_Y;
     v3[i].y *= m_fInvAspectY;
 
+  float t = 0;
+
+  if (m_supertexts[supertextIndex].bIsSongTitle)
+    t = powf(fProgress, 0.3f) * 1.0f;
+  else if (fProgress <= 1.0f)
+    t = CosineInterp(min(1.0f, (fProgress / m_supertexts[supertextIndex].fFadeTime)));
+  else {
+    float fTimeAfterFullDuration = GetTime() - m_supertexts[supertextIndex].fStartTime - m_supertexts[supertextIndex].fDuration;
+    t = 1 - (fTimeAfterFullDuration / m_supertexts[supertextIndex].fBurnTime);
+  }
+  if (t < 0) {
+    t = 0;
+  }
+
+  // nudge down & right for shadow, up & left for solid text
+  float offset_x = 0, offset_y = 0;
+  float baseOffsetX = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeX * (m_supertexts[supertextIndex].fFontSize / 40);
+  float baseOffsetY = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeY * (m_supertexts[supertextIndex].fFontSize / 40);
+
+  swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: t=%.2f\n", t);
+  OutputDebugStringW(debugMsg);
+
   for (int it = 0; it < 2; it++) {
     // colors
     {
-      float t = 0;
-
-      if (m_supertexts[supertextIndex].bIsSongTitle)
-        t = powf(fProgress, 0.3f) * 1.0f;
-      else if (fProgress <= 1.0f)
-        t = CosineInterp(min(1.0f, (fProgress / m_supertexts[supertextIndex].fFadeTime)));
-      else {
-        float fTimeAfterFullDuration = GetTime() - m_supertexts[supertextIndex].fStartTime - m_supertexts[supertextIndex].fDuration;
-        t = 1 - (fTimeAfterFullDuration / m_supertexts[supertextIndex].fBurnTime);
-      }
-      if (t < 0) {
-        t = 0;
-      }
-      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: t=%.2f\n", t);
-      OutputDebugStringW(debugMsg);
-
       if (it == 0)
         v3[0].Diffuse = D3DCOLOR_RGBA_01(t, t, t, t);
       else
@@ -5291,11 +5300,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
         v3[i].Diffuse = v3[0].Diffuse;
     }
 
-    // nudge down & right for shadow, up & left for solid text
-    float offset_x = 0, offset_y = 0;
-
-    float baseOffsetX = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeX * (m_supertexts[supertextIndex].fFontSize / 40);
-    float baseOffsetY = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeY * (m_supertexts[supertextIndex].fFontSize / 40);
     switch (it) {
     case 0:
       offset_x = baseOffsetX;
