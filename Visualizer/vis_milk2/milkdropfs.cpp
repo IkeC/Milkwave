@@ -5128,13 +5128,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   ZeroMemory(v3, sizeof(SPRITEVERTEX) * 128);
 
 
-  //float aspect = w / (float)(h * 4.0f / 3.0f);
-  float aspect = w / (float)(h * 4.0f / 3.0f);
-  //float aspect = (w / h) * 1.8f;
-  
-  //float aspect = GetWidth() / GetHeight();
-  float saveY = 0, saveY2 = 0, saveY3 = 0;
-
   if (m_supertexts[supertextIndex].bIsSongTitle) {
     // positioning:
     float fSizeX = 50.0f / (float)m_supertexts[supertextIndex].nFontSizeUsed * powf(1.5f, m_supertexts[supertextIndex].fFontSize - 2.0f);
@@ -5182,6 +5175,7 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     }
   }
   else { // not song title
+
     // positioning:
     float fSizeX = (float)m_nTexSizeX / 1024.0f * 100.0f / (float)m_supertexts[supertextIndex].nFontSizeUsed * powf(1.033f, m_supertexts[supertextIndex].fFontSize - 50.0f);
     float fSizeY = fSizeX * m_nTitleTexSizeY / (float)m_nTitleTexSizeX;
@@ -5199,7 +5193,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
         i++;
       }
     }
-    saveY = v3[0].y;
 
     // apply 'growth' factor and move to user-specified (x,y)
     {
@@ -5235,27 +5228,14 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
       }
       float dy = (currentY * 2 - 1);
       
-      if (w != h)	// regular render-to-backbuffer
-      {
-          if (aspect < 1) {
-            //dx /= aspect;
-          }
-          else {
-            // dy *= aspect;
-          }
-      }
-
       for (i = 0; i < 128; i++) {
         // note: (x,y) are in (-1,1) range, but m_supertext[supertextIndex].f{X|Y} are in (0..1) range
         v3[i].x = (v3[i].x) * t + dx;
         v3[i].y = (v3[i].y) * t + dy;
       }
 
-
-      saveY2 = v3[0].y;
-
-      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: aspect=%.2f dx=%.2f dy=%.2f\n", aspect, dx, dy);
-      OutputDebugStringW(debugMsg);
+      // swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: dx=%.2f dy=%.2f\n", dx, dy);
+      // OutputDebugStringW(debugMsg);
     }
   }
 
@@ -5272,44 +5252,57 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     }
   }
 
-  // final flip on y
-  //for (i=0; i<128; i++)
-  //	v3[i].y *= -1.0f;
-  float xpos = v3[0].x;
-  float ypos = v3[0].y;
+  float aspect = w / (float)(h * 4.0f / 3.0f);
+
+  // A kinda hacky solutionto make fX and fY work as expected, eg. so fY=0 always means
+  // top of screen, no matter the aspect ratio of the window. Not great but works.
+  float posStart, minVal, maxVal, wantedCenter;
+  
+  // Adjust to change the proportional scaling of the font. This VALUE seems to match the
+  // original font well enough in my tests using Segoe UI.
+  aspect *= 1.4f;
+
+  if (aspect < 1) {
+    posStart = v3[0].x;
+    minVal = posStart + (v3[0].x - posStart) / aspect;
+    maxVal = posStart + (v3[127].x - posStart) / aspect;
+    wantedCenter = m_supertexts[supertextIndex].fX * 2 - 1;
+  }
+  else {
+    posStart = v3[0].y;
+    minVal = posStart + (v3[0].y - posStart) * aspect;
+    maxVal = posStart + (v3[127].y - posStart) * aspect;
+    wantedCenter = m_supertexts[supertextIndex].fY* 2 - 1;
+  }
+  float actualCenter = (minVal+maxVal)/2;
+  float offset = actualCenter - wantedCenter;
+
   for (i = 0; i < 128; i++) {
-    //v3[i].y /= ASPECT_Y;
-    //v3[i].y /= m_fInvAspectY;
-    //v3[i].y /= aspect;
     if (aspect < 1) {
 
-      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f\n", i, v3[i].x);
-      OutputDebugStringW(debugMsg);
+      // swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f\n", i, v3[i].x);
+      // OutputDebugStringW(debugMsg);
 
-      v3[i].x = xpos + (v3[i].x - xpos) / aspect;
+      v3[i].x = posStart + (v3[i].x - posStart) / aspect;
+      v3[i].x -= offset; // center the text on the wanted position
 
-      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f (after)\n", i, v3[i].x);
-      OutputDebugStringW(debugMsg);
+      // swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f (after)\n", i, v3[i].x);
+      // OutputDebugStringW(debugMsg);
 
     }
     else {
 
-      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].y=%.2f\n", i, v3[i].y);
-      OutputDebugStringW(debugMsg);
+      // swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].y=%.2f\n", i, v3[i].y);
+      // OutputDebugStringW(debugMsg);
 
-      v3[i].y = ypos + (v3[i].y - ypos)*aspect;
+      v3[i].y = posStart + (v3[i].y - posStart) * aspect;
+      v3[i].y -= offset; // center the text on the wanted position
 
-      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].y=%.2f (after)\n", i, v3[i].y);
-      OutputDebugStringW(debugMsg);
+      // swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].y=%.2f (after)\n", i, v3[i].y);
+      // OutputDebugStringW(debugMsg);
     }
   }
 
-  /*
-  float diff = saveY - v3[0].y;
-  for (i = 0; i < 128; i++)
-    v3[i].y += diff;
-    */
-  saveY3 = v3[0].y;
   float t = 0;
 
   if (m_supertexts[supertextIndex].bIsSongTitle)
@@ -5328,9 +5321,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   float offset_x = 0, offset_y = 0;
   float baseOffsetX = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeX * (m_supertexts[supertextIndex].fFontSize / 40);
   float baseOffsetY = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeY * (m_supertexts[supertextIndex].fFontSize / 40);
-
-  swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: saveY=%.2f saveY2=%.2f saveY3=%.2f\n", saveY, saveY2, saveY3);
-  OutputDebugStringW(debugMsg);
 
   swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: t=%.2f\n", t);
   OutputDebugStringW(debugMsg);
