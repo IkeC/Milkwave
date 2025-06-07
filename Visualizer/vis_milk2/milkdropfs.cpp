@@ -5127,6 +5127,14 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   SPRITEVERTEX v3[128];
   ZeroMemory(v3, sizeof(SPRITEVERTEX) * 128);
 
+
+  //float aspect = w / (float)(h * 4.0f / 3.0f);
+  float aspect = w / (float)(h * 4.0f / 3.0f);
+  //float aspect = (w / h) * 1.8f;
+  
+  //float aspect = GetWidth() / GetHeight();
+  float saveY = 0, saveY2 = 0, saveY3 = 0;
+
   if (m_supertexts[supertextIndex].bIsSongTitle) {
     // positioning:
     float fSizeX = 50.0f / (float)m_supertexts[supertextIndex].nFontSizeUsed * powf(1.5f, m_supertexts[supertextIndex].fFontSize - 2.0f);
@@ -5191,6 +5199,7 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
         i++;
       }
     }
+    saveY = v3[0].y;
 
     // apply 'growth' factor and move to user-specified (x,y)
     {
@@ -5225,14 +5234,15 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
         currentY -= (m_supertexts[supertextIndex].fY - m_supertexts[supertextIndex].fStartY) * (1 - tFactor);
       }
       float dy = (currentY * 2 - 1);
-
-      float aspect = w / (float)(h * 4.0f / 3.0f);
+      
       if (w != h)	// regular render-to-backbuffer
       {
-        if (aspect < 1)
-          dx /= aspect;
-        else
-          dy *= aspect;
+          if (aspect < 1) {
+            //dx /= aspect;
+          }
+          else {
+            // dy *= aspect;
+          }
       }
 
       for (i = 0; i < 128; i++) {
@@ -5240,6 +5250,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
         v3[i].x = (v3[i].x) * t + dx;
         v3[i].y = (v3[i].y) * t + dy;
       }
+
+
+      saveY2 = v3[0].y;
 
       swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: aspect=%.2f dx=%.2f dy=%.2f\n", aspect, dx, dy);
       OutputDebugStringW(debugMsg);
@@ -5262,10 +5275,41 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   // final flip on y
   //for (i=0; i<128; i++)
   //	v3[i].y *= -1.0f;
-  for (i = 0; i < 128; i++)
+  float xpos = v3[0].x;
+  float ypos = v3[0].y;
+  for (i = 0; i < 128; i++) {
     //v3[i].y /= ASPECT_Y;
-    v3[i].y *= m_fInvAspectY;
+    //v3[i].y /= m_fInvAspectY;
+    //v3[i].y /= aspect;
+    if (aspect < 1) {
 
+      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f\n", i, v3[i].x);
+      OutputDebugStringW(debugMsg);
+
+      v3[i].x = xpos + (v3[i].x - xpos) / aspect;
+
+      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f (after)\n", i, v3[i].x);
+      OutputDebugStringW(debugMsg);
+
+    }
+    else {
+
+      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].y=%.2f\n", i, v3[i].y);
+      OutputDebugStringW(debugMsg);
+
+      v3[i].y = ypos + (v3[i].y - ypos)*aspect;
+
+      swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].y=%.2f (after)\n", i, v3[i].y);
+      OutputDebugStringW(debugMsg);
+    }
+  }
+
+  /*
+  float diff = saveY - v3[0].y;
+  for (i = 0; i < 128; i++)
+    v3[i].y += diff;
+    */
+  saveY3 = v3[0].y;
   float t = 0;
 
   if (m_supertexts[supertextIndex].bIsSongTitle)
@@ -5284,6 +5328,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   float offset_x = 0, offset_y = 0;
   float baseOffsetX = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeX * (m_supertexts[supertextIndex].fFontSize / 40);
   float baseOffsetY = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeY * (m_supertexts[supertextIndex].fFontSize / 40);
+
+  swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: saveY=%.2f saveY2=%.2f saveY3=%.2f\n", saveY, saveY2, saveY3);
+  OutputDebugStringW(debugMsg);
 
   swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: t=%.2f\n", t);
   OutputDebugStringW(debugMsg);
