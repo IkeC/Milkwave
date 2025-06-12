@@ -659,6 +659,15 @@ static void ToggleBorderlessWindow(HWND hwnd) {
     wasTransparent = (flags & LWA_COLORKEY) != 0; // Check if LWA_COLORKEY is set
   }
 
+  // --- Preserve current topmost state ---
+  // Determine if the window is currently topmost
+  HWND hInsertAfter = HWND_NOTOPMOST;
+  // WS_EX_TOPMOST is 0x00000008L
+  LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+  if (exStyle & WS_EX_TOPMOST) {
+    hInsertAfter = HWND_TOPMOST;
+  }
+
   if (!borderless) {
     // Save the current window position and size
 
@@ -670,7 +679,7 @@ static void ToggleBorderlessWindow(HWND hwnd) {
       SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
     }
 
-    SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
+    SetWindowPos(hwnd, hInsertAfter, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
     borderless = true;
   }
   else {
@@ -682,6 +691,7 @@ static void ToggleBorderlessWindow(HWND hwnd) {
       SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
     }
 
+    SetWindowPos(hwnd, hInsertAfter, x, y, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
     borderless = false;
   }
   g_plugin.m_WindowBorderless = borderless;
@@ -1176,9 +1186,13 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   ShowWindow(hwnd, SW_SHOW);
 
+  if (g_plugin.m_bAlwaysOnTop) {
+    g_plugin.ToggleAlwaysOnTop(hwnd);
+  }
   if (g_plugin.m_WindowBorderless && !borderless) {
     ToggleBorderlessWindow(hwnd);
   }
+
   milkwave.Init(g_plugin.m_szBaseDir);
   milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
   milkwave.doSaveCover = g_plugin.m_DisplayCover;
