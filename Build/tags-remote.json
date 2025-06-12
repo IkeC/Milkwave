@@ -1064,6 +1064,12 @@
         "eq"
       ]
     },
+    "martin - a milkdrop edit of xordevs starship": {
+      "PresetPath": "Milkwave\\martin - a milkdrop edit of XorDevs starship.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
     "martin - acid wiring": {
       "PresetPath": "Butterchurn\\Martin - acid wiring.milk",
       "Tags": [
@@ -1226,6 +1232,12 @@
       "Tags": [
         "retro",
         "simple"
+      ]
+    },
+    "martin - starship mystique": {
+      "PresetPath": "Milkwave\\martin - starship mystique.milk",
+      "Tags": [
+        "calm"
       ]
     },
     "martin - stormy sea (2010 update)": {
