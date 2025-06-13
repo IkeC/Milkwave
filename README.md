@@ -2,7 +2,7 @@
 - **Milkwave Visualizer**:
     A feature-enhanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
 - **Milkwave Remote**:
-    A standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
+    A "VJ mode" standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
 ![Milkwave-2 0](https://github.com/user-attachments/assets/1aab1226-1294-40af-ae51-4c2829a66036)
 
@@ -16,9 +16,9 @@
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
  
-## Remote Features
-
 ![Milkwave-2 0-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
+
+## Remote Features
 
 * Tabbed interface
   - Presets, Messaging, Wave, Fonts
@@ -29,17 +29,20 @@
   - Saved in human-readable json file for easy sharing or backup
 * Messaging
   - Send text to Visualizer window
+  - Display multiple messages at once
   - Set color, font size, position and other parameters
+  - Move text around using start and end coordinates
   - Save parameter definitions as named styles for quick access
-  - Send messages, parameters, presets etc. automatically from a script file at configurable intervals based on BPM setting
+  - Send messages, parameters, presets and other commands automatically from a script file at configurable intervals based on BPM setting (see script-default.txt)
 * Wave manipulation
+  - Clear current preset and start with a plain wave
   - Set wave type, zoom, warp, rotation etc. in the running preset
-  - Clear preset and start with a plain wave
+  - Quicksave manipulated presets to a new file
 * Font manipulation
   - Customize display of song information, preset name and notifications
   - Change and preview font face, style and size instantly
-* Send common key combinations using buttons
 * Customizable interface - show only what you need
+* Send common key combinations using buttons
 * Change the used audio device on the fly
 * Amplify the virtual audio signal to make the Visualizer more (or less) responsive
 
@@ -80,7 +83,7 @@ Many thanks to:
 * podenthusiast - [Milkwave Logo](https://www.freepik.com/author/podenthusiast/icons)
 * and all the preset authors!
 
-If you believe you should be mentioned here, please let me know.
+If you believe you or someone else should be mentioned here, please let me know.
 
 ## License
 
