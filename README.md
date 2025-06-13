@@ -4,7 +4,7 @@
 - **Milkwave Remote**:
     A "VJ mode" standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
-![Milkwave-2 0](https://github.com/user-attachments/assets/1aab1226-1294-40af-ae51-4c2829a66036)
+![Milkwave-2](https://github.com/user-attachments/assets/1aab1226-1294-40af-ae51-4c2829a66036)
 
 ## Visualizer Features
  
@@ -16,7 +16,7 @@
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
  
-![Milkwave-2 0-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
+![Milkwave-2-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
 
 ## Remote Features
 
@@ -46,7 +46,9 @@
 * Change the used audio device on the fly
 * Amplify the virtual audio signal to make the Visualizer more (or less) responsive
 
-There are many tooltips explaining all features when you hover over the form elements. If you have any questions, don't be afraid to [ask for support](#support)!
+There are many tooltips explaining all features when you hover over the form elements. Clicking the "Autoplay" button on the Message tab will run the default script file, demonstrating many Milkwave features.
+
+If you have any questions, don't be afraid to [ask for support](#support)!
 
 ## History
 
