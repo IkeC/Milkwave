@@ -1991,6 +1991,23 @@ namespace MilkwaveRemote {
     private void LoadPresetsFromDirectory(string dirToLoad) {
       cboPresets.Items.Clear();
       cboPresets.Text = "";
+      bool includeSubdirs = false;
+
+      if (Directory.GetDirectories(dirToLoad).Length > 0) {
+        if (MessageBox.Show(this, "Include subdirectories?",
+          "Please Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes) {
+          includeSubdirs = true;
+        }
+      }
+      FillCboPresetsFromDir(dirToLoad, includeSubdirs);
+      SetStatusText($"Loaded {cboPresets.Items.Count} presets from '{dirToLoad}'");
+      if (cboPresets.Items.Count > 0) {
+        cboPresets.SelectedIndex = 0;
+        UpdateTagsDisplay(false, false);
+      }
+    }
+
+    private void FillCboPresetsFromDir(string dirToLoad, bool includeSubdirs) {
       int relIndex = -1;
       foreach (string fileName in Directory.GetFiles(dirToLoad)) {
         if (relIndex == -1) {
@@ -2009,10 +2026,10 @@ namespace MilkwaveRemote {
           cboPresets.Items.Add(newPreset);
         }
       }
-      SetStatusText($"Loaded {cboPresets.Items.Count} presets from '{dirToLoad}'");
-      if (cboPresets.Items.Count > 0) {
-        cboPresets.SelectedIndex = 0;
-        UpdateTagsDisplay(false, false);
+      if (includeSubdirs) {
+        foreach (string subDir in Directory.GetDirectories(dirToLoad)) {
+          FillCboPresetsFromDir(subDir, true);
+        }
       }
     }
 
