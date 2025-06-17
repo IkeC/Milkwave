@@ -6694,7 +6694,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       break;
     case 'A':
       if (m_UI_mode == UI_REGULAR) {
-        if ((GetKeyState(VK_SHIFT) & mask) != 0) {
+        if ((GetKeyState(VK_CONTROL) & mask) != 0) {
           m_ChangePresetWithSong = !m_ChangePresetWithSong;
           if (m_ChangePresetWithSong) {
             AddError(L"Auto Preset Change enabled", 5.0f, ERR_NOTIFY, false);
@@ -6712,10 +6712,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       break;
     case 'C':
       if (m_UI_mode == UI_REGULAR) {
-        if ((GetKeyState(VK_SHIFT) & mask) != 0) {
-          // TODO
-        }
-        else {
+        if ((GetKeyState(VK_SHIFT) & mask) == 0 && (GetKeyState(VK_CONTROL) & mask) == 0) {
           AddError(L"Stop", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
           keybd_event(VK_MEDIA_STOP, 0, 0, 0);
           keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);

@@ -812,7 +812,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
   }
   else if (wParam == VK_B) {
-    if (GetKeyState(VK_SHIFT) & 0x8000) { // Check if Shift is pressed
+    if (GetKeyState(VK_CONTROL) & 0x8000) { // Check if Ctrl is pressed
       g_plugin.m_SongInfoPollingEnabled = !g_plugin.m_SongInfoPollingEnabled;
       milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
       if (g_plugin.m_SongInfoPollingEnabled) {
@@ -831,7 +831,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     return 0;
   }
   else if (wParam == VK_C) {
-    if (GetKeyState(VK_SHIFT) & 0x8000) { // Check if Shift is pressed
+    if (GetKeyState(VK_CONTROL) & 0x8000) { // Check if Ctrl is pressed
       g_plugin.m_DisplayCover = !g_plugin.m_DisplayCover;
       milkwave.doSaveCover = g_plugin.m_DisplayCover;
       if (g_plugin.m_DisplayCover) {
