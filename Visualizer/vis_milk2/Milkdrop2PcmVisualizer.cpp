@@ -605,6 +605,23 @@ static void ToggleFullScreen(HWND hwnd) {
   stretch = false;
 }
 
+void SetWindowFixedDimensions(HWND hwnd) {
+  int windowX = 0;
+  int windowY = 0;
+  
+  RECT rect;
+  if (GetWindowRect(hwnd, &rect)) {
+    windowX = rect.left;
+    windowY = rect.top;
+  }
+
+  // Restore the window to a normal state if minimized or maximized
+  ShowWindow(hwnd, SW_RESTORE);
+
+  // Adjust the window size and position
+  SetWindowPos(hwnd, HWND_NOTOPMOST, windowX, windowY, g_plugin.m_WindowFixedWidth, g_plugin.m_WindowFixedHeight, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
 void ResetWindow(HWND hwnd) {
   // Get the screen dimensions
   int screenWidth = GetSystemMetrics(SM_CXSCREEN);
@@ -765,7 +782,13 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   if (wParam == VK_F2) {
     bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
     if (isCtrlPressed) {
-      ResetWindow(hWnd);
+      bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+      if (isShiftPressed) {
+        SetWindowFixedDimensions(hWnd);
+      }
+      else {
+        ResetWindow(hWnd);
+      }
     }
     else if (!fullscreen && !stretch) {
       ToggleBorderlessWindow(hWnd);
@@ -1583,7 +1606,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
   }
   milkwave.LogInfo(L"WinMain ended");
 }
-
 
 static std::string title;
 

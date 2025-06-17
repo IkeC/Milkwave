@@ -346,6 +346,8 @@ public:
   int m_WindowY = 50;
   int m_WindowWidth = 640;
   int m_WindowHeight = 360;
+  int m_WindowFixedWidth = 960;
+  int m_WindowFixedHeight = 540;
   
   float fOpacity = 1.0f; // 0.0f = 100% transparent, 1.0f = 100% opaque
   bool m_RemotePresetLink = false;

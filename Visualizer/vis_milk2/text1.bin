@@ -7,6 +7,7 @@ SHIFT + UP / DOWN       Increase/decrease window opacity (or mousewheel)
 F1                      Show/hide help
 F2 / 2xR MOUSEBUTTON    Toggle borderless window (unless in fullscreen/stretch mode)
 CTRL + F2               Reset window
+CTRL + SHIFT + F2       Set window to fixed dimensions from config file
 F3                      Set fps to 30/60/90/120/144/240/360/Unlimited
 F4                      Show/hide preset info
 F5                      Show/hide fps

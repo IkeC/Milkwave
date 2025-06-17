@@ -1409,6 +1409,8 @@ void CPlugin::MyReadConfig() {
   m_WindowY = GetPrivateProfileIntW(L"Milkwave", L"WindowY", m_WindowY, pIni);
   m_WindowWidth = GetPrivateProfileIntW(L"Milkwave", L"WindowWidth", m_WindowWidth, pIni);
   m_WindowHeight = GetPrivateProfileIntW(L"Milkwave", L"WindowHeight", m_WindowHeight, pIni);
+  m_WindowFixedWidth = GetPrivateProfileIntW(L"Milkwave", L"WindowFixedWidth", m_WindowFixedWidth, pIni);
+  m_WindowFixedHeight = GetPrivateProfileIntW(L"Milkwave", L"WindowFixedHeight", m_WindowFixedHeight, pIni);
 
   ReadCustomMessages();
 
