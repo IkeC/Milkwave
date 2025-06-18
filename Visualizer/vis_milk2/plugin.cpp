@@ -4411,6 +4411,7 @@ void CPlugin::AddError(wchar_t* szMsg, float fDuration, int category, bool bBold
   x.expireTime = GetTime() + fDuration;
   x.category = category;
   x.bBold = bBold;
+  x.bSentToRemote = false; // not sent to remote yet
   m_errors.push_back(x);
 }
 
@@ -5405,12 +5406,12 @@ void CPlugin::MyRenderUI(
           }
           else {
             float age = t - m_errors[i].birthTime;
-            int res = 1;
-            if (age < 0.03f) {
-              // don't send more often than necessary
+            if (!m_errors[i].bSentToRemote) {
+              // send once
               int res = SendMessageToMilkwaveRemote((L"STATUS=" + m_errors[i].msg).c_str());
+              m_errors[i].bSentToRemote = res != 0;
             }
-            if (res != 1 || !m_HideNotificationsWhenRemoteActive) {
+            if (!m_errors[i].bSentToRemote || !m_HideNotificationsWhenRemoteActive) {
               SelectFont(SIMPLE_FONT);
               swprintf(buf, L"%s ", m_errors[i].msg.c_str());
               DWORD col = GetFontColor(SIMPLE_FONT);

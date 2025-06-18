@@ -9,6 +9,7 @@
 
 struct LoopbackCaptureThreadFunctionArguments {
   IMMDevice* pMMDevice;
+  bool bIsRenderDevice; // true if this is a render device, false if capture
   bool bInt16;
   HMMIO hFile;
   HANDLE hStartedEvent;

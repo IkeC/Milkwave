@@ -3,6 +3,7 @@
 class CPrefs {
 public:
   IMMDevice* m_pMMDevice;
+  bool m_bIsRenderDevice = true;
   HMMIO m_hFile;
   bool m_bInt16;
   PWAVEFORMATEX m_pwfx;

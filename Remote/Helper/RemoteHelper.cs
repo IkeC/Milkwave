@@ -7,15 +7,13 @@ namespace MilkwaveRemote.Helper {
   public class RemoteHelper {
 
     private string iniFile;
+    private bool includeInputDevices = true;
 
-    public RemoteHelper() {
-#if DEBUG
-      iniFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\Visualizer\\vis_milk2\\Debug\\settings.ini");
-#else
-      iniFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
-#endif
+    public RemoteHelper(string iniFile) {
+      this.iniFile = iniFile;
+      this.includeInputDevices = GetIniValue("Milkwave", "IncludeCaptureDevices", "1") == "1";
     }
-
+    
     [DllImport("kernel32")]
     private static extern int GetPrivateProfileString(
        string section, string key, string defaultValue,
@@ -60,20 +58,16 @@ namespace MilkwaveRemote.Helper {
         defaultMDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
         var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
 
-        bool includeCaptureDevices = false;
-#if DEBUG
-        includeCaptureDevices = true; // Include capture devices in debug mode
-#endif
         foreach (var device in devices) {
           bool isDefaultDevice = device.ID == defaultMDevice.ID;
-          string name = includeCaptureDevices ? "Output: " + device.FriendlyName : device.FriendlyName;
+          string name = includeInputDevices ? "Out: " + device.FriendlyName : device.FriendlyName;
           cbo.Items.Add(new ComboBoxItemDevice(name, device, isDefaultDevice)); // Add device names to ComboBox
         }
 
-        if (includeCaptureDevices) {
+        if (includeInputDevices) {
           devices = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
           foreach (var device in devices) {
-            cbo.Items.Add(new ComboBoxItemDevice("Input: " + device.FriendlyName, device, false)); // Add device names to ComboBox
+            cbo.Items.Add(new ComboBoxItemDevice("In: " + device.FriendlyName, device, false)); // Add device names to ComboBox
           }
         }
 

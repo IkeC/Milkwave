@@ -505,7 +505,7 @@ static void ToggleFullScreen(HWND hwnd) {
   if (g_plugin.IsBorderlessFullscreen(hwnd)) {
     // ShowCursor(TRUE);
     ToggleBorderlessFullscreen(hwnd);
-  } 
+  }
   else if (!fullscreen) {
     ShowCursor(FALSE);
 
@@ -608,7 +608,7 @@ static void ToggleFullScreen(HWND hwnd) {
 void SetWindowFixedDimensions(HWND hwnd) {
   int windowX = 0;
   int windowY = 0;
-  
+
   RECT rect;
   if (GetWindowRect(hwnd, &rect)) {
     windowX = rect.left;
@@ -1025,8 +1025,8 @@ void RenderFrame() {
 
       if (currentToken == "artist") {
         if (milkwave.currentArtist.length() > 0) {
-            wcscpy(buf, milkwave.currentArtist.c_str());
-            g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
+          wcscpy(buf, milkwave.currentArtist.c_str());
+          g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
         }
       }
       else if (currentToken == "title") {
@@ -1219,7 +1219,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   milkwave.Init(g_plugin.m_szBaseDir);
   milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
   milkwave.doSaveCover = g_plugin.m_DisplayCover;
-  
+
   unsigned int frame = 0;
 
   // SPOUT - defaults if no GUI
@@ -1375,6 +1375,7 @@ int StartAudioCaptureThread(HINSTANCE instance) {
     LoopbackCaptureThreadFunctionArguments threadArgs;
     threadArgs.hr = E_UNEXPECTED; // thread will overwrite this
     threadArgs.pMMDevice = prefs.m_pMMDevice;
+    threadArgs.bIsRenderDevice = prefs.m_bIsRenderDevice;
     threadArgs.bInt16 = prefs.m_bInt16;
     threadArgs.hFile = prefs.m_hFile;
     threadArgs.hStartedEvent = hStartedEvent;
@@ -1477,14 +1478,20 @@ int StartAudioCaptureThread(HINSTANCE instance) {
 
     if (g_plugin.m_AudioLoopState == 2) {
       // pauseRender = true;
+      g_plugin.AddNotification(g_plugin.m_szAudioDevice);
       int result = StartAudioCaptureThread(instance);
       if (result != 0) {
+        g_plugin.AddNotification(g_plugin.m_szAudioDevicePrevious);
         ERR(L"StartAudioCaptureThread failed: %d", result);
-        std::wstring statusMessage = L"STATUS=Device init failed, reverting to previous device";
+
+        std::wstring statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevicePrevious);
         g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
 
-        statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevicePrevious);
+        std::wstringstream ss;
+        ss << L"STATUS=Device init failed, reverting to " << g_plugin.m_szAudioDevicePrevious;
+        statusMessage = ss.str();
         g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
+
 
         wcscpy_s(g_plugin.m_szAudioDevice, g_plugin.m_szAudioDevicePrevious);
         result = StartAudioCaptureThread(instance);

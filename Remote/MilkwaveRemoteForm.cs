@@ -1,5 +1,6 @@
 ﻿using MilkwaveRemote.Data;
 using MilkwaveRemote.Helper;
+using NAudio.Midi;
 using System.Diagnostics;
 using System.Drawing.Text;
 using System.Formats.Tar;
@@ -80,7 +81,7 @@ namespace MilkwaveRemote {
     Random rnd = new Random();
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
-    private RemoteHelper helper = new RemoteHelper();
+    private RemoteHelper helper;
 
     private OpenFileDialog ofd;
     private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
@@ -281,6 +282,8 @@ namespace MilkwaveRemote {
       ofd.Filter = "MilkDrop Presets|*.milk;*.milk2|All files (*.*)|*.*";
       ofd.RestoreDirectory = true;
       SetAllControlFontSizes(this, 9f); // Sets all controls to font size 9
+
+      helper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
       helper.FillAudioDevices(cboAudioDevice);
     }
 
@@ -539,7 +542,7 @@ namespace MilkwaveRemote {
             ComboBoxItemDevice? selectedItem = (ComboBoxItemDevice?)cboAudioDevice.SelectedItem;
             if (selectedItem != null) {
               message = "DEVICE=" + selectedItem.Device.FriendlyName;
-              statusMessage = $"Set device '{cboAudioDevice.Text}' in";
+              //statusMessage = $"Set device '{cboAudioDevice.Text}' in";
             }
           }
         } else if (type == MessageType.Opacity) {

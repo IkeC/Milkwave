@@ -4,6 +4,7 @@
 
 HRESULT LoopbackCapture(
   IMMDevice* pMMDevice,
+  bool bIsRenderDevice,
   HMMIO hFile,
   bool bInt16,
   HANDLE hStartedEvent,
@@ -27,6 +28,7 @@ DWORD WINAPI LoopbackCaptureThreadFunction(LPVOID pContext) {
 
   pArgs->hr = LoopbackCapture(
     pArgs->pMMDevice,
+    pArgs->bIsRenderDevice,
     pArgs->hFile,
     pArgs->bInt16,
     pArgs->hStartedEvent,
@@ -39,6 +41,7 @@ DWORD WINAPI LoopbackCaptureThreadFunction(LPVOID pContext) {
 
 HRESULT LoopbackCapture(
   IMMDevice* pMMDevice,
+  bool bIsRenderDevice,
   HMMIO hFile,
   bool bInt16,
   HANDLE hStartedEvent,
@@ -46,6 +49,7 @@ HRESULT LoopbackCapture(
   PUINT32 pnFrames
 ) {
   HRESULT hr;
+
 
   // activate an IAudioClient
   IAudioClient* pAudioClient;
@@ -179,8 +183,6 @@ HRESULT LoopbackCapture(
   UINT32 nBlockAlign = pwfx->nBlockAlign;
   *pnFrames = 0;
 
-
-
   // call IAudioClient::Initialize
   // note that AUDCLNT_STREAMFLAGS_LOOPBACK and AUDCLNT_STREAMFLAGS_EVENTCALLBACK
   // do not work together...
@@ -189,7 +191,8 @@ HRESULT LoopbackCapture(
   hr = pAudioClient->Initialize(
     AUDCLNT_SHAREMODE_SHARED,
     AUDCLNT_STREAMFLAGS_LOOPBACK,
-    0, 0, pwfx, 0
+    bIsRenderDevice ? AUDCLNT_STREAMFLAGS_LOOPBACK : 0,
+    0, pwfx, nullptr
   );
   if (FAILED(hr)) {
     ERR(L"IAudioClient::Initialize failed: hr = 0x%08x", hr);

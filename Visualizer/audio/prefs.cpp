@@ -7,7 +7,7 @@
 void usage(LPCWSTR exe);
 HRESULT get_default_device(IMMDevice** ppMMDevice);
 HRESULT list_devices();
-HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice);
+HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice, bool bRenderDevices);
 HRESULT open_file(LPCWSTR szFileName, HMMIO* phFile);
 
 void usage(LPCWSTR exe) {
@@ -72,13 +72,26 @@ CPrefs::CPrefs(int argc, LPCWSTR argv[], HRESULT& hr)
           return;
         }
 
-        hr = get_specific_device(argv[i], &m_pMMDevice);
-        if (FAILED(hr)) {
-          // invalid device, use default
-          hr = get_default_device(&m_pMMDevice);
-          if (FAILED(hr)) {
-            MessageBox(NULL, "Could not find any suitable audio devices.", "Milkwave Error", MB_OK | MB_ICONERROR);
-            return;
+        // try render devices first
+        hr = get_specific_device(argv[i], &m_pMMDevice, true);
+        if (!FAILED(hr)) {
+          m_bIsRenderDevice = true; // we got a render device
+        }
+        else {
+          // now try capture devices
+          hr = get_specific_device(argv[i], &m_pMMDevice, false);
+          if (!FAILED(hr)) {
+            m_bIsRenderDevice = false; // we got a capture device
+          }
+          else {
+            // invalid device, use default
+            hr = get_default_device(&m_pMMDevice);
+            if (!FAILED(hr)) {
+              m_bIsRenderDevice = true; // default is always a render device
+            } else {
+              MessageBox(NULL, "Could not find any suitable audio devices.", "Milkwave Error", MB_OK | MB_ICONERROR);
+              return;
+            }
           }
         }
         continue;
@@ -203,13 +216,9 @@ HRESULT list_devices() {
   IMMDeviceCollection* pMMDeviceCollection;
 
   // get all the active render endpoints
-  
+
   hr = pMMDeviceEnumerator->EnumAudioEndpoints(
-#ifdef _DEBUG
-    eAll, // Use eAll in debug mode
-#else
-    eRender, // Use eRender in release mode
-#endif
+    eRender,
     DEVICE_STATE_ACTIVE, &pMMDeviceCollection
   );
 
@@ -267,7 +276,7 @@ HRESULT list_devices() {
   return S_OK;
 }
 
-HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice) {
+HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice, bool bRenderDevices) {
   HRESULT hr = S_OK;
 
   *ppMMDevice = NULL;
@@ -290,7 +299,8 @@ HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice) {
 
   // get all the active render endpoints
   hr = pMMDeviceEnumerator->EnumAudioEndpoints(
-    eRender, DEVICE_STATE_ACTIVE, &pMMDeviceCollection
+    bRenderDevices ? eRender : eCapture,
+    DEVICE_STATE_ACTIVE, &pMMDeviceCollection
   );
   if (FAILED(hr)) {
     ERR(L"IMMDeviceEnumerator::EnumAudioEndpoints failed: hr = 0x%08x", hr);

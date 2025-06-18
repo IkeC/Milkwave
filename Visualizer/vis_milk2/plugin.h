@@ -189,6 +189,7 @@ typedef struct {
   float     birthTime;
   float     expireTime;
   int       category;
+  bool      bSentToRemote;
 } ErrorMsg;
 
 typedef std::vector<ErrorMsg> ErrorMsgList;
