@@ -11,7 +11,7 @@ namespace MilkwaveRemote.Helper {
 
     public RemoteHelper(string iniFile) {
       this.iniFile = iniFile;
-      this.includeInputDevices = GetIniValue("Milkwave", "IncludeCaptureDevices", "1") == "1";
+      this.includeInputDevices = GetIniValue("Milkwave", "IncludeInputDevices", "1") == "1";
     }
     
     [DllImport("kernel32")]
