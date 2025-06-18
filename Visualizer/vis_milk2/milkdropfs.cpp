@@ -5127,7 +5127,7 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   SPRITEVERTEX v3[128];
   ZeroMemory(v3, sizeof(SPRITEVERTEX) * 128);
 
-
+  float dx, dy;
   if (m_supertexts[supertextIndex].bIsSongTitle) {
     // positioning:
     float fSizeX = 50.0f / (float)m_supertexts[supertextIndex].nFontSizeUsed * powf(1.5f, m_supertexts[supertextIndex].fFontSize - 2.0f);
@@ -5220,13 +5220,13 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
       if (startTimeProgress < 1 && m_supertexts[supertextIndex].fStartX != -100 && m_supertexts[supertextIndex].fStartX != m_supertexts[supertextIndex].fX) {
         currentX -= (m_supertexts[supertextIndex].fX - m_supertexts[supertextIndex].fStartX) * (1 - tFactor);
       }
-      float dx = (currentX * 2 - 1);
+      dx = (currentX * 2 - 1);
 
       float currentY = m_supertexts[supertextIndex].fY;
       if (startTimeProgress < 1 && m_supertexts[supertextIndex].fStartY != -100 && m_supertexts[supertextIndex].fStartY != m_supertexts[supertextIndex].fY) {
         currentY -= (m_supertexts[supertextIndex].fY - m_supertexts[supertextIndex].fStartY) * (1 - tFactor);
       }
-      float dy = (currentY * 2 - 1);
+      dy = (currentY * 2 - 1);
       
       for (i = 0; i < 128; i++) {
         // note: (x,y) are in (-1,1) range, but m_supertext[supertextIndex].f{X|Y} are in (0..1) range
@@ -5266,13 +5266,13 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     posStart = v3[0].x;
     minVal = posStart + (v3[0].x - posStart) / aspect;
     maxVal = posStart + (v3[127].x - posStart) / aspect;
-    wantedCenter = m_supertexts[supertextIndex].fX * 2 - 1;
+    wantedCenter = dx;
   }
   else {
     posStart = v3[0].y;
     minVal = posStart + (v3[0].y - posStart) * aspect;
     maxVal = posStart + (v3[127].y - posStart) * aspect;
-    wantedCenter = m_supertexts[supertextIndex].fY* 2 - 1;
+    wantedCenter = dy;
   }
   float actualCenter = (minVal+maxVal)/2;
   float offset = actualCenter - wantedCenter;
@@ -5280,15 +5280,14 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   for (i = 0; i < 128; i++) {
     if (aspect < 1) {
 
-      // swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f\n", i, v3[i].x);
-      // OutputDebugStringW(debugMsg);
+      //swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f offset=%.2f\n", i, v3[i].x, offset);
+      //OutputDebugStringW(debugMsg);
 
       v3[i].x = posStart + (v3[i].x - posStart) / aspect;
       v3[i].x -= offset; // center the text on the wanted position
 
-      // swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f (after)\n", i, v3[i].x);
-      // OutputDebugStringW(debugMsg);
-
+      //swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f (after)\n", i, v3[i].x);
+      //OutputDebugStringW(debugMsg);
     }
     else {
 
@@ -5322,7 +5321,7 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   float baseOffsetX = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeX * (m_supertexts[supertextIndex].fFontSize / 40);
   float baseOffsetY = m_supertexts[supertextIndex].fShadowOffset / m_nTitleTexSizeY * (m_supertexts[supertextIndex].fFontSize / 40);
 
-  swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: t=%.2f\n", t);
+  swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: t=%.2f offset=%.2f\n", t, offset);
   OutputDebugStringW(debugMsg);
 
   for (int it = 0; it < 2; it++) {
