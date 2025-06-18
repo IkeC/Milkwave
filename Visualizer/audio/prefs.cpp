@@ -349,7 +349,10 @@ HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice, bool bRe
       return E_UNEXPECTED;
     }
 
-    // is it a match?
+    // WCHAR debugMsg[512];
+    // swprintf(debugMsg, 512, L"pv.pwszVal=%ls szLongName=%ls\n", pv.pwszVal, szLongName);
+    // OutputDebugStringW(debugMsg);
+
     if (0 == _wcsicmp(pv.pwszVal, szLongName)) {
       // did we already find it?
       if (NULL == *ppMMDevice) {

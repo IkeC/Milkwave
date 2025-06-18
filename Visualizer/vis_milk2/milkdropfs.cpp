@@ -5280,7 +5280,7 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   for (i = 0; i < 128; i++) {
     if (aspect < 1) {
 
-      //swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f offset=%.2f\n", i, v3[i].x, offset);
+      //swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: v3[%i].x=%.2f\n", i, v3[i].x);
       //OutputDebugStringW(debugMsg);
 
       v3[i].x = posStart + (v3[i].x - posStart) / aspect;

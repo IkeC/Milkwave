@@ -190,10 +190,10 @@ HRESULT LoopbackCapture(
   // so we're going to do a timer-driven loop
   hr = pAudioClient->Initialize(
     AUDCLNT_SHAREMODE_SHARED,
-    AUDCLNT_STREAMFLAGS_LOOPBACK,
     bIsRenderDevice ? AUDCLNT_STREAMFLAGS_LOOPBACK : 0,
-    0, pwfx, nullptr
+    0, 0, pwfx, nullptr
   );
+
   if (FAILED(hr)) {
     ERR(L"IAudioClient::Initialize failed: hr = 0x%08x", hr);
     return hr;
