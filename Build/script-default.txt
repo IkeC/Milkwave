@@ -41,9 +41,9 @@ SEND=99|Triggering Sprite 99
 FONT=Courier New|Everybody likes Courier!
 FONT=Arial|Some Arial//doubleline text!
 PRESET=resources\presets\Milkwave\Geiss - Reaction Diffusion 3 (Lichen Mix).milk|COLOR=255,255,0|I like this preset!
-MSG=size=25;time=3.0;growth=1.5;startx=0;y=0.4;movetime=1.0;easemode=1;shadowoffset=0;text=Some shadowless text from the left
-MSG=size=25;time=3.0;growth=1.5;startx=1;y=0.5;movetime=1.0;text=With shadow from the right, easing in
-MSG=size=25;time=3.0;growth=1.5;starty=1;y=0.6;movetime=1.0;burntime=5;text=Some text with long burntime
+MSG=size=25;time=3.0;growth=1.5;startx=0;starty=0;y=0.4;movetime=1.0;easemode=1;shadowoffset=0;text=Shadowless text from the upper left
+MSG=size=25;time=3.0;growth=1.5;startx=1;starty=0.5;y=0.5;movetime=1.0;text=With shadow from the right, easing in
+MSG=size=25;time=3.0;growth=1.5;startx=1;starty=1;y=0.6;movetime=1.0;burntime=5;text=Some text with long burntime
 
 PRESET=resources\presets\Milkwave\Flexi - lorenz attractor.milk|BPM=180|BEATS=4|Let's go faster!
 RESET|CLEARPARAMS|SIZE=30|Boom

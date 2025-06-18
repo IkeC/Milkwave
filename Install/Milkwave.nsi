@@ -8,14 +8,14 @@
 !define MUI_ICON "..\Resources\MilkwaveVisualizer.ico"
 !define MUI_UNICON "..\Resources\MilkwaveVisualizer.ico"
 
-!define VERSION "2.1"
+!define VERSION "2.2"
 !define VER_MAJOR 2
-!define VER_MINOR 1
+!define VER_MINOR 2
 
 !define RELDIR "..\Release\"
 
 !define REG_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Milkwave"
-                 
+
 Name "Milkwave ${VERSION}"
 OutFile "Milkwave-${VERSION}-Installer.exe"
 InstallDir "C:\Tools\Milkwave"
