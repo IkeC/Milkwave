@@ -1,5 +1,7 @@
-**/Debug
-**/Release
+Remote/**/Debug
+Remote/**/Release
+Visualizer/**/Debug
+Visualizer/**/Release
 **/.vs
 **/*.opendb
 **/*.aps
@@ -17,3 +19,5 @@ vis_milk2/bin
 /Remote/.idea/.idea.Remote.dir/.idea
 /Install/sign.cmd
 /Build/notes.md
+/Release/*
+!/Release/Developer*.*
