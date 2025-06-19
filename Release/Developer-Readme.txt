@@ -1,3 +1,5 @@
-This folder is used as base folder (working directory) for both the Visualizer and Remote when running the solution in Debug configuration. More details here: https://github.com/IkeC/Milkwave/issues/12
+If you run the Visual Studio solution (Milkwave.sln) in DEBUG configuration, this /Release folder is used as base folder (working directory) for both the Visualizer and the Remote. To set up this folder with default config files and required resources, you can run (or inspect) Developer-Setup.cmd. There's no automatic event for this, so any changes you make eg. to config files are not overwritten while developing.
 
-For a default population of the folder, you can run (or inspect) Developer-Setup.cmd.
+If you run the Visual Studio solution in RELEASE configuration, the base folder is that of the resulting executable. The file /Build/release.cmd is run as a post-build event, copying the executables, other required files and default config files to the /Release folder.
+
+Background and details here: https://github.com/IkeC/Milkwave/issues/12

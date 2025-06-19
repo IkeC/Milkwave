@@ -49,11 +49,13 @@
 
 There are many tooltips explaining all features when you hover over the form elements. Clicking the "Autoplay" button on the Message tab will run the default script file, demonstrating many Milkwave features.
 
-For a chronological list of Milkwave releases and features, read the [Changes](Changes.md). If you have any questions, don't be afraid to [ask for support](#support)!
+If you have any questions, don't be afraid to [ask for support](#support)!
 
 ## History
 
 The original [MilkDrop2](https://www.geisswerks.com/milkdrop/) WinAmp plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and has since been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) and [MilkDrop3](https://github.com/milkdrop2077/MilkDrop3) projects.
+
+For a chronological list of Milkwave releases and features, read the [Changes](Changes.md).
 
 ## System Requirements
 
