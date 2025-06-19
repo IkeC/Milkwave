@@ -5,9 +5,9 @@
 #define DEFAULT_FILE L"loopback-capture.wav"
 
 void usage(LPCWSTR exe);
-HRESULT get_default_device(IMMDevice** ppMMDevice);
+HRESULT get_default_device(IMMDevice** ppMMDevice, std::wstring* m_szAudioDeviceDisplayName);
 HRESULT list_devices();
-HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice, bool bRenderDevices);
+HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice, bool bRenderDevices, std::wstring* m_szAudioDeviceDisplayName);
 HRESULT open_file(LPCWSTR szFileName, HMMIO* phFile);
 
 void usage(LPCWSTR exe) {
@@ -30,7 +30,8 @@ CPrefs::CPrefs(int argc, LPCWSTR argv[], HRESULT& hr)
   , m_hFile(NULL)
   , m_bInt16(false)
   , m_pwfx(NULL)
-  , m_szFilename(NULL) {
+  , m_szFilename(NULL)
+  , m_szAudioDeviceDisplayName(L"(unknown)") {
 
   // list_devices();
 
@@ -73,19 +74,19 @@ CPrefs::CPrefs(int argc, LPCWSTR argv[], HRESULT& hr)
         }
 
         // try render devices first
-        hr = get_specific_device(argv[i], &m_pMMDevice, true);
+        hr = get_specific_device(argv[i], &m_pMMDevice, true, &m_szAudioDeviceDisplayName);
         if (!FAILED(hr)) {
           m_bIsRenderDevice = true; // we got a render device
         }
         else {
           // now try capture devices
-          hr = get_specific_device(argv[i], &m_pMMDevice, false);
+          hr = get_specific_device(argv[i], &m_pMMDevice, false, &m_szAudioDeviceDisplayName);
           if (!FAILED(hr)) {
             m_bIsRenderDevice = false; // we got a capture device
           }
           else {
             // invalid device, use default
-            hr = get_default_device(&m_pMMDevice);
+            hr = get_default_device(&m_pMMDevice, &m_szAudioDeviceDisplayName);
             if (!FAILED(hr)) {
               m_bIsRenderDevice = true; // default is always a render device
             } else {
@@ -134,7 +135,7 @@ CPrefs::CPrefs(int argc, LPCWSTR argv[], HRESULT& hr)
 
     // open default device if not specified
     if (NULL == m_pMMDevice) {
-      hr = get_default_device(&m_pMMDevice);
+      hr = get_default_device(&m_pMMDevice, &m_szAudioDeviceDisplayName);
       if (FAILED(hr)) {
         MessageBox(NULL, "Could not find any suitable audio devices.", "Milkwave Error", MB_OK | MB_ICONERROR);
         return;
@@ -170,7 +171,7 @@ CPrefs::~CPrefs() {
   }
 }
 
-HRESULT get_default_device(IMMDevice** ppMMDevice) {
+HRESULT get_default_device(IMMDevice** ppMMDevice, std::wstring* m_szAudioDeviceDisplayName) {
   HRESULT hr = S_OK;
   IMMDeviceEnumerator* pMMDeviceEnumerator;
 
@@ -192,6 +193,30 @@ HRESULT get_default_device(IMMDevice** ppMMDevice) {
     ERR(L"IMMDeviceEnumerator::GetDefaultAudioEndpoint failed: hr = 0x%08x", hr);
     return hr;
   }
+
+  // open the property store on that device
+  IPropertyStore* pPropertyStore;
+  hr = (*ppMMDevice)->OpenPropertyStore(STGM_READ, &pPropertyStore);
+  if (FAILED(hr)) {
+    ERR(L"IMMDevice::OpenPropertyStore failed: hr = 0x%08x", hr);
+    return hr;
+  }
+  ReleaseOnExit releasePropertyStore(pPropertyStore);
+
+  // get the long name property
+  PROPVARIANT pv; PropVariantInit(&pv);
+  hr = pPropertyStore->GetValue(PKEY_Device_FriendlyName, &pv);
+  if (FAILED(hr)) {
+    ERR(L"IPropertyStore::GetValue failed: hr = 0x%08x", hr);
+    return hr;
+  }
+  PropVariantClearOnExit clearPv(&pv);
+
+  if (VT_LPWSTR != pv.vt) {
+    ERR(L"PKEY_Device_FriendlyName variant type is %u - expected VT_LPWSTR", pv.vt);
+    return E_UNEXPECTED;
+  }
+  *m_szAudioDeviceDisplayName = std::wstring(pv.pwszVal) + L" [default]";
 
   return S_OK;
 }
@@ -276,7 +301,7 @@ HRESULT list_devices() {
   return S_OK;
 }
 
-HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice, bool bRenderDevices) {
+HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice, bool bRenderDevices, std::wstring* m_szAudioDeviceDisplayName) {
   HRESULT hr = S_OK;
 
   *ppMMDevice = NULL;
@@ -358,6 +383,13 @@ HRESULT get_specific_device(LPCWSTR szLongName, IMMDevice** ppMMDevice, bool bRe
       if (NULL == *ppMMDevice) {
         *ppMMDevice = pMMDevice;
         pMMDevice->AddRef();
+
+        if (bRenderDevices) {
+          *m_szAudioDeviceDisplayName = std::wstring(szLongName) + L" [Out]";
+        }
+        else {
+          *m_szAudioDeviceDisplayName = std::wstring(szLongName) + L" [In]";
+        }
       }
       else {
         ERR(L"Found (at least) two devices named %ls", szLongName);

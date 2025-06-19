@@ -11,9 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkwaveRemote", "Remote\Mi
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
+		Changes.md = Changes.md
 		Build\messages.ini = Build\messages.ini
-		README.md = README.md
 		Build\notes.md = Build\notes.md
+		README.md = README.md
 		Build\README.txt = Build\README.txt
 		Build\release.cmd = Build\release.cmd
 		Build\script-default.txt = Build\script-default.txt

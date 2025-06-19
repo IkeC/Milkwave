@@ -118,6 +118,11 @@
 #ifndef VK_C
 #define VK_C 0x43 // ASCII code for 'C'
 #endif
+
+#ifndef VK_D
+#define VK_D 0x44 // ASCII code for 'D'
+#endif
+
 #include <stdlib.h>
 #include <malloc.h>
 #include <crtdbg.h>
@@ -801,14 +806,12 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
     else {
       ToggleClickThrough(hWnd);
-      wchar_t buf[1024], tmp[64];
       if (clickthrough) {
-        swprintf(buf, L"Clickthrough Mode enabled", tmp, 64);
+        g_plugin.AddNotification(L"Clickthrough Mode enabled");
       }
       else {
-        swprintf(buf, L"Clickthrough Mode disabled", tmp, 64);
+        g_plugin.AddNotification(L"Clickthrough Mode disabled");
       }
-      g_plugin.AddError(buf, 5.0f, ERR_NOTIFY, false);
     }
   }
   else if (wParam == VK_B) {
@@ -816,10 +819,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       g_plugin.m_SongInfoPollingEnabled = !g_plugin.m_SongInfoPollingEnabled;
       milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
       if (g_plugin.m_SongInfoPollingEnabled) {
-        g_plugin.AddError(L"Song Info enabled", 5.0f, ERR_NOTIFY, false);
+        g_plugin.AddNotification(L"Song Info enabled");
       }
       else {
-        g_plugin.AddError(L"Song Info disabled", 5.0f, ERR_NOTIFY, false);
+        g_plugin.AddNotification(L"Song Info disabled");
         milkwave.currentArtist = L"";
         milkwave.currentTitle = L"";
         milkwave.currentAlbum = L"";
@@ -835,14 +838,20 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       g_plugin.m_DisplayCover = !g_plugin.m_DisplayCover;
       milkwave.doSaveCover = g_plugin.m_DisplayCover;
       if (g_plugin.m_DisplayCover) {
-        g_plugin.AddError(L"Cover Display enabled", 5.0f, ERR_NOTIFY, false);
+        g_plugin.AddNotification(L"Cover Display enabled");
       }
       else {
-        g_plugin.AddError(L"Cover Display disabled", 5.0f, ERR_NOTIFY, false);
+        g_plugin.AddNotification(L"Cover Display disabled");
       }
     }
     else {
       milkwave.doPollExplicit = true;
+    }
+    return 0;
+  }
+  else if (wParam == VK_D) {
+    if (GetKeyState(VK_CONTROL) & 0x8000) { // Check if Ctrl is pressed
+      g_plugin.AddNotification(g_plugin.m_szAudioDeviceDisplayName);
     }
     return 0;
   }
@@ -1370,6 +1379,8 @@ int StartAudioCaptureThread(HINSTANCE instance) {
       return -__LINE__;
     }
     CloseHandleOnExit closeStopEvent(hStopEvent);
+
+    g_plugin.SetAudioDeviceDisplayName(prefs.m_szAudioDeviceDisplayName.c_str());
 
     // create arguments for loopback capture thread
     LoopbackCaptureThreadFunctionArguments threadArgs;

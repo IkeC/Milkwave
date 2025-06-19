@@ -7263,24 +7263,26 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   break;
   case 'd':
   case 'D':
-    if (!m_bCompShaderLock && !m_bWarpShaderLock) {
-      m_bCompShaderLock = true; m_bWarpShaderLock = false;
-      AddNotification(wasabiApiLangString(IDS_COMPSHADER_LOCKED));
+    if ((GetKeyState(VK_CONTROL) & 0x8000) == 0) { 
+      // Ctrl+D handled in Milkdrop2PcmVisualizer.cpp
+      if (!m_bCompShaderLock && !m_bWarpShaderLock) {
+        m_bCompShaderLock = true; m_bWarpShaderLock = false;
+        AddNotification(wasabiApiLangString(IDS_COMPSHADER_LOCKED));
+      }
+      else if (m_bCompShaderLock && !m_bWarpShaderLock) {
+        m_bCompShaderLock = false; m_bWarpShaderLock = true;
+        AddNotification(wasabiApiLangString(IDS_WARPSHADER_LOCKED));
+      }
+      else if (!m_bCompShaderLock && m_bWarpShaderLock) {
+        m_bCompShaderLock = true; m_bWarpShaderLock = true;
+        AddNotification(wasabiApiLangString(IDS_ALLSHADERS_LOCKED));
+      }
+      else {
+        m_bCompShaderLock = false; m_bWarpShaderLock = false;
+        AddNotification(wasabiApiLangString(IDS_ALLSHADERS_UNLOCKED));
+      }
+      break;
     }
-    else if (m_bCompShaderLock && !m_bWarpShaderLock) {
-      m_bCompShaderLock = false; m_bWarpShaderLock = true;
-      AddNotification(wasabiApiLangString(IDS_WARPSHADER_LOCKED));
-    }
-    else if (!m_bCompShaderLock && m_bWarpShaderLock) {
-      m_bCompShaderLock = true; m_bWarpShaderLock = true;
-      AddNotification(wasabiApiLangString(IDS_ALLSHADERS_LOCKED));
-    }
-    else {
-      m_bCompShaderLock = false; m_bWarpShaderLock = false;
-      AddNotification(wasabiApiLangString(IDS_ALLSHADERS_UNLOCKED));
-    }
-    break;
-
     // row 2 keys
       // 'A' KEY IS FREE!!
       // 'D' KEY IS FREE!!
@@ -10998,4 +11000,8 @@ void CPlugin::OpenMilkwaveRemote() {
       CloseHandle(pi.hThread);
     }
   }
+}
+
+void CPlugin::SetAudioDeviceDisplayName(const wchar_t* displayName) {
+  wcscpy_s(m_szAudioDeviceDisplayName, MAX_PATH, displayName);
 }

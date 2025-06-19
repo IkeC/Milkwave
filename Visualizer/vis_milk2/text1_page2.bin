@@ -10,7 +10,8 @@ N                       Show per-frame monitor
 S                       Save new preset
 CTRL + S                Quicksave preset to /presets/Quicksave folder
 SHIFT + CTRL + S        Quicksave preset to /presets/Quicksave2 folder
-                        
+CTRL + D                Display current audio device
+
 K                       Toggle sprite/message mode
 SHIFT + K               Enter sprite kill mode
 00-99                   Invoke sprites/messages

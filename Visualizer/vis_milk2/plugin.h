@@ -278,6 +278,7 @@ public:
   bool bInitialized; // did it work ?
   bool OpenSender(unsigned int width, unsigned int height);
   void OpenMilkwaveRemote();
+  void SetAudioDeviceDisplayName(const wchar_t* displayName);
   bool bSpoutChanged; // set to write config on exit
   bool bSpoutOut; // Spout output on or off
   bool bEnablePresetStartup;
@@ -550,6 +551,7 @@ public:
   wchar_t     m_szPresetStartup[MAX_PATH];
   wchar_t     m_szAudioDevicePrevious[MAX_PATH];
   wchar_t     m_szAudioDevice[MAX_PATH];
+  wchar_t     m_szAudioDeviceDisplayName[MAX_PATH];
   wchar_t     m_SongInfoFormat[MAX_PATH];
   int m_AudioLoopState = 0; // 0: Running, 1: Cancel running thread, 2: Must restart
 
