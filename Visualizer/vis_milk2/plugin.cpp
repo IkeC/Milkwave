@@ -1380,6 +1380,7 @@ void CPlugin::MyReadConfig() {
 
   // Milkwave
   GetPrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, m_szAudioDevice, sizeof(m_szAudioDevice), pIni);
+  m_nAudioDeviceRequestType = GetPrivateProfileIntW(L"Milkwave", L"AudioDeviceRequestType", m_nAudioDeviceRequestType, pIni);
   m_SongInfoPollingEnabled = GetPrivateProfileBoolW(L"Milkwave", L"SongInfoPollingEnabled", m_SongInfoPollingEnabled, pIni);
   m_SongInfoDisplayCorner = GetPrivateProfileIntW(L"Milkwave", L"SongInfoDisplayCorner", m_SongInfoDisplayCorner, pIni);
   GetPrivateProfileStringW(L"Milkwave", L"SongInfoFormat", L"Artist;Title;Album", m_SongInfoFormat, sizeof(m_SongInfoFormat), pIni);
@@ -1526,6 +1527,7 @@ void CPlugin::MyWriteConfig() {
 
   // Milkwave
   WritePrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, pIni);
+  WritePrivateProfileIntW(m_nAudioDeviceRequestType, L"AudioDeviceRequestType", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_SongInfoPollingEnabled, L"SongInfoPollingEnabled", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_SongInfoDisplayCorner, L"SongInfoDisplayCorner", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
@@ -10386,10 +10388,21 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   }
   else if (wcsncmp(sMessage, L"DEVICE=", 7) == 0) {
     std::wstring message(sMessage + 7);
+    if (wcsncmp(message.c_str(), L"IN|", 3) == 0) {
+      message = message.substr(3);
+      m_nAudioDeviceRequestType = 1;
+    }
+    else if (wcsncmp(message.c_str(), L"OUT|", 4) == 0) {
+      message = message.substr(4);
+      m_nAudioDeviceRequestType = 2;
+    }
+    else {
+      m_nAudioDeviceRequestType = 0;
+    }
     wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
     wcscpy(g_plugin.m_szAudioDevice, message.c_str());
     // Restart audio
-    m_AudioLoopState = 1;
+    m_nAudioLoopState = 1;
   }
   else if (wcsncmp(sMessage, L"OPACITY=", 8) == 0) {
     std::wstring message(sMessage + 8);

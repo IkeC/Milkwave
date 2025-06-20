@@ -541,7 +541,11 @@ namespace MilkwaveRemote {
           if (cboAudioDevice.Text.Length > 0) {
             ComboBoxItemDevice? selectedItem = (ComboBoxItemDevice?)cboAudioDevice.SelectedItem;
             if (selectedItem != null) {
-              message = "DEVICE=" + selectedItem.Device.FriendlyName;
+              if (selectedItem.IsInputDevice) {
+                message = "DEVICE=IN|" + selectedItem.Device.FriendlyName;
+              } else {
+                message = "DEVICE=OUT|" + selectedItem.Device.FriendlyName;
+              }
               //statusMessage = $"Set device '{cboAudioDevice.Text}' in";
             }
           }

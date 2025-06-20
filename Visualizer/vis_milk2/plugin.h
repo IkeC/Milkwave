@@ -553,8 +553,8 @@ public:
   wchar_t     m_szAudioDevice[MAX_PATH];
   wchar_t     m_szAudioDeviceDisplayName[MAX_PATH];
   wchar_t     m_SongInfoFormat[MAX_PATH];
-  int m_AudioLoopState = 0; // 0: Running, 1: Cancel running thread, 2: Must restart
-
+  int m_nAudioLoopState = 0; // 0: Running, 1: Cancel running thread, 2: Must restart
+  int m_nAudioDeviceRequestType = 0; // 0: Undefined, 1: Capture (in), 2: Render (out)
   float		m_fRandStart[4];
 
   // DIRECTX 9:

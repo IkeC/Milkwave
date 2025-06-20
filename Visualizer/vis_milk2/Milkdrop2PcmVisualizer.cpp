@@ -1353,7 +1353,7 @@ int StartAudioCaptureThread(HINSTANCE instance) {
 
 
     // parse command line
-    CPrefs prefs(argc, argv, hr);
+    CPrefs prefs(argc, argv, hr, g_plugin.m_nAudioDeviceRequestType);
     if (FAILED(hr)) {
       ERR(L"CPrefs::CPrefs constructor failed: hr = 0x%08x", hr);
       return -__LINE__;
@@ -1362,7 +1362,6 @@ int StartAudioCaptureThread(HINSTANCE instance) {
       // nothing to do
       return 0;
     }
-
 
     // create a "loopback capture has started" event
     HANDLE hStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -1448,17 +1447,17 @@ int StartAudioCaptureThread(HINSTANCE instance) {
 
       HANDLE rhHandles[2] = { hThreadLoopbackCapture, hStdIn };
       */
-      g_plugin.m_AudioLoopState = 0;
+      g_plugin.m_nAudioLoopState = 0;
       bool bKeepWaiting = true;
       while (bKeepWaiting) {
         if (threadRender == nullptr) {
           // render thread stopped
           bKeepWaiting = false;
         }
-        else if (g_plugin.m_AudioLoopState == 1) {
+        else if (g_plugin.m_nAudioLoopState == 1) {
           // audio device changed
           bKeepWaiting = false;
-          g_plugin.m_AudioLoopState = 2;
+          g_plugin.m_nAudioLoopState = 2;
         }
         else {
           Sleep(100);
@@ -1487,9 +1486,20 @@ int StartAudioCaptureThread(HINSTANCE instance) {
     }
     // let prefs' destructor call mmioClose
 
-    if (g_plugin.m_AudioLoopState == 2) {
+    if (g_plugin.m_nAudioLoopState == 2) {
       // pauseRender = true;
-      g_plugin.AddNotification(g_plugin.m_szAudioDevice);
+      if (g_plugin.m_nAudioDeviceRequestType == 1) {
+        std::wstring statusMessage = std::wstring(g_plugin.m_szAudioDevice) + L" [In]";
+        g_plugin.AddNotification(statusMessage.data());
+      }
+      else if (g_plugin.m_nAudioDeviceRequestType == 2) {
+        std::wstring statusMessage = std::wstring(g_plugin.m_szAudioDevice) + L" [Out]";
+        g_plugin.AddNotification(statusMessage.data());
+      }
+      else {
+        g_plugin.AddNotification(g_plugin.m_szAudioDevice);
+      }
+
       int result = StartAudioCaptureThread(instance);
       if (result != 0) {
         g_plugin.AddNotification(g_plugin.m_szAudioDevicePrevious);

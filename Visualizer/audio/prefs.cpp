@@ -25,12 +25,13 @@ void usage(LPCWSTR exe) {
   );
 }
 
-CPrefs::CPrefs(int argc, LPCWSTR argv[], HRESULT& hr)
+CPrefs::CPrefs(int argc, LPCWSTR argv[], HRESULT& hr, int nAudioDeviceRequesType)
   : m_pMMDevice(NULL)
   , m_hFile(NULL)
   , m_bInt16(false)
   , m_pwfx(NULL)
   , m_szFilename(NULL)
+  , m_nAudioDeviceRequesType(nAudioDeviceRequesType)
   , m_szAudioDeviceDisplayName(L"(unknown)") {
 
   // list_devices();
@@ -73,28 +74,34 @@ CPrefs::CPrefs(int argc, LPCWSTR argv[], HRESULT& hr)
           return;
         }
 
-        // try render devices first
-        hr = get_specific_device(argv[i], &m_pMMDevice, true, &m_szAudioDeviceDisplayName);
-        if (!FAILED(hr)) {
-          m_bIsRenderDevice = true; // we got a render device
-        }
-        else {
-          // now try capture devices
+        // try to find capture device
+        if (m_nAudioDeviceRequesType == 0 || m_nAudioDeviceRequesType == 1) {
           hr = get_specific_device(argv[i], &m_pMMDevice, false, &m_szAudioDeviceDisplayName);
           if (!FAILED(hr)) {
             m_bIsRenderDevice = false; // we got a capture device
-          }
-          else {
-            // invalid device, use default
-            hr = get_default_device(&m_pMMDevice, &m_szAudioDeviceDisplayName);
-            if (!FAILED(hr)) {
-              m_bIsRenderDevice = true; // default is always a render device
-            } else {
-              MessageBox(NULL, "Could not find any suitable audio devices.", "Milkwave Error", MB_OK | MB_ICONERROR);
-              return;
-            }
+            continue;
           }
         }
+
+        // try to find render device
+        if (m_nAudioDeviceRequesType == 0 || m_nAudioDeviceRequesType == 2) {
+          hr = get_specific_device(argv[i], &m_pMMDevice, true, &m_szAudioDeviceDisplayName);
+          if (!FAILED(hr)) {
+            m_bIsRenderDevice = true; // we got a render device
+            continue;
+          }
+        }
+
+        // no device found, use default
+        hr = get_default_device(&m_pMMDevice, &m_szAudioDeviceDisplayName);
+        if (!FAILED(hr)) {
+          m_bIsRenderDevice = true; // default is always a render device
+        }
+        else {
+          MessageBox(NULL, "Could not find any suitable audio devices!", "Milkwave Error", MB_OK | MB_ICONERROR);
+          return;
+        }
+
         continue;
       }
 

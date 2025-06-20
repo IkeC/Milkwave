@@ -1,6 +1,6 @@
 ## v2.2
 
-- Support for input devices (microphones)
+- Support for input devices (eg. microphones)
 - Show current audio device (Ctrl+D)
 - Remote: Allow including subdirs when loading directories
 - Set window to fixed dimensions from config (Ctrl+Shift+F2)

@@ -61,13 +61,13 @@ namespace MilkwaveRemote.Helper {
         foreach (var device in devices) {
           bool isDefaultDevice = device.ID == defaultMDevice.ID;
           string name = includeInputDevices ? "Out: " + device.FriendlyName : device.FriendlyName;
-          cbo.Items.Add(new ComboBoxItemDevice(name, device, isDefaultDevice)); // Add device names to ComboBox
+          cbo.Items.Add(new ComboBoxItemDevice(name, device, isDefaultDevice, false)); // Add device names to ComboBox
         }
 
         if (includeInputDevices) {
           devices = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
           foreach (var device in devices) {
-            cbo.Items.Add(new ComboBoxItemDevice("In: " + device.FriendlyName, device, false)); // Add device names to ComboBox
+            cbo.Items.Add(new ComboBoxItemDevice("In: " + device.FriendlyName, device, false, true)); // Add device names to ComboBox
           }
         }
 
@@ -139,16 +139,17 @@ namespace MilkwaveRemote.Helper {
 
     public class ComboBoxItemDevice {
 
-      public ComboBoxItemDevice(string text, MMDevice device, bool isDefaultDevice) {
+      public ComboBoxItemDevice(string text, MMDevice device, bool isDefaultDevice, bool isInputDevice) {
         Text = text;
         Device = device;
         IsDefaultDevice = isDefaultDevice;
+        IsInputDevice = isInputDevice;
       }
 
       public string Text { get; set; }
       public MMDevice Device { get; set; }
       public bool IsDefaultDevice { get; set; } = false;
-
+      public bool IsInputDevice { get; set; } = false;
       public override string ToString() {
         return Text;
       }
