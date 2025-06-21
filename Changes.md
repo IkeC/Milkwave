@@ -5,6 +5,7 @@
 - Remote: Allow including subdirs when loading directories
 - Set window to fixed dimensions from config (Ctrl+Shift+F2) (#10)
 - startx/starty not always working correctly (#11)
+- Screen-dependent render mode feature (by @OfficialIncubo)
 
 ## v2.1 (2025-06-13)
 

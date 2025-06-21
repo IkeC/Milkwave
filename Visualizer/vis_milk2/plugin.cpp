@@ -1313,6 +1313,7 @@ void CPlugin::MyReadConfig() {
   m_bSongTitleAnims = GetPrivateProfileBoolW(L"Settings", L"bSongTitleAnims", m_bSongTitleAnims, pIni);
   m_bEnablePresetStartup = GetPrivateProfileBoolW(L"Settings", L"bEnablePresetStartup", m_bEnablePresetStartup, pIni);
   m_bAutoLockPresetWhenNoMusic = GetPrivateProfileBoolW(L"Settings", L"bAutoLockPresetWhenNoMusic", m_bAutoLockPresetWhenNoMusic, pIni);
+  m_bScreenDependentRenderMode = GetPrivateProfileBoolW(L"Settings", L"bScreenDependentRenderMode", m_bScreenDependentRenderMode, pIni);
 
   m_bShowFPS = GetPrivateProfileBoolW(L"Settings", L"bShowFPS", m_bShowFPS, pIni);
   m_bShowRating = GetPrivateProfileBoolW(L"Settings", L"bShowRating", m_bShowRating, pIni);
@@ -1491,6 +1492,7 @@ void CPlugin::MyWriteConfig() {
   // note: this is also written @ exit of the visualizer
   WritePrivateProfileIntW(m_bEnablePresetStartup, L"bEnablePresetStartup", pIni, L"Settings");
   WritePrivateProfileIntW(m_bAutoLockPresetWhenNoMusic, L"bAutoLockPresetWhenNoMusic", pIni, L"Settings");
+  WritePrivateProfileIntW(m_bScreenDependentRenderMode, L"bScreenDependentRenderMode", pIni, L"Settings");
 
   WritePrivateProfileIntW(m_nCanvasStretch, L"nCanvasStretch", pIni, L"Settings");
   //WritePrivateProfileIntW(m_nTexSizeX,			    L"nTexSize",				pIni, L"Settings");
@@ -2370,7 +2372,7 @@ int CPlugin::AllocateMyDX9Stuff() {
   {
     m_nTitleTexSizeX = max(m_nTexSizeX, m_nTexSizeY);
     m_nTitleTexSizeY = m_nTitleTexSizeX / 4;
-    
+
     // m_nTitleTexSizeX = max(m_nTexSizeX, m_nTexSizeY);
     // m_nTitleTexSizeY = m_nTitleTexSizeX / 4;
 
@@ -2483,11 +2485,19 @@ int CPlugin::AllocateMyDX9Stuff() {
       m_verts[nVert].z = 0.0f;
 
       // precompute rad, ang, being conscious of aspect ratio
-      m_vertinfo[nVert].rad = sqrtf(m_verts[nVert].x * m_verts[nVert].x * m_fAspectX * m_fAspectX + m_verts[nVert].y * m_verts[nVert].y * m_fAspectY * m_fAspectY);
+      if (m_bScreenDependentRenderMode)
+        m_vertinfo[nVert].rad = sqrtf(m_verts[nVert].x * m_verts[nVert].x + m_verts[nVert].y * m_verts[nVert].y);
+      else
+        m_vertinfo[nVert].rad = sqrtf(m_verts[nVert].x * m_verts[nVert].x * m_fAspectX * m_fAspectX + m_verts[nVert].y * m_verts[nVert].y * m_fAspectY * m_fAspectY);
+
       if (y == m_nGridY / 2 && x == m_nGridX / 2)
         m_vertinfo[nVert].ang = 0.0f;
       else
-        m_vertinfo[nVert].ang = atan2f(m_verts[nVert].y * m_fAspectY, m_verts[nVert].x * m_fAspectX);
+        if (m_bScreenDependentRenderMode)
+          m_vertinfo[nVert].ang = atan2f(m_verts[nVert].y, m_verts[nVert].x);
+        else
+          m_vertinfo[nVert].ang = atan2f(m_verts[nVert].y * m_fAspectY, m_verts[nVert].x * m_fAspectX);
+
       m_vertinfo[nVert].a = 1;
       m_vertinfo[nVert].c = 0;
 
@@ -3965,7 +3975,7 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // 2. release stuff
   SafeRelease(m_lpVS[0]);
   SafeRelease(m_lpVS[1]);
-  
+
   for (int i = 0; i < NUM_SUPERTEXTS; i++) {
     SafeRelease(m_lpDDSTitle[i]);
   }
@@ -7265,7 +7275,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   break;
   case 'd':
   case 'D':
-    if ((GetKeyState(VK_CONTROL) & 0x8000) == 0) { 
+    if ((GetKeyState(VK_CONTROL) & 0x8000) == 0) {
       // Ctrl+D handled in Milkdrop2PcmVisualizer.cpp
       if (!m_bCompShaderLock && !m_bWarpShaderLock) {
         m_bCompShaderLock = true; m_bWarpShaderLock = false;
@@ -7972,9 +7982,18 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY);
+      else
+        fy = (y / (float)m_nGridY) * m_fAspectY;
+
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX);
+        else
+          fx = (x / (float)m_nGridX) * m_fAspectX;
 
         // at t==0, mix rangse from -10..0
         // at t==1, mix ranges from   1..11
@@ -8035,9 +8054,20 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float dy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+
+      float dy;
+      if (m_bScreenDependentRenderMode)
+        dy = (y / (float)m_nGridY - 0.5f);
+      else
+        dy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+
       for (int x = 0; x <= m_nGridX; x++) {
-        float dx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+        float dx;
+        if (m_bScreenDependentRenderMode)
+          dx = (x / (float)m_nGridX - 0.5f);
+        else
+          dx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+
         float t = sqrtf(dx * dx + dy * dy) * 1.41421f;
         if (dir == -1)
           t = 1 - t;
@@ -8057,9 +8087,17 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY - 0.5f);
+      else
+        fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX - 0.5f);
+        else
+          fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
 
         // Calculate angle and distance from center
         float angle = atan2f(fy, fx); // range: -PI to PI
@@ -8097,9 +8135,18 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY - 0.5f);
+      else
+        fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX - 0.5f);
+        else
+          fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
 
         // Calculate polar coordinates
         float angle = atan2f(fy, fx); // range: -PI to PI
@@ -8138,9 +8185,17 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY - 0.5f);
+      else
+        fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX - 0.5f);
+        else
+          fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
 
         // Rotate coordinates
         float rx = fx * cos_a - fy * sin_a;
@@ -8173,9 +8228,17 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY - center_y) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY - center_y);
+      else
+        fy = (y / (float)m_nGridY - center_y) * m_fAspectY;
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX - center_x) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX - center_x);
+        else
+          fx = (x / (float)m_nGridX - center_x) * m_fAspectX;
 
         // Calculate angle and distance from center
         float angle = atan2f(fy, fx); // range: -PI to PI
@@ -8222,9 +8285,17 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY - 0.5f);
+      else
+        fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX - 0.5f);
+        else
+          fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
 
         float t;
         if (diagonal) {
@@ -8274,7 +8345,11 @@ void CPlugin::RandomizeBlendPattern() {
 
         // Calculate checkerboard pattern (0 or 1)
         int cx = (int)(fx * checker_size);
-        int cy = (int)(fy * checker_size * m_fAspectY);
+        int cy;
+        if (m_bScreenDependentRenderMode)
+          cy = (int)(fy * checker_size);
+        else
+          cy = (int)(fy * checker_size * m_fAspectY);
         int checker = (cx + cy) % 2;
 
         // Calculate animation progress
@@ -8451,8 +8526,15 @@ void CPlugin::RandomizeBlendPattern() {
 
         for (int i = 0; i < bubble_count; i++) {
           // Calculate distance to bubble center
-          float dx = (fx - bubbles[i].x) * m_fAspectX;
-          float dy = (fy - bubbles[i].y) * m_fAspectY;
+          float dx, dy;
+          if (m_bScreenDependentRenderMode) {
+            dx = (fx - bubbles[i].x);
+            dy = (fy - bubbles[i].y);
+          }
+          else {
+            dx = (fx - bubbles[i].x) * m_fAspectX;
+            dy = (fy - bubbles[i].y) * m_fAspectY;
+          }
           float dist = sqrtf(dx * dx + dy * dy);
 
           // Calculate bubble influence (1 at center, 0 at edge)
@@ -8491,9 +8573,17 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY - 0.5f);
+      else
+        fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX - 0.5f);
+        else
+          fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
 
         // Calculate polar coordinates
         float angle = atan2f(fy, fx) + rotation; // range: -PI to PI plus rotation
@@ -8538,9 +8628,17 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY - 0.5f);
+      else
+        fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX - 0.5f);
+        else
+          fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
 
         // Convert to polar coordinates
         float angle = atan2f(fy, fx); // range: -PI to PI
@@ -8580,9 +8678,17 @@ void CPlugin::RandomizeBlendPattern() {
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
-      float fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
+      float fy;
+      if (m_bScreenDependentRenderMode)
+        fy = (y / (float)m_nGridY - 0.5f);
+      else
+        fy = (y / (float)m_nGridY - 0.5f) * m_fAspectY;
       for (int x = 0; x <= m_nGridX; x++) {
-        float fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
+        float fx;
+        if (m_bScreenDependentRenderMode)
+          fx = (x / (float)m_nGridX - 0.5f);
+        else
+          fx = (x / (float)m_nGridX - 0.5f) * m_fAspectX;
 
         // Convert to polar coordinates
         float angle = atan2f(fy, fx) + rotation; // range: -PI to PI plus rotation
@@ -8741,13 +8847,25 @@ void CPlugin::GenPlasma(int x0, int x1, int y0, int y1, float dt) {
 
   if (y1 - y0 >= 2) {
     if (x0 == 0)
-      m_vertinfo[midy * (m_nGridX + 1) + x0].c = 0.5f * (t00 + t10) + (FRAND * 2 - 1) * dt * m_fAspectY;
-    m_vertinfo[midy * (m_nGridX + 1) + x1].c = 0.5f * (t01 + t11) + (FRAND * 2 - 1) * dt * m_fAspectY;
+      if (m_bScreenDependentRenderMode)
+        m_vertinfo[midy * (m_nGridX + 1) + x0].c = 0.5f * (t00 + t10) + (FRAND * 2 - 1) * dt;
+      else
+        m_vertinfo[midy * (m_nGridX + 1) + x0].c = 0.5f * (t00 + t10) + (FRAND * 2 - 1) * dt * m_fAspectY;
+    if (m_bScreenDependentRenderMode)
+      m_vertinfo[midy * (m_nGridX + 1) + x1].c = 0.5f * (t01 + t11) + (FRAND * 2 - 1) * dt;
+    else
+      m_vertinfo[midy * (m_nGridX + 1) + x1].c = 0.5f * (t01 + t11) + (FRAND * 2 - 1) * dt * m_fAspectY;
   }
   if (x1 - x0 >= 2) {
     if (y0 == 0)
-      m_vertinfo[y0 * (m_nGridX + 1) + midx].c = 0.5f * (t00 + t01) + (FRAND * 2 - 1) * dt * m_fAspectX;
-    m_vertinfo[y1 * (m_nGridX + 1) + midx].c = 0.5f * (t10 + t11) + (FRAND * 2 - 1) * dt * m_fAspectX;
+      if (m_bScreenDependentRenderMode)
+        m_vertinfo[y0 * (m_nGridX + 1) + midx].c = 0.5f * (t00 + t01) + (FRAND * 2 - 1) * dt;
+      else
+        m_vertinfo[y0 * (m_nGridX + 1) + midx].c = 0.5f * (t00 + t01) + (FRAND * 2 - 1) * dt * m_fAspectX;
+    if (m_bScreenDependentRenderMode)
+      m_vertinfo[y1 * (m_nGridX + 1) + midx].c = 0.5f * (t10 + t11) + (FRAND * 2 - 1) * dt;
+    else
+      m_vertinfo[y1 * (m_nGridX + 1) + midx].c = 0.5f * (t10 + t11) + (FRAND * 2 - 1) * dt * m_fAspectX;
   }
 
   if (y1 - y0 >= 2 && x1 - x0 >= 2) {
@@ -8817,7 +8935,7 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
     // Log the full path (to debugger or console)
     OutputDebugStringW(fullPath);
     OutputDebugStringW(L"\n");
-   
+
     wchar_t buf[1024];
     swprintf(buf, wasabiApiLangString(IDS_ERROR_PRESET_NOT_FOUND_X), fullPath);
     AddError(buf, 6.0f, ERR_PRESET, true);
