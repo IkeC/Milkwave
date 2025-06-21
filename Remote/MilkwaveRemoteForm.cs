@@ -1,9 +1,7 @@
 ﻿using MilkwaveRemote.Data;
 using MilkwaveRemote.Helper;
-using NAudio.Midi;
 using System.Diagnostics;
 using System.Drawing.Text;
-using System.Formats.Tar;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;

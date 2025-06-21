@@ -44,15 +44,12 @@ namespace MilkwaveRemote.Helper {
       return SetIniValue("Fonts", key, value);
     }
 
-    public string ReadMilkwaveAudioDevice() {
-      return GetIniValue("Milkwave", "AudioDevice", "");
-    }
-
     public void FillAudioDevices(ComboBox cbo) {
       cbo.Items.Clear(); // Clear existing items
 
       MMDevice defaultMDevice;
-      string iniMilkwaveAudioDevice = ReadMilkwaveAudioDevice();
+      string iniMilkwaveAudioDevice = GetIniValue("Milkwave", "AudioDevice", "");
+      string iniAudioDeviceRequestType = GetIniValue("Milkwave", "AudioDeviceRequestType", "0"); // 0: Undefined, 1: Capture (in), 2: Render (out)
 
       using (var enumerator = new MMDeviceEnumerator()) {
         defaultMDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
@@ -83,6 +80,10 @@ namespace MilkwaveRemote.Helper {
           if (iniMilkwaveAudioDevice.Length > 0) {
             foreach (ComboBoxItemDevice item in cbo.Items) {
               if (item.Device.FriendlyName.Equals(iniMilkwaveAudioDevice)) {
+                if (!item.IsInputDevice && iniAudioDeviceRequestType == "1" || item.IsInputDevice && iniAudioDeviceRequestType == "2") {
+                  // the item device type is not the requested type, skip it
+                  continue;
+                }
                 cbo.SelectedItem = item;
                 found = true;
                 break;
