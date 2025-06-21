@@ -4,7 +4,7 @@
 - **Milkwave Remote**:
     A "VJ mode" standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
-![Milkwave-2](https://github.com/user-attachments/assets/1aab1226-1294-40af-ae51-4c2829a66036)
+![Milkwave-2](https://github.com/user-attachments/assets/973b7bad-6a85-445f-94af-fe2805d961f2)
 
 ## Visualizer Features
  
@@ -16,7 +16,7 @@
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
  
-![Milkwave-2-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
+![Milkwave-2](https://github.com/user-attachments/assets/973b7bad-6a85-445f-94af-fe2805d961f2)
 
 ## Remote Features
 
