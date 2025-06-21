@@ -422,7 +422,7 @@ namespace MilkwaveRemote {
               }
 
               // Process the received string
-              txtVisRunning.Text = displayText;
+              SetRunningPresetText(displayText);
               toolTip1.SetToolTip(txtVisRunning, presetFilePath);
               UpdateTagsDisplay(false, true);
             }
@@ -462,6 +462,10 @@ namespace MilkwaveRemote {
       }
 
       base.WndProc(ref m);
+    }
+
+    private void SetRunningPresetText(string displayText) {
+      txtVisRunning.Text = displayText.Replace("PRESET=", "");
     }
 
     private nint FindVisualizerWindow() {
