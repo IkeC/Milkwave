@@ -1,16 +1,16 @@
-## v2.2
+## v2.2 (2025-06-21)
 
 - Support for input devices (eg. microphones)
 - Show current audio device (Ctrl+D)
 - Remote: Allow including subdirs when loading directories
-- Set window to fixed dimensions from config (Ctrl+Shift+F2)
-- Fix #11: startx/starty not always working correctly
+- Set window to fixed dimensions from config (Ctrl+Shift+F2) (#10)
+- startx/starty not always working correctly (#11)
 
-## v2.1 (2024-06-13)
+## v2.1 (2025-06-13)
 
-- Display multiple messages at once
-- Move text around using start and end coordinates (startx, starty, movetime)
-- Adjust the "burn in"-time of messages
+- Display multiple messages at once (#9)
+  - Move text around using start and end coordinates (startx, starty, movetime)
+  - Adjust the "burn in"-time of messages
 - Improved font proportional display and handling of font message coordinates
 - Save and restore "Always on top" window state
 - New script file commands (see script-default.txt for details)
