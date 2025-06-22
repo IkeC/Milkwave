@@ -1,3 +1,7 @@
+## v2.3
+
+- Option to disable saving last used preset as startup preset (bEnablePresetStartupSavingOnClose=0)
+
 ## v2.2 (2025-06-21)
 
 - Support for input devices (eg. microphones)
