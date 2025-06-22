@@ -16,7 +16,7 @@
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
  
-![Milkwave-2](https://github.com/user-attachments/assets/973b7bad-6a85-445f-94af-fe2805d961f2)
+![Milkwave-2-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
 
 ## Remote Features
 
