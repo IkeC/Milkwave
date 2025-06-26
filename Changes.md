@@ -1,4 +1,4 @@
-## v2.3
+## v2.3 (unreleased)
 
 - Option to disable saving last used preset as startup preset (bEnablePresetStartupSavingOnClose=0)
 
