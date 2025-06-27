@@ -99,9 +99,9 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>windowsapp.lib;DbgHelp.lib;Winmm.lib;d3d9.lib;d3dx9.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>windowsapp.lib;DbgHelp.lib;Winmm.lib;d3d9.lib;d3dx9.lib;Shlwapi.lib;projectM_eval.lib;projectM_ns-eel2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\spoutlibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib;..\spoutlibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -158,10 +158,10 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>windowsapp.lib;DbgHelp.lib;Winmm.lib;d3d9.lib;d3dx9.lib;Shlwapi.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>windowsapp.lib;DbgHelp.lib;Winmm.lib;d3d9.lib;d3dx9.lib;Shlwapi.lib;projectM_eval.lib;projectM_ns-eel2.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\spoutlibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib;..\spoutlibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -183,13 +183,6 @@
     <ClCompile Include="..\audio\log.cpp" />
     <ClCompile Include="..\audio\loopback-capture.cpp" />
     <ClCompile Include="..\audio\prefs.cpp" />
-    <ClCompile Include="..\ns-eel2\nseel-caltab.c" />
-    <ClCompile Include="..\ns-eel2\nseel-cfunc.c" />
-    <ClCompile Include="..\ns-eel2\nseel-compiler.c" />
-    <ClCompile Include="..\ns-eel2\nseel-eval.c" />
-    <ClCompile Include="..\ns-eel2\nseel-lextab.c" />
-    <ClCompile Include="..\ns-eel2\nseel-ram.c" />
-    <ClCompile Include="..\ns-eel2\nseel-yylex.c" />
     <ClCompile Include="..\spoutDX9\SpoutCopy.cpp" />
     <ClCompile Include="..\spoutDX9\SpoutDX9.cpp" />
     <ClCompile Include="..\spoutDX9\SpoutFrameCount.cpp" />
@@ -218,6 +211,7 @@
     <ClInclude Include="..\audio\log.h" />
     <ClInclude Include="..\audio\loopback-capture.h" />
     <ClInclude Include="..\audio\prefs.h" />
+    <ClInclude Include="..\ns-eel2-shim\ns-eel.h" />
     <ClInclude Include="..\spoutDX9\SpoutCommon.h" />
     <ClInclude Include="..\spoutDX9\SpoutCopy.h" />
     <ClInclude Include="..\spoutDX9\SpoutDX9.h" />

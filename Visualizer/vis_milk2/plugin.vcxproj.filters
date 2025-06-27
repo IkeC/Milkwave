@@ -25,27 +25,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ns-eel2\nseel-caltab.c">
-      <Filter>library\ns-eel</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns-eel2\nseel-cfunc.c">
-      <Filter>library\ns-eel</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns-eel2\nseel-compiler.c">
-      <Filter>library\ns-eel</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns-eel2\nseel-eval.c">
-      <Filter>library\ns-eel</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns-eel2\nseel-lextab.c">
-      <Filter>library\ns-eel</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns-eel2\nseel-ram.c">
-      <Filter>library\ns-eel</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns-eel2\nseel-yylex.c">
-      <Filter>library\ns-eel</Filter>
-    </ClCompile>
     <ClCompile Include="Milkdrop2PcmVisualizer.cpp">
       <Filter>musikcube</Filter>
     </ClCompile>
@@ -203,6 +182,9 @@
     </ClInclude>
     <ClInclude Include="milkwave.h" />
     <ClInclude Include="api.h" />
+    <ClInclude Include="..\ns-eel2-shim\ns-eel.h">
+      <Filter>library\ns-eel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="text1.bin">

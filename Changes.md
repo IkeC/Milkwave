@@ -1,5 +1,6 @@
 ## v2.3 (unreleased)
 
+- Now using projectm-eval as expression evaluation library (replacing ns-eel2)
 - Option to disable saving last used preset as startup preset (bEnablePresetStartupSavingOnClose=0)
 
 ## v2.2 (2025-06-21)
