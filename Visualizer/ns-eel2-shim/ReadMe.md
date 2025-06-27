@@ -1,3 +1,5 @@
+Homepage: https://github.com/projectM-visualizer/projectm-eval
+
 NullSoft Expression Evaluation Library Shim
 ===========================================
 

@@ -83,6 +83,7 @@ Many thanks to:
 * oO-MrC-Oo - [XBMC plugin](https://github.com/oO-MrC-Oo/Milkdrop2-XBMC)
 * Casey Langen - [milkdrop2-musikcube](https://github.com/clangen/milkdrop2-musikcube)
 * Matthew van Eerde - [loopback-capture](https://github.com/mvaneerde/blog)
+* projectM - [projectm-eval](https://github.com/projectM-visualizer/projectm-eval)
 * Incubo_ - [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer)
 * milkdrop2077 - [MilkDrop3](https://github.com/milkdrop2077/MilkDrop3)
 * podenthusiast - [Milkwave Logo](https://www.freepik.com/author/podenthusiast/icons)
