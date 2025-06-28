@@ -1735,7 +1735,7 @@ namespace MilkwaveRemote
       lblFactorFrame.TabIndex = 140;
       lblFactorFrame.Text = "Frame";
       lblFactorFrame.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorFrame, "Double-click: Set 0");
+      toolTip1.SetToolTip(lblFactorFrame, "Double-click: Set 1");
       lblFactorFrame.Click += lblFactorFrame_Click;
       // 
       // lblFactorTime
@@ -1746,7 +1746,7 @@ namespace MilkwaveRemote
       lblFactorTime.TabIndex = 138;
       lblFactorTime.Text = "Time";
       lblFactorTime.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorTime, "Double-click: Set 0");
+      toolTip1.SetToolTip(lblFactorTime, "Double-click: Set 1");
       lblFactorTime.Click += lblFactorTime_Click;
       // 
       // lblFactorFPS
@@ -1757,7 +1757,7 @@ namespace MilkwaveRemote
       lblFactorFPS.TabIndex = 142;
       lblFactorFPS.Text = "FPS";
       lblFactorFPS.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorFPS, "Double-click: Set 0");
+      toolTip1.SetToolTip(lblFactorFPS, "Double-click: Set 1");
       lblFactorFPS.Click += lblFactorFPS_Click;
       // 
       // cboParameters
