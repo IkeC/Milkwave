@@ -157,6 +157,10 @@ protected:
 
   int m_show_help;
 
+  float m_frameFactor = 1.0f;
+  float m_timeFactor = 1.0f;
+  float m_fpsFactor = 1.0f;
+
   //=====================================================================================================================
 private:
 

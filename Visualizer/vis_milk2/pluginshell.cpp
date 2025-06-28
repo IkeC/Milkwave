@@ -205,14 +205,16 @@ CPluginShell::~CPluginShell() {
 }
 
 int       CPluginShell::GetFrame() {
+  //return (int)m_frame * m_frameFactor;
   return m_frame;
 };
 float     CPluginShell::GetTime() {
-  return m_time;
+  return m_time * m_timeFactor;
 };
 float     CPluginShell::GetFps() {
-  return m_fps;
+  return m_fps * m_fpsFactor;
 };
+
 HWND      CPluginShell::GetPluginWindow() {
   if (m_lpDX) return m_lpDX->GetHwnd();       else return NULL;
 };
@@ -1348,7 +1350,8 @@ int CPluginShell::PluginRender(unsigned char* pWaveL, unsigned char* pWaveR)//, 
 
   EnforceMaxFPS();
 
-  m_frame++;
+  // m_frame++;
+  m_frame *= m_frameFactor;
 
   return true;
 }

@@ -10575,6 +10575,18 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"CLEARTEXTS", 10) == 0) {
     g_plugin.KillAllSupertexts();
   }
+  else if (wcsncmp(sMessage, L"VAR_TIME=", 9) == 0) {
+    std::wstring message(sMessage + 9);
+    g_plugin.m_timeFactor = std::stof(message);
+  }
+  else if (wcsncmp(sMessage, L"VAR_FRAME=", 10) == 0) {
+    std::wstring message(sMessage + 10);
+    g_plugin.m_frameFactor = std::stof(message);
+  }
+  else if (wcsncmp(sMessage, L"VAR_FPS=", 8) == 0) {
+    std::wstring message(sMessage + 8);
+    g_plugin.m_fpsFactor = std::stof(message);
+  }
 }
 
 void CPlugin::SendPresetChangedInfoToMilkwaveRemote() {

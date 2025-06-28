@@ -149,6 +149,9 @@ namespace MilkwaveRemote
       btnSpace = new Button();
       btnBackspace = new Button();
       btnWatermark = new Button();
+      lblFactorFrame = new Label();
+      lblFactorTime = new Label();
+      lblFactorFPS = new Label();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -220,6 +223,10 @@ namespace MilkwaveRemote
       chkFontBold2 = new CheckBox();
       chkFontItalic1 = new CheckBox();
       chkFontBold1 = new CheckBox();
+      tabSettings = new TabPage();
+      numFactorFPS = new NumericUpDown();
+      numFactorFrame = new NumericUpDown();
+      numFactorTime = new NumericUpDown();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -256,6 +263,10 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWavePushY).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).BeginInit();
       tabFonts.SuspendLayout();
+      tabSettings.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)numFactorFPS).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
       SuspendLayout();
       // 
       // statusStrip1
@@ -1201,7 +1212,7 @@ namespace MilkwaveRemote
       // 
       // lblRotation
       // 
-      lblRotation.Location = new Point(4, 63);
+      lblRotation.Location = new Point(4, 61);
       lblRotation.Name = "lblRotation";
       lblRotation.Size = new Size(65, 23);
       lblRotation.TabIndex = 134;
@@ -1212,7 +1223,7 @@ namespace MilkwaveRemote
       // 
       // lblWarp
       // 
-      lblWarp.Location = new Point(248, 63);
+      lblWarp.Location = new Point(248, 61);
       lblWarp.Name = "lblWarp";
       lblWarp.Size = new Size(46, 23);
       lblWarp.TabIndex = 136;
@@ -1223,7 +1234,7 @@ namespace MilkwaveRemote
       // 
       // lblDecay
       // 
-      lblDecay.Location = new Point(133, 63);
+      lblDecay.Location = new Point(133, 61);
       lblDecay.Name = "lblDecay";
       lblDecay.Size = new Size(48, 23);
       lblDecay.TabIndex = 138;
@@ -1287,7 +1298,7 @@ namespace MilkwaveRemote
       // 
       // lblEcho
       // 
-      lblEcho.Location = new Point(360, 63);
+      lblEcho.Location = new Point(360, 62);
       lblEcho.Name = "lblEcho";
       lblEcho.Size = new Size(48, 23);
       lblEcho.TabIndex = 151;
@@ -1716,6 +1727,39 @@ namespace MilkwaveRemote
       btnWatermark.Click += btnWatermark_Click;
       btnWatermark.MouseDown += btnWatermark_MouseDown;
       // 
+      // lblFactorFrame
+      // 
+      lblFactorFrame.Location = new Point(4, 33);
+      lblFactorFrame.Name = "lblFactorFrame";
+      lblFactorFrame.Size = new Size(65, 23);
+      lblFactorFrame.TabIndex = 140;
+      lblFactorFrame.Text = "Frame";
+      lblFactorFrame.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblFactorFrame, "Double-click: Set 0");
+      lblFactorFrame.Click += lblFactorFrame_Click;
+      // 
+      // lblFactorTime
+      // 
+      lblFactorTime.Location = new Point(4, 5);
+      lblFactorTime.Name = "lblFactorTime";
+      lblFactorTime.Size = new Size(65, 23);
+      lblFactorTime.TabIndex = 138;
+      lblFactorTime.Text = "Time";
+      lblFactorTime.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblFactorTime, "Double-click: Set 0");
+      lblFactorTime.Click += lblFactorTime_Click;
+      // 
+      // lblFactorFPS
+      // 
+      lblFactorFPS.Location = new Point(4, 61);
+      lblFactorFPS.Name = "lblFactorFPS";
+      lblFactorFPS.Size = new Size(65, 23);
+      lblFactorFPS.TabIndex = 142;
+      lblFactorFPS.Text = "FPS";
+      lblFactorFPS.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblFactorFPS, "Double-click: Set 0");
+      lblFactorFPS.Click += lblFactorFPS_Click;
+      // 
       // cboParameters
       // 
       cboParameters.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -1837,7 +1881,7 @@ namespace MilkwaveRemote
       // 
       // numWaveMode
       // 
-      numWaveMode.Location = new Point(74, 7);
+      numWaveMode.Location = new Point(75, 7);
       numWaveMode.Margin = new Padding(3, 2, 3, 2);
       numWaveMode.Maximum = new decimal(new int[] { 16, 0, 0, 0 });
       numWaveMode.Name = "numWaveMode";
@@ -2225,6 +2269,7 @@ namespace MilkwaveRemote
       tabControl.Controls.Add(tabMessage);
       tabControl.Controls.Add(tabWave);
       tabControl.Controls.Add(tabFonts);
+      tabControl.Controls.Add(tabSettings);
       tabControl.Dock = DockStyle.Fill;
       tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
       tabControl.LineColor = SystemColors.ControlDark;
@@ -2482,7 +2527,7 @@ namespace MilkwaveRemote
       // 
       numWaveEcho.DecimalPlaces = 3;
       numWaveEcho.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveEcho.Location = new Point(410, 65);
+      numWaveEcho.Location = new Point(410, 64);
       numWaveEcho.Margin = new Padding(3, 2, 3, 2);
       numWaveEcho.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveEcho.Name = "numWaveEcho";
@@ -2510,7 +2555,7 @@ namespace MilkwaveRemote
       // 
       numWaveDecay.DecimalPlaces = 3;
       numWaveDecay.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveDecay.Location = new Point(186, 64);
+      numWaveDecay.Location = new Point(186, 63);
       numWaveDecay.Margin = new Padding(3, 2, 3, 2);
       numWaveDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numWaveDecay.Name = "numWaveDecay";
@@ -2523,7 +2568,7 @@ namespace MilkwaveRemote
       // 
       numWaveWarp.DecimalPlaces = 3;
       numWaveWarp.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveWarp.Location = new Point(298, 64);
+      numWaveWarp.Location = new Point(298, 63);
       numWaveWarp.Margin = new Padding(3, 2, 3, 2);
       numWaveWarp.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveWarp.Name = "numWaveWarp";
@@ -2537,7 +2582,7 @@ namespace MilkwaveRemote
       // 
       numWaveRotation.DecimalPlaces = 3;
       numWaveRotation.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveRotation.Location = new Point(75, 64);
+      numWaveRotation.Location = new Point(75, 63);
       numWaveRotation.Margin = new Padding(3, 2, 3, 2);
       numWaveRotation.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
       numWaveRotation.Minimum = new decimal(new int[] { 9999, 0, 0, -2147287040 });
@@ -2804,6 +2849,66 @@ namespace MilkwaveRemote
       chkFontBold1.TextImageRelation = TextImageRelation.ImageAboveText;
       chkFontBold1.UseVisualStyleBackColor = true;
       // 
+      // tabSettings
+      // 
+      tabSettings.BackColor = SystemColors.ControlLight;
+      tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(numFactorFPS);
+      tabSettings.Controls.Add(lblFactorFPS);
+      tabSettings.Controls.Add(numFactorFrame);
+      tabSettings.Controls.Add(numFactorTime);
+      tabSettings.Controls.Add(lblFactorFrame);
+      tabSettings.Controls.Add(lblFactorTime);
+      tabSettings.Location = new Point(4, 25);
+      tabSettings.Margin = new Padding(0);
+      tabSettings.Name = "tabSettings";
+      tabSettings.Padding = new Padding(3);
+      tabSettings.Size = new Size(617, 182);
+      tabSettings.TabIndex = 4;
+      tabSettings.Text = "Settings";
+      // 
+      // numFactorFPS
+      // 
+      numFactorFPS.DecimalPlaces = 2;
+      numFactorFPS.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFactorFPS.Location = new Point(75, 62);
+      numFactorFPS.Margin = new Padding(3, 2, 3, 2);
+      numFactorFPS.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorFPS.Name = "numFactorFPS";
+      numFactorFPS.Size = new Size(56, 23);
+      numFactorFPS.TabIndex = 141;
+      numFactorFPS.TextAlign = HorizontalAlignment.Center;
+      numFactorFPS.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorFPS.ValueChanged += numFactorFPS_ValueChanged;
+      // 
+      // numFactorFrame
+      // 
+      numFactorFrame.DecimalPlaces = 2;
+      numFactorFrame.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFactorFrame.Location = new Point(75, 35);
+      numFactorFrame.Margin = new Padding(3, 2, 3, 2);
+      numFactorFrame.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorFrame.Name = "numFactorFrame";
+      numFactorFrame.Size = new Size(56, 23);
+      numFactorFrame.TabIndex = 139;
+      numFactorFrame.TextAlign = HorizontalAlignment.Center;
+      numFactorFrame.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorFrame.ValueChanged += munFactorFrame_ValueChanged;
+      // 
+      // numFactorTime
+      // 
+      numFactorTime.DecimalPlaces = 2;
+      numFactorTime.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFactorTime.Location = new Point(75, 7);
+      numFactorTime.Margin = new Padding(3, 2, 3, 2);
+      numFactorTime.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorTime.Name = "numFactorTime";
+      numFactorTime.Size = new Size(56, 23);
+      numFactorTime.TabIndex = 137;
+      numFactorTime.TextAlign = HorizontalAlignment.Center;
+      numFactorTime.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorTime.ValueChanged += numFactorTime_ValueChanged;
+      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -2860,6 +2965,10 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWavePushY).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).EndInit();
       tabFonts.ResumeLayout(false);
+      tabSettings.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)numFactorFPS).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
       ResumeLayout(false);
       PerformLayout();
     }
@@ -3061,5 +3170,12 @@ namespace MilkwaveRemote
     private ComboBox cboFont2;
     private Panel pnlColorFont2;
     private Button btnTestFonts;
+    private TabPage tabSettings;
+    private NumericUpDown numFactorFrame;
+    private NumericUpDown numFactorTime;
+    private Label lblFactorFrame;
+    private Label lblFactorTime;
+    private NumericUpDown numFactorFPS;
+    private Label lblFactorFPS;
   }
 }

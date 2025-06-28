@@ -186,7 +186,10 @@ namespace MilkwaveRemote {
       Config,
       TestFonts,
       ClearSprites,
-      ClearTexts
+      ClearTexts,
+      TimeFactor,
+      FrameFactor,
+      FpsFactor,
     }
     private void SetAllControlFontSizes(Control parent, float fontSize) {
       foreach (Control ctrl in parent.Controls) {
@@ -568,6 +571,12 @@ namespace MilkwaveRemote {
           message = "CLEARSPRITES";
         } else if (type == MessageType.ClearTexts) {
           message = "CLEARTEXTS";
+        } else if (type == MessageType.TimeFactor) {
+          message = "VAR_TIME=" + numFactorTime.Value.ToString(CultureInfo.InvariantCulture);
+        } else if (type == MessageType.FrameFactor) {
+          message = "VAR_FRAME=" + numFactorFrame.Value.ToString(CultureInfo.InvariantCulture);
+        } else if (type == MessageType.FpsFactor) {
+          message = "VAR_FPS=" + numFactorFPS.Value.ToString(CultureInfo.InvariantCulture);
         } else if (type == MessageType.PresetLink) {
           message = "LINK=" + messageToSend;
         } else if (type == MessageType.Message) {
@@ -2111,7 +2120,7 @@ namespace MilkwaveRemote {
       if (chkAmpLinked.Checked) {
         numAmpRight.Value = numAmpLeft.Value;
       }
-      SetAmpIncrements(numAmpLeft);
+      SetExpIncrements(numAmpLeft);
       SendToMilkwaveVisualizer("", MessageType.Amplify);
     }
 
@@ -2119,11 +2128,11 @@ namespace MilkwaveRemote {
       if (chkAmpLinked.Checked) {
         numAmpLeft.Value = numAmpRight.Value;
       }
-      SetAmpIncrements(numAmpRight);
+      SetExpIncrements(numAmpRight);
       SendToMilkwaveVisualizer("", MessageType.Amplify);
     }
 
-    private void SetAmpIncrements(NumericUpDown nud) {
+    private void SetExpIncrements(NumericUpDown nud) {
       // Ensure the Tag property is cast to decimal before comparison
       decimal previousValue = nud.Tag is decimal tagValue ? tagValue : 0;
       bool up = previousValue < nud.Value;
@@ -2134,8 +2143,10 @@ namespace MilkwaveRemote {
         nud.Increment = 0.1M;
       } else if (nud.Value < 10M || (nud.Value == 10M && !up)) {
         nud.Increment = 1M;
-      } else {
+      } else if (nud.Value < 100M || (nud.Value == 100M && !up)) {
         nud.Increment = 5M;
+      } else {
+        nud.Increment = 10M;
       }
       nud.Tag = nud.Value;
     }
@@ -3019,6 +3030,33 @@ namespace MilkwaveRemote {
 
     private void cboAutoplay_SelectedIndexChanged(object sender, EventArgs e) {
       toolTip1.SetToolTip(cboAutoplay, cboAutoplay.Text);
+    }
+
+    private void numFactorTime_ValueChanged(object sender, EventArgs e) {
+      SetExpIncrements(numFactorTime);
+      SendToMilkwaveVisualizer("", MessageType.TimeFactor);
+    }
+
+    private void munFactorFrame_ValueChanged(object sender, EventArgs e) {
+      SetExpIncrements(numFactorFrame);
+      SendToMilkwaveVisualizer("", MessageType.FrameFactor);
+    }
+
+    private void numFactorFPS_ValueChanged(object sender, EventArgs e) {
+      SetExpIncrements(numFactorFPS);
+      SendToMilkwaveVisualizer("", MessageType.FpsFactor);
+    }
+
+    private void lblFactorTime_Click(object sender, EventArgs e) {
+      numFactorTime.Value = 1;
+    }
+
+    private void lblFactorFrame_Click(object sender, EventArgs e) {
+      numFactorFrame.Value = 1;
+    }
+
+    private void lblFactorFPS_Click(object sender, EventArgs e) {
+      numFactorFPS.Value = 1;
     }
   } // end class
 } // end namespace
