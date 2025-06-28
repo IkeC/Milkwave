@@ -818,6 +818,21 @@ namespace MilkwaveRemote {
               SendToMilkwaveVisualizer("", MessageType.ClearTexts);
             } else if (tokenUpper.Equals("CLEARPARAMS")) {
               cboParameters.Text = "";
+            } else if (tokenUpper.StartsWith("TIME=")) {
+              string value = token.Substring(5);
+              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+                numFactorTime.Value = (decimal)parsedValue;
+              }
+            } else if (tokenUpper.StartsWith("FRAME=")) {
+              string value = token.Substring(6);
+              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+                numFactorFrame.Value = (decimal)parsedValue;
+              }
+            } else if (tokenUpper.StartsWith("FPS=")) {
+              string value = token.Substring(4);
+              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture,out float parsedValue)) {
+                numFactorFPS.Value = (decimal)parsedValue;
+              }
             } else { // no known command, send as message
               SendToMilkwaveVisualizer(token, MessageType.Message);
             }
