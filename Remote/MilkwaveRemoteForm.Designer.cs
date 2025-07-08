@@ -1212,7 +1212,7 @@ namespace MilkwaveRemote
       // 
       // lblRotation
       // 
-      lblRotation.Location = new Point(4, 61);
+      lblRotation.Location = new Point(5, 61);
       lblRotation.Name = "lblRotation";
       lblRotation.Size = new Size(65, 23);
       lblRotation.TabIndex = 134;
@@ -1729,13 +1729,13 @@ namespace MilkwaveRemote
       // 
       // lblFactorFrame
       // 
-      lblFactorFrame.Location = new Point(4, 33);
+      lblFactorFrame.Location = new Point(4, 61);
       lblFactorFrame.Name = "lblFactorFrame";
       lblFactorFrame.Size = new Size(65, 23);
       lblFactorFrame.TabIndex = 140;
       lblFactorFrame.Text = "Frame";
       lblFactorFrame.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorFrame, "Double-click: Set 1");
+      toolTip1.SetToolTip(lblFactorFrame, "Value by which the internal frame counter is incremented on every loop\r\nHigher values may trigger counter-based preset events more often\r\nDouble-click: Set 1");
       lblFactorFrame.Click += lblFactorFrame_Click;
       // 
       // lblFactorTime
@@ -1746,18 +1746,18 @@ namespace MilkwaveRemote
       lblFactorTime.TabIndex = 138;
       lblFactorTime.Text = "Time";
       lblFactorTime.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorTime, "Double-click: Set 1");
+      toolTip1.SetToolTip(lblFactorTime, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nDouble-click: Set 1");
       lblFactorTime.Click += lblFactorTime_Click;
       // 
       // lblFactorFPS
       // 
-      lblFactorFPS.Location = new Point(4, 61);
+      lblFactorFPS.Location = new Point(4, 34);
       lblFactorFPS.Name = "lblFactorFPS";
       lblFactorFPS.Size = new Size(65, 23);
       lblFactorFPS.TabIndex = 142;
       lblFactorFPS.Text = "FPS";
       lblFactorFPS.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorFPS, "Double-click: Set 1");
+      toolTip1.SetToolTip(lblFactorFPS, "Values < 1 may speed up rendering of the preset, not affecting sprites and notifications\r\nDouble-click: Set 1");
       lblFactorFPS.Click += lblFactorFPS_Click;
       // 
       // cboParameters
@@ -2871,7 +2871,7 @@ namespace MilkwaveRemote
       // 
       numFactorFPS.DecimalPlaces = 2;
       numFactorFPS.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFactorFPS.Location = new Point(75, 62);
+      numFactorFPS.Location = new Point(75, 35);
       numFactorFPS.Margin = new Padding(3, 2, 3, 2);
       numFactorFPS.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numFactorFPS.Name = "numFactorFPS";
@@ -2883,9 +2883,8 @@ namespace MilkwaveRemote
       // 
       // numFactorFrame
       // 
-      numFactorFrame.DecimalPlaces = 2;
       numFactorFrame.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFactorFrame.Location = new Point(75, 35);
+      numFactorFrame.Location = new Point(75, 63);
       numFactorFrame.Margin = new Padding(3, 2, 3, 2);
       numFactorFrame.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numFactorFrame.Name = "numFactorFrame";

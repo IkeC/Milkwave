@@ -1351,7 +1351,7 @@ int CPluginShell::PluginRender(unsigned char* pWaveL, unsigned char* pWaveR)//, 
   EnforceMaxFPS();
 
   // m_frame++;
-  m_frame += (int)1*m_frameFactor;
+  m_frame += (int)m_frameFactor;
 
   return true;
 }
