@@ -2883,7 +2883,6 @@ namespace MilkwaveRemote
       // 
       // numFactorFrame
       // 
-      numFactorFrame.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
       numFactorFrame.Location = new Point(75, 63);
       numFactorFrame.Margin = new Padding(3, 2, 3, 2);
       numFactorFrame.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });

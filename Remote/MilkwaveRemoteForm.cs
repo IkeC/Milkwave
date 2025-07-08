@@ -3053,7 +3053,6 @@ namespace MilkwaveRemote {
     }
 
     private void munFactorFrame_ValueChanged(object sender, EventArgs e) {
-      SetExpIncrements(numFactorFrame);
       SendToMilkwaveVisualizer("", MessageType.FrameFactor);
     }
 
