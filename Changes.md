@@ -1,8 +1,9 @@
 ## v2.3 (unreleased)
 
 - Settings Tab: Change internal time, FPS and frame counters (#13)
-- Replacing expression evaluation library ns-eel2 with projectM-eval
+- Replaced expression evaluation library ns-eel2 with projectM-eval (by @kblaschke)
 - Option to disable saving last used preset as startup preset (bEnablePresetStartupSavingOnClose=0)
+- Many new and updated presets (by @OfficialIncubo)
 
 ## v2.2 (2025-06-21)
 
