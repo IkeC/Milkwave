@@ -202,9 +202,9 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\Remote\plugin_icon.ico" />
+    <Xml Include="manifest.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="manifest.xml" />
+    <Image Include="plugin_icon.ico" />
   </ItemGroup>
 </Project>

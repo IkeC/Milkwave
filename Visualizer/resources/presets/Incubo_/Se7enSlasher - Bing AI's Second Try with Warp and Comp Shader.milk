@@ -4,54 +4,54 @@ PSVERSION_WARP=2
 PSVERSION_COMP=2
 [preset00]
 fRating=4.000
-fGammaAdj=2.001
-fDecay=0.950
-fVideoEchoZoom=1.000
+fGammaAdj=1.000
+fDecay=1.000
+fVideoEchoZoom=2.000
 fVideoEchoAlpha=0.000
 nVideoEchoOrientation=0
 nWaveMode=1
 bAdditiveWaves=0
 bWaveDots=0
 bWaveThick=0
-bModWaveAlphaByVolume=0
+bModWaveAlphaByVolume=1
 bMaximizeWaveColor=1
-bTexWrap=0
+bTexWrap=1
 bDarkenCenter=0
 bRedBlueStereo=0
 bBrighten=0
 bDarken=0
 bSolarize=0
 bInvert=0
-fWaveAlpha=3.073
-fWaveScale=1.286
-fWaveSmoothing=0.000
-fWaveParam=0.000
-fModWaveAlphaStart=0.710
-fModWaveAlphaEnd=1.300
+fWaveAlpha=8.200
+fWaveScale=1.013
+fWaveSmoothing=0.900
+fWaveParam=-0.400
+fModWaveAlphaStart=1.050
+fModWaveAlphaEnd=1.650
 fWarpAnimSpeed=1.000
-fWarpScale=1.331
-fZoomExponent=1.00000
-fShader=0.000
-zoom=0.99951
-rot=0.00000
-cx=0.500
-cy=0.500
+fWarpScale=2.853
+fZoomExponent=3.60000
+fShader=1.000
+zoom=1.02500
+rot=-0.02000
+cx=-0.500
+cy=-1.000
 dx=0.00000
 dy=0.00000
-warp=0.01010
+warp=1.00000
 sx=1.00000
 sy=1.00000
-wave_r=0.650
-wave_g=0.650
-wave_b=0.650
-wave_x=0.500
-wave_y=0.500
-ob_size=0.005
+wave_r=0.000
+wave_g=0.000
+wave_b=0.000
+wave_x=0.000
+wave_y=0.000
+ob_size=0.010
 ob_r=0.000
 ob_g=0.000
 ob_b=0.000
-ob_a=0.800
-ib_size=0.000
+ob_a=0.000
+ib_size=0.010
 ib_r=0.250
 ib_g=0.250
 ib_b=0.250
@@ -664,49 +664,26 @@ shapecode_15_border_r=1.000
 shapecode_15_border_g=1.000
 shapecode_15_border_b=1.000
 shapecode_15_border_a=0.100
-per_frame_1=wave_r = wave_r + 0.5*sin(time*1.13);
-per_frame_2=wave_g = wave_g + 0.5*sin(time*1.23);
-per_frame_3=wave_b = wave_b + 0.5*sin(time*1.33);
-per_pixel_1=zoom = zoom + 0.05*(sin(6*ang) + sin(sin(time*2*sin(time)*rad))*0.3 - cos(rad)*0.1);
-per_pixel_2=rot = rot + 0.5*sin(0.5-rad)*cos(0.02*(0.5-rad)+time);
-per_pixel_3=sx = sx + 0.01*(0.99*1-rad)*sin(0.733*time)*below(sin(time),0);
-per_pixel_4=sy = sy + 0.01*(0.99*1-rad)*cos(0.953*time)*above(sin(time),0);
-per_pixel_5=zoom = zoom - 0.05*(1-rad)*below(rad,0.5);
+per_frame_1=//Bing AI's implementation
+per_frame_2=wave_r = wave_r + 0.200*( 0.60*sin(2*time) + 0.40*sin(3*time) );
+per_frame_3=wave_g = wave_g + 0.200*( 0.60*sin(5*time) + 0.40*sin(4*time) );
+per_frame_4=wave_b = wave_b + 0.200*( 0.60*sin(7*time) + 0.40*sin(6*time) );
+per_frame_5=zoom = zoom + 0.023*( 0.60*sin(2*time) + 0.40*sin(3*time) );
+per_frame_6=rot = rot + 0.030*( 0.60*sin(4*time) + 0.40*sin(5*time) );
+per_frame_7=
+per_frame_8=//Making it center
+per_frame_9=wave_x=0.5;
+per_frame_10=wave_y=0.5;
+
 warp_1=`shader_body
 warp_2=`{
-warp_3=`    // PAINTERLY EFFECT:
-warp_4=`    float2 uv2 = uv;
-warp_5=`    const float mipbias = 0;
-warp_6=`    float2 delta2 = texsize.zw*float2(1,1);
-warp_7=`    float3 blurry_color = tex2D( sampler_main, uv2 + delta2 ).xyz;
-warp_8=`    uv2.xy += (blurry_color.xy-0.37) * 0.02;
-warp_9=`
-warp_10=`    // sample previous frame
-warp_11=`    ret = tex2D( sampler_main, uv2 ).xyz;
-warp_12=`
-warp_13=`    // darken over time
-warp_14=`    ret -= 0.004;    
-warp_15=`}
+warp_3=`    ret = tex2D(sampler_main, uv).xyz;
+warp_4=`    ret *= pow(sin(time),2);
+warp_5=`}
+
 comp_1=`shader_body
 comp_2=`{
-comp_3=`  //rad = frac(rad*2);
-comp_4=`  rad = pow(rad,0.5)*1;
-comp_5=`
-comp_6=`
-comp_7=`  float ang2 = frac(ang/6.28*7 + time*0.05);
-comp_8=`  ang2 = abs(ang2*2-1);
-comp_9=`  float2 uv2 = 0.5 + rad*0.5*float2(cos(ang2),sin(ang2));    
-comp_10=`
-comp_11=`  uv = uv2;
-comp_12=`  //uv = lerp(uv, uv2, 0.5 + 0.5*cos(ang + time*3));
-comp_13=`
-comp_14=`
-comp_15=`  ret = tex2D(sampler_main, uv).xyz;
-comp_16=`
-comp_17=`  //ret = lum(ret);
-comp_18=`  //ret = pow(ret,float3(0.7,1.3,1.6));
-comp_19=`
-comp_20=`  ret = -0.3 + 1.7*ret;
-comp_21=`}
-comp_22=`
-comp_23=`
+comp_3=`    ret = tex2D(sampler_main, uv).xyz;
+comp_4=`    ret += tex2D(sampler_main, uv+float2(-rad*.01,-ang*.01)).xyz;
+comp_5=`    ret *= .5;
+comp_6=`}

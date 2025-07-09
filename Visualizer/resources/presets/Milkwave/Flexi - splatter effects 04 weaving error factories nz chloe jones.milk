@@ -1,0 +1,156 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=3
+PSVERSION_WARP=2
+PSVERSION_COMP=3
+[preset00]
+fRating=5.000
+fGammaAdj=1.000
+fDecay=0.995
+fVideoEchoZoom=1.007
+fVideoEchoAlpha=0.000
+nVideoEchoOrientation=3
+nWaveMode=7
+bAdditiveWaves=1
+bWaveDots=0
+bWaveThick=0
+bModWaveAlphaByVolume=1
+bMaximizeWaveColor=0
+bTexWrap=0
+bDarkenCenter=0
+bRedBlueStereo=0
+bBrighten=0
+bDarken=0
+bSolarize=0
+bInvert=0
+fWaveAlpha=0.001
+fWaveScale=0.573
+fWaveSmoothing=0.000
+fWaveParam=0.000
+fModWaveAlphaStart=0.240
+fModWaveAlphaEnd=1.300
+fWarpAnimSpeed=0.010
+fWarpScale=100.000
+fZoomExponent=0.01000
+fShader=0.000
+zoom=0.99010
+rot=0.00000
+cx=0.500
+cy=0.500
+dx=0.00000
+dy=0.00000
+warp=0.01000
+sx=1.00000
+sy=1.00000
+wave_r=0.650
+wave_g=0.650
+wave_b=0.650
+wave_x=0.500
+wave_y=0.500
+ob_size=0.000
+ob_r=0.000
+ob_g=0.000
+ob_b=0.000
+ob_a=1.000
+ib_size=0.000
+ib_r=1.000
+ib_g=1.000
+ib_b=1.000
+ib_a=1.000
+nMotionVectorsX=28.000
+nMotionVectorsY=9.000
+mv_dx=0.000
+mv_dy=0.000
+mv_l=0.900
+mv_r=1.000
+mv_g=1.000
+mv_b=1.000
+mv_a=0.000
+b1n=0.000
+b2n=0.000
+b3n=0.000
+b1x=1.000
+b2x=1.000
+b3x=1.000
+b1ed=0.000
+shapecode_1_enabled=1
+shapecode_1_sides=32
+shapecode_1_additive=0
+shapecode_1_thickOutline=1
+shapecode_1_textured=0
+shapecode_1_num_inst=1
+shapecode_1_x=0.500
+shapecode_1_y=0.500
+shapecode_1_rad=0.05033
+shapecode_1_ang=0.03000
+shapecode_1_tex_ang=0.00000
+shapecode_1_tex_zoom=1.00000
+shapecode_1_r=0.210
+shapecode_1_g=0.440
+shapecode_1_b=0.230
+shapecode_1_a=0.900
+shapecode_1_r2=0.180
+shapecode_1_g2=1.000
+shapecode_1_b2=0.110
+shapecode_1_a2=0.900
+shapecode_1_border_r=0.150
+shapecode_1_border_g=0.400
+shapecode_1_border_b=0.480
+shapecode_1_border_a=0.900
+shape_1_per_frame1=ang = time*0.01*2.4;
+shape_1_per_frame2=//x = 0.5 + 0.26*cos(time*0.01*3.1) + 0.13*cos(time*0.01*1.7);
+shape_1_per_frame3=//y = 0.5 + 0.22*sin(time*0.01*3.3) + 0.14*sin(time*0.01*1.2);
+shape_1_per_frame4=r = 0.5 + 0.5*sin(time*0.01*0.713 + 1);
+shape_1_per_frame5=g = 0.5 + 0.5*sin(time*0.01*0.563 + 2);
+shape_1_per_frame6=b = 0.5 + 0.5*cos(time*0.01*0.654 + 5);
+shape_1_per_frame7=r2 = 0.15 + 0.5*cos(time*0.01*0.885 + 4);
+shape_1_per_frame8=g2 = 0.5 + 0.5*sin(time*0.01*0.556+ 1);
+shape_1_per_frame9=b2 = 0.5 + 0.5*sin(time*0.01*0.638 + 3);
+shape_1_per_frame10=border_red = sin(time*0.01*0.644);
+shape_1_per_frame11=border_green = cos(time*0.01*0.874);
+shape_1_per_frame12=border_blue = sin(time*0.01*0.954);
+per_frame_init_1=x1 = 0.9;
+per_frame_init_2=y1 = 0.5;
+per_frame_init_3=
+per_frame_init_4=x2 = 0.5; y2 = 0.5;
+per_frame_init_5=x3 = 0.5; y3 = 0.5;
+per_frame_init_6=x4 = 0.5; y4 = 0.5;
+per_frame_1=zoom = 1;//0.999;
+per_frame_2=warp = 0;
+per_frame_3=dx = -0.001;
+per_frame_4=rot = 0.0;
+warp_1=`shader_body
+warp_2=`{
+warp_3=`    float2 d = texsize.zw*4;
+warp_4=`    float3 dx = ( 2*GetBlur1(uv+float2(1,0)*d)-2*GetBlur1(uv-float2(1,0)*d) );
+warp_5=`    float3 dy = ( 2*GetBlur1(uv+float2(0,1)*d)-2*GetBlur1(uv-float2(0,1)*d) );
+warp_6=`float2 dz = -float2(dx.x,dy.x)*texsize.zw*1;
+warp_7=`
+warp_8=`//ret = GetPixel(uv);
+warp_9=`ret = 0;
+warp_10=`ret.x = tex2d(sampler_fw_main,uv - dz).x - 0.0 - (GetBlur3(uv).x-GetBlur1(uv+dz).x) ;
+warp_11=`float4 noise2 = tex3D(sampler_noisevol_hq, 
+warp_12=`                      ((uv.xyy+float3(lum(roam_sin.xy),
+warp_13=`                                           lum(roam_cos.yx),
+warp_14=`                                           0)*0.5
+warp_15=`                       )*texsize.xyy*texsize_noisevol_hq.zww
+warp_16=`                      ).xyz*
+warp_17=`                      float3(1,1,0)*0.05 + 
+warp_18=`                      time*float3(0,0,1)*0.2 
+warp_19=`                     );
+warp_20=`ret += (noise2)*.2; 
+warp_21=`}
+comp_1=`shader_body
+comp_2=`{
+comp_3=`ret = GetPixel(uv).x*(1-GetBlur2(uv).x);
+comp_4=`float4 noise2 = tex3D(sampler_noisevol_hq, 
+comp_5=`                      ((uv.xyy+float3(lum(roam_sin.xy),
+comp_6=`                                           lum(roam_cos.yx),
+comp_7=`                                           0)*0.5
+comp_8=`                       )*texsize.xyy*texsize_noisevol_hq.zww
+comp_9=`                      ).xyz*
+comp_10=`                      float3(1,1,0)*0.05 + 
+comp_11=`                      time*float3(0,0,1)*0.2 
+comp_12=`                     );
+comp_13=`ret *= (noise2)*2.31; 
+comp_14=`ret += (1-GetPixel(uv).x)*GetBlur1(uv).x*float3(2,1.2,0);
+comp_15=`}

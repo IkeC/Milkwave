@@ -36,6 +36,13 @@
         "top"
       ]
     },
+    "01_mw_new40": {
+      "PresetPath": "Incubo_ Picks\\01_MW_new40.milk",
+      "Tags": [
+        "calm",
+        "dark"
+      ]
+    },
     "02_mw_new03t4a (se7enslasher\u0027s edit)": {
       "PresetPath": "Incubo_\\02_MW_new03T4a (Se7enSlasher\u0027s Edit).milk",
       "Tags": [
@@ -418,10 +425,23 @@
         "rich"
       ]
     },
+    "cope - strange attractor [flexis let it grow mix] (jelly 5-56 [volume noise zoom-in])": {
+      "PresetPath": "Milkwave\\Cope - strange attractor [flexis let it grow mix] (Jelly 5-56 [volume noise zoom-in]).milk",
+      "Tags": [
+        "calm",
+        "colorful"
+      ]
+    },
     "cope - the neverending explosion of red liquid fire": {
       "PresetPath": "Butterchurn\\Cope - The Neverending Explosion of Red Liquid Fire.milk",
       "Tags": [
         "vibrant"
+      ]
+    },
+    "cynos - glowing viscous sustance": {
+      "PresetPath": "Milkwave\\Cynos - Glowing Viscous Sustance.milk",
+      "Tags": [
+        "colorful"
       ]
     },
     "eo.s. \u002B geiss - glowsticks v2 02 (relief mix)": {
@@ -679,8 +699,7 @@
     "flexi - hue burst": {
       "PresetPath": "Milkwave\\Flexi - hue burst.milk",
       "Tags": [
-        "calm",
-        "retro"
+        "calm"
       ]
     },
     "flexi - infused with the spiral": {
@@ -799,6 +818,15 @@
     "flexi - smouldering": {
       "PresetPath": "Milkwave\\Flexi - smouldering.milk",
       "Tags": [
+        "dark",
+        "top",
+        "watermark"
+      ]
+    },
+    "flexi - splatter effects 04 weaving error factories nz chloe jones": {
+      "PresetPath": "Milkwave\\Flexi - splatter effects 04 weaving error factories nz chloe jones.milk",
+      "Tags": [
+        "calm",
         "dark",
         "top",
         "watermark"
@@ -1027,6 +1055,12 @@
         "watermark"
       ]
     },
+    "isosceles inferenceillusionist milkdroplm 20241204 v1663": {
+      "PresetPath": "Milkwave\\Isosceles InferenceIllusionist MilkdropLM 20241204 v1663.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
     "krash \u0026 rovastar - cerebral demons - phat \u002B eo.s. killer death bunny remix": {
       "PresetPath": "Milkwave\\Krash \u0026 Rovastar - Cerebral Demons - Phat \u002B Eo.S. Killer Death Bunny Remix.milk",
       "Tags": [
@@ -1191,6 +1225,12 @@
         "fly"
       ]
     },
+    "martin - kings cross": {
+      "PresetPath": "Milkwave\\martin - kings cross.milk",
+      "Tags": [
+        "colorful"
+      ]
+    },
     "martin - liquid arrows": {
       "PresetPath": "Butterchurn\\Martin - liquid arrows.milk",
       "Tags": [
@@ -1216,6 +1256,13 @@
       "PresetPath": "Butterchurn\\martin - mucus cervix.milk",
       "Tags": [
         "liquid"
+      ]
+    },
+    "martin - push ax": {
+      "PresetPath": "Milkwave\\martin - push ax.milk",
+      "Tags": [
+        "colorful",
+        "fly"
       ]
     },
     "martin - reflections on black tiles": {
@@ -1320,6 +1367,12 @@
         "retro"
       ]
     },
+    "mw_new22": {
+      "PresetPath": "Milkwave\\MW_new22.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
     "my dream in a pharmacy": {
       "PresetPath": "Incubo_\\my dream in a pharmacy.milk",
       "Tags": [
@@ -1331,6 +1384,12 @@
       "Tags": [
         "dark",
         "simple"
+      ]
+    },
+    "nivush - tunnel": {
+      "PresetPath": "Milkwave\\Nivush - Tunnel.milk",
+      "Tags": [
+        "fly"
       ]
     },
     "orb - dark omen": {

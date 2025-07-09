@@ -249,10 +249,10 @@
     <None Include="text1_page2.bin" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\Remote\plugin_icon.ico" />
+    <Xml Include="manifest.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="manifest.xml" />
+    <Image Include="plugin_icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
