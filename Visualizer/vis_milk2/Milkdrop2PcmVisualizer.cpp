@@ -384,9 +384,6 @@ static void ToggleClickThrough(HWND hWnd) {
 
 static void ToggleBorderlessFullscreen(HWND hWnd) {
   try {
-    // may crash otherwise for some reason
-    g_plugin.KillAllSprites();
-
     static bool previousClickthrough = false; // Store the previous clickthrough state
     static float previousOpacity = 1.0f; // Store the previous opacity (fully opaque by default)
 

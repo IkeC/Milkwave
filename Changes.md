@@ -2,6 +2,7 @@
 
 - Settings Tab: Change internal time, FPS and frame counters (#13)
 - Replaced expression evaluation library ns-eel2 with projectM-eval (by @kblaschke)
+- Fix for Visualizer crashing when resizing or going fullscreen with more than one sprite displayed
 - Option to disable saving last used preset as startup preset (bEnablePresetStartupSavingOnClose=0)
 - Many new and updated presets (by @OfficialIncubo)
 
