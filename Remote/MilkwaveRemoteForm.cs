@@ -830,7 +830,7 @@ namespace MilkwaveRemote {
               }
             } else if (tokenUpper.StartsWith("FPS=")) {
               string value = token.Substring(4);
-              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture,out float parsedValue)) {
+              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
                 numFactorFPS.Value = (decimal)parsedValue;
               }
             } else { // no known command, send as message
@@ -3071,6 +3071,46 @@ namespace MilkwaveRemote {
 
     private void lblFactorFPS_Click(object sender, EventArgs e) {
       numFactorFPS.Value = 1;
+    }
+
+    private void OpenFile(string filePath) {
+      filePath = Path.Combine(BaseDir, filePath);
+      if (File.Exists(filePath)) {
+        try {
+          Process.Start(new ProcessStartInfo {
+            FileName = filePath,
+            UseShellExecute = true
+          });
+        } catch (Exception ex) {
+          SetStatusText($"Error opening file: {ex.Message}");
+        }
+      } else {
+        SetStatusText($"File not found: {filePath}");
+      }
+    }
+
+    private void btnOpenSettingsIni_Click(object sender, EventArgs e) {
+      OpenFile("settings.ini");
+    }
+
+    private void btnOpenSpritesIni_Click(object sender, EventArgs e) {
+      OpenFile("sprites.ini");
+    }
+
+    private void btnOpenMessagesIni_Click(object sender, EventArgs e) {
+      OpenFile("messages.ini");
+    }
+
+    private void btnOpenScriptDefault_Click(object sender, EventArgs e) {
+      OpenFile("script-default.txt");
+    }
+
+    private void btnOpenSettingsRemote_Click(object sender, EventArgs e) {
+      OpenFile("settings-remote.json");
+    }
+
+    private void btnOpenTagsRemote_Click(object sender, EventArgs e) {
+      OpenFile("tags-remote.json");
     }
   } // end class
 } // end namespace

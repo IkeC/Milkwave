@@ -152,6 +152,12 @@ namespace MilkwaveRemote
       lblFactorFrame = new Label();
       lblFactorTime = new Label();
       lblFactorFPS = new Label();
+      btnOpenSettingsIni = new Button();
+      btnOpenSpritesIni = new Button();
+      btnOpenMessagesIni = new Button();
+      btnOpenScriptDefault = new Button();
+      btnOpenSettingsRemote = new Button();
+      btnOpenTagsRemote = new Button();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -1760,6 +1766,78 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblFactorFPS, "Values < 1 may speed up rendering of the preset, not affecting sprites and notifications\r\nDouble-click: Set 1");
       lblFactorFPS.Click += lblFactorFPS_Click;
       // 
+      // btnOpenSettingsIni
+      // 
+      btnOpenSettingsIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnOpenSettingsIni.Location = new Point(482, 6);
+      btnOpenSettingsIni.Name = "btnOpenSettingsIni";
+      btnOpenSettingsIni.Size = new Size(125, 23);
+      btnOpenSettingsIni.TabIndex = 143;
+      btnOpenSettingsIni.Text = "settings.ini\r\n";
+      toolTip1.SetToolTip(btnOpenSettingsIni, "Open file in associated editor");
+      btnOpenSettingsIni.UseVisualStyleBackColor = true;
+      btnOpenSettingsIni.Click += btnOpenSettingsIni_Click;
+      // 
+      // btnOpenSpritesIni
+      // 
+      btnOpenSpritesIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnOpenSpritesIni.Location = new Point(482, 34);
+      btnOpenSpritesIni.Name = "btnOpenSpritesIni";
+      btnOpenSpritesIni.Size = new Size(125, 23);
+      btnOpenSpritesIni.TabIndex = 144;
+      btnOpenSpritesIni.Text = "sprites.ini\r\n";
+      toolTip1.SetToolTip(btnOpenSpritesIni, "Open file in associated editor");
+      btnOpenSpritesIni.UseVisualStyleBackColor = true;
+      btnOpenSpritesIni.Click += btnOpenSpritesIni_Click;
+      // 
+      // btnOpenMessagesIni
+      // 
+      btnOpenMessagesIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnOpenMessagesIni.Location = new Point(482, 62);
+      btnOpenMessagesIni.Name = "btnOpenMessagesIni";
+      btnOpenMessagesIni.Size = new Size(125, 23);
+      btnOpenMessagesIni.TabIndex = 145;
+      btnOpenMessagesIni.Text = "messages.ini\r\n";
+      toolTip1.SetToolTip(btnOpenMessagesIni, "Open file in associated editor");
+      btnOpenMessagesIni.UseVisualStyleBackColor = true;
+      btnOpenMessagesIni.Click += btnOpenMessagesIni_Click;
+      // 
+      // btnOpenScriptDefault
+      // 
+      btnOpenScriptDefault.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnOpenScriptDefault.Location = new Point(349, 6);
+      btnOpenScriptDefault.Name = "btnOpenScriptDefault";
+      btnOpenScriptDefault.Size = new Size(125, 23);
+      btnOpenScriptDefault.TabIndex = 146;
+      btnOpenScriptDefault.Text = "script-default.txt";
+      toolTip1.SetToolTip(btnOpenScriptDefault, "Open file in associated editor");
+      btnOpenScriptDefault.UseVisualStyleBackColor = true;
+      btnOpenScriptDefault.Click += btnOpenScriptDefault_Click;
+      // 
+      // btnOpenSettingsRemote
+      // 
+      btnOpenSettingsRemote.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnOpenSettingsRemote.Location = new Point(349, 34);
+      btnOpenSettingsRemote.Name = "btnOpenSettingsRemote";
+      btnOpenSettingsRemote.Size = new Size(125, 23);
+      btnOpenSettingsRemote.TabIndex = 147;
+      btnOpenSettingsRemote.Text = "settings-remote.json";
+      toolTip1.SetToolTip(btnOpenSettingsRemote, "Open file in associated editor");
+      btnOpenSettingsRemote.UseVisualStyleBackColor = true;
+      btnOpenSettingsRemote.Click += btnOpenSettingsRemote_Click;
+      // 
+      // btnOpenTagsRemote
+      // 
+      btnOpenTagsRemote.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnOpenTagsRemote.Location = new Point(349, 62);
+      btnOpenTagsRemote.Name = "btnOpenTagsRemote";
+      btnOpenTagsRemote.Size = new Size(125, 23);
+      btnOpenTagsRemote.TabIndex = 148;
+      btnOpenTagsRemote.Text = "tags-remote.json";
+      toolTip1.SetToolTip(btnOpenTagsRemote, "Open file in associated editor");
+      btnOpenTagsRemote.UseVisualStyleBackColor = true;
+      btnOpenTagsRemote.Click += btnOpenTagsRemote_Click;
+      // 
       // cboParameters
       // 
       cboParameters.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -2853,6 +2931,12 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(btnOpenTagsRemote);
+      tabSettings.Controls.Add(btnOpenSettingsRemote);
+      tabSettings.Controls.Add(btnOpenScriptDefault);
+      tabSettings.Controls.Add(btnOpenMessagesIni);
+      tabSettings.Controls.Add(btnOpenSpritesIni);
+      tabSettings.Controls.Add(btnOpenSettingsIni);
       tabSettings.Controls.Add(numFactorFPS);
       tabSettings.Controls.Add(lblFactorFPS);
       tabSettings.Controls.Add(numFactorFrame);
@@ -3175,5 +3259,11 @@ namespace MilkwaveRemote
     private Label lblFactorTime;
     private NumericUpDown numFactorFPS;
     private Label lblFactorFPS;
+    private Button btnOpenSettingsIni;
+    private Button btnOpenScriptDefault;
+    private Button btnOpenMessagesIni;
+    private Button btnOpenSpritesIni;
+    private Button btnOpenTagsRemote;
+    private Button btnOpenSettingsRemote;
   }
 }
