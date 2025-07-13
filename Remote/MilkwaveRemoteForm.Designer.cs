@@ -158,6 +158,7 @@ namespace MilkwaveRemote
       btnOpenScriptDefault = new Button();
       btnOpenSettingsRemote = new Button();
       btnOpenTagsRemote = new Button();
+      txtFilter = new TextBox();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -717,7 +718,7 @@ namespace MilkwaveRemote
       btnPresetLoadDirectory.Name = "btnPresetLoadDirectory";
       btnPresetLoadDirectory.Size = new Size(70, 23);
       btnPresetLoadDirectory.TabIndex = 24;
-      btnPresetLoadDirectory.Text = "Directory";
+      btnPresetLoadDirectory.Text = "Dir";
       toolTip1.SetToolTip(btnPresetLoadDirectory, "Load presets from a directory (Ctrl+D)\r\n\r\n");
       btnPresetLoadDirectory.UseVisualStyleBackColor = true;
       btnPresetLoadDirectory.Click += btnPresetLoadDirectory_Click;
@@ -1318,7 +1319,7 @@ namespace MilkwaveRemote
       cboTagsFilter.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       cboTagsFilter.Location = new Point(71, 36);
       cboTagsFilter.Name = "cboTagsFilter";
-      cboTagsFilter.Size = new Size(309, 23);
+      cboTagsFilter.Size = new Size(241, 23);
       cboTagsFilter.TabIndex = 137;
       toolTip1.SetToolTip(cboTagsFilter, "Tags filter");
       cboTagsFilter.KeyDown += cboDirOrTagsFilter_KeyDown;
@@ -1837,6 +1838,15 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(btnOpenTagsRemote, "Open file in associated editor");
       btnOpenTagsRemote.UseVisualStyleBackColor = true;
       btnOpenTagsRemote.Click += btnOpenTagsRemote_Click;
+      // 
+      // txtFilter
+      // 
+      txtFilter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      txtFilter.Location = new Point(318, 37);
+      txtFilter.Name = "txtFilter";
+      txtFilter.Size = new Size(62, 23);
+      txtFilter.TabIndex = 138;
+      toolTip1.SetToolTip(txtFilter, "Only load presets containing this text in filename");
       // 
       // cboParameters
       // 
@@ -2369,6 +2379,7 @@ namespace MilkwaveRemote
       // 
       tabPreset.BackColor = SystemColors.ControlLight;
       tabPreset.BorderStyle = BorderStyle.FixedSingle;
+      tabPreset.Controls.Add(txtFilter);
       tabPreset.Controls.Add(cboTagsFilter);
       tabPreset.Controls.Add(lblMostUsed);
       tabPreset.Controls.Add(btnTagsSave);
@@ -3265,5 +3276,6 @@ namespace MilkwaveRemote
     private Button btnOpenSpritesIni;
     private Button btnOpenTagsRemote;
     private Button btnOpenSettingsRemote;
+    private TextBox txtFilter;
   }
 }

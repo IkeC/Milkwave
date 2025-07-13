@@ -4,6 +4,7 @@
 - Replaced expression evaluation library ns-eel2 with projectM-eval (by @kblaschke)
 - Fix: Visualizer crashing when resizing or going fullscreen with more than one sprite displayed (by @kblaschke)
 - Option to disable saving last used preset as startup preset (bEnablePresetStartupSavingOnClose=0)
+- Option to only load presets containing a specific text
 - Many new and updated presets (by @OfficialIncubo)
 
 ## v2.2 (2025-06-21)

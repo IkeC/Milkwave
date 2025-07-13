@@ -2056,7 +2056,12 @@ namespace MilkwaveRemote {
             DisplayName = fileNameOnlyNoExtension,
             MaybeRelativePath = fileNameMaybeRelativePath
           };
-          cboPresets.Items.Add(newPreset);
+          if (String.IsNullOrEmpty(txtFilter.Text) || fileNameOnlyNoExtension.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
+            // Check if the preset already exists in the combo box
+            if (!cboPresets.Items.Contains(newPreset)) {
+              cboPresets.Items.Add(newPreset);
+            }
+          }
         }
       }
       if (includeSubdirs) {
@@ -2504,11 +2509,13 @@ namespace MilkwaveRemote {
       if (cboTagsFilter.Text.Length > 0) {
         var filteredEntries = FilterTagEntries();
         foreach (var entry in filteredEntries) {
-          Data.Preset newPreset = new Data.Preset {
-            DisplayName = entry.Key,
-            MaybeRelativePath = entry.Value.PresetPath
-          };
-          presetList.Add(newPreset);
+          if (String.IsNullOrEmpty(txtFilter.Text) || entry.Key.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
+            Data.Preset newPreset = new Data.Preset {
+              DisplayName = entry.Key,
+              MaybeRelativePath = entry.Value.PresetPath
+            };
+            presetList.Add(newPreset);
+          }
         }
         presetList.Sort((x, y) => string.Compare(x.DisplayName, y.DisplayName, StringComparison.OrdinalIgnoreCase));
 
