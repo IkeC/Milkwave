@@ -21,7 +21,7 @@
 ## Remote Features
 
 * Tabbed interface
-  - Presets, Messaging, Wave, Fonts
+  - Presets, Messaging, Wave, Fonts, Settings
 * Preset tagging
   - Tag your presets with any number of words of your choice
   - Dynamic buttons for your most used tags

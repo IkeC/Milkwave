@@ -1,4 +1,4 @@
-## v2.3 (unreleased)
+## v2.3 (2025-07-13)
 
 - Settings Tab: Change internal time, FPS and frame counters (#13)
 - Replaced expression evaluation library ns-eel2 with projectM-eval (by @kblaschke)
