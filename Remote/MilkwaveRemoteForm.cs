@@ -329,7 +329,7 @@ namespace MilkwaveRemote {
 
       string MilkwavePresetsFolder = Path.Combine(VisualizerPresetsFolder, "Milkwave");
       if (Directory.Exists(MilkwavePresetsFolder)) {
-        LoadPresetsFromDirectory(MilkwavePresetsFolder);
+        LoadPresetsFromDirectory(MilkwavePresetsFolder, false);
       }
 
       if (Settings.LoadFilters?.Count > 0) {
@@ -2016,18 +2016,18 @@ namespace MilkwaveRemote {
         DialogResult result = fbd.ShowDialog();
 
         if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath)) {
-          LoadPresetsFromDirectory(fbd.SelectedPath);
+          LoadPresetsFromDirectory(fbd.SelectedPath, false);
         }
       }
     }
 
-    private void LoadPresetsFromDirectory(string dirToLoad) {
+    private void LoadPresetsFromDirectory(string dirToLoad, bool forceIncludeSubdirs) {
       cboPresets.Items.Clear();
       cboPresets.Text = "";
       bool includeSubdirs = false;
 
       if (Directory.GetDirectories(dirToLoad).Length > 0) {
-        if (MessageBox.Show(this, "Include subdirectories?",
+        if (forceIncludeSubdirs || MessageBox.Show(this, "Include subdirectories?",
           "Please Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes) {
           includeSubdirs = true;
         }
@@ -3118,6 +3118,13 @@ namespace MilkwaveRemote {
 
     private void btnOpenTagsRemote_Click(object sender, EventArgs e) {
       OpenFile("tags-remote.json");
+    }
+
+    private void txtFilter_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter) {
+        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+        LoadPresetsFromDirectory(VisualizerPresetsFolder, true);
+      }
     }
   } // end class
 } // end namespace

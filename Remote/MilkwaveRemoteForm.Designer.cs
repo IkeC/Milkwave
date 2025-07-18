@@ -1319,7 +1319,7 @@ namespace MilkwaveRemote
       cboTagsFilter.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       cboTagsFilter.Location = new Point(71, 36);
       cboTagsFilter.Name = "cboTagsFilter";
-      cboTagsFilter.Size = new Size(241, 23);
+      cboTagsFilter.Size = new Size(207, 23);
       cboTagsFilter.TabIndex = 137;
       toolTip1.SetToolTip(cboTagsFilter, "Tags filter");
       cboTagsFilter.KeyDown += cboDirOrTagsFilter_KeyDown;
@@ -1842,11 +1842,12 @@ namespace MilkwaveRemote
       // txtFilter
       // 
       txtFilter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtFilter.Location = new Point(318, 37);
+      txtFilter.Location = new Point(284, 37);
       txtFilter.Name = "txtFilter";
-      txtFilter.Size = new Size(62, 23);
+      txtFilter.Size = new Size(96, 23);
       txtFilter.TabIndex = 138;
       toolTip1.SetToolTip(txtFilter, "Only load presets containing this text in filename");
+      txtFilter.KeyDown += txtFilter_KeyDown;
       // 
       // cboParameters
       // 
