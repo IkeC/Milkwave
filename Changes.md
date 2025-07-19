@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Age filter: Only load presets modified within the last X days
+- Ctrl+Click on labels "Preset" or "Running" to open preset file in editor
 
 ## v2.3 (2025-07-13)
 

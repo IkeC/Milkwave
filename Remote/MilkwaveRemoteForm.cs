@@ -2056,7 +2056,7 @@ namespace MilkwaveRemote {
             DisplayName = fileNameOnlyNoExtension,
             MaybeRelativePath = fileNameMaybeRelativePath
           };
-          if (txtFilter.Text.ToUpper().StartsWith("AGE=")) { 
+          if (txtFilter.Text.ToUpper().StartsWith("AGE=")) {
             if (Int32.TryParse(txtFilter.Text.Substring(4), out int age) && age > 0) {
               DateTime lastFileWriteTime = File.GetLastWriteTime(fileName);
               if ((DateTime.Now - lastFileWriteTime).TotalDays < age) {
@@ -2066,8 +2066,7 @@ namespace MilkwaveRemote {
                 }
               }
             }
-          }
-          else if (String.IsNullOrEmpty(txtFilter.Text) || fileNameOnlyNoExtension.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
+          } else if (String.IsNullOrEmpty(txtFilter.Text) || fileNameOnlyNoExtension.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
             // Check if the preset already exists in the combo box
             if (!cboPresets.Items.Contains(newPreset)) {
               cboPresets.Items.Add(newPreset);
@@ -2090,17 +2089,27 @@ namespace MilkwaveRemote {
     }
 
     private void lblPreset_Click(object sender, EventArgs e) {
+      String fullPath = "";
       if (cboPresets.SelectedItem != null) {
-        try {
-          Data.Preset preset = (Data.Preset)cboPresets.SelectedItem;
-          if (!string.IsNullOrEmpty(preset.MaybeRelativePath)) {
-            Clipboard.SetText(preset.MaybeRelativePath);
-            SetStatusText($"Copied '{preset.MaybeRelativePath}' to clipboard");
+        Data.Preset preset = (Data.Preset)cboPresets.SelectedItem;
+        if (!string.IsNullOrEmpty(preset.MaybeRelativePath)) {
+          fullPath = preset.MaybeRelativePath;
+          if (!Path.IsPathRooted(fullPath)) {
+            fullPath = Path.Combine(VisualizerPresetsFolder, preset.MaybeRelativePath);
           }
-        } catch {
-          // Handle the case where the selected item is not a Preset
-          SetStatusText("No valid preset selected");
         }
+      }
+
+      if (fullPath.Length > 0) {
+        if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+          OpenFile(fullPath);
+        } else {
+          Clipboard.SetText(fullPath);
+          SetStatusText($"Copied '{fullPath}' to clipboard");
+        }
+      } else {
+        // Handle the case where the selected item is not a Preset
+        SetStatusText("No valid preset selected");
       }
     }
 
@@ -2218,11 +2227,15 @@ namespace MilkwaveRemote {
       SetStatusText($"Copied '{displayText}' to clipboard");
     }
 
-    private void lblCurrentPreset_DoubleClick(object sender, EventArgs e) {
+    private void lblCurrentPreset_Click(object sender, EventArgs e) {
       string? text = toolTip1.GetToolTip(txtVisRunning);
       if (!string.IsNullOrEmpty(text)) {
-        Clipboard.SetText(text);
-        SetStatusText($"Copied '{text}' to clipboard");
+        if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+          OpenFile(text);
+        } else {
+          Clipboard.SetText(text);
+          SetStatusText($"Copied '{text}' to clipboard");
+        }
       }
     }
 
@@ -3137,5 +3150,6 @@ namespace MilkwaveRemote {
         LoadPresetsFromDirectory(VisualizerPresetsFolder, true);
       }
     }
+
   } // end class
 } // end namespace

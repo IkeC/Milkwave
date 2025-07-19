@@ -679,7 +679,7 @@ namespace MilkwaveRemote
       lblPreset.TabIndex = 98;
       lblPreset.Text = "Preset";
       lblPreset.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblPreset, "Click to copy full path to clipboard\r\nDouble-click to clear all items");
+      toolTip1.SetToolTip(lblPreset, "Click: Copy full path to clipboard\r\nDouble-click: Clear all items\r\nCtrl+Click: Open file in editor");
       lblPreset.Click += lblPreset_Click;
       lblPreset.DoubleClick += lblPreset_DoubleClick;
       // 
@@ -799,8 +799,8 @@ namespace MilkwaveRemote
       lblCurrentPreset.TabIndex = 95;
       lblCurrentPreset.Text = "Running";
       lblCurrentPreset.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblCurrentPreset, "Double-click to copy full path");
-      lblCurrentPreset.DoubleClick += lblCurrentPreset_DoubleClick;
+      toolTip1.SetToolTip(lblCurrentPreset, "Click: Copy full path to clipboard\r\nCtrl+Click: Open file in editor\r\n");
+      lblCurrentPreset.Click += lblCurrentPreset_Click;
       // 
       // chkAmpLinked
       // 
