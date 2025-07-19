@@ -2,9 +2,11 @@
 - **Milkwave Visualizer**:
     A feature-enhanced version of [MilkDrop2](https://www.geisswerks.com/milkdrop/) visualizer
 - **Milkwave Remote**:
-    A "VJ mode" standalone window which allows you do do things like send customized messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
+    A standalone window to do things like sending messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
-![Milkwave-2](https://github.com/user-attachments/assets/973b7bad-6a85-445f-94af-fe2805d961f2)
+Download the latest version [**here**](https://github.com/IkeC/Milkwave/releases/latest) or from the [Microsoft Store](https://aka.ms/AAwblcj). Both versions are free and open source.
+
+![Milkwave](https://github.com/user-attachments/assets/973b7bad-6a85-445f-94af-fe2805d961f2)
 
 ## Visualizer Features
  
@@ -16,7 +18,7 @@
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
  
-![Milkwave-2-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
+![Milkwave-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
 
 ## Remote Features
 
@@ -41,6 +43,9 @@
 * Font manipulation
   - Customize display of song information, preset name and notifications
   - Change and preview font face, style and size instantly
+* Settings
+  - Change internal time, FPS and frame counters to slow down or speed up some presets
+  - Quick access to configuration files
 * Customizable interface - show only what you need
 * Send common key combinations using buttons
 * Support for input devices (eg. microphones)
@@ -53,7 +58,7 @@ If you have any questions, don't be afraid to [ask for support](#support)!
 
 ## History
 
-The original [MilkDrop2](https://www.geisswerks.com/milkdrop/) WinAmp plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and has since been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) and [MilkDrop3](https://github.com/milkdrop2077/MilkDrop3) projects.
+The original [MilkDrop2](https://www.geisswerks.com/milkdrop/) WinAmp plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and has since been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) and MilkDrop3 projects.
 
 For a chronological list of Milkwave releases and features, read the [Changes](Changes.md).
 
@@ -70,7 +75,7 @@ This project incorporates the work of many different authors over the years, as 
 
 However, if you're satisfied with the additions I made and you want to support my work, you may do so using [**Ko-fi**](https://ko-fi.com/ikeserver) or [**PayPal**](https://www.paypal.com/ncp/payment/5XMP3S69PJLCU). You'll be listed as a supporter within the next program release unless you don't want to.
 
-Many thanks to **Shanev** and  **Tures1955** for supporting the development of Milkwave. ❤️
+Many thanks to **Shanev** and **Tures1955** for supporting the development of Milkwave. ❤️
 
 I may add new features or fix bugs if people are actually using this, so don't be shy to [open an issue](https://github.com/IkeC/Milkwave/issues) or join my [**Discord**](https://bit.ly/Ikes-Discord)!
 
