@@ -1846,7 +1846,7 @@ namespace MilkwaveRemote
       txtFilter.Name = "txtFilter";
       txtFilter.Size = new Size(96, 23);
       txtFilter.TabIndex = 138;
-      toolTip1.SetToolTip(txtFilter, "Only load presets containing this text in filename");
+      toolTip1.SetToolTip(txtFilter, "Only load presets containing this text in filename\r\nPress Enter: Load and filter all presets including subdirs\r\n\"age=X\": Load only presets modified within the last X days");
       txtFilter.KeyDown += txtFilter_KeyDown;
       // 
       // cboParameters

@@ -1,3 +1,7 @@
+## Unreleased
+
+- Age filter: Only load presets modified within the last X days
+
 ## v2.3 (2025-07-13)
 
 - Settings Tab: Change internal time, FPS and frame counters (#13)
