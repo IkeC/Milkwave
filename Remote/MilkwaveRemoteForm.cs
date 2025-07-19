@@ -2056,7 +2056,18 @@ namespace MilkwaveRemote {
             DisplayName = fileNameOnlyNoExtension,
             MaybeRelativePath = fileNameMaybeRelativePath
           };
-          if (String.IsNullOrEmpty(txtFilter.Text) || fileNameOnlyNoExtension.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
+          if (txtFilter.Text.ToUpper().StartsWith("AGE=")) { 
+            if (Int32.TryParse(txtFilter.Text.Substring(4), out int age) && age > 0) {
+              DateTime lastFileWriteTime = File.GetLastWriteTime(fileName);
+              if ((DateTime.Now - lastFileWriteTime).TotalDays < age) {
+                // Check if the preset already exists in the combo box
+                if (!cboPresets.Items.Contains(newPreset)) {
+                  cboPresets.Items.Add(newPreset);
+                }
+              }
+            }
+          }
+          else if (String.IsNullOrEmpty(txtFilter.Text) || fileNameOnlyNoExtension.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
             // Check if the preset already exists in the combo box
             if (!cboPresets.Items.Contains(newPreset)) {
               cboPresets.Items.Add(newPreset);
