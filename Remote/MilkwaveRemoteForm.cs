@@ -199,6 +199,7 @@ namespace MilkwaveRemote {
         }
       }
     }
+
     public MilkwaveRemoteForm() {
       InitializeComponent();
 
@@ -248,6 +249,8 @@ namespace MilkwaveRemote {
         cboParameters.Text = "size=20|time=5.0|x=0.5|y=0.5|growth=2";
       }
 
+      txtShadertoyURL.Text = Settings.ShadertoyURL;
+
       // Fill cboFonts with available system fonts and add a blank first entry  
       cboFonts.Items.Add(""); // Add a blank first entry  
       using (InstalledFontCollection fontsCollection = new InstalledFontCollection()) {
@@ -277,12 +280,19 @@ namespace MilkwaveRemote {
       LoadAndSetSettings();
       SetPanelsVisibility();
 
+#if DEBUG
+      txtShadertoyURL.Text = "w3KGRK";
+#else
       StartVisualizerIfNotFound();
+#endif
 
       ofd = new OpenFileDialog();
       ofd.Filter = "MilkDrop Presets|*.milk;*.milk2|All files (*.*)|*.*";
       ofd.RestoreDirectory = true;
       SetAllControlFontSizes(this, 9f); // Sets all controls to font size 9
+
+      txtShader.Font = new Font(txtShader.Font.FontFamily, 11f, txtShader.Font.Style);
+      txtShaderGLSL.Font = txtShader.Font;
 
       helper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
       helper.FillAudioDevices(cboAudioDevice);
@@ -1409,7 +1419,11 @@ namespace MilkwaveRemote {
           SelectNextPreset();
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
-          SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
+          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+            btnSendShader_Click(null, null);
+          } else {
+            SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
+          }
         } else if (e.KeyCode == Keys.T) {
           btnTagsSave_Click(null, null);
         } else if (e.KeyCode == Keys.X) {
@@ -1496,7 +1510,7 @@ namespace MilkwaveRemote {
 
     private void lblParameters_MouseDown(object sender, MouseEventArgs e) {
       if (e.Button == MouseButtons.Right) {
-        string helpText = "font={fontname}  // The font name to use" + Environment.NewLine +
+        string helpText = "font={fontname}  // The font shaderName to use" + Environment.NewLine +
           "size={int:0..100}  // The font size (0=tiny, 100=enormous, 20-60=normal range)" + Environment.NewLine +
           "growth={float:0.25..4.0}  // The factor to grow or shrink over time (0.5=shrink to half-size, 2.0=grow to double size)" + Environment.NewLine +
           "x={float:0..1}  // The x-position of the center of the text (0.0=left side, 1.0=right side)" + Environment.NewLine +
@@ -2638,7 +2652,7 @@ namespace MilkwaveRemote {
       }
       Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
-
+      Settings.ShadertoyURL = txtShadertoyURL.Text;
       SaveSettingsToFile();
     }
 
@@ -3151,5 +3165,139 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void btnSendShader_Click(object sender, EventArgs e) {
+      try {
+        // Ensure the shader directory exists
+        string shaderDir = Path.Combine(VisualizerPresetsFolder, "shader");
+        Directory.CreateDirectory(shaderDir);
+
+        string presetName = txtShaderinfo.Text.Split(Environment.NewLine)[0].Trim();
+        if (string.IsNullOrEmpty(presetName)) {
+          presetName = "Shader";
+        }
+        string fileName = StripInvalidFileNameChars(presetName + ".milk");
+
+        // Build the file path
+        string shaderFile = Path.Combine(shaderDir, fileName);
+
+        // Prepare the header and shader content
+        var sb = new StringBuilder();
+        sb.AppendLine("MILKDROP_PRESET_VERSION=201");
+        sb.AppendLine("PSVERSION=4");
+        sb.AppendLine("PSVERSION_WARP=4");
+        sb.AppendLine("PSVERSION_COMP=4");
+
+        // Prefix each line in txtShader.Text with comp_X=
+        var lines = txtShader.Text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        int lineNum = 1;
+        foreach (var line in lines) {
+          sb.AppendLine($"comp_{lineNum}={line}");
+          lineNum++;
+        }
+
+        // Write to file (overwrite if exists)
+        File.WriteAllText(shaderFile, sb.ToString());
+        SetStatusText($"Shader saved to {shaderFile}");
+
+        SendToMilkwaveVisualizer(shaderFile, MessageType.PresetFilePath);
+      } catch (Exception ex) {
+        SetStatusText($"Error saving shader: {ex.Message}");
+      }
+    }
+
+    private void btnLoadShaderInput_Click(object sender, EventArgs e) {
+
+      OpenFileDialog ofdShader = new OpenFileDialog();
+      ofdShader.Filter = "All files (*.*)|*.*";
+      ofdShader.RestoreDirectory = true;
+      ofdShader.InitialDirectory = Path.Combine(BaseDir, "resources\\shader");
+
+      if (ofdShader.ShowDialog() == DialogResult.OK) {
+        String shaderInput = ofdShader.FileName;
+        if (File.Exists(shaderInput)) {
+          try {
+            // Read the shader content from the input file
+            string shaderContent = File.ReadAllText(shaderInput);
+            txtShaderGLSL.Text = shaderContent;
+            // Notify the user
+            SetStatusText($"Shader loaded from {shaderInput}");
+          } catch (Exception ex) {
+            SetStatusText($"Error loading shader: {ex.Message}");
+          }
+        } else {
+          SetStatusText($"Shader input file not found: {shaderInput}");
+        }
+      }
+    }
+
+    private void statusBar_Click(object sender, EventArgs e) {
+      Clipboard.SetText(statusBar.Text);
+      SetStatusText($"Copied '{statusBar.Text}' to clipboard");
+    }
+
+    private void SetCurrentShaderLineNumber() {
+      // Get the current caret (cursor) position in the text box
+      int charIndex = txtShader.SelectionStart;
+      // Get the zero-based line number from the character index
+      int lineNumber = txtShader.GetLineFromCharIndex(charIndex);
+      // Return a 1-based line number
+      lineNumber += 1;
+      txtLineNumber.Text = (lineNumber).ToString();
+      // 160 lines are inserted as header by Visualizer
+      txtLineNumberError.Text = (lineNumber + 160).ToString();
+    }
+
+    private void txtShaderSetLineNumber(object sender, EventArgs e) {
+      SetCurrentShaderLineNumber();
+    }
+
+    private void btnShaderConvert_Click(object sender, EventArgs e) {
+      txtShader.Text = Shader.ConvertGLSLtoHLSL(txtShaderGLSL.Text);
+    }
+
+    private void btnLoadURL_Click(object sender, EventArgs e) {
+      string id = txtShadertoyURL.Text.Trim();
+      int index = id.LastIndexOf("/");
+      if (index > 0) {
+        id = id.Substring(index + 1);
+      }
+      if (string.IsNullOrEmpty(id)) {
+        SetStatusText("Please enter a Shadertoy URL or ID");
+        return;
+      }
+
+      // please request your own api key at https://www.shadertoy.com/howto
+      string appKey = "ftrlhm";
+      string url = $"https://www.shadertoy.com/api/v1/shaders/{id}?key={appKey}";
+      using var httpClient = new HttpClient();
+      try {
+        var jsonString = httpClient.GetStringAsync(url).Result;
+        JsonDocument doc = JsonDocument.Parse(jsonString);
+
+        JsonElement elShader = doc.RootElement.GetProperty("Shader");
+        JsonElement elInfo = elShader.GetProperty("info");
+        string? shaderId = elInfo.GetProperty("id").GetString();
+        string? shaderName = elInfo.GetProperty("name").GetString();
+        string? shaderUsername = elInfo.GetProperty("username").GetString();
+        JsonElement firstRenderpassElement = elShader.GetProperty("renderpass").EnumerateArray().First();
+        string? shaderCode = firstRenderpassElement.GetProperty("code").GetString();
+
+        txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"shadertoy.com id: {shaderId}";
+        string formattedShaderCode = shaderCode?.Replace("\n", Environment.NewLine);
+        txtShaderGLSL.Text = formattedShaderCode;
+      } catch (Exception ex) {
+        SetStatusText($"Load Failed: {ex.Message}");
+      }
+    }
+
+    private string StripInvalidFileNameChars(string fileName) {
+      var invalidChars = Path.GetInvalidFileNameChars();
+      var sb = new StringBuilder(fileName.Length);
+      foreach (char c in fileName) {
+        if (!invalidChars.Contains(c))
+          sb.Append(c);
+      }
+      return sb.ToString();
+    }
   } // end class
 } // end namespace

@@ -1087,7 +1087,7 @@ END
 
 STRINGTABLE
 BEGIN
-IDS_ERROR_PARSING_X_X_SHADER "Error parsing %hs %hs shader.\n"
+IDS_ERROR_PARSING_X_X_SHADER "Error parsing %hs %hs shader\n"
 IDS_UNABLE_TO_RESOLVE_TEXSIZE_FOR_A_TEXTURE_NOT_IN_USE
 "Unable to resolve texsize for a texture that is not in use!  (%hs)"
 IDS_KEY_MAPPINGS        "yYYyYzZ"

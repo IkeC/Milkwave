@@ -15,5 +15,6 @@
     public bool ShowButtonPanel { get; set; } = true;
     public bool CloseVisualizerWithRemote { get; set; } = false;
     public int SelectedTabIndex { get; set; } = 0;
+    public string ShadertoyURL { get; set; } = String.Empty;
   }
 }
