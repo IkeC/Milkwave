@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Windows.Forms;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
 
@@ -291,8 +292,8 @@ namespace MilkwaveRemote {
       ofd.RestoreDirectory = true;
       SetAllControlFontSizes(this, 9f); // Sets all controls to font size 9
 
-      txtShader.Font = new Font(txtShader.Font.FontFamily, 11f, txtShader.Font.Style);
-      txtShaderGLSL.Font = txtShader.Font;
+      txtShaderHLSL.Font = new Font(txtShaderHLSL.Font.FontFamily, 10f, txtShaderHLSL.Font.Style);
+      txtShaderGLSL.Font = txtShaderHLSL.Font;
 
       helper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
       helper.FillAudioDevices(cboAudioDevice);
@@ -1421,13 +1422,15 @@ namespace MilkwaveRemote {
         } else if (e.KeyCode == Keys.S) {
           if (tabControl.SelectedTab.Name.Equals("tabShader")) {
             btnSendShader_Click(null, null);
-          } else {
+          } else if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
             SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
           }
         } else if (e.KeyCode == Keys.T) {
           btnTagsSave_Click(null, null);
         } else if (e.KeyCode == Keys.X) {
-          btnSendFile_Click(null, null);
+          if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+            btnSendFile_Click(null, null);
+          }
           if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
             SelectNextAutoplayEntry();
           }
@@ -1534,7 +1537,7 @@ namespace MilkwaveRemote {
           "movetime={float}  // The duration (in seconds) the text will move from startx/starty to x/y" + Environment.NewLine +
           "easemode={int:0|1|2}  // Moving animation smoothing: 0=linear, 1=ease-in, 2=ease-out (default=2)" + Environment.NewLine +
           "easefactor={float:1..5}  // Smoothing strengh (default=2.0)" + Environment.NewLine +
-          "shadowoffset={float}  // Text drop shadow offset: 0=no shadow (default=2.0)" + Environment.NewLine +
+          "shadowoffset={float}  // Text drop shadow offsetNum: 0=no shadow (default=2.0)" + Environment.NewLine +
           "burntime={float}  // The duration (in seconds) the text will \"burn in\" at the end (default=0.1)" + Environment.NewLine;
 
         new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Parameters", helpText, 9, 800, 600);
@@ -3168,7 +3171,7 @@ namespace MilkwaveRemote {
     private void btnSendShader_Click(object sender, EventArgs e) {
       try {
         // Ensure the shader directory exists
-        string shaderDir = Path.Combine(VisualizerPresetsFolder, "shader");
+        string shaderDir = Path.Combine(VisualizerPresetsFolder, "Shader");
         Directory.CreateDirectory(shaderDir);
 
         string presetName = txtShaderinfo.Text.Split(Environment.NewLine)[0].Trim();
@@ -3187,8 +3190,13 @@ namespace MilkwaveRemote {
         sb.AppendLine("PSVERSION_WARP=4");
         sb.AppendLine("PSVERSION_COMP=4");
 
+        // Write shader info as comment into preset file
+        string shaderinfo = "// " + txtShaderinfo.Text.Trim().Replace(Environment.NewLine, "\n").Replace('\r', '\n').Replace("\n", " / ");
+        shaderinfo += Environment.NewLine + "// Transpiled to HLSL using Milkwave" + Environment.NewLine + Environment.NewLine;
+        string shaderText = shaderinfo + txtShaderHLSL.Text.Trim();
+
         // Prefix each line in txtShader.Text with comp_X=
-        var lines = txtShader.Text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        var lines = shaderText.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
         int lineNum = 1;
         foreach (var line in lines) {
           sb.AppendLine($"comp_{lineNum}={line}");
@@ -3236,15 +3244,13 @@ namespace MilkwaveRemote {
     }
 
     private void SetCurrentShaderLineNumber() {
-      // Get the current caret (cursor) position in the text box
-      int charIndex = txtShader.SelectionStart;
-      // Get the zero-based line number from the character index
-      int lineNumber = txtShader.GetLineFromCharIndex(charIndex);
-      // Return a 1-based line number
-      lineNumber += 1;
+      string sub = txtShaderHLSL.Text.Substring(0, txtShaderHLSL.SelectionStart);
+      int lineNumber = sub.Count(f => f == '\n') + 1;
       txtLineNumber.Text = (lineNumber).ToString();
-      // 160 lines are inserted as header by Visualizer
-      txtLineNumberError.Text = (lineNumber + 160).ToString();
+
+      // offsetNum lines are inserted as header by Visualizer
+      int offsetNum = 163;
+      txtLineNumberError.Text = (lineNumber + offsetNum).ToString();
     }
 
     private void txtShaderSetLineNumber(object sender, EventArgs e) {
@@ -3252,27 +3258,34 @@ namespace MilkwaveRemote {
     }
 
     private void btnShaderConvert_Click(object sender, EventArgs e) {
-      txtShader.Text = Shader.ConvertGLSLtoHLSL(txtShaderGLSL.Text);
+      ConvertShader();
     }
 
-    private void btnLoadURL_Click(object sender, EventArgs e) {
+    private void btnLoadURL_Click(object? sender, EventArgs? e) {
       string id = txtShadertoyURL.Text.Trim();
       int index = id.LastIndexOf("/");
       if (index > 0) {
         id = id.Substring(index + 1);
       }
       if (string.IsNullOrEmpty(id)) {
-        SetStatusText("Please enter a Shadertoy URL or ID");
+        SetStatusText("Please enter a Shadertoy.com URL or ID");
         return;
       }
 
-      // please request your own api key at https://www.shadertoy.com/howto
+      SetStatusText($"Loading code for Shadertoy ID {id}");
+
+      // please request your own appKey at https://www.shadertoy.com/howto
       string appKey = "ftrlhm";
       string url = $"https://www.shadertoy.com/api/v1/shaders/{id}?key={appKey}";
       using var httpClient = new HttpClient();
       try {
         var jsonString = httpClient.GetStringAsync(url).Result;
         JsonDocument doc = JsonDocument.Parse(jsonString);
+        if (doc.RootElement.TryGetProperty("Error", out JsonElement elError)) {
+          // If the error property exists, it means the shader was not found
+          SetStatusText($"Shadertoy.com says: {elError.GetString()}");
+          return;
+        }
 
         JsonElement elShader = doc.RootElement.GetProperty("Shader");
         JsonElement elInfo = elShader.GetProperty("info");
@@ -3285,8 +3298,13 @@ namespace MilkwaveRemote {
         txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"shadertoy.com id: {shaderId}";
         string formattedShaderCode = shaderCode?.Replace("\n", Environment.NewLine);
         txtShaderGLSL.Text = formattedShaderCode;
+
+        if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
+          ConvertShader();
+        }
+        SetStatusText($"Shader code loaded and converted");
       } catch (Exception ex) {
-        SetStatusText($"Load Failed: {ex.Message}");
+        SetStatusText($"Loading failed: {ex.Message}");
       }
     }
 
@@ -3299,5 +3317,29 @@ namespace MilkwaveRemote {
       }
       return sb.ToString();
     }
+
+    private void ConvertShader() {
+      txtShaderHLSL.Text = Shader.ConvertGLSLtoHLSL(txtShaderGLSL.Text);
+    }
+
+    private void txtShadertoyURL_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter) {
+        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+        btnLoadURL_Click(null, null);
+      }
+    }
+
+    private void txtShadertoyURL_Click(object sender, EventArgs e) {
+      txtShadertoyURL.SelectAll();
+    }
+
+    private void btnShaderHelp_Click(object sender, EventArgs e) {
+      StringBuilder helpText = new StringBuilder();
+      helpText.AppendLine("Convert GLSL shader code to HLSL shader code.");
+      helpText.AppendLine();
+      helpText.AppendLine("Demo video here by Patrick Pomerleau: https://www.youtube.com/watch?v=Ur2gPa996Aw");
+      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Shaders", helpText.ToString(), 9, 800, 600);
+    }
+
   } // end class
 } // end namespace

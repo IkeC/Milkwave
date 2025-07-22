@@ -161,6 +161,15 @@ namespace MilkwaveRemote
       txtFilter = new TextBox();
       txtShadertoyURL = new TextBox();
       btnSendShader = new Button();
+      txtShaderinfo = new TextBox();
+      btnLoadURL = new Button();
+      btnShaderConvert = new Button();
+      txtShaderGLSL = new TextBox();
+      txtShaderHLSL = new TextBox();
+      txtLineNumberError = new TextBox();
+      txtLineNumber = new TextBox();
+      btnLoadShaderInputFromFile = new Button();
+      btnShaderHelp = new Button();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -212,15 +221,7 @@ namespace MilkwaveRemote
       btnTag1 = new Button();
       tabMessage = new TabPage();
       tabShader = new TabPage();
-      txtShaderinfo = new TextBox();
-      btnLoadURL = new Button();
-      btnShaderConvert = new Button();
       splitContainerShader = new SplitContainer();
-      txtShaderGLSL = new TextBox();
-      txtShader = new TextBox();
-      txtLineNumberError = new TextBox();
-      txtLineNumber = new TextBox();
-      btnLoadShaderInputFromFile = new Button();
       tabWave = new TabPage();
       numWaveEcho = new NumericUpDown();
       numWaveScale = new NumericUpDown();
@@ -1869,11 +1870,14 @@ namespace MilkwaveRemote
       // 
       // txtShadertoyURL
       // 
-      txtShadertoyURL.Location = new Point(2, 7);
+      txtShadertoyURL.Location = new Point(5, 7);
       txtShadertoyURL.Name = "txtShadertoyURL";
-      txtShadertoyURL.Size = new Size(145, 23);
+      txtShadertoyURL.Size = new Size(142, 23);
       txtShadertoyURL.TabIndex = 33;
       toolTip1.SetToolTip(txtShadertoyURL, "shadertoy.com URL or ID");
+      txtShadertoyURL.WordWrap = false;
+      txtShadertoyURL.Click += txtShadertoyURL_Click;
+      txtShadertoyURL.KeyDown += txtShadertoyURL_KeyDown;
       // 
       // btnSendShader
       // 
@@ -1884,8 +1888,118 @@ namespace MilkwaveRemote
       btnSendShader.Size = new Size(70, 23);
       btnSendShader.TabIndex = 26;
       btnSendShader.Text = "Send";
+      toolTip1.SetToolTip(btnSendShader, "Send HLSL to Visualizer \r\n(Ctrl+S)");
       btnSendShader.UseVisualStyleBackColor = true;
       btnSendShader.Click += btnSendShader_Click;
+      // 
+      // txtShaderinfo
+      // 
+      txtShaderinfo.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      txtShaderinfo.Location = new Point(346, 6);
+      txtShaderinfo.Multiline = true;
+      txtShaderinfo.Name = "txtShaderinfo";
+      txtShaderinfo.Size = new Size(77, 23);
+      txtShaderinfo.TabIndex = 35;
+      toolTip1.SetToolTip(txtShaderinfo, "Shaderinfo used for filename and embedded into generated preset file\r\nCan be multiple lines, use cursor keys to scroll");
+      // 
+      // btnLoadURL
+      // 
+      btnLoadURL.FlatStyle = FlatStyle.System;
+      btnLoadURL.Location = new Point(153, 6);
+      btnLoadURL.Name = "btnLoadURL";
+      btnLoadURL.Size = new Size(49, 23);
+      btnLoadURL.TabIndex = 34;
+      btnLoadURL.Text = "Load";
+      toolTip1.SetToolTip(btnLoadURL, "Load and convert shader");
+      btnLoadURL.UseVisualStyleBackColor = true;
+      btnLoadURL.Click += btnLoadURL_Click;
+      // 
+      // btnShaderConvert
+      // 
+      btnShaderConvert.FlatStyle = FlatStyle.System;
+      btnShaderConvert.Location = new Point(263, 6);
+      btnShaderConvert.Name = "btnShaderConvert";
+      btnShaderConvert.Size = new Size(77, 23);
+      btnShaderConvert.TabIndex = 32;
+      btnShaderConvert.Text = "Convert";
+      toolTip1.SetToolTip(btnShaderConvert, "Convert GLSL (left) to HLSL (right)");
+      btnShaderConvert.UseVisualStyleBackColor = true;
+      btnShaderConvert.Click += btnShaderConvert_Click;
+      // 
+      // txtShaderGLSL
+      // 
+      txtShaderGLSL.Dock = DockStyle.Fill;
+      txtShaderGLSL.Font = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+      txtShaderGLSL.Location = new Point(0, 0);
+      txtShaderGLSL.Multiline = true;
+      txtShaderGLSL.Name = "txtShaderGLSL";
+      txtShaderGLSL.ScrollBars = ScrollBars.Both;
+      txtShaderGLSL.Size = new Size(294, 142);
+      txtShaderGLSL.TabIndex = 28;
+      toolTip1.SetToolTip(txtShaderGLSL, "GLSL");
+      // 
+      // txtShaderHLSL
+      // 
+      txtShaderHLSL.Dock = DockStyle.Fill;
+      txtShaderHLSL.Font = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+      txtShaderHLSL.Location = new Point(0, 0);
+      txtShaderHLSL.Multiline = true;
+      txtShaderHLSL.Name = "txtShaderHLSL";
+      txtShaderHLSL.ScrollBars = ScrollBars.Both;
+      txtShaderHLSL.Size = new Size(309, 142);
+      txtShaderHLSL.TabIndex = 27;
+      toolTip1.SetToolTip(txtShaderHLSL, "HLSL");
+      txtShaderHLSL.Click += txtShaderSetLineNumber;
+      txtShaderHLSL.Enter += txtShaderSetLineNumber;
+      txtShaderHLSL.KeyUp += txtShaderSetLineNumber;
+      txtShaderHLSL.PreviewKeyDown += txtShaderSetLineNumber;
+      // 
+      // txtLineNumberError
+      // 
+      txtLineNumberError.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      txtLineNumberError.Location = new Point(465, 6);
+      txtLineNumberError.Name = "txtLineNumberError";
+      txtLineNumberError.ReadOnly = true;
+      txtLineNumberError.Size = new Size(30, 23);
+      txtLineNumberError.TabIndex = 30;
+      txtLineNumberError.TextAlign = HorizontalAlignment.Right;
+      toolTip1.SetToolTip(txtLineNumberError, "Approx. line in Milkwave generated shader code\r\nUse this to find the matching line from shader compilation error messages");
+      // 
+      // txtLineNumber
+      // 
+      txtLineNumber.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      txtLineNumber.Location = new Point(429, 6);
+      txtLineNumber.Name = "txtLineNumber";
+      txtLineNumber.ReadOnly = true;
+      txtLineNumber.Size = new Size(30, 23);
+      txtLineNumber.TabIndex = 29;
+      txtLineNumber.TextAlign = HorizontalAlignment.Right;
+      toolTip1.SetToolTip(txtLineNumber, "Right pane line counter");
+      // 
+      // btnLoadShaderInputFromFile
+      // 
+      btnLoadShaderInputFromFile.FlatStyle = FlatStyle.System;
+      btnLoadShaderInputFromFile.Location = new Point(208, 6);
+      btnLoadShaderInputFromFile.Name = "btnLoadShaderInputFromFile";
+      btnLoadShaderInputFromFile.Size = new Size(49, 23);
+      btnLoadShaderInputFromFile.TabIndex = 28;
+      btnLoadShaderInputFromFile.Text = "File";
+      toolTip1.SetToolTip(btnLoadShaderInputFromFile, "Load GLSL input into left pane");
+      btnLoadShaderInputFromFile.UseVisualStyleBackColor = true;
+      btnLoadShaderInputFromFile.Click += btnLoadShaderInput_Click;
+      // 
+      // btnShaderHelp
+      // 
+      btnShaderHelp.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnShaderHelp.FlatStyle = FlatStyle.System;
+      btnShaderHelp.Location = new Point(501, 6);
+      btnShaderHelp.Name = "btnShaderHelp";
+      btnShaderHelp.Size = new Size(31, 23);
+      btnShaderHelp.TabIndex = 36;
+      btnShaderHelp.Text = "?";
+      toolTip1.SetToolTip(btnShaderHelp, "Help");
+      btnShaderHelp.UseVisualStyleBackColor = true;
+      btnShaderHelp.Click += btnShaderHelp_Click;
       // 
       // cboParameters
       // 
@@ -2609,6 +2723,7 @@ namespace MilkwaveRemote
       // 
       tabShader.BackColor = SystemColors.ControlLight;
       tabShader.BorderStyle = BorderStyle.FixedSingle;
+      tabShader.Controls.Add(btnShaderHelp);
       tabShader.Controls.Add(txtShaderinfo);
       tabShader.Controls.Add(btnLoadURL);
       tabShader.Controls.Add(txtShadertoyURL);
@@ -2626,37 +2741,6 @@ namespace MilkwaveRemote
       tabShader.TabIndex = 5;
       tabShader.Text = "Shader";
       // 
-      // txtShaderinfo
-      // 
-      txtShaderinfo.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      txtShaderinfo.Location = new Point(339, 6);
-      txtShaderinfo.Multiline = true;
-      txtShaderinfo.Name = "txtShaderinfo";
-      txtShaderinfo.Size = new Size(117, 23);
-      txtShaderinfo.TabIndex = 35;
-      // 
-      // btnLoadURL
-      // 
-      btnLoadURL.FlatStyle = FlatStyle.System;
-      btnLoadURL.Location = new Point(153, 6);
-      btnLoadURL.Name = "btnLoadURL";
-      btnLoadURL.Size = new Size(49, 23);
-      btnLoadURL.TabIndex = 34;
-      btnLoadURL.Text = "Load";
-      btnLoadURL.UseVisualStyleBackColor = true;
-      btnLoadURL.Click += btnLoadURL_Click;
-      // 
-      // btnShaderConvert
-      // 
-      btnShaderConvert.FlatStyle = FlatStyle.System;
-      btnShaderConvert.Location = new Point(263, 6);
-      btnShaderConvert.Name = "btnShaderConvert";
-      btnShaderConvert.Size = new Size(70, 23);
-      btnShaderConvert.TabIndex = 32;
-      btnShaderConvert.Text = "Convert ->";
-      btnShaderConvert.UseVisualStyleBackColor = true;
-      btnShaderConvert.Click += btnShaderConvert_Click;
-      // 
       // splitContainerShader
       // 
       splitContainerShader.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -2670,66 +2754,10 @@ namespace MilkwaveRemote
       // 
       // splitContainerShader.Panel2
       // 
-      splitContainerShader.Panel2.Controls.Add(txtShader);
+      splitContainerShader.Panel2.Controls.Add(txtShaderHLSL);
       splitContainerShader.Size = new Size(607, 142);
-      splitContainerShader.SplitterDistance = 218;
+      splitContainerShader.SplitterDistance = 294;
       splitContainerShader.TabIndex = 31;
-      // 
-      // txtShaderGLSL
-      // 
-      txtShaderGLSL.Dock = DockStyle.Fill;
-      txtShaderGLSL.Font = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      txtShaderGLSL.Location = new Point(0, 0);
-      txtShaderGLSL.Multiline = true;
-      txtShaderGLSL.Name = "txtShaderGLSL";
-      txtShaderGLSL.ScrollBars = ScrollBars.Both;
-      txtShaderGLSL.Size = new Size(218, 142);
-      txtShaderGLSL.TabIndex = 28;
-      // 
-      // txtShader
-      // 
-      txtShader.Dock = DockStyle.Fill;
-      txtShader.Font = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
-      txtShader.Location = new Point(0, 0);
-      txtShader.Multiline = true;
-      txtShader.Name = "txtShader";
-      txtShader.ScrollBars = ScrollBars.Both;
-      txtShader.Size = new Size(385, 142);
-      txtShader.TabIndex = 27;
-      txtShader.Click += txtShaderSetLineNumber;
-      txtShader.Enter += txtShaderSetLineNumber;
-      txtShader.PreviewKeyDown += txtShaderSetLineNumber;
-      // 
-      // txtLineNumberError
-      // 
-      txtLineNumberError.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumberError.Location = new Point(500, 6);
-      txtLineNumberError.Name = "txtLineNumberError";
-      txtLineNumberError.ReadOnly = true;
-      txtLineNumberError.Size = new Size(32, 23);
-      txtLineNumberError.TabIndex = 30;
-      txtLineNumberError.TextAlign = HorizontalAlignment.Right;
-      // 
-      // txtLineNumber
-      // 
-      txtLineNumber.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumber.Location = new Point(462, 6);
-      txtLineNumber.Name = "txtLineNumber";
-      txtLineNumber.ReadOnly = true;
-      txtLineNumber.Size = new Size(32, 23);
-      txtLineNumber.TabIndex = 29;
-      txtLineNumber.TextAlign = HorizontalAlignment.Right;
-      // 
-      // btnLoadShaderInputFromFile
-      // 
-      btnLoadShaderInputFromFile.FlatStyle = FlatStyle.System;
-      btnLoadShaderInputFromFile.Location = new Point(208, 6);
-      btnLoadShaderInputFromFile.Name = "btnLoadShaderInputFromFile";
-      btnLoadShaderInputFromFile.Size = new Size(49, 23);
-      btnLoadShaderInputFromFile.TabIndex = 28;
-      btnLoadShaderInputFromFile.Text = "File";
-      btnLoadShaderInputFromFile.UseVisualStyleBackColor = true;
-      btnLoadShaderInputFromFile.Click += btnLoadShaderInput_Click;
       // 
       // tabWave
       // 
@@ -3452,7 +3480,7 @@ namespace MilkwaveRemote
     private Button btnOpenSettingsRemote;
     private TextBox txtFilter;
     private TabPage tabShader;
-    private TextBox txtShader;
+    private TextBox txtShaderHLSL;
     private Button btnSendShader;
     private Button btnLoadShaderInputFromFile;
     private TextBox txtLineNumber;
@@ -3463,5 +3491,6 @@ namespace MilkwaveRemote
     private TextBox txtShadertoyURL;
     private Button btnLoadURL;
     private TextBox txtShaderinfo;
+    private Button btnShaderHelp;
   }
 }
