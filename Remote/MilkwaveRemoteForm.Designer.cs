@@ -159,7 +159,6 @@ namespace MilkwaveRemote
       btnOpenSettingsRemote = new Button();
       btnOpenTagsRemote = new Button();
       txtFilter = new TextBox();
-      txtShadertoyURL = new TextBox();
       btnSendShader = new Button();
       txtShaderinfo = new TextBox();
       btnLoadURL = new Button();
@@ -170,6 +169,8 @@ namespace MilkwaveRemote
       txtLineNumber = new TextBox();
       btnLoadShaderInputFromFile = new Button();
       btnShaderHelp = new Button();
+      cboShadertoyURL = new ComboBox();
+      txtPSVersion = new TextBox();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -1868,17 +1869,6 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(txtFilter, "Only load presets containing this text in filename\r\nPress Enter: Load and filter all presets including subdirs\r\n\"age=X\": Load only presets modified within the last X days");
       txtFilter.KeyDown += txtFilter_KeyDown;
       // 
-      // txtShadertoyURL
-      // 
-      txtShadertoyURL.Location = new Point(5, 7);
-      txtShadertoyURL.Name = "txtShadertoyURL";
-      txtShadertoyURL.Size = new Size(142, 23);
-      txtShadertoyURL.TabIndex = 33;
-      toolTip1.SetToolTip(txtShadertoyURL, "shadertoy.com URL or ID");
-      txtShadertoyURL.WordWrap = false;
-      txtShadertoyURL.Click += txtShadertoyURL_Click;
-      txtShadertoyURL.KeyDown += txtShadertoyURL_KeyDown;
-      // 
       // btnSendShader
       // 
       btnSendShader.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -1898,7 +1888,7 @@ namespace MilkwaveRemote
       txtShaderinfo.Location = new Point(346, 6);
       txtShaderinfo.Multiline = true;
       txtShaderinfo.Name = "txtShaderinfo";
-      txtShaderinfo.Size = new Size(77, 23);
+      txtShaderinfo.Size = new Size(55, 23);
       txtShaderinfo.TabIndex = 35;
       toolTip1.SetToolTip(txtShaderinfo, "Shaderinfo used for filename and embedded into generated preset file\r\nCan be multiple lines, use cursor keys to scroll");
       // 
@@ -1937,6 +1927,7 @@ namespace MilkwaveRemote
       txtShaderGLSL.Size = new Size(294, 142);
       txtShaderGLSL.TabIndex = 28;
       toolTip1.SetToolTip(txtShaderGLSL, "GLSL");
+      txtShaderGLSL.MouseWheel += txtShader_MouseWheel;
       // 
       // txtShaderHLSL
       // 
@@ -1952,28 +1943,29 @@ namespace MilkwaveRemote
       txtShaderHLSL.Click += txtShaderSetLineNumber;
       txtShaderHLSL.Enter += txtShaderSetLineNumber;
       txtShaderHLSL.KeyUp += txtShaderSetLineNumber;
+      txtShaderHLSL.MouseWheel += txtShader_MouseWheel;
       txtShaderHLSL.PreviewKeyDown += txtShaderSetLineNumber;
       // 
       // txtLineNumberError
       // 
       txtLineNumberError.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumberError.Location = new Point(465, 6);
+      txtLineNumberError.Location = new Point(467, 6);
       txtLineNumberError.Name = "txtLineNumberError";
       txtLineNumberError.ReadOnly = true;
-      txtLineNumberError.Size = new Size(30, 23);
+      txtLineNumberError.Size = new Size(28, 23);
       txtLineNumberError.TabIndex = 30;
-      txtLineNumberError.TextAlign = HorizontalAlignment.Right;
+      txtLineNumberError.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(txtLineNumberError, "Approx. line in Milkwave generated shader code\r\nUse this to find the matching line from shader compilation error messages");
       // 
       // txtLineNumber
       // 
       txtLineNumber.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumber.Location = new Point(429, 6);
+      txtLineNumber.Location = new Point(431, 6);
       txtLineNumber.Name = "txtLineNumber";
       txtLineNumber.ReadOnly = true;
-      txtLineNumber.Size = new Size(30, 23);
+      txtLineNumber.Size = new Size(28, 23);
       txtLineNumber.TabIndex = 29;
-      txtLineNumber.TextAlign = HorizontalAlignment.Right;
+      txtLineNumber.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(txtLineNumber, "Right pane line counter");
       // 
       // btnLoadShaderInputFromFile
@@ -2000,6 +1992,28 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(btnShaderHelp, "Help");
       btnShaderHelp.UseVisualStyleBackColor = true;
       btnShaderHelp.Click += btnShaderHelp_Click;
+      // 
+      // cboShadertoyURL
+      // 
+      cboShadertoyURL.Location = new Point(4, 6);
+      cboShadertoyURL.Name = "cboShadertoyURL";
+      cboShadertoyURL.Size = new Size(144, 23);
+      cboShadertoyURL.TabIndex = 138;
+      toolTip1.SetToolTip(cboShadertoyURL, "Shadertoy.com URL or ID");
+      cboShadertoyURL.KeyDown += cboShadertoyURL_KeyDown;
+      // 
+      // txtPSVersion
+      // 
+      txtPSVersion.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      txtPSVersion.Location = new Point(407, 6);
+      txtPSVersion.MaxLength = 1;
+      txtPSVersion.Name = "txtPSVersion";
+      txtPSVersion.Size = new Size(16, 23);
+      txtPSVersion.TabIndex = 139;
+      txtPSVersion.Text = "4";
+      txtPSVersion.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(txtPSVersion, "Pixel shader version written to preset file on send");
+      txtPSVersion.Click += txtPSVersion_Click;
       // 
       // cboParameters
       // 
@@ -2723,10 +2737,11 @@ namespace MilkwaveRemote
       // 
       tabShader.BackColor = SystemColors.ControlLight;
       tabShader.BorderStyle = BorderStyle.FixedSingle;
+      tabShader.Controls.Add(txtPSVersion);
+      tabShader.Controls.Add(cboShadertoyURL);
       tabShader.Controls.Add(btnShaderHelp);
       tabShader.Controls.Add(txtShaderinfo);
       tabShader.Controls.Add(btnLoadURL);
-      tabShader.Controls.Add(txtShadertoyURL);
       tabShader.Controls.Add(btnShaderConvert);
       tabShader.Controls.Add(splitContainerShader);
       tabShader.Controls.Add(txtLineNumberError);
@@ -3488,9 +3503,10 @@ namespace MilkwaveRemote
     private SplitContainer splitContainerShader;
     private Button btnShaderConvert;
     private TextBox txtShaderGLSL;
-    private TextBox txtShadertoyURL;
     private Button btnLoadURL;
     private TextBox txtShaderinfo;
     private Button btnShaderHelp;
+    private ComboBox cboShadertoyURL;
+    private TextBox txtPSVersion;
   }
 }

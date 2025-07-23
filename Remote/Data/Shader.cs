@@ -1,17 +1,20 @@
-﻿using System.Diagnostics;
+﻿using NAudio.Wave;
+using System.Configuration;
+using System.Diagnostics;
 using System.Text;
 
 namespace MilkwaveRemote.Data {
   public class Shader {
-    private static string indent = "";
+    private string indent = "";
 
-    public static string ConvertGLSLtoHLSL(string inp) {
+    public string ConvertGLSLtoHLSL(string inp) {
       StringBuilder sb = new StringBuilder();
 
       try {
         inp = inp.Replace("vec2", "float2").Replace("vec3", "float3").Replace("vec4", "float4");
         inp = inp.Replace("fract (", "fract(").Replace("mod (", "mod(").Replace("mix (", "mix (");
         inp = inp.Replace("fract(", "frac(").Replace("mod(", "mod_conv(").Replace("mix(", "lerp(");
+        inp = ReplaceVarName("time", "time_conv", inp);
         inp = inp.Replace("iTime", "time").Replace("iResolution", "texsize");
         inp = inp.Replace("void mainImage(", "mainImage(");
 
@@ -22,7 +25,7 @@ namespace MilkwaveRemote.Data {
         string inpFooter = "";
 
         if (indexMainImage == -1) {
-          // no mainImage function, we'll just wrap everything into a shader_body
+          // no mainImage function, we'll just wrap the full input into a shader_body
           inpMain = inp + Environment.NewLine + "}"; // opening bracket is supplied below
         } else {
           int indexMainImageMethodClosingBracket = FindClosingBracketIndex(inp.Substring(indexMainImage), '{', '}', 0);
@@ -38,11 +41,7 @@ namespace MilkwaveRemote.Data {
           inpHeader += inpFooter;
         }
 
-        inpHeader = inpHeader.Replace(" uv ", " uv_conv ");
-        inpHeader = inpHeader.Replace(" uv.", " uv_conv.");
-        inpHeader = inpHeader.Replace("(uv", "(uv_conv");
-        inpHeader = inpHeader.Replace("uv)", "uv_conv)");
-        inpHeader = inpHeader.Replace("float2 uv", "float2 uv_conv");
+        inpHeader = ReplaceVarName("uv", "uv_conv", inpHeader);
 
         if (inp.Contains("mod_conv(")) {
           inpHeader = AddHelperFunctionsMod(inpHeader);
@@ -52,6 +51,7 @@ namespace MilkwaveRemote.Data {
         }
 
         StringBuilder sbHeader = new StringBuilder();
+        sbHeader.AppendLine();
         sbHeader.AppendLine("shader_body {");
 
         if (indexMainImage > -1) {
@@ -87,20 +87,19 @@ namespace MilkwaveRemote.Data {
             currentLine = line.Replace("fragColor =", "ret =");
           } else if (line.Contains("float2 uv =")) {
             currentLine = indent + "// " + line;
-          } else if (line.Contains("*= mat")) {
-            // TODO
-            SetConvertorError("Matrix multiplication unsupported", sb);
-            SetConvertorError("Example: uv = mul(uv,transpose(float2x2(arg1, arg2, arg3, arg4)));", sb);
-            currentLine = indent + "// " + line;
           } else if (line.Contains("iMouse")) {
             SetConvertorError("iMouse unsupported", sb);
             currentLine = indent + "// " + line;
           } else if (line.Contains("iChannel")) {
             SetConvertorError("iChannel (textures) unsupported", sb);
             currentLine = indent + "// " + line;
+          } else if (line.Contains("break;")) {
+            SetConvertorError("break is unsupported, see Milkwave manual for details", sb);
           }
 
+          currentLine = FixMatrixMultiplication(currentLine);
           currentLine = FixFloatNumberOfArguments(currentLine, inp);
+
           sb.AppendLine(currentLine);
         }
       } catch (Exception e) {
@@ -109,7 +108,7 @@ namespace MilkwaveRemote.Data {
       return sb.ToString();
     }
 
-    private static string FixFloatNumberOfArguments(string inputLine, string fullContext, int startIndex = 0) {
+    public string FixFloatNumberOfArguments(string inputLine, string fullContext, int startIndex = 0) {
       string result = inputLine;
       for (int numArgs = 2; numArgs <= 4; numArgs++) {
         int index = result.IndexOf("float" + numArgs + "(", startIndex);
@@ -146,7 +145,50 @@ namespace MilkwaveRemote.Data {
       return result;
     }
 
-    private static int FindClosingBracketIndex(string input, char openingBracket, char closingBracket, int level) {
+    public string FixMatrixMultiplication(string inputLine) {
+      string result = inputLine;
+      inputLine = inputLine.Replace("*= mat", "*=mat").Replace("* mat", "*mat").Replace(" *mat", "*mat");
+      string token = "*=mat";
+      int index = inputLine.IndexOf(token);
+      if (index > -1) {
+        // something like "uv *= mat2(cos(angle), -sin(angle), sin(angle), cos(angle));" (see ShaderTests.cs)
+        string matSizeChar = inputLine.Substring(index + token.Length, 1);
+        if (int.TryParse(matSizeChar, out int matSize)) {
+          string fac1 = inputLine.Substring(0, index).Trim();
+          string indent = inputLine.Substring(0, inputLine.IndexOf(fac1));
+          int closingBracketIndex = FindClosingBracketIndex(inputLine.Substring(index + token.Length + 2), '(', ')', 1);
+          string args = inputLine.Substring(index + token.Length + 2, closingBracketIndex).Trim();
+          result = indent + fac1 + " = mul(" + fac1 + ", transpose(float" + matSize + "x" + matSize + "(" + args + ")));";
+        }
+      } else {
+        token = "*mat";
+        index = inputLine.IndexOf(token);
+        if (index > -1) {
+          // something like "return p*mat2(c,s,-s,c);" (see ShaderTests.cs)
+          string matSizeChar = inputLine.Substring(index + token.Length, 1);
+          if (int.TryParse(matSizeChar, out int matSize)) {
+            string fac1 = inputLine.Substring(0, index).Trim();
+            int blankIndex = fac1.LastIndexOf(' ');
+            if (blankIndex > -1) {
+              fac1 = fac1.Substring(blankIndex + 1);
+            }
+            int closingBracketIndex = FindClosingBracketIndex(inputLine.Substring(index + token.Length + 2), '(', ')', 1);
+            string args = inputLine.Substring(index + token.Length + 2, closingBracketIndex).Trim();
+            string left = inputLine.Substring(0, index - fac1.Length);
+            result = left + " mul(" + fac1 + ", transpose(float" + matSize + "x" + matSize + "(" + args + ")));";
+            result = result.Replace("  ", " ");
+          }
+        }
+      }
+
+      // try to replace any remaining clear uses of mat2, mat3, mat4
+      result = result.Replace("mat2(", "float2x2(").Replace("mat3(", "float3x3(").Replace("mat4(", "float4x4(");
+      result = result.Replace(" mat2 ", " float2x2 ").Replace(" mat3 ", " float3x3 ").Replace(" mat4 ", " float4x4 ");
+
+      return result;
+    }
+
+    private int FindClosingBracketIndex(string input, char openingBracket, char closingBracket, int level) {
       int bracketCount = level;
       for (int i = 0; i < input.Length; i++) {
         if (input[i] == openingBracket) {
@@ -161,11 +203,11 @@ namespace MilkwaveRemote.Data {
       return -1; // No matching closing bracket found
     }
 
-    private static void SetConvertorError(string msg, StringBuilder sb) {
+    private void SetConvertorError(string msg, StringBuilder sb) {
       sb.AppendLine("// CONV: " + msg);
     }
 
-    private static string AddHelperFunctionsMod(string inpHeader) {
+    private string AddHelperFunctionsMod(string inpHeader) {
       StringBuilder sb = new StringBuilder();
       sb.AppendLine("float mod_conv(float x, float y) { return x - y * floor(x / y); }");
       sb.AppendLine("float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }");
@@ -174,10 +216,21 @@ namespace MilkwaveRemote.Data {
       return sb.ToString() + Environment.NewLine + inpHeader;
     }
 
-    private static string AddHelperFunctionsLessThan(string inpHeader) {
+    private string AddHelperFunctionsLessThan(string inpHeader) {
       StringBuilder sb = new StringBuilder();
       sb.AppendLine("float4 lessThan(float4 a, float4 b) { return float4(a.x < b.x ? 1.0 : 0.0, a.y < b.y ? 1.0 : 0.0, a.z < b.z ? 1.0 : 0.0, a.w < b.w ? 1.0 : 0.0); }");
       return sb.ToString() + Environment.NewLine + inpHeader;
+    }
+
+    private string ReplaceVarName(string oldName, string newName, string inp) {
+      string res = inp.Replace(" " + oldName + " ", " " + newName + " ");
+      res = res.Replace(" " + oldName + ". ", " " + newName + ". ");
+      res = res.Replace("(" + oldName + " ", "(" + newName + " ");
+      res = res.Replace(" " + oldName + ") ", " " + newName + ") ");
+
+      res = res.Replace("float2 " + oldName + ";", "float2 " + newName + "; ");
+      res = res.Replace("float2 " + oldName + " ", "float2 " + newName + " ");
+      return res;
     }
   } // end class
 } // end namespace
