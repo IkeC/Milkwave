@@ -21,3 +21,5 @@ vis_milk2/bin
 /Build/notes.md
 /Release/*
 !/Release/Developer*.*
+/MilkwaveRemoteTests/bin
+/MilkwaveRemoteTests/obj
