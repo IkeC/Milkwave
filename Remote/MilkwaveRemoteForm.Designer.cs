@@ -2013,7 +2013,7 @@ namespace MilkwaveRemote
       txtPSVersion.Name = "txtPSVersion";
       txtPSVersion.Size = new Size(21, 23);
       txtPSVersion.TabIndex = 139;
-      txtPSVersion.Text = "4";
+      txtPSVersion.Text = "3";
       txtPSVersion.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(txtPSVersion, "Pixel shader version written to preset file on send");
       txtPSVersion.Click += txtPSVersion_Click;
