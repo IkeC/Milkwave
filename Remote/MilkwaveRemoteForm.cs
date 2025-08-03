@@ -79,6 +79,7 @@ namespace MilkwaveRemote {
     Random rnd = new Random();
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
+    private Shader Shader = new Shader();
     private RemoteHelper helper;
 
     private OpenFileDialog ofd;
@@ -199,6 +200,7 @@ namespace MilkwaveRemote {
         }
       }
     }
+
     public MilkwaveRemoteForm() {
       InitializeComponent();
 
@@ -277,12 +279,19 @@ namespace MilkwaveRemote {
       LoadAndSetSettings();
       SetPanelsVisibility();
 
+#if DEBUG
+      //cboShadertoyURL.Text = "w3KGRK";
+#else
       StartVisualizerIfNotFound();
+#endif
 
       ofd = new OpenFileDialog();
       ofd.Filter = "MilkDrop Presets|*.milk;*.milk2|All files (*.*)|*.*";
       ofd.RestoreDirectory = true;
       SetAllControlFontSizes(this, 9f); // Sets all controls to font size 9
+
+      txtShaderHLSL.Font = new Font(txtShaderHLSL.Font.FontFamily, 10f, txtShaderHLSL.Font.Style);
+      txtShaderGLSL.Font = txtShaderHLSL.Font;
 
       helper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
       helper.FillAudioDevices(cboAudioDevice);
@@ -335,6 +344,11 @@ namespace MilkwaveRemote {
       if (Settings.LoadFilters?.Count > 0) {
         ReloadLoadFiltersList(false);
         cboTagsFilter.SelectedIndex = 0;
+      }
+
+      if (Settings.ShadertoyURLs?.Count > 0) {
+        ReloadShadertoyURLsList(false);
+        cboShadertoyURL.SelectedIndex = 0;
       }
 
       LoadVisualizerSettings();
@@ -1409,11 +1423,17 @@ namespace MilkwaveRemote {
           SelectNextPreset();
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
-          SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
+          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+            btnSendShader_Click(null, null);
+          } else if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+            SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
+          }
         } else if (e.KeyCode == Keys.T) {
           btnTagsSave_Click(null, null);
         } else if (e.KeyCode == Keys.X) {
-          btnSendFile_Click(null, null);
+          if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+            btnSendFile_Click(null, null);
+          }
           if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
             SelectNextAutoplayEntry();
           }
@@ -1496,7 +1516,7 @@ namespace MilkwaveRemote {
 
     private void lblParameters_MouseDown(object sender, MouseEventArgs e) {
       if (e.Button == MouseButtons.Right) {
-        string helpText = "font={fontname}  // The font name to use" + Environment.NewLine +
+        string helpText = "font={fontname}  // The font shaderName to use" + Environment.NewLine +
           "size={int:0..100}  // The font size (0=tiny, 100=enormous, 20-60=normal range)" + Environment.NewLine +
           "growth={float:0.25..4.0}  // The factor to grow or shrink over time (0.5=shrink to half-size, 2.0=grow to double size)" + Environment.NewLine +
           "x={float:0..1}  // The x-position of the center of the text (0.0=left side, 1.0=right side)" + Environment.NewLine +
@@ -1520,7 +1540,7 @@ namespace MilkwaveRemote {
           "movetime={float}  // The duration (in seconds) the text will move from startx/starty to x/y" + Environment.NewLine +
           "easemode={int:0|1|2}  // Moving animation smoothing: 0=linear, 1=ease-in, 2=ease-out (default=2)" + Environment.NewLine +
           "easefactor={float:1..5}  // Smoothing strengh (default=2.0)" + Environment.NewLine +
-          "shadowoffset={float}  // Text drop shadow offset: 0=no shadow (default=2.0)" + Environment.NewLine +
+          "shadowoffset={float}  // Text drop shadow offsetNum: 0=no shadow (default=2.0)" + Environment.NewLine +
           "burntime={float}  // The duration (in seconds) the text will \"burn in\" at the end (default=0.1)" + Environment.NewLine;
 
         new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Parameters", helpText, 9, 800, 600);
@@ -1553,6 +1573,18 @@ namespace MilkwaveRemote {
       cboTagsFilter.Items.Clear();
       cboTagsFilter.Items.AddRange(Settings.LoadFilters.ToArray());
       cboTagsFilter.Refresh();
+    }
+
+    private void ReloadShadertoyURLsList(bool addCuurent) {
+      if (addCuurent && cboShadertoyURL.Text.Length > 0 && !Settings.ShadertoyURLs.Contains(cboShadertoyURL.Text)) {
+        Settings.ShadertoyURLs.Insert(0, cboShadertoyURL.Text);
+        if (Settings.ShadertoyURLs.Count > 5) {
+          Settings.ShadertoyURLs.RemoveAt(5);
+        }
+      }
+      cboShadertoyURL.Items.Clear();
+      cboShadertoyURL.Items.AddRange(Settings.ShadertoyURLs.ToArray());
+      cboShadertoyURL.Refresh();
     }
 
     private void txtStyle_KeyDown(object sender, KeyEventArgs e) {
@@ -1829,17 +1861,26 @@ namespace MilkwaveRemote {
     }
 
     private void toolStripMenuItemReleases_Click(object sender, EventArgs e) {
-      string url = "https://github.com/IkeC/Milkwave/releases";
-      Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+      OpenURL("https://github.com/IkeC/Milkwave/releases");
+    }
+
+    private void OpenURL(string url) {
+      try {
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+      } catch (Exception ex) {
+        MessageBox.Show($"Unable to open URL: {url}" + Environment.NewLine + Environment.NewLine + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      }
     }
 
     private void toolStripMenuItemHelp_Click(object sender, EventArgs e) {
       string dialogtext =
   "There are many tooltips explaining all features when you move your mouse over all the form elements." + Environment.NewLine +
    Environment.NewLine +
+  "Manual: https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md" + Environment.NewLine +
+  "Readme: https://github.com/IkeC/Milkwave/blob/main/Build/README.txt" + Environment.NewLine +
+  Environment.NewLine +
   "GitHub homepage: https://github.com/IkeC/Milkwave" + Environment.NewLine +
   "GitHub issues: https://github.com/IkeC/Milkwave/issues" + Environment.NewLine +
-  "Readme: https://github.com/IkeC/Milkwave/blob/main/Build/README.txt" + Environment.NewLine +
   "Discord: https://bit.ly/Ikes-Discord" + Environment.NewLine +
   Environment.NewLine +
   "More Presets: https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets" + Environment.NewLine +
@@ -2638,7 +2679,6 @@ namespace MilkwaveRemote {
       }
       Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
-
       SaveSettingsToFile();
     }
 
@@ -3151,5 +3191,201 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void btnSendShader_Click(object sender, EventArgs e) {
+      try {
+        // Ensure the shader directory exists
+        string shaderDir = Path.Combine(VisualizerPresetsFolder, "Shader");
+        Directory.CreateDirectory(shaderDir);
+
+        string presetName = txtShaderinfo.Text.Split(Environment.NewLine)[0].Trim();
+        if (string.IsNullOrEmpty(presetName)) {
+          presetName = "Shader";
+        }
+        string fileName = StripInvalidFileNameChars(presetName + ".milk");
+
+        // Build the file path
+        string shaderFile = Path.Combine(shaderDir, fileName);
+
+        // Prepare the header and shader content
+        var sb = new StringBuilder();
+        sb.AppendLine("MILKDROP_PRESET_VERSION=201");
+        sb.AppendLine("PSVERSION=" + txtPSVersion.Text);
+        sb.AppendLine("PSVERSION_WARP=" + txtPSVersion.Text);
+        sb.AppendLine("PSVERSION_COMP=" + txtPSVersion.Text);
+
+        // Write shader info as comment into preset file
+        string shaderinfo = "// " + txtShaderinfo.Text.Trim().Replace(Environment.NewLine, "\n").Replace('\r', '\n').Replace("\n", " / ");
+        shaderinfo += Environment.NewLine + "// Transpiled to HLSL using Milkwave" + Environment.NewLine + Environment.NewLine;
+        string shaderText = shaderinfo + txtShaderHLSL.Text.Trim();
+
+        // Prefix each line in txtShader.Text with comp_X=
+        var lines = shaderText.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        int lineNum = 1;
+        foreach (var line in lines) {
+          sb.AppendLine($"comp_{lineNum}={line}");
+          lineNum++;
+        }
+
+        // Write to file (overwrite if exists)
+        File.WriteAllText(shaderFile, sb.ToString());
+        SetStatusText($"Shader saved to {shaderFile}");
+
+        SendToMilkwaveVisualizer(shaderFile, MessageType.PresetFilePath);
+      } catch (Exception ex) {
+        SetStatusText($"Error saving shader: {ex.Message}");
+      }
+    }
+
+    private void btnLoadShaderInput_Click(object sender, EventArgs e) {
+
+      OpenFileDialog ofdShader = new OpenFileDialog();
+      ofdShader.Filter = "All files (*.*)|*.*";
+      ofdShader.RestoreDirectory = true;
+      ofdShader.InitialDirectory = Path.Combine(BaseDir, "resources\\shader");
+
+      if (ofdShader.ShowDialog() == DialogResult.OK) {
+        String shaderInput = ofdShader.FileName;
+        if (File.Exists(shaderInput)) {
+          try {
+            // Read the shader content from the input file
+            string shaderContent = File.ReadAllText(shaderInput);
+            txtShaderGLSL.Text = shaderContent;
+            // Notify the user
+            SetStatusText($"Shader loaded from {shaderInput}");
+          } catch (Exception ex) {
+            SetStatusText($"Error loading shader: {ex.Message}");
+          }
+        } else {
+          SetStatusText($"Shader input file not found: {shaderInput}");
+        }
+      }
+    }
+
+    private void statusBar_Click(object sender, EventArgs e) {
+      if (!statusBar.Text.StartsWith("Copied ")) {
+        Clipboard.SetText(statusBar.Text);
+        SetStatusText($"Copied '{statusBar.Text}' to clipboard");
+      }
+    }
+
+    private void SetCurrentShaderLineNumber() {
+      string sub = txtShaderHLSL.Text.Substring(0, txtShaderHLSL.SelectionStart);
+      int lineNumber = sub.Count(f => f == '\n') + 1;
+      txtLineNumber.Text = (lineNumber).ToString();
+
+      // offsetNum lines are inserted as header by Visualizer
+      int offsetNum = 163;
+      txtLineNumberError.Text = (lineNumber + offsetNum).ToString();
+    }
+
+    private void txtShaderSetLineNumber(object sender, EventArgs e) {
+      SetCurrentShaderLineNumber();
+    }
+
+    private void btnShaderConvert_Click(object sender, EventArgs e) {
+      ConvertShader();
+    }
+
+    private void btnLoadURL_Click(object? sender, EventArgs? e) {
+      ReloadShadertoyURLsList(true);
+      string id = cboShadertoyURL.Text.Trim();
+      int index = id.LastIndexOf("/");
+      if (index > 0) {
+        id = id.Substring(index + 1);
+      }
+      if (string.IsNullOrEmpty(id)) {
+        SetStatusText("Please enter a Shadertoy.com URL or ID");
+        return;
+      } else {
+        cboShadertoyURL.Text = id; // Set the ID back to the combobox
+      }
+
+      SetStatusText($"Loading code for Shadertoy ID {id}");
+
+      // please request your own appKey at https://www.shadertoy.com/howto
+      string appKey = "ftrlhm";
+      string url = $"https://www.shadertoy.com/api/v1/shaders/{id}?key={appKey}";
+      using var httpClient = new HttpClient();
+      try {
+        var jsonString = httpClient.GetStringAsync(url).Result;
+        JsonDocument doc = JsonDocument.Parse(jsonString);
+        if (doc.RootElement.TryGetProperty("Error", out JsonElement elError)) {
+          // If the error property exists, it means the shader was not found
+          SetStatusText($"Shadertoy.com says: {elError.GetString()}");
+          return;
+        }
+
+        JsonElement elShader = doc.RootElement.GetProperty("Shader");
+        JsonElement elInfo = elShader.GetProperty("info");
+        string? shaderId = elInfo.GetProperty("id").GetString();
+        string? shaderName = elInfo.GetProperty("name").GetString();
+        string? shaderUsername = elInfo.GetProperty("username").GetString();
+        JsonElement firstRenderpassElement = elShader.GetProperty("renderpass").EnumerateArray().First();
+        string? shaderCode = firstRenderpassElement.GetProperty("code").GetString();
+        if (shaderCode == null) {
+          SetStatusText("Shader code not found in the response");
+        } else {
+          txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"shadertoy.com id: {shaderId}";
+          string? formattedShaderCode = shaderCode?.Replace("\n", Environment.NewLine);
+          txtShaderGLSL.Text = formattedShaderCode;
+          if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
+            ConvertShader();
+          }
+          SetStatusText($"Shader code loaded and converted");
+        }
+
+      } catch (Exception ex) {
+        SetStatusText($"Loading failed: {ex.Message}");
+      }
+    }
+
+    private string StripInvalidFileNameChars(string fileName) {
+      var invalidChars = Path.GetInvalidFileNameChars();
+      var sb = new StringBuilder(fileName.Length);
+      foreach (char c in fileName) {
+        if (!invalidChars.Contains(c))
+          sb.Append(c);
+      }
+      return sb.ToString();
+    }
+
+    private void ConvertShader() {
+      txtShaderHLSL.Text = Shader.ConvertGLSLtoHLSL(txtShaderGLSL.Text);
+    }
+
+    private void btnShaderHelp_Click(object sender, EventArgs e) {
+      OpenURL("https://github.com/IkeC/Milkwave/blob/main/build/Manual.md");
+    }
+
+    private void txtShader_MouseWheel(object sender, MouseEventArgs e) {
+      TextBox ctrl = (TextBox)sender;
+      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        // Ctrl+MouseWheel detected
+        if (e.Delta > 0) {
+          // Scrolled up
+          int fontSize = (int)ctrl.Font.Size + 1;
+          ctrl.Font = new Font(ctrl.Font.FontFamily, fontSize, ctrl.Font.Style);
+        } else {
+          int fontSize = (int)ctrl.Font.Size - 1;
+          if (fontSize > 0) {
+            ctrl.Font = new Font(ctrl.Font.FontFamily, fontSize, ctrl.Font.Style);
+          }
+        }
+        // Optionally, mark the event as handled if needed
+        if (e is HandledMouseEventArgs hme)
+          hme.Handled = true;
+      }
+    }
+
+    private void cboShadertoyURL_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter) {
+        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+        btnLoadURL_Click(null, null);
+      }
+    }
+
+    private void txtPSVersion_Click(object sender, EventArgs e) {
+      txtPSVersion.SelectAll();
+    }
   } // end class
 } // end namespace

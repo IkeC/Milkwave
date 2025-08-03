@@ -3797,6 +3797,13 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   bool failed = false;
   int len = lstrlen(szShaderText);
 
+  std::wstring wideShaderText = std::wstring(szShaderText, szShaderText + strlen(szShaderText));
+  wchar_t tempBuffer[32768]; // Ensure the buffer size is sufficient for the content.
+  wcsncpy(tempBuffer, wideShaderText.c_str(), 32767); // Copy the content safely.
+  tempBuffer[32767] = L'\0'; // Null-terminate to avoid overflow.
+  dumpmsg(tempBuffer); // Pass the non-const buffer to dumpmsg.
+
+    
   HRESULT hresult = D3DXCompileShader(
     szShaderText,
     len,
@@ -3822,31 +3829,24 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   }
 
   if (failed) {
-    wchar_t temp[1024];
+    wchar_t wideErrorMsg[1024];
 
-    // "error compiling ps_2_0_shader:"
-    // swprintf(temp, wasabiApiLangString(IDS_ERROR_COMPILING_X_X_SHADER), szProfile, szWhichShader);
+    if (m_pShaderCompileErrors) {
+      const char* errorMsg = (const char*)m_pShaderCompileErrors->GetBufferPointer();
+      // Convert to wide string
+      MultiByteToWideChar(CP_ACP, 0, errorMsg, -1, wideErrorMsg, _countof(wideErrorMsg));
+      dumpmsg(wideErrorMsg);
 
-    if (MessageBoxA(GetPluginWindow(), "The shader could not be compiled.\n\nPlease install the Microsoft DirectX End-User Runtimes.\n\nOpen Download-Website now?", "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
-      // open website in browser https://www.microsoft.com/en-ca/download/details.aspx?id=8109
-      ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-ca/download/details.aspx?id=8109", NULL, NULL, SW_SHOWNORMAL);
+      SafeRelease(m_pShaderCompileErrors);
+      AddNotification(wideErrorMsg);
     }
-
-    if (m_pShaderCompileErrors && m_pShaderCompileErrors->GetBufferSize() < sizeof(temp) - 256) {
-      lstrcatW(temp, L"\n\n");
-      lstrcatW(temp, AutoWide((char*)m_pShaderCompileErrors->GetBufferPointer()));
-    }
-    SafeRelease(m_pShaderCompileErrors);
-    return false;
-    /*
-    dumpmsg(temp);
-    if (bHardErrors)
-      MessageBoxW(GetPluginWindow(), temp, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
     else {
-      AddError(temp, 8.0f, ERR_PRESET, true);
+      if (MessageBoxA(GetPluginWindow(), "The shader could not be compiled.\n\nPlease install the Microsoft DirectX End-User Runtimes.\n\nOpen Download-Website now?", "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
+        // open website in browser https://www.microsoft.com/en-ca/download/details.aspx?id=8109
+        ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-ca/download/details.aspx?id=8109", NULL, NULL, SW_SHOWNORMAL);
+      }
     }
     return false;
-    */
   }
 
   HRESULT hr = 1;
@@ -3860,7 +3860,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   if (hr != D3D_OK) {
     wchar_t temp[512];
     wasabiApiLangString(IDS_ERROR_CREATING_SHADER, temp, sizeof(temp));
-    dumpmsg(temp);
+    // dumpmsg(temp);
     if (bHardErrors)
       MessageBoxW(GetPluginWindow(), temp, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
     else {
