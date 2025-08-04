@@ -37,11 +37,19 @@ namespace MilkwaveRemote.Helper {
     public FlatTabControl() {
       try {
         Appearance = TabAppearance.Buttons;
-        DrawMode = TabDrawMode.Normal;
-        ItemSize = new Size(0, 0);
         SizeMode = TabSizeMode.Fixed;
 
-        PreRemoveTabPage = null;
+        // DPI-aware tab height and width
+        float dpi = DeviceDpi;
+        if (dpi < 96f) {
+          dpi = 96f; // Ensure minimum DPI
+        }
+
+        int baseHeight = 25;
+        int scaledHeight = Math.Max(24, (int)(baseHeight * dpi / 96f));
+        int baseWidth = 100;
+        int scaledWidth = Math.Max(60, (int)(baseWidth * dpi / 96f));
+        ItemSize = new Size(scaledWidth, scaledHeight);
         DrawMode = TabDrawMode.OwnerDrawFixed;
       } catch { }
     }
