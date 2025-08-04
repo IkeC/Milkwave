@@ -23,3 +23,5 @@ vis_milk2/bin
 !/Release/Developer*.*
 /MilkwaveRemoteTests/bin
 /MilkwaveRemoteTests/obj
+/RemoteTests/bin
+/RemoteTests/obj
