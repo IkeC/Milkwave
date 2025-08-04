@@ -1412,7 +1412,6 @@ namespace MilkwaveRemote {
 
     private void MainForm_KeyDown(object sender, KeyEventArgs e) {
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
         if (e.KeyCode == Keys.A) {
           txtMessage.Focus();
           txtMessage.SelectAll();
@@ -1425,6 +1424,7 @@ namespace MilkwaveRemote {
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
           if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+            e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
             btnSendShader_Click(null, null);
           } else if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
             SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);

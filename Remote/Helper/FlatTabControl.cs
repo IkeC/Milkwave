@@ -33,27 +33,6 @@ namespace MilkwaveRemote.Helper {
 
     #endregion Public Properties
 
-
-    public FlatTabControl() {
-      try {
-        Appearance = TabAppearance.Buttons;
-        SizeMode = TabSizeMode.Fixed;
-
-        // DPI-aware tab height and width
-        float dpi = DeviceDpi;
-        if (dpi < 96f) {
-          dpi = 96f; // Ensure minimum DPI
-        }
-
-        int baseHeight = 25;
-        int scaledHeight = Math.Max(24, (int)(baseHeight * dpi / 96f));
-        int baseWidth = 100;
-        int scaledWidth = Math.Max(60, (int)(baseWidth * dpi / 96f));
-        ItemSize = new Size(scaledWidth, scaledHeight);
-        DrawMode = TabDrawMode.OwnerDrawFixed;
-      } catch { }
-    }
-
     protected override void InitLayout() {
       SetStyle(ControlStyles.AllPaintingInWmPaint, true);
       SetStyle(ControlStyles.DoubleBuffer, true);
@@ -63,6 +42,25 @@ namespace MilkwaveRemote.Helper {
       base.InitLayout();
 
       TabCloseColor = ForeColor;
+    }
+
+    protected override void OnCreateControl() {
+      base.OnCreateControl();
+      Appearance = TabAppearance.Buttons;
+      SizeMode = TabSizeMode.Fixed;
+      // DPI-aware tab height and width
+      float dpi = DeviceDpi;
+      if (dpi < 96f) {
+        dpi = 96f; // Ensure minimum DPI
+      }
+
+      int baseHeight = 20;
+      int baseWidth = 80;
+      int scaledHeight = Math.Max(baseHeight, (int)(baseHeight * dpi / 96f));
+      int scaledWidth = Math.Max(baseWidth, (int)(baseWidth * dpi / 96f));
+
+      ItemSize = new Size(scaledWidth, scaledHeight);
+      DrawMode = TabDrawMode.OwnerDrawFixed;
     }
 
     protected override void OnPaint(PaintEventArgs e) {
@@ -188,7 +186,7 @@ namespace MilkwaveRemote.Helper {
       if (Alignment == TabAlignment.Top) {
         points = new[]
         {
-          
+
           new Point(tabRect.Left+3, tabRect.Bottom),
           new Point(tabRect.Left+3, tabRect.Top + 0),
           new Point(tabRect.Left + 0, tabRect.Top),
@@ -235,8 +233,8 @@ namespace MilkwaveRemote.Helper {
           g.DrawLine(new Pen(Color.DodgerBlue),
             new Point(tabRect.Left + 3, tabRect.Top), new Point(tabRect.Left + tabRect.Width, tabRect.Top));
           */
+          }
         }
-      }
 
       // Draws a Close Button:
       if (ShowTabCloseButton) {
@@ -254,6 +252,7 @@ namespace MilkwaveRemote.Helper {
         // Draws an X:
         g.DrawLine(p, r.X, r.Y, r.X + r.Width, r.Y + r.Height);
         g.DrawLine(p, r.X + r.Width, r.Y, r.X, r.Y + r.Height);
+
       }
 
       // Draws the Title of the Tab:

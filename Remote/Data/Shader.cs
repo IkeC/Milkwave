@@ -224,10 +224,13 @@ namespace MilkwaveRemote.Data {
 
     private string ReplaceVarName(string oldName, string newName, string inp) {
       string res = inp.Replace(" " + oldName + " ", " " + newName + " ");
-      res = res.Replace(" " + oldName + ". ", " " + newName + ". ");
+      res = res.Replace(" " + oldName + ".", " " + newName + ".");
+      res = res.Replace("(" + oldName + ".", "(" + newName + ".");
       res = res.Replace("(" + oldName + " ", "(" + newName + " ");
-      res = res.Replace(" " + oldName + ") ", " " + newName + ") ");
+      res = res.Replace(" " + oldName + ")", " " + newName + ")");
+      res = res.Replace("(" + oldName + ")", "(" + newName + ")");
 
+      res = res.Replace("float2 " + oldName + ",", "float2 " + newName + ", ");
       res = res.Replace("float2 " + oldName + ";", "float2 " + newName + "; ");
       res = res.Replace("float2 " + oldName + " ", "float2 " + newName + " ");
       return res;
