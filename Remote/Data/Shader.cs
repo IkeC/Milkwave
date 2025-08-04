@@ -183,7 +183,7 @@ namespace MilkwaveRemote.Data {
 
       // try to replace any remaining clear uses of mat2, mat3, mat4
       result = result.Replace("mat2(", "float2x2(").Replace("mat3(", "float3x3(").Replace("mat4(", "float4x4(");
-      result = result.Replace(" mat2 ", " float2x2 ").Replace(" mat3 ", " float3x3 ").Replace(" mat4 ", " float4x4 ");
+      result = result.Replace("mat2 ", "float2x2 ").Replace("mat3 ", "float3x3 ").Replace("mat4 ", "float4x4 ");
 
       return result;
     }

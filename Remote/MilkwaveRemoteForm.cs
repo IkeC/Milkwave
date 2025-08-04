@@ -3326,7 +3326,7 @@ namespace MilkwaveRemote {
         if (shaderCode == null) {
           SetStatusText("Shader code not found in the response");
         } else {
-          txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"shadertoy.com id: {shaderId}";
+          txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"https://www.shadertoy.com/view/{shaderId}";
           string? formattedShaderCode = shaderCode?.Replace("\n", Environment.NewLine);
           txtShaderGLSL.Text = formattedShaderCode;
           if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
