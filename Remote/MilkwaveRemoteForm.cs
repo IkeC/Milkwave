@@ -346,8 +346,8 @@ namespace MilkwaveRemote {
         cboTagsFilter.SelectedIndex = 0;
       }
 
-      if (Settings.ShadertoyURLs?.Count > 0) {
-        ReloadShadertoyURLsList(false);
+      if (Settings.ShadertoyIDs?.Count > 0) {
+        ReloadShadertoyIDsList(false);
         cboShadertoyURL.SelectedIndex = 0;
       }
 
@@ -1576,15 +1576,15 @@ namespace MilkwaveRemote {
       cboTagsFilter.Refresh();
     }
 
-    private void ReloadShadertoyURLsList(bool addCuurent) {
-      if (addCuurent && cboShadertoyURL.Text.Length > 0 && !Settings.ShadertoyURLs.Contains(cboShadertoyURL.Text)) {
-        Settings.ShadertoyURLs.Insert(0, cboShadertoyURL.Text);
-        if (Settings.ShadertoyURLs.Count > 5) {
-          Settings.ShadertoyURLs.RemoveAt(5);
+    private void ReloadShadertoyIDsList(bool addCuurent) {
+      if (addCuurent && cboShadertoyURL.Text.Length > 0 && !Settings.ShadertoyIDs.Contains(cboShadertoyURL.Text)) {
+        Settings.ShadertoyIDs.Insert(0, cboShadertoyURL.Text);
+        if (Settings.ShadertoyIDs.Count > 5) {
+          Settings.ShadertoyIDs.RemoveAt(5);
         }
       }
       cboShadertoyURL.Items.Clear();
-      cboShadertoyURL.Items.AddRange(Settings.ShadertoyURLs.ToArray());
+      cboShadertoyURL.Items.AddRange(Settings.ShadertoyIDs.ToArray());
       cboShadertoyURL.Refresh();
     }
 
@@ -3288,12 +3288,14 @@ namespace MilkwaveRemote {
     }
 
     private void btnLoadURL_Click(object? sender, EventArgs? e) {
-      ReloadShadertoyURLsList(true);
       string id = cboShadertoyURL.Text.Trim();
       int index = id.LastIndexOf("/");
       if (index > 0) {
         id = id.Substring(index + 1);
+        cboShadertoyURL.Text = id; // Set the ID back to the combobox
       }
+      ReloadShadertoyIDsList(true);
+
       if (string.IsNullOrEmpty(id)) {
         SetStatusText("Please enter a Shadertoy.com URL or ID");
         return;
