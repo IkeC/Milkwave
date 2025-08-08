@@ -17,6 +17,7 @@ Some of the Shadertoy shaders that can be converted to a Milkwave preset using t
 | Shader Art Coding Introduction | [mtyGWy](https://www.shadertoy.com/view/mtyGWy) | - |
 | Cyber Fuji 2020 | [Wt33Wf](https://www.shadertoy.com/view/Wt33Wf) | - |
 | Tunnel of Lights | [w3KGRK](https://www.shadertoy.com/view/w3KGRK) | - |
+| String Theory 2 | [33sSzf](https://www.shadertoy.com/view/33sSzf) | - |
 | Fractal Pyramid | [tsXBzS](https://www.shadertoy.com/view/tsXBzS) | replace `break;` with `i=64.;` |
 | CineShader Lava | [3sySRK](https://www.shadertoy.com/view/3sySRK) | replace `break;` with `i=64;` / replace aspect correction with `uv.x *= aspect.x;` / remove flipping |
 

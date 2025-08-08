@@ -161,7 +161,7 @@ namespace MilkwaveRemote
       txtFilter = new TextBox();
       btnSendShader = new Button();
       txtShaderinfo = new TextBox();
-      btnLoadURL = new Button();
+      btnLoadShadertoyID = new Button();
       btnShaderConvert = new Button();
       txtShaderGLSL = new TextBox();
       txtShaderHLSL = new TextBox();
@@ -169,9 +169,12 @@ namespace MilkwaveRemote
       txtLineNumber = new TextBox();
       btnLoadShaderInputFromFile = new Button();
       btnShaderHelp = new Button();
-      cboShadertoyURL = new ComboBox();
+      cboShadertoyID = new ComboBox();
       numPSVersion = new NumericUpDown();
       numOffset = new NumericUpDown();
+      cboShadertoyType = new ComboBox();
+      numShadertoyQueryIndex = new NumericUpDown();
+      btnLoadShadertoyQuery = new Button();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -269,6 +272,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFont5).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numPSVersion).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).BeginInit();
       tableLayoutPanel1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -1897,17 +1901,17 @@ namespace MilkwaveRemote
       txtShaderinfo.TabIndex = 35;
       toolTip1.SetToolTip(txtShaderinfo, "Shaderinfo used for filename and embedded into generated preset file\r\nCan be multiple lines, use cursor keys to scroll");
       // 
-      // btnLoadURL
+      // btnLoadShadertoyID
       // 
-      btnLoadURL.FlatStyle = FlatStyle.System;
-      btnLoadURL.Location = new Point(217, 6);
-      btnLoadURL.Name = "btnLoadURL";
-      btnLoadURL.Size = new Size(49, 23);
-      btnLoadURL.TabIndex = 34;
-      btnLoadURL.Text = "Load";
-      toolTip1.SetToolTip(btnLoadURL, "Load and convert shader");
-      btnLoadURL.UseVisualStyleBackColor = true;
-      btnLoadURL.Click += btnLoadURL_Click;
+      btnLoadShadertoyID.FlatStyle = FlatStyle.System;
+      btnLoadShadertoyID.Location = new Point(96, 6);
+      btnLoadShadertoyID.Name = "btnLoadShadertoyID";
+      btnLoadShadertoyID.Size = new Size(49, 23);
+      btnLoadShadertoyID.TabIndex = 34;
+      btnLoadShadertoyID.Text = "Load";
+      toolTip1.SetToolTip(btnLoadShadertoyID, "Load shader using Shadertoy.com API, convert it and send it to the Visualizer");
+      btnLoadShadertoyID.UseVisualStyleBackColor = true;
+      btnLoadShadertoyID.Click += btnLoadShadertoyID_Click;
       // 
       // btnShaderConvert
       // 
@@ -1977,7 +1981,7 @@ namespace MilkwaveRemote
       // btnLoadShaderInputFromFile
       // 
       btnLoadShaderInputFromFile.FlatStyle = FlatStyle.System;
-      btnLoadShaderInputFromFile.Location = new Point(272, 6);
+      btnLoadShaderInputFromFile.Location = new Point(354, 6);
       btnLoadShaderInputFromFile.Name = "btnLoadShaderInputFromFile";
       btnLoadShaderInputFromFile.Size = new Size(49, 23);
       btnLoadShaderInputFromFile.TabIndex = 28;
@@ -1999,14 +2003,14 @@ namespace MilkwaveRemote
       btnShaderHelp.UseVisualStyleBackColor = true;
       btnShaderHelp.Click += btnShaderHelp_Click;
       // 
-      // cboShadertoyURL
+      // cboShadertoyID
       // 
-      cboShadertoyURL.Location = new Point(6, 7);
-      cboShadertoyURL.Name = "cboShadertoyURL";
-      cboShadertoyURL.Size = new Size(205, 23);
-      cboShadertoyURL.TabIndex = 138;
-      toolTip1.SetToolTip(cboShadertoyURL, "Shadertoy.com URL or ID");
-      cboShadertoyURL.KeyDown += cboShadertoyURL_KeyDown;
+      cboShadertoyID.Location = new Point(6, 7);
+      cboShadertoyID.Name = "cboShadertoyID";
+      cboShadertoyID.Size = new Size(84, 23);
+      cboShadertoyID.TabIndex = 138;
+      toolTip1.SetToolTip(cboShadertoyID, "Shadertoy.com URL or ID");
+      cboShadertoyID.KeyDown += cboShadertoyURL_KeyDown;
       // 
       // numPSVersion
       // 
@@ -2036,6 +2040,41 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(numOffset, "Adjust this value if the line marked as error is wrong");
       numOffset.Value = new decimal(new int[] { 160, 0, 0, 0 });
       numOffset.ValueChanged += numOffset_ValueChanged;
+      // 
+      // cboShadertoyType
+      // 
+      cboShadertoyType.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboShadertoyType.Items.AddRange(new object[] { "newest", "name", "love", "popular", "hot" });
+      cboShadertoyType.Location = new Point(152, 7);
+      cboShadertoyType.Name = "cboShadertoyType";
+      cboShadertoyType.Size = new Size(88, 23);
+      cboShadertoyType.TabIndex = 142;
+      toolTip1.SetToolTip(cboShadertoyType, "Shadertoy.com query type");
+      // 
+      // numShadertoyQueryIndex
+      // 
+      numShadertoyQueryIndex.Location = new Point(246, 7);
+      numShadertoyQueryIndex.Margin = new Padding(3, 2, 3, 2);
+      numShadertoyQueryIndex.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
+      numShadertoyQueryIndex.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+      numShadertoyQueryIndex.Name = "numShadertoyQueryIndex";
+      numShadertoyQueryIndex.Size = new Size(47, 23);
+      numShadertoyQueryIndex.TabIndex = 143;
+      numShadertoyQueryIndex.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numShadertoyQueryIndex, "Load the nth ID from the query");
+      numShadertoyQueryIndex.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      // 
+      // btnLoadShadertoyQuery
+      // 
+      btnLoadShadertoyQuery.FlatStyle = FlatStyle.System;
+      btnLoadShadertoyQuery.Location = new Point(299, 6);
+      btnLoadShadertoyQuery.Name = "btnLoadShadertoyQuery";
+      btnLoadShadertoyQuery.Size = new Size(49, 23);
+      btnLoadShadertoyQuery.TabIndex = 144;
+      btnLoadShadertoyQuery.Text = "Load";
+      toolTip1.SetToolTip(btnLoadShadertoyQuery, "Load ID matching this query type and index using Shadertoy.com API\r\nResults will be cached until type is changed\r\nCtrl+Click: Force requery");
+      btnLoadShadertoyQuery.UseVisualStyleBackColor = true;
+      btnLoadShadertoyQuery.Click += btnLoadShadertoyQuery_Click;
       // 
       // cboParameters
       // 
@@ -2770,17 +2809,20 @@ namespace MilkwaveRemote
       // 
       // pnlTabShader
       // 
+      pnlTabShader.Controls.Add(btnLoadShadertoyQuery);
+      pnlTabShader.Controls.Add(numShadertoyQueryIndex);
+      pnlTabShader.Controls.Add(cboShadertoyType);
       pnlTabShader.Controls.Add(numOffset);
       pnlTabShader.Controls.Add(numPSVersion);
       pnlTabShader.Controls.Add(txtShaderinfo);
       pnlTabShader.Controls.Add(txtLineNumber);
       pnlTabShader.Controls.Add(txtLineNumberError);
       pnlTabShader.Controls.Add(btnShaderHelp);
-      pnlTabShader.Controls.Add(cboShadertoyURL);
+      pnlTabShader.Controls.Add(cboShadertoyID);
       pnlTabShader.Controls.Add(splitContainerShader);
       pnlTabShader.Controls.Add(btnSendShader);
       pnlTabShader.Controls.Add(btnLoadShaderInputFromFile);
-      pnlTabShader.Controls.Add(btnLoadURL);
+      pnlTabShader.Controls.Add(btnLoadShadertoyID);
       pnlTabShader.Controls.Add(btnShaderConvert);
       pnlTabShader.Dock = DockStyle.Fill;
       pnlTabShader.Location = new Point(0, 0);
@@ -3280,6 +3322,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFont5).EndInit();
       ((System.ComponentModel.ISupportInitialize)numPSVersion).EndInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).EndInit();
       tableLayoutPanel1.ResumeLayout(false);
       splitContainer1.Panel1.ResumeLayout(false);
@@ -3538,12 +3581,15 @@ namespace MilkwaveRemote
     private SplitContainer splitContainerShader;
     private Button btnShaderConvert;
     private TextBox txtShaderGLSL;
-    private Button btnLoadURL;
+    private Button btnLoadShadertoyID;
     private TextBox txtShaderinfo;
     private Button btnShaderHelp;
-    private ComboBox cboShadertoyURL;
+    private ComboBox cboShadertoyID;
     private Panel pnlTabShader;
     private NumericUpDown numPSVersion;
     private NumericUpDown numOffset;
+    private Button btnLoadShadertoyQuery;
+    private NumericUpDown numShadertoyQueryIndex;
+    private ComboBox cboShadertoyType;
   }
 }

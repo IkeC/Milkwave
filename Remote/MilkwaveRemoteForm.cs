@@ -77,6 +77,11 @@ namespace MilkwaveRemote {
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
 
+    // please request your own appKey at https://www.shadertoy.com/howto if you build your own version
+    private string shadertoyAppKey = "ftrlhm";
+    private string shadertoyQueryType = "";
+    private List<String> shadertoyQueryList = new List<String>();
+
     Random rnd = new Random();
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
@@ -274,6 +279,8 @@ namespace MilkwaveRemote {
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
       cboWindowTitle.SelectedIndex = 0;
+
+      cboShadertoyType.SelectedIndex = 0;
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
@@ -349,7 +356,7 @@ namespace MilkwaveRemote {
 
       if (Settings.ShadertoyIDs?.Count > 0) {
         ReloadShadertoyIDsList(false);
-        cboShadertoyURL.SelectedIndex = 0;
+        cboShadertoyID.SelectedIndex = 0;
       }
 
       LoadVisualizerSettings();
@@ -1587,15 +1594,15 @@ namespace MilkwaveRemote {
     }
 
     private void ReloadShadertoyIDsList(bool addCuurent) {
-      if (addCuurent && cboShadertoyURL.Text.Length > 0 && !Settings.ShadertoyIDs.Contains(cboShadertoyURL.Text)) {
-        Settings.ShadertoyIDs.Insert(0, cboShadertoyURL.Text);
+      if (addCuurent && cboShadertoyID.Text.Length > 0 && !Settings.ShadertoyIDs.Contains(cboShadertoyID.Text)) {
+        Settings.ShadertoyIDs.Insert(0, cboShadertoyID.Text);
         if (Settings.ShadertoyIDs.Count > 5) {
           Settings.ShadertoyIDs.RemoveAt(5);
         }
       }
-      cboShadertoyURL.Items.Clear();
-      cboShadertoyURL.Items.AddRange(Settings.ShadertoyIDs.ToArray());
-      cboShadertoyURL.Refresh();
+      cboShadertoyID.Items.Clear();
+      cboShadertoyID.Items.AddRange(Settings.ShadertoyIDs.ToArray());
+      cboShadertoyID.Refresh();
     }
 
     private void txtStyle_KeyDown(object sender, KeyEventArgs e) {
@@ -3202,7 +3209,7 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnSendShader_Click(object sender, EventArgs e) {
+    private void btnSendShader_Click(object? sender, EventArgs? e) {
       try {
         // Ensure the shader directory exists
         string shaderDir = Path.Combine(VisualizerPresetsFolder, "Shader");
@@ -3296,12 +3303,12 @@ namespace MilkwaveRemote {
       ConvertShader();
     }
 
-    private void btnLoadURL_Click(object? sender, EventArgs? e) {
-      string id = cboShadertoyURL.Text.Trim();
+    private void btnLoadShadertoyID_Click(object? sender, EventArgs? e) {
+      string id = cboShadertoyID.Text.Trim();
       int index = id.LastIndexOf("/");
       if (index > 0) {
         id = id.Substring(index + 1);
-        cboShadertoyURL.Text = id; // Set the ID back to the combobox
+        cboShadertoyID.Text = id; // Set the ID back to the combobox
       }
       ReloadShadertoyIDsList(true);
 
@@ -3309,14 +3316,12 @@ namespace MilkwaveRemote {
         SetStatusText("Please enter a Shadertoy.com URL or ID");
         return;
       } else {
-        cboShadertoyURL.Text = id; // Set the ID back to the combobox
+        cboShadertoyID.Text = id; // Set the ID back to the combobox
       }
 
       SetStatusText($"Loading code for Shadertoy ID {id}");
 
-      // please request your own appKey at https://www.shadertoy.com/howto
-      string appKey = "ftrlhm";
-      string url = $"https://www.shadertoy.com/api/v1/shaders/{id}?key={appKey}";
+      string url = $"https://www.shadertoy.com/api/v1/shaders/{id}?key={shadertoyAppKey}";
       using var httpClient = new HttpClient();
       try {
         var jsonString = httpClient.GetStringAsync(url).Result;
@@ -3342,6 +3347,7 @@ namespace MilkwaveRemote {
           txtShaderGLSL.Text = formattedShaderCode;
           if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
             ConvertShader();
+            btnSendShader_Click(null, null);
           }
           SetStatusText($"Shader code loaded and converted");
         }
@@ -3392,7 +3398,7 @@ namespace MilkwaveRemote {
     private void cboShadertoyURL_KeyDown(object sender, KeyEventArgs e) {
       if (e.KeyCode == Keys.Enter) {
         e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
-        btnLoadURL_Click(null, null);
+        btnLoadShadertoyID_Click(null, null);
       }
     }
 
@@ -3425,5 +3431,52 @@ namespace MilkwaveRemote {
         MarkRow(lastReceivedShaderErrorLineNumber - (int)numOffset.Value);
       }
     }
+
+    private void btnLoadShadertoyQuery_Click(object sender, EventArgs e) {
+
+      try {
+        bool ctrlPressed = ((Control.ModifierKeys & Keys.Control) == Keys.Control);
+        if (ctrlPressed || !cboShadertoyType.Text.Equals(shadertoyQueryType)) {
+          // no results cached for this type, so we need to query Shadertoy.com
+          string url = $"https://www.shadertoy.com/api/v1/shaders/query/string?sort={cboShadertoyType.Text}&key={shadertoyAppKey}";
+          using var httpClient = new HttpClient();
+          SetStatusText($"Trying to load {cboShadertoyType.Text} entries...");
+          var jsonString = httpClient.GetStringAsync(url).Result;
+          JsonDocument doc = JsonDocument.Parse(jsonString);
+          if (doc.RootElement.TryGetProperty("Error", out JsonElement elError)) {
+            SetStatusText($"Shadertoy.com says: {elError.GetString()}");
+            return;
+          }
+
+          JsonElement elShaders = doc.RootElement.GetProperty("Shaders");
+          JsonElement elResults = doc.RootElement.GetProperty("Results");
+
+          if (elShaders.ValueKind == JsonValueKind.Number) {
+            numShadertoyQueryIndex.Maximum = elShaders.GetInt16();
+            // using null-forgiving operator
+            shadertoyQueryList.AddRange(elResults.EnumerateArray().Select(static e => e.GetString()!));
+
+            if (shadertoyQueryList.Count > 0) {
+              // seems like a proper query result, let's cache it
+              shadertoyQueryType = cboShadertoyType.Text;
+            }
+          }
+        }
+
+        int selectIndex = (int)numShadertoyQueryIndex.Value - 1;
+        if (selectIndex >= shadertoyQueryList.Count) {
+          selectIndex = shadertoyQueryList.Count - 1;
+        }
+        string id = shadertoyQueryList[selectIndex];
+        if (!string.IsNullOrEmpty(id)) {
+          cboShadertoyID.Text = id;
+          btnLoadShadertoyID_Click(null, null);
+          numShadertoyQueryIndex.Value = (int)numShadertoyQueryIndex.Value + 1;
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Loading failed: {ex.Message}");
+      }
+    }
+
   } // end class
 } // end namespace
