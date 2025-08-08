@@ -1,8 +1,6 @@
 # Milkwave Manual
 
-This manual is a stub. User input and contributions are welcome! 
-
-If you want to contribute or need help, it's a good idea to [open an issue](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord).
+This manuual is a work in progress and will be updated as needed. User input and contributions are welcome! If you want to contribute or need help, it's a good idea to [open an issue](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord).
 
 ## Tab "Shader"
 
@@ -25,7 +23,7 @@ Some of the Shadertoy shaders that can be converted to a Milkwave preset using t
 - [An introduction to Shader Art Coding](https://www.youtube.com/watch?v=f4s1h2YETNY) (Video)
 - [How to create Presets from OpenGL Shaders](https://www.youtube.com/watch?v=Ur2gPa996Aw) (Video)
 - [GLSL-to-HLSL reference](https://learn.microsoft.com/en-us/windows/uwp/gaming/glsl-to-hlsl-reference)
-- [MilkDrop Preset Authoring Guide](https://www.geisswerks.com/milkdrop/milkdrop_preset_authoring.html#3f)
+
 ### Known limitations
 
 | Term | Info |

@@ -3210,9 +3210,9 @@ namespace MilkwaveRemote {
         // Prepare the header and shader content
         var sb = new StringBuilder();
         sb.AppendLine("MILKDROP_PRESET_VERSION=201");
-        sb.AppendLine("PSVERSION=" + numPSVersion.Text);
-        sb.AppendLine("PSVERSION_WARP=" + numPSVersion.Text);
-        sb.AppendLine("PSVERSION_COMP=" + numPSVersion.Text);
+        sb.AppendLine("PSVERSION=" + txtPSVersion.Text);
+        sb.AppendLine("PSVERSION_WARP=" + txtPSVersion.Text);
+        sb.AppendLine("PSVERSION_COMP=" + txtPSVersion.Text);
 
         // Write shader info as comment into preset file
         string shaderinfo = "// " + txtShaderinfo.Text.Trim().Replace(Environment.NewLine, "\n").Replace('\r', '\n').Replace("\n", " / ");
@@ -3357,7 +3357,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnShaderHelp_Click(object sender, EventArgs e) {
-      OpenURL("https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md");
+      OpenURL("https://github.com/IkeC/Milkwave/blob/main/build/Manual.md");
     }
 
     private void txtShader_MouseWheel(object sender, MouseEventArgs e) {
@@ -3387,5 +3387,8 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void txtPSVersion_Click(object sender, EventArgs e) {
+      txtPSVersion.SelectAll();
+    }
   } // end class
 } // end namespace

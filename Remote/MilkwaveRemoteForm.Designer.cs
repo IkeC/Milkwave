@@ -170,7 +170,7 @@ namespace MilkwaveRemote
       btnLoadShaderInputFromFile = new Button();
       btnShaderHelp = new Button();
       cboShadertoyURL = new ComboBox();
-      numPSVersion = new NumericUpDown();
+      txtPSVersion = new TextBox();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -266,7 +266,6 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFont3).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFont4).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFont5).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numPSVersion).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).BeginInit();
       tableLayoutPanel1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -1888,17 +1887,17 @@ namespace MilkwaveRemote
       // txtShaderinfo
       // 
       txtShaderinfo.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      txtShaderinfo.Location = new Point(89, 155);
+      txtShaderinfo.Location = new Point(89, 154);
       txtShaderinfo.Multiline = true;
       txtShaderinfo.Name = "txtShaderinfo";
-      txtShaderinfo.Size = new Size(393, 23);
+      txtShaderinfo.Size = new Size(441, 23);
       txtShaderinfo.TabIndex = 35;
       toolTip1.SetToolTip(txtShaderinfo, "Shaderinfo used for filename and embedded into generated preset file\r\nCan be multiple lines, use cursor keys to scroll");
       // 
       // btnLoadURL
       // 
       btnLoadURL.FlatStyle = FlatStyle.System;
-      btnLoadURL.Location = new Point(217, 6);
+      btnLoadURL.Location = new Point(217, 7);
       btnLoadURL.Name = "btnLoadURL";
       btnLoadURL.Size = new Size(49, 23);
       btnLoadURL.TabIndex = 34;
@@ -1928,7 +1927,7 @@ namespace MilkwaveRemote
       txtShaderGLSL.Multiline = true;
       txtShaderGLSL.Name = "txtShaderGLSL";
       txtShaderGLSL.ScrollBars = ScrollBars.Both;
-      txtShaderGLSL.Size = new Size(290, 114);
+      txtShaderGLSL.Size = new Size(290, 113);
       txtShaderGLSL.TabIndex = 28;
       toolTip1.SetToolTip(txtShaderGLSL, "GLSL");
       txtShaderGLSL.MouseWheel += txtShader_MouseWheel;
@@ -1941,7 +1940,7 @@ namespace MilkwaveRemote
       txtShaderHLSL.Multiline = true;
       txtShaderHLSL.Name = "txtShaderHLSL";
       txtShaderHLSL.ScrollBars = ScrollBars.Both;
-      txtShaderHLSL.Size = new Size(308, 114);
+      txtShaderHLSL.Size = new Size(308, 113);
       txtShaderHLSL.TabIndex = 27;
       toolTip1.SetToolTip(txtShaderHLSL, "HLSL");
       txtShaderHLSL.Click += txtShaderSetLineNumber;
@@ -1953,7 +1952,7 @@ namespace MilkwaveRemote
       // txtLineNumberError
       // 
       txtLineNumberError.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumberError.Location = new Point(543, 7);
+      txtLineNumberError.Location = new Point(543, 8);
       txtLineNumberError.Name = "txtLineNumberError";
       txtLineNumberError.ReadOnly = true;
       txtLineNumberError.Size = new Size(28, 23);
@@ -1964,7 +1963,7 @@ namespace MilkwaveRemote
       // txtLineNumber
       // 
       txtLineNumber.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumber.Location = new Point(510, 7);
+      txtLineNumber.Location = new Point(510, 8);
       txtLineNumber.Name = "txtLineNumber";
       txtLineNumber.ReadOnly = true;
       txtLineNumber.Size = new Size(28, 23);
@@ -1975,7 +1974,7 @@ namespace MilkwaveRemote
       // btnLoadShaderInputFromFile
       // 
       btnLoadShaderInputFromFile.FlatStyle = FlatStyle.System;
-      btnLoadShaderInputFromFile.Location = new Point(272, 6);
+      btnLoadShaderInputFromFile.Location = new Point(272, 7);
       btnLoadShaderInputFromFile.Name = "btnLoadShaderInputFromFile";
       btnLoadShaderInputFromFile.Size = new Size(49, 23);
       btnLoadShaderInputFromFile.TabIndex = 28;
@@ -1988,7 +1987,7 @@ namespace MilkwaveRemote
       // 
       btnShaderHelp.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnShaderHelp.FlatStyle = FlatStyle.System;
-      btnShaderHelp.Location = new Point(577, 6);
+      btnShaderHelp.Location = new Point(577, 7);
       btnShaderHelp.Name = "btnShaderHelp";
       btnShaderHelp.Size = new Size(31, 23);
       btnShaderHelp.TabIndex = 36;
@@ -2006,19 +2005,18 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(cboShadertoyURL, "Shadertoy.com URL or ID");
       cboShadertoyURL.KeyDown += cboShadertoyURL_KeyDown;
       // 
-      // numPSVersion
+      // txtPSVersion
       // 
-      numPSVersion.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      numPSVersion.Location = new Point(488, 156);
-      numPSVersion.Margin = new Padding(3, 2, 3, 2);
-      numPSVersion.Maximum = new decimal(new int[] { 4, 0, 0, 0 });
-      numPSVersion.Minimum = new decimal(new int[] { 2, 0, 0, 0 });
-      numPSVersion.Name = "numPSVersion";
-      numPSVersion.Size = new Size(42, 23);
-      numPSVersion.TabIndex = 140;
-      numPSVersion.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numPSVersion, "Pixel shader version");
-      numPSVersion.Value = new decimal(new int[] { 4, 0, 0, 0 });
+      txtPSVersion.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      txtPSVersion.Location = new Point(484, 8);
+      txtPSVersion.MaxLength = 1;
+      txtPSVersion.Name = "txtPSVersion";
+      txtPSVersion.Size = new Size(21, 23);
+      txtPSVersion.TabIndex = 139;
+      txtPSVersion.Text = "3";
+      txtPSVersion.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(txtPSVersion, "Pixel shader version written to preset file on send");
+      txtPSVersion.Click += txtPSVersion_Click;
       // 
       // cboParameters
       // 
@@ -2533,7 +2531,6 @@ namespace MilkwaveRemote
       tabControl.Controls.Add(tabSettings);
       tabControl.Dock = DockStyle.Fill;
       tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
-      tabControl.ItemSize = new Size(80, 20);
       tabControl.LineColor = SystemColors.ControlDark;
       tabControl.Location = new Point(0, 0);
       tabControl.Margin = new Padding(0);
@@ -2588,10 +2585,10 @@ namespace MilkwaveRemote
       tabPreset.Controls.Add(lblAudioDevice);
       tabPreset.Controls.Add(lblCurrentPreset);
       tabPreset.Controls.Add(lblAmp);
-      tabPreset.Location = new Point(4, 24);
+      tabPreset.Location = new Point(4, 25);
       tabPreset.Margin = new Padding(0);
       tabPreset.Name = "tabPreset";
-      tabPreset.Size = new Size(617, 183);
+      tabPreset.Size = new Size(617, 182);
       tabPreset.TabIndex = 1;
       tabPreset.Text = "Preset";
       // 
@@ -2732,10 +2729,10 @@ namespace MilkwaveRemote
       tabMessage.Controls.Add(lblBPM);
       tabMessage.Controls.Add(lblStyle);
       tabMessage.Controls.Add(lblSize);
-      tabMessage.Location = new Point(4, 24);
+      tabMessage.Location = new Point(4, 25);
       tabMessage.Margin = new Padding(0);
       tabMessage.Name = "tabMessage";
-      tabMessage.Size = new Size(617, 183);
+      tabMessage.Size = new Size(617, 182);
       tabMessage.TabIndex = 0;
       tabMessage.Text = "Message";
       // 
@@ -2744,17 +2741,17 @@ namespace MilkwaveRemote
       tabShader.BackColor = SystemColors.ControlLight;
       tabShader.BorderStyle = BorderStyle.FixedSingle;
       tabShader.Controls.Add(pnlTabShader);
-      tabShader.Location = new Point(4, 24);
+      tabShader.Location = new Point(4, 25);
       tabShader.Margin = new Padding(0);
       tabShader.Name = "tabShader";
-      tabShader.Size = new Size(617, 183);
+      tabShader.Size = new Size(617, 182);
       tabShader.TabIndex = 5;
       tabShader.Text = "Shader";
       // 
       // pnlTabShader
       // 
-      pnlTabShader.Controls.Add(numPSVersion);
       pnlTabShader.Controls.Add(txtShaderinfo);
+      pnlTabShader.Controls.Add(txtPSVersion);
       pnlTabShader.Controls.Add(txtLineNumber);
       pnlTabShader.Controls.Add(txtLineNumberError);
       pnlTabShader.Controls.Add(btnShaderHelp);
@@ -2767,7 +2764,7 @@ namespace MilkwaveRemote
       pnlTabShader.Dock = DockStyle.Fill;
       pnlTabShader.Location = new Point(0, 0);
       pnlTabShader.Name = "pnlTabShader";
-      pnlTabShader.Size = new Size(615, 181);
+      pnlTabShader.Size = new Size(615, 180);
       pnlTabShader.TabIndex = 140;
       // 
       // splitContainerShader
@@ -2784,7 +2781,7 @@ namespace MilkwaveRemote
       // splitContainerShader.Panel2
       // 
       splitContainerShader.Panel2.Controls.Add(txtShaderHLSL);
-      splitContainerShader.Size = new Size(602, 114);
+      splitContainerShader.Size = new Size(602, 113);
       splitContainerShader.SplitterDistance = 290;
       splitContainerShader.TabIndex = 31;
       // 
@@ -2828,10 +2825,10 @@ namespace MilkwaveRemote
       tabWave.Controls.Add(lblPushX);
       tabWave.Controls.Add(lblRGB);
       tabWave.Controls.Add(lblWavemode);
-      tabWave.Location = new Point(4, 24);
+      tabWave.Location = new Point(4, 25);
       tabWave.Margin = new Padding(0);
       tabWave.Name = "tabWave";
-      tabWave.Size = new Size(617, 183);
+      tabWave.Size = new Size(617, 182);
       tabWave.TabIndex = 2;
       tabWave.Text = "Wave";
       // 
@@ -2992,10 +2989,10 @@ namespace MilkwaveRemote
       tabFonts.Controls.Add(cboFont1);
       tabFonts.Controls.Add(pnlColorFont1);
       tabFonts.Controls.Add(btnSettingsLoad);
-      tabFonts.Location = new Point(4, 24);
+      tabFonts.Location = new Point(4, 25);
       tabFonts.Margin = new Padding(0);
       tabFonts.Name = "tabFonts";
-      tabFonts.Size = new Size(617, 183);
+      tabFonts.Size = new Size(617, 182);
       tabFonts.TabIndex = 3;
       tabFonts.Text = "Fonts";
       // 
@@ -3177,11 +3174,11 @@ namespace MilkwaveRemote
       tabSettings.Controls.Add(numFactorTime);
       tabSettings.Controls.Add(lblFactorFrame);
       tabSettings.Controls.Add(lblFactorTime);
-      tabSettings.Location = new Point(4, 24);
+      tabSettings.Location = new Point(4, 25);
       tabSettings.Margin = new Padding(0);
       tabSettings.Name = "tabSettings";
       tabSettings.Padding = new Padding(3);
-      tabSettings.Size = new Size(617, 183);
+      tabSettings.Size = new Size(617, 182);
       tabSettings.TabIndex = 4;
       tabSettings.Text = "Settings";
       // 
@@ -3260,7 +3257,6 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFont3).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFont4).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFont5).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numPSVersion).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).EndInit();
       tableLayoutPanel1.ResumeLayout(false);
       splitContainer1.Panel1.ResumeLayout(false);
@@ -3523,7 +3519,7 @@ namespace MilkwaveRemote
     private TextBox txtShaderinfo;
     private Button btnShaderHelp;
     private ComboBox cboShadertoyURL;
+    private TextBox txtPSVersion;
     private Panel pnlTabShader;
-    private NumericUpDown numPSVersion;
   }
 }
