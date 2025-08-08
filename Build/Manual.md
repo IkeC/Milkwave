@@ -17,7 +17,7 @@ Some of the Shadertoy shaders that can be converted to a Milkwave preset using t
 | Shader Art Coding Introduction | [mtyGWy](https://www.shadertoy.com/view/mtyGWy) | - |
 | Cyber Fuji 2020 | [Wt33Wf](https://www.shadertoy.com/view/Wt33Wf) | - |
 | Tunnel of Lights | [w3KGRK](https://www.shadertoy.com/view/w3KGRK) | - |
-| Fractal Pyramid | [tsXBzS](https://www.shadertoy.com/view/tsXBzS) | replace `break;` with `i=64.;` |
+| Fractal Pyramid | [tsXBzS](https://www.shadertoy.com/view/tsXBzS) | replace `break;` with `i=64.;`|
 | CineShader Lava | [3sySRK](https://www.shadertoy.com/view/3sySRK) | rename `float time` / replace `break;` / replace aspect correction with `uv.x *= aspect.x;` / remove flipping |
 
 ### Resources
@@ -31,3 +31,4 @@ Some of the Shadertoy shaders that can be converted to a Milkwave preset using t
 | Term | Info |
 | ---- | ---- |
 | `break` | Replace with a statement setting a condition to end the loop |
+| `atan(a,b)` | Use `atan2(a,b)` instead |
