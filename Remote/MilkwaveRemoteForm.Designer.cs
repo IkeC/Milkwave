@@ -171,6 +171,7 @@ namespace MilkwaveRemote
       btnShaderHelp = new Button();
       cboShadertoyURL = new ComboBox();
       numPSVersion = new NumericUpDown();
+      numOffset = new NumericUpDown();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -267,6 +268,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFont4).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFont5).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numPSVersion).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numOffset).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).BeginInit();
       tableLayoutPanel1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -1964,7 +1966,7 @@ namespace MilkwaveRemote
       // txtLineNumber
       // 
       txtLineNumber.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumber.Location = new Point(510, 7);
+      txtLineNumber.Location = new Point(456, 7);
       txtLineNumber.Name = "txtLineNumber";
       txtLineNumber.ReadOnly = true;
       txtLineNumber.Size = new Size(28, 23);
@@ -2019,6 +2021,21 @@ namespace MilkwaveRemote
       numPSVersion.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numPSVersion, "Pixel shader version");
       numPSVersion.Value = new decimal(new int[] { 4, 0, 0, 0 });
+      // 
+      // numOffset
+      // 
+      numOffset.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numOffset.Location = new Point(490, 7);
+      numOffset.Margin = new Padding(3, 2, 3, 2);
+      numOffset.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+      numOffset.Minimum = new decimal(new int[] { 150, 0, 0, 0 });
+      numOffset.Name = "numOffset";
+      numOffset.Size = new Size(47, 23);
+      numOffset.TabIndex = 141;
+      numOffset.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numOffset, "Adjust this value if the line marked as error is wrong");
+      numOffset.Value = new decimal(new int[] { 160, 0, 0, 0 });
+      numOffset.ValueChanged += numOffset_ValueChanged;
       // 
       // cboParameters
       // 
@@ -2753,6 +2770,7 @@ namespace MilkwaveRemote
       // 
       // pnlTabShader
       // 
+      pnlTabShader.Controls.Add(numOffset);
       pnlTabShader.Controls.Add(numPSVersion);
       pnlTabShader.Controls.Add(txtShaderinfo);
       pnlTabShader.Controls.Add(txtLineNumber);
@@ -3261,6 +3279,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFont4).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFont5).EndInit();
       ((System.ComponentModel.ISupportInitialize)numPSVersion).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numOffset).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).EndInit();
       tableLayoutPanel1.ResumeLayout(false);
       splitContainer1.Panel1.ResumeLayout(false);
@@ -3525,5 +3544,6 @@ namespace MilkwaveRemote
     private ComboBox cboShadertoyURL;
     private Panel pnlTabShader;
     private NumericUpDown numPSVersion;
+    private NumericUpDown numOffset;
   }
 }

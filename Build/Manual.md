@@ -18,7 +18,7 @@ Some of the Shadertoy shaders that can be converted to a Milkwave preset using t
 | Cyber Fuji 2020 | [Wt33Wf](https://www.shadertoy.com/view/Wt33Wf) | - |
 | Tunnel of Lights | [w3KGRK](https://www.shadertoy.com/view/w3KGRK) | - |
 | Fractal Pyramid | [tsXBzS](https://www.shadertoy.com/view/tsXBzS) | replace `break;` with `i=64.;` |
-| CineShader Lava | [3sySRK](https://www.shadertoy.com/view/3sySRK) | rename `float time` / replace `break;` / replace aspect correction with `uv.x *= aspect.x;` / remove flipping |
+| CineShader Lava | [3sySRK](https://www.shadertoy.com/view/3sySRK) | replace `break;` with `i=64;` / replace aspect correction with `uv.x *= aspect.x;` / remove flipping |
 
 ### Resources
 
@@ -26,8 +26,12 @@ Some of the Shadertoy shaders that can be converted to a Milkwave preset using t
 - [How to create Presets from OpenGL Shaders](https://www.youtube.com/watch?v=Ur2gPa996Aw) (Video)
 - [GLSL-to-HLSL reference](https://learn.microsoft.com/en-us/windows/uwp/gaming/glsl-to-hlsl-reference)
 - [MilkDrop Preset Authoring Guide](https://www.geisswerks.com/milkdrop/milkdrop_preset_authoring.html#3f)
+
 ### Known limitations
+
+Here are some common terms that cannot be converted automatically and need to be edited manually after conversion.
 
 | Term | Info |
 | ---- | ---- |
 | `break` | Replace with a statement setting a condition to end the loop |
+| `atan(a,b)` | Replace with `atan2(a,b)` |

@@ -57,6 +57,7 @@ namespace MilkwaveRemote {
     private System.Windows.Forms.Timer autoplayTimer;
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
+    private int lastReceivedShaderErrorLineNumber = -1;
     private float autoplayRemainingBeats = 1;
     private bool updatingWaveParams = false;
 
@@ -445,6 +446,15 @@ namespace MilkwaveRemote {
             string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
             if (status.Length > 0) {
               SetStatusText(status);
+            }
+            if (status.Contains(": error ")) {
+              string errLine = status.Substring(1, status.IndexOf(")") - 1);
+              if (int.TryParse(errLine, out int lineNumber)) {
+                if (lineNumber > 0) {
+                  lastReceivedShaderErrorLineNumber = lineNumber;
+                  MarkRow(lineNumber - (int)numOffset.Value);
+                }
+              }
             }
           } else if (receivedString.StartsWith("OPACITY=")) {
             string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
@@ -3275,8 +3285,7 @@ namespace MilkwaveRemote {
       txtLineNumber.Text = (lineNumber).ToString();
 
       // offsetNum lines are inserted as header by Visualizer
-      int offsetNum = 163;
-      txtLineNumberError.Text = (lineNumber + offsetNum).ToString();
+      txtLineNumberError.Text = (lineNumber + numOffset.Value).ToString();
     }
 
     private void txtShaderSetLineNumber(object sender, EventArgs e) {
@@ -3387,5 +3396,34 @@ namespace MilkwaveRemote {
       }
     }
 
+    public int GetNthIndex(string s, char t, int n) {
+      int count = 0;
+      for (int i = 0; i < s.Length; i++) {
+        if (s[i] == t) {
+          count++;
+          if (count == n) {
+            return i;
+          }
+        }
+      }
+      return -1;
+    }
+
+    private void MarkRow(int row) {
+      try {
+        txtShaderHLSL.SelectionStart = GetNthIndex(txtShaderHLSL.Text, '\n', row - 1) + 1;
+        txtShaderHLSL.SelectionLength = GetNthIndex(txtShaderHLSL.Text, '\n', row) - txtShaderHLSL.SelectionStart;
+        txtShaderHLSL.Focus();
+        txtShaderHLSL.ScrollToCaret();
+      } catch (Exception ex) {
+        // ignore
+      }
+    }
+
+    private void numOffset_ValueChanged(object sender, EventArgs e) {
+      if (lastReceivedShaderErrorLineNumber > 0) {
+        MarkRow(lastReceivedShaderErrorLineNumber - (int)numOffset.Value);
+      }
+    }
   } // end class
 } // end namespace
