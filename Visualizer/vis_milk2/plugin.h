@@ -605,7 +605,8 @@ public:
   texmgr      m_texmgr;		// for user sprites
   
   bool m_blackmode = false;
-  
+  bool m_DX11 = true; //TODO
+
   IDirect3DTexture9* m_tracer_tex;
 
   int         m_nFramesSinceResize;

@@ -39,6 +39,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <d3d9.h>
 #include <d3dx9.h>
 
+#include "../dx11/d3d11shim.h"
+
 #define SNAP_WINDOWED_MODE_BLOCKSIZE  32    // or use 0 if you don't want snapping
 
 typedef struct {
@@ -57,6 +59,21 @@ typedef struct {
   int m_skin;
 }
 DXCONTEXT_PARAMS;
+
+typedef struct _DX11_CONTEXT_PARAMS {
+  unsigned int allow_page_tearing;
+  unsigned int enable_hdr;
+  DXGI_FORMAT back_buffer_format;
+  DXGI_FORMAT depth_buffer_format;
+  UINT back_buffer_count;
+  DXGI_SAMPLE_DESC msaa;
+  D3D_FEATURE_LEVEL min_feature_level;
+  LUID adapter_guid;
+  wchar_t adapter_devicename[256];
+  //X eScrMode screenmode; // WINDOWED, DESKTOP, FULLSCREEN, or FAKE FULLSCREEN
+  int m_skin;
+  HWND parent_window;
+} DX11_CONTEXT_PARAMS;
 
 #define MAX_DXC_ADAPTERS 32
 

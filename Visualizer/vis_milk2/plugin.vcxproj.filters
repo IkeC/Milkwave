@@ -195,6 +195,7 @@
     <None Include="text1_page2.bin">
       <Filter>library\resources</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="plugin.rc">

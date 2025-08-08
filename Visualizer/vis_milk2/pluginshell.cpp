@@ -814,6 +814,47 @@ void CPluginShell::CleanUpDirectX() {
   SafeDelete(m_lpDX);
 }
 
+int CPluginShell::InitDirectX11(HWND hwnd) {
+  DXCONTEXT_PARAMS params{};
+  StuffParams(&params);
+
+  m_lpDX = std::make_unique<DXContext>(hwnd, &params); //, m_szConfigIniFile, m_hInstance, CLASSNAME, WINDOWCAPTION, CPluginShell::WindowProc, (LONG_PTR)this, m_minimize_winamp
+
+  if (!m_lpDX) {
+    PopupMessage(IDS_UNABLE_TO_INIT_DXCONTEXT, IDS_MILKDROP_ERROR);
+    return FALSE;
+  }
+
+  if (m_lpDX->m_lastErr != S_OK) {
+    // Warning message box will have already been given.
+    m_lpDX.reset(); //delete m_lpDX;
+    return FALSE;
+  }
+
+  m_lpDX->GetDeviceResources()->RegisterDeviceNotify(this);
+
+  // Initialize graphics.
+  if (!m_lpDX->StartOrRestartDevice(&params)) {
+    // Note: A basic warning message box will have already been given.
+    /* if (m_lpDX->m_lastErr == DXC_ERR_CREATEDEV_PROBABLY_OUTOFVIDEOMEMORY)
+    {
+        // Make specific suggestions on how to regain more video memory.
+        SuggestHowToFreeSomeMem();
+    } */
+
+    m_lpDX.reset();
+
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+void CPluginShell::CleanUpDirectX11() {
+  if (m_lpDX) m_lpDX.reset();
+  //if (m_device) m_device->Release();
+}
+
 int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance) {
 
   // PROTECTED CONFIG PANEL SETTINGS (also see 'private' settings, below)
@@ -1028,7 +1069,12 @@ int CPluginShell::PluginInitialize(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAME
   // when we change windowed<->fullscreen, or lose the device and restore it,
   // we don't want to mess with any (persistent) GDI stuff.
 
-  if (!InitDirectX(device, d3dpp, hwnd)) return FALSE;  // gives its own error messages
+  if (m_DX11) {
+    if (!InitDirectX11(hwnd)) return FALSE;  // gives its own error messages
+  }
+  else {
+    if (!InitDirectX(device, d3dpp, hwnd)) return FALSE;  // gives its own error messages
+  }
 
   m_lpDX->m_client_width = iWidth;
   m_lpDX->m_client_height = iHeight;

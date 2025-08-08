@@ -272,8 +272,10 @@ private:
 
   // SPOUT - DX9EX
   int  InitDirectX(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd);
-
   void CleanUpDirectX();
+
+  int InitDirectX11(HWND hwnd);
+
   int  InitGDIStuff();
   void CleanUpGDIStuff();
   void CleanUpDX9Stuff(int final_cleanup);
