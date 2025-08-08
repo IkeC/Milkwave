@@ -25,9 +25,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Milkdrop2PcmVisualizer.cpp">
-      <Filter>musikcube</Filter>
-    </ClCompile>
     <ClCompile Include="textmgr.cpp">
       <Filter>library\sources</Filter>
     </ClCompile>
@@ -97,8 +94,14 @@
     <ClCompile Include="..\spoutDX9\SpoutUtils.cpp">
       <Filter>spoutDX9</Filter>
     </ClCompile>
+    <ClCompile Include="Milkdrop2PcmVisualizer.cpp">
+      <Filter>library\sources</Filter>
+    </ClCompile>
     <ClCompile Include="milkwave.cpp">
-      <Filter>musikcube</Filter>
+      <Filter>library\sources</Filter>
+    </ClCompile>
+    <ClCompile Include="AMDDetection.cpp">
+      <Filter>library\sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -153,12 +156,6 @@
     <ClInclude Include="AutoWide.h">
       <Filter>library\headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\audio\cleanup.h" />
-    <ClInclude Include="..\audio\common.h" />
-    <ClInclude Include="..\audio\log.h" />
-    <ClInclude Include="..\audio\loopback-capture.h" />
-    <ClInclude Include="..\audio\prefs.h" />
-    <ClInclude Include="..\audio\audiobuf.h" />
     <ClInclude Include="..\spoutDX9\SpoutCommon.h">
       <Filter>spoutDX9</Filter>
     </ClInclude>
@@ -180,10 +177,32 @@
     <ClInclude Include="..\spoutDX9\SpoutUtils.h">
       <Filter>spoutDX9</Filter>
     </ClInclude>
-    <ClInclude Include="milkwave.h" />
-    <ClInclude Include="api.h" />
     <ClInclude Include="..\ns-eel2-shim\ns-eel.h">
       <Filter>library\ns-eel</Filter>
+    </ClInclude>
+    <ClInclude Include="milkwave.h">
+      <Filter>library\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="api.h">
+      <Filter>library\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\audio\audiobuf.h">
+      <Filter>library\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\audio\cleanup.h">
+      <Filter>library\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\audio\common.h">
+      <Filter>library\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\audio\log.h">
+      <Filter>library\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\audio\loopback-capture.h">
+      <Filter>library\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\audio\prefs.h">
+      <Filter>library\headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -205,6 +224,8 @@
     <Xml Include="manifest.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="plugin_icon.ico" />
+    <Image Include="plugin_icon.ico">
+      <Filter>library\resources</Filter>
+    </Image>
   </ItemGroup>
 </Project>

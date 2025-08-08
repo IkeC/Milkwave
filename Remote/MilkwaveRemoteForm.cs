@@ -446,6 +446,14 @@ namespace MilkwaveRemote {
             if (status.Length > 0) {
               SetStatusText(status);
             }
+            if (status.Contains(": error ")) {
+              string errLine = status.Substring(1, status.IndexOf(")") - 1);
+              if (int.TryParse(errLine, out int lineNumber)) {
+                if (lineNumber > 0) {
+                  MarkRow(lineNumber - (int)numOffset.Value);
+                }
+              }
+            }
           } else if (receivedString.StartsWith("OPACITY=")) {
             string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
             if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
@@ -3275,8 +3283,7 @@ namespace MilkwaveRemote {
       txtLineNumber.Text = (lineNumber).ToString();
 
       // offsetNum lines are inserted as header by Visualizer
-      int offsetNum = 163;
-      txtLineNumberError.Text = (lineNumber + offsetNum).ToString();
+      txtLineNumberError.Text = (lineNumber + numOffset.Value).ToString();
     }
 
     private void txtShaderSetLineNumber(object sender, EventArgs e) {
@@ -3385,6 +3392,26 @@ namespace MilkwaveRemote {
         e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
         btnLoadURL_Click(null, null);
       }
+    }
+
+    public int GetNthIndex(string s, char t, int n) {
+      int count = 0;
+      for (int i = 0; i < s.Length; i++) {
+        if (s[i] == t) {
+          count++;
+          if (count == n) {
+            return i;
+          }
+        }
+      }
+      return -1;
+    }
+  
+    private void MarkRow(int row) {
+      txtShaderHLSL.SelectionStart = GetNthIndex(txtShaderHLSL.Text, '\n', row-1) + 1;
+      txtShaderHLSL.SelectionLength = GetNthIndex(txtShaderHLSL.Text, '\n', row) - txtShaderHLSL.SelectionStart;
+      txtShaderHLSL.Focus();
+      txtShaderHLSL.ScrollToCaret();
     }
 
   } // end class
