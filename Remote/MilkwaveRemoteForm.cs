@@ -80,6 +80,8 @@ namespace MilkwaveRemote {
     // please request your own appKey at https://www.shadertoy.com/howto if you build your own version
     private string shadertoyAppKey = "ftrlhm";
     private string shadertoyQueryType = "";
+    private int shadertoyQueryPageSize = 50;
+
     private List<String> shadertoyQueryList = new List<String>();
 
     Random rnd = new Random();
@@ -1434,10 +1436,15 @@ namespace MilkwaveRemote {
           txtMessage.SelectAll();
         } else if (e.KeyCode == Keys.D) {
           btnPresetLoadDirectory_Click(null, null);
-        } else if (e.KeyCode == Keys.P) {
-          btnPresetSend_Click(null, null);
+        } else if (e.KeyCode == Keys.L) {
+          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+            e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+            LoadShadertoyQuery();
+          }
         } else if (e.KeyCode == Keys.N) {
           SelectNextPreset();
+          btnPresetSend_Click(null, null);
+        } else if (e.KeyCode == Keys.P) {
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
           if (tabControl.SelectedTab.Name.Equals("tabShader")) {
@@ -3315,8 +3322,6 @@ namespace MilkwaveRemote {
       if (string.IsNullOrEmpty(id)) {
         SetStatusText("Please enter a Shadertoy.com URL or ID");
         return;
-      } else {
-        cboShadertoyID.Text = id; // Set the ID back to the combobox
       }
 
       SetStatusText($"Loading code for Shadertoy ID {id}");
@@ -3432,41 +3437,50 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnLoadShadertoyQuery_Click(object sender, EventArgs e) {
+    private void btnLoadShadertoyQuery_Click(object? sender, EventArgs? e) {
+      LoadShadertoyQuery();
+    }
 
+    private bool LoadShadertoyQuery() {
       try {
-        bool ctrlPressed = ((Control.ModifierKeys & Keys.Control) == Keys.Control);
-        if (ctrlPressed || !cboShadertoyType.Text.Equals(shadertoyQueryType)) {
-          // no results cached for this type, so we need to query Shadertoy.com
-          string url = $"https://www.shadertoy.com/api/v1/shaders/query/string?sort={cboShadertoyType.Text}&key={shadertoyAppKey}";
+        bool altPressed = ((Control.ModifierKeys & Keys.Alt) == Keys.Alt);
+        int selectIndex = (int)numShadertoyQueryIndex.Value - 1;
+        int page = (int)Math.Floor((decimal)selectIndex / shadertoyQueryPageSize);
+
+        if (altPressed || selectIndex >= shadertoyQueryList.Count || !cboShadertoyType.Text.Equals(shadertoyQueryType)) {
+          if (altPressed || !cboShadertoyType.Text.Equals(shadertoyQueryType)) {
+            page = 0;
+            selectIndex = 0;
+            shadertoyQueryList.Clear();
+            numShadertoyQueryIndex.Value = 1;
+          }
+          string url = "https://www.shadertoy.com/api/v1/shaders/query/string?" +
+            $"key={shadertoyAppKey}&" +
+            $"sort={cboShadertoyType.Text}&" +
+            $"from={page*shadertoyQueryPageSize}&" +
+            $"num={shadertoyQueryPageSize}";
           using var httpClient = new HttpClient();
-          SetStatusText($"Trying to load {cboShadertoyType.Text} entries...");
+          SetStatusText($"Trying to load {cboShadertoyType.Text} entries, page {page + 1}...");
           var jsonString = httpClient.GetStringAsync(url).Result;
           JsonDocument doc = JsonDocument.Parse(jsonString);
           if (doc.RootElement.TryGetProperty("Error", out JsonElement elError)) {
             SetStatusText($"Shadertoy.com says: {elError.GetString()}");
-            return;
+            return false;
           }
 
-          JsonElement elShaders = doc.RootElement.GetProperty("Shaders");
+          // JsonElement elShaders = doc.RootElement.GetProperty("Shaders");
           JsonElement elResults = doc.RootElement.GetProperty("Results");
 
-          if (elShaders.ValueKind == JsonValueKind.Number) {
-            numShadertoyQueryIndex.Maximum = elShaders.GetInt16();
-            // using null-forgiving operator
-            shadertoyQueryList.AddRange(elResults.EnumerateArray().Select(static e => e.GetString()!));
+          // using null-forgiving operator
+          shadertoyQueryList.AddRange(elResults.EnumerateArray().Select(e => e.GetString()!));
 
-            if (shadertoyQueryList.Count > 0) {
-              // seems like a proper query result, let's cache it
-              shadertoyQueryType = cboShadertoyType.Text;
-            }
+          if (shadertoyQueryList.Count > 0) {
+            // seems like a proper query result, let's cache it
+            shadertoyQueryType = cboShadertoyType.Text;
+            numShadertoyQueryIndex.Maximum = shadertoyQueryPageSize * (page + 2);
           }
         }
 
-        int selectIndex = (int)numShadertoyQueryIndex.Value - 1;
-        if (selectIndex >= shadertoyQueryList.Count) {
-          selectIndex = shadertoyQueryList.Count - 1;
-        }
         string id = shadertoyQueryList[selectIndex];
         if (!string.IsNullOrEmpty(id)) {
           cboShadertoyID.Text = id;
@@ -3476,7 +3490,8 @@ namespace MilkwaveRemote {
       } catch (Exception ex) {
         SetStatusText($"Loading failed: {ex.Message}");
       }
-    }
 
+      return true;
+    }
   } // end class
 } // end namespace

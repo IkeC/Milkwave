@@ -2055,7 +2055,7 @@ namespace MilkwaveRemote
       // 
       numShadertoyQueryIndex.Location = new Point(225, 7);
       numShadertoyQueryIndex.Margin = new Padding(3, 2, 3, 2);
-      numShadertoyQueryIndex.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
+      numShadertoyQueryIndex.Maximum = new decimal(new int[] { 50, 0, 0, 0 });
       numShadertoyQueryIndex.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
       numShadertoyQueryIndex.Name = "numShadertoyQueryIndex";
       numShadertoyQueryIndex.Size = new Size(47, 23);
@@ -2072,7 +2072,7 @@ namespace MilkwaveRemote
       btnLoadShadertoyQuery.Size = new Size(49, 23);
       btnLoadShadertoyQuery.TabIndex = 144;
       btnLoadShadertoyQuery.Text = "Load";
-      toolTip1.SetToolTip(btnLoadShadertoyQuery, "Load ID matching this query type and index using Shadertoy.com API\r\nResults will be cached until type is changed\r\nCtrl+Click: Force requery");
+      toolTip1.SetToolTip(btnLoadShadertoyQuery, "Load ID matching this query type and index using Shadertoy.com API (Ctrl+L)\r\nResults will be cached until type is changed\r\nAlt+Click: Force requery");
       btnLoadShadertoyQuery.UseVisualStyleBackColor = true;
       btnLoadShadertoyQuery.Click += btnLoadShadertoyQuery_Click;
       // 
