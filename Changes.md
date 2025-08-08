@@ -1,5 +1,6 @@
 ## Unreleased
 
+- AMD GPU detection and support for PSVersion=4 (by @OfficialIncubo)
 - Age filter: Only load presets modified within the last X days
 - Ctrl+Click on labels "Preset" or "Running" to open preset file in editor
 
