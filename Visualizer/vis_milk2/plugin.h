@@ -279,6 +279,7 @@ public:
   bool OpenSender(unsigned int width, unsigned int height);
   void OpenMilkwaveRemote();
   void SetAudioDeviceDisplayName(const wchar_t* displayName);
+  void SetAMDFlag();
   bool bSpoutChanged; // set to write config on exit
   bool bSpoutOut; // Spout output on or off
   bool bEnablePresetStartup;
@@ -370,6 +371,7 @@ public:
   int m_MinPSVersionConfig = 2;
   int m_MaxPSVersionConfig = 4;
   bool m_ShowUpArrowInDescriptionIfPSMinVersionForced = true;
+  bool m_IsAMD = false;
 
   //bool		m_bAlways3D;
   //float       m_fStereoSep;
@@ -605,7 +607,8 @@ public:
   texmgr      m_texmgr;		// for user sprites
   
   bool m_blackmode = false;
-  
+  int m_AMDDetectionMode = 0; // 0 = Auto detect, 1 = Force AMD, 2 = Force non-AMD
+
   IDirect3DTexture9* m_tracer_tex;
 
   int         m_nFramesSinceResize;

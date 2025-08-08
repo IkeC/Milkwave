@@ -1016,6 +1016,7 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   ReadConfig();
   MyPreInitialize();
   MyReadConfig();
+  SetAMDFlag();
 
   //-----
 

@@ -650,6 +650,8 @@ bool AutoLockedPreset = false;
 #include <propsys.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include "../audio/log.h"
+#include "AMDDetection.h"
+
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "propsys.lib")
 //
@@ -1395,6 +1397,7 @@ void CPlugin::MyReadConfig() {
 
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
   m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
+  m_AMDDetectionMode = GetPrivateProfileIntW(L"Milkwave", L"AMDDetectionMode", m_AMDDetectionMode, pIni);
 
   // We'll put these in the settings section since other MilkDrop forks use similar settings
   m_MinPSVersionConfig = GetPrivateProfileIntW(L"Settings", L"MinPSVersion", m_MinPSVersionConfig, pIni);
@@ -1997,7 +2000,8 @@ int CPlugin::AllocateMyDX9Stuff() {
     }
 
     // Load the FALLBACK shaders...
-    if (!RecompilePShader(m_szDefaultWarpPShaderText, &m_fallbackShaders_ps.warp, SHADER_WARP, true, 2)) {
+    int PSVersion = m_IsAMD ? m_nMaxPSVersion_DX9 : 2;
+    if (!RecompilePShader(m_szDefaultWarpPShaderText, &m_fallbackShaders_ps.warp, SHADER_WARP, true, PSVersion)) {
       wchar_t szSM[64];
       switch (m_nMaxPSVersion_DX9) {
       case MD2_PS_2_0:
@@ -2029,7 +2033,8 @@ int CPlugin::AllocateMyDX9Stuff() {
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
       return false;
     }
-    if (!RecompilePShader(m_szDefaultCompPShaderText, &m_fallbackShaders_ps.comp, SHADER_COMP, true, 2)) {
+    
+    if (!RecompilePShader(m_szDefaultCompPShaderText, &m_fallbackShaders_ps.comp, SHADER_COMP, true, PSVersion)) {
       wasabiApiLangString(IDS_COULD_NOT_COMPILE_FALLBACK_CP_SHADER, buf, sizeof(buf));
       dumpmsg(buf);
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
@@ -2043,7 +2048,8 @@ int CPlugin::AllocateMyDX9Stuff() {
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
       return false;
     }
-    if (!RecompilePShader(m_szBlurPSX, &m_BlurShaders[0].ps, SHADER_BLUR, true, 2)) {
+    
+    if (!RecompilePShader(m_szBlurPSX, &m_BlurShaders[0].ps, SHADER_BLUR, true, PSVersion)) {
       wasabiApiLangString(IDS_COULD_NOT_COMPILE_BLUR1_PIXEL_SHADER, buf, sizeof(buf));
       dumpmsg(buf);
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
@@ -2055,7 +2061,8 @@ int CPlugin::AllocateMyDX9Stuff() {
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
       return false;
     }
-    if (!RecompilePShader(m_szBlurPSY, &m_BlurShaders[1].ps, SHADER_BLUR, true, 2)) {
+
+    if (!RecompilePShader(m_szBlurPSY, &m_BlurShaders[1].ps, SHADER_BLUR, true, PSVersion)) {
       wasabiApiLangString(IDS_COULD_NOT_COMPILE_BLUR2_PIXEL_SHADER, buf, sizeof(buf));
       dumpmsg(buf);
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
@@ -3504,8 +3511,14 @@ bool CPlugin::RecompileVShader(const char* szShadersText, VShaderInfo* si, int s
   SafeRelease(si->ptr);
   ZeroMemory(si, sizeof(VShaderInfo));
 
+  char ver[16];
+  if (m_IsAMD)
+    lstrcpy(ver, "vs_3_0");
+  else
+    lstrcpy(ver, "vs_1_1");
+
   // LOAD SHADER
-  if (!LoadShaderFromMemory(szShadersText, "VS", "vs_1_1", &si->CT, (void**)&si->ptr, shaderType, bHardErrors))
+  if (!LoadShaderFromMemory(szShadersText, "VS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors))
     return false;
 
   // Track down texture & float4 param bindings for this shader.
@@ -11156,4 +11169,14 @@ void CPlugin::OpenMilkwaveRemote() {
 
 void CPlugin::SetAudioDeviceDisplayName(const wchar_t* displayName) {
   wcscpy_s(m_szAudioDeviceDisplayName, MAX_PATH, displayName);
+}
+
+void CPlugin::SetAMDFlag() {
+  if (m_AMDDetectionMode == 0) {
+    m_IsAMD = is_amd_ati();
+  } else if (m_AMDDetectionMode == 1) {
+    m_IsAMD = true;
+  } else {
+    m_IsAMD = false;
+  }
 }
