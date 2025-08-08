@@ -1,4 +1,4 @@
-# Milkwave Manual
+﻿# Milkwave Manual
 
 This manual is a stub. User input and contributions are welcome! 
 
@@ -36,3 +36,4 @@ Here are some common terms that cannot be converted automatically and need to be
 | ---- | ---- |
 | `break` | Replace with a statement setting a condition to end the loop |
 | `atan(a,b)` | Replace with `atan2(a,b)` |
+| `radians(a)` | Multiply by π/180 directly: `a * (PI/180)` |

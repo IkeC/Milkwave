@@ -1904,7 +1904,7 @@ namespace MilkwaveRemote
       // btnLoadShadertoyID
       // 
       btnLoadShadertoyID.FlatStyle = FlatStyle.System;
-      btnLoadShadertoyID.Location = new Point(96, 6);
+      btnLoadShadertoyID.Location = new Point(87, 6);
       btnLoadShadertoyID.Name = "btnLoadShadertoyID";
       btnLoadShadertoyID.Size = new Size(49, 23);
       btnLoadShadertoyID.TabIndex = 34;
@@ -1970,7 +1970,7 @@ namespace MilkwaveRemote
       // txtLineNumber
       // 
       txtLineNumber.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumber.Location = new Point(456, 7);
+      txtLineNumber.Location = new Point(457, 7);
       txtLineNumber.Name = "txtLineNumber";
       txtLineNumber.ReadOnly = true;
       txtLineNumber.Size = new Size(28, 23);
@@ -1981,7 +1981,7 @@ namespace MilkwaveRemote
       // btnLoadShaderInputFromFile
       // 
       btnLoadShaderInputFromFile.FlatStyle = FlatStyle.System;
-      btnLoadShaderInputFromFile.Location = new Point(354, 6);
+      btnLoadShaderInputFromFile.Location = new Point(333, 6);
       btnLoadShaderInputFromFile.Name = "btnLoadShaderInputFromFile";
       btnLoadShaderInputFromFile.Size = new Size(49, 23);
       btnLoadShaderInputFromFile.TabIndex = 28;
@@ -2007,7 +2007,7 @@ namespace MilkwaveRemote
       // 
       cboShadertoyID.Location = new Point(6, 7);
       cboShadertoyID.Name = "cboShadertoyID";
-      cboShadertoyID.Size = new Size(84, 23);
+      cboShadertoyID.Size = new Size(77, 23);
       cboShadertoyID.TabIndex = 138;
       toolTip1.SetToolTip(cboShadertoyID, "Shadertoy.com URL or ID");
       cboShadertoyID.KeyDown += cboShadertoyURL_KeyDown;
@@ -2045,15 +2045,15 @@ namespace MilkwaveRemote
       // 
       cboShadertoyType.DropDownStyle = ComboBoxStyle.DropDownList;
       cboShadertoyType.Items.AddRange(new object[] { "newest", "name", "love", "popular", "hot" });
-      cboShadertoyType.Location = new Point(152, 7);
+      cboShadertoyType.Location = new Point(143, 7);
       cboShadertoyType.Name = "cboShadertoyType";
-      cboShadertoyType.Size = new Size(88, 23);
+      cboShadertoyType.Size = new Size(76, 23);
       cboShadertoyType.TabIndex = 142;
       toolTip1.SetToolTip(cboShadertoyType, "Shadertoy.com query type");
       // 
       // numShadertoyQueryIndex
       // 
-      numShadertoyQueryIndex.Location = new Point(246, 7);
+      numShadertoyQueryIndex.Location = new Point(225, 7);
       numShadertoyQueryIndex.Margin = new Padding(3, 2, 3, 2);
       numShadertoyQueryIndex.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numShadertoyQueryIndex.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -2067,7 +2067,7 @@ namespace MilkwaveRemote
       // btnLoadShadertoyQuery
       // 
       btnLoadShadertoyQuery.FlatStyle = FlatStyle.System;
-      btnLoadShadertoyQuery.Location = new Point(299, 6);
+      btnLoadShadertoyQuery.Location = new Point(278, 6);
       btnLoadShadertoyQuery.Name = "btnLoadShadertoyQuery";
       btnLoadShadertoyQuery.Size = new Size(49, 23);
       btnLoadShadertoyQuery.TabIndex = 144;
