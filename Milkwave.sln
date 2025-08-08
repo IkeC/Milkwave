@@ -24,7 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Build\sprites.ini = Build\sprites.ini
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkwaveRemoteTests", "RemoteTests\MilkwaveRemoteTests.csproj", "{79CA1E64-42BC-47B1-A247-4C10B7A3855E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteTests", "RemoteTests\MilkwaveRemoteTests.csproj", "{79CA1E64-42BC-47B1-A247-4C10B7A3855E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
