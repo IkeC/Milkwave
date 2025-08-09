@@ -80,7 +80,7 @@ namespace MilkwaveRemote {
     // please request your own appKey at https://www.shadertoy.com/howto if you build your own version
     private string shadertoyAppKey = "ftrlhm";
     private string shadertoyQueryType = "";
-    private int shadertoyQueryPageSize = 50;
+    private int shadertoyQueryPageSize = 100;
 
     private List<String> shadertoyQueryList = new List<String>();
 
@@ -3342,6 +3342,13 @@ namespace MilkwaveRemote {
         string? shaderId = elInfo.GetProperty("id").GetString();
         string? shaderName = elInfo.GetProperty("name").GetString();
         string? shaderUsername = elInfo.GetProperty("username").GetString();
+        string? date = elInfo.GetProperty("date").GetString();
+        if (long.TryParse(date, out long unixTimestamp)) {
+          DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp);
+          string formattedDate = dateTimeOffset.ToString("yyyy-MM-dd HH:mm:ss");
+          toolTip1.SetToolTip(txtShaderinfo, formattedDate);
+        }
+
         JsonElement firstRenderpassElement = elShader.GetProperty("renderpass").EnumerateArray().First();
         string? shaderCode = firstRenderpassElement.GetProperty("code").GetString();
         if (shaderCode == null) {
@@ -3350,6 +3357,7 @@ namespace MilkwaveRemote {
           txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"https://www.shadertoy.com/view/{shaderId}";
           string? formattedShaderCode = shaderCode?.Replace("\n", Environment.NewLine);
           txtShaderGLSL.Text = formattedShaderCode;
+          
           if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
             ConvertShader();
             btnSendShader_Click(null, null);
@@ -3454,7 +3462,7 @@ namespace MilkwaveRemote {
             shadertoyQueryList.Clear();
             numShadertoyQueryIndex.Value = 1;
           }
-          string url = "https://www.shadertoy.com/api/v1/shaders/query/string?" +
+          string url = "https://www.shadertoy.com/api/v1/shaders/query?" +
             $"key={shadertoyAppKey}&" +
             $"sort={cboShadertoyType.Text}&" +
             $"from={page*shadertoyQueryPageSize}&" +

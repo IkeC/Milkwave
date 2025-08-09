@@ -31,6 +31,9 @@ namespace MilkwaveRemote.Data {
           int indexMainImageMethodClosingBracket = FindClosingBracketIndex(inp.Substring(indexMainImage), '{', '}', 0);
 
           inpHeader = inp.Substring(0, indexMainImage);
+
+          inpHeader = StripCommentsUntilCodeStarts(inpHeader);
+
           inpMain = inp.Substring(indexMainImage, indexMainImageMethodClosingBracket + 1);
           inpFooter = "";
 
@@ -104,6 +107,35 @@ namespace MilkwaveRemote.Data {
         }
       } catch (Exception e) {
         Debug.Assert(false);
+      }
+      return sb.ToString();
+    }
+
+    private string StripCommentsUntilCodeStarts(string inp) {
+      StringBuilder sb = new StringBuilder();
+      string[] lines = inp.Replace("\r\n", "\n").Replace('\r', '\n').Split(new[] { '\n' }, StringSplitOptions.None);
+      bool codeStarted = false;
+      bool inComment = false;
+      foreach (string line in lines) {
+        string currentLine = line;
+        if (!codeStarted) {
+          if (currentLine.Trim().StartsWith("//")) {
+            // skip comments before the code starts
+            continue;
+          } else if (currentLine.Trim().StartsWith("/*")) {
+            inComment = true;
+            continue;
+          } else if (currentLine.Trim().EndsWith("*/")) {
+            inComment = false;
+            continue;
+          } else if (inComment) {
+            continue;
+          } else if (currentLine.Trim().Length > 0) {
+            codeStarted = true;
+          }
+        } else {
+          sb.AppendLine(currentLine);
+        }
       }
       return sb.ToString();
     }

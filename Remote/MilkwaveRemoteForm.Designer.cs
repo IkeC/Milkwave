@@ -1898,6 +1898,7 @@ namespace MilkwaveRemote
       txtShaderinfo.Location = new Point(89, 155);
       txtShaderinfo.Multiline = true;
       txtShaderinfo.Name = "txtShaderinfo";
+      txtShaderinfo.ScrollBars = ScrollBars.Vertical;
       txtShaderinfo.Size = new Size(343, 23);
       txtShaderinfo.TabIndex = 35;
       toolTip1.SetToolTip(txtShaderinfo, "Shaderinfo used for filename and embedded into generated preset file\r\nCan be multiple lines, use cursor keys to scroll");
@@ -2039,7 +2040,7 @@ namespace MilkwaveRemote
       numOffset.TabIndex = 141;
       numOffset.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numOffset, "Adjust this value if the line marked as error is wrong");
-      numOffset.Value = new decimal(new int[] { 160, 0, 0, 0 });
+      numOffset.Value = new decimal(new int[] { 163, 0, 0, 0 });
       numOffset.ValueChanged += numOffset_ValueChanged;
       // 
       // cboShadertoyType
