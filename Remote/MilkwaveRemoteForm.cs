@@ -3223,7 +3223,7 @@ namespace MilkwaveRemote {
         Directory.CreateDirectory(shaderDir);
 
         string presetName = txtShaderinfo.Text.Split(Environment.NewLine)[0].Trim();
-        if (string.IsNullOrEmpty(presetName)) {
+        if (!chkShaderFilename.Checked || string.IsNullOrEmpty(presetName)) {
           presetName = "Shader";
         }
         string fileName = StripInvalidFileNameChars(presetName + ".milk");

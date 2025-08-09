@@ -175,6 +175,7 @@ namespace MilkwaveRemote
       cboShadertoyType = new ComboBox();
       numShadertoyQueryIndex = new NumericUpDown();
       btnLoadShadertoyQuery = new Button();
+      chkShaderFilename = new CheckBox();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -1887,7 +1888,7 @@ namespace MilkwaveRemote
       btnSendShader.Size = new Size(70, 23);
       btnSendShader.TabIndex = 26;
       btnSendShader.Text = "Send";
-      toolTip1.SetToolTip(btnSendShader, "Send HLSL to Visualizer \r\n(Ctrl+S)");
+      toolTip1.SetToolTip(btnSendShader, "Save HLSL as preset and send to Visualizer \r\n(Ctrl+S)");
       btnSendShader.UseVisualStyleBackColor = true;
       btnSendShader.Click += btnSendShader_Click;
       // 
@@ -1897,7 +1898,7 @@ namespace MilkwaveRemote
       txtShaderinfo.Location = new Point(89, 155);
       txtShaderinfo.Multiline = true;
       txtShaderinfo.Name = "txtShaderinfo";
-      txtShaderinfo.Size = new Size(393, 23);
+      txtShaderinfo.Size = new Size(343, 23);
       txtShaderinfo.TabIndex = 35;
       toolTip1.SetToolTip(txtShaderinfo, "Shaderinfo used for filename and embedded into generated preset file\r\nCan be multiple lines, use cursor keys to scroll");
       // 
@@ -2075,6 +2076,20 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(btnLoadShadertoyQuery, "Load ID matching this query type and index using Shadertoy.com API (Ctrl+L)\r\nResults will be cached until type is changed\r\nAlt+Click: Force requery");
       btnLoadShadertoyQuery.UseVisualStyleBackColor = true;
       btnLoadShadertoyQuery.Click += btnLoadShadertoyQuery_Click;
+      // 
+      // chkShaderFilename
+      // 
+      chkShaderFilename.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+      chkShaderFilename.AutoSize = true;
+      chkShaderFilename.Checked = true;
+      chkShaderFilename.CheckState = CheckState.Checked;
+      chkShaderFilename.Location = new Point(438, 156);
+      chkShaderFilename.Name = "chkShaderFilename";
+      chkShaderFilename.Size = new Size(44, 19);
+      chkShaderFilename.TabIndex = 145;
+      chkShaderFilename.Text = "File";
+      toolTip1.SetToolTip(chkShaderFilename, "If checked, use left line for generated preset file\r\nIf unchecked, filename will be \"Shader.milk\"");
+      chkShaderFilename.UseVisualStyleBackColor = true;
       // 
       // cboParameters
       // 
@@ -2809,6 +2824,7 @@ namespace MilkwaveRemote
       // 
       // pnlTabShader
       // 
+      pnlTabShader.Controls.Add(chkShaderFilename);
       pnlTabShader.Controls.Add(btnLoadShadertoyQuery);
       pnlTabShader.Controls.Add(numShadertoyQueryIndex);
       pnlTabShader.Controls.Add(cboShadertoyType);
@@ -3591,5 +3607,6 @@ namespace MilkwaveRemote
     private Button btnLoadShadertoyQuery;
     private NumericUpDown numShadertoyQueryIndex;
     private ComboBox cboShadertoyType;
+    private CheckBox chkShaderFilename;
   }
 }
