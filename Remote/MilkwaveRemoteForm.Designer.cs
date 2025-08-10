@@ -175,7 +175,7 @@ namespace MilkwaveRemote
       cboShadertoyType = new ComboBox();
       numShadertoyQueryIndex = new NumericUpDown();
       btnLoadShadertoyQuery = new Button();
-      chkShaderFilename = new CheckBox();
+      chkShaderFile = new CheckBox();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -228,6 +228,7 @@ namespace MilkwaveRemote
       tabMessage = new TabPage();
       tabShader = new TabPage();
       pnlTabShader = new Panel();
+      picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
       tabWave = new TabPage();
       numWaveEcho = new NumericUpDown();
@@ -285,6 +286,7 @@ namespace MilkwaveRemote
       tabMessage.SuspendLayout();
       tabShader.SuspendLayout();
       pnlTabShader.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)picShaderError).BeginInit();
       ((System.ComponentModel.ISupportInitialize)splitContainerShader).BeginInit();
       splitContainerShader.Panel1.SuspendLayout();
       splitContainerShader.Panel2.SuspendLayout();
@@ -2078,19 +2080,19 @@ namespace MilkwaveRemote
       btnLoadShadertoyQuery.UseVisualStyleBackColor = true;
       btnLoadShadertoyQuery.Click += btnLoadShadertoyQuery_Click;
       // 
-      // chkShaderFilename
+      // chkShaderFile
       // 
-      chkShaderFilename.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-      chkShaderFilename.AutoSize = true;
-      chkShaderFilename.Checked = true;
-      chkShaderFilename.CheckState = CheckState.Checked;
-      chkShaderFilename.Location = new Point(438, 156);
-      chkShaderFilename.Name = "chkShaderFilename";
-      chkShaderFilename.Size = new Size(44, 19);
-      chkShaderFilename.TabIndex = 145;
-      chkShaderFilename.Text = "File";
-      toolTip1.SetToolTip(chkShaderFilename, "If checked, use left line for generated preset file\r\nIf unchecked, filename will be \"Shader.milk\"");
-      chkShaderFilename.UseVisualStyleBackColor = true;
+      chkShaderFile.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+      chkShaderFile.AutoSize = true;
+      chkShaderFile.Checked = true;
+      chkShaderFile.CheckState = CheckState.Checked;
+      chkShaderFile.Location = new Point(438, 156);
+      chkShaderFile.Name = "chkShaderFile";
+      chkShaderFile.Size = new Size(44, 19);
+      chkShaderFile.TabIndex = 145;
+      chkShaderFile.Text = "File";
+      toolTip1.SetToolTip(chkShaderFile, "If checked, use left line for generated preset file\r\nIf unchecked, filename will be \"Shader.milk\"");
+      chkShaderFile.UseVisualStyleBackColor = true;
       // 
       // cboParameters
       // 
@@ -2825,27 +2827,39 @@ namespace MilkwaveRemote
       // 
       // pnlTabShader
       // 
-      pnlTabShader.Controls.Add(chkShaderFilename);
+      pnlTabShader.Controls.Add(picShaderError);
+      pnlTabShader.Controls.Add(txtLineNumber);
+      pnlTabShader.Controls.Add(numOffset);
+      pnlTabShader.Controls.Add(txtLineNumberError);
+      pnlTabShader.Controls.Add(btnShaderHelp);
       pnlTabShader.Controls.Add(btnLoadShadertoyQuery);
       pnlTabShader.Controls.Add(numShadertoyQueryIndex);
       pnlTabShader.Controls.Add(cboShadertoyType);
-      pnlTabShader.Controls.Add(numOffset);
-      pnlTabShader.Controls.Add(numPSVersion);
-      pnlTabShader.Controls.Add(txtShaderinfo);
-      pnlTabShader.Controls.Add(txtLineNumber);
-      pnlTabShader.Controls.Add(txtLineNumberError);
-      pnlTabShader.Controls.Add(btnShaderHelp);
       pnlTabShader.Controls.Add(cboShadertoyID);
-      pnlTabShader.Controls.Add(splitContainerShader);
-      pnlTabShader.Controls.Add(btnSendShader);
       pnlTabShader.Controls.Add(btnLoadShaderInputFromFile);
       pnlTabShader.Controls.Add(btnLoadShadertoyID);
+      pnlTabShader.Controls.Add(chkShaderFile);
+      pnlTabShader.Controls.Add(numPSVersion);
+      pnlTabShader.Controls.Add(txtShaderinfo);
+      pnlTabShader.Controls.Add(splitContainerShader);
+      pnlTabShader.Controls.Add(btnSendShader);
       pnlTabShader.Controls.Add(btnShaderConvert);
       pnlTabShader.Dock = DockStyle.Fill;
       pnlTabShader.Location = new Point(0, 0);
       pnlTabShader.Name = "pnlTabShader";
       pnlTabShader.Size = new Size(615, 181);
       pnlTabShader.TabIndex = 140;
+      // 
+      // picShaderError
+      // 
+      picShaderError.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      picShaderError.Location = new Point(431, 7);
+      picShaderError.Margin = new Padding(0);
+      picShaderError.Name = "picShaderError";
+      picShaderError.Size = new Size(20, 20);
+      picShaderError.SizeMode = PictureBoxSizeMode.Zoom;
+      picShaderError.TabIndex = 146;
+      picShaderError.TabStop = false;
       // 
       // splitContainerShader
       // 
@@ -3354,6 +3368,7 @@ namespace MilkwaveRemote
       tabShader.ResumeLayout(false);
       pnlTabShader.ResumeLayout(false);
       pnlTabShader.PerformLayout();
+      ((System.ComponentModel.ISupportInitialize)picShaderError).EndInit();
       splitContainerShader.Panel1.ResumeLayout(false);
       splitContainerShader.Panel1.PerformLayout();
       splitContainerShader.Panel2.ResumeLayout(false);
@@ -3608,6 +3623,8 @@ namespace MilkwaveRemote
     private Button btnLoadShadertoyQuery;
     private NumericUpDown numShadertoyQueryIndex;
     private ComboBox cboShadertoyType;
-    private CheckBox chkShaderFilename;
+    private CheckBox chkShaderFile;
+    private Button btnShaderError;
+    private PictureBox picShaderError;
   }
 }

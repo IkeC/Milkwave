@@ -10,7 +10,7 @@ Converts GLSL shader code to HLSL shader code.
 
 ### Shadertoy examples
 
-Some of the Shadertoy shaders that can be converted to a Milkwave preset using the Shader tab, along with the required manual corrections after conversion. 
+Some of the Shadertoy shaders that can be converted to a Milkwave preset using the Shader tab, along with the required manual corrections after conversion.
 
 | Title | ID  | Corrections |
 | ----- | --- | ------------------------------------- |
@@ -27,6 +27,7 @@ Some of the Shadertoy shaders that can be converted to a Milkwave preset using t
 - [How to create Presets from OpenGL Shaders](https://www.youtube.com/watch?v=Ur2gPa996Aw) (Video)
 - [GLSL-to-HLSL reference](https://learn.microsoft.com/en-us/windows/uwp/gaming/glsl-to-hlsl-reference)
 - [MilkDrop Preset Authoring Guide](https://www.geisswerks.com/milkdrop/milkdrop_preset_authoring.html#3f)
+- [Shadertoy How-To](https://www.shadertoy.com/howto)
 
 ### Known limitations
 
@@ -35,5 +36,7 @@ Here are some common terms that cannot be converted automatically and need to be
 | Term | Info |
 | ---- | ---- |
 | `break` | Replace with a statement setting a condition to end the loop |
-| `atan(a,b)` | Replace with `atan2(a,b)` |
-| `radians(a)` | Multiply by π/180 directly: `a * (PI/180)` |
+| `radians(a)` | Multiply by π/180 directly: `a * (M_PI/180)` |
+| `atan(a,b)` | `atan2(a,b)` |
+| `float[3] arr` | `float arr[3]` |
+| `int[3] arr = int[](1,2,3)` | `int arr[3] = {1,2,3}` |

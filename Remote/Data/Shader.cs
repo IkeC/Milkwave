@@ -1,21 +1,22 @@
-﻿using NAudio.Wave;
-using System.Configuration;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 
 namespace MilkwaveRemote.Data {
   public class Shader {
     private string indent = "";
+    public StringBuilder ConversionErrors = new StringBuilder();
 
     public string ConvertGLSLtoHLSL(string inp) {
       StringBuilder sb = new StringBuilder();
-
+      ConversionErrors = new StringBuilder();
       try {
         inp = inp.Replace("vec2", "float2").Replace("vec3", "float3").Replace("vec4", "float4");
         inp = inp.Replace("fract (", "fract(").Replace("mod (", "mod(").Replace("mix (", "mix (");
         inp = inp.Replace("fract(", "frac(").Replace("mod(", "mod_conv(").Replace("mix(", "lerp(");
         inp = ReplaceVarName("time", "time_conv", inp);
         inp = inp.Replace("iTime", "time").Replace("iResolution", "texsize");
+        inp = inp.Replace("iFrame", "frame");
+        inp = inp.Replace("texture(", "tex2D(");
         inp = inp.Replace("void mainImage(", "mainImage(");
 
         int indexMainImage = inp.IndexOf("mainImage(");
@@ -32,7 +33,7 @@ namespace MilkwaveRemote.Data {
 
           inpHeader = inp.Substring(0, indexMainImage);
 
-          inpHeader = StripCommentsUntilCodeStarts(inpHeader);
+          inpHeader = StripCommentsAndBlankLines(inpHeader);
 
           inpMain = inp.Substring(indexMainImage, indexMainImageMethodClosingBracket + 1);
           inpFooter = "";
@@ -93,6 +94,9 @@ namespace MilkwaveRemote.Data {
           } else if (line.Contains("iMouse")) {
             SetConvertorError("iMouse unsupported", sb);
             currentLine = indent + "// " + line;
+          } else if (line.Contains("iDate")) {
+            SetConvertorError("iDate unsupported", sb);
+            currentLine = indent + "// " + line;
           } else if (line.Contains("iChannel")) {
             SetConvertorError("iChannel (textures) unsupported", sb);
             currentLine = indent + "// " + line;
@@ -111,31 +115,29 @@ namespace MilkwaveRemote.Data {
       return sb.ToString();
     }
 
-    private string StripCommentsUntilCodeStarts(string inp) {
+    private string StripCommentsAndBlankLines(string inp) {
       StringBuilder sb = new StringBuilder();
       string[] lines = inp.Replace("\r\n", "\n").Replace('\r', '\n').Split(new[] { '\n' }, StringSplitOptions.None);
-      bool codeStarted = false;
       bool inComment = false;
+      string prevLine = "";
       foreach (string line in lines) {
-        string currentLine = line;
-        if (!codeStarted) {
-          if (currentLine.Trim().StartsWith("//")) {
-            // skip comments before the code starts
-            continue;
-          } else if (currentLine.Trim().StartsWith("/*")) {
-            inComment = true;
-            continue;
-          } else if (currentLine.Trim().EndsWith("*/")) {
-            inComment = false;
-            continue;
-          } else if (inComment) {
-            continue;
-          } else if (currentLine.Trim().Length > 0) {
-            codeStarted = true;
-          }
-        } else {
+        string currentLine = line.Trim();
+        if (currentLine.StartsWith("//")) {
+          // skip comments before the code starts
+          continue;
+        } else if (currentLine.StartsWith("/*")) {
+          inComment = !currentLine.EndsWith("*/");
+          continue;
+        } else if (currentLine.EndsWith("*/")) {
+          inComment = false;
+          continue;
+        } else if (inComment) {
+          continue;
+        } else if (currentLine.Length > 0 || prevLine.Length > 0) {
+          // allow a single blank line, but not multiple blank lines
           sb.AppendLine(currentLine);
         }
+        prevLine = currentLine;
       }
       return sb.ToString();
     }
@@ -237,6 +239,9 @@ namespace MilkwaveRemote.Data {
 
     private void SetConvertorError(string msg, StringBuilder sb) {
       sb.AppendLine("// CONV: " + msg);
+      if (!ConversionErrors.ToString().Contains(msg + Environment.NewLine)) {
+        ConversionErrors.AppendLine(msg);
+      }
     }
 
     private string AddHelperFunctionsMod(string inpHeader) {

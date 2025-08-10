@@ -4,7 +4,6 @@
     }
 
     public static int Panel1DefaultHeight = 256;
-
     public List<Style> Styles { get; set; } = new List<Style>();
     public List<String> LoadFilters { get; set; } = new List<String>();
     public List<String> ShadertoyIDs { get; set; } = new List<String>();
@@ -16,5 +15,6 @@
     public bool ShowButtonPanel { get; set; } = true;
     public bool CloseVisualizerWithRemote { get; set; } = false;
     public int SelectedTabIndex { get; set; } = 0;
+    public bool ShaderFileChecked { get; set; } = true;
   }
 }
