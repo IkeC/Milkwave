@@ -40,3 +40,6 @@ Here are some common terms that cannot be converted automatically and need to be
 | `atan(a,b)` | `atan2(a,b)` |
 | `float[3] arr` | `float arr[3]` |
 | `int[3] arr = int[](1,2,3)` | `int arr[3] = {1,2,3}` |
+| `int ix = i & 1` (bitwise) | `int ix = i % 2` |
+| `int yx = y >> 1` (bitwise) | `int yx = y / 2` |
+

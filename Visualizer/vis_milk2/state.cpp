@@ -528,24 +528,25 @@ void CState::Default(DWORD ApplyFlags) {
 
   // wave:
   if (ApplyFlags & STATE_WAVE) {
-    m_nWaveMode = 14;
+    // default wave settings
+    m_nWaveMode = 16; // triangle
     m_nOldWaveMode = -1;
-    m_bAdditiveWaves = false;
+    m_bAdditiveWaves = true;
     m_bWaveDots = false;
-    m_bWaveThick = false;
-    m_fWaveAlpha = 0.5f;
+    m_bWaveThick = true;
+    m_fWaveAlpha = 0.4f;
     m_fWaveScale = 1.0f;
     m_fWaveSmoothing = 0.75f;	// 0 = no smoothing, 0.9 = HEAVY smoothing
     m_fWaveParam = 0.0f;
     m_bModWaveAlphaByVolume = false;
     m_fModWaveAlphaStart = 0.75f;		// when relative volume hits this level, alpha -> 0
     m_fModWaveAlphaEnd = 0.95f;		// when relative volume hits this level, alpha -> 1
-    m_fWaveR = 0.0f;
-    m_fWaveG = 1.0f;
-    m_fWaveB = 0.0f;
+    m_fWaveR = 1.0f;
+    m_fWaveG = 0.0f;
+    m_fWaveB = 0.5f; // pink
     m_fWaveX = 0.5f;
     m_fWaveY = 0.5f;
-    m_bMaximizeWaveColor = false;
+    m_bMaximizeWaveColor = true;
     m_fMvX = 0.0f;
     m_fMvY = 0.0f;
     m_fMvDX = 0.0f;
@@ -614,13 +615,13 @@ void CState::Default(DWORD ApplyFlags) {
     m_fWarpAnimSpeed = 1.0f;		// additional timescaling for warp animation
     m_fWarpScale = 1.0f;
     m_fZoomExponent = 1.0f;
-    m_fZoom = 1.0f;
+    m_fZoom = 0.9f;
     m_fRot = 0.0f;
     m_fRotCX = 0.5f;
     m_fRotCY = 0.5f;
-    m_fXPush = 0.0f;
+    m_fXPush = 0.04f;
     m_fYPush = 0.0f;
-    m_fWarpAmount = 1.0f;
+    m_fWarpAmount = 0.0f;
     m_fStretchX = 1.0f;
     m_fStretchY = 1.0f;
     m_fOuterBorderSize = 0.01f;

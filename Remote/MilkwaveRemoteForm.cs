@@ -361,7 +361,7 @@ namespace MilkwaveRemote {
         ReloadShadertoyIDsList(false);
         cboShadertoyID.SelectedIndex = 0;
       }
-      
+
       picShaderError.Image = SystemIcons.GetStockIcon(StockIconId.Warning, 64).ToBitmap();
       picShaderError.Visible = false;
       LoadVisualizerSettings();
@@ -704,7 +704,7 @@ namespace MilkwaveRemote {
       text = text
         .Replace(" " + Environment.NewLine, Environment.NewLine)
         .Replace(Environment.NewLine + " ", Environment.NewLine)
-        .Replace(Environment.NewLine, " // ").Trim();
+        .Replace(Environment.NewLine, " // ").Replace("&", "&&").Trim();
       if (!text.Equals(statusBar.Text)) {
         statusBar.Text = text;
       }
@@ -1468,7 +1468,12 @@ namespace MilkwaveRemote {
             SelectNextAutoplayEntry();
           }
         } else if (e.KeyCode == Keys.Y) {
-          chkAutoplay.Checked = !chkAutoplay.Checked;
+          e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+          if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+            chkAutoplay.Checked = !chkAutoplay.Checked;
+          } else {
+            chkShaderLeft.Checked = !chkShaderLeft.Checked;
+          }
         } else if (e.KeyCode == Keys.Tab) {
           if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
             // Switch to the previous tab
@@ -1484,7 +1489,7 @@ namespace MilkwaveRemote {
           } else {
             SendPostMessage(VK_SPACE, "Space");
           }
-        }
+        } 
       }
 
       if (e.KeyCode == Keys.F1) {
@@ -3364,7 +3369,7 @@ namespace MilkwaveRemote {
           txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"https://www.shadertoy.com/view/{shaderId}";
           string? formattedShaderCode = shaderCode?.Replace("\n", Environment.NewLine);
           txtShaderGLSL.Text = formattedShaderCode;
-          
+
           if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
             ConvertShader();
             btnSendShader_Click(null, null);
@@ -3476,7 +3481,7 @@ namespace MilkwaveRemote {
           string url = "https://www.shadertoy.com/api/v1/shaders/query?" +
             $"key={shadertoyAppKey}&" +
             $"sort={cboShadertoyType.Text}&" +
-            $"from={page*shadertoyQueryPageSize}&" +
+            $"from={page * shadertoyQueryPageSize}&" +
             $"num={shadertoyQueryPageSize}";
           using var httpClient = new HttpClient();
           SetStatusText($"Trying to load {cboShadertoyType.Text} entries...");
@@ -3499,7 +3504,7 @@ namespace MilkwaveRemote {
             numShadertoyQueryIndex.Maximum = shadertoyQueryPageSize * (page + 2);
           }
         }
-        
+
         if (shadertoyQueryList.Count > 0) {
           if (selectIndex > shadertoyQueryList.Count - 1) {
             numShadertoyQueryIndex.Value = 1;
@@ -3518,6 +3523,16 @@ namespace MilkwaveRemote {
       }
 
       return true;
+    }
+
+    private void cboShadertoyID_Click(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        OpenURL($"https://www.shadertoy.com/view/{cboShadertoyID.Text}");
+      }
+    }
+
+    private void chkShaderLeft_CheckedChanged(object sender, EventArgs e) {
+      splitContainerShader.Panel1Collapsed = chkShaderLeft.Checked;
     }
   } // end class
 } // end namespace

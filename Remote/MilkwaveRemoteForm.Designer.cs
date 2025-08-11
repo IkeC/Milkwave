@@ -176,6 +176,7 @@ namespace MilkwaveRemote
       numShadertoyQueryIndex = new NumericUpDown();
       btnLoadShadertoyQuery = new Button();
       chkShaderFile = new CheckBox();
+      chkShaderLeft = new CheckBox();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -1897,11 +1898,11 @@ namespace MilkwaveRemote
       // txtShaderinfo
       // 
       txtShaderinfo.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      txtShaderinfo.Location = new Point(89, 155);
+      txtShaderinfo.Location = new Point(117, 155);
       txtShaderinfo.Multiline = true;
       txtShaderinfo.Name = "txtShaderinfo";
       txtShaderinfo.ScrollBars = ScrollBars.Vertical;
-      txtShaderinfo.Size = new Size(343, 23);
+      txtShaderinfo.Size = new Size(315, 23);
       txtShaderinfo.TabIndex = 35;
       toolTip1.SetToolTip(txtShaderinfo, "Shaderinfo used for filename and embedded into generated preset file\r\nCan be multiple lines, use cursor keys to scroll");
       // 
@@ -1921,9 +1922,9 @@ namespace MilkwaveRemote
       // 
       btnShaderConvert.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
       btnShaderConvert.FlatStyle = FlatStyle.System;
-      btnShaderConvert.Location = new Point(6, 154);
+      btnShaderConvert.Location = new Point(35, 154);
       btnShaderConvert.Name = "btnShaderConvert";
-      btnShaderConvert.Size = new Size(77, 23);
+      btnShaderConvert.Size = new Size(76, 23);
       btnShaderConvert.TabIndex = 32;
       btnShaderConvert.Text = "Convert";
       toolTip1.SetToolTip(btnShaderConvert, "Convert GLSL (left) to HLSL (right)");
@@ -2013,7 +2014,8 @@ namespace MilkwaveRemote
       cboShadertoyID.Name = "cboShadertoyID";
       cboShadertoyID.Size = new Size(77, 23);
       cboShadertoyID.TabIndex = 138;
-      toolTip1.SetToolTip(cboShadertoyID, "Shadertoy.com URL or ID");
+      toolTip1.SetToolTip(cboShadertoyID, "Shadertoy.com URL or ID\r\nCtrl+Click: Open in browser\r\n\r\n");
+      cboShadertoyID.Click += cboShadertoyID_Click;
       cboShadertoyID.KeyDown += cboShadertoyURL_KeyDown;
       // 
       // numPSVersion
@@ -2093,6 +2095,24 @@ namespace MilkwaveRemote
       chkShaderFile.Text = "File";
       toolTip1.SetToolTip(chkShaderFile, "If checked, use left line for generated preset file\r\nIf unchecked, filename will be \"Shader.milk\"");
       chkShaderFile.UseVisualStyleBackColor = true;
+      // 
+      // chkShaderLeft
+      // 
+      chkShaderLeft.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+      chkShaderLeft.Appearance = Appearance.Button;
+      chkShaderLeft.FlatStyle = FlatStyle.System;
+      chkShaderLeft.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+      chkShaderLeft.Location = new Point(7, 154);
+      chkShaderLeft.Margin = new Padding(3, 2, 3, 2);
+      chkShaderLeft.Name = "chkShaderLeft";
+      chkShaderLeft.Size = new Size(23, 23);
+      chkShaderLeft.TabIndex = 147;
+      chkShaderLeft.Text = "<";
+      chkShaderLeft.TextAlign = ContentAlignment.MiddleCenter;
+      chkShaderLeft.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkShaderLeft, "Show/hide left pane (Ctrl-Y)\r\n\r\n");
+      chkShaderLeft.UseVisualStyleBackColor = true;
+      chkShaderLeft.CheckedChanged += chkShaderLeft_CheckedChanged;
       // 
       // cboParameters
       // 
@@ -2827,6 +2847,7 @@ namespace MilkwaveRemote
       // 
       // pnlTabShader
       // 
+      pnlTabShader.Controls.Add(chkShaderLeft);
       pnlTabShader.Controls.Add(picShaderError);
       pnlTabShader.Controls.Add(txtLineNumber);
       pnlTabShader.Controls.Add(numOffset);
@@ -3626,5 +3647,6 @@ namespace MilkwaveRemote
     private CheckBox chkShaderFile;
     private Button btnShaderError;
     private PictureBox picShaderError;
+    private CheckBox chkShaderLeft;
   }
 }

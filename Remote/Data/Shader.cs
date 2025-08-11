@@ -67,7 +67,12 @@ namespace MilkwaveRemote.Data {
           string mainImageArgsString = inpMain.Substring(indexMainImageArgsOpeningBracket, indexMainImageArgsClosingBracket);
           string[] mainImageArgs = mainImageArgsString.Split(",");
           for (int i = 0; i < mainImageArgs.Length; i++) {
-            string arg = mainImageArgs[i].Replace("in ", "").Replace("out ", "").Trim();
+            string arg = mainImageArgs[i];
+            if (arg.Contains("out ")) {
+              arg = arg.Replace("out ", "") + " = 0";
+            } else {
+              arg = arg.Replace("in ", "") + " = uv";
+            }
             sbHeader.AppendLine(arg + ";");
           }
         }
@@ -87,9 +92,7 @@ namespace MilkwaveRemote.Data {
         string[] lines = inp.Replace("\r\n", "\n").Replace('\r', '\n').Split(new[] { '\n' }, StringSplitOptions.None);
         foreach (string line in lines) {
           string currentLine = line;
-          if (line.Contains("fragColor =")) {
-            currentLine = line.Replace("fragColor =", "ret =");
-          } else if (line.Contains("float2 uv =")) {
+          if (line.Contains("float2 uv =")) {
             currentLine = indent + "// " + line;
           } else if (line.Contains("iMouse")) {
             SetConvertorError("iMouse unsupported", sb);
@@ -261,12 +264,13 @@ namespace MilkwaveRemote.Data {
 
     private string ReplaceVarName(string oldName, string newName, string inp) {
       string res = inp.Replace(" " + oldName + " ", " " + newName + " ");
-      res = res.Replace(" " + oldName + ".", " " + newName + ".");
+      res = res.Replace("" + oldName + ".", "" + newName + ".");
       res = res.Replace("(" + oldName + ".", "(" + newName + ".");
       res = res.Replace("(" + oldName + " ", "(" + newName + " ");
       res = res.Replace(" " + oldName + ")", " " + newName + ")");
       res = res.Replace("(" + oldName + ")", "(" + newName + ")");
-
+      res = res.Replace(oldName + " =", newName + " =");
+      res = res.Replace(oldName + "+", newName + "+");
       res = res.Replace("float2 " + oldName + ",", "float2 " + newName + ", ");
       res = res.Replace("float2 " + oldName + ";", "float2 " + newName + "; ");
       res = res.Replace("float2 " + oldName + " ", "float2 " + newName + " ");
