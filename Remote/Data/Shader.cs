@@ -7,6 +7,7 @@ namespace MilkwaveRemote.Data {
     public StringBuilder ConversionErrors = new StringBuilder();
 
     public string ConvertGLSLtoHLSL(string inp) {
+      string result = "";
       StringBuilder sb = new StringBuilder();
       ConversionErrors = new StringBuilder();
       try {
@@ -24,6 +25,7 @@ namespace MilkwaveRemote.Data {
         string inpHeader = "";
         string inpMain = "";
         string inpFooter = "";
+        string retVarName = "";
 
         if (indexMainImage == -1) {
           // no mainImage function, we'll just wrap the full input into a shader_body
@@ -69,6 +71,9 @@ namespace MilkwaveRemote.Data {
           for (int i = 0; i < mainImageArgs.Length; i++) {
             string arg = mainImageArgs[i];
             if (arg.Contains("out ")) {
+              if (arg.Contains("float4")) {
+                retVarName = arg.Substring(arg.IndexOf("float4 ") + 7);
+              }
               arg = arg.Replace("out ", "") + " = 0";
             } else {
               arg = arg.Replace("in ", "") + " = uv";
@@ -112,10 +117,14 @@ namespace MilkwaveRemote.Data {
 
           sb.AppendLine(currentLine);
         }
+        result = sb.ToString();
+        AddReturnValue(ref result, retVarName);
+
       } catch (Exception e) {
         Debug.Assert(false);
       }
-      return sb.ToString();
+
+      return result;
     }
 
     private string StripCommentsAndBlankLines(string inp) {
@@ -269,12 +278,30 @@ namespace MilkwaveRemote.Data {
       res = res.Replace("(" + oldName + " ", "(" + newName + " ");
       res = res.Replace(" " + oldName + ")", " " + newName + ")");
       res = res.Replace("(" + oldName + ")", "(" + newName + ")");
+      res = res.Replace(oldName + "=", newName + "=");
       res = res.Replace(oldName + " =", newName + " =");
       res = res.Replace(oldName + "+", newName + "+");
+      res = res.Replace(oldName + " +", newName + " +");
       res = res.Replace("float2 " + oldName + ",", "float2 " + newName + ", ");
       res = res.Replace("float2 " + oldName + ";", "float2 " + newName + "; ");
       res = res.Replace("float2 " + oldName + " ", "float2 " + newName + " ");
       return res;
     }
+
+    void AddReturnValue(ref string inp, string varName) {
+      try {
+        int ind = inp.IndexOf("shader_body");
+        if (ind >= 0) {
+          int indShaderBodyClosingBracket = FindClosingBracketIndex(inp.Substring(ind), '{', '}', 0);
+          if (indShaderBodyClosingBracket >= 0) {
+            indShaderBodyClosingBracket += ind;
+            string p1 = inp.Substring(0, indShaderBodyClosingBracket);
+            string p2 = inp.Substring(indShaderBodyClosingBracket);
+            inp = p1 + "ret = " + varName + ";" + Environment.NewLine + p2;
+          }
+        }
+      } catch {}
+    }
+
   } // end class
 } // end namespace

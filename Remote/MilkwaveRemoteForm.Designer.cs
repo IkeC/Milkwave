@@ -2044,7 +2044,7 @@ namespace MilkwaveRemote
       numOffset.TabIndex = 141;
       numOffset.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numOffset, "Adjust this value if the line marked as error is wrong");
-      numOffset.Value = new decimal(new int[] { 163, 0, 0, 0 });
+      numOffset.Value = new decimal(new int[] { 174, 0, 0, 0 });
       numOffset.ValueChanged += numOffset_ValueChanged;
       // 
       // cboShadertoyType
