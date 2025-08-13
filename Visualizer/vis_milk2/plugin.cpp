@@ -11067,9 +11067,10 @@ void CPlugin::DoCustomSoundAnalysis() {
     else
       mysound.smooth_rel[i] = mysound.smooth[i] / mysound.long_avg[i];
 
-    wchar_t buffer[256];
-    swprintf(buffer, 256, L"[%i] %5.2f %5.2f %5.2f %5.2f\n", i, mysound.imm[i], mysound.imm_rel[i], mysound.avg_rel[i], mysound.smooth[i]);
-    OutputDebugStringW(buffer);
+
+    //wchar_t buffer[256];
+    //swprintf(buffer, 256, L"[%i] %5.2f %5.2f %5.2f %5.2f\n", i, mysound.imm[i], mysound.imm_rel[i], mysound.avg_rel[i], mysound.smooth[i]);
+    //OutputDebugStringW(buffer);
   }
 }
 

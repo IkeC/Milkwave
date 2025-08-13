@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using System.Windows.Forms;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
 
@@ -69,6 +68,7 @@ namespace MilkwaveRemote {
 #endif
 
     private string VisualizerPresetsFolder = "";
+    private string ShaderFilesFolder = "";
 
     private string lastScriptFileName = "script-default.txt";
     private string windowNotFound = "Milkwave Visualizer Window not found";
@@ -82,6 +82,7 @@ namespace MilkwaveRemote {
     private string shadertoyAppKey = "ftrlhm";
     private string shadertoyQueryType = "";
     private int shadertoyQueryPageSize = 500;
+    private string ShaderinfoLinePrefix = "// Shaderinfo: ";
 
     private List<String> shadertoyQueryList = new List<String>();
 
@@ -214,6 +215,7 @@ namespace MilkwaveRemote {
       InitializeComponent();
 
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
+      ShaderFilesFolder = Path.Combine(BaseDir, "resources\\shader\\");
 
       FixNumericUpDownMouseWheel(this);
 
@@ -1489,7 +1491,7 @@ namespace MilkwaveRemote {
           } else {
             SendPostMessage(VK_SPACE, "Space");
           }
-        } 
+        }
       }
 
       if (e.KeyCode == Keys.F1) {
@@ -3276,9 +3278,9 @@ namespace MilkwaveRemote {
     private void btnLoadShaderInput_Click(object sender, EventArgs e) {
 
       OpenFileDialog ofdShader = new OpenFileDialog();
-      ofdShader.Filter = "All files (*.*)|*.*";
+      ofdShader.Filter = "GLSL files|*.glsl|All files (*.*)|*.*";
       ofdShader.RestoreDirectory = true;
-      ofdShader.InitialDirectory = Path.Combine(BaseDir, "resources\\shader");
+      ofdShader.InitialDirectory = Path.Combine(BaseDir, ShaderFilesFolder);
 
       if (ofdShader.ShowDialog() == DialogResult.OK) {
         String shaderInput = ofdShader.FileName;
@@ -3534,5 +3536,58 @@ namespace MilkwaveRemote {
     private void chkShaderLeft_CheckedChanged(object sender, EventArgs e) {
       splitContainerShader.Panel1Collapsed = chkShaderLeft.Checked;
     }
+
+    private void btnHLSLSave_Click(object sender, EventArgs e) {
+      
+      StringBuilder sb = new StringBuilder();
+      string[] txtShaderinfoLines = txtShaderinfo.Text.Split(Environment.NewLine);
+      string hlslFilename = "Shader";
+      foreach (string line in txtShaderinfoLines) {
+        sb.AppendLine(ShaderinfoLinePrefix + line.Trim());
+      }
+      if (txtShaderinfoLines.Length > 0 && txtShaderinfoLines[0].Length > 0) {
+        hlslFilename = StripInvalidFileNameChars(txtShaderinfoLines[0]);
+      }
+      hlslFilename = Path.Combine(ShaderFilesFolder, hlslFilename + ".hlsl");
+      sb.Append(txtShaderHLSL.Text);
+
+      try {
+        File.WriteAllText(hlslFilename, sb.ToString());
+        SetStatusText($"Saved {hlslFilename}");
+      } catch (UnauthorizedAccessException ex) {
+        SetStatusText($"Error saving HLSL file: {ex.Message}");
+      }
+    }
+
+    private void btnHLSLLoad_Click(object sender, EventArgs e) {
+      OpenFileDialog ofdShader = new OpenFileDialog();
+      ofdShader.Filter = "HLSL files|*.hlsl|All files (*.*)|*.*";
+      ofdShader.RestoreDirectory = true;
+      ofdShader.InitialDirectory = Path.Combine(ShaderFilesFolder);
+
+      if (ofdShader.ShowDialog() == DialogResult.OK) {
+        if (File.Exists(ofdShader.FileName)) {
+          string[] content = File.ReadAllLines(ofdShader.FileName);
+          txtShaderinfo.Clear();
+          foreach (string line in content) {
+            if (line.StartsWith(ShaderinfoLinePrefix)) {
+              if (txtShaderinfo.Text.Length > 0) {
+                txtShaderinfo.AppendText(Environment.NewLine);
+              }
+              txtShaderinfo.AppendText(line.Substring(ShaderinfoLinePrefix.Length).Trim());
+            } else {
+              txtShaderHLSL.AppendText(line + Environment.NewLine);
+            }
+          }
+        }
+        txtShaderinfo.SelectionStart = 0;
+        txtShaderinfo.ScrollToCaret();
+        txtShaderHLSL.SelectionStart = 0;
+        txtShaderHLSL.ScrollToCaret();
+
+        SetStatusText($"Loaded HLSL from {ofdShader.FileName}");
+      }
+    }
+
   } // end class
 } // end namespace

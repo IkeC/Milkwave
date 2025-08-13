@@ -15,7 +15,7 @@ namespace MilkwaveRemote.Data {
         inp = inp.Replace("fract (", "fract(").Replace("mod (", "mod(").Replace("mix (", "mix (");
         inp = inp.Replace("fract(", "frac(").Replace("mod(", "mod_conv(").Replace("mix(", "lerp(");
         inp = ReplaceVarName("time", "time_conv", inp);
-        inp = inp.Replace("iTime", "time").Replace("iResolution", "texsize");
+        inp = inp.Replace("iTime", "time").Replace("iResolution", "uv");
         inp = inp.Replace("iFrame", "frame");
         inp = inp.Replace("texture(", "tex2D(");
         inp = inp.Replace("void mainImage(", "mainImage(");
@@ -109,7 +109,7 @@ namespace MilkwaveRemote.Data {
             SetConvertorError("iChannel (textures) unsupported", sb);
             currentLine = indent + "// " + line;
           } else if (line.Contains("break;")) {
-            SetConvertorError("break is unsupported, see Milkwave manual for details", sb);
+            SetConvertorError("break unsupported, see Milkwave manual", sb);
           }
 
           currentLine = FixMatrixMultiplication(currentLine);
