@@ -510,12 +510,19 @@ void CPlugin::LoadPerFrameEvallibVars(CState* pState) {
   // read-only:
   *pState->var_pf_time = (double)(GetTime() - m_fStartTime);
   *pState->var_pf_fps = (double)GetFps();
+
   *pState->var_pf_bass = (double)mysound.imm_rel[0];
   *pState->var_pf_mid = (double)mysound.imm_rel[1];
   *pState->var_pf_treb = (double)mysound.imm_rel[2];
+  
   *pState->var_pf_bass_att = (double)mysound.avg_rel[0];
   *pState->var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->var_pf_treb_att = (double)mysound.avg_rel[2];
+  
+  *pState->var_pf_bass_smooth = (double)mysound.smooth[0];
+  *pState->var_pf_mid_smooth = (double)mysound.smooth[1];
+  *pState->var_pf_treb_smooth = (double)mysound.smooth[2];
+
   *pState->var_pf_frame = (double)GetFrame();
   //*pState->var_pf_monitor     = 0;   -leave this as it was set in the per-frame INIT code!
   for (int vi = 0; vi < NUM_Q_VAR; vi++)
@@ -675,12 +682,19 @@ void CPlugin::RunPerFrameEquations(int code) {
     *pState->var_pv_fps = *pState->var_pf_fps;
     *pState->var_pv_frame = *pState->var_pf_frame;
     *pState->var_pv_progress = *pState->var_pf_progress;
+    
     *pState->var_pv_bass = *pState->var_pf_bass;
     *pState->var_pv_mid = *pState->var_pf_mid;
     *pState->var_pv_treb = *pState->var_pf_treb;
+
     *pState->var_pv_bass_att = *pState->var_pf_bass_att;
     *pState->var_pv_mid_att = *pState->var_pf_mid_att;
     *pState->var_pv_treb_att = *pState->var_pf_treb_att;
+
+    *pState->var_pv_bass_smooth = *pState->var_pf_bass_smooth;
+    *pState->var_pv_mid_smooth = *pState->var_pf_mid_smooth;
+    *pState->var_pv_treb_smooth = *pState->var_pf_treb_smooth;
+
     *pState->var_pv_meshx = (double)m_nGridX;
     *pState->var_pv_meshy = (double)m_nGridY;
     *pState->var_pv_pixelsx = (double)GetWidth();
@@ -2511,12 +2525,15 @@ void CPlugin::LoadCustomShapePerFrameEvallibVars(CState* pState, int i, int inst
   *pState->m_shape[i].var_pf_frame = (double)GetFrame();
   *pState->m_shape[i].var_pf_fps = (double)GetFps();
   *pState->m_shape[i].var_pf_progress = (GetTime() - m_fPresetStartTime) / (m_fNextPresetTime - m_fPresetStartTime);
+  
   *pState->m_shape[i].var_pf_bass = (double)mysound.imm_rel[0];
   *pState->m_shape[i].var_pf_mid = (double)mysound.imm_rel[1];
   *pState->m_shape[i].var_pf_treb = (double)mysound.imm_rel[2];
+  
   *pState->m_shape[i].var_pf_bass_att = (double)mysound.avg_rel[0];
   *pState->m_shape[i].var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->m_shape[i].var_pf_treb_att = (double)mysound.avg_rel[2];
+  
   for (int vi = 0; vi < NUM_Q_VAR; vi++)
     *pState->m_shape[i].var_pf_q[vi] = *pState->var_pf_q[vi];
   for (vi = 0; vi < NUM_T_VAR; vi++)
@@ -2552,12 +2569,15 @@ void CPlugin::LoadCustomWavePerFrameEvallibVars(CState* pState, int i) {
   *pState->m_wave[i].var_pf_frame = (double)GetFrame();
   *pState->m_wave[i].var_pf_fps = (double)GetFps();
   *pState->m_wave[i].var_pf_progress = (GetTime() - m_fPresetStartTime) / (m_fNextPresetTime - m_fPresetStartTime);
+  
   *pState->m_wave[i].var_pf_bass = (double)mysound.imm_rel[0];
   *pState->m_wave[i].var_pf_mid = (double)mysound.imm_rel[1];
   *pState->m_wave[i].var_pf_treb = (double)mysound.imm_rel[2];
+  
   *pState->m_wave[i].var_pf_bass_att = (double)mysound.avg_rel[0];
   *pState->m_wave[i].var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->m_wave[i].var_pf_treb_att = (double)mysound.avg_rel[2];
+  
   for (int vi = 0; vi < NUM_Q_VAR; vi++)
     *pState->m_wave[i].var_pf_q[vi] = *pState->var_pf_q[vi];
   for (vi = 0; vi < NUM_T_VAR; vi++)
@@ -2632,9 +2652,11 @@ void CPlugin::DrawCustomWaves() {
         *pState->m_wave[i].var_pp_fps = *pState->m_wave[i].var_pf_fps;
         *pState->m_wave[i].var_pp_frame = *pState->m_wave[i].var_pf_frame;
         *pState->m_wave[i].var_pp_progress = *pState->m_wave[i].var_pf_progress;
+        
         *pState->m_wave[i].var_pp_bass = *pState->m_wave[i].var_pf_bass;
         *pState->m_wave[i].var_pp_mid = *pState->m_wave[i].var_pf_mid;
         *pState->m_wave[i].var_pp_treb = *pState->m_wave[i].var_pf_treb;
+        
         *pState->m_wave[i].var_pp_bass_att = *pState->m_wave[i].var_pf_bass_att;
         *pState->m_wave[i].var_pp_mid_att = *pState->m_wave[i].var_pf_mid_att;
         *pState->m_wave[i].var_pp_treb_att = *pState->m_wave[i].var_pf_treb_att;
@@ -4711,6 +4733,7 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   ));
   if (h[12]) pCT->SetVector(lpDevice, h[12], &D3DXVECTOR4(mip_x, mip_y, mip_avg, 0));
   if (h[13]) pCT->SetVector(lpDevice, h[13], &D3DXVECTOR4(blur_min[1], blur_max[1], blur_min[2], blur_max[2]));
+  if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
 
   // write q vars
   int num_q_float4s = sizeof(p->q_const_handles) / sizeof(p->q_const_handles[0]);

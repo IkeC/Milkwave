@@ -255,9 +255,15 @@ void CState::RegisterBuiltInVariables(int flags) {
     var_pf_bass = NSEEL_VM_regvar(m_pf_eel, "bass");		// i
     var_pf_mid = NSEEL_VM_regvar(m_pf_eel, "mid");		// i
     var_pf_treb = NSEEL_VM_regvar(m_pf_eel, "treb");		// i
+    
     var_pf_bass_att = NSEEL_VM_regvar(m_pf_eel, "bass_att");	// i
     var_pf_mid_att = NSEEL_VM_regvar(m_pf_eel, "mid_att");	// i
     var_pf_treb_att = NSEEL_VM_regvar(m_pf_eel, "treb_att");	// i
+    
+    var_pf_bass_smooth = NSEEL_VM_regvar(m_pf_eel, "bass_smooth");	// i
+    var_pf_mid_smooth = NSEEL_VM_regvar(m_pf_eel, "mid_smooth");	// i
+    var_pf_treb_smooth = NSEEL_VM_regvar(m_pf_eel, "treb_smooth");	// i
+    
     var_pf_frame = NSEEL_VM_regvar(m_pf_eel, "frame");
     var_pf_decay = NSEEL_VM_regvar(m_pf_eel, "decay");
     var_pf_wave_a = NSEEL_VM_regvar(m_pf_eel, "wave_a");
@@ -342,9 +348,15 @@ void CState::RegisterBuiltInVariables(int flags) {
     var_pv_bass = NSEEL_VM_regvar(m_pv_eel, "bass");		// i
     var_pv_mid = NSEEL_VM_regvar(m_pv_eel, "mid");		// i
     var_pv_treb = NSEEL_VM_regvar(m_pv_eel, "treb");		// i
+    
     var_pv_bass_att = NSEEL_VM_regvar(m_pv_eel, "bass_att");	// i
     var_pv_mid_att = NSEEL_VM_regvar(m_pv_eel, "mid_att");	// i
     var_pv_treb_att = NSEEL_VM_regvar(m_pv_eel, "treb_att");	// i
+    
+    var_pv_bass_smooth = NSEEL_VM_regvar(m_pv_eel, "bass_smooth");		// i
+    var_pv_mid_smooth = NSEEL_VM_regvar(m_pv_eel, "mid_smooth");		// i
+    var_pv_treb_smooth = NSEEL_VM_regvar(m_pv_eel, "treb_smooth");		// i
+
     var_pv_frame = NSEEL_VM_regvar(m_pv_eel, "frame");
     var_pv_x = NSEEL_VM_regvar(m_pv_eel, "x");			// i
     var_pv_y = NSEEL_VM_regvar(m_pv_eel, "y");			// i

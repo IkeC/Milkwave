@@ -43,6 +43,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "texmgr.h"
 #include "state.h"
 #include <vector>
+#include <array>
 #include "../ns-eel2-shim/ns-eel.h"
 
 //#include <core/sdk/IPlaybackService.h>
@@ -65,6 +66,9 @@ typedef struct {
   float   fWave[2][576];
   float   fSpecLeft[MY_FFT_SAMPLES];
   float   fSpecRight[MY_FFT_SAMPLES];
+  std::array<std::vector<float>, 3> recent;
+  float	  smooth[3];
+  float	  smooth_rel[3];
 } td_mysounddata;
 
 typedef struct {

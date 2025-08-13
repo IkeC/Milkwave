@@ -2033,7 +2033,7 @@ int CPlugin::AllocateMyDX9Stuff() {
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
       return false;
     }
-    
+
     if (!RecompilePShader(m_szDefaultCompPShaderText, &m_fallbackShaders_ps.comp, SHADER_COMP, true, PSVersion)) {
       wasabiApiLangString(IDS_COULD_NOT_COMPILE_FALLBACK_CP_SHADER, buf, sizeof(buf));
       dumpmsg(buf);
@@ -2048,7 +2048,7 @@ int CPlugin::AllocateMyDX9Stuff() {
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
       return false;
     }
-    
+
     if (!RecompilePShader(m_szBlurPSX, &m_BlurShaders[0].ps, SHADER_BLUR, true, PSVersion)) {
       wasabiApiLangString(IDS_COULD_NOT_COMPILE_BLUR1_PIXEL_SHADER, buf, sizeof(buf));
       dumpmsg(buf);
@@ -3816,7 +3816,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   tempBuffer[32767] = L'\0'; // Null-terminate to avoid overflow.
   dumpmsg(tempBuffer); // Pass the non-const buffer to dumpmsg.
 
-    
+
   HRESULT hresult = D3DXCompileShader(
     szShaderText,
     len,
@@ -4545,18 +4545,29 @@ void CPlugin::MyRenderUI(
       SelectFont(SIMPLE_FONT);
       DWORD color = GetFontColor(SIMPLE_FONT);
 
-      swprintf(buf, L" %s: %6.4f ", wasabiApiLangString(IDS_PF_MONITOR), (float)(*m_pState->var_pf_monitor));
-      //MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
-      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
-      swprintf(buf, L"%s %s %6.4f ", ((double)mysound.imm_rel[0] >= 1.3) ? L"+" : L" ", L"bass:", (float)(*m_pState->var_pf_bass));
-      //MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
-      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
-      swprintf(buf, L"%s %s %6.4f ", ((double)mysound.imm_rel[1] >= 1.3) ? L"+" : L" ", L"mid:", (float)(*m_pState->var_pf_mid));
-      //MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
-      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
-      swprintf(buf, L"%s %s %6.4f ", ((double)mysound.imm_rel[2] >= 1.3) ? L"+" : L" ", L"treb:", (float)(*m_pState->var_pf_treb));
-      //MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
-      MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
+      swprintf(buf, L"  %6.2f %s", (float)(*m_pState->var_pf_monitor), wasabiApiLangString(IDS_PF_MONITOR));
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.imm_rel[0] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_bass), L"bass");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.avg_rel[0] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_bass_att), L"bass_att");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.smooth_rel[0] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_bass_smooth), L"bass_smooth");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.imm_rel[1] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_mid), L"mid");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.avg_rel[1] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_mid_att), L"mid_att");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.smooth_rel[1] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_mid_smooth), L"mid_smooth");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.imm_rel[2] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_treb), L"treb");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.avg_rel[2] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_treb_att), L"treb_att");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+      swprintf(buf, L"%s %6.2f %s", ((double)mysound.smooth_rel[2] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_treb_smooth), L"treb_smooth");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
 
       // swprintf(buf, L"BeatDrop v1.3.2.2 RC1");
       // MyTextOut_Shadow(buf, MTO_LOWER_RIGHT);
@@ -11001,6 +11012,8 @@ void CPlugin::DoCustomSoundAnalysis() {
     }
   }
 
+  int recentBufferSize = GetFps();
+
   // do temporal blending to create attenuated and super-attenuated versions
   for (i = 0; i < 3; i++) {
     float rate;
@@ -11019,7 +11032,6 @@ void CPlugin::DoCustomSoundAnalysis() {
     rate = AdjustRateToFPS(rate, 30.0f, GetFps());
     mysound.long_avg[i] = mysound.long_avg[i] * rate + mysound.imm[i] * (1 - rate);
 
-
     // also get bass/mid/treble levels *relative to the past*
     //changed all the values to 0 instead of 1 when it's no music
     if (fabsf(mysound.long_avg[i]) < 0.001f)
@@ -11031,6 +11043,33 @@ void CPlugin::DoCustomSoundAnalysis() {
       mysound.avg_rel[i] = 0.0f;
     else
       mysound.avg_rel[i] = mysound.avg[i] / mysound.long_avg[i];
+
+    if (mysound.recent[i].size() == 0) {
+      mysound.recent[i] = std::vector<float>();
+    }
+
+    // smooth
+    mysound.recent[i].push_back(mysound.imm_rel[i]);
+    if (mysound.recent[i].size() > recentBufferSize) {
+      mysound.recent[i].erase(mysound.recent[i].begin());
+    }
+    mysound.smooth[i] = 0;
+    int k = 0;
+    for (; k < mysound.recent[i].size(); k++) {
+      mysound.smooth[i] += mysound.recent[i][k];
+    }
+    if (k > 0) {
+      mysound.smooth[i] /= k;
+    }
+
+    if (fabsf(mysound.long_avg[i]) < 0.001f)
+      mysound.smooth_rel[i] = 0.0f;
+    else
+      mysound.smooth_rel[i] = mysound.smooth[i] / mysound.long_avg[i];
+
+    wchar_t buffer[256];
+    swprintf(buffer, 256, L"[%i] %5.2f %5.2f %5.2f %5.2f\n", i, mysound.imm[i], mysound.imm_rel[i], mysound.avg_rel[i], mysound.smooth[i]);
+    OutputDebugStringW(buffer);
   }
 }
 
@@ -11174,9 +11213,11 @@ void CPlugin::SetAudioDeviceDisplayName(const wchar_t* displayName) {
 void CPlugin::SetAMDFlag() {
   if (m_AMDDetectionMode == 0) {
     m_IsAMD = is_amd_ati();
-  } else if (m_AMDDetectionMode == 1) {
+  }
+  else if (m_AMDDetectionMode == 1) {
     m_IsAMD = true;
-  } else {
+  }
+  else {
     m_IsAMD = false;
   }
 }

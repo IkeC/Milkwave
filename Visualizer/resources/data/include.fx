@@ -15,6 +15,8 @@ float4   _c10;  // .xyzw ~= 0.5 + 0.5*cos(time * float4(~0.005, ~0.008, ~0.013, 
 float4   _c11;  // .xyzw ~= same, but using sin()
 float4   _c12;  // .xyz = mip info for main image (.x=#across, .y=#down, .z=avg); .w = unused
 float4   _c13;  //.xy = blur2_min,blur2_max; .zw = blur3_min, blur3_max.
+float4   _c14; // _smooth
+
 float4   _qa;  // q vars bank 1 [q1-q4]
 float4   _qb;  // q vars bank 2 [q5-q8]
 float4   _qc;  // q vars ...
@@ -56,14 +58,22 @@ float4x3 rot_rand4;
 #define fps      _c2.y
 #define frame    _c2.z
 #define progress _c2.w
+
 #define bass _c3.x
 #define mid  _c3.y
 #define treb _c3.z
 #define vol  _c3.w
+
 #define bass_att _c4.x
 #define mid_att  _c4.y
 #define treb_att _c4.z
 #define vol_att  _c4.w
+
+#define bass_smooth _c14.x
+#define mid_smooth  _c14.y
+#define treb_smooth _c14.z
+#define vol_smooth  _c14.w
+
 #define q1 _qa.x
 #define q2 _qa.y
 #define q3 _qa.z

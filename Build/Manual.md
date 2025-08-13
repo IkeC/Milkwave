@@ -43,3 +43,22 @@ Here are some common terms that cannot be converted automatically and need to be
 | `int ix = i & 1` (bitwise) | `int ix = i % 2` |
 | `int yx = y >> 1` (bitwise) | `int yx = y / 2` |
 
+## Milkwave specifics
+
+### "_smooth" preset variables
+
+Milkwave 3 introduced these addtional variables for preset authors to use:
+-  _bass_smooth, mid_smooth, treb_smooth, vol_smooth_
+
+These provide much more softed versions than the standard _\*\_att_ variables, meaning the value change is much more subtle between each frame. If you want to use them in your preset but also stay compatible with other MilkDrop based visualizers (eg. BeatDrop Visualizer or MilkDrop 3), you can use the following code snippet:
+```
+#ifndef bass_smooth
+#define bass_smooth bass_att
+#endif
+```
+Or wrap your code in a conditional block:
+```
+#ifdef bass_smooth
+float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
+#endif
+```

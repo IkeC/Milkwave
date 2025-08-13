@@ -384,6 +384,7 @@ public:
   double* var_pf_zoom, * var_pf_zoomexp, * var_pf_rot, * var_pf_warp, * var_pf_cx, * var_pf_cy, * var_pf_dx, * var_pf_dy, * var_pf_sx, * var_pf_sy;
   double* var_pf_time, * var_pf_fps;
   double* var_pf_bass, * var_pf_mid, * var_pf_treb, * var_pf_bass_att, * var_pf_mid_att, * var_pf_treb_att;
+  double* var_pf_bass_smooth, * var_pf_mid_smooth, * var_pf_treb_smooth;
   double* var_pf_wave_a, * var_pf_wave_r, * var_pf_wave_g, * var_pf_wave_b, * var_pf_wave_x, * var_pf_wave_y, * var_pf_wave_mystery, * var_pf_wave_mode;
   double* var_pf_decay;
   double* var_pf_frame;
@@ -423,6 +424,7 @@ public:
   double* var_pv_zoom, * var_pv_zoomexp, * var_pv_rot, * var_pv_warp, * var_pv_cx, * var_pv_cy, * var_pv_dx, * var_pv_dy, * var_pv_sx, * var_pv_sy;
   double* var_pv_time, * var_pv_fps;
   double* var_pv_bass, * var_pv_mid, * var_pv_treb, * var_pv_bass_att, * var_pv_mid_att, * var_pv_treb_att;
+  double* var_pv_bass_smooth, * var_pv_mid_smooth, * var_pv_treb_smooth;
   double* var_pv_x, * var_pv_y, * var_pv_rad, * var_pv_ang;
   double* var_pv_frame;
   //double *var_pv_q1, *var_pv_q2, *var_pv_q3, *var_pv_q4, *var_pv_q5, *var_pv_q6, *var_pv_q7, *var_pv_q8;
