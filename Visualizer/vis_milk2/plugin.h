@@ -284,6 +284,12 @@ public:
   void OpenMilkwaveRemote();
   void SetAudioDeviceDisplayName(const wchar_t* displayName);
   void SetAMDFlag();
+  
+  void SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t checksum, char* prefix);
+  ID3DXBuffer* LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix);
+
+  uint32_t crc32(const char* data, size_t length);
+  
   bool bSpoutChanged; // set to write config on exit
   bool bSpoutOut; // Spout output on or off
   bool bEnablePresetStartup;
@@ -435,6 +441,7 @@ public:
   bool        m_bTexSizeWasAutoExact;
   bool		m_bPresetLockedByUser;
   bool		m_bPresetLockedByCode;
+  bool    m_ShaderCaching = true;
   bool		m_ShowLockSymbol = true;
   float		m_fAnimTime;
   float		m_fStartTime;
