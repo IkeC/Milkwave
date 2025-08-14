@@ -1,6 +1,7 @@
 ## Unreleased
 
-- New preset variables: bass_smooth, mid_smooth,_treb_smooth, vol_smooth
+- Shader caching
+- New preset variables: bass_smooth, mid_smooth, treb_smooth, vol_smooth
 - AMD GPU detection and support for PSVersion=4 (by @OfficialIncubo)
 - Age filter: Only load presets modified within the last X days
 - Ctrl+Click on labels "Preset" or "Running" to open preset file in editor
