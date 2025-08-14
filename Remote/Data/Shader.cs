@@ -15,10 +15,12 @@ namespace MilkwaveRemote.Data {
         inp = inp.Replace("fract (", "fract(").Replace("mod (", "mod(").Replace("mix (", "mix (");
         inp = inp.Replace("fract(", "frac(").Replace("mod(", "mod_conv(").Replace("mix(", "lerp(");
         inp = ReplaceVarName("time", "time_conv", inp);
+        inp = inp.Replace("refrac(", "refract(");
         inp = inp.Replace("iTimeDelta", "xTimeDelta"); // prevent replacing below
         inp = inp.Replace("iTime", "time").Replace("iResolution", "uv");
         inp = inp.Replace("iFrame", "frame");
         inp = inp.Replace("texture(", "tex2D(");
+        inp = inp.Replace("highp ", "");
         inp = inp.Replace("void mainImage(", "mainImage(");
 
         int indexMainImage = inp.IndexOf("mainImage(");
@@ -53,6 +55,8 @@ namespace MilkwaveRemote.Data {
         if (inp.Contains("mod_conv(")) {
           inpHeader = AddHelperFunctionsMod(inpHeader);
         }
+        inpHeader = AddIChannelDefinitions(inp, inpHeader);
+
         if (inp.Contains("lessthan", StringComparison.InvariantCultureIgnoreCase)) {
           inpHeader = AddHelperFunctionsLessThan(inpHeader);
         }
@@ -105,9 +109,6 @@ namespace MilkwaveRemote.Data {
             currentLine = indent + "// " + line;
           } else if (line.Contains("iDate")) {
             SetConvertorError("iDate unsupported", sb);
-            currentLine = indent + "// " + line;
-          } else if (line.Contains("iChannel")) {
-            SetConvertorError("iChannel (textures) unsupported", sb);
             currentLine = indent + "// " + line;
           } else if (line.Contains("xTimeDelta")) {
             SetConvertorError("iTimeDelta unsupported", sb);
@@ -262,6 +263,7 @@ namespace MilkwaveRemote.Data {
 
     private string AddHelperFunctionsMod(string inpHeader) {
       StringBuilder sb = new StringBuilder();
+      sb.AppendLine("// CONV: adding helper functions");
       sb.AppendLine("float mod_conv(float x, float y) { return x - y * floor(x / y); }");
       sb.AppendLine("float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }");
       sb.AppendLine("float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }");
@@ -290,6 +292,25 @@ namespace MilkwaveRemote.Data {
       res = res.Replace("float2 " + oldName + ";", "float2 " + newName + "; ");
       res = res.Replace("float2 " + oldName + " ", "float2 " + newName + " ");
       return res;
+    }
+
+    private string AddIChannelDefinitions(string inpToCheck, string inpToModify) {
+      StringBuilder sb = new StringBuilder();
+      if (inpToCheck.Contains("iChannel0")) {
+        sb.AppendLine("#define iChannel0 sampler_noise_lq");
+      } else if(inpToCheck.Contains("iChannel1")) {
+        sb.AppendLine("#define iChannel1 sampler_noise_lq");
+      } else if (inpToCheck.Contains("iChannel2")) {
+        sb.AppendLine("#define iChannel2 sampler_noise_lq");
+      } else if (inpToCheck.Contains("iChannel3")) {
+        sb.AppendLine("#define iChannel3 sampler_noise_lq");
+      }
+      if (sb.Length > 0) {
+        sb.Insert(0, "// CONV: setting iChannel samplers to default noise texture" + Environment.NewLine);
+        sb.AppendLine();
+      }
+      sb.Append(inpToModify);
+      return sb.ToString();
     }
 
     void AddReturnValue(ref string inp, string varName) {
