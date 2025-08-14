@@ -166,7 +166,7 @@ namespace MilkwaveRemote
       txtShaderGLSL = new TextBox();
       txtShaderHLSL = new TextBox();
       txtLineNumberError = new TextBox();
-      txtLineNumber = new TextBox();
+      txtShaderFind = new TextBox();
       btnLoadShaderInputFromFile = new Button();
       btnShaderHelp = new Button();
       cboShadertoyID = new ComboBox();
@@ -1974,16 +1974,15 @@ namespace MilkwaveRemote
       txtLineNumberError.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(txtLineNumberError, "Approx. line in Milkwave generated shader code\r\nUse this to find the matching line from shader compilation error messages");
       // 
-      // txtLineNumber
+      // txtShaderFind
       // 
-      txtLineNumber.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtLineNumber.Location = new Point(441, 7);
-      txtLineNumber.Name = "txtLineNumber";
-      txtLineNumber.ReadOnly = true;
-      txtLineNumber.Size = new Size(28, 23);
-      txtLineNumber.TabIndex = 29;
-      txtLineNumber.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(txtLineNumber, "Right pane line counter");
+      txtShaderFind.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      txtShaderFind.Location = new Point(426, 7);
+      txtShaderFind.Name = "txtShaderFind";
+      txtShaderFind.Size = new Size(43, 23);
+      txtShaderFind.TabIndex = 29;
+      toolTip1.SetToolTip(txtShaderFind, "Ctrl+F: Find next occurence of this string\r\nCtrl+Shift+F: Focus search box\r\n");
+      txtShaderFind.KeyDown += txtShaderFind_KeyDown;
       // 
       // btnLoadShaderInputFromFile
       // 
@@ -2879,7 +2878,7 @@ namespace MilkwaveRemote
       pnlTabShader.Controls.Add(chkShaderLeft);
       pnlTabShader.Controls.Add(btnHLSLSave);
       pnlTabShader.Controls.Add(picShaderError);
-      pnlTabShader.Controls.Add(txtLineNumber);
+      pnlTabShader.Controls.Add(txtShaderFind);
       pnlTabShader.Controls.Add(numOffset);
       pnlTabShader.Controls.Add(txtLineNumberError);
       pnlTabShader.Controls.Add(btnShaderHelp);
@@ -2904,7 +2903,7 @@ namespace MilkwaveRemote
       // picShaderError
       // 
       picShaderError.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      picShaderError.Location = new Point(414, 7);
+      picShaderError.Location = new Point(399, 7);
       picShaderError.Margin = new Padding(0);
       picShaderError.Name = "picShaderError";
       picShaderError.Size = new Size(20, 20);
@@ -3659,7 +3658,7 @@ namespace MilkwaveRemote
     private TextBox txtShaderHLSL;
     private Button btnSendShader;
     private Button btnLoadShaderInputFromFile;
-    private TextBox txtLineNumber;
+    private TextBox txtShaderFind;
     private TextBox txtLineNumberError;
     private SplitContainer splitContainerShader;
     private Button btnShaderConvert;

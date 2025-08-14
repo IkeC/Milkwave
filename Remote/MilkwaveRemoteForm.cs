@@ -1443,6 +1443,16 @@ namespace MilkwaveRemote {
           txtMessage.SelectAll();
         } else if (e.KeyCode == Keys.D) {
           btnPresetLoadDirectory_Click(null, null);
+        } else if (e.KeyCode == Keys.F) {
+          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+            e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+            if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
+              txtShaderFind.SelectAll();
+              txtShaderFind.Focus();
+            } else {
+              FindShaderString();
+            }
+          }
         } else if (e.KeyCode == Keys.L) {
           if (tabControl.SelectedTab.Name.Equals("tabShader")) {
             e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
@@ -3310,7 +3320,6 @@ namespace MilkwaveRemote {
     private void SetCurrentShaderLineNumber() {
       string sub = txtShaderHLSL.Text.Substring(0, txtShaderHLSL.SelectionStart);
       int lineNumber = sub.Count(f => f == '\n') + 1;
-      txtLineNumber.Text = (lineNumber).ToString();
 
       // offsetNum lines are inserted as header by Visualizer
       txtLineNumberError.Text = (lineNumber + numOffset.Value).ToString();
@@ -3538,7 +3547,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnHLSLSave_Click(object sender, EventArgs e) {
-      
+
       StringBuilder sb = new StringBuilder();
       string[] txtShaderinfoLines = txtShaderinfo.Text.Split(Environment.NewLine);
       string hlslFilename = "Shader";
@@ -3569,6 +3578,7 @@ namespace MilkwaveRemote {
         if (File.Exists(ofdShader.FileName)) {
           string[] content = File.ReadAllLines(ofdShader.FileName);
           txtShaderinfo.Clear();
+          StringBuilder sb = new StringBuilder();
           foreach (string line in content) {
             if (line.StartsWith(ShaderinfoLinePrefix)) {
               if (txtShaderinfo.Text.Length > 0) {
@@ -3576,9 +3586,10 @@ namespace MilkwaveRemote {
               }
               txtShaderinfo.AppendText(line.Substring(ShaderinfoLinePrefix.Length).Trim());
             } else {
-              txtShaderHLSL.AppendText(line + Environment.NewLine);
+              sb.AppendLine(line);
             }
           }
+          txtShaderHLSL.Text = sb.ToString();
         }
         txtShaderinfo.SelectionStart = 0;
         txtShaderinfo.ScrollToCaret();
@@ -3586,6 +3597,39 @@ namespace MilkwaveRemote {
         txtShaderHLSL.ScrollToCaret();
 
         SetStatusText($"Loaded HLSL from {ofdShader.FileName}");
+      }
+    }
+
+    private void txtShaderFind_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter) {
+        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
+        FindShaderString();
+      }
+    }
+
+    private void FindShaderString() {
+      string searchText = txtShaderFind.Text;
+      if (searchText.Length > 0) {
+        try {
+          txtShaderHLSL.Focus();
+          int pos = txtShaderHLSL.SelectionStart + 1;
+          string remainingText = txtShaderHLSL.Text.Substring(pos);
+          int indexInRemaining = remainingText.IndexOf(searchText, StringComparison.InvariantCultureIgnoreCase);
+          if (indexInRemaining >= 0) {
+            txtShaderHLSL.SelectionStart = pos + indexInRemaining;
+            txtShaderHLSL.SelectionLength = searchText.Length;
+            txtShaderHLSL.ScrollToCaret();
+          } else {
+            // If not found, start from the beginning
+            pos = 0;
+            indexInRemaining = txtShaderHLSL.Text.IndexOf(searchText, StringComparison.InvariantCultureIgnoreCase);
+            if (indexInRemaining >= 0) {
+              txtShaderHLSL.SelectionStart = indexInRemaining;
+              txtShaderHLSL.SelectionLength = searchText.Length;
+              txtShaderHLSL.ScrollToCaret();
+            }
+          }
+        } catch {}
       }
     }
 
