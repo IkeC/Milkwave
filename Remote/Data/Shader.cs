@@ -51,6 +51,7 @@ namespace MilkwaveRemote.Data {
         }
 
         inpHeader = ReplaceVarName("uv", "uv_conv", inpHeader);
+        inpHeader = ReplaceVarName("ang", "ang_conv", inpHeader);
 
         if (inp.Contains("mod_conv(")) {
           inpHeader = AddHelperFunctionsMod(inpHeader);
