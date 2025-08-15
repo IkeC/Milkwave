@@ -44,6 +44,7 @@ namespace MilkwaveRemote
       toolStripMenuItemButtonPanel = new ToolStripMenuItem();
       toolStripSeparator2 = new ToolStripSeparator();
       toolStripMenuItemDarkMode = new ToolStripMenuItem();
+      toolStripMenuItemOpenVisualizer = new ToolStripMenuItem();
       toolTip1 = new ToolTip(components);
       chkPreview = new CheckBox();
       btnAppendSize = new Button();
@@ -334,7 +335,7 @@ namespace MilkwaveRemote
       // 
       // toolStripDropDownButton
       // 
-      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripSeparator2, toolStripMenuItemDarkMode });
+      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
       toolStripDropDownButton.Image = (Image)resources.GetObject("toolStripDropDownButton.Image");
       toolStripDropDownButton.ImageTransparentColor = Color.Magenta;
       toolStripDropDownButton.Name = "toolStripDropDownButton";
@@ -404,6 +405,13 @@ namespace MilkwaveRemote
       toolStripMenuItemDarkMode.Size = new Size(142, 22);
       toolStripMenuItemDarkMode.Text = "Dark Mode";
       toolStripMenuItemDarkMode.Click += toolStripMenuItemDarkMode_Click;
+      // 
+      // toolStripMenuItemOpenVisualizer
+      // 
+      toolStripMenuItemOpenVisualizer.Name = "toolStripMenuItemOpenVisualizer";
+      toolStripMenuItemOpenVisualizer.Size = new Size(142, 22);
+      toolStripMenuItemOpenVisualizer.Text = "Open Visualizer";
+      toolStripMenuItemOpenVisualizer.Click += toolStripMenuItemOpenVisualizer_Click;
       // 
       // chkPreview
       // 
@@ -3511,6 +3519,7 @@ namespace MilkwaveRemote
     private ToolStripMenuItem toolStripMenuItemHomepage;
     private ToolStripSeparator toolStripSeparator1;
     private ToolStripMenuItem toolStripMenuItemDarkMode;
+    private ToolStripMenuItem toolStripMenuItemOpenVisualizer;
     private ToolStripMenuItem toolStripMenuItemButtonPanel;
     private ToolStripMenuItem toolStripMenuItemVisualizerPanel;
     private ToolStripSeparator toolStripSeparator2;

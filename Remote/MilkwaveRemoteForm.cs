@@ -1980,6 +1980,10 @@ namespace MilkwaveRemote {
       SetFormattedMessage();
     }
 
+    private void toolStripMenuItemOpenVisualizer_Click(object sender, EventArgs e) {
+      StartVisualizerIfNotFound();
+    }
+
     private void toolStripMenuItemTabsPanel_Click(object sender, EventArgs e) {
       toolStripMenuItemTabsPanel.Checked = !toolStripMenuItemTabsPanel.Checked;
       if (!toolStripMenuItemTabsPanel.Checked && !toolStripMenuItemButtonPanel.Checked) {

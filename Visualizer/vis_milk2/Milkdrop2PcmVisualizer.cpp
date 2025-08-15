@@ -1527,7 +1527,7 @@ unsigned __stdcall DoSetup(void* param) {
   Sleep(3000); // wait for the render thread to initialize the plugin completely
   HINSTANCE instance = (HINSTANCE)param;
   
-  if (g_plugin.m_ShaderPrecompileOnStartup) {
+  if (g_plugin.m_ShaderCaching && g_plugin.m_ShaderPrecompileOnStartup) {
 
     std::wstring cacheDir = std::wstring(g_plugin.m_szBaseDir) + L"cache";
     std::wstring compiledListPath = cacheDir + L"\\compiled.txt";
@@ -1548,7 +1548,7 @@ unsigned __stdcall DoSetup(void* param) {
     // Prepare output file for compiled shader list
     std::wofstream compiledList(compiledListPath);
     if (!compiledList.is_open()) {
-      g_plugin.AddNotification(L"Failed to create compiled.txt");
+      //g_plugin.AddNotification(L"Failed to create compiled.txt");
       return -1;
     }
 

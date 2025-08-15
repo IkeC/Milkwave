@@ -286,6 +286,8 @@ namespace MilkwaveRemote.Data {
       res = res.Replace(" " + oldName + ")", " " + newName + ")");
       res = res.Replace("(" + oldName + ")", "(" + newName + ")");
       res = res.Replace(oldName + "=", newName + "=");
+      res = res.Replace(oldName + "*", newName + "*");
+      res = res.Replace("*" + oldName, "*" + newName);
       res = res.Replace(oldName + " =", newName + " =");
       res = res.Replace(oldName + "+", newName + "+");
       res = res.Replace(oldName + " +", newName + " +");
