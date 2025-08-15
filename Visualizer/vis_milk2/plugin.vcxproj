@@ -23,7 +23,7 @@
     <UseOfMfc>false</UseOfMfc>
     <TargetExt>.exe</TargetExt>
     <CharacterSet>MultiByte</CharacterSet>
-    <EnableASAN>true</EnableASAN>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -150,7 +150,7 @@
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -230,6 +230,7 @@
     <ClInclude Include="fft.h" />
     <ClInclude Include="md_defines.h" />
     <ClInclude Include="menu.h" />
+    <ClInclude Include="Milkdrop2PcmVisualizer.h" />
     <ClInclude Include="milkwave.h" />
     <ClInclude Include="plugin.h" />
     <ClInclude Include="pluginshell.h" />

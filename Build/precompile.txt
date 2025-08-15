@@ -1,0 +1,15 @@
+# Precompile the following shaders on Visualizer startup if:
+#
+# - ShaderPrecompileOnStartup=1 in settings.ini is set
+# - The file cache\compiled.txt does not exist
+#
+# You can remove or empty the cache folder safely anytime. Use relative or absolute paths for the presets. The base
+# directory for relative paths is the Milkwave directory. You can put an asterisk (*) as a wildcard to include all 
+# contents of a directory (eg. resources\presets\Mine\*). 
+#
+# A list of compiled files, along with compilation time per file in milliseconds, are written to cache\compiled.txt.
+#
+resources\presets\Shader\*
+resources\presets\Milkwave\totetmatt + Se7enSlasher - Tunnel Cable.milk
+resources\presets\Milkdrop2077\martin - stratospheric turbulences.milk
+resources\presets\Milkdrop2077\martin - stratospheric turbulences 2.milk

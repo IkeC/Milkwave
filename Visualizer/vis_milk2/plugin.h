@@ -421,9 +421,9 @@ public:
 #define SHADER_BLUR  2
 #define SHADER_OTHER 3
   bool LoadShaderFromMemory(const char* szShaderText, char* szFn, char* szProfile,
-    LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors);
-  bool RecompileVShader(const char* szShadersText, VShaderInfo* si, int shaderType, bool bHardErrors);
-  bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion);
+    LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly);
+  bool RecompileVShader(const char* szShadersText, VShaderInfo* si, int shaderType, bool bHardErrors, bool bCompileOnly);
+  bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion, bool bCompileOnly);
   bool EvictSomeTexture();
   typedef std::vector<TexInfo> TexInfoList;
   TexInfoList     m_textures;
@@ -436,27 +436,28 @@ public:
   D3DXVECTOR4 m_rand_frame;  // 4 random floats (0..1); randomized once per frame; fed to pixel shaders.
 
   // RUNTIME SETTINGS THAT WE'VE ADDED
-  float       m_prev_time;
-  bool		m_bTexSizeWasAutoPow2;
-  bool        m_bTexSizeWasAutoExact;
-  bool		m_bPresetLockedByUser;
-  bool		m_bPresetLockedByCode;
+  float   m_prev_time;
+  bool    m_bTexSizeWasAutoPow2;
+  bool    m_bTexSizeWasAutoExact;
+  bool    m_bPresetLockedByUser;
+  bool    m_bPresetLockedByCode;
   bool    m_ShaderCaching = true;
-  bool		m_ShowLockSymbol = true;
-  float		m_fAnimTime;
-  float		m_fStartTime;
-  float		m_fPresetStartTime;
-  float		m_fNextPresetTime;
-  float       m_fSnapPoint;
+  bool    m_ShaderPrecompileOnStartup = true;
+  bool    m_ShowLockSymbol = true;
+  float   m_fAnimTime;
+  float   m_fStartTime;
+  float   m_fPresetStartTime;
+  float   m_fNextPresetTime;
+  float   m_fSnapPoint;
   CState* m_pState;				// points to current CState
   CState* m_pOldState;			// points to previous CState
   CState* m_pNewState;			// points to the coming CState - we're not yet blending to it b/c we're still compiling the shaders for it!
-  int         m_nLoadingPreset;
-  wchar_t     m_szLoadingPreset[MAX_PATH];
-  float       m_fLoadingPresetBlendTime;
-  int         m_nPresetsLoadedTotal; //important for texture eviction age-tracking...
-  CState		m_state_DO_NOT_USE[3];	// do not use; use pState and pOldState instead.
-  ui_mode		m_UI_mode;				// can be UI_REGULAR, UI_LOAD, UI_SAVEHOW, or UI_SAVEAS
+  int     m_nLoadingPreset;
+  wchar_t m_szLoadingPreset[MAX_PATH];
+  float   m_fLoadingPresetBlendTime;
+  int     m_nPresetsLoadedTotal; //important for texture eviction age-tracking...
+  CState	m_state_DO_NOT_USE[3];	// do not use; use pState and pOldState instead.
+  ui_mode	m_UI_mode;				// can be UI_REGULAR, UI_LOAD, UI_SAVEHOW, or UI_SAVEAS
 
 #define MASH_SLOTS 5
 #define MASH_APPLY_DELAY_FRAMES 1
@@ -644,6 +645,7 @@ public:
   void        DrawTooltip(wchar_t* str, int xR, int yB);
   void        RandomizeBlendPattern();
   void        GenPlasma(int x0, int x1, int y0, int y1, float dt);
+  void        CompilePresetShadersToFile(wchar_t* m_szCurrentPresetFile);
   void        ClearPreset();
   void        RemoveAngleBrackets(wchar_t* str);
   void        LoadPerFrameEvallibVars(CState* pState);
@@ -704,7 +706,7 @@ public:
   void        DoCustomSoundAnalysis();
   void        DrawMotionVectors();
 
-  bool        LoadShaders(PShaderSet* sh, CState* pState, bool bTick);
+  bool        LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly);
   void        UvToMathSpace(float u, float v, float* rad, float* ang);
   void        ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CState* pState);
   void        RestoreShaderParams();

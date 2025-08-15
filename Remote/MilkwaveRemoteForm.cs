@@ -69,6 +69,7 @@ namespace MilkwaveRemote {
 
     private string VisualizerPresetsFolder = "";
     private string ShaderFilesFolder = "";
+    private string PresetsShaderConvFolder = "";
 
     private string lastScriptFileName = "script-default.txt";
     private string windowNotFound = "Milkwave Visualizer Window not found";
@@ -216,6 +217,7 @@ namespace MilkwaveRemote {
 
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
       ShaderFilesFolder = Path.Combine(BaseDir, "resources\\shader\\");
+      PresetsShaderConvFolder = Path.Combine(VisualizerPresetsFolder, "Shader\\Conv\\");
 
       FixNumericUpDownMouseWheel(this);
 
@@ -3243,8 +3245,7 @@ namespace MilkwaveRemote {
     private void btnSendShader_Click(object? sender, EventArgs? e) {
       try {
         // Ensure the shader directory exists
-        string shaderDir = Path.Combine(VisualizerPresetsFolder, "Shader");
-        Directory.CreateDirectory(shaderDir);
+        Directory.CreateDirectory(PresetsShaderConvFolder);
 
         string presetName = txtShaderinfo.Text.Split(Environment.NewLine)[0].Trim();
         if (!chkShaderFile.Checked || string.IsNullOrEmpty(presetName)) {
@@ -3253,7 +3254,7 @@ namespace MilkwaveRemote {
         string fileName = StripInvalidFileNameChars(presetName + ".milk");
 
         // Build the file path
-        string shaderFile = Path.Combine(shaderDir, fileName);
+        string shaderFile = Path.Combine(PresetsShaderConvFolder, fileName);
 
         // Prepare the header and shader content
         var sb = new StringBuilder();

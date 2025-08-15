@@ -152,6 +152,7 @@
 #include "milkwave.h"
 #include <locale>
 #include <codecvt>
+#include "Milkdrop2PcmVisualizer.h"
 
 #define DLL_EXPORT __declspec(dllexport)
 //#define COMPILE_AS_DLL
@@ -188,6 +189,7 @@ static RECT lastRect = { 0 };
 
 static HMODULE module = nullptr;
 static std::atomic<HANDLE> threadRender = nullptr;
+static std::atomic<HANDLE> threadSetup = nullptr;
 static unsigned threadId = 0;
 static std::mutex pcmMutex;
 static unsigned char pcmLeftIn[SAMPLE_SIZE];
@@ -1520,6 +1522,121 @@ int StartAudioCaptureThread(HINSTANCE instance) {
   }
 }
 
+unsigned __stdcall DoSetup(void* param) {
+
+  Sleep(3000); // wait for the render thread to initialize the plugin completely
+  HINSTANCE instance = (HINSTANCE)param;
+  
+  if (g_plugin.m_ShaderPrecompileOnStartup) {
+
+    std::wstring cacheDir = std::wstring(g_plugin.m_szBaseDir) + L"cache";
+    std::wstring compiledListPath = cacheDir + L"\\compiled.txt";
+
+    // Abort if compiled.txt already exists
+    if (std::filesystem::exists(compiledListPath)) {
+      //g_plugin.AddNotification(L"Shader cache already exists ,skipping precompilation");
+      return -1;
+    }
+
+    // Open precompile.txt
+    std::ifstream file("precompile.txt");
+    if (!file.is_open()) {
+      //g_plugin.AddNotification(L"Failed to open precompile.txt");
+      return -1;
+    }
+
+    // Prepare output file for compiled shader list
+    std::wofstream compiledList(compiledListPath);
+    if (!compiledList.is_open()) {
+      g_plugin.AddNotification(L"Failed to create compiled.txt");
+      return -1;
+    }
+
+    g_plugin.AddNotification(L"Precompiling shaders in the background...");
+
+    int compiledShaders = 0;
+    std::string line;
+    auto start = std::chrono::high_resolution_clock::now();
+    while (std::getline(file, line)) {
+      // Convert to wide string
+      std::wstring wLine(line.begin(), line.end());
+
+      // Trim whitespace
+      wLine.erase(0, wLine.find_first_not_of(L" \t"));
+      wLine.erase(wLine.find_last_not_of(L" \t") + 1);
+
+      // Skip empty lines or comments
+      if (wLine.empty() || wLine[0] == L'#') continue;
+
+      // Check for wildcard
+      if (!wLine.empty() && wLine.back() == L'*') {
+        std::wstring dirPath = wLine.substr(0, line.length() - 1); // Remove '*'
+        if (std::filesystem::exists(dirPath)) {
+          for (const auto& entry : std::filesystem::directory_iterator(dirPath)) {
+            if (entry.is_regular_file()) {
+              PrecompilePresetShaders(entry.path().wstring(), compiledList, compiledShaders);
+            }
+          }
+        }
+      }
+      else {
+        PrecompilePresetShaders(wLine, compiledList, compiledShaders);
+      }
+    }
+
+    file.close();
+    compiledList.close();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration<double>(end - start); // fractional seconds
+    std::wstringstream ss;
+    ss << std::fixed << std::setprecision(2) << duration.count();
+
+    std::wstring message = L"Precompiling " + std::to_wstring(compiledShaders) 
+      + L" shaders completed in " + ss.str() + L"s";
+
+    wchar_t szMessage[256];
+    wcsncpy_s(szMessage, message.c_str(), _TRUNCATE);
+    g_plugin.AddNotification(szMessage);    
+  }
+  return 0;
+}
+
+void PrecompilePresetShaders(std::wstring& wLine, std::wofstream& compiledList, int& compiledShaders) {
+  wchar_t szFile[512];
+  // Treat anything without a drive letter as relative
+  if (wLine.find(L":\\") == std::wstring::npos) {
+    lstrcpyW(szFile, g_plugin.m_szBaseDir);
+    lstrcatW(szFile, wLine.c_str());
+  }
+  else {
+    lstrcpyW(szFile, wLine.c_str());
+  }
+
+  // Compile the shader
+  if (std::filesystem::exists(std::filesystem::path(szFile))) {
+    auto start = std::chrono::high_resolution_clock::now();
+    g_plugin.CompilePresetShadersToFile(szFile);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::wstring warn = L" ";
+    if (durationMs > 2000) {
+      warn = L"!";
+    }
+    compiledList << warn << std::setw(8) << std::setfill(L' ') << durationMs << " " << szFile << std::endl;
+    compiledShaders++;
+  }
+}
+
+void StartSetupThread(HINSTANCE instance) {
+  threadSetup = (HANDLE)_beginthreadex(
+    nullptr,
+    0,
+    &DoSetup,
+    (void*)instance,
+    0,
+    &threadId);
+}
+
 int StartThreads(HINSTANCE instance) {
   try {
     // Milkwave: early init so we can read audio device from settings
@@ -1527,6 +1644,8 @@ int StartThreads(HINSTANCE instance) {
 
     StartRenderThread(instance);
     // WaitForSingleObject(threadRender, INFINITE);
+
+    StartSetupThread(instance);
 
     StartAudioCaptureThread(instance);
 
