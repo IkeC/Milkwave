@@ -1,0 +1,179 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// kaiware007 - Cyber Fuji 2020 / https://www.shadertoy.com/view/Wt33Wf
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_5=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_6=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_7=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_8=
+comp_9=
+comp_10=float sun(float2 uv_conv,  float battery)
+comp_11={
+comp_12= 	float val = smoothstep(0.3, 0.29, length(uv_conv));
+comp_13= 	float bloom = smoothstep(0.7, 0.0, length(uv_conv));
+comp_14=    float cut = 3.0 * sin((uv_conv.y + time * 0.2 * (battery + 0.02)) * 100.0) 
+comp_15=				+ clamp(uv_conv.y * 14.0 + 1.0, -6.0, 6.0);
+comp_16=    cut = clamp(cut, 0.0, 1.0);
+comp_17=    return clamp(val * cut, 0.0, 1.0) + bloom * 0.6;
+comp_18=}
+comp_19=
+comp_20=float grid(float2 uv_conv,  float battery)
+comp_21={
+comp_22=    float2 size = float2(uv_conv.y, uv_conv.y * uv_conv.y * 0.2) * 0.01;
+comp_23=    uv_conv += float2(0.0, time * 4.0 * (battery + 0.05));
+comp_24=    uv_conv = abs(frac(uv_conv) - 0.5);
+comp_25= 	float2 lines = smoothstep(size, float2(0.0, 0.0), uv_conv);
+comp_26= 	lines += smoothstep(size * 5.0, float2(0.0, 0.0), uv_conv) * 0.4 * battery;
+comp_27=    return clamp(lines.x + lines.y, 0.0, 3.0);
+comp_28=}
+comp_29=
+comp_30=float dot2(in float2 v ) { return dot(v,v); }
+comp_31=
+comp_32=float sdTrapezoid( in float2 p, in float r1, float r2, float he )
+comp_33={
+comp_34=    float2 k1 = float2(r2,he);
+comp_35=    float2 k2 = float2(r2-r1,2.0*he);
+comp_36=    p.x = abs(p.x);
+comp_37=    float2 ca = float2(p.x-min(p.x,(p.y<0.0)?r1:r2), abs(p.y)-he);
+comp_38=    float2 cb = p - k1 + k2*clamp( dot(k1-p,k2)/dot2(k2), 0.0, 1.0 );
+comp_39=    float s = (cb.x<0.0 && ca.y<0.0) ? -1.0 : 1.0;
+comp_40=    return s*sqrt( min(dot2(ca),dot2(cb)) );
+comp_41=}
+comp_42=
+comp_43=float sdLine( in float2 p, in float2 a, in float2 b )
+comp_44={
+comp_45=    float2 pa = p-a, ba = b-a;
+comp_46=    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+comp_47=    return length( pa - ba*h );
+comp_48=}
+comp_49=
+comp_50=float sdBox( in float2 p, in float2 b )
+comp_51={
+comp_52=    float2 d = abs(p)-b;
+comp_53=    return length(max(d,float2(0, 0))) + min(max(d.x,d.y),0.0);
+comp_54=}
+comp_55=
+comp_56=float opSmoothUnion(float d1, float d2, float k){
+comp_57=	float h = clamp(0.5 + 0.5 * (d2 - d1) /k,0.0,1.0);
+comp_58=    return lerp(d2, d1 , h) - k * h * ( 1.0 - h);
+comp_59=}
+comp_60=
+comp_61=float sdCloud(in float2 p, in float2 a1, in float2 b1, in float2 a2, in float2 b2, float w)
+comp_62={
+comp_63=	//float lineVal1 = smoothstep(w - 0.0001, w, sdLine(p, a1, b1));
+comp_64=    float lineVal1 = sdLine(p, a1, b1);
+comp_65=    float lineVal2 = sdLine(p, a2, b2);
+comp_66=    float2 ww = float2(w*1.5, 0.0);
+comp_67=    float2 left = max(a1 + ww, a2 + ww);
+comp_68=    float2 right = min(b1 - ww, b2 - ww);
+comp_69=    float2 boxCenter = (left + right) * 0.5;
+comp_70=    //float boxW = right.x - left.x;
+comp_71=    float boxH = abs(a2.y - a1.y) * 0.5;
+comp_72=    //float boxVal = sdBox(p - boxCenter, float2(boxW, boxH)) + w;
+comp_73=    float boxVal = sdBox(p - boxCenter, float2(0.04, boxH)) + w;
+comp_74=    
+comp_75=    float uniVal1 = opSmoothUnion(lineVal1, boxVal, 0.05);
+comp_76=    float uniVal2 = opSmoothUnion(lineVal2, boxVal, 0.05);
+comp_77=    
+comp_78=    return min(uniVal1, uniVal2);
+comp_79=}
+comp_80=
+comp_81=
+comp_82=shader_body {
+comp_83=float4 fragColor;
+comp_84=float2 fragCoord;
+comp_85=// CONV: Center on screen, then try some aspect correction
+comp_86=uv = (uv*2) - 1;
+comp_87=uv *= aspect.xy;
+comp_88=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_89=uv = float2(uv.x, -uv.y);
+comp_90=
+comp_91=//     float2 uv = (2.0 * fragCoord.xy - texsize.xy)/texsize.y;
+comp_92=    float battery = 1.0;
+comp_93=// CONV: iMouse unsupported
+comp_94=//     //if (iMouse.x > 1.0 && iMouse.y > 1.0) battery = iMouse.y / texsize.y;
+comp_95=    //else battery = 0.8;
+comp_96=    
+comp_97=    //if (abs(uv.x) < (9.0 / 16.0))
+comp_98=    {
+comp_99=        // Grid
+comp_100=        float fog = smoothstep(0.1, -0.02, abs(uv.y + 0.2));
+comp_101=        float3 col = float3(0.0, 0.1, 0.2);
+comp_102=        if (uv.y < -0.2)
+comp_103=        {
+comp_104=            uv.y = 3.0 / (abs(uv.y + 0.2) + 0.05);
+comp_105=            uv.x *= uv.y * 1.0;
+comp_106=            float gridVal = grid(uv, battery);
+comp_107=            col = lerp(col, float3(1.0, 0.5, 1.0), gridVal);
+comp_108=        }
+comp_109=        else
+comp_110=        {
+comp_111=            float fujiD = min(uv.y * 4.5 - 0.5, 1.0);
+comp_112=            uv.y -= battery * 1.1 - 0.51;
+comp_113=            
+comp_114=            float2 sunUV = uv;
+comp_115=            float2 fujiUV = uv;
+comp_116=            
+comp_117=            // Sun
+comp_118=            sunUV += float2(0.75, 0.2);
+comp_119=            //uv.y -= 1.1 - 0.51;
+comp_120=            col = float3(1.0, 0.2, 1.0);
+comp_121=            float sunVal = sun(sunUV, battery);
+comp_122=            
+comp_123=            col = lerp(col, float3(1.0, 0.4, 0.1), sunUV.y * 2.0 + 0.2);
+comp_124=            col = lerp(float3(0.0, 0.0, 0.0), col, sunVal);
+comp_125=            
+comp_126=            // fuji
+comp_127=            float fujiVal = sdTrapezoid( uv  + float2(-0.75+sunUV.y * 0.0, 0.5), 1.75 + pow(uv.y * uv.y, 2.1), 0.2, 0.5);
+comp_128=            float waveVal = uv.y + sin(uv.x * 20.0 + time * 2.0) * 0.05 + 0.2;
+comp_129=            float wave_width = smoothstep(0.0,0.01,(waveVal));
+comp_130=            
+comp_131=            // fuji color
+comp_132=            col = lerp( col, lerp(float3(0.0, 0.0, 0.25), float3(1.0, 0.0, 0.5), fujiD), step(fujiVal, 0.0));
+comp_133=            // fuji top snow
+comp_134=            col = lerp( col, float3(1.0, 0.5, 1.0), wave_width * step(fujiVal, 0.0));
+comp_135=            // fuji outline
+comp_136=            col = lerp( col, float3(1.0, 0.5, 1.0), 1.0-smoothstep(0.0,0.01,abs(fujiVal)) );
+comp_137=            //col = lerp( col, float3(1.0, 1.0, 1.0), 1.0-smoothstep(0.03,0.04,abs(fujiVal)) );
+comp_138=            //col = float3(1.0, 1.0, 1.0) *(1.0-smoothstep(0.03,0.04,abs(fujiVal)));
+comp_139=            
+comp_140=            // horizon color
+comp_141=            col += lerp( col, lerp(float3(1.0, 0.12, 0.8), float3(0.0, 0.0, 0.2), clamp(uv.y * 3.5 + 3.0, 0.0, 1.0)), step(0.0, fujiVal) );
+comp_142=            
+comp_143=            // cloud
+comp_144=            float2 cloudUV = uv;
+comp_145=            cloudUV.x = mod_conv(cloudUV.x + time * 0.1, 4.0) - 2.0;
+comp_146=            float cloudTime = time * 0.5;
+comp_147=            float cloudY = -0.5;
+comp_148=            float cloudVal1 = sdCloud(cloudUV, 
+comp_149=                                     float2(0.1 + sin(cloudTime + 140.5)*0.1,cloudY), 
+comp_150=                                     float2(1.05 + cos(cloudTime * 0.9 - 36.56) * 0.1, cloudY), 
+comp_151=                                     float2(0.2 + cos(cloudTime * 0.867 + 387.165) * 0.1,0.25+cloudY), 
+comp_152=                                     float2(0.5 + cos(cloudTime * 0.9675 - 15.162) * 0.09, 0.25+cloudY), 0.075);
+comp_153=            cloudY = -0.6;
+comp_154=            float cloudVal2 = sdCloud(cloudUV, 
+comp_155=                                     float2(-0.9 + cos(cloudTime * 1.02 + 541.75) * 0.1,cloudY), 
+comp_156=                                     float2(-0.5 + sin(cloudTime * 0.9 - 316.56) * 0.1, cloudY), 
+comp_157=                                     float2(-1.5 + cos(cloudTime * 0.867 + 37.165) * 0.1,0.25+cloudY), 
+comp_158=                                     float2(-0.6 + sin(cloudTime * 0.9675 + 665.162) * 0.09, 0.25+cloudY), 0.075);
+comp_159=            
+comp_160=            float cloudVal = min(cloudVal1, cloudVal2);
+comp_161=            
+comp_162=            //col = lerp(col, float3(1.0,1.0,0.0), smoothstep(0.0751, 0.075, cloudVal));
+comp_163=            col = lerp(col, float3(0.0, 0.0, 0.2), 1.0 - smoothstep(0.075 - 0.0001, 0.075, cloudVal));
+comp_164=            col += float3(1.0, 1.0, 1.0)*(1.0 - smoothstep(0.0,0.01,abs(cloudVal - 0.075)));
+comp_165=        }
+comp_166=
+comp_167=        col += fog * fog * fog;
+comp_168=        col = lerp(float3(col.r, col.r, col.r) * 0.5, col, battery * 0.7);
+comp_169=
+comp_170=        ret = float4(col,1.0);
+comp_171=    }
+comp_172=    //else ret = float4(0.0, 0.0, 0.0, 0.0);
+comp_173=
+comp_174=    
+comp_175=}

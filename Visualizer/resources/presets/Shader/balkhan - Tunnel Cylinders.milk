@@ -1,0 +1,209 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// balkhan - Tunnel Cylinders / https://www.shadertoy.com/view/MlsfWS
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_5=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_6=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_7=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_8=
+comp_9=float2	march(float3 pos, float3 dir);
+comp_10=float3	camera(float2 uv_conv);
+comp_11=void	rotate(inout float2 v, float angle);
+comp_12=float	sdTorus( float3 p, float2 t, float phase );
+comp_13=float	mylength(float2 p);
+comp_14=
+comp_15=#define LIGHT
+comp_16=
+comp_17=float 	t;			// time
+comp_18=float3	ret_col;	// color
+comp_19=#ifdef LIGHT
+comp_20=float3	h; 			// light amount
+comp_21=#endif
+comp_22=
+comp_23=#define I_MAX		200.
+comp_24=#define E			0.0001
+comp_25=#define FAR			50.
+comp_26=#define	PI			3.14159
+comp_27=#define	TAU			PI*2.
+comp_28=
+comp_29=
+comp_30=
+comp_31=/*
+comp_32=** Leon's mod polar from : https://www.shadertoy.com/view/XsByWd
+comp_33=*/
+comp_34=
+comp_35=float2 modA (float2 p, float count) {
+comp_36=    float an = TAU/count;
+comp_37=    float a = atan2(p.y,p.x)+an*.5;
+comp_38=    a = mod_conv(a, an)-an*.5;
+comp_39=    return float2(cos(a),sin(a))*length(p);
+comp_40=}
+comp_41=
+comp_42=/*
+comp_43=** end mod polar
+comp_44=*/
+comp_45=
+comp_46=float	scene(float3 p)
+comp_47={  
+comp_48=    float	var;
+comp_49=    float	mind = 1e5;
+comp_50=    float3	op = p;
+comp_51=    #ifdef	FUNKY
+comp_52=    var =
+comp_53=        step(-1.+cos( floor( p.z*6.)/6.+time*1.)*3.14, mod_conv(atan(p.x, p.y ), 6.28)-3.14 )
+comp_54=        *
+comp_55=        step(mod_conv(atan(p.x, p.y ), 6.28)-3.14-1.5, -1.+cos( floor( p.z*3.)/1.+time*1.)*3.14)
+comp_56=        
+comp_57=        *
+comp_58=        step(
+comp_59=            .0
+comp_60=            ,
+comp_61=        (length(frac(float2(op.z, min(abs(op.x), abs(op.y)))*10.)-.5)-.2)
+comp_62=	        )
+comp_63=        
+comp_64=        ;
+comp_65=    #else
+comp_66=    var = 
+comp_67=        atan2(p.x, p.y)*1.+0.;
+comp_68=    #endif
+comp_69=    var = cos(var*1.+floor(p.z) +time*(mod_conv(floor(p.z), 2.)-1. == 0. ? -1. : 1.) );
+comp_70=    float	dist_cylinder = 1e5;
+comp_71=    ret_col = 1.-float3(.5-var*.5, .5, .3+var*.5);
+comp_72=    mind = length(p.xy)-1.+.1*var;
+comp_73=    #ifdef HOLES
+comp_74=    mind = max(mind, var*-(length(frac(float2(op.z, min(abs(op.x), abs(op.y)))*10.)-.5)-.1) );
+comp_75=    #endif
+comp_76=    mind = max(mind, -(length(p.xy)-.9+.1*var));
+comp_77=    p.xy = modA(p.yx, 50.+50.*sin(p.z*.25) );
+comp_78=	p.z = frac(p.z*3.)-.5;
+comp_79=    if (var != 0.)
+comp_80=    {
+comp_81=	    dist_cylinder = length(p.zy)-.0251-.25*sin(op.z*5.5);
+comp_82=	    dist_cylinder = max(dist_cylinder, -p.x+.4 +clamp(var, .0, 1.) );
+comp_83=    }
+comp_84=    mind = 
+comp_85=        min
+comp_86=        (
+comp_87=            mind
+comp_88=            ,
+comp_89=			dist_cylinder
+comp_90=        );
+comp_91=
+comp_92=    #ifdef LIGHT
+comp_93=    h += float3(.5,.8,.5)*(var!=0.?1.:0.)*.0125/(.01+max(mind-var*.1, .0001)*max(mind-var*.1, .0001) );
+comp_94=    #endif
+comp_95=    
+comp_96=    return (mind);
+comp_97=}
+comp_98=
+comp_99=float2	march(float3 pos, float3 dir)
+comp_100={
+comp_101=    float2	dist = float2(0.0, 0.0);
+comp_102=    float3	p = float3(0.0, 0.0, 0.0);
+comp_103=    float2	s = float2(0.0, 0.0);
+comp_104=
+comp_105=	    for (float i = -1.; i < I_MAX; ++i)
+comp_106=	    {
+comp_107=	    	p = pos + dir * dist.y;
+comp_108=	        dist.x = scene(p);
+comp_109=	        dist.y += dist.x*.2; // makes artefacts disappear
+comp_110=	        if (dist.x < E || dist.y > FAR)
+comp_111=            {
+comp_112=// CONV: break unsupported, see Milkwave manual
+comp_113=                i = I_MAX;
+comp_114=            }
+comp_115=	        s.x++;
+comp_116=    }
+comp_117=    s.y = dist.y;
+comp_118=    return (s);
+comp_119=}
+comp_120=
+comp_121=float	mylength(float2 p)
+comp_122={
+comp_123=	float	ret;
+comp_124=
+comp_125=    p = p*p*p*p;
+comp_126=    p = p*p;
+comp_127=    ret = (p.x+p.y);
+comp_128=    ret = pow(ret, 1./8.);
+comp_129=    
+comp_130=    return ret;
+comp_131=}
+comp_132=
+comp_133=
+comp_134=void rotate(inout float2 v, float angle)
+comp_135={
+comp_136=    float s = sin(angle);
+comp_137=    float c = cos(angle);
+comp_138=    v = float2(c * v.x + s * v.y,
+comp_139=              -s * v.x + c * v.y);
+comp_140=
+comp_141=}
+comp_142=
+comp_143=float2	rot(float2 p, float2 ang_c)
+comp_144={
+comp_145=	float	c = cos(ang_c.x);
+comp_146=    float	s = sin(ang_c.y);
+comp_147=    float2x2	m = float2x2(c, -s, s, c);
+comp_148=    
+comp_149=    return mul(p,transpose(m));
+comp_150=}
+comp_151=
+comp_152=float3	camera(float2 uv_conv)
+comp_153={
+comp_154=    float		fov = 1.;
+comp_155=	float3		forw  = float3(0.0, 0.0, -1.0);
+comp_156=	float3    	right = float3(1.0, 0.0, 0.0);
+comp_157=	float3    	up    = float3(0.0, 1.0, 0.0);
+comp_158=
+comp_159=    return (normalize((uv_conv.x) * right + (uv_conv.y) * up + fov * forw));
+comp_160=}
+comp_161=
+comp_162=shader_body {
+comp_163=float4 c_out = 0;
+comp_164=// CONV: Center on screen, then try some aspect correction
+comp_165=
+comp_166=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_167=//uv = float2(uv.x, -uv.y);
+comp_168=uv.x = uv.x-0.5;
+comp_169=
+comp_170=uv.y = uv.y+0.3;
+comp_171=
+comp_172=float2 f = uv;
+comp_173=f.y-=0.4;
+comp_174=
+comp_175=uv *= aspect.xy;
+comp_176=f *= aspect.xy;
+comp_177=
+comp_178=    t  = time*.125;
+comp_179=
+comp_180=
+comp_181=
+comp_182=
+comp_183=    float3	col = float3(0., 0., 0.);
+comp_184=	float2 R = uv.xy,
+comp_185=          uv_c  = float2(f-R/2.) / R.y;
+comp_186=
+comp_187=
+comp_188=	float3	dir = camera(uv_c);
+comp_189=    float3	pos = float3(.0, .0, 0.0);
+comp_190=
+comp_191=    pos.z = 4.5-time*2.;
+comp_192=    #ifdef LIGHT
+comp_193=    h = float3(0., 0., 0.);
+comp_194=    #endif
+comp_195=    float2	inter = (march(pos, dir));
+comp_196=    if (inter.y <= FAR)
+comp_197=        col.xyz = ret_col*(1.-inter.x*.0025);
+comp_198=    else
+comp_199=        col *= 0.;
+comp_200=    #ifdef LIGHT
+comp_201=    col += h*.005125;
+comp_202=    #endif
+comp_203=    c_out =  float4(col,1.0);
+comp_204=ret = c_out;
+comp_205=}

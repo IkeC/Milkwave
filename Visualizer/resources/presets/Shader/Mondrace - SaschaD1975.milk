@@ -1,0 +1,72 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Mondrace - SaschaD1975 / https://www.shadertoy.com/view/t3yXRd
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define iChannel0 sampler_stoy_pebbles
+comp_5=#define iChannel1 sampler_stoy_noise
+comp_6=
+comp_7=sampler iChannel0;
+comp_8=sampler iChannel1;
+comp_9=
+comp_10=// Adjust if this takes long to compile
+comp_11=// higher value = higher quality
+comp_12=// Original value was 300
+comp_13=
+comp_14=#define LOOPS 20
+comp_15=
+comp_16=float map(float3 p) {
+comp_17=return p.y + tex2D(iChannel0, p.xz/20).r + tex2D(iChannel0, p.xz/200).r*20.;
+comp_18=}
+comp_19=
+comp_20=float2 rot(float2 v, float a) { return cos(a)*v - sin(a)*float2(v.y, -v.x); }
+comp_21=
+comp_22=
+comp_23=shader_body {
+comp_24= float4 fragColor = 0;
+comp_25= float2 fragCoord  = uv;
+comp_26=// CONV: Center on screen, then try some aspect correction
+comp_27=uv = (uv*2) - 1;
+comp_28=uv *= aspect.xy;
+comp_29=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_30=uv = float2(uv.x, -uv.y);
+comp_31=
+comp_32=//     float2 uv = (2.*fragCoord - texsize.xy) / texsize.x;
+comp_33=    
+comp_34=    float3 ro = float3(0., 0., time*8.), 
+comp_35=p,
+comp_36=    	rd = normalize(float3(rot(uv, sin(time/2.)/8.), 1.0));
+comp_37=    
+comp_38=    ro.y = 1. -(map(ro) + map(ro + float3(0., 0., 1.0)))/8.;
+comp_39=   
+comp_40=    float far = 50., marched = 0.01, c=0, d;
+comp_41=    
+comp_42=    for (int i = 0; i < LOOPS; ++i) {
+comp_43=        p = ro + rd*marched;
+comp_44=        d = map(p);
+comp_45=        marched += d*0.5;
+comp_46=        
+comp_47=// CONV: break is unsupported, see Milkwave manual for details
+comp_48=        if (abs(d) < 0.001 || abs(d) > far) i=300;
+comp_49=    }
+comp_50=    
+comp_51=    if (marched < far) {
+comp_52=        float2 ve = float2(0., 0.01);
+comp_53=        float3 normal = normalize(float3(
+comp_54=        	map(p + ve.yxx),
+comp_55=        	map(p + ve.xyx),
+comp_56=        	map(p + ve.xxy)
+comp_57=        ));
+comp_58=        
+comp_59=        float3 ld = normalize(float3(sin(time/2.)*4., 1.0, 1.0));
+comp_60=        c = (clamp(dot(ld, normal), 0., 1.) + step(frac(p.y*2.), 0.1))*(1. - distance(p, ro)/far);
+comp_61=    } else {
+comp_62=          c = pow(tex2D(iChannel1, uv*.5 + tex2D(iChannel1, uv*.3).xy + time/300.).r, 15.)*.5;
+comp_63=    }
+comp_64=
+comp_65=    // Output to screen
+comp_66=    ret = float4(float3(c,c,c),1.0);
+comp_67=
+comp_68=}

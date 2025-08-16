@@ -1,0 +1,91 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// etrujillo - Glassy with odd rotation / https://www.shadertoy.com/view/3XdXWX
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=float map(float3 p) {
+comp_5=p = abs(frac(p) - 0.5);
+comp_6=return abs(min(length(p.xy) - 0.175, min(p.x, p.y) + 1e-3)) + 1e-3;
+comp_7=}
+comp_8=
+comp_9=float3 estimateNormal(float3 p) {
+comp_10=float eps = 0.001;
+comp_11=return normalize(float3(
+comp_12=map(p + float3(eps, 0.0, 0.0)) - map(p - float3(eps, 0.0, 0.0)),
+comp_13=map(p + float3(0.0, eps, 0.0)) - map(p - float3(0.0, eps, 0.0)),
+comp_14=map(p + float3(0.0, 0.0, eps)) - map(p - float3(0.0, 0.0, eps))
+comp_15=));
+comp_16=}
+comp_17=
+comp_18=
+comp_19=
+comp_20=shader_body {
+comp_21=float4 O = 0;
+comp_22=// CONV: Center on screen, then try some aspect correction
+comp_23=uv *= aspect.xy;
+comp_24=uv.x += -0.35;
+comp_25=uv.y += 0.1;
+comp_26=
+comp_27=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_28=uv = float2(uv.x, uv.y);
+comp_29=    
+comp_30=float2 C = uv;
+comp_31=float2 r = C;
+comp_32=r.x += 0.08;
+comp_33=r.y += 0.12;
+comp_34=C.y*=1.03;
+comp_35=
+comp_36=    float t = time;
+comp_37=    float z = frac(dot(C, sin(C))) - 0.5;
+comp_38=    float4 col = float4(0.0, 0.0, 0.0, 0.0);
+comp_39=    float4 p;
+comp_40=
+comp_41=    for (float i = 0.0; i < 77.0; i++) {
+comp_42=        // Ray direction
+comp_43=        p = float4(-z * normalize(float3(C - 0.75 * r, r.y)), 0.1 * t);
+comp_44=        p.z -= t;
+comp_45=
+comp_46=// IkeC: added some movement
+comp_47=p.x += 0.2*sin(t*0.1);
+comp_48=p.y += 0.1*sin(t*0.15);
+comp_49=
+comp_50=        float4 q = p;
+comp_51=
+comp_52=        // Apply "bugged" rotation matrices for glitchy fractal distortion
+comp_53=        p.xy = mul(p.xy, transpose(float2x2(cos(2.0 + q.z + float4(0,11,33,0)))));
+comp_54=        p.xy = mul(p.xy, transpose(float2x2(cos(q + float4(0,11,33,0)))));
+comp_55=
+comp_56=        // Distance estimation
+comp_57=        float d = map(p.xyz);
+comp_58=
+comp_59=        // Estimate lighting
+comp_60=        float3 pos = p.xyz;
+comp_61=        float3 lightDir = normalize(float3(0.3, 0.5, 1.0));
+comp_62=        float3 viewDir = normalize(float3(uv.xy, 1.0));
+comp_63=        float3 n = estimateNormal(pos);
+comp_64=        float3 reflectDir = reflect(viewDir, n);
+comp_65=
+comp_66=        // Fake environment reflection (sky blue + fade to white)
+comp_67=        float3 envColor = lerp(float3(0.8, 0.4, 0.8), float3(1,1,1), 0.5 + 0.5 * reflectDir.y);
+comp_68=
+comp_69=        // Specular highlight
+comp_70=        float spec = pow(max(dot(reflectDir, lightDir), 0.0), 32.0);
+comp_71=
+comp_72=        // Funky palette color using original method
+comp_73=        float4 baseColor = (1.0 + sin(0.5 * q.z + length(p.xyz - q.xyz) + float4(0,4,3,6)))
+comp_74=                       / (0.5 + 2.0 * dot(q.xy, q.xy));
+comp_75=
+comp_76=        // Combine base color + environment reflection + specular highlight
+comp_77=        float3 finalColor = baseColor.rgb * 0.1 + envColor * 0.9 + float3(spec,spec,spec) * 1.2;
+comp_78=
+comp_79=        // Brightness weighted accumulation
+comp_80=        col.rgb += finalColor / d;
+comp_81=
+comp_82=        z += 0.7 * d;
+comp_83=    }
+comp_84=
+comp_85=    // Compress brightness range
+comp_86=    ret = float4(tanh(col.rgb / 2e4), 1.0);
+comp_87=}

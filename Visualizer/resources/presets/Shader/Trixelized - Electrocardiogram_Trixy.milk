@@ -1,0 +1,67 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Trixelized - Electrocardiogram_Trixy / https://www.shadertoy.com/view/McycDt
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define PI 3.141
+comp_5=
+comp_6=
+comp_7=shader_body {
+comp_8= float4 fragColor = 0;
+comp_9= float2 fragCoord  = uv;
+comp_10=// CONV: Center on screen, then try some aspect correction
+comp_11=uv = (uv*2) - 1;
+comp_12=uv *= aspect.xy;
+comp_13=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_14=uv = float2(uv.x, -uv.y);
+comp_15=
+comp_16=//     float2 uv = (fragCoord - (0.5 * uv.xy)) / uv.y;
+comp_17=
+comp_18=    float hei = 0.0;
+comp_19=    
+comp_20=    // Wobble
+comp_21=    hei += sin(uv.x * 42.0) * 0.005;
+comp_22=    hei += sin(uv.x * 20.0) * 0.010;
+comp_23=    
+comp_24=    // Heartbeat
+comp_25=    const float hb_size = 0.20;
+comp_26=    const float hb_smooth = 0.15;
+comp_27=    float hb_mult = smoothstep(
+comp_28=        hb_size + hb_smooth,
+comp_29=        hb_size - hb_smooth,
+comp_30=        abs(uv.x)
+comp_31=    );
+comp_32=    float hb_hei = sin(uv.x / hb_size * PI);
+comp_33=    hei = lerp(hei, hb_hei, hb_mult);
+comp_34=    
+comp_35=    // Line + glow value
+comp_36=    float val = 0.0;
+comp_37=    val += smoothstep(
+comp_38=        0.010,
+comp_39=        0.005,
+comp_40=        abs(hei / 3.0 - uv.y)
+comp_41=    );
+comp_42=    val += smoothstep(
+comp_43=         0.125,
+comp_44=        -0.1,
+comp_45=        abs(hei / 3.0 - uv.y)
+comp_46=    );
+comp_47=    
+comp_48=    // Base color
+comp_49=    float anim = (uv.x - time) / 2.0;
+comp_50=    float3 col = pow(frac(anim) * val, 1.5)
+comp_51=        * float3(0.250, 1.000, 0.250);
+comp_52=
+comp_53=    // Grid
+comp_54=    float grid_x = abs(1.0 - 2.0 * frac(uv.x * 6.0));
+comp_55=    float grid_y = abs(1.0 - 2.0 * frac(uv.y * 12.0));
+comp_56=    col += smoothstep(0.1, 0.0, min(grid_x, grid_y))
+comp_57=        * (uv.y + 0.5)
+comp_58=        * float3(0.1, 0.2, 0.2);
+comp_59=
+comp_60=    // Output to screen
+comp_61=    fragColor = float4(col, 1.0);
+comp_62=ret = fragColor;
+comp_63=}

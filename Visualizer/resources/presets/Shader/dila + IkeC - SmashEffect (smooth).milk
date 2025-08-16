@@ -1,0 +1,205 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// dila + IkeC - SmashEffect (smooth) / https://www.shadertoy.com/view/XlBXRK
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=// CONV: setting iChannel samplers to default noise texture
+comp_5=#define iChannel0 sampler_noise_lq
+comp_6=#define iChannel1 sampler_noise_lq
+comp_7=#define iChannel2 sampler_sun
+comp_8=sampler iChannel2;
+comp_9=
+comp_10=float2x2 rot(float t)
+comp_11={
+comp_12=return float2x2(cos(t), sin(t), -sin(t), cos(t));
+comp_13=}
+comp_14=
+comp_15=float udRoundBox( float3 p, float3 b, float r )
+comp_16={
+comp_17=return length(max(abs(p)-b,0.0))-r;
+comp_18=}
+comp_19=
+comp_20=float3 times()
+comp_21={
+comp_22=#ifdef bass_smooth
+comp_23= float gt = frac(time * 0.8 + 0.2 * bass_smooth) * 3.0;
+comp_24=#else
+comp_25= float gt = frac(time * 0.5) * 3.0;
+comp_26=#endif
+comp_27=
+comp_28=float a = clamp(gt - 0.0, 0.0, 1.0);
+comp_29=float b = clamp(gt - 1.0, 0.0, 1.0);
+comp_30=float c = clamp(gt - 2.0, 0.0, 1.0);
+comp_31=return float3(a, b, c);
+comp_32=}
+comp_33=
+comp_34=float map(float3 p)
+comp_35={
+comp_36=float height = 1.0;
+comp_37=float ground = p.y + height;
+comp_38=
+comp_39=float3 pt = times();
+comp_40=float pound = 1.0 - pow(1.0-pt.y, 2.0) - pow(pt.z, 32.0);
+comp_41=pound *= 2.0;
+comp_42=
+comp_43=float srot = smoothstep(0.0, 1.0, (pt.y+pt.z)*0.5);
+comp_44=float2x2 mrot = rot(-0.3 + srot * 3.14);
+comp_45=
+comp_46=float3 boxoff = float3(0, pound, 0);
+comp_47=p.xz = mul(p.xz, transpose(mrot));
+comp_48=float fac = 0.5;
+comp_49=float box = udRoundBox(p - boxoff, float3(height,height,height)*fac, height*0.25);
+comp_50=return min(ground, box);
+comp_51=}
+comp_52=
+comp_53=float trace(float3 o, float3 r)
+comp_54={
+comp_55=float t = 0.0;
+comp_56=for (int i = 0; i < 50; ++i) {
+comp_57=float3 p = o + r * t;
+comp_58=float d = map(p);
+comp_59=t += d * 0.5;
+comp_60=}
+comp_61=return t;
+comp_62=}
+comp_63=
+comp_64=float rayplane(float3 o, float3 r, float3 p, float3 n)
+comp_65={
+comp_66=return dot(p - o, n) / dot(r, n);
+comp_67=}
+comp_68=
+comp_69=float3 _tex2D(float3 p)
+comp_70={
+comp_71=float3 ta = tex2D(iChannel2, p.xz).xyz;
+comp_72=float3 tb = tex2D(iChannel2, p.yz).xyz;
+comp_73=float3 tc = tex2D(iChannel2, p.xy).xyz;
+comp_74=return (ta*ta + tb*tb + tc*tc) / 3.0;
+comp_75=}
+comp_76=
+comp_77=float3 normal(float3 p)
+comp_78={
+comp_79=float3 o = float3(0.01, 0.0, 0.0);
+comp_80=return normalize(float3(map(p+o.xyy) - map(p-o.xyy),
+comp_81=map(p+o.yxy) - map(p-o.yxy),
+comp_82=map(p+o.yyx) - map(p-o.yyx)));
+comp_83=}
+comp_84=
+comp_85=float3 smoke(float3 o, float3 r, float3 f, float t)
+comp_86={
+comp_87=float3 tms = times();
+comp_88=float3 sm = float3(0.0, 0.0, 0.0);
+comp_89=const int c = 32;
+comp_90=float fc = float(c);
+comp_91=for (int i = 0; i < c; ++i)
+comp_92={
+comp_93=float j = float(i) / fc;
+comp_94=float bout = 1.0 + tms.x;
+comp_95=float3 p = float3(cos(j*6.28), 0.0, sin(j*6.28)) * bout;
+comp_96=p.y = -1.0;
+comp_97=float pt = rayplane(o, r, p, f);
+comp_98=if (pt >= 0.0 && pt < t)  {
+comp_99=float3 pp = o + r * pt;
+comp_100=float cd = length(pp - p);
+comp_101=float2 uv_conv = (pp - p).xy * 0.1 + float2(j,j) * 2.0;
+comp_102=float3 tex = tex2D(iChannel0, uv_conv).xyz;
+comp_103=tex *= tex;
+comp_104=float f= tex.x + tex.y + tex.z;
+comp_105=tex = float3(f,f,f) / 3.0;
+comp_106=float3 part = tex;
+comp_107=part /= 1.0 + cd * cd * 10.0 * tms.x;
+comp_108=part *= clamp(abs(t - pt), 0.0, 1.0);
+comp_109=part /= 1.0 + pt * pt;
+comp_110=part *= clamp(pt, 0.0, 1.0);
+comp_111=sm += part;
+comp_112=}
+comp_113=}
+comp_114=sm *= 1.0 - smoothstep(0.0, 1.0, tms.x);
+comp_115=return sm;
+comp_116=}
+comp_117=
+comp_118=float3 shade(float3 o, float3 r, float3 f, float3 w, float t)
+comp_119={
+comp_120=float3 tuv_conv = w;
+comp_121=if (tuv_conv.y > -0.85)
+comp_122={
+comp_123=float3 pt = times();
+comp_124=float srot = smoothstep(0.0, 1.0, (pt.y+pt.z)*0.5);
+comp_125=float2x2 mrot = rot(-0.3 + srot * 3.14);
+comp_126=tuv_conv.xz = mul(mrot,tuv_conv.xz);
+comp_127=float pound = 1 - pow(1.0-pt.y, 2.0) - pow(pt.z, 32.0);
+comp_128=pound *= 2.0;
+comp_129=tuv_conv.y -= pound;
+comp_130=}
+comp_131=float3 tex = _tex2D(tuv_conv * 0.5);
+comp_132=float3 sn = normal(w);
+comp_133=float3 ground = float3(1.0, 1.0, 1.0);
+comp_134=
+comp_135=float3 sky = float3(0.8,0.9,0.9);
+comp_136=
+comp_137=float3 slight = 1.5*lerp(ground, sky, 0.5+0.5*sn.y);
+comp_138=float aoc = 0.0;
+comp_139=const int aocs = 8;
+comp_140=for (int i = 0; i < aocs; ++i) {
+comp_141=float3 p = w - r * float(i) * 0.4;
+comp_142=float d = map(p);
+comp_143=aoc += d * 0.5;
+comp_144=}
+comp_145=aoc /= float(aocs);
+comp_146=aoc = 1.0 - 1.0 / (1.0 + aoc);
+comp_147=float fog = 1.0 / (1.0 + t * t * 0.01);
+comp_148=float3 smk = smoke(o, r, f, t);
+comp_149=float fakeocc = 0.5 + 0.5 * pow(1.0 - times().y, 4.0);
+comp_150=float3 fc = slight * tex * aoc + smk * sky;
+comp_151=fc = lerp(fc * fakeocc, sky, 1.0-fog);
+comp_152=return fc;
+comp_153=}
+comp_154=
+comp_155=
+comp_156=shader_body {
+comp_157= float4 fragColor = 0;
+comp_158=// CONV: Center on screen, then try some aspect correction
+comp_159=uv = (uv*2)-1;
+comp_160=uv *= aspect.xy;
+comp_161=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_162=uv = float2(uv.x, -uv.y);
+comp_163= float2 fragCoord  = uv;
+comp_164=
+comp_165=// 	float2 uv = fragCoord.xy / uv.xy;
+comp_166=    //uv = uv * 2.0 - 1.0;
+comp_167=    //uv.x *= uv.x / uv.y;
+comp_168=    
+comp_169=    float3 r = normalize(float3(uv, 0.8 - dot(uv, uv) * 0.2));
+comp_170=// distance    
+comp_171=
+comp_172=#ifdef bass_smooth
+comp_173=float3 o = float3(0.0, 0.125, -3+0.5*bass_smooth);
+comp_174=#else
+comp_175=float3 o = float3(0.0, 0.125, -2.4);
+comp_176=#endif
+comp_177=
+comp_178=float3 f = float3(0.0, 0.0, 1.0);
+comp_179=    
+comp_180=    float3 pt = times();
+comp_181=    
+comp_182=    float shake = pow(1.0 - pt.x, 4.0);
+comp_183=    float3 smack = tex2D(iChannel0, float2(pt.x, 0.5)).xyz * 2.0 - 1.0;
+comp_184=    smack *= shake;
+comp_185=    
+comp_186=    o.x += smack.x * shake * 0.25;
+comp_187=    o.z += smack.y * shake * 0.1;
+comp_188=    
+comp_189=    float2x2 smackrot = rot(0.3 + smack.z * shake * 0.1);
+comp_190=    r.xy = mul(transpose(smackrot),    r.xy);
+comp_191=    f.xy = mul(transpose(smackrot),   f.xy);
+comp_192=    
+comp_193=    float t = trace(o, r);
+comp_194=    float3 w = o + r * t;
+comp_195=    float fd = map(w);
+comp_196=    
+comp_197=    float3 fc = shade(o, r, f, w, t);
+comp_198=    
+comp_199=	fragColor = float4(sqrt(fc), 1.0);
+comp_200=ret = fragColor;
+comp_201=}

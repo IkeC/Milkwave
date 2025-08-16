@@ -1,0 +1,89 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// edankwan - CineShader Lava / https://www.shadertoy.com/view/3sySRK
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=float opSmoothUnion( float d1, float d2, float k )
+comp_5={
+comp_6=    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+comp_7=    return lerp( d2, d1, h ) - k*h*(1.0-h);
+comp_8=}
+comp_9=
+comp_10=float sdSphere( float3 p, float s )
+comp_11={
+comp_12=  return length(p)-s;
+comp_13=} 
+comp_14=
+comp_15=float map(float3 p)
+comp_16={
+comp_17=	float d = 2.0;
+comp_18=	for (int i = 0; i < 16; i++) {
+comp_19=		float fi = float(i);
+comp_20=		float time_conv = time * (frac(fi * 412.531 + 0.513) - 0.5) * 2.0;
+comp_21=		d = opSmoothUnion(
+comp_22=            sdSphere(p + sin(time_conv + fi * float3(52.5126, 64.62744, 632.25)) * float3(2.0, 2.0, 0.8), lerp(0.5, 1.0, frac(fi * 412.531 + 0.5124))),
+comp_23=			d,
+comp_24=			0.4
+comp_25=		);
+comp_26=	}
+comp_27=	return d;
+comp_28=}
+comp_29=
+comp_30=float3 calcNormal( in float3 p )
+comp_31={
+comp_32=    const float h = 1e-5; // or some other value
+comp_33=    const float2 k = float2(1,-1);
+comp_34=    return normalize( k.xyy*map( p + k.xyy*h ) + 
+comp_35=                      k.yyx*map( p + k.yyx*h ) + 
+comp_36=                      k.yxy*map( p + k.yxy*h ) + 
+comp_37=                      k.xxx*map( p + k.xxx*h ) );
+comp_38=}
+comp_39=
+comp_40=
+comp_41=
+comp_42=/** SHADERDATA
+comp_43={
+comp_44=	"title": "My Shader 0",
+comp_45=	"description": "Lorem ipsum dolor",
+comp_46=	"model": "person"
+comp_47=}
+comp_48=*/
+comp_49=shader_body {
+comp_50=float4 fragColor;
+comp_51=float2 fragCoord;
+comp_52=// CONV: Center on screen, then try some aspect correction
+comp_53=//uv = (uv*2) - 1;
+comp_54=uv.x *= aspect.x;
+comp_55=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_56=//uv = float2(uv.x, -uv.y);
+comp_57=
+comp_58=//     float2 uv = fragCoord/texsize.xy;
+comp_59=    
+comp_60=    // screen size is 6m x 6m
+comp_61=	float3 rayOri = float3((uv - 0.5) * float2(texsize.x/texsize.y, 1.0) * 6.0, 3.0);
+comp_62=	float3 rayDir = float3(0.0, 0.0, -1.0);
+comp_63=	
+comp_64=	float depth = 0.0;
+comp_65=	float3 p;
+comp_66=	
+comp_67=	for(int i = 0; i < 64; i++) {
+comp_68=		p = rayOri + rayDir * depth;
+comp_69=		float dist = map(p);
+comp_70=        depth += dist;
+comp_71=		if (dist < 1e-6) {
+comp_72=// CONV: break is unsupported, see Milkwave manual for details
+comp_73=			i=64;
+comp_74=		}
+comp_75=	}
+comp_76=	
+comp_77=    depth = min(6.0, depth);
+comp_78=	float3 n = calcNormal(p);
+comp_79=    float b = max(0.0, dot(n, float3(0.577, 0.577, 0.577)));
+comp_80=    float3 col = (0.5 + 0.5 * cos((b + time * 3.0) + uv.xyx * 2.0 + float3(0,2,4))) * (0.85 + b * 0.35);
+comp_81=    col *= exp( -depth * 0.15 );
+comp_82=	
+comp_83=    // maximum thickness is 2m in alpha channel
+comp_84=    ret = float4(col, 1.0 - (depth - 0.5) / 2.0);
+comp_85=}

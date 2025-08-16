@@ -1,0 +1,71 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// mrange - Clearly a bug / https://www.shadertoy.com/view/33cGDj
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=shader_body {
+comp_5=float4 O = 0;
+comp_6=// CONV: Center on screen, then try some aspect correction
+comp_7=uv = (uv*2) - 1;
+comp_8=uv *= aspect.xy;
+comp_9=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_10=uv = float2(uv.x, -uv.y);
+comp_11=
+comp_12=uv.y-=0.3;
+comp_13=float2 C = uv;
+comp_14=C.y+=0.2;
+comp_15=
+comp_16=  float 
+comp_17=      i     // Loop counter (starts at 0)
+comp_18=    , d     // Distance to nearest surface
+comp_19=    , z = frac(dot(C,sin(C)))-.5  // Ray distance + noise for anti-banding
+comp_20=    ;
+comp_21=  float4 
+comp_22=      o     // Accumulated color/lighting
+comp_23=    , p     // Current 3D position along ray
+comp_24=    ;
+comp_25=  for(
+comp_26=      float2 r = uv.xy  // Screen resolution
+comp_27=    ; ++i < 77.                
+comp_28=    ; z -= .6*d                // Step forward (larger steps when far from surfaces)
+comp_29=    )
+comp_30=      // Convert 2D pixel to 3D ray direction
+comp_31=      p = float4(z*normalize(float3(C-.5*r,r.y)),.1*time)
+comp_32=      
+comp_33=      // Move through 3D space over time
+comp_34=    , p.z += time
+comp_35=    
+comp_36=      // Save position for lighting calculations
+comp_37=    , O = p
+comp_38=    
+comp_39=      // Apply rotation matrices to create fractal patterns
+comp_40=      // (These transform the 3D coordinates in interesting ways)
+comp_41=    , p.xy = mul(p.xy, transpose(float2x2(cos(2.+O.z+float4(0,11,33,0)))))
+comp_42=      
+comp_43=      // This was originally a bug in the matrix calculation
+comp_44=      // The incorrect transformation created an unexpectedly interesting pattern
+comp_45=      // Bob Ross would call this a "happy little accident"
+comp_46=    , p.xy = mul(p.xy, transpose(float2x2(cos(O+float4(0,11,33,0)))))
+comp_47=    
+comp_48=      // Calculate color based on position and space distortion
+comp_49=      // The sin() creates a nice looking palette, division by dot() creates falloff
+comp_50=    , O = (1.+sin(.5*O.z+length(p-O)+float4(0,4,3,6)))
+comp_51=       / (.5+2.*dot(O.xy,O.xy))
+comp_52=    
+comp_53=      // Domain repetition, repeats the single line and the 2 planes infinitely
+comp_54=    , p = abs(frac(p)-.5)
+comp_55=    
+comp_56=      // Calculate distance to nearest surface
+comp_57=      // This combines a cylinder (length(p.xy)-.125) with 2 planesbox (min(p.x,p.y))
+comp_58=    , d = abs(min(length(p.xy)-.125,min(p.x,p.y)+1e-3))+1e-3
+comp_59=    
+comp_60=      // Add lighting contribution (brighter when closer to surfaces)
+comp_61=    , o += O.w/d*O
+comp_62=    ;
+comp_63=  
+comp_64=  // tanh() compresses the accumulated brightness to 0-1 range
+comp_65=  // (Like HDR tone mapping in photography)
+comp_66=  ret = tanh(o/2e4);
+comp_67=}

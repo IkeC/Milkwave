@@ -1,0 +1,82 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// 4rknova - The Blob / https://www.shadertoy.com/view/XsXGRS
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define AA 4.
+comp_5=#ifndef bass_smooth
+comp_6=#define bass_smooth bass_att
+comp_7=#endif
+comp_8=#define CI float3(.1,.9,.3)
+comp_9=//#define CO float3(0.0745, 0.0862, 0.1058)
+comp_10=#define CO float3(.1, .1, .5)
+comp_11=
+comp_12=#define CM float3(0,0,0)
+comp_13=#define CE float3(.8,.7,.5)
+comp_14=
+comp_15=float metaball(float2 p, float ry)
+comp_16={
+comp_17=return ry / dot(p, p);
+comp_18=}
+comp_19=
+comp_20=float3 samplef(in float2 uv_conv)
+comp_21={
+comp_22=float fac = time * 0.5;
+comp_23=float t0 = sin(fac * 1.9) * .46;
+comp_24=//t0*=1.1;
+comp_25=float t1 = sin(fac * 2.4) * .49;
+comp_26=//t1*=1.1;
+comp_27=float t2 = cos(fac * 1.4) * .57;
+comp_28=//t2*=1.1;
+comp_29= 
+comp_30=float rc = metaball(uv_conv + float2(t0, t2), .33) * metaball(uv_conv - float2(t0, t1), .27) * metaball(uv_conv + float2(t1, t2), .59);
+comp_31=
+comp_32=float a1 = step(.1, rc*rc*rc);
+comp_33=
+comp_34=float3 ci = float3(0,0,0);
+comp_35=float f2 = sin(bass_smooth);
+comp_36=
+comp_37=// listen to the beat
+comp_38= 
+comp_39=ci.r= f2;
+comp_40=//ci.g = f2;
+comp_41=ci.b = f2/2;
+comp_42=
+comp_42=
+comp_43=
+comp_44=float3 alt = rc < .9 ? (rc < .7 ? CO: CM) : ci;
+comp_45=float3 cc = (rc > .4 && rc < .7) ? float3(a1,a1,a1) * CE : alt;
+comp_46=
+comp_47=return cc;
+comp_48=}
+comp_49=
+comp_50=
+comp_51=shader_body {
+comp_52= float4 fragColor = 0;
+comp_53= float2 fragCoord  = uv;
+comp_54=// CONV: Center on screen, then try some aspect correction
+comp_55=uv = (uv*2) - 1;
+comp_56=uv *= aspect.xy;
+comp_57=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_58=uv = float2(uv.x, -uv.y);
+comp_59=
+comp_60=// 	float2 uv = (fragCoord.xy / texsize.xy * 2. - 1.) * float2(texsize.x / texsize.y, 1) * 1.25;
+comp_61=
+comp_62=    float3 col = float3(0, 0, 0);
+comp_63=
+comp_64=#ifdef AA
+comp_65=    // Antialiasing via supersampling
+comp_66=    float e = 1. / min(texsize.y , texsize.x);    
+comp_67=    for (float i = -AA; i < AA; ++i) {
+comp_68=        for (float j = -AA; j < AA; ++j) {
+comp_69=    		col += samplef(uv + float2(i, j) * (e/AA)) / (4.*AA*AA);
+comp_70=        }
+comp_71=    }
+comp_72=#else
+comp_73=    col += samplef(uv);
+comp_74=#endif /* AA */
+comp_75=    
+comp_76=    ret = float4(clamp(col, 0., 1.), 1);
+comp_77=}
