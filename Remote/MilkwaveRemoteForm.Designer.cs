@@ -2272,7 +2272,7 @@ namespace MilkwaveRemote
       // 
       numWaveMode.Location = new Point(75, 7);
       numWaveMode.Margin = new Padding(3, 2, 3, 2);
-      numWaveMode.Maximum = new decimal(new int[] { 16, 0, 0, 0 });
+      numWaveMode.Maximum = new decimal(new int[] { 17, 0, 0, 0 });
       numWaveMode.Name = "numWaveMode";
       numWaveMode.Size = new Size(56, 23);
       numWaveMode.TabIndex = 113;
