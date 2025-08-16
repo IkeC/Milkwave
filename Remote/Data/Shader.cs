@@ -56,7 +56,7 @@ namespace MilkwaveRemote.Data {
         if (inp.Contains("mod_conv(")) {
           inpHeader = AddHelperFunctionsMod(inpHeader);
         }
-        inpHeader = AddIChannelDefinitions(inp, inpHeader);
+        inpHeader = AddDefines(inp, inpHeader);
 
         if (inp.Contains("lessthan", StringComparison.InvariantCultureIgnoreCase)) {
           inpHeader = AddHelperFunctionsLessThan(inpHeader);
@@ -297,7 +297,7 @@ namespace MilkwaveRemote.Data {
       return res;
     }
 
-    private string AddIChannelDefinitions(string inpToCheck, string inpToModify) {
+    private string AddDefines(string inpToCheck, string inpToModify) {
       StringBuilder sb = new StringBuilder();
       if (inpToCheck.Contains("iChannel0")) {
         sb.AppendLine("#define iChannel0 sampler_noise_lq");
@@ -311,6 +311,10 @@ namespace MilkwaveRemote.Data {
       if (sb.Length > 0) {
         sb.Insert(0, "// CONV: setting iChannel samplers to default noise texture" + Environment.NewLine);
         sb.AppendLine();
+      }
+      if (!inpToCheck.Contains(" tx")) {
+        // helpful for quick testing, multiply any value by tx to see the effect
+        sb.Insert(0, "#define tx sin(time)*0.5+1 // 0.5 <= tx <= 1.5" + Environment.NewLine + Environment.NewLine);
       }
       sb.Append(inpToModify);
       return sb.ToString();

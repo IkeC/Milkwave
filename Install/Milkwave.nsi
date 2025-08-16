@@ -66,6 +66,9 @@ Section "Milkwave" SecMilkwave
   SetOutPath "$INSTDIR\resources\presets\Milkwave\"
   File /r "${RELDIR}resources\presets\Milkwave\*"
 
+  SetOutPath "$INSTDIR\resources\presets\Shader\"
+  File /r "${RELDIR}resources\presets\Shader\*"
+
   SetOutPath "$INSTDIR\resources\sprites\"
   File /r "${RELDIR}resources\sprites\*"
 
@@ -86,6 +89,7 @@ Section "Milkwave" SecMilkwave
   File "${RELDIR}messages.ini"
   File "${RELDIR}settings.ini"
   File "${RELDIR}sprites.ini"
+  File "${RELDIR}precompile.txt"
   SetOverwrite on
    
   SetOutPath $INSTDIR
@@ -170,6 +174,7 @@ Section Uninstall
   Delete "$INSTDIR\messages.ini"
   Delete "$INSTDIR\settings.ini"
   Delete "$INSTDIR\sprites.ini"
+  Delete "$INSTDIR\precompile.txt"
   
   Delete "$INSTDIR\Uninstall.exe"
   

@@ -346,40 +346,40 @@ namespace MilkwaveRemote
       // toolStripMenuItemHomepage
       // 
       toolStripMenuItemHomepage.Name = "toolStripMenuItemHomepage";
-      toolStripMenuItemHomepage.Size = new Size(142, 22);
+      toolStripMenuItemHomepage.Size = new Size(155, 22);
       toolStripMenuItemHomepage.Text = "Milkwave";
       toolStripMenuItemHomepage.Click += toolStripMenuItemReleases_Click;
       // 
       // toolStripSeparator1
       // 
       toolStripSeparator1.Name = "toolStripSeparator1";
-      toolStripSeparator1.Size = new Size(139, 6);
+      toolStripSeparator1.Size = new Size(152, 6);
       // 
       // toolStripMenuItemHelp
       // 
       toolStripMenuItemHelp.Name = "toolStripMenuItemHelp";
-      toolStripMenuItemHelp.Size = new Size(142, 22);
+      toolStripMenuItemHelp.Size = new Size(155, 22);
       toolStripMenuItemHelp.Text = "Help";
       toolStripMenuItemHelp.Click += toolStripMenuItemHelp_Click;
       // 
       // toolStripMenuItemSupporters
       // 
       toolStripMenuItemSupporters.Name = "toolStripMenuItemSupporters";
-      toolStripMenuItemSupporters.Size = new Size(142, 22);
+      toolStripMenuItemSupporters.Size = new Size(155, 22);
       toolStripMenuItemSupporters.Text = "Supporters";
       toolStripMenuItemSupporters.Click += toolStripMenuItemSupporters_Click;
       // 
       // toolStripSeparator3
       // 
       toolStripSeparator3.Name = "toolStripSeparator3";
-      toolStripSeparator3.Size = new Size(139, 6);
+      toolStripSeparator3.Size = new Size(152, 6);
       // 
       // toolStripMenuItemTabsPanel
       // 
       toolStripMenuItemTabsPanel.Checked = true;
       toolStripMenuItemTabsPanel.CheckState = CheckState.Checked;
       toolStripMenuItemTabsPanel.Name = "toolStripMenuItemTabsPanel";
-      toolStripMenuItemTabsPanel.Size = new Size(142, 22);
+      toolStripMenuItemTabsPanel.Size = new Size(155, 22);
       toolStripMenuItemTabsPanel.Text = "Tabs Panel";
       toolStripMenuItemTabsPanel.Click += toolStripMenuItemTabsPanel_Click;
       // 
@@ -388,28 +388,28 @@ namespace MilkwaveRemote
       toolStripMenuItemButtonPanel.Checked = true;
       toolStripMenuItemButtonPanel.CheckState = CheckState.Checked;
       toolStripMenuItemButtonPanel.Name = "toolStripMenuItemButtonPanel";
-      toolStripMenuItemButtonPanel.Size = new Size(142, 22);
+      toolStripMenuItemButtonPanel.Size = new Size(155, 22);
       toolStripMenuItemButtonPanel.Text = "Button Panel";
       toolStripMenuItemButtonPanel.Click += toolStripMenuItemButtonPanel_Click;
       // 
       // toolStripSeparator2
       // 
       toolStripSeparator2.Name = "toolStripSeparator2";
-      toolStripSeparator2.Size = new Size(139, 6);
+      toolStripSeparator2.Size = new Size(152, 6);
       // 
       // toolStripMenuItemDarkMode
       // 
       toolStripMenuItemDarkMode.Checked = true;
       toolStripMenuItemDarkMode.CheckState = CheckState.Checked;
       toolStripMenuItemDarkMode.Name = "toolStripMenuItemDarkMode";
-      toolStripMenuItemDarkMode.Size = new Size(142, 22);
+      toolStripMenuItemDarkMode.Size = new Size(155, 22);
       toolStripMenuItemDarkMode.Text = "Dark Mode";
       toolStripMenuItemDarkMode.Click += toolStripMenuItemDarkMode_Click;
       // 
       // toolStripMenuItemOpenVisualizer
       // 
       toolStripMenuItemOpenVisualizer.Name = "toolStripMenuItemOpenVisualizer";
-      toolStripMenuItemOpenVisualizer.Size = new Size(142, 22);
+      toolStripMenuItemOpenVisualizer.Size = new Size(155, 22);
       toolStripMenuItemOpenVisualizer.Text = "Open Visualizer";
       toolStripMenuItemOpenVisualizer.Click += toolStripMenuItemOpenVisualizer_Click;
       // 
@@ -2145,7 +2145,7 @@ namespace MilkwaveRemote
       btnHLSLLoad.Size = new Size(23, 23);
       btnHLSLLoad.TabIndex = 149;
       btnHLSLLoad.Text = "L";
-      toolTip1.SetToolTip(btnHLSLLoad, "Load HLSL from file\r\n(restoring Shaderinfo lines)");
+      toolTip1.SetToolTip(btnHLSLLoad, "Load HLSL shader code from HLSL or preset file\r\n(restoring Shaderinfo lines)");
       btnHLSLLoad.UseVisualStyleBackColor = true;
       btnHLSLLoad.Click += btnHLSLLoad_Click;
       // 

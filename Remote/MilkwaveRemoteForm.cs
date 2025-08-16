@@ -3575,7 +3575,7 @@ namespace MilkwaveRemote {
 
     private void btnHLSLLoad_Click(object sender, EventArgs e) {
       OpenFileDialog ofdShader = new OpenFileDialog();
-      ofdShader.Filter = "HLSL files|*.hlsl|All files (*.*)|*.*";
+      ofdShader.Filter = "Presets or HLSL files|*.milk;*.hlsl|All files (*.*)|*.*";
       ofdShader.RestoreDirectory = true;
       ofdShader.InitialDirectory = Path.Combine(ShaderFilesFolder);
 
@@ -3583,7 +3583,33 @@ namespace MilkwaveRemote {
         if (File.Exists(ofdShader.FileName)) {
           string[] content = File.ReadAllLines(ofdShader.FileName);
           txtShaderinfo.Clear();
+          
           StringBuilder sb = new StringBuilder();
+          if (ofdShader.FileName.EndsWith(".milk", StringComparison.InvariantCultureIgnoreCase)) {
+            // If it's a preset file, extract the comp shader info
+            foreach (string line in content) {
+              if (line.StartsWith("comp_", StringComparison.InvariantCultureIgnoreCase)) {
+                int index = line.IndexOf('=');
+                if (index > 0) {
+                  string shaderLine = line.Substring(index + 1).Trim();
+                  if (shaderLine.Contains("// Transpiled")) {
+                    continue;
+                  }
+                  if (line.StartsWith("comp_1=//")) {
+                    // treat as shader info line(s)
+                    shaderLine = line.Substring(9).Trim();
+                    shaderLine = shaderLine.Replace(" / ", Environment.NewLine).Trim();
+                    txtShaderinfo.Text = shaderLine;
+                  } else {
+                    sb.AppendLine(shaderLine);
+                  }
+                }
+              }
+            }
+            content = sb.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            sb = new StringBuilder();
+          }
+
           foreach (string line in content) {
             if (line.StartsWith(ShaderinfoLinePrefix)) {
               if (txtShaderinfo.Text.Length > 0) {
@@ -3634,7 +3660,7 @@ namespace MilkwaveRemote {
               txtShaderHLSL.ScrollToCaret();
             }
           }
-        } catch {}
+        } catch { }
       }
     }
 
