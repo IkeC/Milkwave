@@ -514,11 +514,11 @@ void CPlugin::LoadPerFrameEvallibVars(CState* pState) {
   *pState->var_pf_bass = (double)mysound.imm_rel[0];
   *pState->var_pf_mid = (double)mysound.imm_rel[1];
   *pState->var_pf_treb = (double)mysound.imm_rel[2];
-  
+
   *pState->var_pf_bass_att = (double)mysound.avg_rel[0];
   *pState->var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->var_pf_treb_att = (double)mysound.avg_rel[2];
-  
+
   *pState->var_pf_bass_smooth = (double)mysound.smooth[0];
   *pState->var_pf_mid_smooth = (double)mysound.smooth[1];
   *pState->var_pf_treb_smooth = (double)mysound.smooth[2];
@@ -682,7 +682,7 @@ void CPlugin::RunPerFrameEquations(int code) {
     *pState->var_pv_fps = *pState->var_pf_fps;
     *pState->var_pv_frame = *pState->var_pf_frame;
     *pState->var_pv_progress = *pState->var_pf_progress;
-    
+
     *pState->var_pv_bass = *pState->var_pf_bass;
     *pState->var_pv_mid = *pState->var_pf_mid;
     *pState->var_pv_treb = *pState->var_pf_treb;
@@ -2525,15 +2525,15 @@ void CPlugin::LoadCustomShapePerFrameEvallibVars(CState* pState, int i, int inst
   *pState->m_shape[i].var_pf_frame = (double)GetFrame();
   *pState->m_shape[i].var_pf_fps = (double)GetFps();
   *pState->m_shape[i].var_pf_progress = (GetTime() - m_fPresetStartTime) / (m_fNextPresetTime - m_fPresetStartTime);
-  
+
   *pState->m_shape[i].var_pf_bass = (double)mysound.imm_rel[0];
   *pState->m_shape[i].var_pf_mid = (double)mysound.imm_rel[1];
   *pState->m_shape[i].var_pf_treb = (double)mysound.imm_rel[2];
-  
+
   *pState->m_shape[i].var_pf_bass_att = (double)mysound.avg_rel[0];
   *pState->m_shape[i].var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->m_shape[i].var_pf_treb_att = (double)mysound.avg_rel[2];
-  
+
   for (int vi = 0; vi < NUM_Q_VAR; vi++)
     *pState->m_shape[i].var_pf_q[vi] = *pState->var_pf_q[vi];
   for (vi = 0; vi < NUM_T_VAR; vi++)
@@ -2569,15 +2569,15 @@ void CPlugin::LoadCustomWavePerFrameEvallibVars(CState* pState, int i) {
   *pState->m_wave[i].var_pf_frame = (double)GetFrame();
   *pState->m_wave[i].var_pf_fps = (double)GetFps();
   *pState->m_wave[i].var_pf_progress = (GetTime() - m_fPresetStartTime) / (m_fNextPresetTime - m_fPresetStartTime);
-  
+
   *pState->m_wave[i].var_pf_bass = (double)mysound.imm_rel[0];
   *pState->m_wave[i].var_pf_mid = (double)mysound.imm_rel[1];
   *pState->m_wave[i].var_pf_treb = (double)mysound.imm_rel[2];
-  
+
   *pState->m_wave[i].var_pf_bass_att = (double)mysound.avg_rel[0];
   *pState->m_wave[i].var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->m_wave[i].var_pf_treb_att = (double)mysound.avg_rel[2];
-  
+
   for (int vi = 0; vi < NUM_Q_VAR; vi++)
     *pState->m_wave[i].var_pf_q[vi] = *pState->var_pf_q[vi];
   for (vi = 0; vi < NUM_T_VAR; vi++)
@@ -2652,11 +2652,11 @@ void CPlugin::DrawCustomWaves() {
         *pState->m_wave[i].var_pp_fps = *pState->m_wave[i].var_pf_fps;
         *pState->m_wave[i].var_pp_frame = *pState->m_wave[i].var_pf_frame;
         *pState->m_wave[i].var_pp_progress = *pState->m_wave[i].var_pf_progress;
-        
+
         *pState->m_wave[i].var_pp_bass = *pState->m_wave[i].var_pf_bass;
         *pState->m_wave[i].var_pp_mid = *pState->m_wave[i].var_pf_mid;
         *pState->m_wave[i].var_pp_treb = *pState->m_wave[i].var_pf_treb;
-        
+
         *pState->m_wave[i].var_pp_bass_att = *pState->m_wave[i].var_pf_bass_att;
         *pState->m_wave[i].var_pp_mid_att = *pState->m_wave[i].var_pf_mid_att;
         *pState->m_wave[i].var_pp_treb_att = *pState->m_wave[i].var_pf_treb_att;
@@ -3994,6 +3994,80 @@ if (hr != D3D_OK)
         memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
       }
       break;
+
+    case 17:
+      // DeepSeek - Fireworks Waveform
+      nVerts = 256; // Use fewer vertices for better performance with particles
+
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+
+      {
+        float time = GetTime();
+        float burst_frequency = 1.0f - fWaveParam2 + .001; // How often new bursts occur
+        float burst_phase = fmodf(time, burst_frequency) / burst_frequency;
+
+        // Random seed based on which burst we're on
+        int burst_num = (int)(time / burst_frequency);
+        float rand_seed = (burst_num * 10.0f);
+
+        // Base position for this firework
+        float base_x = (rand_seed * 0.1345f - floor(rand_seed * 0.1345f)) * 2.0f - 1.0f;
+        float base_y = (rand_seed * 0.2783f - floor(rand_seed * 0.2783f)) * 2.0f - 1.0f;
+
+        // Make bursts start from random positions but stay centered more often
+        if (fmodf(rand_seed, 1.0f) > 0.3f) {
+          base_x *= 0.3f;
+          base_y *= 0.3f;
+        }
+
+        // Size and fade of current burst
+        float burst_size = min(1.0f, burst_phase * 4.0f); // Quick expansion
+        float burst_fade = 1.0f - powf(burst_phase, 3.0f); // Slow fade
+
+        // Audio reactivity
+        float audio_boost = 1.0f + 2.0f * (mysound.imm_rel[0] + mysound.imm_rel[1]) * 0.5f;
+
+        for (i = 0; i < nVerts; i++) {
+          // Particle angle
+          float ang = (i / (float)nVerts) * 6.283185f;
+
+          // Particle distance from center (with some randomness)
+          float dist_var = 0.7f + 0.3f * (fmodf(rand_seed + i * 0.1f, 1.0f));
+          float dist = burst_size * dist_var * (0.5f + 0.5f * fR[(i * 3) % NUM_WAVEFORM_SAMPLES]) * audio_boost;
+
+          // Calculate position
+          float x = base_x + cosf(ang) * dist;
+          float y = base_y + sinf(ang) * dist;
+
+          // Add some secondary motion
+          float swirl = time * 3.0f + ang;
+          x += cosf(swirl) * burst_size * 0.1f;
+          y += sinf(swirl) * burst_size * 0.1f;
+
+          // Apply aspect ratio
+          if (m_bScreenDependentRenderMode) {
+            v[i].x = x + fWavePosX;
+            v[i].y = y + fWavePosY;
+          }
+          else {
+            v[i].x = x * m_fAspectY + fWavePosX;
+            v[i].y = y * m_fAspectX + fWavePosY;
+          }
+
+          // Fade particles as burst ages
+          alpha *= burst_fade;
+        }
+      }
+
+      // For point rendering mode (recommended for this waveform)
+      if (!m_pState->m_bBlending) {
+        nVerts++;
+        memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
+      }
+      break;
     }
 
     if (it == 0) {
@@ -4612,7 +4686,7 @@ void CPlugin::UvToMathSpace(float u, float v, float* rad, float* ang) {
     px = (u * 2 - 1) * m_fAspectX;  // probably 1.0
     py = (v * 2 - 1) * m_fAspectY;  // probably <1
 
-    *rad = sqrtf(px * px + py * py) / sqrtf(m_fAspectX * m_fAspectX + m_fAspectY * m_fAspectY); 
+    *rad = sqrtf(px * px + py * py) / sqrtf(m_fAspectX * m_fAspectX + m_fAspectY * m_fAspectY);
   }
 
   *ang = atan2f(py, px);

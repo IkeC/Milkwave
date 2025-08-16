@@ -260,8 +260,6 @@ comp_16=`
 comp_17=`    ret1 = 0.3*lum(ret1)+dots*ret1*(4+(bass+mid)+treb_att);
 comp_18=`    //ret1 = lerp(noiseVal,ret1,abs(ret1-1));
 comp_19=`    ret = .8*ret1;
-comp_20=`
-comp_21=`    ret *= .77;
-comp_22=`}
-comp_23=`
-comp_24=`//Props to martin for code I used to create the glossy effect.  Learning this pixel shader stuff!
+comp_20=`}
+comp_21=`
+comp_22=`//Props to martin for code I used to create the glossy effect.  Learning this pixel shader stuff!
