@@ -36,6 +36,11 @@ Download the latest version [**here**](https://github.com/IkeC/Milkwave/releases
   - Move text around using start and end coordinates
   - Save parameter definitions as named styles for quick access
   - Send messages, parameters, presets and other commands automatically from a script file at configurable intervals based on BPM setting (see script-default.txt)
+* Shader code conversion
+  - Convert GLSL shader code to HLSL
+  - Preview converted code in the Visualizer instantly
+  - Load shaders by id or query from Shadertoy.com using Shadertoy API
+  - Load and save HLSL code to a file
 * Wave manipulation
   - Clear current preset and start with a plain wave
   - Set wave type, zoom, warp, rotation etc. in the running preset

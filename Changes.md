@@ -1,10 +1,13 @@
-## Unreleased
+## v3.0 (2025-08-16)
 
-- Shader precompiling and caching
+- Shader Tab: Convert GLSL shader code to HLSL and send it to the Visualizer instantly
+- 20 new presets in presets/Shader directory
+- Shader precompiling and caching (configurable)
 - New preset variables: bass_smooth, mid_smooth, treb_smooth, vol_smooth
 - AMD GPU detection and support for PSVersion=4 (by @OfficialIncubo)
 - Age filter: Only load presets modified within the last X days
 - Ctrl+Click on labels "Preset" or "Running" to open preset file in editor
+- Improved scaling of tab heights with high DPI displays
 
 ## v2.3 (2025-07-13)
 

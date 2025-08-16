@@ -154,6 +154,8 @@
 #include <codecvt>
 #include "Milkdrop2PcmVisualizer.h"
 
+namespace fs = std::filesystem;
+
 #define DLL_EXPORT __declspec(dllexport)
 //#define COMPILE_AS_DLL
 #define SAMPLE_SIZE 576
@@ -1526,7 +1528,7 @@ unsigned __stdcall DoSetup(void* param) {
 
   Sleep(3000); // wait for the render thread to initialize the plugin completely
   HINSTANCE instance = (HINSTANCE)param;
-  
+
   if (g_plugin.m_ShaderCaching && g_plugin.m_ShaderPrecompileOnStartup) {
 
     std::wstring cacheDir = std::wstring(g_plugin.m_szBaseDir) + L"cache";
@@ -1534,7 +1536,7 @@ unsigned __stdcall DoSetup(void* param) {
 
     // Abort if compiled.txt already exists
     if (std::filesystem::exists(compiledListPath)) {
-      //g_plugin.AddNotification(L"Shader cache already exists ,skipping precompilation");
+      //g_plugin.AddNotification(L"Shader cache already exists, skipping precompilation");
       return -1;
     }
 
@@ -1548,11 +1550,13 @@ unsigned __stdcall DoSetup(void* param) {
     // Prepare output file for compiled shader list
     std::wofstream compiledList(compiledListPath);
     if (!compiledList.is_open()) {
-      //g_plugin.AddNotification(L"Failed to create compiled.txt");
+      std::wstring msg = L"Precompile failed to create " + compiledListPath;
+      wchar_t* writableMsg = &msg[0];  // Get non-const pointer to internal buffer
+      g_plugin.AddNotification(writableMsg);
       return -1;
     }
 
-    g_plugin.AddNotification(L"Precompiling shaders in the background...");
+    g_plugin.AddNotification(L"Precompiling shaders in the background");
 
     int compiledShaders = 0;
     std::string line;
@@ -1619,7 +1623,8 @@ void PrecompilePresetShaders(std::wstring& wLine, std::wofstream& compiledList, 
     auto end = std::chrono::high_resolution_clock::now();
     auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::wstring warn = L" ";
-    if (durationMs > 2000) {
+    if (durationMs > 1000) {
+      // if compilation took more than 1 second, add a warning
       warn = L"!";
     }
     compiledList << warn << std::setw(8) << std::setfill(L' ') << durationMs << " " << szFile << std::endl;
@@ -1735,7 +1740,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
   OutputDebugStringW(g_plugin.m_szBaseDir);
   OutputDebugStringW(L"\n");
 #else
-  GetModuleFileNameW(NULL, g_plugin.m_szBaseDir, MAX_PATH);
+  wchar_t exePath[MAX_PATH];
+  GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+  fs::path fullPath(exePath);
+  fs::path exeDir = fullPath.parent_path();
+
+  std::wstring baseDir = exeDir.wstring();
+  if (!baseDir.empty() && baseDir.back() != L'\\') {
+    baseDir += L'\\';
+  }
+
+  wcscpy_s(g_plugin.m_szBaseDir, MAX_PATH, baseDir.c_str());
 #endif
 
   try {
