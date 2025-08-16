@@ -289,6 +289,8 @@ public:
   ID3DXBuffer* LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix);
 
   uint32_t crc32(const char* data, size_t length);
+
+  int CheckDX9DLL();
   
   bool bSpoutChanged; // set to write config on exit
   bool bSpoutOut; // Spout output on or off
@@ -443,6 +445,7 @@ public:
   bool    m_bPresetLockedByCode;
   bool    m_ShaderCaching = true;
   bool    m_ShaderPrecompileOnStartup = true;
+  bool    m_CheckDirectXOnStartup = true;
   bool    m_ShowLockSymbol = true;
   float   m_fAnimTime;
   float   m_fStartTime;

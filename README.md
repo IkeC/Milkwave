@@ -71,7 +71,7 @@ For a chronological list of Milkwave releases and features, read the [Changes](C
 
 * Windows 10 or later
 * DirectX 9 or higher - compatible GPU
-* [DirectX End-User Runtimes](https://www.microsoft.com/en-ca/download/details.aspx?id=8109)
+* [DirectX End-User Legacy Runtimes](https://www.microsoft.com/en-us/download/details.aspx?id=35)
 * [Microsoft .NET Desktop Runtime 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) (for Remote)
 
 ## Support

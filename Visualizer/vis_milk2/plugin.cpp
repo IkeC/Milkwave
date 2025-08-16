@@ -1398,6 +1398,7 @@ void CPlugin::MyReadConfig() {
   m_ShowLockSymbol = GetPrivateProfileBoolW(L"Milkwave", L"ShowLockSymbol", m_ShowLockSymbol, pIni);
   m_ShaderCaching = GetPrivateProfileBoolW(L"Milkwave", L"ShaderCaching", m_ShaderCaching, pIni);
   m_ShaderPrecompileOnStartup = GetPrivateProfileBoolW(L"Milkwave", L"ShaderPrecompileOnStartup", m_ShaderPrecompileOnStartup, pIni);
+  m_CheckDirectXOnStartup = GetPrivateProfileBoolW(L"Milkwave", L"CheckDirectXOnStartup", m_CheckDirectXOnStartup, pIni);
 
   m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
   m_AMDDetectionMode = GetPrivateProfileIntW(L"Milkwave", L"AMDDetectionMode", m_AMDDetectionMode, pIni);
@@ -1545,6 +1546,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
   //WritePrivateProfileIntW(m_DisplayCoverWhenPressingB, L"mDisplayCoverWhenPressingB", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_blackmode, L"BlackMode", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_CheckDirectXOnStartup, L"CheckDirectXOnStartup", pIni, L"Milkwave");
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_bAlwaysOnTop, L"WindowAlwaysOnTop", pIni, L"Milkwave");
@@ -3808,8 +3810,8 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
       }
       else {
         if (MessageBoxA(GetPluginWindow(), "The shader could not be compiled.\n\nPlease install the Microsoft DirectX End-User Runtimes.\n\nOpen Download-Website now?", "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
-          // open website in browser https://www.microsoft.com/en-ca/download/details.aspx?id=8109
-          ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-ca/download/details.aspx?id=8109", NULL, NULL, SW_SHOWNORMAL);
+          // open website in browser
+          ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
         }
       }
       return false;
@@ -11426,3 +11428,33 @@ uint32_t CPlugin::crc32(const char* data, size_t length) {
   }
   return ~crc;
 }
+
+
+int CPlugin::CheckDX9DLL() {
+  // Try to load the DLL manually
+  
+  if (!g_plugin.m_CheckDirectXOnStartup) return 0;
+
+  HMODULE hD3DX = LoadLibrary(TEXT("D3DX9_43.dll"));
+
+  if (!hD3DX) {
+    if (MessageBoxA(GetPluginWindow(), 
+      "Could not initialize DirectX 9.\n\nPlease install the DirectX End-User Legacy Runtimes.\n\nOpen Download-Website now?", 
+      "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
+      // open website in browser
+      ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
+    }
+    return -1;
+  }
+
+  g_plugin.m_CheckDirectXOnStartup = false;
+
+  // If successful, free the DLL (optional if you're linking statically)
+  FreeLibrary(hD3DX);
+
+  // Continue with your app
+  // ...
+  return 0;
+}
+
+

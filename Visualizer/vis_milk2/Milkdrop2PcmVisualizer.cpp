@@ -233,8 +233,11 @@ BOOL CALLBACK GetWindowNames(HWND h, LPARAM l) {
 // SPOUT - DX9EX
 void InitD3d(HWND hwnd, int width, int height) {
 
-  // TODO - error return
   HRESULT Hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3D9);
+  if (Hr != S_OK) {
+    printf("Milkdrop2PcmVisualizer::InitD3d - Direct3DCreate9Ex error\n");
+    return;
+  }
 
   D3DCAPS9 d3dCaps;
 
@@ -1264,8 +1267,6 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     SpoutWidth,
     SpoutHeight);
 
-  // g_plugin. .m_lpVS->
-
   MSG msg;
   msg.message = WM_NULL;
 
@@ -1647,6 +1648,11 @@ int StartThreads(HINSTANCE instance) {
     // Milkwave: early init so we can read audio device from settings
     g_plugin.PluginPreInitialize(0, 0);
 
+    if (g_plugin.CheckDX9DLL() != 0) {
+      ERR(L"DirectX 9 DLL not found, exiting");
+      return 0;
+    }
+
     StartRenderThread(instance);
     // WaitForSingleObject(threadRender, INFINITE);
 
@@ -1766,6 +1772,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
   }
   milkwave.LogInfo(L"WinMain ended");
 }
+
 
 static std::string title;
 
