@@ -4,7 +4,7 @@
 - **Milkwave Remote**:
     A standalone window to do things like sending messages (either directly by typing or from a script file), load and change presets, send common key combinations using buttons and more
 
-Download the latest version [**here**](https://github.com/IkeC/Milkwave/releases/latest) or from the [Microsoft Store](https://aka.ms/AAwblcj). Both versions are free and open source.
+[**Click here**](https://github.com/IkeC/Milkwave/releases/latest) to get the latest version.
 
 ![Milkwave](https://github.com/user-attachments/assets/973b7bad-6a85-445f-94af-fe2805d961f2)
 

@@ -1,4 +1,4 @@
-## v3.0 (2025-08-16)
+## v3.0 (2025-08-17)
 
 - Shader Tab: Convert GLSL shader code to HLSL and send it to the Visualizer instantly
 - 20 new presets in presets/Shader directory
