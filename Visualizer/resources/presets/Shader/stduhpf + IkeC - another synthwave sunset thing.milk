@@ -228,7 +228,7 @@ comp_223=jTime = time;
 comp_224=
 comp_225=float fx = sin(time*0.3)*0.3;
 comp_226=#ifdef bass_smooth
-comp_227=float fy = 0.7+0.2*bass_smooth;
+comp_227=float fy = 0.6+0.2*bass_smooth;
 comp_228=#else
 comp_229=float fy = sin(time*0.3)*0.3+1.1;
 comp_230=#endif
