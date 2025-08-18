@@ -1,7 +1,6 @@
 // audiobuf.cpp
 
 #include "audiobuf.h"
-#include "..\vis_milk2\milkwave.h"
 
 #define SAMPLE_SIZE_LPB 576 // Max number of audio samples stored in circular buffer. Should be no less than SAMPLE_SIZE. Expected sampling rate is 44100 Hz or 48000 Hz (samples per second).
 

@@ -1146,7 +1146,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   // ===============================================
   // Enumerate other instances of BeatDrop to increment the title
-  WCHAR BeatDroptitle[256];
+  WCHAR VisualizerWindowTitle[256];
   // printf("Number of existing BeatDrops (%d)\n", nBeatDrops);
 
   bool freeTitleFound = false;
@@ -1154,21 +1154,21 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   while (!freeTitleFound && nBeatDrops < 100) {
     if (nBeatDrops == 0) {
-      lstrcpyW(BeatDroptitle, L"Milkwave Visualizer");
+      lstrcpyW(VisualizerWindowTitle, L"Milkwave Visualizer");
     }
     else {
-      swprintf_s(BeatDroptitle, L"Milkwave Visualizer %d", nBeatDrops + 1);
+      swprintf_s(VisualizerWindowTitle, L"Milkwave Visualizer %d", nBeatDrops + 1);
     }
 
     // Check if a window with this title already exists
-    HWND existing = FindWindowW(L"Direct3DWindowClass", BeatDroptitle);
+    HWND existing = FindWindowW(L"Direct3DWindowClass", VisualizerWindowTitle);
     if (existing != NULL) {
       nBeatDrops++;
       // Try next title
     }
     else {
       // No window with this title, so we can use it
-      printf("New title [%S]\n", BeatDroptitle);
+      printf("New title [%S]\n", VisualizerWindowTitle);
       freeTitleFound = true;
     }
   }
@@ -1180,7 +1180,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     L"Direct3DWindowClass",
     // ===========================
         // L"Milkwave",
-    BeatDroptitle,
+    VisualizerWindowTitle,
     // ===========================
     WS_OVERLAPPEDWINDOW, // SPOUT
     //dwStyle,
@@ -1220,7 +1220,12 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     }
   }
 
-  ShowWindow(hwnd, SW_SHOW);
+  if (IsWindow(hwnd)) {
+    ShowWindow(hwnd, SW_SHOW);
+  }
+  else {
+    milkwave.LogInfo(L"CreateWindowAndRun: ShowWindow failed, window not created");
+  }
 
   if (g_plugin.m_bAlwaysOnTop) {
     g_plugin.ToggleAlwaysOnTop(hwnd);
@@ -1228,7 +1233,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   if (g_plugin.m_WindowBorderless && !borderless) {
     ToggleBorderlessWindow(hwnd);
   }
-
+  
+  // always ensure .Init is called after the window is created (ShowWindow above)
   milkwave.Init(g_plugin.m_szBaseDir);
   milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
   milkwave.doSaveCover = g_plugin.m_DisplayCover;
@@ -1271,6 +1277,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   msg.message = WM_NULL;
 
   try {
+    milkwave.LogInfo(L"CreateWindowAndRun: Message loop starting");
+
     PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
     while (WM_QUIT != msg.message) {
       try {
@@ -1286,11 +1294,11 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
         // ignore
       }
       frame++;
-      ////////////////////////////////////////////////////////////////////////////////////////////////
     }
   } catch (const std::exception& e) {
     milkwave.LogException(L"Exception in main loop", e, true);
   }
+  milkwave.LogInfo(L"CreateWindowAndRun: Message loop ended");
 
   g_plugin.MyWriteConfig();
   g_plugin.PluginQuit();
@@ -1300,9 +1308,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   threadRender = nullptr;
   threadId = 0;
 
-  milkwave.LogInfo(L"CreateWindowAndRun ended");
-
-  return 1;
+  return 0;
 }
 
 void StartRenderThread(HINSTANCE instance) {
@@ -1537,14 +1543,14 @@ unsigned __stdcall DoSetup(void* param) {
 
     // Abort if compiled.txt already exists
     if (std::filesystem::exists(compiledListPath)) {
-      std::cerr << "Shader cache already exists, skipping precompilation\n";
+      milkwave.LogInfo(L"Shader cache already exists, skipping precompilation");
       return -1;
     }
 
     // Open precompile.txt
     std::ifstream file("precompile.txt");
     if (!file.is_open()) {
-      std::cerr << "Failed to open precompile.txt\n";
+      milkwave.LogInfo(L"Failed to open precompile.txt");
       return -1;
     }
 
@@ -1552,7 +1558,7 @@ unsigned __stdcall DoSetup(void* param) {
     try {
       std::filesystem::create_directory(cacheDir);
     } catch (const std::filesystem::filesystem_error& e) {
-      std::cerr << "Filesystem error: " << e.what() << '\n';
+      milkwave.LogException(L"Failed to create cache directory", e, false);
       return -1;
     }
 
@@ -1623,6 +1629,7 @@ unsigned __stdcall DoSetup(void* param) {
     wchar_t szMessage[256];
     wcsncpy_s(szMessage, message.c_str(), _TRUNCATE);
     g_plugin.AddNotification(szMessage);
+    milkwave.LogInfo(message);
   }
   return 0;
 }
@@ -1666,16 +1673,24 @@ void StartSetupThread(HINSTANCE instance) {
 
 int StartThreads(HINSTANCE instance) {
   try {
-    // Milkwave: early init so we can read audio device from settings
+    // Milkwave: early init so we can read from settings
     g_plugin.PluginPreInitialize(0, 0);
+    
+    // early assignment so we can use logging
+    // milkwave.Init() may only be called after the window is created due to threading issues
+    milkwave.logLevel = g_plugin.m_LogLevel;
+    g_plugin.milkwave = &milkwave;
+    
+    milkwave.LogInfo(L"Milkwave initialized, LogLevel=" + std::to_wstring(milkwave.logLevel) 
+      + L" BaseDir=" + g_plugin.m_szBaseDir);
 
     if (g_plugin.m_CheckDirectXOnStartup) {
       if (!g_plugin.CheckForDirectX9c()) {
-        ERR(L"DirectX 9 DLL not in registry, exiting");
+        milkwave.LogInfo(L"DirectX 9 DLL not in registry, exiting");
         return -1;
       }
       if (!g_plugin.CheckDX9DLL()) {
-        ERR(L"DirectX 9 DLL not found, exiting");
+        milkwave.LogInfo(L"DirectX 9 DLL not found, exiting");
         return -1;
       }
 
@@ -1692,9 +1707,8 @@ int StartThreads(HINSTANCE instance) {
 
   } catch (const std::exception& e) {
     milkwave.LogException(L"StartThreads", e, true);
+    return -1;
   }
-
-  milkwave.LogInfo(L"StartThreads ended");
 
   return 0;
 }
@@ -1756,15 +1770,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
   wcscpy_s(g_plugin.m_szBaseDir, MAX_PATH, baseDir.c_str());
 #endif
-
+  int res = 0;
   try {
-    return StartThreads(hInstance);
+    res = StartThreads(hInstance);
   } catch (const std::exception& e) {
     milkwave.LogException(L"WinMain", e, true);
   }
-  milkwave.LogInfo(L"WinMain ended");
+  milkwave.LogInfo(L"WinMain ended, result=" + std::to_wstring(res));
+  return res;
 }
-
 
 static std::string title;
 

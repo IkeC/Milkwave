@@ -112,11 +112,14 @@ void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
     LogException(L"SaveThumbnailToFile", e, false);
   }
 }
+void Milkwave::LogInfo(std::wstring info) {
+  LogInfo(info.c_str());
+}
 
 void Milkwave::LogInfo(const wchar_t* info) {
-  if (!infoLogEnabled) return;
+  if (logLevel < 2) return;
 
-  // Ensure the "log" directory exists  
+  // Ensure the "log" directory exists
   const char* logDir = "log";
   if (_mkdir(logDir) != 0 && errno != EEXIST) {
     std::cerr << "Failed to create or access log directory: " << logDir << std::endl;
@@ -136,7 +139,7 @@ void Milkwave::LogInfo(const wchar_t* info) {
 
   // Construct the log file path
   std::ostringstream logFilePath;
-  logFilePath << logDir << "\\info." << datestring << ".visualizer.log";
+  logFilePath << logDir << "\\" << datestring << ".visualizer.info.log";
 
   // Open the log file in append mode
   std::ofstream logFile(logFilePath.str(), std::ios::app);
@@ -155,6 +158,8 @@ void Milkwave::LogInfo(const wchar_t* info) {
 }
 
 void Milkwave::LogException(const wchar_t* context, const std::exception& e, bool showMessage) {
+
+  if (logLevel < 1) return;
 
   std::wstring ws(context);
   std::wstring info = L"caught exception: ";
@@ -180,7 +185,7 @@ void Milkwave::LogException(const wchar_t* context, const std::exception& e, boo
 
   // Construct the log file path
   std::ostringstream logFilePath;
-  logFilePath << logDir << "\\error." << timestamp << ".visualizer.log";
+  logFilePath << logDir << "\\" << timestamp << ".visualizer.error.log";
 
   // Write the exception details to the log file
   std::ofstream logFile(logFilePath.str());

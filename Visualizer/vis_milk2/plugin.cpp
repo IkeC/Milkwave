@@ -626,7 +626,6 @@ SPOUT :
 #include <Windows.h>
 #include "AutoCharFn.h"
 #include <sstream>
-#include "milkwave.h"
 
 #include <dwmapi.h>  // Link with Dwmapi.lib
 #pragma comment(lib, "dwmapi.lib")
@@ -1400,6 +1399,7 @@ void CPlugin::MyReadConfig() {
   m_ShaderCaching = GetPrivateProfileBoolW(L"Milkwave", L"ShaderCaching", m_ShaderCaching, pIni);
   m_ShaderPrecompileOnStartup = GetPrivateProfileBoolW(L"Milkwave", L"ShaderPrecompileOnStartup", m_ShaderPrecompileOnStartup, pIni);
   m_CheckDirectXOnStartup = GetPrivateProfileBoolW(L"Milkwave", L"CheckDirectXOnStartup", m_CheckDirectXOnStartup, pIni);
+  m_LogLevel = GetPrivateProfileIntW(L"Milkwave", L"LogLevel", m_LogLevel, pIni);
 
   m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
   m_AMDDetectionMode = GetPrivateProfileIntW(L"Milkwave", L"AMDDetectionMode", m_AMDDetectionMode, pIni);
@@ -11430,7 +11430,6 @@ uint32_t CPlugin::crc32(const char* data, size_t length) {
 
 bool CPlugin::CheckDX9DLL() {
   // Try to load the DLL manually
-  
   HMODULE hD3DX = LoadLibrary(TEXT("D3DX9_43.dll"));
 
   if (!hD3DX) {

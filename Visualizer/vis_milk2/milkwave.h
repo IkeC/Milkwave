@@ -1,3 +1,4 @@
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -41,13 +42,14 @@ public:
   bool doPollExplicit = false;
   bool isSongChange = false;
   bool doSaveCover = true;
-  
-  bool infoLogEnabled = false;
+  int logLevel = 1; // 0 = Off, 1 = Error, 2 = Info
 
   Milkwave();
   void Init(wchar_t* exePath);
   void LogInfo(const wchar_t* info);
+  void LogInfo(std::wstring info);
   void LogException(const wchar_t* context, const std::exception& e, bool showMessage);
   void PollMediaInfo();
   void SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
+  
 };

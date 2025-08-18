@@ -45,6 +45,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <array>
 #include "../ns-eel2-shim/ns-eel.h"
+#include "milkwave.h"
 
 //#include <core/sdk/IPlaybackService.h>
 
@@ -272,7 +273,7 @@ typedef std::vector<PresetInfo> PresetList;
 
 class CPlugin : public CPluginShell {
 public:
-
+  Milkwave* milkwave;
   //====[ 1. members added to create this specific example plugin: ]================================================
 
 // =========================================================
@@ -448,6 +449,7 @@ public:
   bool    m_ShaderCaching = true;
   bool    m_ShaderPrecompileOnStartup = true;
   bool    m_CheckDirectXOnStartup = true;
+  int     m_LogLevel = 1; // 0 = Off, 1 = Error, 2 = Info
   bool    m_ShowLockSymbol = true;
   float   m_fAnimTime;
   float   m_fStartTime;
