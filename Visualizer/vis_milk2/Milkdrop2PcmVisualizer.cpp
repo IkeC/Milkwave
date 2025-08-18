@@ -1537,14 +1537,22 @@ unsigned __stdcall DoSetup(void* param) {
 
     // Abort if compiled.txt already exists
     if (std::filesystem::exists(compiledListPath)) {
-      //g_plugin.AddNotification(L"Shader cache already exists, skipping precompilation");
+      std::cerr << "Shader cache already exists, skipping precompilation\n";
       return -1;
     }
 
     // Open precompile.txt
     std::ifstream file("precompile.txt");
     if (!file.is_open()) {
-      //g_plugin.AddNotification(L"Failed to open precompile.txt");
+      std::cerr << "Failed to open precompile.txt\n";
+      return -1;
+    }
+
+    // Ensure the "cache" directory exists
+    try {
+      std::filesystem::create_directory(cacheDir);
+    } catch (const std::filesystem::filesystem_error& e) {
+      std::cerr << "Filesystem error: " << e.what() << '\n';
       return -1;
     }
 
@@ -1557,14 +1565,27 @@ unsigned __stdcall DoSetup(void* param) {
       return -1;
     }
 
+    // Set UTF-8 locale for the output stream
+    compiledList.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t>));
+
     g_plugin.AddNotification(L"Precompiling shaders in the background");
 
     int compiledShaders = 0;
     std::string line;
     auto start = std::chrono::high_resolution_clock::now();
     while (std::getline(file, line)) {
-      // Convert to wide string
-      std::wstring wLine(line.begin(), line.end());
+      // Skip BOM if present (UTF-8)
+      if (!line.empty() && line[0] == '\xEF' && line[1] == '\xBB' && line[2] == '\xBF') {
+        line.erase(0, 3);
+      }
+
+      // Convert UTF-8 to wide string properly
+      std::wstring wLine;
+      if (!line.empty()) {
+        int size_needed = MultiByteToWideChar(CP_UTF8, 0, &line[0], (int)line.size(), NULL, 0);
+        wLine.resize(size_needed);
+        MultiByteToWideChar(CP_UTF8, 0, &line[0], (int)line.size(), &wLine[0], size_needed);
+      }
 
       // Trim whitespace
       wLine.erase(0, wLine.find_first_not_of(L" \t"));
@@ -1596,12 +1617,12 @@ unsigned __stdcall DoSetup(void* param) {
     std::wstringstream ss;
     ss << std::fixed << std::setprecision(2) << duration.count();
 
-    std::wstring message = L"Precompiling " + std::to_wstring(compiledShaders) 
+    std::wstring message = L"Precompiling " + std::to_wstring(compiledShaders)
       + L" shaders completed in " + ss.str() + L"s";
 
     wchar_t szMessage[256];
     wcsncpy_s(szMessage, message.c_str(), _TRUNCATE);
-    g_plugin.AddNotification(szMessage);    
+    g_plugin.AddNotification(szMessage);
   }
   return 0;
 }
@@ -1649,13 +1670,13 @@ int StartThreads(HINSTANCE instance) {
     g_plugin.PluginPreInitialize(0, 0);
 
     if (g_plugin.m_CheckDirectXOnStartup) {
-      if (g_plugin.CheckForDirectX9c() != 0) {
+      if (!g_plugin.CheckForDirectX9c()) {
         ERR(L"DirectX 9 DLL not in registry, exiting");
-        return 0;
+        return -1;
       }
-      if (g_plugin.CheckDX9DLL() != 0) {
+      if (!g_plugin.CheckDX9DLL()) {
         ERR(L"DirectX 9 DLL not found, exiting");
-        return 0;
+        return -1;
       }
 
       // if we made it here, skip this check in the future

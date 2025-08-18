@@ -651,6 +651,7 @@ bool AutoLockedPreset = false;
 #include <functiondiscoverykeys_devpkey.h>
 #include "../audio/log.h"
 #include "AMDDetection.h"
+#include <cstdint>
 
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "propsys.lib")
@@ -11413,8 +11414,6 @@ ID3DXBuffer* CPlugin::LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix
   return pBuffer;
 }
 
-#include <cstdint>
-
 uint32_t CPlugin::crc32(const char* data, size_t length) {
   uint32_t crc = 0xFFFFFFFF;
   for (size_t i = 0; i < length; ++i) {
@@ -11428,7 +11427,6 @@ uint32_t CPlugin::crc32(const char* data, size_t length) {
   }
   return ~crc;
 }
-
 
 bool CPlugin::CheckDX9DLL() {
   // Try to load the DLL manually
@@ -11485,6 +11483,3 @@ void CPlugin::ShowDirectXMissingMessage() {
     ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
   }
 }
-
-
-
