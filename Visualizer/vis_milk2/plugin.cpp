@@ -11430,31 +11430,61 @@ uint32_t CPlugin::crc32(const char* data, size_t length) {
 }
 
 
-int CPlugin::CheckDX9DLL() {
+bool CPlugin::CheckDX9DLL() {
   // Try to load the DLL manually
   
-  if (!g_plugin.m_CheckDirectXOnStartup) return 0;
-
   HMODULE hD3DX = LoadLibrary(TEXT("D3DX9_43.dll"));
 
   if (!hD3DX) {
-    if (MessageBoxA(GetPluginWindow(), 
-      "Could not initialize DirectX 9.\n\nPlease install the DirectX End-User Legacy Runtimes.\n\nOpen Download-Website now?", 
-      "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
-      // open website in browser
-      ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
-    }
-    return -1;
+    ShowDirectXMissingMessage();
+    return false;
   }
-
-  g_plugin.m_CheckDirectXOnStartup = false;
 
   // If successful, free the DLL (optional if you're linking statically)
   FreeLibrary(hD3DX);
 
-  // Continue with your app
-  // ...
-  return 0;
+  return true;
 }
+
+// Test for DirectX installation and warn if not installed
+//
+// Registry method only works for DirectX 9 and lower but that is OK
+bool CPlugin::CheckForDirectX9c() {
+
+  // HKLM\Software\Microsoft\DirectX\Version should be 4.09.00.0904
+  // handy information : http://en.wikipedia.org/wiki/DirectX
+  HKEY  hRegKey;
+  LONG  regres;
+  DWORD  dwSize, major, minor, revision, notused;
+  char value[256];
+  dwSize = 256;
+
+  // Does the key exist
+  regres = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\DirectX", NULL, KEY_READ, &hRegKey);
+  if (regres == ERROR_SUCCESS) {
+    // Read the key
+    regres = RegQueryValueExA(hRegKey, "Version", 0, NULL, (LPBYTE)value, &dwSize);
+    // Decode the string : 4.09.00.0904
+    sscanf_s(value, "%d.%d.%d.%d", &major, &minor, &notused, &revision);
+    // printf("DirectX registry : [%s] (%d.%d.%d.%d)\n", value, major, minor, notused, revision);
+    RegCloseKey(hRegKey);
+    if (major == 4 && minor == 9 && revision == 904)
+      return true;
+  }
+  else {
+    ShowDirectXMissingMessage();
+    return false;
+  }
+}
+
+void CPlugin::ShowDirectXMissingMessage() {
+  if (MessageBoxA(NULL,
+    "Could not initialize DirectX 9.\n\nPlease install the DirectX End-User Legacy Runtimes.\n\nOpen Download-Website now?",
+    "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
+    // open website in browser
+    ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
+  }
+}
+
 
 

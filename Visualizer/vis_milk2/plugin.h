@@ -290,8 +290,10 @@ public:
 
   uint32_t crc32(const char* data, size_t length);
 
-  int CheckDX9DLL();
-  
+  bool CheckDX9DLL();
+  bool CheckForDirectX9c();
+  void ShowDirectXMissingMessage();
+
   bool bSpoutChanged; // set to write config on exit
   bool bSpoutOut; // Spout output on or off
   bool bEnablePresetStartup;

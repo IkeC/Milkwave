@@ -1648,9 +1648,18 @@ int StartThreads(HINSTANCE instance) {
     // Milkwave: early init so we can read audio device from settings
     g_plugin.PluginPreInitialize(0, 0);
 
-    if (g_plugin.CheckDX9DLL() != 0) {
-      ERR(L"DirectX 9 DLL not found, exiting");
-      return 0;
+    if (g_plugin.m_CheckDirectXOnStartup) {
+      if (g_plugin.CheckForDirectX9c() != 0) {
+        ERR(L"DirectX 9 DLL not in registry, exiting");
+        return 0;
+      }
+      if (g_plugin.CheckDX9DLL() != 0) {
+        ERR(L"DirectX 9 DLL not found, exiting");
+        return 0;
+      }
+
+      // if we made it here, skip this check in the future
+      g_plugin.m_CheckDirectXOnStartup = false;
     }
 
     StartRenderThread(instance);
@@ -1667,39 +1676,6 @@ int StartThreads(HINSTANCE instance) {
   milkwave.LogInfo(L"StartThreads ended");
 
   return 0;
-}
-
-// SPOUT
-//
-// Test for DirectX installation and warn if not installed
-// TODO : doesn't seem to need a header declaration
-//
-// Registry method only works for DirectX 9 and lower but that is OK
-bool CheckForDirectX9c() {
-
-  // HKLM\Software\Microsoft\DirectX\Version should be 4.09.00.0904
-  // handy information : http://en.wikipedia.org/wiki/DirectX
-  HKEY  hRegKey;
-  LONG  regres;
-  DWORD  dwSize, major, minor, revision, notused;
-  char value[256];
-  dwSize = 256;
-
-  // Does the key exist
-  regres = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\DirectX", NULL, KEY_READ, &hRegKey);
-  if (regres == ERROR_SUCCESS) {
-    // Read the key
-    regres = RegQueryValueExA(hRegKey, "Version", 0, NULL, (LPBYTE)value, &dwSize);
-    // Decode the string : 4.09.00.0904
-    sscanf_s(value, "%d.%d.%d.%d", &major, &minor, &notused, &revision);
-    // printf("DirectX registry : [%s] (%d.%d.%d.%d)\n", value, major, minor, notused, revision);
-    RegCloseKey(hRegKey);
-    if (major == 4 && minor == 9 && revision == 904)
-      return true;
-  }
-
-  return false;
-
 }
 
 void MilkwaveTerminateHandler() {
@@ -1761,12 +1737,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #endif
 
   try {
-    // test error logging
-    // throw std::runtime_error("An example exception occurred.");
-    if (CheckForDirectX9c())
-      return StartThreads(hInstance);
-    else
-      return false;
+    return StartThreads(hInstance);
   } catch (const std::exception& e) {
     milkwave.LogException(L"WinMain", e, true);
   }
