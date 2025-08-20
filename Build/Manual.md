@@ -1,12 +1,58 @@
 ﻿# Milkwave Manual
 
-This manual is a stub. User input and contributions are welcome! 
+If you want to contribute to this manual or need help, it's a good idea to [open an issue](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord).
 
-If you want to contribute or need help, it's a good idea to [open an issue](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord).
+Make sure to hover the mouse over all labels and buttons to see some inline help tooltips describing most of the features and displaying keyboard shortcuts. 
+
+# Interface
+
+The Tabs panel holds most features available in the Remote, described in detail below.
+
+The Buttons panel allows to trigger some commonly used functions in the Visualizer without having to focus the Visualizer window. The Buttons labeled "00" to "99" will either trigger the sprites from _sprites.ini_ when Visualizer is in sprite mode (default), or the messages from _messages.ini_ when Visualizer is in message mode. Press K in Visualizer to change modes.
+
+Note that you can choose to hide either the Tabs or the Button panel with  the popup menu that opens by clicking "Milkwave" in the bottom right corner. You may also use the menu to access help resources, find or open the Visualizer window and switch between light and dark mode.
+
+## Tab "Presets"
+
+Send a preset from the drop-down list to display in the Visualizer using "Send". The list will show the presets from _presets/Milkwave_ by default. You can fill the list using the buttons "Tags", "File" and "Dir".
+
+The currently playing Visualizer preset is displayed after the "Running" label. After "Tags" you can supply your own set of tags describing the current preset, separated by comma. If "Running" is checked, the tags are loaded (and saved to) the currently running preset, if it is unchecked the preset from the drop-down list in the first line is used. Click "Save" to save the tag information to tags-remote.json.
+
+Your most used tags are displayed as buttons automatically after the "Most used" label. Note that you may delete the file _tags-remote.json_ anytime if you want to start from scratch.
+
+Your audio input and output devices are displayed after the "Device" label. If you don't wish to see input devices (such as microphones), set _settings.ini:IncludeInputDevices=0_. Use "Set" to set the Visualizer input source to the selected device. Use Ctrl+D in the Visualizer window to display the currently active device.
+
+Use "Amp" to amplify the virtual audio level for the Visualizer, eg. if you feel the preset should react more to your music. If "Link" is checked, left and right audio channels are amplified equally.
+
+## Tab "Message"
+
+Use "Send" to send the text after "Message" to display in the Visualizer window. Toggle "Preview" to see a "what you see is what you get" version of your text. If "Wrap" is checked, text will be wrapped to two lines if the text is longer than the number in the drop-down box. You can manually define a line break within your text by writing "//". Note that this feature is rather experimental and may clip your text sometimes depending on your used font face and size.
+
+The "Window" label shows the window title of the Visualizer that the Remote will send its commands to. You may start multiple Visualizer windows and control them all by changing the target window. Change the opacity of the Visualizer window using the "%" box.
+
+Right-Click the "Parameters" label to display a list of all available parameters for the text message display. You can save a parameter line to the named slot after "Style" by pressing "Save".
+
+Changing "Font", "Size" and "Color" parameters will change the text display. Note that these definitions can be "Set" to the "Parameters" line. If any of these values are defined in "Parameters", they will override your UI settings. To remove a set definition from "Parameters", you may double-click the "Font", "Size" and "Color" labels.
+
+You can load a list of parameter lines from a file and send them to the Visualizer individually by pressing the "Send" button in the bottom right. By default, the file _script-default.txt_ from the Milkwave main directory is loaded, but you can load any file by right-clicking the "From File" label. Please read the documentation in _script-default.txt_ for a detailed description on possible commands.
+
+Instead of selecting and sending lines from the fine manually, you may check the "Autoplay" to play them sequentially. Use the "BPM" and "Beats" parameters to control the interval between sending each line. Check the "Rand" button to send a random line on each interval (excluding the last sent line).
 
 ## Tab "Shader"
 
-Converts GLSL shader code to HLSL shader code.
+Converts GLSL shader code to HLSL shader code. You may load code from Shadertoy.com by entering an ID or URL and click "Load". You may load the n-th "newest", "hot" etc. entry from Shadertoy.com, or load code from a file. Of course, you can also simply paste code into the left pane. If loaded from Shadertoy, the shader author, name and URL will be put into the shaderinfo box below the panes.
+
+You can show/hide the left pane with the "<" button. Click "Convert" to convert the GLSL code from the left pane to HLSL code in the right pane. Use "Send" to save a preset from the code and send it to the Visualizer. The "File" checkbox determines whether the preset name is built from the shaderinfo line or not. 
+
+If you test many different shader code snippets, you may not want to produce a (possibly not working) preset file everytime, so if "File" is unchecked, the default filename "Shader.milk" will be used (and overwritten each time). You can set the pixel shader version written to the preset file using the number box before the "Send" button. If unsure, leave it at 4.
+
+Note that the conversion process will most likely not produce a working preset right away, as some logical statements, terms and expression cannout be converted easily. Some common problems are listed below, and I highly recommend at least watching the great [How to create Presets from OpenGL Shaders](https://www.youtube.com/watch?v=Ur2gPa996Aw) video by Patrick Pomerleau to understand the process.
+
+If you get conversion errors, they will be displayed in the Remote status bar. Milkwave will try to find the correct error line in the right pane and jump there, but it's not always exact due to the way the Visualizer compiles the preset file. You can use the number box ("offset") in the upper right corner to highlight the acutal error line. A common pratice is to add a deliberate error (like "xxx;") to the code, set the offset to the correct line, then remove it. Subsequent errors will then be marked more precisely.
+
+The upper right corner also features a search box to find text within the right pane. Use Ctrl+Shift+F to jump to the search box, and Ctrl+F to actually find the next occurence of the search text. The "L" button allows you to load shader code from a file, or extract it from an existing preset (comp shader lines only). The "?" button opens this manual in your browser.
+
+Remember that it is your responsibility to check and respect the individual license of the code you use and convert. In any case, always make sure you give proper credit to the original author.
 
 ### Shadertoy examples
 
@@ -44,6 +90,24 @@ Here are some common terms that cannot be converted automatically and need to be
 | `int yx = y >> 1` (bitwise) | `int yx = y / 2` |
 | `if (i==0) return;` (asymetric returns) | Put subsequent code in else branch: `if (i==0) {} else {} return;` |
 
+## Tab "Wave"
+
+Manipulate factors of the default wave of the current preset and display the changes instantly in the Visualizer. If the "Link" button is checked, values are received from and sent to the currently running preset instantly, if not click "Send" to send your values. Use "Clear" to display a default wave. 
+
+Use the "Quicksave" button or press Ctrl+S in the Visualizer to save the current preset instantly to the _presets/Quicksave_ folder as a new file. Press Shift+Ctrl+S to save to _presets/Quicksave2_ instead.
+
+## Tab "Fonts"
+
+Modify most of the fonts used to display information in the Visualizer window. Use "Save" and "Test" to see your changes. You can save and preview changes instantly if you hold the ALT key while changing fonts or sizes.
+
+Changes are saved to the _Fonts_ section in _settings.ini_. Of course you may edit them there manually as well.
+
+## Tab "Settings"
+
+Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
+
+Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
+
 ## Milkwave specifics
 
 ### "_smooth" preset variables
@@ -63,3 +127,5 @@ Or wrap your code in a conditional block:
 float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 #endif
 ```
+
+-- _written by IkeC_
