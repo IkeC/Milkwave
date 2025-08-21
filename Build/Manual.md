@@ -1,8 +1,8 @@
 ﻿# Milkwave Manual
 
-If you want to contribute to this manual or need help, it's a good idea to [open an issue](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord).
+Welcome to the Milkwave manual! This document will help you get started with the Milkwave Remote, a tool to control the Milkwave Visualizer.
 
-Make sure to hover the mouse over all labels and buttons to see some inline help tooltips describing most of the features and displaying keyboard shortcuts. 
+In general, make sure to hover the mouse over all labels and buttons to see some inline help tooltips describing most of the features and displaying keyboard shortcuts.
 
 # Interface
 
@@ -40,19 +40,21 @@ Instead of selecting and sending lines from the fine manually, you may check the
 
 ## Tab "Shader"
 
-Converts GLSL shader code to HLSL shader code. You may load code from Shadertoy.com by entering an ID or URL and click "Load". You may load the n-th "newest", "hot" etc. entry from Shadertoy.com, or load code from a file. Of course, you can also simply paste code into the left pane. If loaded from Shadertoy, the shader author, name and URL will be put into the shaderinfo box below the panes.
+This tab can convert GLSL shader code (eg. from Shadertoy.com) to HLSL shader code, save it to a preset file and display it in the Visualizer instantly.
 
-You can show/hide the left pane with the "<" button. Click "Convert" to convert the GLSL code from the left pane to HLSL code in the right pane. Use "Send" to save a preset from the code and send it to the Visualizer. The "File" checkbox determines whether the preset name is built from the shaderinfo line or not. 
+You may load code from Shadertoy.com by entering an ID or URL and click "Load". You may load the n-th "newest", "hot" etc. entry from Shadertoy.com, or load code from a file. Of course, you can also simply paste code into the left pane. If loaded from Shadertoy, the shader author, name and URL will be put into the shaderinfo box below the panes.
 
-If you test many different shader code snippets, you may not want to produce a (possibly not working) preset file everytime, so if "File" is unchecked, the default filename "Shader.milk" will be used (and overwritten each time). You can set the pixel shader version written to the preset file using the number box before the "Send" button. If unsure, leave it at 4.
+You can show/hide the left pane with the "<" button. Click "Convert" to convert the GLSL code from the left pane to HLSL code in the right pane. Use "Send" to save a preset from the code and send it to the Visualizer.
 
-Note that the conversion process will most likely not produce a working preset right away, as some logical statements, terms and expression cannout be converted easily. Some common problems are listed below, and I highly recommend at least watching the great [How to create Presets from OpenGL Shaders](https://www.youtube.com/watch?v=Ur2gPa996Aw) video by Patrick Pomerleau to understand the process.
+The "File" checkbox determines whether the preset name is built from the shaderinfo line or not. If you test many different shader code snippets, you may not want to produce a (possibly not working) preset file everytime, so if "File" is unchecked, the default filename "Shader.milk" will be used (and overwritten each time). You can set the pixel shader version written to the preset file using the number box before the "Send" button. If unsure, leave it at 4.
+
+Note that the conversion process will most likely not produce a working preset right away, as some logical statements, terms and expressions cannot be converted easily. Some common problems are listed below, and I highly recommend at least watching the great [How to create Presets from OpenGL Shaders](https://www.youtube.com/watch?v=Ur2gPa996Aw) video by Patrick Pomerleau (also listed below) to understand the process.
 
 If you get conversion errors, they will be displayed in the Remote status bar. Milkwave will try to find the correct error line in the right pane and jump there, but it's not always exact due to the way the Visualizer compiles the preset file. You can use the number box ("offset") in the upper right corner to highlight the acutal error line. A common pratice is to add a deliberate error (like "xxx;") to the code, set the offset to the correct line, then remove it. Subsequent errors will then be marked more precisely.
 
 The upper right corner also features a search box to find text within the right pane. Use Ctrl+Shift+F to jump to the search box, and Ctrl+F to actually find the next occurence of the search text. The "L" button allows you to load shader code from a file, or extract it from an existing preset (comp shader lines only). The "?" button opens this manual in your browser.
 
-Remember that it is your responsibility to check and respect the individual license of the code you use and convert. In any case, always make sure you give proper credit to the original author.
+Remember that it is your responsibility to check and respect the individual license of the code you use and convert. In any case, always make sure you give proper credit to the original author. If you converted a preset successfully, consider sharing it with the community so it may be included with future Milkwave releases.
 
 ### Shadertoy examples
 
@@ -128,4 +130,6 @@ float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 #endif
 ```
 
--- _written by IkeC_
+## Closing Notes
+
+This manual was written by IkeC. If you want to contribute to this manual or need further help, it's a good idea to [open an issue on GitHub](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord). The latter is also a good place to share your preset or discuss with other users.
