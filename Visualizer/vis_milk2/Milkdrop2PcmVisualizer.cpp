@@ -1574,7 +1574,7 @@ unsigned __stdcall DoSetup(void* param) {
     // Set UTF-8 locale for the output stream
     compiledList.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t>));
 
-    g_plugin.AddNotification(L"Precompiling shaders in the background");
+    g_plugin.AddNotification(L"Shader cache empty, precompiling shaders\nRendering performance limited, please be patient", 10*60);
 
     int compiledShaders = 0;
     std::string line;
@@ -1628,7 +1628,7 @@ unsigned __stdcall DoSetup(void* param) {
 
     wchar_t szMessage[256];
     wcsncpy_s(szMessage, message.c_str(), _TRUNCATE);
-    g_plugin.AddNotification(szMessage);
+    g_plugin.AddNotification(szMessage, 5);
     milkwave.LogInfo(message);
   }
   return 0;

@@ -4399,6 +4399,10 @@ void CPlugin::AddNotification(wchar_t* szMsg) {
   g_plugin.AddError(szMsg, 3.0F, ERR_NOTIFY, m_fontinfo[SIMPLE_FONT].bBold);
 }
 
+void CPlugin::AddNotification(wchar_t* szMsg, float time) {
+  g_plugin.AddError(szMsg, time, ERR_NOTIFY, m_fontinfo[SIMPLE_FONT].bBold);
+}
+
 void CPlugin::AddError(wchar_t* szMsg, float fDuration, int category, bool bBold) {
   OutputDebugStringW(szMsg);
   if (category == ERR_NOTIFY)
