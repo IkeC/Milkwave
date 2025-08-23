@@ -98,6 +98,7 @@ namespace MilkwaveRemote.Data {
         inpMain = sbHeader.ToString() + inpMain.Substring(indexMainImageMethodStartingBracket + 1);
 
         inp = inpHeader + inpMain;
+        bool iMouseFound = false;
 
         // global processing of all lines
         string[] lines = inp.Replace("\r\n", "\n").Replace('\r', '\n').Split(new[] { '\n' }, StringSplitOptions.None);
@@ -106,8 +107,11 @@ namespace MilkwaveRemote.Data {
           if (line.Contains("float2 uv =")) {
             currentLine = indent + "// " + line;
           } else if (line.Contains("iMouse")) {
-            SetConvertorError("iMouse unsupported", sb);
-            currentLine = indent + "// " + line;
+            if (!iMouseFound) {
+              SetConvertorError("iMouse unsupported, introducing standard variable", sb);
+              currentLine = "float3 iMouse = float3(0.5, 0.5, 0);" + Environment.NewLine + currentLine;
+              iMouseFound = true;
+            }
           } else if (line.Contains("iDate")) {
             SetConvertorError("iDate unsupported", sb);
             currentLine = indent + "// " + line;
@@ -129,7 +133,7 @@ namespace MilkwaveRemote.Data {
       } catch (Exception e) {
         Debug.Assert(false);
       }
-
+      result = BasicFormatShaderCode(result);
       return result;
     }
 
@@ -188,7 +192,6 @@ namespace MilkwaveRemote.Data {
                 result = result.Substring(0, index + 7)
                   + newArgsLine
                   + result.Substring(index + 7 + indexcClosingBracket);
-                //result = FixFloatNumberOfArguments(result, fullContext, index + 7 + newArgsLine.Length);
               }
             }
           }
@@ -301,7 +304,7 @@ namespace MilkwaveRemote.Data {
       StringBuilder sb = new StringBuilder();
       if (inpToCheck.Contains("iChannel0")) {
         sb.AppendLine("#define iChannel0 sampler_noise_lq");
-      } else if(inpToCheck.Contains("iChannel1")) {
+      } else if (inpToCheck.Contains("iChannel1")) {
         sb.AppendLine("#define iChannel1 sampler_noise_lq");
       } else if (inpToCheck.Contains("iChannel2")) {
         sb.AppendLine("#define iChannel2 sampler_noise_lq");
@@ -332,8 +335,71 @@ namespace MilkwaveRemote.Data {
             inp = p1 + "ret = " + varName + ";" + Environment.NewLine + p2;
           }
         }
-      } catch {}
+      } catch { }
     }
 
+    public string BasicFormatShaderCode(string code) {
+      int indentSize = 2;
+      var lines = code.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+      var sb = new StringBuilder();
+      int indentLevel = 0;
+      bool lastLineWasEmpty = false;
+
+      for (int i = 0; i < lines.Length; i++) {
+        string rawLine = lines[i];
+        string line = rawLine.Trim();
+
+        // Skip multiple empty lines
+        if (string.IsNullOrWhiteSpace(line)) {
+          if (!lastLineWasEmpty) {
+            sb.AppendLine();
+            lastLineWasEmpty = true;
+          }
+          continue;
+        }
+
+        lastLineWasEmpty = false;
+
+        // Decrease indent if line is just '}'
+        if (line == "}")
+          indentLevel = Math.Max(indentLevel - 1, 0);
+
+        // Handle inline comments
+        int commentIndex = line.IndexOf("//");
+        if (commentIndex >= 0) {
+          string codePart = line.Substring(0, commentIndex).TrimEnd();
+          string commentPart = line.Substring(commentIndex).Trim();
+
+          // Normalize comment spacing: "//  float2" → "// float2"
+          commentPart = "// " + commentPart.Substring(2).TrimStart();
+
+          if (!string.IsNullOrWhiteSpace(codePart))
+            sb.AppendLine(new string(' ', indentLevel * indentSize) + codePart);
+
+          sb.AppendLine(new string(' ', indentLevel * indentSize) + commentPart);
+        } else {
+          sb.AppendLine(new string(' ', indentLevel * indentSize) + line);
+        }
+
+        // Add blank line after lone '}'
+        if (line == "}") {
+          if (i + 1 < lines.Length && !string.IsNullOrWhiteSpace(lines[i + 1]))
+            sb.AppendLine();
+        }
+
+        // Add blank line after #define if next line isn't another #define
+        if (line.StartsWith("#define") && i + 1 < lines.Length) {
+          string nextLine = lines[i + 1].Trim();
+          if (!nextLine.StartsWith("#define") && !string.IsNullOrWhiteSpace(nextLine))
+            sb.AppendLine();
+        }
+
+        // Increase indent after lines ending with '{'
+        if (line.EndsWith("{"))
+          indentLevel++;
+      }
+
+      return sb.ToString();
+    }
   } // end class
 } // end namespace
