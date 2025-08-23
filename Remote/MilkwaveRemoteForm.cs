@@ -3419,7 +3419,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnShaderHelp_Click(object sender, EventArgs e) {
-      OpenURL("https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md");
+      OpenURL("https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md#tab-shader");
     }
 
     private void txtShader_MouseWheel(object sender, MouseEventArgs e) {

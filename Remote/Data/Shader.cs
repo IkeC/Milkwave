@@ -304,11 +304,14 @@ namespace MilkwaveRemote.Data {
       StringBuilder sb = new StringBuilder();
       if (inpToCheck.Contains("iChannel0")) {
         sb.AppendLine("#define iChannel0 sampler_noise_lq");
-      } else if (inpToCheck.Contains("iChannel1")) {
+      } 
+      if (inpToCheck.Contains("iChannel1")) {
         sb.AppendLine("#define iChannel1 sampler_noise_lq");
-      } else if (inpToCheck.Contains("iChannel2")) {
+      } 
+      if (inpToCheck.Contains("iChannel2")) {
         sb.AppendLine("#define iChannel2 sampler_noise_lq");
-      } else if (inpToCheck.Contains("iChannel3")) {
+      } 
+      if (inpToCheck.Contains("iChannel3")) {
         sb.AppendLine("#define iChannel3 sampler_noise_lq");
       }
       if (sb.Length > 0) {
