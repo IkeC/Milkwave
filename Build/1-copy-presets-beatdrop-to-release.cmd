@@ -5,7 +5,7 @@ set DESTDIR=..\Milkwave\Release\resources\presets
 
 cd ..\..\BeatDrop-Music-Visualizer
 git pull
-pause
+::pause
 
 ::presets
 robocopy %SRCDIR% %DESTDIR%\BeatDrop /LEV:1
@@ -21,6 +21,7 @@ SET CMD=del /s /q
 %CMD% "*Dancing Saber*" "*BPM Code Test*" "*Bing AI*Try*"
 %CMD% "Aderrasi - Bitterfeld (Crystal Border Mix) - [Jian Simanjuntak with forest tree edit].milk"
 %CMD% "*Altars Of Madness 2 (Cold Snap Edit)*"
+%CMD% "*Jian Simanjuntak - Particle Nights in Jakarta*"
 pause
 
 ::textures
