@@ -506,14 +506,18 @@ public:
 
   // PRESET HISTORY
 #define PRESET_HIST_LEN (64+2)     // make this 2 more than the # you REALLY want to be able to go back.
-  std::wstring     m_presetHistory[PRESET_HIST_LEN];   //circular
-  int         m_presetHistoryPos;
-  int         m_presetHistoryBackFence;
-  int         m_presetHistoryFwdFence;
-  void        PrevPreset(float fBlendTime);
-  void        NextPreset(float fBlendTime);  // if not retracing our former steps, it will choose a random one.
-  void        OnFinishedLoadingPreset();
-  int         SendMessageToMilkwaveRemote(const wchar_t* presetFile);
+  std::wstring m_presetHistory[PRESET_HIST_LEN];   //circular
+  int m_presetHistoryPos;
+  int m_presetHistoryBackFence;
+  int m_presetHistoryFwdFence;
+  void PrevPreset(float fBlendTime);
+  void NextPreset(float fBlendTime);  // if not retracing our former steps, it will choose a random one.
+  void OnFinishedLoadingPreset();
+  int SendMessageToMilkwaveRemote(const wchar_t* presetFile);
+  void PostMessageToMilkwaveRemote(UINT msg);
+
+#define WM_USER_NEXT_PRESET WM_USER + 100
+#define WM_USER_PREV_PRESET WM_USER + 101
 
   FFT            myfft;
   td_mysounddata mysound;

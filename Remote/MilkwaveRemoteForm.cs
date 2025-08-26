@@ -50,6 +50,12 @@ namespace MilkwaveRemote {
     private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     private const uint WM_COPYDATA = 0x004A;
+
+    // Custom window messages for next/previous preset
+    // must match definitions in Milkwave Visualizer
+    private const int WM_NEXT_PRESET = 0x0400 + 100;
+    private const int WM_PREV_PRESET = 0x0400 + 101;
+
     private const uint WM_KEYDOWN = 0x0100;
 
     private DarkModeCS dm;
@@ -376,9 +382,17 @@ namespace MilkwaveRemote {
     }
 
     protected override void WndProc(ref Message m) {
-      const int WM_COPYDATA = 0x004A;
-
-      if (m.Msg == WM_COPYDATA) {
+      if (m.Msg == WM_NEXT_PRESET) {
+        if (chkPresetRandom.Checked) {
+          SelectRandomPreset();
+        } else {
+          SelectNextPreset();
+        }
+        btnPresetSend_Click(null, null);
+      } else if (m.Msg == WM_PREV_PRESET) {
+        SelectPreviousPreset();
+        btnPresetSend_Click(null, null);
+      } else if (m.Msg == WM_COPYDATA) {
         // Extract the COPYDATASTRUCT from the message
         COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
         if (cds.lpData != IntPtr.Zero) {
@@ -487,19 +501,6 @@ namespace MilkwaveRemote {
           } else if (receivedString.StartsWith("DEVICE=")) {
             string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
             helper.SelectDeviceByName(cboAudioDevice, device);
-          } else if (receivedString.StartsWith("LINKCMD=")) {
-            string cmd = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            if (cmd.ToUpper().Equals("NEXT")) {
-              if (chkPresetRandom.Checked) {
-                SelectRandomPreset();
-              } else {
-                SelectNextPreset();
-              }
-              btnPresetSend_Click(null, null);
-            } else if (cmd.ToUpper().Equals("PREV")) {
-              SelectPreviousPreset();
-              btnPresetSend_Click(null, null);
-            }
           }
         }
       }
@@ -3583,7 +3584,7 @@ namespace MilkwaveRemote {
         if (File.Exists(ofdShader.FileName)) {
           string[] content = File.ReadAllLines(ofdShader.FileName);
           txtShaderinfo.Clear();
-          
+
           StringBuilder sb = new StringBuilder();
           if (ofdShader.FileName.EndsWith(".milk", StringComparison.InvariantCultureIgnoreCase)) {
             // If it's a preset file, extract the comp shader info

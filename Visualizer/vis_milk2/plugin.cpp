@@ -7817,7 +7817,8 @@ void CPlugin::dumpmsg(wchar_t* s) {
 
 void CPlugin::PrevPreset(float fBlendTime) {
   if (m_RemotePresetLink) {
-    if (SendMessageToMilkwaveRemote(L"LINKCMD=PREV")) return;
+    PostMessageToMilkwaveRemote(WM_USER_PREV_PRESET);
+    return;
   }
 
   if (m_bSequentialPresetOrder) {
@@ -7849,8 +7850,10 @@ void CPlugin::NextPreset(float fBlendTime)  // if not retracing our former steps
 
 void CPlugin::LoadRandomPreset(float fBlendTime) {
   if (m_RemotePresetLink) {
-    if (SendMessageToMilkwaveRemote(L"LINKCMD=NEXT")) return;
+    PostMessageToMilkwaveRemote(WM_USER_NEXT_PRESET);
+    return;
   }
+
   // make sure file list is ok
   if (m_nPresets - m_nDirs == 0) {
     if (m_nPresets - m_nDirs == 0) {
@@ -9242,6 +9245,21 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
     // ignore
   }
   return 1;
+}
+
+void CPlugin::PostMessageToMilkwaveRemote(UINT msg) {
+  try {
+    // Find the Milkwave Remote window
+    HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
+    if (!hRemoteWnd) {
+      return;
+    }
+    if (IsWindow(hRemoteWnd)) {
+      PostMessageW(hRemoteWnd, msg, 0, 0);
+    }
+  } catch (...) {
+    // ignore
+  }
 }
 
 void CPlugin::LoadPresetTick() {
