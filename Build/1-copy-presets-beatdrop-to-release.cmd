@@ -5,7 +5,7 @@ set DESTDIR=..\Milkwave\Release\resources\presets
 
 cd ..\..\BeatDrop-Music-Visualizer
 git pull
-::pause
+pause
 
 ::presets
 robocopy %SRCDIR% %DESTDIR%\BeatDrop /LEV:1

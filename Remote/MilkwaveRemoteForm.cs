@@ -3317,9 +3317,13 @@ namespace MilkwaveRemote {
     }
 
     private void statusBar_Click(object sender, EventArgs e) {
-      if (statusBar.Text != null && !statusBar.Text.StartsWith("Copied ")) {
-        Clipboard.SetText(statusBar.Text);
-        SetStatusText($"Copied '{statusBar.Text}' to clipboard");
+      try {
+        if (statusBar.Text != null && !statusBar.Text.StartsWith("Copied ")) {
+          Clipboard.SetText(statusBar.Text);
+          SetStatusText($"Copied '{statusBar.Text}' to clipboard");
+        }
+      } catch (Exception) {
+        // ignore
       }
     }
 

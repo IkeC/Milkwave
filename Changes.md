@@ -1,3 +1,15 @@
+## v3.0.2 (2025-08-26)
+
+- Pretty code formatting for HLSL shader code in Shader tab
+- Shader-based "Heartfelt" preset added to presets/Shader
+- Fix: Visualizer crashing when using "Link" button in Milkwave Remote "Preset" tab
+- Improved shader precompile notification and error messages
+
+## v3.0.1 (2025-08-18)
+
+- settings.ini: LogLevel=2 for verbose application logging
+- Shader precompiler can now handle multibyte-encoded filenames
+
 ## v3.0 (2025-08-17)
 
 - Shader Tab: Convert GLSL shader code to HLSL and send it to the Visualizer instantly
