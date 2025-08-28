@@ -1452,6 +1452,9 @@ namespace MilkwaveRemote {
             if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
               txtShaderFind.SelectAll();
               txtShaderFind.Focus();
+            } else if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+              txtShaderHLSL.Text = Shader.BasicFormatShaderCode(txtShaderHLSL.Text);
+              SetStatusText("HLSL code formatted");
             } else {
               FindShaderString();
             }
@@ -3666,6 +3669,28 @@ namespace MilkwaveRemote {
             }
           }
         } catch { }
+      }
+    }
+
+    private void txtShaderHLSL_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter) {
+        TextBox? tb = sender as TextBox;
+        int caretIndex = tb.SelectionStart;
+
+        // Get all text before the caret
+        string textBeforeCaret = tb.Text.Substring(0, caretIndex);
+        int lastLineBreak = textBeforeCaret.LastIndexOf('\n');
+        string currentLine = lastLineBreak >= 0
+            ? textBeforeCaret.Substring(lastLineBreak + 1)
+            : textBeforeCaret;
+
+        // Extract leading whitespace
+        string indentation = new string(currentLine.TakeWhile(char.IsWhiteSpace).ToArray());
+
+        // Insert newline and indentation using SelectedText
+        tb.SelectedText = "\r\n" + indentation;
+
+        e.SuppressKeyPress = true;
       }
     }
 

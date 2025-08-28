@@ -1967,6 +1967,7 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(txtShaderHLSL, "HLSL");
       txtShaderHLSL.Click += txtShaderSetLineNumber;
       txtShaderHLSL.Enter += txtShaderSetLineNumber;
+      txtShaderHLSL.KeyDown += txtShaderHLSL_KeyDown;
       txtShaderHLSL.KeyUp += txtShaderSetLineNumber;
       txtShaderHLSL.MouseWheel += txtShader_MouseWheel;
       txtShaderHLSL.PreviewKeyDown += txtShaderSetLineNumber;
@@ -1989,7 +1990,7 @@ namespace MilkwaveRemote
       txtShaderFind.Name = "txtShaderFind";
       txtShaderFind.Size = new Size(43, 23);
       txtShaderFind.TabIndex = 29;
-      toolTip1.SetToolTip(txtShaderFind, "Ctrl+F: Find next occurence of this string\r\nCtrl+Shift+F: Focus search box\r\n");
+      toolTip1.SetToolTip(txtShaderFind, "Ctrl+F: Find next occurence of this string\r\nCtrl+Shift+F: Focus search box\r\nCtrl+Alt+F: Reformat HLSL code");
       txtShaderFind.KeyDown += txtShaderFind_KeyDown;
       // 
       // btnLoadShaderInputFromFile
