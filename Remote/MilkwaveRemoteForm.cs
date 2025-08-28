@@ -303,7 +303,7 @@ namespace MilkwaveRemote {
 #if DEBUG
       //cboShadertoyURL.Text = "w3KGRK";
 #else
-      StartVisualizerIfNotFound();
+      StartVisualizerIfNotFound(true);
 #endif
 
       ofd = new OpenFileDialog();
@@ -318,9 +318,11 @@ namespace MilkwaveRemote {
       helper.FillAudioDevices(cboAudioDevice);
     }
 
-    private IntPtr StartVisualizerIfNotFound() {
+    private IntPtr StartVisualizerIfNotFound(bool onlyIfNotFound) {
+      bool doOpen = false;
+
       IntPtr result = FindVisualizerWindow();
-      if (FindVisualizerWindow() == IntPtr.Zero) {
+      if (result == IntPtr.Zero || !onlyIfNotFound) {
         // Try to run MilkwaveVisualizer.exe from the same directory as the assembly
         string visualizerPath = Path.Combine(BaseDir, "MilkwaveVisualizer.exe");
         if (File.Exists(visualizerPath)) {
@@ -1444,6 +1446,9 @@ namespace MilkwaveRemote {
         if (e.KeyCode == Keys.A) {
           txtMessage.Focus();
           txtMessage.SelectAll();
+        } else if (e.KeyCode == Keys.B) {
+          e.SuppressKeyPress = true;
+          toolStripMenuItemButtonPanel_Click(null, null);
         } else if (e.KeyCode == Keys.D) {
           btnPresetLoadDirectory_Click(null, null);
         } else if (e.KeyCode == Keys.F) {
@@ -1467,6 +1472,9 @@ namespace MilkwaveRemote {
         } else if (e.KeyCode == Keys.N) {
           SelectNextPreset();
           btnPresetSend_Click(null, null);
+        } else if (e.KeyCode == Keys.O) {
+          e.SuppressKeyPress = true;
+          StartVisualizerIfNotFound(false);
         } else if (e.KeyCode == Keys.P) {
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
@@ -1910,7 +1918,7 @@ namespace MilkwaveRemote {
     }
 
     private void lblWindow_DoubleClick(object sender, EventArgs e) {
-      StartVisualizerIfNotFound();
+      StartVisualizerIfNotFound(true);
     }
 
     private void toolStripMenuItemReleases_Click(object sender, EventArgs e) {
@@ -1985,7 +1993,7 @@ namespace MilkwaveRemote {
     }
 
     private void toolStripMenuItemOpenVisualizer_Click(object sender, EventArgs e) {
-      StartVisualizerIfNotFound();
+      StartVisualizerIfNotFound(false);
     }
 
     private void toolStripMenuItemTabsPanel_Click(object sender, EventArgs e) {
@@ -1996,7 +2004,7 @@ namespace MilkwaveRemote {
       SetPanelsVisibility();
     }
 
-    private void toolStripMenuItemButtonPanel_Click(object sender, EventArgs e) {
+    private void toolStripMenuItemButtonPanel_Click(object? sender, EventArgs? e) {
       toolStripMenuItemButtonPanel.Checked = !toolStripMenuItemButtonPanel.Checked;
       if (!toolStripMenuItemTabsPanel.Checked && !toolStripMenuItemButtonPanel.Checked) {
         toolStripMenuItemTabsPanel.Checked = true;
@@ -3628,7 +3636,7 @@ namespace MilkwaveRemote {
               sb.AppendLine(line);
             }
           }
-          txtShaderHLSL.Text = sb.ToString();
+          txtShaderHLSL.Text = Shader.BasicFormatShaderCode(sb.ToString());
         }
         txtShaderinfo.SelectionStart = 0;
         txtShaderinfo.ScrollToCaret();
