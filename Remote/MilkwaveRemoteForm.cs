@@ -223,7 +223,7 @@ namespace MilkwaveRemote {
 
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
       ShaderFilesFolder = Path.Combine(BaseDir, "resources\\shader\\");
-      PresetsShaderConvFolder = Path.Combine(VisualizerPresetsFolder, "Shader\\Conv\\");
+      PresetsShaderConvFolder = Path.Combine(VisualizerPresetsFolder, "Milkwave\\Shader\\Conv\\");
 
       FixNumericUpDownMouseWheel(this);
 

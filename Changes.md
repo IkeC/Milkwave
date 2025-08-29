@@ -1,7 +1,7 @@
 ## v3.0.2 (2025-08-26)
 
 - Pretty code formatting for HLSL shader code in Shader tab
-- Shader-based "Heartfelt" preset added to presets/Shader
+- Shader-based "Heartfelt" preset added to Milkwave/Shader
 - Fix: Visualizer crashing when using "Link" button in Milkwave Remote "Preset" tab
 - Improved shader precompile notification and error messages
 
@@ -13,7 +13,7 @@
 ## v3.0 (2025-08-17)
 
 - Shader Tab: Convert GLSL shader code to HLSL and send it to the Visualizer instantly
-- 20 new presets in presets/Shader directory
+- 20 new presets in Milkwave/Shader directory
 - Shader precompiling and caching (configurable)
 - New preset variables: bass_smooth, mid_smooth, treb_smooth, vol_smooth
 - AMD GPU detection and support for PSVersion=4 (by @OfficialIncubo)

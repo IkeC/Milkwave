@@ -10,7 +10,7 @@ robocopy %SRCDIR%\Incubo_ %DESTDIR%\Incubo_
 robocopy %SRCDIR%\Incubo_ Picks %DESTDIR%\Incubo_ Picks
 robocopy %SRCDIR%\Milkdrop2077 %DESTDIR%\Milkdrop2077
 robocopy %SRCDIR%\Milkwave %DESTDIR%\Milkwave
-robocopy %SRCDIR%\Shader %DESTDIR%\Shader
+robocopy %SRCDIR%\Milkwave\Shader %DESTDIR%\Milkwave\Shader
 
 :: textures
 robocopy %SRCDIR%\..\textures %DESTDIR%\..\textures

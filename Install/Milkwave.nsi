@@ -8,9 +8,9 @@
 !define MUI_ICON "..\Resources\MilkwaveVisualizer.ico"
 !define MUI_UNICON "..\Resources\MilkwaveVisualizer.ico"
 
-!define VERSION "3.0.2"
+!define VERSION "3.1"
 !define VER_MAJOR 3
-!define VER_MINOR 0
+!define VER_MINOR 1
 
 !define RELDIR "..\Release\"
 
@@ -64,10 +64,10 @@ Section "Milkwave" SecMilkwave
   File /r "${RELDIR}resources\docs\*"
 
   SetOutPath "$INSTDIR\resources\presets\Milkwave\"
-  File /r "${RELDIR}resources\presets\Milkwave\*"
+  File "${RELDIR}resources\presets\Milkwave\*"
 
-  SetOutPath "$INSTDIR\resources\presets\Shader\"
-  File /r "${RELDIR}resources\presets\Shader\*"
+  SetOutPath "$INSTDIR\resources\presets\Milkwave\Shader\"
+  File "${RELDIR}resources\presets\Milkwave\Shader\*"
 
   SetOutPath "$INSTDIR\resources\sprites\"
   File /r "${RELDIR}resources\sprites\*"
