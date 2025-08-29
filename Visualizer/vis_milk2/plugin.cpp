@@ -4407,6 +4407,20 @@ void CPlugin::AddNotification(wchar_t* szMsg, float time) {
   g_plugin.AddError(szMsg, time, ERR_NOTIFY, m_fontinfo[SIMPLE_FONT].bBold);
 }
 
+void CPlugin::AddNotificationAudioDevice() {
+  if (m_nAudioDeviceRequestType == 1) {
+    std::wstring statusMessage = std::wstring(m_szAudioDeviceDisplayName) + L" [In]";
+    AddNotification(statusMessage.data());
+  }
+  else if (m_nAudioDeviceRequestType == 2) {
+    std::wstring statusMessage = std::wstring(m_szAudioDeviceDisplayName) + L" [Out]";
+    AddNotification(statusMessage.data());
+  }
+  else {
+    AddNotification(g_plugin.m_szAudioDeviceDisplayName);
+  }
+}
+
 void CPlugin::AddError(wchar_t* szMsg, float fDuration, int category, bool bBold) {
   OutputDebugStringW(szMsg);
   if (category == ERR_NOTIFY)

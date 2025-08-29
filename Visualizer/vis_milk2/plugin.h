@@ -552,6 +552,7 @@ public:
 
   ErrorMsgList m_errors;
   void AddNotification(wchar_t* szMsg);
+  void AddNotificationAudioDevice();
   void AddNotification(wchar_t* szMsg, float time);
   void AddError(wchar_t* szMsg, float fDuration, int category = ERR_ALL, bool bBold = true);
   void ClearErrors(int category = ERR_ALL);  // 0=all categories

@@ -1,4 +1,5 @@
 // prefs.cpp
+#pragma once
 
 #include "common.h"
 

@@ -723,6 +723,57 @@ static void ToggleBorderlessWindow(HWND hwnd) {
   g_plugin.m_WindowBorderless = borderless;
 }
 
+
+HRESULT GetDefaultAudioDeviceName(IMMDevice** ppMMDevice, std::wstring* m_szAudioDeviceDisplayName) {
+  HRESULT hr = S_OK;
+  IMMDeviceEnumerator* pMMDeviceEnumerator;
+
+  // activate a device enumerator
+  hr = CoCreateInstance(
+    __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
+    __uuidof(IMMDeviceEnumerator),
+    (void**)&pMMDeviceEnumerator
+  );
+  if (FAILED(hr)) {
+    ERR(L"CoCreateInstance(IMMDeviceEnumerator) failed: hr = 0x%08x", hr);
+    return hr;
+  }
+  ReleaseOnExit releaseMMDeviceEnumerator(pMMDeviceEnumerator);
+
+  // get the default render endpoint
+  hr = pMMDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, ppMMDevice);
+  if (FAILED(hr)) {
+    ERR(L"IMMDeviceEnumerator::GetDefaultAudioEndpoint failed: hr = 0x%08x", hr);
+    return hr;
+  }
+
+  // open the property store on that device
+  IPropertyStore* pPropertyStore;
+  hr = (*ppMMDevice)->OpenPropertyStore(STGM_READ, &pPropertyStore);
+  if (FAILED(hr)) {
+    ERR(L"IMMDevice::OpenPropertyStore failed: hr = 0x%08x", hr);
+    return hr;
+  }
+  ReleaseOnExit releasePropertyStore(pPropertyStore);
+
+  // get the long name property
+  PROPVARIANT pv; PropVariantInit(&pv);
+  hr = pPropertyStore->GetValue(PKEY_Device_FriendlyName, &pv);
+  if (FAILED(hr)) {
+    ERR(L"IPropertyStore::GetValue failed: hr = 0x%08x", hr);
+    return hr;
+  }
+  PropVariantClearOnExit clearPv(&pv);
+
+  if (VT_LPWSTR != pv.vt) {
+    ERR(L"PKEY_Device_FriendlyName variant type is %u - expected VT_LPWSTR", pv.vt);
+    return E_UNEXPECTED;
+  }
+  *m_szAudioDeviceDisplayName = std::wstring(pv.pwszVal);
+
+  return S_OK;
+}
+
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
   static bool rightMouseButtonHeld = false; // Track the state of the right mouse button  
@@ -855,7 +906,24 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   }
   else if (wParam == VK_D) {
     if (GetKeyState(VK_CONTROL) & 0x8000) { // Check if Ctrl is pressed
-      g_plugin.AddNotification(g_plugin.m_szAudioDeviceDisplayName);
+      bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+      if (isShiftPressed) {
+        g_plugin.AddNotification(g_plugin.m_szAudioDeviceDisplayName);
+      }
+      else {
+        wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
+
+        IMMDevice* m_pMMDevice;
+        std::wstring sAudioDeviceDisplayName;
+        GetDefaultAudioDeviceName(&m_pMMDevice, &sAudioDeviceDisplayName);
+        wcscpy(g_plugin.m_szAudioDevice, sAudioDeviceDisplayName.c_str());
+        
+        g_plugin.SetAudioDeviceDisplayName(sAudioDeviceDisplayName.c_str());
+
+        // Restart audio
+        g_plugin.m_nAudioDeviceRequestType = 2;
+        g_plugin.m_nAudioLoopState = 1;
+      }
     }
     return 0;
   }
@@ -1490,45 +1558,42 @@ int StartAudioCaptureThread(HINSTANCE instance) {
 
     if (S_OK != threadArgs.hr) {
       ERR(L"Thread HRESULT is 0x%08x", threadArgs.hr);
-      return -__LINE__;
+      // return -__LINE__;
+      // probably the device got disconnected, see handling for result > 0 below
+      return 1;
     }
     // let prefs' destructor call mmioClose
 
     if (g_plugin.m_nAudioLoopState == 2) {
-      // pauseRender = true;
-      if (g_plugin.m_nAudioDeviceRequestType == 1) {
-        std::wstring statusMessage = std::wstring(g_plugin.m_szAudioDevice) + L" [In]";
-        g_plugin.AddNotification(statusMessage.data());
-      }
-      else if (g_plugin.m_nAudioDeviceRequestType == 2) {
-        std::wstring statusMessage = std::wstring(g_plugin.m_szAudioDevice) + L" [Out]";
-        g_plugin.AddNotification(statusMessage.data());
-      }
-      else {
-        g_plugin.AddNotification(g_plugin.m_szAudioDevice);
-      }
+      g_plugin.AddNotificationAudioDevice();
 
       int result = StartAudioCaptureThread(instance);
       if (result != 0) {
-        g_plugin.AddNotification(g_plugin.m_szAudioDevicePrevious);
         ERR(L"StartAudioCaptureThread failed: %d", result);
 
-        std::wstring statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevicePrevious);
-        g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
-
+        /*
         std::wstringstream ss;
-        ss << L"STATUS=Device init failed, reverting to " << g_plugin.m_szAudioDevicePrevious;
+        ss << L"STATUS=Device init \"" << g_plugin.m_szAudioDeviceDisplayName << "\" failed, reverting to \"" << g_plugin.m_szAudioDevicePrevious << "\"";
         statusMessage = ss.str();
         g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
+        */
+        
+        // if result > 1, we probably encountered a disconnection error earlier (eg. Bluetooth headphone disconnection), 
+        // and the m_szAudioDevice was already set using Ctrl+D
+        if (result < 0) {
+          wcscpy_s(g_plugin.m_szAudioDevice, g_plugin.m_szAudioDevicePrevious);
+        }
 
-
-        wcscpy_s(g_plugin.m_szAudioDevice, g_plugin.m_szAudioDevicePrevious);
+        std::wstring statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevice);
+        g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
+        g_plugin.AddNotificationAudioDevice();
         result = StartAudioCaptureThread(instance);
       }
     }
   } catch (const std::exception& e) {
     milkwave.LogException(L"StartAudioCaptureThread", e, true);
   }
+  return 0;
 }
 
 unsigned __stdcall DoSetup(void* param) {

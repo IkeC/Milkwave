@@ -346,40 +346,40 @@ namespace MilkwaveRemote
       // toolStripMenuItemHomepage
       // 
       toolStripMenuItemHomepage.Name = "toolStripMenuItemHomepage";
-      toolStripMenuItemHomepage.Size = new Size(180, 22);
+      toolStripMenuItemHomepage.Size = new Size(155, 22);
       toolStripMenuItemHomepage.Text = "Milkwave";
       toolStripMenuItemHomepage.Click += toolStripMenuItemReleases_Click;
       // 
       // toolStripSeparator1
       // 
       toolStripSeparator1.Name = "toolStripSeparator1";
-      toolStripSeparator1.Size = new Size(177, 6);
+      toolStripSeparator1.Size = new Size(152, 6);
       // 
       // toolStripMenuItemHelp
       // 
       toolStripMenuItemHelp.Name = "toolStripMenuItemHelp";
-      toolStripMenuItemHelp.Size = new Size(180, 22);
+      toolStripMenuItemHelp.Size = new Size(155, 22);
       toolStripMenuItemHelp.Text = "Help";
       toolStripMenuItemHelp.Click += toolStripMenuItemHelp_Click;
       // 
       // toolStripMenuItemSupporters
       // 
       toolStripMenuItemSupporters.Name = "toolStripMenuItemSupporters";
-      toolStripMenuItemSupporters.Size = new Size(180, 22);
+      toolStripMenuItemSupporters.Size = new Size(155, 22);
       toolStripMenuItemSupporters.Text = "Supporters";
       toolStripMenuItemSupporters.Click += toolStripMenuItemSupporters_Click;
       // 
       // toolStripSeparator3
       // 
       toolStripSeparator3.Name = "toolStripSeparator3";
-      toolStripSeparator3.Size = new Size(177, 6);
+      toolStripSeparator3.Size = new Size(152, 6);
       // 
       // toolStripMenuItemTabsPanel
       // 
       toolStripMenuItemTabsPanel.Checked = true;
       toolStripMenuItemTabsPanel.CheckState = CheckState.Checked;
       toolStripMenuItemTabsPanel.Name = "toolStripMenuItemTabsPanel";
-      toolStripMenuItemTabsPanel.Size = new Size(180, 22);
+      toolStripMenuItemTabsPanel.Size = new Size(155, 22);
       toolStripMenuItemTabsPanel.Text = "Tabs Panel";
       toolStripMenuItemTabsPanel.Click += toolStripMenuItemTabsPanel_Click;
       // 
@@ -388,7 +388,7 @@ namespace MilkwaveRemote
       toolStripMenuItemButtonPanel.Checked = true;
       toolStripMenuItemButtonPanel.CheckState = CheckState.Checked;
       toolStripMenuItemButtonPanel.Name = "toolStripMenuItemButtonPanel";
-      toolStripMenuItemButtonPanel.Size = new Size(180, 22);
+      toolStripMenuItemButtonPanel.Size = new Size(155, 22);
       toolStripMenuItemButtonPanel.Text = "Button Panel";
       toolStripMenuItemButtonPanel.ToolTipText = "Ctrl+B";
       toolStripMenuItemButtonPanel.Click += toolStripMenuItemButtonPanel_Click;
@@ -396,21 +396,21 @@ namespace MilkwaveRemote
       // toolStripSeparator2
       // 
       toolStripSeparator2.Name = "toolStripSeparator2";
-      toolStripSeparator2.Size = new Size(177, 6);
+      toolStripSeparator2.Size = new Size(152, 6);
       // 
       // toolStripMenuItemDarkMode
       // 
       toolStripMenuItemDarkMode.Checked = true;
       toolStripMenuItemDarkMode.CheckState = CheckState.Checked;
       toolStripMenuItemDarkMode.Name = "toolStripMenuItemDarkMode";
-      toolStripMenuItemDarkMode.Size = new Size(180, 22);
+      toolStripMenuItemDarkMode.Size = new Size(155, 22);
       toolStripMenuItemDarkMode.Text = "Dark Mode";
       toolStripMenuItemDarkMode.Click += toolStripMenuItemDarkMode_Click;
       // 
       // toolStripMenuItemOpenVisualizer
       // 
       toolStripMenuItemOpenVisualizer.Name = "toolStripMenuItemOpenVisualizer";
-      toolStripMenuItemOpenVisualizer.Size = new Size(180, 22);
+      toolStripMenuItemOpenVisualizer.Size = new Size(155, 22);
       toolStripMenuItemOpenVisualizer.Text = "Open Visualizer";
       toolStripMenuItemOpenVisualizer.ToolTipText = "Ctrl+O";
       toolStripMenuItemOpenVisualizer.Click += toolStripMenuItemOpenVisualizer_Click;
