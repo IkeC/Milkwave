@@ -1403,6 +1403,10 @@ void CPlugin::MyReadConfig() {
 
   m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
   m_AMDDetectionMode = GetPrivateProfileIntW(L"Milkwave", L"AMDDetectionMode", m_AMDDetectionMode, pIni);
+  
+  m_MessageDefaultBurnTime = GetPrivateProfileFloatW(L"Milkwave", L"MessageDefaultBurnTime", m_MessageDefaultBurnTime, pIni);
+  m_MessageDefaultFadeinTime = GetPrivateProfileFloatW(L"Milkwave", L"MessageDefaultFadeinTime", m_MessageDefaultFadeinTime, pIni);
+  m_MessageDefaultFadeoutTime = GetPrivateProfileFloatW(L"Milkwave", L"MessageDefaultFadeoutTime", m_MessageDefaultFadeoutTime, pIni);
 
   // We'll put these in the settings section since other MilkDrop forks use similar settings
   m_MinPSVersionConfig = GetPrivateProfileIntW(L"Settings", L"MinPSVersion", m_MinPSVersionConfig, pIni);
@@ -10227,6 +10231,7 @@ void CPlugin::ReadCustomMessages() {
     m_CustomMessage[n].growth = 1.0f;
     m_CustomMessage[n].fTime = 1.5f;
     m_CustomMessage[n].fFade = 0.2f;
+    m_CustomMessage[n].fFadeOut = 0.0f;
 
     m_CustomMessage[n].bOverrideBold = false;
     m_CustomMessage[n].bOverrideItal = false;
@@ -10275,7 +10280,11 @@ void CPlugin::ReadCustomMessages() {
 
       m_CustomMessage[n].growth = GetPrivateProfileFloatW(szSectionName, L"growth", m_CustomMessage[n].growth, m_szMsgIniFile);
       m_CustomMessage[n].fTime = GetPrivateProfileFloatW(szSectionName, L"time", m_CustomMessage[n].fTime, m_szMsgIniFile);
-      m_CustomMessage[n].fFade = GetPrivateProfileFloatW(szSectionName, L"fade", m_CustomMessage[n].fFade, m_szMsgIniFile);
+      
+      m_CustomMessage[n].fFade = GetPrivateProfileFloatW(szSectionName, L"fade", m_MessageDefaultFadeinTime, m_szMsgIniFile);
+      m_CustomMessage[n].fFadeOut = GetPrivateProfileFloatW(szSectionName, L"fadeout", m_MessageDefaultFadeoutTime, m_szMsgIniFile);
+      m_CustomMessage[n].fBurnTime = GetPrivateProfileFloatW(szSectionName, L"burntime", m_MessageDefaultBurnTime, m_szMsgIniFile);
+      
       m_CustomMessage[n].nColorR = GetPrivateProfileIntW(szSectionName, L"r", m_CustomMessage[n].nColorR, m_szMsgIniFile);
       m_CustomMessage[n].nColorG = GetPrivateProfileIntW(szSectionName, L"g", m_CustomMessage[n].nColorG, m_szMsgIniFile);
       m_CustomMessage[n].nColorB = GetPrivateProfileIntW(szSectionName, L"b", m_CustomMessage[n].nColorB, m_szMsgIniFile);
@@ -10331,7 +10340,7 @@ void CPlugin::LaunchCustomMessage(int nMsgNum) {
   int fontID = m_CustomMessage[nMsgNum].nFont;
 
   int nextFreeSupertextIndex = GetNextFreeSupertextIndex();
-  if (nextFreeSupertextIndex > 0) {
+  if (nextFreeSupertextIndex > -1) {
     m_supertexts[nextFreeSupertextIndex].bRedrawSuperText = true;
     m_supertexts[nextFreeSupertextIndex].bIsSongTitle = false;
     lstrcpyW(m_supertexts[nextFreeSupertextIndex].szTextW, m_CustomMessage[nMsgNum].szText);
@@ -10342,7 +10351,9 @@ void CPlugin::LaunchCustomMessage(int nMsgNum) {
     m_supertexts[nextFreeSupertextIndex].fY = m_CustomMessage[nMsgNum].y + m_CustomMessage[nMsgNum].randy * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f);
     m_supertexts[nextFreeSupertextIndex].fGrowth = m_CustomMessage[nMsgNum].growth;
     m_supertexts[nextFreeSupertextIndex].fDuration = m_CustomMessage[nMsgNum].fTime;
-    m_supertexts[nextFreeSupertextIndex].fFadeTime = m_CustomMessage[nMsgNum].fFade;
+    m_supertexts[nextFreeSupertextIndex].fFadeInTime = m_CustomMessage[nMsgNum].fFade;
+    m_supertexts[nextFreeSupertextIndex].fFadeOutTime = m_CustomMessage[nMsgNum].fFadeOut;
+    m_supertexts[nextFreeSupertextIndex].fBurnTime = m_CustomMessage[nMsgNum].fBurnTime;
 
     // overrideables:
     if (m_CustomMessage[nMsgNum].bOverrideFace)
@@ -10508,11 +10519,17 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
 
     if (params.find(L"fade") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].fFadeTime = std::stof(params[L"fade"]);
+      m_supertexts[nextFreeSupertextIndex].fFadeInTime = std::stof(params[L"fade"]);
     }
     else {
-      // The percentage of time (0..1) spent fading in the text
-      m_supertexts[nextFreeSupertextIndex].fFadeTime = 0.2f; // Default fade time
+      m_supertexts[nextFreeSupertextIndex].fFadeInTime = m_MessageDefaultFadeinTime;
+    }
+
+    if (params.find(L"fadeout") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fFadeOutTime = std::stof(params[L"fadeout"]);
+    }
+    else {
+      m_supertexts[nextFreeSupertextIndex].fFadeOutTime = m_MessageDefaultFadeoutTime;
     }
 
     if (params.find(L"bold") != params.end()) {
@@ -10603,6 +10620,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
 
     if (params.find(L"burntime") != params.end()) {
       m_supertexts[nextFreeSupertextIndex].fBurnTime = std::stof(params[L"burntime"]);
+    }
+    else {
+      m_supertexts[nextFreeSupertextIndex].fBurnTime = m_MessageDefaultBurnTime;
     }
 
     m_supertexts[nextFreeSupertextIndex].fStartTime = GetTime();

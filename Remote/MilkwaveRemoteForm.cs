@@ -1584,8 +1584,9 @@ namespace MilkwaveRemote {
           "y={float:0..1}  // The y-position of the center of the text (0.0=top, 1.0=bottom)" + Environment.NewLine +
           "randx={float:0..1}  // X-randomization: x will be bumped within +/- this value" + Environment.NewLine +
           "randy={float:0..1}  // Y-randomization: y will be bumped within +/- this value" + Environment.NewLine +
-          "time={float:0..999}  // The duration (in seconds) the text will display" + Environment.NewLine +
-          "fade={float:0..1}  // The percentage of time (0..1) spent fading in the text" + Environment.NewLine +
+          "time={float}  // The duration (in seconds) the text will display" + Environment.NewLine +
+          "fade={float}  // The duration (in seconds) spent fading in the text" + Environment.NewLine +
+          "fadeout={float}  // The duration (in seconds) spent fading out the text" + Environment.NewLine +
           "ital={0|1}  // Font italics override (0=off, 1=on)" + Environment.NewLine +
           "bold={0|1}  // Font bold override (0=off, 1=on)" + Environment.NewLine +
           "r={int:0..255}  // Red color component for the font" + Environment.NewLine +

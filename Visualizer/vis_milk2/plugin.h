@@ -115,6 +115,8 @@ typedef struct {
   float	growth;
   float	fTime;	// total time to display the message, in seconds
   float	fFade;	// % (0..1) of the time that is spent fading in
+  float	fFadeOut;
+  float	fBurnTime;
 
   // overrides
   int     bOverrideBold;
@@ -155,14 +157,15 @@ typedef struct {
   float fGrowth;			// applies to custom messages only
   int		nFontSizeUsed;		// height IN PIXELS
   float	fDuration;
-  float	fFadeTime;			// applies to custom messages only; song title fade times are handled specially
+  float	fFadeInTime; // applies to custom messages only; song title fade times are handled specially
+  float	fFadeOutTime; // applies to custom messages only; song title fade times are handled specially
   int  	nColorR;
   int   nColorG;
   int  	nColorB;
   int   nEaseMode = 2;	// 0 = linear, 1 = ease-in, 2 = ease-out (default)
   float fEaseFactor = 2.0f; // 1.0f = linear, 2.0f = ease-in/out, 3.0f = more pronounced ease-in/out
   float fShadowOffset = 2.0f;
-  float fBurnTime = 0.1f; // seconds
+  float fBurnTime; // seconds
 }
 td_supertext;
 
@@ -359,7 +362,10 @@ public:
   int     m_nMidEnd = 4000;
   int     m_nTrebStart = 4000;
   int     m_nTrebEnd = 20000;
-
+  float   m_MessageDefaultBurnTime = 0.1f;
+  float   m_MessageDefaultFadeinTime = 0.2f;
+  float   m_MessageDefaultFadeoutTime = 0.0f;
+  
   bool m_WindowBorderless = false;
   float m_WindowWatermarkModeOpacity = 0.3f;
   int m_WindowX = 850;

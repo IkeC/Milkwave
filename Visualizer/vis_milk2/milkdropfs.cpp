@@ -5355,6 +5355,7 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   lpDevice->SetFVF(SPRITEVERTEX_FORMAT);
 
   lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+
   lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
   lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
 
@@ -5536,19 +5537,34 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     }
   }
 
-  float t = 0;
-
-  if (m_supertexts[supertextIndex].bIsSongTitle)
-    t = powf(fProgress, 0.3f) * 1.0f;
-  else if (fProgress <= 1.0f)
-    t = CosineInterp(min(1.0f, (fProgress / m_supertexts[supertextIndex].fFadeTime)));
-  else {
-    float fTimeAfterFullDuration = GetTime() - m_supertexts[supertextIndex].fStartTime - m_supertexts[supertextIndex].fDuration;
-    t = 1 - (fTimeAfterFullDuration / m_supertexts[supertextIndex].fBurnTime);
+  float t = 1.0f;
+  float currentTime = GetTime();
+  
+  float fadeInProgress = 1.0f;
+  if (m_supertexts[supertextIndex].fFadeInTime > 0) {
+    fadeInProgress = (currentTime - m_supertexts[supertextIndex].fStartTime) / m_supertexts[supertextIndex].fFadeInTime;
   }
+  float fadeOutStartTime = m_supertexts[supertextIndex].fStartTime + m_supertexts[supertextIndex].fDuration - m_supertexts[supertextIndex].fFadeOutTime;
+  
+  float fadeOutProgress = 0.0f;
+  if (m_supertexts[supertextIndex].fFadeOutTime > 0) {
+    fadeOutProgress = (currentTime - fadeOutStartTime) / m_supertexts[supertextIndex].fFadeOutTime;
+  }
+
+  if (m_supertexts[supertextIndex].bIsSongTitle) {
+    t = powf(fProgress, 0.3f) * 1.0f;
+  } else if (fadeInProgress < 1.0f) {
+    // Fasde-in phase
+    t = CosineInterp(max(0.0f, min(1.0f, fadeInProgress)));
+  } else if (fadeOutProgress >= 0.0f) {
+    // Fade-out phase
+    t = 1.0f - CosineInterp(max(0.0f, min(1.0f, fadeOutProgress)));
+  }
+
   if (t < 0) {
     t = 0;
   }
+  
 
   // nudge down & right for shadow, up & left for solid text
   float offset_x = 0, offset_y = 0;
@@ -5589,6 +5605,7 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     if (it == 0) {
       lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);//SRCALPHA);
       lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCCOLOR);
+
     }
     else {
       lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);//SRCALPHA);

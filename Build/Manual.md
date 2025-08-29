@@ -38,6 +38,12 @@ You can load a list of parameter lines from a file and send them to the Visualiz
 
 Instead of selecting and sending lines from the fine manually, you may check the "Autoplay" to play them sequentially. Use the "BPM" and "Beats" parameters to control the interval between sending each line. Check the "Rand" button to send a random line on each interval (excluding the last sent line).
 
+### Fade-in, Fade-Out and Burntime
+
+You can define default values for fade-in ("fade", default 0.2), fade-out ("fadeout", default 0.0) and burntime ("burntime", default 0.1) in settings.ini, and override them per message as a parameter.
+
+If a burntime > 0 is defined, the message will be "baked" into the background and slowly fade away for the defined burntime duration. Note that this won't work with all presets, and if you define a fadeout > 0, the burntime will be irrelevant because the message will fade out before there's something to "burn in".
+
 ## Tab "Shader"
 
 This tab can convert GLSL shader code (eg. from Shadertoy.com) to HLSL shader code, save it to a preset file and display it in the Visualizer instantly.
