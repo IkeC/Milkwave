@@ -1389,7 +1389,7 @@ void StartRenderThread(HINSTANCE instance) {
     &threadId);
 }
 
-int StartAudioCaptureThread(HINSTANCE instance) {
+static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
 
   try {
 
@@ -1560,14 +1560,18 @@ int StartAudioCaptureThread(HINSTANCE instance) {
       ERR(L"Thread HRESULT is 0x%08x", threadArgs.hr);
       // return -__LINE__;
       // probably the device got disconnected, see handling for result > 0 below
-      return 1;
+      // if this is the topmost thread, do not return
+      if (nestingLevel > 0) {
+        return 1;
+      }
     }
     // let prefs' destructor call mmioClose
 
     if (g_plugin.m_nAudioLoopState == 2) {
       g_plugin.AddNotificationAudioDevice();
 
-      int result = StartAudioCaptureThread(instance);
+      // not the best solution to build a thread tree like this, but too lazy/scared to refactor right now
+      int result = StartAudioCaptureThread(instance, ++nestingLevel);
       if (result != 0) {
         ERR(L"StartAudioCaptureThread failed: %d", result);
 
@@ -1587,7 +1591,7 @@ int StartAudioCaptureThread(HINSTANCE instance) {
         std::wstring statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevice);
         g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
         g_plugin.AddNotificationAudioDevice();
-        result = StartAudioCaptureThread(instance);
+        result = StartAudioCaptureThread(instance, ++nestingLevel);
       }
     }
   } catch (const std::exception& e) {
@@ -1768,7 +1772,7 @@ int StartThreads(HINSTANCE instance) {
 
     StartSetupThread(instance);
 
-    StartAudioCaptureThread(instance);
+    StartAudioCaptureThread(instance, 0);
 
   } catch (const std::exception& e) {
     milkwave.LogException(L"StartThreads", e, true);
