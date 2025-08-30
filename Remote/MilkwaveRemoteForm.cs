@@ -361,7 +361,7 @@ namespace MilkwaveRemote {
 
       string MilkwavePresetsFolder = Path.Combine(VisualizerPresetsFolder, "Milkwave");
       if (Directory.Exists(MilkwavePresetsFolder)) {
-        LoadPresetsFromDirectory(MilkwavePresetsFolder, false);
+        LoadPresetsFromDirectory(MilkwavePresetsFolder, true);
       }
 
       if (Settings.LoadFilters?.Count > 0) {
@@ -2139,7 +2139,7 @@ namespace MilkwaveRemote {
           includeSubdirs = true;
         }
       }
-      FillCboPresetsFromDir(dirToLoad, includeSubdirs);
+      FillCboPresetsFromDir(dirToLoad, includeSubdirs, "");
       SetStatusText($"Loaded {cboPresets.Items.Count} presets from '{dirToLoad}'");
       if (cboPresets.Items.Count > 0) {
         cboPresets.SelectedIndex = 0;
@@ -2147,7 +2147,7 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void FillCboPresetsFromDir(string dirToLoad, bool includeSubdirs) {
+    private void FillCboPresetsFromDir(string dirToLoad, bool includeSubdirs, string displayDirPrefix) {
       int relIndex = -1;
       foreach (string fileName in Directory.GetFiles(dirToLoad)) {
         if (relIndex == -1) {
@@ -2160,7 +2160,7 @@ namespace MilkwaveRemote {
         if (fileNameMaybeRelativePath.EndsWith(".milk") || fileNameMaybeRelativePath.EndsWith(".milk2")) {
           string fileNameOnlyNoExtension = Path.GetFileNameWithoutExtension(fileNameMaybeRelativePath);
           Data.Preset newPreset = new Data.Preset {
-            DisplayName = fileNameOnlyNoExtension,
+            DisplayName = displayDirPrefix + fileNameOnlyNoExtension,
             MaybeRelativePath = fileNameMaybeRelativePath
           };
           if (txtFilter.Text.ToUpper().StartsWith("AGE=")) {
@@ -2183,7 +2183,8 @@ namespace MilkwaveRemote {
       }
       if (includeSubdirs) {
         foreach (string subDir in Directory.GetDirectories(dirToLoad)) {
-          FillCboPresetsFromDir(subDir, true);
+          string? prefix = Path.GetFileName(subDir) + "\\";
+          FillCboPresetsFromDir(subDir, true, prefix);
         }
       }
     }
