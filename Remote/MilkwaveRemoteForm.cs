@@ -100,6 +100,9 @@ namespace MilkwaveRemote {
     private RemoteHelper helper;
 
     private OpenFileDialog ofd;
+    private OpenFileDialog ofdShader;
+    private OpenFileDialog ofdShaderHLSL;
+
     private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
 
     private const int VK_F1 = 0x70;
@@ -232,8 +235,6 @@ namespace MilkwaveRemote {
       var version = fieVersionInfo.FileVersion;
       toolStripMenuItemHomepage.Text = $"Milkwave {version}";
 
-      ofd = new OpenFileDialog();
-
       try {
         string jsonString = File.ReadAllText(Path.Combine(BaseDir, milkwaveSettingsFile));
         Settings? loadedSettings = JsonSerializer.Deserialize<Settings>(jsonString, new JsonSerializerOptions {
@@ -353,11 +354,19 @@ namespace MilkwaveRemote {
       }
       SetFormattedMessage();
 
+      ofd = new OpenFileDialog();
       if (Directory.Exists(VisualizerPresetsFolder)) {
         ofd.InitialDirectory = VisualizerPresetsFolder;
       } else {
         ofd.InitialDirectory = BaseDir;
       }
+
+      ofdShader = new OpenFileDialog();
+      ofdShader.Filter = "GLSL files|*.glsl|All files (*.*)|*.*";
+      ofdShader.InitialDirectory = Path.Combine(BaseDir, ShaderFilesFolder);
+
+      ofdShaderHLSL = new OpenFileDialog();
+      ofdShaderHLSL.Filter = "Presets or HLSL files|*.milk;*.hlsl|All files (*.*)|*.*";
 
       string MilkwavePresetsFolder = Path.Combine(VisualizerPresetsFolder, "Milkwave");
       if (Directory.Exists(MilkwavePresetsFolder)) {
@@ -546,164 +555,174 @@ namespace MilkwaveRemote {
       txtMessage.SelectAll();
     }
 
+    bool SendingMessage = false;
+
     private void SendToMilkwaveVisualizer(string messageToSend, MessageType type) {
       SetStatusText("");
       string partialTitle = cboWindowTitle.Text;
       string statusMessage = "";
-      IntPtr foundWindow = FindVisualizerWindow();
-      if (foundWindow != IntPtr.Zero) {
-        string message = "";
-        if (type == MessageType.Wave) {
-          message = "WAVE" +
-            "|MODE=" + numWaveMode.Value +
-            "|ALPHA=" + numWaveAlpha.Value.ToString(CultureInfo.InvariantCulture) +
-            "|COLORR=" + pnlColorWave.BackColor.R +
-            "|COLORG=" + pnlColorWave.BackColor.G +
-            "|COLORB=" + pnlColorWave.BackColor.B +
-            "|PUSHX=" + numWavePushX.Value.ToString(CultureInfo.InvariantCulture) +
-            "|PUSHY=" + numWavePushY.Value.ToString(CultureInfo.InvariantCulture) +
-            "|ZOOM=" + numWaveZoom.Value.ToString(CultureInfo.InvariantCulture) +
-            "|WARP=" + numWaveWarp.Value.ToString(CultureInfo.InvariantCulture) +
-            "|ROTATION=" + numWaveRotation.Value.ToString(CultureInfo.InvariantCulture) +
-            "|DECAY=" + numWaveDecay.Value.ToString(CultureInfo.InvariantCulture) +
-            "|SCALE=" + numWaveScale.Value.ToString(CultureInfo.InvariantCulture) +
-            "|ECHO=" + numWaveEcho.Value.ToString(CultureInfo.InvariantCulture) +
-            "|BRIGHTEN=" + (chkWaveBrighten.Checked ? "1" : "0") +
-            "|DARKEN=" + (chkWaveDarken.Checked ? "1" : "0") +
-            "|SOLARIZE=" + (chkWaveSolarize.Checked ? "1" : "0") +
-            "|INVERT=" + (chkWaveInvert.Checked ? "1" : "0") +
-            "|ADDITIVE=" + (chkWaveAdditive.Checked ? "1" : "0") +
-            "|DOTTED=" + (chkWaveDotted.Checked ? "1" : "0") +
-            "|THICK=" + (chkWaveThick.Checked ? "1" : "0") +
-            "|VOLALPHA=" + (chkWaveVolAlpha.Checked ? "1" : "0");
-          statusMessage = $"Changed Wave in";
-        } else if (type == MessageType.PresetFilePath) {
-          message = "PRESET=" + messageToSend;
-          string fileName = Path.GetFileNameWithoutExtension(messageToSend);
-          statusMessage = $"Sent preset \"{fileName}\" to";
-        } else if (type == MessageType.Amplify) {
-          message = "AMP" +
-            "|l=" + numAmpLeft.Value.ToString(CultureInfo.InvariantCulture) +
-            "|r=" + numAmpRight.Value.ToString(CultureInfo.InvariantCulture);
-          statusMessage = $"Sent amplification {numAmpLeft.Value.ToString(CultureInfo.InvariantCulture)}" +
-            $"/{numAmpRight.Value.ToString(CultureInfo.InvariantCulture)} to";
-        } else if (type == MessageType.AudioDevice) {
-          if (cboAudioDevice.Text.Length > 0) {
-            ComboBoxItemDevice? selectedItem = (ComboBoxItemDevice?)cboAudioDevice.SelectedItem;
-            if (selectedItem != null) {
-              if (selectedItem.IsInputDevice) {
-                message = "DEVICE=IN|" + selectedItem.Device.FriendlyName;
-              } else {
-                message = "DEVICE=OUT|" + selectedItem.Device.FriendlyName;
+
+      try {
+        if (!SendingMessage) {
+          SendingMessage = true;
+          IntPtr foundWindow = FindVisualizerWindow();
+          if (foundWindow != IntPtr.Zero) {
+            string message = "";
+            if (type == MessageType.Wave) {
+              message = "WAVE" +
+                "|MODE=" + numWaveMode.Value +
+                "|ALPHA=" + numWaveAlpha.Value.ToString(CultureInfo.InvariantCulture) +
+                "|COLORR=" + pnlColorWave.BackColor.R +
+                "|COLORG=" + pnlColorWave.BackColor.G +
+                "|COLORB=" + pnlColorWave.BackColor.B +
+                "|PUSHX=" + numWavePushX.Value.ToString(CultureInfo.InvariantCulture) +
+                "|PUSHY=" + numWavePushY.Value.ToString(CultureInfo.InvariantCulture) +
+                "|ZOOM=" + numWaveZoom.Value.ToString(CultureInfo.InvariantCulture) +
+                "|WARP=" + numWaveWarp.Value.ToString(CultureInfo.InvariantCulture) +
+                "|ROTATION=" + numWaveRotation.Value.ToString(CultureInfo.InvariantCulture) +
+                "|DECAY=" + numWaveDecay.Value.ToString(CultureInfo.InvariantCulture) +
+                "|SCALE=" + numWaveScale.Value.ToString(CultureInfo.InvariantCulture) +
+                "|ECHO=" + numWaveEcho.Value.ToString(CultureInfo.InvariantCulture) +
+                "|BRIGHTEN=" + (chkWaveBrighten.Checked ? "1" : "0") +
+                "|DARKEN=" + (chkWaveDarken.Checked ? "1" : "0") +
+                "|SOLARIZE=" + (chkWaveSolarize.Checked ? "1" : "0") +
+                "|INVERT=" + (chkWaveInvert.Checked ? "1" : "0") +
+                "|ADDITIVE=" + (chkWaveAdditive.Checked ? "1" : "0") +
+                "|DOTTED=" + (chkWaveDotted.Checked ? "1" : "0") +
+                "|THICK=" + (chkWaveThick.Checked ? "1" : "0") +
+                "|VOLALPHA=" + (chkWaveVolAlpha.Checked ? "1" : "0");
+              statusMessage = $"Changed Wave in";
+            } else if (type == MessageType.PresetFilePath) {
+              message = "PRESET=" + messageToSend;
+              string fileName = Path.GetFileNameWithoutExtension(messageToSend);
+              statusMessage = $"Sent preset \"{fileName}\" to";
+            } else if (type == MessageType.Amplify) {
+              message = "AMP" +
+                "|l=" + numAmpLeft.Value.ToString(CultureInfo.InvariantCulture) +
+                "|r=" + numAmpRight.Value.ToString(CultureInfo.InvariantCulture);
+              statusMessage = $"Sent amplification {numAmpLeft.Value.ToString(CultureInfo.InvariantCulture)}" +
+                $"/{numAmpRight.Value.ToString(CultureInfo.InvariantCulture)} to";
+            } else if (type == MessageType.AudioDevice) {
+              if (cboAudioDevice.Text.Length > 0) {
+                ComboBoxItemDevice? selectedItem = (ComboBoxItemDevice?)cboAudioDevice.SelectedItem;
+                if (selectedItem != null) {
+                  if (selectedItem.IsInputDevice) {
+                    message = "DEVICE=IN|" + selectedItem.Device.FriendlyName;
+                  } else {
+                    message = "DEVICE=OUT|" + selectedItem.Device.FriendlyName;
+                  }
+                  //statusMessage = $"Set device '{cboAudioDevice.Text}' in";
+                }
               }
-              //statusMessage = $"Set device '{cboAudioDevice.Text}' in";
-            }
-          }
-        } else if (type == MessageType.Opacity) {
-          decimal val = numOpacity.Value / 100;
-          message = "OPACITY=" + val.ToString(CultureInfo.InvariantCulture);
-        } else if (type == MessageType.GetState) {
-          message = "STATE";
-        } else if (type == MessageType.WaveClear) {
-          message = "CLEARPRESET";
-        } else if (type == MessageType.WaveQuickSave) {
-          message = "QUICKSAVE";
-        } else if (type == MessageType.Config) {
-          message = "CONFIG";
-        } else if (type == MessageType.TestFonts) {
-          message = "TESTFONTS";
-        } else if (type == MessageType.ClearSprites) {
-          message = "CLEARSPRITES";
-        } else if (type == MessageType.ClearTexts) {
-          message = "CLEARTEXTS";
-        } else if (type == MessageType.TimeFactor) {
-          message = "VAR_TIME=" + numFactorTime.Value.ToString(CultureInfo.InvariantCulture);
-        } else if (type == MessageType.FrameFactor) {
-          message = "VAR_FRAME=" + numFactorFrame.Value.ToString(CultureInfo.InvariantCulture);
-        } else if (type == MessageType.FpsFactor) {
-          message = "VAR_FPS=" + numFactorFPS.Value.ToString(CultureInfo.InvariantCulture);
-        } else if (type == MessageType.PresetLink) {
-          message = "LINK=" + messageToSend;
-        } else if (type == MessageType.Message) {
-          if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
-            // try auto-wrap
-            if (chkWrap.Checked && !message.Contains("//") && !message.Contains(Environment.NewLine)) {
-              // Find the whitespace character closest to the middle of messageToSend
-              int middleIndex = messageToSend.Length / 2;
-              int closestWhitespaceIndex = messageToSend.LastIndexOf(' ', middleIndex);
-              if (closestWhitespaceIndex == -1) {
-                closestWhitespaceIndex = messageToSend.IndexOf(' ', middleIndex);
+            } else if (type == MessageType.Opacity) {
+              decimal val = numOpacity.Value / 100;
+              message = "OPACITY=" + val.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.GetState) {
+              message = "STATE";
+            } else if (type == MessageType.WaveClear) {
+              message = "CLEARPRESET";
+            } else if (type == MessageType.WaveQuickSave) {
+              message = "QUICKSAVE";
+            } else if (type == MessageType.Config) {
+              message = "CONFIG";
+            } else if (type == MessageType.TestFonts) {
+              message = "TESTFONTS";
+            } else if (type == MessageType.ClearSprites) {
+              message = "CLEARSPRITES";
+            } else if (type == MessageType.ClearTexts) {
+              message = "CLEARTEXTS";
+            } else if (type == MessageType.TimeFactor) {
+              message = "VAR_TIME=" + numFactorTime.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.FrameFactor) {
+              message = "VAR_FRAME=" + numFactorFrame.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.FpsFactor) {
+              message = "VAR_FPS=" + numFactorFPS.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.PresetLink) {
+              message = "LINK=" + messageToSend;
+            } else if (type == MessageType.Message) {
+              if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
+                // try auto-wrap
+                if (chkWrap.Checked && !message.Contains("//") && !message.Contains(Environment.NewLine)) {
+                  // Find the whitespace character closest to the middle of messageToSend
+                  int middleIndex = messageToSend.Length / 2;
+                  int closestWhitespaceIndex = messageToSend.LastIndexOf(' ', middleIndex);
+                  if (closestWhitespaceIndex == -1) {
+                    closestWhitespaceIndex = messageToSend.IndexOf(' ', middleIndex);
+                  }
+                  // Replace the closest whitespace with a newline placeholder
+                  if (closestWhitespaceIndex != -1) {
+                    messageToSend = messageToSend.Remove(closestWhitespaceIndex, 1).Insert(closestWhitespaceIndex, "//");
+                  }
+                }
               }
-              // Replace the closest whitespace with a newline placeholder
-              if (closestWhitespaceIndex != -1) {
-                messageToSend = messageToSend.Remove(closestWhitespaceIndex, 1).Insert(closestWhitespaceIndex, "//");
+
+              // hard limit is 507 characters
+              if (messageToSend.Length > 500) {
+                messageToSend = messageToSend.Substring(0, 500);
+              }
+
+              message = "MSG" +
+                "|text=" + messageToSend;
+              if (cboParameters.Text.Length > 0) {
+                message += "|" + cboParameters.Text;
+              }
+              statusMessage = $"Sent '{messageToSend}' to";
+            } else if (type == MessageType.Raw) {
+              message = messageToSend;
+              statusMessage = $"Sent '{messageToSend}' to";
+            }
+
+            // if line doesn't contain font face, size or color, use form-defined values
+            if (type == MessageType.Message || type == MessageType.Raw) {
+              if (!message.Contains("font=")) {
+                message += "|font=" + cboFonts.Text;
+              }
+              if (!message.Contains("r=") && !message.Contains("g=") && !message.Contains("b=")) {
+                message += "|r=" + pnlColorMessage.BackColor.R;
+                message += "|g=" + pnlColorMessage.BackColor.G;
+                message += "|b=" + pnlColorMessage.BackColor.B;
+              }
+              if (!message.Contains("size=")) {
+                message += "|size=" + numSize.Value;
+              }
+
+              message = message
+                .Replace(" //", "//")
+                .Replace("// ", "//")
+                .Replace("//", " " + Environment.NewLine + " ");
+
+              if (message.Contains(Environment.NewLine)) {
+                string size = GetParam("size", message);
+                if (size.Length > 0) {
+                  int newSize = (int)(int.Parse(size) * 1.8);
+                  message = message.Replace("size=" + size, "size=" + newSize);
+                }
               }
             }
-          }
 
-          // hard limit is 507 characters
-          if (messageToSend.Length > 500) {
-            messageToSend = messageToSend.Substring(0, 500);
-          }
+            byte[] messageBytes = Encoding.Unicode.GetBytes(message);
+            IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
+            Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
 
-          message = "MSG" +
-            "|text=" + messageToSend;
-          if (cboParameters.Text.Length > 0) {
-            message += "|" + cboParameters.Text;
-          }
-          statusMessage = $"Sent '{messageToSend}' to";
-        } else if (type == MessageType.Raw) {
-          message = messageToSend;
-          statusMessage = $"Sent '{messageToSend}' to";
-        }
+            COPYDATASTRUCT cds = new COPYDATASTRUCT {
+              dwData = 1,
+              cbData = messageBytes.Length,
+              lpData = messagePtr
+            };
 
-        // if line doesn't contain font face, size or color, use form-defined values
-        if (type == MessageType.Message || type == MessageType.Raw) {
-          if (!message.Contains("font=")) {
-            message += "|font=" + cboFonts.Text;
-          }
-          if (!message.Contains("r=") && !message.Contains("g=") && !message.Contains("b=")) {
-            message += "|r=" + pnlColorMessage.BackColor.R;
-            message += "|g=" + pnlColorMessage.BackColor.G;
-            message += "|b=" + pnlColorMessage.BackColor.B;
-          }
-          if (!message.Contains("size=")) {
-            message += "|size=" + numSize.Value;
-          }
-
-          message = message
-            .Replace(" //", "//")
-            .Replace("// ", "//")
-            .Replace("//", " " + Environment.NewLine + " ");
-
-          if (message.Contains(Environment.NewLine)) {
-            string size = GetParam("size", message);
-            if (size.Length > 0) {
-              int newSize = (int)(int.Parse(size) * 1.8);
-              message = message.Replace("size=" + size, "size=" + newSize);
+            SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
+            if (statusMessage.Length > 0) {
+              SetStatusText($"{statusMessage} {foundWindowTitle}");
             }
+
+            Marshal.FreeHGlobal(messagePtr);
+
+          } else {
+            SetStatusText(windowNotFound);
           }
         }
-
-        byte[] messageBytes = Encoding.Unicode.GetBytes(message);
-        IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
-        Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
-
-        COPYDATASTRUCT cds = new COPYDATASTRUCT {
-          dwData = 1,
-          cbData = messageBytes.Length,
-          lpData = messagePtr
-        };
-
-        SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
-        if (statusMessage.Length > 0) {
-          SetStatusText($"{statusMessage} {foundWindowTitle}");
-        }
-
-        Marshal.FreeHGlobal(messagePtr);
-
-      } else {
-        SetStatusText(windowNotFound);
+      } finally {
+        SendingMessage = false;
       }
     }
 
@@ -3306,12 +3325,8 @@ namespace MilkwaveRemote {
 
     private void btnLoadShaderInput_Click(object sender, EventArgs e) {
 
-      OpenFileDialog ofdShader = new OpenFileDialog();
-      ofdShader.Filter = "GLSL files|*.glsl|All files (*.*)|*.*";
-      ofdShader.RestoreDirectory = true;
-      ofdShader.InitialDirectory = Path.Combine(BaseDir, ShaderFilesFolder);
-
       if (ofdShader.ShowDialog() == DialogResult.OK) {
+        ofdShader.InitialDirectory = Path.GetDirectoryName(ofdShader.FileName);
         String shaderInput = ofdShader.FileName;
         if (File.Exists(shaderInput)) {
           try {
@@ -3592,18 +3607,19 @@ namespace MilkwaveRemote {
     }
 
     private void btnHLSLLoad_Click(object sender, EventArgs e) {
-      OpenFileDialog ofdShader = new OpenFileDialog();
-      ofdShader.Filter = "Presets or HLSL files|*.milk;*.hlsl|All files (*.*)|*.*";
-      ofdShader.RestoreDirectory = true;
-      ofdShader.InitialDirectory = Path.Combine(ShaderFilesFolder);
 
-      if (ofdShader.ShowDialog() == DialogResult.OK) {
-        if (File.Exists(ofdShader.FileName)) {
-          string[] content = File.ReadAllLines(ofdShader.FileName);
+      if (string.IsNullOrEmpty(ofdShaderHLSL.InitialDirectory)) {
+        ofdShaderHLSL.InitialDirectory = Path.Combine(ShaderFilesFolder);
+      }
+
+      if (ofdShaderHLSL.ShowDialog() == DialogResult.OK) {
+        ofdShaderHLSL.InitialDirectory = Path.GetDirectoryName(ofdShaderHLSL.FileName);
+        if (File.Exists(ofdShaderHLSL.FileName)) {
+          string[] content = File.ReadAllLines(ofdShaderHLSL.FileName);
           txtShaderinfo.Clear();
 
           StringBuilder sb = new StringBuilder();
-          if (ofdShader.FileName.EndsWith(".milk", StringComparison.InvariantCultureIgnoreCase)) {
+          if (ofdShaderHLSL.FileName.EndsWith(".milk", StringComparison.InvariantCultureIgnoreCase)) {
             // If it's a preset file, extract the comp shader info
             foreach (string line in content) {
               if (line.StartsWith("comp_", StringComparison.InvariantCultureIgnoreCase)) {
@@ -3645,7 +3661,7 @@ namespace MilkwaveRemote {
         txtShaderHLSL.SelectionStart = 0;
         txtShaderHLSL.ScrollToCaret();
 
-        SetStatusText($"Loaded HLSL from {ofdShader.FileName}");
+        SetStatusText($"Loaded HLSL from {ofdShaderHLSL.FileName}");
       }
     }
 

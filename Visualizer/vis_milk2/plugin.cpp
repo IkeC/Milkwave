@@ -641,7 +641,7 @@ int beatcount;
 bool TranspaMode = false;
 int NumTotalPresetsLoaded = 0;
 bool AutoLockedPreset = false;
-//bool ShowPresetOnTitle = 0;
+uint64_t LastSentMilkwaveMessage = 0;
 
 //For Sample Rate auto-detection
 #include <windows.h>
@@ -9230,11 +9230,20 @@ void CPlugin::OnFinishedLoadingPreset() {
 }
 
 int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
+  using namespace std::chrono;
   try {
     if (!messageToSend || !*messageToSend) {
       wprintf(L"message is null or empty.\n");
       return 0;
     }
+
+    // Get current time since epoch in milliseconds
+    uint64_t Now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    if (Now - LastSentMilkwaveMessage < 500) {
+      // Skipping message send to Milkwave Remote to avoid flooding
+      return 0;
+    } 
+    LastSentMilkwaveMessage = Now;
 
     // Find the Milkwave Remote window
     HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
