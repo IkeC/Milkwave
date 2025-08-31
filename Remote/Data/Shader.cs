@@ -401,8 +401,18 @@ namespace MilkwaveRemote.Data {
         if (line.EndsWith("{"))
           indentLevel++;
       }
+       
+      var lines2 = sb.ToString().Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+      int start = 0, end = lines2.Length - 1;
 
-      return sb.ToString();
+      // Trim leading and trailing empty lines
+      while (start <= end && string.IsNullOrWhiteSpace(lines2[start]))
+        start++;
+      while (end >= start && string.IsNullOrWhiteSpace(lines2[end]))
+        end--;
+
+      var trimmed = string.Join(Environment.NewLine, lines2[start..(end + 1)]);
+      return trimmed;
     }
   } // end class
 } // end namespace
