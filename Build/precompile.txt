@@ -1,7 +1,7 @@
 # Precompile the following shaders on Visualizer startup if:
 #
-# - ShaderCaching=1 is set in settings.ini
-# - ShaderPrecompileOnStartup=1 is set in settings.ini
+# - ShaderCaching=1 is set in settings.ini (default)
+# - ShaderPrecompileOnStartup=1 is set in settings.ini (default)
 # - The file cache\compiled.txt does not exist
 #
 # You can remove or empty the cache folder safely anytime. Use relative or 
@@ -12,7 +12,7 @@
 # A list of compiled files, along with compilation time per file in 
 # milliseconds, are written to cache\compiled.txt.
 #
-resources\presets\Shader\*
+resources\presets\Milkwave\Shader\*
 resources\presets\Milkdrop2077\Martin - jewelry.milk
 resources\presets\Milkdrop2077\martin - stratospheric turbulences.milk
 resources\presets\Milkdrop2077\martin - stratospheric turbulences 2.milk

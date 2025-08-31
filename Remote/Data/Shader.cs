@@ -320,7 +320,7 @@ namespace MilkwaveRemote.Data {
       }
       if (!inpToCheck.Contains(" tx")) {
         // helpful for quick testing, multiply any value by tx to see the effect
-        sb.Insert(0, "#define tx sin(time)*0.5+1 // 0.5 <= tx <= 1.5" + Environment.NewLine + Environment.NewLine);
+        sb.Insert(0, "#define tx sin(time)*0.5+1" + Environment.NewLine + Environment.NewLine);
       }
       sb.Append(inpToModify);
       return sb.ToString();
