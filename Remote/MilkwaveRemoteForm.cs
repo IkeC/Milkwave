@@ -1504,13 +1504,14 @@ namespace MilkwaveRemote {
         } else if (e.KeyCode == Keys.P) {
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
+          e.SuppressKeyPress = true;
           if (tabControl.SelectedTab.Name.Equals("tabShader")) {
-            e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
             btnSendShader_Click(null, null);
           } else if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
             SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
           }
         } else if (e.KeyCode == Keys.T) {
+          e.SuppressKeyPress = true;
           btnTagsSave_Click(null, null);
         } else if (e.KeyCode == Keys.X) {
           if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
