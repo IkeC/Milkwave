@@ -1,3 +1,14 @@
+## v3.1 (2025-09-02)
+
+- 10 new shader-based presets in Milkwave/Shader directory
+- All 30 Milkwave shader presets now react to audio input
+- New "vis_intensity" and "vis_shift" preset variables
+- Adjust "Intensity" and "Shift" live from Remote for supported presets (eg. Milkwaves shader presets)
+- Set default audio device using Ctrl+D (eg. after disconnecting Bluetooth headphones)
+- New message parameter "fadeout" (also for custom messages)
+- New shortcuts: Ctrl+B for toggling button panel, Ctrl+O for opening Visualizer window
+- Stability improvements
+
 ## v3.0.2 (2025-08-26)
 
 - Pretty code formatting for HLSL shader code in Shader tab
