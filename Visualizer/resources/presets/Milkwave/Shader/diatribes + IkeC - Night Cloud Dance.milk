@@ -1,0 +1,69 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// diatribes + IkeC - Night Cloud Dance / https://www.shadertoy.com/view/3cjcWD
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx sin(time)*0.5+1
+comp_5=// 0.5 <= tx <= 1.5
+comp_6=
+comp_7=shader_body {
+comp_8=  float4 o = 0;
+comp_9=  // CONV: Center on screen, then try some aspect correction
+comp_10=  uv = (uv*2) - 1;
+comp_11=  uv *= aspect.xy;
+comp_12=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_13=  uv = float2(uv.x, -uv.y);
+comp_14=  uv*=1.3;
+comp_15=  float2 u = uv;
+comp_16=
+comp_17=  float d,a,e,i=0,s,t = time*.5;
+comp_18=  float3  ep, p = float3(uv.x, uv.y, 0);
+comp_19=
+comp_20=
+comp_21=  // scale coords
+comp_22=  //u = (u+u-p.xy)/p.y;
+comp_23=  
+comp_24=  u += float2(cos(t*.4)*.3, cos(t*.8)*.1);
+comp_25=  
+comp_26=  #ifdef bass_smooth
+comp_27=    float fac = (0.9-0.5*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_28=  #else
+comp_29=    float fac = 0.8-0.1*smoothstep(0,2,bass_att);
+comp_30=  #endif
+comp_31=
+comp_32=  for(o*=i; i++<1e2;
+comp_33=
+comp_34=  // accumulate distance
+comp_35=  d += s = min(.02+.6*abs(s),e=max(.8*e, .01)),
+comp_36=
+comp_37=  // grayscale color
+comp_38=  o += 1./(s+e*2.))
+comp_39=
+comp_40=  // noise loop start, march
+comp_41=  for (p = float3(u*d,d+t),
+comp_42=  // p = ro + rd *d, p.z + t;
+comp_43=
+comp_44=  // entity (orb) position
+comp_45=  ep = p - float3(
+comp_46=  sin(sin(t)+t*.4) * 8.,
+comp_47=  sin(sin(t)+t*.2) *2.,
+comp_48=  16.+t+cos(t)*8.),
+comp_49=
+comp_50=  // orb sphere
+comp_51=  e = 2 * length(ep) +.2,
+comp_52=
+comp_53=  // plane, mix with entity/orb
+comp_54=  s = lerp(e*.02,4.+p.y, smoothstep(0., 12., length(ep))),
+comp_55=
+comp_56=  // noise params
+comp_57=  a = .4; a < 8.; a *= 1.4)
+comp_58=
+comp_59=  // apply noise
+comp_60=  s -= abs(dot(cos(t+.2*p.z+p * a ), .11+p-p)) / a;
+comp_61=
+comp_62=  // tanh tonemap, blue tint, brightness, moon
+comp_63=  o = tanh(float4(1,fac*2,6,0)*o/1e1/length(u-.65));
+comp_64=  ret = o;
+comp_65=}

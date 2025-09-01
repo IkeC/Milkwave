@@ -5,74 +5,84 @@ PSVERSION_COMP=4
 comp_1=// mrange + IkeC - Trailing the Twinkling Tunnelwisp / https://www.shadertoy.com/view/WfcGWj
 comp_2=// Transpiled to HLSL using Milkwave
 comp_3=
-comp_4=float g(float4 p,float s) {
-comp_5=return abs(dot(sin(p*=s),cos(p.zxwy))-1.)/s;
-comp_6=}
-comp_7=
-comp_8=shader_body {
-comp_9=float4 O = 0;
-comp_10=// CONV: Center on screen, then try some aspect correction
-comp_11=uv = (uv*2)-1;
-comp_12=uv *= aspect.xy;
-comp_13=uv = float2(-uv.x, -uv.y);
-comp_14=uv *= 1.5;
-comp_15=//uv.x*=1.1;
-comp_16=//uv.y*=0.8;
-comp_17=
-comp_18=uv.y-=1.9;
+comp_4=#define tx sin(time)*0.5+1
+comp_5=
+comp_6=float g(float4 p,float s) {
+comp_7=  return abs(dot(sin(p*=s),cos(p.zxwy))-1.)/s;
+comp_8=}
+comp_9=
+comp_10=shader_body {
+comp_11=  float4 O = 0;
+comp_12=  // CONV: Center on screen, then try some aspect correction
+comp_13=  uv = (uv*2)-1;
+comp_14=  uv *= aspect.xy;
+comp_15=  uv = float2(-uv.x, -uv.y);
+comp_16=  uv *= 1.5;
+comp_17=  // uv.x*=1.1;
+comp_18=  // uv.y*=0.8;
 comp_19=
-comp_20=float2 C=uv;
-comp_21=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_22=
-comp_23=C.x+=-0.1;
-comp_24=C.y+=0.95;
-comp_25=
-comp_26=  // FYI: This code is intended to be as small as possible. 
-comp_27=  //  As a consequence even harder to read than usual.
-comp_28=
-comp_29=  float i, d, z, s, T = time;
-comp_30=  float4 o, q, p, U=float4(2,1,0,3);
-comp_31=  for (
-comp_32=    // Store resolution
-comp_33=    float2 r = uv.xy
-comp_34=    // Step through the scene, up to 78 steps
-comp_35=    ; ++i < 79.
-comp_36=    // Advance along the ray by current distance estimate (+ epsilon)
-comp_37=    // The epsilon makes the cave walls somewhat translucent
-comp_38=    ; z += d + 5E-4
-comp_39=    // Compute ray direction, scaled by distance
-comp_40=    , q = float4(normalize(float3(C-.5*r, r.y)) * z, .2)
-comp_41=    // Traverse through the cave
-comp_42=    , q.z -= T/5
-comp_43=    // Save sign before mirroring
-comp_44=    , s = q.y + .1
-comp_45=    // Creates the water reflection effect
-comp_46=    , q.y = abs(s)
-comp_47=    , p = q
-comp_48=    , p.y -= .11
-comp_49=    // Twist cave walls based on depth
-comp_50=    //  This uses a trick that a 2D rotation matrix
-comp_51=    //   float2x2(cos(a), sin(a), -sin(a), cos(a)) can be approximated with:
-comp_52=    //   float2x2(cos(a + float4(0,11,33,0)))
-comp_53=    //   22/7 ~= PI, then 11 ~= 3.5*PI and 33 ~= 10.5*PI
-comp_54=    //   sin(a) = cos(a-0.5*PI) = cos(a-0.5*PI+4*PI) = cos(a+3.5*PI)
-comp_55=    //   -sin(a) = cos(a-1.5*PI) = cos(a-1.5*PI+12*PI) = cos(a+10.5*PI)
-comp_56=    //   If that makes sense to you.
-comp_57=    , p.xy = mul(p.xy, transpose(float2x2(cos(11.*U.zywz - 2. * p.z ))))
-comp_58=    , p.y -= .2
-comp_59=    // Combine gyroid fields at two scales for more detail
-comp_60=    , d = abs(g(p,8.) - g(p,24.)) / 4.
-comp_61=    // Base glow color varies with distance from center
-comp_62=    , p = 1. + cos(.7 * U + 5. * q.z)
-comp_63=  )
-comp_64=    // Accumulate glow — brighter and sharper if not mirrored (above axis)
-comp_65=    o += (s > 0. ? 1. : .1) * p.w * p / max(s > 0. ? d : d*d*d, 5E-4)
-comp_66=    ;
-comp_67=
-comp_68=  // Add pulsing glow for the “tunnelwisp”
-comp_69=  o += (1.4 + sin(T) * sin(1.7 * T) * sin(2.3 * T))
-comp_70=       * 1E3 * U / length(q.xy);
-comp_71=
-comp_72=  // Apply tanh for soft tone mapping
-comp_73=  ret = tanh(o / 1E5);
-comp_74=}
+comp_20=  uv.y-=1.9;
+comp_21=
+comp_22=  float2 C=uv;
+comp_23=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_24=
+comp_25=  C.x+=-0.1;
+comp_26=  C.y+=0.95;
+comp_27=
+comp_28=  // FYI: This code is intended to be as small as possible.
+comp_29=  // As a consequence even harder to read than usual.
+comp_30=
+comp_31=  float i, d, z, s, T = time;
+comp_32=  float4 o, q, p, U=float4(2,1,0,3);
+comp_33=  for (
+comp_34=  // Store resolution
+comp_35=  float2 r = uv.xy
+comp_36=  // Step through the scene, up to 78 steps
+comp_37=  ; ++i < 79.
+comp_38=  // Advance along the ray by current distance estimate (+ epsilon)
+comp_39=  // The epsilon makes the cave walls somewhat translucent
+comp_40=  ; z += d + 5E-4
+comp_41=  // Compute ray direction, scaled by distance
+comp_42=  , q = float4(normalize(float3(C-.5*r, r.y)) * z, .2)
+comp_43=  // Traverse through the cave
+comp_44=  , q.z -= T/5
+comp_45=  // Save sign before mirroring
+comp_46=  , s = q.y + .1
+comp_47=  // Creates the water reflection effect
+comp_48=  , q.y = abs(s)
+comp_49=  , p = q
+comp_50=  , p.y -= .11
+comp_51=  // Twist cave walls based on depth
+comp_52=  // This uses a trick that a 2D rotation matrix
+comp_53=  // float2x2(cos(a), sin(a), -sin(a), cos(a)) can be approximated with:
+comp_54=  // float2x2(cos(a + float4(0,11,33,0)))
+comp_55=  // 22/7 ~= PI, then 11 ~= 3.5*PI and 33 ~= 10.5*PI
+comp_56=  // sin(a) = cos(a-0.5*PI) = cos(a-0.5*PI+4*PI) = cos(a+3.5*PI)
+comp_57=  // -sin(a) = cos(a-1.5*PI) = cos(a-1.5*PI+12*PI) = cos(a+10.5*PI)
+comp_58=  // If that makes sense to you.
+comp_59=  , p.xy = mul(p.xy, transpose(float2x2(cos(11.*U.zywz - 2. * p.z ))))
+comp_60=  , p.y -= .2
+comp_61=  // Combine gyroid fields at two scales for more detail
+comp_62=  , d = abs(g(p,8.) - g(p,24.)) / 4.
+comp_63=  // Base glow color varies with distance from center
+comp_64=  , p = 1. + cos(.7 * U + 5. * q.z)
+comp_65=  )
+comp_66=  // Accumulate glow — brighter and sharper if not mirrored (above axis)
+comp_67=  o += (s > 0. ? 1. : .1) * p.w * p / max(s > 0. ? d : d*d*d, 5E-4)
+comp_68=  ;
+comp_69=  
+comp_70=  #ifdef bass_smooth
+comp_71=    float fac = (0.1 + 0.2*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_72=  #else
+comp_73=    float fac = 0.1 + 0.05*smoothstep(0,2,bass_att);
+comp_74=  #endif
+comp_75=  
+comp_76=  T *= 0.2;
+comp_77=  
+comp_78=  // Add pulsing glow for the “tunnelwisp”
+comp_79=  o += fac*(1.4 + sin(T) * sin(1.7 * T) * sin(2.3 * T))
+comp_80=  * 1E3 * U / length(q.xy);
+comp_81=
+comp_82=  // Apply tanh for soft tone mapping
+comp_83=  ret = tanh(o / 1E5);
+comp_84=}

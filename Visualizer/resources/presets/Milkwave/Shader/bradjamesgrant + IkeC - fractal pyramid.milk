@@ -5,79 +5,81 @@ PSVERSION_COMP=4
 comp_1=// bradjamesgrant + IkeC - fractal pyramid / https://www.shadertoy.com/view/tsXBzS
 comp_2=// Transpiled to HLSL using Milkwave
 comp_3=
-comp_4=float3 palette(float d){
-comp_5=	return lerp(float3(0.2,0.7,0.9),float3(1.,0.,1.),d);
-comp_6=}
-comp_7=
-comp_8=float2 rotate(float2 p,float a){
-comp_9=	float c = cos(a);
-comp_10=    float s = sin(a);
-comp_11=  return mul(p, transpose(float2x2(c,s,-s,c)));
-comp_12=}
-comp_13=
-comp_14=float map(float3 p){
-comp_15=    for( int i = 0; i<8; ++i){
-comp_16=        float t = time*0.2;
-comp_17=        p.xz =rotate(p.xz,t);
-comp_18=        p.xy =rotate(p.xy,t*1.89);
-comp_19=        p.xz = abs(p.xz);
-comp_20=        p.xz-=.5;
-comp_21=	}
-comp_22=	return dot(sign(p),p)/5.;
-comp_23=}
+comp_4=#define tx sin(time)+0.5
+comp_5=
+comp_6=float3 palette(float d){
+comp_7=  return lerp(float3(0.2,0.7,0.9),float3(1.,0.,1.),d);
+comp_8=}
+comp_9=
+comp_10=float2 rotate(float2 p,float a){
+comp_11=  float c = cos(a);
+comp_12=  float s = sin(a);
+comp_13=  return mul(p, transpose(float2x2(c,s,-s,c)));
+comp_14=}
+comp_15=
+comp_16=float map(float3 p){
+comp_17=  for( int i = 0; i<8; ++i){
+comp_18=    float t = time*0.2;
+comp_19=    p.xz =rotate(p.xz,t);
+comp_20=    p.xy =rotate(p.xy,t*1.89);
+comp_21=    p.xz = abs(p.xz);
+comp_22=    p.xz-=.5;
+comp_23=  }
 comp_24=
-comp_25=float4 rm (float3 ro, float3 rd){
-comp_26=    float t = 0.;
-comp_27=    float3 col = float3(0., 0., 0.);
-comp_28=    float d;
-comp_29=    for(float i =0.; i<64.; i++){
-comp_30=		float3 p = ro + rd*t;
-comp_31=        d = map(p)*.5;
-comp_32=        if(d<0.02){
-comp_33=// CONV: break is unsupported, see Milkwave manual for details
-comp_34=            i=64;
-comp_35=        }
-comp_36=        if(d>100.){
-comp_37=// CONV: break is unsupported, see Milkwave manual for details
-comp_38=        	i=64;
-comp_39=        }
-comp_40=        //col+=float3(0.6,0.8,0.8)/(400.*(d));
-comp_41=        col+=palette(length(p)*.1)/(400.*(d));
-comp_42=        t+=d;
-comp_43=    }
-comp_44=    return float4(col,1./(d*100.));
-comp_45=}
-comp_46=
+comp_25=  return dot(sign(p),p)/5.;
+comp_26=}
+comp_27=
+comp_28=float4 rm (float3 ro, float3 rd){
+comp_29=  float t = 0.;
+comp_30=  float3 col = float3(0., 0., 0.);
+comp_31=  float d;
+comp_32=  for(float i =0.; i<64.; i++){
+comp_33=    float3 p = ro + rd*t;
+comp_34=    d = map(p)*.5;
+comp_35=    if(d<0.02){
+comp_36=      i=64;
+comp_37=    }
+comp_38=
+comp_39=    if(d>100.){
+comp_40=      i=64;
+comp_41=    }
+comp_42=
+comp_43=    // col+=float3(0.6,0.8,0.8)/(400.*(d));
+comp_44=    col+=palette(length(p)*.1)/(400.*(d));
+comp_45=    t+=d;
+comp_46=  }
 comp_47=
-comp_48=/** SHADERDATA
-comp_49={
-comp_50=	"title": "fractal pyramid",
-comp_51=	"description": "",
-comp_52=	"model": "car"
-comp_53=}
-comp_54=*/
-comp_55=shader_body {
-comp_56=float4 fragColor;
-comp_57=float2 fragCoord;
-comp_58=// CONV: Center on screen, then try some aspect correction
-comp_59=uv = (uv*2) - 1;
-comp_60=uv *= aspect.xy;
-comp_61=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_62=uv = float2(uv.x, -uv.y);
-comp_63=
-comp_64=//     float2 uv = (fragCoord-(texsize.xy/2.))/texsize.x;
-comp_65=	float3 ro = float3(0.,0.,-50.);
-comp_66=    ro.xz = rotate(ro.xz,time);
-comp_67=    float3 cf = normalize(-ro);
-comp_68=    float3 cs = normalize(cross(cf,float3(0.,1.,0.)));
-comp_69=    float3 cu = normalize(cross(cf,cs));
-comp_70=    
-comp_71=    float3 uuv = ro+cf*3. + uv.x*cs + uv.y*cu;
-comp_72=    
-comp_73=    float3 rd = normalize(uuv-ro);
-comp_74=    
-comp_75=    float4 col = rm(ro,rd);
-comp_76=    
-comp_77=    
-comp_78=    ret = col;
-comp_79=}
+comp_48=  return float4(col,1./(d*100.));
+comp_49=}
+comp_50=
+comp_51=shader_body {
+comp_52=  float4 fragColor;
+comp_53=  float2 fragCoord;
+comp_54=  // CONV: Center on screen, then try some aspect correction
+comp_55=  uv = (uv*2) - 1;
+comp_56=  uv *= aspect.xy;
+comp_57=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_58=  uv = float2(uv.x, -uv.y);
+comp_59=  
+comp_60=  uv = uv*(0.9-0.4*sin(time*0.2));
+comp_61=  
+comp_62=  #ifdef bass_smooth
+comp_63=    uv *= (1-(smoothstep(0,2,bass_smooth)*0.25))*vis_intensity+vis_shift;
+comp_64=  #else
+comp_65=    uv *= (1-(smoothstep(0,2,bass_att)*0.05));
+comp_66=  #endif
+comp_67=  
+comp_68=  // float2 uv = (fragCoord-(texsize.xy/2.))/texsize.x;
+comp_69=  float3 ro = float3(0.,0.,-50.);
+comp_70=  ro.xz = rotate(ro.xz,time);
+comp_71=  float3 cf = normalize(-ro);
+comp_72=  float3 cs = normalize(cross(cf,float3(0.,1.,0.)));
+comp_73=  float3 cu = normalize(cross(cf,cs));
+comp_74=
+comp_75=  float3 uuv = ro+cf*3. + uv.x*cs + uv.y*cu;
+comp_76=
+comp_77=  float3 rd = normalize(uuv-ro);
+comp_78=  float4 col = rm(ro,rd);
+comp_79=  
+comp_80=  ret = col;
+comp_81=}

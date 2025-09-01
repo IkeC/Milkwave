@@ -5,242 +5,269 @@ PSVERSION_COMP=4
 comp_1=// nayk + IkeC - mighty star / https://www.shadertoy.com/view/w3KXzc
 comp_2=// Transpiled to HLSL using Milkwave
 comp_3=
-comp_4=
+comp_4=#define tx sin(time)*0.5+1
 comp_5=
-comp_6=
-comp_7=float4 lessThan(float4 a, float4 b) { return float4(a.x < b.x ? 1.0 : 0.0, a.y < b.y ? 1.0 : 0.0, a.z < b.z ? 1.0 : 0.0, a.w < b.w ? 1.0 : 0.0); }
-comp_8=
-comp_9=float mod_conv(float x, float y) { return x - y * floor(x / y); }
-comp_10=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
-comp_11=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
-comp_12=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
-comp_13=
-comp_14=#define iterations 17
-comp_15=#define formuparam 0.53
-comp_16=
-comp_17=#define volsteps 20
-comp_18=#define stepsize 0.1
-comp_19=
-comp_20=#define zoom   0.700
-comp_21=#define tile   0.850
-comp_22=#define speed  0.000
-comp_23=
-comp_24=#define brightness 0.0015
-comp_25=#define darkmatter 0.300
-comp_26=#define distfading 0.730
-comp_27=#define saturation 0.950
-comp_28=
-comp_29=float3 mod289(float3 x) {
-comp_30=return x - floor(x * (1.0 / 289.0)) * 289.0;
-comp_31=}
-comp_32=
-comp_33=float4 mod289(float4 x) {
-comp_34=return x - floor(x * (1.0 / 289.0)) * 289.0;
-comp_35=}
-comp_36=
-comp_37=float4 permute(float4 x) {
-comp_38=return mod289(((x*34.0)+1.0)*x);
-comp_39=}
-comp_40=
-comp_41=float4 taylorInvSqrt(float4 r)
-comp_42={
-comp_43=return 1.79284291400159 - 0.85373472095314 * r;
-comp_44=}
-comp_45=
-comp_46=float snoise(float3 v)
-comp_47={
-comp_48=float2  C = float2(1.0/6.0, 1.0/3.0) ;
-comp_49=float4  D = float4(0.0, 0.5, 1.0, 2.0);
-comp_50=
-comp_51=float3 i  = floor(v + dot(v, C.yyy) );
-comp_52=float3 x0 =   v - i + dot(i, C.xxx) ;
-comp_53=
-comp_54=float3 g = step(x0.yzx, x0.xyz);
-comp_55=float3 l = 1.0 - g;
-comp_56=float3 i1 = min( g.xyz, l.zxy );
-comp_57=float3 i2 = max( g.xyz, l.zxy );
-comp_58=
-comp_59=float3 x1 = x0 - i1 + C.xxx;
-comp_60=float3 x2 = x0 - i2 + C.yyy; // 2.0*C.x = 1/3 = C.y
-comp_61=float3 x3 = x0 - D.yyy;      // -1.0+3.0*C.x = -0.5 = -D.y
-comp_62=
-comp_63=i = mod289(i);
-comp_64=float4 p = permute( permute( permute(
-comp_65=i.z + float4(0.0, i1.z, i2.z, 1.0 ))
-comp_66=+ i.y + float4(0.0, i1.y, i2.y, 1.0 ))
-comp_67=+ i.x + float4(0.0, i1.x, i2.x, 1.0 ));
-comp_68=
-comp_69=float n_ = 0.142857142857; // 1.0/7.0
-comp_70=float3  ns = n_ * D.wyz - D.xzx;
-comp_71=
-comp_72=float4 j = p - 49.0 * floor(p * ns.z * ns.z);  //  mod_conv(p,7*7)
+comp_6=float4 lessThan(float4 a, float4 b) { return float4(a.x < b.x ? 1.0 : 0.0, a.y < b.y ? 1.0 : 0.0, a.z < b.z ? 1.0 : 0.0, a.w < b.w ? 1.0 : 0.0); }
+comp_7=
+comp_8=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_9=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_10=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_11=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_12=
+comp_13=#define iterations 17
+comp_14=#define formuparam 0.53
+comp_15=
+comp_16=#define volsteps 20
+comp_17=#define stepsize 0.1
+comp_18=
+comp_19=#define zoom   0.700
+comp_20=#define tile   0.850
+comp_21=#define speed  0.000
+comp_22=
+comp_23=#define brightness 0.0015
+comp_24=#define darkmatter 0.300
+comp_25=#define distfading 0.730
+comp_26=#define saturation 0.950
+comp_27=
+comp_28=float3 mod289(float3 x) {
+comp_29=  return x - floor(x * (1.0 / 289.0)) * 289.0;
+comp_30=}
+comp_31=
+comp_32=float4 mod289(float4 x) {
+comp_33=  return x - floor(x * (1.0 / 289.0)) * 289.0;
+comp_34=}
+comp_35=
+comp_36=float4 permute(float4 x) {
+comp_37=  return mod289(((x*34.0)+1.0)*x);
+comp_38=}
+comp_39=
+comp_40=float4 taylorInvSqrt(float4 r)
+comp_41={
+comp_42=  return 1.79284291400159 - 0.85373472095314 * r;
+comp_43=}
+comp_44=
+comp_45=float snoise(float3 v)
+comp_46={
+comp_47=  float2  C = float2(1.0/6.0, 1.0/3.0) ;
+comp_48=  float4  D = float4(0.0, 0.5, 1.0, 2.0);
+comp_49=
+comp_50=  float3 i  = floor(v + dot(v, C.yyy) );
+comp_51=  float3 x0 =   v - i + dot(i, C.xxx) ;
+comp_52=
+comp_53=  float3 g = step(x0.yzx, x0.xyz);
+comp_54=  float3 l = 1.0 - g;
+comp_55=  float3 i1 = min( g.xyz, l.zxy );
+comp_56=  float3 i2 = max( g.xyz, l.zxy );
+comp_57=
+comp_58=  float3 x1 = x0 - i1 + C.xxx;
+comp_59=  float3 x2 = x0 - i2 + C.yyy;
+comp_60=  // 2.0*C.x = 1/3 = C.y
+comp_61=  float3 x3 = x0 - D.yyy;
+comp_62=  // -1.0+3.0*C.x = -0.5 = -D.y
+comp_63=
+comp_64=  i = mod289(i);
+comp_65=  float4 p = permute( permute( permute(
+comp_66=  i.z + float4(0.0, i1.z, i2.z, 1.0 ))
+comp_67=  + i.y + float4(0.0, i1.y, i2.y, 1.0 ))
+comp_68=  + i.x + float4(0.0, i1.x, i2.x, 1.0 ));
+comp_69=
+comp_70=  float n_ = 0.142857142857;
+comp_71=  // 1.0/7.0
+comp_72=  float3  ns = n_ * D.wyz - D.xzx;
 comp_73=
-comp_74=float4 x_ = floor(j * ns.z);
-comp_75=float4 y_ = floor(j - 7.0 * x_ );    // mod_conv(j,N)
+comp_74=  float4 j = p - 49.0 * floor(p * ns.z * ns.z);
+comp_75=  // mod_conv(p,7*7)
 comp_76=
-comp_77=float4 x = x_ *ns.x + ns.yyyy;
-comp_78=float4 y = y_ *ns.x + ns.yyyy;
-comp_79=float4 h = 1.0 - abs(x) - abs(y);
+comp_77=  float4 x_ = floor(j * ns.z);
+comp_78=  float4 y_ = floor(j - 7.0 * x_ );
+comp_79=  // mod_conv(j,N)
 comp_80=
-comp_81=float4 b0 = float4( x.xy, y.xy );
-comp_82=float4 b1 = float4( x.zw, y.zw );
-comp_83=
-comp_84=float4 s0 = floor(b0)*2.0 + 1.0;
-comp_85=float4 s1 = floor(b1)*2.0 + 1.0;
-comp_86=float4 sh = -step(h, float4(0.0, 0.0, 0.0, 0.0));
+comp_81=  float4 x = x_ *ns.x + ns.yyyy;
+comp_82=  float4 y = y_ *ns.x + ns.yyyy;
+comp_83=  float4 h = 1.0 - abs(x) - abs(y);
+comp_84=
+comp_85=  float4 b0 = float4( x.xy, y.xy );
+comp_86=  float4 b1 = float4( x.zw, y.zw );
 comp_87=
-comp_88=float4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-comp_89=float4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
-comp_90=
-comp_91=float3 p0 = float3(a0.xy,h.x);
-comp_92=float3 p1 = float3(a0.zw,h.y);
-comp_93=float3 p2 = float3(a1.xy,h.z);
-comp_94=float3 p3 = float3(a1.zw,h.w);
-comp_95=
-comp_96=float4 norm = taylorInvSqrt(float4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-comp_97=p0 *= norm.x;
-comp_98=p1 *= norm.y;
-comp_99=p2 *= norm.z;
-comp_100=p3 *= norm.w;
-comp_101=
-comp_102=float4 m = max(0.6 - float4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-comp_103=m = m * m;
-comp_104=return 42.0 * dot( m*m, float4( dot(p0,x0), dot(p1,x1),
-comp_105=dot(p2,x2), dot(p3,x3) ) );
-comp_106=}
-comp_107=
-comp_108=float fBm(float3 coords)
-comp_109={
-comp_110=const int octaves = 2;
+comp_88=  float4 s0 = floor(b0)*2.0 + 1.0;
+comp_89=  float4 s1 = floor(b1)*2.0 + 1.0;
+comp_90=  float4 sh = -step(h, float4(0.0, 0.0, 0.0, 0.0));
+comp_91=
+comp_92=  float4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+comp_93=  float4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+comp_94=
+comp_95=  float3 p0 = float3(a0.xy,h.x);
+comp_96=  float3 p1 = float3(a0.zw,h.y);
+comp_97=  float3 p2 = float3(a1.xy,h.z);
+comp_98=  float3 p3 = float3(a1.zw,h.w);
+comp_99=
+comp_100=  float4 norm = taylorInvSqrt(float4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+comp_101=  p0 *= norm.x;
+comp_102=  p1 *= norm.y;
+comp_103=  p2 *= norm.z;
+comp_104=  p3 *= norm.w;
+comp_105=
+comp_106=  float4 m = max(0.6 - float4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+comp_107=  m = m * m;
+comp_108=  return 42.0 * dot( m*m, float4( dot(p0,x0), dot(p1,x1),
+comp_109=  dot(p2,x2), dot(p3,x3) ) );
+comp_110=}
 comp_111=
-comp_112=float smoothness = 2.0; // should be between 0.0 and 1.0?
-comp_113=float lacunarity = 2.0;
-comp_114=
-comp_115=float result = 0.0;
-comp_116=float totalAmplitude = 0.0;
-comp_117=
-comp_118=for (int o = 0; o != octaves; ++o)
-comp_119={
-comp_120=float amplitude = pow(lacunarity, -smoothness * float(o));
-comp_121=
-comp_122=result += snoise(coords) * amplitude;
-comp_123=totalAmplitude += amplitude;
-comp_124=
-comp_125=coords *= lacunarity;
-comp_126=}
-comp_127=
-comp_128=return result / totalAmplitude;
-comp_129=}
-comp_130=
-comp_131=float turbulence(float3 coords)
-comp_132={
-comp_133=const float f_low = 1.0;
-comp_134=const int octaves = 8;
+comp_112=float fBm(float3 coords)
+comp_113={
+comp_114=  const int octaves = 2;
+comp_115=
+comp_116=  float smoothness = 2.0;
+comp_117=  // should be between 0.0 and 1.0?
+comp_118=  float lacunarity = 2.0;
+comp_119=
+comp_120=  float result = 0.0;
+comp_121=  float totalAmplitude = 0.0;
+comp_122=
+comp_123=  for (int o = 0; o != octaves; ++o)
+comp_124=  {
+comp_125=    float amplitude = pow(lacunarity, -smoothness * float(o));
+comp_126=
+comp_127=    result += snoise(coords) * amplitude;
+comp_128=    totalAmplitude += amplitude;
+comp_129=
+comp_130=    coords *= lacunarity;
+comp_131=  }
+comp_132=
+comp_133=  return result / totalAmplitude;
+comp_134=}
 comp_135=
-comp_136=float t = 0.0;
-comp_137=
-comp_138=for (int o = 0; o != octaves; ++o)
-comp_139={
-comp_140=float f = f_low * pow(2.0, float(o));
-comp_141=
-comp_142=t += abs(snoise(coords)) / f;
-comp_143=
-comp_144=coords *= 2.0;
-comp_145=}
+comp_136=float turbulence(float3 coords)
+comp_137={
+comp_138=  const float f_low = 1.0;
+comp_139=  const int octaves = 8;
+comp_140=
+comp_141=  float t = 0.0;
+comp_142=
+comp_143=  for (int o = 0; o != octaves; ++o)
+comp_144=  {
+comp_145=    float f = f_low * pow(2.0, float(o));
 comp_146=
-comp_147=return t; // - 0.3;
-comp_148=}
-comp_149=
-comp_150=float happy_star(float2 uv_conv,  float anim)
-comp_151={
-comp_152=uv_conv = abs(uv_conv);
-comp_153=float2 pos = min(uv_conv.xy/uv_conv.yx, anim);
-comp_154=float p = (2.0 - pos.x - pos.y);
-comp_155=return (2.0+p*(p*p-1.5)) / (uv_conv.x+uv_conv.y);
-comp_156=}
-comp_157=
-comp_158=
-comp_159=shader_body {
-comp_160= float4 fragColor = 0;
-comp_161= float2 fragCoord  = uv;
-comp_162=// CONV: Center on screen, then try some aspect correction
-comp_163=uv.x = (uv.x*2) - 1;
-comp_164=uv.y = (uv.y*2) - 1;
-comp_165=uv = float2(-uv.x, uv.y);
-comp_166=//uv *= aspect.xy;
-comp_167=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_168=
-comp_169=	//get coords and direction
-comp_170=	//float2 uv=fragCoord.xy/texsize.xy-.5;
-comp_171=	uv.y*=texsize.y/texsize.x;
-comp_172=	float3 dir=float3(uv*zoom,1.);
-comp_173=	
+comp_147=    t += abs(snoise(coords)) / f;
+comp_148=
+comp_149=    coords *= 2.0;
+comp_150=  }
+comp_151=
+comp_152=  return t;
+comp_153=  // - 0.3;
+comp_154=}
+comp_155=
+comp_156=float happy_star(float2 uv_conv,  float anim)
+comp_157={
+comp_158=  uv_conv = abs(uv_conv);
+comp_159=  float2 pos = min(uv_conv.xy/uv_conv.yx, anim);
+comp_160=  float p = (2.0 - pos.x - pos.y);
+comp_161=  return (2.0+p*(p*p-1.5)) / (uv_conv.x+uv_conv.y);
+comp_162=}
+comp_163=
+comp_164=shader_body {
+comp_165=  float4 fragColor = 0;
+comp_166=
+comp_167=  // CONV: Center on screen, then try some aspect correction
+comp_168=  uv.x = (uv.x*2) - 1;
+comp_169=  uv.y = (uv.y*4) - 2;
+comp_170=  uv = float2(-uv.x, uv.y);
+comp_171=  uv *= aspect.xy;
+comp_172=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_173=  float2 fragCoord  = uv;
 comp_174=
-comp_175=	float time_scale = 0.5;
-comp_176=    float time_conv = time * time_scale;
-comp_177=    
-comp_178=	float2 uv2 = fragCoord.xy / min(texsize.x, texsize.y);
-comp_179=    uv2=normalize(float3(uv,0.212)).xy;
-comp_180=float t = time * .1 + ((.25 + .05 * sin(time * .1))/(length(uv.xy) + .47)) * 12.2+time;
-comp_181=	float si = sin(t);
-comp_182=	float co = cos(t);
-comp_183=	float2x2 ma = float2x2(co, si, -si, co);
-comp_184= ;
-comp_185=  
-comp_186=   
-comp_187=    float2 fbm_scale = float2(1.0, 1.0);
-comp_188=    float2 t_scale = float2(5.0, 5.0);
-comp_189=    
-comp_190=    float2 x_offset = float2(123.456, 0.0);
-comp_191=    float2 y_offset = float2(349.234, 1704.2);
-comp_192=    
-comp_193=    
-comp_194=    float2 x_coords = (uv2 + x_offset) * fbm_scale;
-comp_195=    float xo = fBm(float3(x_coords, time_conv));
-comp_196=    
-comp_197=    float2 tx_coords = (uv2 + x_offset) * t_scale;
-comp_198=    float xt = turbulence(float3(tx_coords, time_conv));
-comp_199=    
-comp_200=    float2 y_coords = (uv2 + y_offset) * fbm_scale;
-comp_201=    float yo = fBm(float3(y_coords, time_conv));
-comp_202=    
-comp_203=    float2 ty_coords = (uv2 + y_offset) * t_scale;
-comp_204=    float yt = turbulence(float3(ty_coords, time_conv));
-comp_205=    
-comp_206=    
-comp_207=    float2 pixel = 1.0 / texsize.xy;
-comp_208=    float max_po = 10.0;
-comp_209=    float2 po = max_po * float2(xo + xt, yo + yt) * pixel;
-comp_210=     po = mul(po, transpose(float2x2(cos(time)*2.,sin(time)*2.,-sin(time)*2.,cos(time)*2.)));
-comp_211=    float2 tc = fragCoord.xy / texsize.xy;
-comp_212=	float3 from=float3(1.,.5,0.5);
-comp_213=	dir.xy*=po;
-comp_214=	
-comp_215=	//volumetric rendering
-comp_216=	float s=0.1,fade=1.;
-comp_217=	float3 v=float3(0., 0., 0.);
-comp_218=	for (int r=0; r<volsteps; r++) {
-comp_219=		float3 p=from+s*dir*.5;
-comp_220=		p = abs(float3(tile,tile,tile)-mod_conv(p,float3(tile*2.,tile*2.,tile*2.))); // tiling fold
-comp_221=		float pa,a=pa=0.;
-comp_222=		for (int i=0; i<iterations; i++) { 
-comp_223=			p=abs(p)/dot(p,p)-formuparam; // the magic formula
-comp_224=			a+=abs(length(p)-pa); // absolute sum of average change
-comp_225=			pa=length(p);
-comp_226=		}
-comp_227=		float dm=max(0.,darkmatter-a*a*.001); //dark matter
-comp_228=		a*=a*a; // add contrast
-comp_229=		if (r>6) fade*=1.3-dm; // dark matter, don't render near
-comp_230=		//v+=float3(dm,dm*.5,0.);
-comp_231=		v+=fade;
-comp_232=		v+=float3(s,s*s,s*s*s*s)*a*brightness*fade; // coloring based on distance
-comp_233=		fade*=distfading; // distance fading
-comp_234=		s+=stepsize;
-comp_235=	}
-comp_236=	v=lerp(float3(length(v), length(v), length(v)),v,saturation); //color adjust
-comp_237=	fragColor = float4(v*.03,1.);	
-comp_238=    uv *= 2.0 * ( cos(time * 2.0) -2.5); // scale
-comp_239=    float anim = sin(time * 12.0) * 0.1 + 1.0;  // anim between 0.9 - 1.1 
-comp_240=    fragColor*= float4(happy_star(uv, anim) * float3(0.5,0.5,0.55)*0.2, 1.0);
-comp_241=	ret = fragColor;
-comp_242=}
+comp_175=  // get coords and direction
+comp_176=  // float2 uv=fragCoord.xy/texsize.xy-.5;
+comp_177=  //uv.y*=texsize.y/texsize.x;
+comp_178=  uv*=0.4;
+comp_179=
+comp_180=  float3 dir=float3(uv*zoom,1.);
+comp_181=
+comp_182=  float time_scale = 0.5;
+comp_183=  float time_conv = time * time_scale;
+comp_184=
+comp_185=  float2 uv2 = fragCoord.xy / min(texsize.x, texsize.y);
+comp_186=  uv2=normalize(float3(uv,0.212)).xy;
+comp_187=  float t = time * .1 + ((.25 + .05 * sin(time * .1))/(length(uv.xy) + .47)) * 12.2+time;
+comp_188=  float si = sin(t);
+comp_189=  float co = cos(t);
+comp_190=  float2x2 ma = float2x2(co, si, -si, co);
+comp_191=  ;
+comp_192=
+comp_193=  float2 fbm_scale = float2(1.0, 1.0);
+comp_194=  float2 t_scale = float2(5.0, 5.0);
+comp_195=
+comp_196=  float2 x_offset = float2(123.456, 0.0);
+comp_197=  float2 y_offset = float2(349.234, 1704.2);
+comp_198=
+comp_199=  float2 x_coords = (uv2 + x_offset) * fbm_scale;
+comp_200=  float xo = fBm(float3(x_coords, time_conv));
+comp_201=
+comp_202=  float2 tx_coords = (uv2 + x_offset) * t_scale;
+comp_203=  float xt = turbulence(float3(tx_coords, time_conv));
+comp_204=
+comp_205=  float2 y_coords = (uv2 + y_offset) * fbm_scale;
+comp_206=  float yo = fBm(float3(y_coords, time_conv));
+comp_207=
+comp_208=  float2 ty_coords = (uv2 + y_offset) * t_scale;
+comp_209=  float yt = turbulence(float3(ty_coords, time_conv));
+comp_210=
+comp_211=  float2 pixel = 1.0 / texsize.xy;
+comp_212=  float max_po = 10.0;
+comp_213=  float2 po = max_po * float2(xo + xt, yo + yt) * pixel;
+comp_214=  po = mul(po, transpose(float2x2(cos(time)*2.,sin(time)*2.,-sin(time)*2.,cos(time)*2.)));
+comp_215=  float2 tc = fragCoord.xy / texsize.xy;
+comp_216=  float3 from=float3(1.,.5,0.5);
+comp_217=  dir.xy*=po;
+comp_218=
+comp_219=  // volumetric rendering
+comp_220=  float s=0.1,fade=1.;
+comp_221=  float3 v=float3(0., 0., 0.);
+comp_222=
+comp_223=  #ifdef bass_smooth
+comp_224=    float fac = (0.8 + 0.2*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_225=  #else
+comp_226=    float fac = 0.9 + 0.02*smoothstep(0,2,bass_att);
+comp_227=  #endif
+comp_228=
+comp_229=  for (int r=0; r<volsteps; r++) {
+comp_230=    float3 p=from+s*dir*.5;
+comp_231=    p = abs(float3(tile,tile,tile)-mod_conv(p,float3(tile*2.,tile*2.,tile*2.)));
+comp_232=
+comp_233=    // tiling fold
+comp_234=    float pa,a=pa=0.;
+comp_235=    for (int i=0; i<iterations; i++) {
+comp_236=      p=abs(p)/dot(p,p)-formuparam;
+comp_237=      // the magic formula
+comp_238=      a+=abs(length(p)-pa);
+comp_239=      // absolute sum of average change
+comp_240=      pa=length(p);
+comp_241=    }
+comp_242=
+comp_243=    float dm=max(0.,darkmatter-a*a*.001);
+comp_244=    // dark matter
+comp_245=    a*=a*a;
+comp_246=    // add contrast
+comp_247=    if (r>6) fade*=1.3-dm;
+comp_248=    // dark matter, don't render near
+comp_249=    // v+=float3(dm,dm*.5,0.);
+comp_250=    v+=fade;
+comp_251=    v+=float3(s,s*s,s*s*s*s)*a*brightness*fade;
+comp_252=    // coloring based on distance
+comp_253=    fade*=distfading;
+comp_254=    // distance fading
+comp_255=    fade*=fac;
+comp_256=    s+=stepsize;
+comp_257=  }
+comp_258=
+comp_259=  v=lerp(float3(length(v), length(v), length(v)),v,saturation);
+comp_260=
+comp_261=  // color adjust
+comp_262=  fragColor = float4(v*.03,1.);
+comp_263=  uv *= 2.0 * ( cos(time * 2.0) -2.5);
+comp_264=  // scale
+comp_265=  float anim = sin(time * 12.0) * 0.1 + 1.0;
+comp_266=  // anim between 0.9 - 1.1
+comp_267=  fragColor*= float4(happy_star(uv, anim) * float3(0.5,0.5,0.55)*0.2, 1.0);
+comp_268=  ret = fragColor;
+comp_269=}

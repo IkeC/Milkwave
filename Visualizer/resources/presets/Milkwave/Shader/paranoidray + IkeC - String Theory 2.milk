@@ -9,50 +9,46 @@ comp_4=// original code from XorDev all credit belongs to him!
 comp_5=// https://x.com/XorDev/status/1914698293554139442
 comp_6=// https://twigl.app?ol=true&ss=-OOTrxZCfc7skbElm-8u
 comp_7=
-comp_8=
+comp_8=#define tx sin(time)*0.5+1
 comp_9=
-comp_10=
-comp_11=/*
-comp_12=float3 p;for(float i,z,d;i++<1e2;o+=(sin(p.x+t+float4(0,2,3,0))+1.)/d)p=z*normalize(FC.rgb*2.-r.xyy),
-comp_13=p.z-=t,p.xy = mul(p.z-=t,p.xy, transpose(float2x2(cos(z*.2+t*.1+float4(0,33,11,0)))));
-comp_14=
-comp_15="resolution", "mouse", "time", "frame", and "backbuffer" == "r", "m", "t", "f", and "b", respectively.
-comp_16=
-comp_17=
-comp_18= "gl_FragCoord" can be described as "FC"
-comp_19=*/
-comp_20=shader_body {
-comp_21=float4 fragColor;
-comp_22=float2 fragCoord;
-comp_23=// CONV: Center on screen, then try some aspect correction
-comp_24=uv = (uv*2) - 1;
-comp_25=uv *= aspect.xy;
-comp_26=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_27=uv = float2(uv.x, -uv.y);
-comp_28=
-comp_29=//     float2 uv = (fragCoord - 0.5 * texsize.xy) / texsize.y;
-comp_30=    float3 r = float3(uv, 1.0);
-comp_31=    float4 o = float4(0.0, 0.0, 0.0, 0.0);
-comp_32=    float t = time;
-comp_33=    float3 p;
+comp_10=shader_body {
+comp_11=  float4 fragColor;
+comp_12=  float2 fragCoord;
+comp_13=  // CONV: Center on screen, then try some aspect correction
+comp_14=  uv = (uv*2) - 1;
+comp_15=  uv *= aspect.xy;
+comp_16=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_17=  uv = float2(uv.x, -uv.y);
+comp_18=
+comp_19=  float3 r = float3(uv, 1.0);
+comp_20=  float4 o = 0;
+comp_21=  float t = time;
+comp_22=  float3 p;
+comp_23=  
+comp_24=  #ifdef bass_smooth
+comp_25=    float fac = (0.8+0.2*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_26=  #else
+comp_27=    float fac = 0.9+0.05*smoothstep(0,2,bass_att);
+comp_28=  #endif
+comp_29=  
+comp_30=  for (float i = 0.0, z = 0.0, d; i < 100.0; i++) {
+comp_31=    // Ray direction, modulated by time and camera
+comp_32=    p = z * normalize(float3(uv, 0.5));
+comp_33=    p.z += t;
 comp_34=
-comp_35=    for (float i = 0.0, z = 0.0, d; i < 100.0; i++) {
-comp_36=        // Ray direction, modulated by time_conv and camera
-comp_37=        p = z * normalize(float3(uv, 0.5));
-comp_38=        p.z += t;
-comp_39=
-comp_40=        // Rotating plane using a cos matrix
-comp_41=        float4 angle = float4(0.0, 33.0, 11.0, 0.0);
-comp_42=        float4 a = z * 0.2 + t * 0.1 + angle;
-comp_43=        p.xy = mul(p.xy, transpose(float2x2(cos(a.x), -sin(a.x), sin(a.x), cos(a.x))));
-comp_44=
-comp_45=        // Distance estimator
-comp_46=        z += d = length(cos(p + cos(p.yzx + p.z - t * 0.2)).xy) / 6.0;
+comp_35=    // Rotating plane using a cos matrix
+comp_36=    float rot = 10*sin(time*0.02);
+comp_37=    float4 angle = float4(rot, 33.0, 11.0, 0.0);
+comp_38=    float4 a = z * 0.2 + t * 0.1 + angle;
+comp_39=    p.xy = mul(p.xy, transpose(float2x2(cos(a.x), -sin(a.x), sin(a.x), cos(a.x))));
+comp_40=
+comp_41=    // Distance estimator
+comp_42=    z += d = length(cos(p + cos(p.yzx + p.z - t * 0.2)).xy) / 6.0*fac;
+comp_43=
+comp_44=    // Color accumulation using sin palette
+comp_45=    o += (sin(p.x + t + float4(0, 2, 3, 0)) + 1.0) / d;
+comp_46=  }
 comp_47=
-comp_48=        // Color accumulation using sin palette
-comp_49=        o += (sin(p.x + t + float4(0.0, 2.0, 3.0, 0.0)) + 1.0) / d;
-comp_50=    }
-comp_51=
-comp_52=    o = tanh(o / 5000.0);
-comp_53=    ret = float4(o.rgb, 1.0);
-comp_54=}
+comp_48=  o = tanh(o / 5000.0);
+comp_49=  ret = float4(o.rgb, 1.0);
+comp_50=}

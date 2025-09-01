@@ -5,109 +5,158 @@ PSVERSION_COMP=4
 comp_1=// ChunderFPV + IkeC - Undulating Urchin / https://www.shadertoy.com/view/332XWd
 comp_2=// Transpiled to HLSL using Milkwave
 comp_3=
-comp_4=#define A 9. // amplitude
-comp_5=#define T (time/3e2)
-comp_6=#define H(a) (cos(radians(float3(180, 90, 0))+(a)*6.2832)*.5+.5)  // hue
-comp_7=
-comp_8=float map(float3 u, float v)  // sdf
-comp_9={
-comp_10=float t = T,     // speed
-comp_11=l = 5.,    // loop to reduce clipping
-comp_12=f = 1e10, i = 0., y, z;
-comp_13=
-comp_14=u.xy = float2(atan2(u.x, u.y), length(u.xy));  // polar transform
-comp_15=u.x += t*v*3.1416*.7;  // counter rotation
-comp_16=
-comp_17=for (; i++<l;)
-comp_18={
-comp_19=float3 p = u;
-comp_20=y = round((p.y-i)/l)*l+i;
-comp_21=p.x *= y;
-comp_22=p.x -= y*y*t*3.1416;
-comp_23=p.x -= round(p.x/6.2832)*6.2832;
-comp_24=p.y -= y;
-comp_25=z = cos(y*t*6.2832)*.5 +.5;  // z wave
-comp_26=f = min(f, max(length(p.xy), -p.z -z*A) -.1 -z*.2 -p.z/1e2);  // tubes
-comp_27=}
-comp_28=return f;
-comp_29=}
-comp_30=
-comp_31=
-comp_32=shader_body {
-comp_33= float4 C = 0;
-comp_34= float2 U  = uv;
-comp_35=// CONV: Center on screen, then try some aspect correction
-comp_36=
-comp_37=uv.x/=100;
-comp_38=uv.y*=1.05;
-comp_39=
-comp_40=uv.x += 1 + 0.3*sin(0.1*time);
-comp_41=uv.y += 1.1 + 0.3*sin(0.03*time);
-comp_42=
-comp_43=uv *= aspect.xy;
-comp_44=
-comp_45=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_46=//uv = float2(uv.x, -uv.y);
-comp_47=    float2 R = uv.xy, j,
-comp_48=// CONV: iMouse unsupported
-comp_49=         M = float2(0.5,0.5) * (1+0.5*sin(0.05*time)),
-comp_50=         m = (M -R/2.)/R.y;
-comp_51=    
-comp_52=// CONV: iMouse unsupported
-comp_53=//     if (iMouse.z < 1. && M.x+M.y < 10.) m = float2(0, .5);
-comp_54=    
-comp_55=    float3 o = float3(0, 0, -130.),  // camera
-comp_56=         u = normalize(float3(U -R/2., R.y)),  // 3d coords
-comp_57=         c = float3(0, 0, 0),
-comp_58=         p, k;
-comp_59=    
-comp_60=    float t = T,
-comp_61=          v = -o.z/3.,  // pattern scale
-comp_62=          i = 0., d = i,
-comp_63=          s, f, z, r;
-comp_64=    
-comp_65=    bool b;
-comp_66=    
-comp_67=    for (; i++<70;)  // raymarch
-comp_68=    {
-comp_69=        p = u*d +o;
-comp_70=        p.xy /= v;           // scale down
-comp_71=        r = 1.2*length(p.xy);    // radius
-comp_72=        z = abs(1. -r*r);    // z warp
-comp_73=        b = r < 1.;          // inside?
-comp_74=        if (b) z = sqrt(z);
-comp_75=        p.xy /= z+1.;        // spherize
-comp_76=        p.xy -= m;           // move with mouse
-comp_77=        p.xy *= 0.6*v;           // scale back up
-comp_78=        p.xy -= cos(p.z/8. +t*3e2 +float2(0, 1.5708) +z/2.)*.2;  // wave along z
-comp_79=        
-comp_80=        s = map(p, v);  // sdf
-comp_81=        
-comp_82=        r = length(p.xy);                  // new r
-comp_83=        f = cos(round(r)*t*6.2832)*.5+.5;  // multiples
-comp_84=        k = H(.2 -f/3. +t +p.z/2e2);       // color
-comp_85=        if (b) k = 1.-k;                   // flip color
-comp_86=        
-comp_87=        // this stuff can go outside the raymarch,
-comp_88=        // but accumulating it here produces softer edges
-comp_89=        c += min(exp(s/-.05), s)        // shapes
-comp_90=           * (f+.01)                    // shade pattern
-comp_91=           * min(z, 1.)                 // darken edges
-comp_92=           * sqrt(cos(r*6.2832)*.5 +.5) // shade between rows
-comp_93=           * k*k;                       // color
-comp_94=        
-comp_95=// CONV: break is unsupported, see Milkwave manual for details
-comp_96=        if (s < 1e-3 || d > 1e3) i=70;
-comp_97=        d += s*clamp(z, .3, .9);  // smaller steps towards sphere edge
-comp_98=    }
-comp_99=    
-comp_100=// CONV: iChannel (textures) unsupported
-comp_101=//     c += tex2D(iChannel0, u*d +o).rrr * float3(0, .4, s)*s*z*.03;  // wavy aqua
-comp_102=    c += min(exp(-p.z -f*A)*z*k*.01/s, 1.);  // light tips
-comp_103=        
-comp_104=    j = p.xy/v +m;  // 2d coords
-comp_105=    c /= clamp(dot(j, j)*4., .04, 4.);  // brightness
-comp_106=    
-comp_107=    C = float4(exp(log(c)/2.2), 1);
-comp_108=ret=C;
-comp_109=}
+comp_4=#define tx sin(time)+0.5
+comp_5=
+comp_6=#define A 9.
+comp_7=// amplitude
+comp_8=#define T (time/3e2)
+comp_9=#define H(a) (cos(radians(float3(180, 90, 0))+(a)*6.2832)*.5+.5)
+comp_10=// hue
+comp_11=#define iChannel0 sampler_noise_lq
+comp_12=
+comp_13=float map(float3 u, float v)
+comp_14=// sdf
+comp_15={
+comp_16=  float t = T,
+comp_17=  // speed
+comp_18=  l = 5.,
+comp_19=  // loop to reduce clipping
+comp_20=  f = 1e10, i = 0., y, z;
+comp_21=
+comp_22=  u.xy = float2(atan2(u.x, u.y), length(u.xy));
+comp_23=  // polar transform
+comp_24=  u.x += t*v*3.1416*.7;
+comp_25=  // counter rotation
+comp_26=
+comp_27=  for (; i++<l;)
+comp_28=  {
+comp_29=    float3 p = u;
+comp_30=    y = round((p.y-i)/l)*l+i;
+comp_31=    p.x *= y;
+comp_32=    p.x -= y*y*t*3.1416;
+comp_33=    p.x -= round(p.x/6.2832)*6.2832;
+comp_34=    p.y -= y;
+comp_35=    z = cos(y*t*6.2832)*.5 +.5;
+comp_36=    // z wave
+comp_37=    f = min(f, max(length(p.xy), -p.z -z*A) -.1 -z*.2 -p.z/1e2);
+comp_38=    // tubes
+comp_39=  }
+comp_40=
+comp_41=  return f;
+comp_42=}
+comp_43=
+comp_44=shader_body {
+comp_45=  float4 C = 0;
+comp_46=
+comp_47=  uv *= aspect.xy;
+comp_48=  float2 U = uv;
+comp_49=  
+comp_50=  U.x += 0.15;  
+comp_51=  U.y += 0.2;  
+comp_52=  
+comp_53=  uv *= 0.15;
+comp_54=  uv += 1.3;
+comp_55=
+comp_56=  uv.y+=-0.2;
+comp_57=  
+comp_58=  float TM = 0.2*time;
+comp_59=  uv.x += 0.1*sin(TM);
+comp_60=  uv.y -= 0*cos(TM);
+comp_61=  
+comp_62=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_63=  // uv = float2(uv.x, -uv.y);
+comp_64=  float2 R = uv.xy, j,
+comp_65=  // CONV: iMouse unsupported
+comp_66=  M = float2(0.5,0.5) * (1+0.5*sin(0.05*time)),
+comp_67=  m = (M -R/2.)/R.y;
+comp_68=
+comp_69=  // CONV: iMouse unsupported
+comp_70=  // if (iMouse.z < 1. && M.x+M.y < 10.) m = float2(0, .5);
+comp_71=
+comp_72=  float3 o = float3(0, 0, -130.),
+comp_73=  // camera
+comp_74=  u = normalize(float3(U -R/2., R.y)),
+comp_75=  // 3d coords
+comp_76=  c = float3(0, 0, 0),
+comp_77=  p, k;
+comp_78=
+comp_79=  float t = T,
+comp_80=  v = -o.z/3.,
+comp_81=  // pattern scale
+comp_82=  i = 0., d = i,
+comp_83=  s, f, z, r;
+comp_84=
+comp_85=  bool b;
+comp_86=
+comp_87=  for (; i++<70;)
+comp_88=  // raymarch
+comp_89=  {
+comp_90=    p = u*d +o;
+comp_91=    p.xy /= v;
+comp_92=    // scale down
+comp_93=    r = 1.2*length(p.xy);
+comp_94=    // radius
+comp_95=    z = abs(1. -r*r);
+comp_96=    // z warp
+comp_97=    b = r < 1.;
+comp_98=    // inside?
+comp_99=    if (b) z = sqrt(z);
+comp_100=    p.xy /= z+1.;
+comp_101=    // spherize
+comp_102=    p.xy -= m;
+comp_103=    // move with mouse
+comp_104=    p.xy *= 0.6*v;
+comp_105=    // scale back up
+comp_106=    p.xy -= cos(p.z/8. +t*3e2 +float2(0, 1.5708) +z/2.)*.2;
+comp_107=    // wave along z
+comp_108=
+comp_109=    s = map(p, v);
+comp_110=    // sdf
+comp_111=
+comp_112=    r = length(p.xy);
+comp_113=    // new r
+comp_114=    f = cos(round(r)*t*6.2832)*.5+.5;
+comp_115=    // multiples
+comp_116=    k = H(.2 -f/3. +t +p.z/2e2);
+comp_117=    // color
+comp_118=    if (b) k = 1.-k;
+comp_119=    // flip color
+comp_120=
+comp_121=    // this stuff can go outside the raymarch,
+comp_122=    // but accumulating it here produces softer edges
+comp_123=    c += min(exp(s/-.05), s)
+comp_124=    // shapes
+comp_125=    * (f+.01)
+comp_126=    // shade pattern
+comp_127=    * min(z, 1.)
+comp_128=    // darken edges
+comp_129=    * sqrt(cos(r*6.2832)*.5 +.5)
+comp_130=    // shade between rows
+comp_131=    * k*k;
+comp_132=    // color
+comp_133=
+comp_134=    // CONV: break is unsupported, see Milkwave manual for details
+comp_135=    if (s < 1e-3 || d > 1e3) i=70;
+comp_136=    d += s*clamp(z, .3, .9);
+comp_137=    // smaller steps towards sphere edge
+comp_138=  }
+comp_139=
+comp_140=  c += tex2D(iChannel0, u*d +o).rrr * float3(0, .4, s)*s*z*.03;  // wavy aqua
+comp_141=
+comp_142=  #ifdef bass_smooth
+comp_143=    float fc = (smoothstep(0,3,bass_smooth)*0.2)*vis_intensity+vis_shift;
+comp_144=  #else
+comp_145=    float fc = smoothstep(0,2,bass_att)*0.1;
+comp_146=  #endif  
+comp_147=
+comp_148=  c += min(exp(-p.z-f*A)*z*k*.01/s, fc);
+comp_149=  // light tips
+comp_150=
+comp_151=  j = p.xy/v+m;
+comp_152=  // 2d coords
+comp_153=  c /= clamp(dot(j, j)*4, .04, 4.);
+comp_154=  // brightness
+comp_155=
+comp_156=  C = float4(exp(log(c)/2.2), 1);
+comp_157=  ret=C;
+comp_158=}

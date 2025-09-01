@@ -1,0 +1,62 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// ProSureString + IkeC - cube go spinny :3 / https://www.shadertoy.com/view/tcXyWX
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx sin(time)*0.2+1
+comp_5=#define LOOPS 64
+comp_6=
+comp_7=float map(float3 p) {
+comp_8=
+comp_9=  float a = time+(sin(time*.3)*3.);
+comp_10=  p.xy = tx*mul(p.xy, transpose(float2x2(cos(a), -sin(a), sin(a), cos(a))));
+comp_11=  p.yz = tx*mul(p.yz, transpose(float2x2(cos(a), -sin(a), sin(a), cos(a))));
+comp_12=  p.xz = tx*mul(p.xz, transpose(float2x2(cos(a), sin(a), -sin(a), cos(a))));
+comp_13=
+comp_14=  float bo = max(abs(p).x-.8, max(abs(p).y-.8, abs(p).z-.8));
+comp_15=
+comp_16=  return bo;
+comp_17=  // max(-to,sp);//bo; //min(sp,bo);
+comp_18=}
+comp_19=
+comp_20=float3 palette(float t){
+comp_21=  return 0.35 + 0.5*cos(6.2831*(float3(0.3,0.5,0.7)*t + float3(0,0.2,0.4) * sin(time * .2)));
+comp_22=}
+comp_23=
+comp_24=shader_body {
+comp_25=  float4 fragColor = 0;
+comp_26=  // CONV: Center on screen, then try some aspect correction
+comp_27=  uv = (uv*2) - 1;
+comp_28=  uv *= aspect.xy;
+comp_29=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_30=  uv = float2(uv.x, -uv.y);
+comp_31=
+comp_32=  #ifdef bass_smooth
+comp_33=    uv *= (1-0.4*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_34=  #else
+comp_35=    uv *= 1-0.1*smoothstep(0,2,bass_att);
+comp_36=  #endif
+comp_37=
+comp_38=  float3 ro = float3(0,0,-5.0);
+comp_39=  float3 rd = normalize(float3(uv, 1.5));
+comp_40=  float3 col = float3(0.0, 0.0, 0.0);
+comp_41=
+comp_42=  // float dis;
+comp_43=
+comp_44=  float t = 0.0;
+comp_45=  for(float i=0.;i<LOOPS;i++){
+comp_46=    float3 p = ro + rd * t;
+comp_47=    float d = map(p);
+comp_48=    if(d < 0.001) i=LOOPS;
+comp_49=    else {
+comp_50=      t += d * 0.7;
+comp_51=      col += palette(t*0.1) / (d+0.9);
+comp_52=    }
+comp_53=  }
+comp_54=
+comp_55=  fragColor = float4(col/(10.0+col),1.0);
+comp_56=  // fragColor = float4(pow(col, float3(-100000, -100000, -100000)),1.0); // gamma
+comp_57=  ret = fragColor;
+comp_58=}

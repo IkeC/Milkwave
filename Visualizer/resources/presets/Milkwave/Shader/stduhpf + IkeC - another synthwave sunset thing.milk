@@ -16,276 +16,305 @@ comp_11=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
 comp_12=
 comp_13=#define speed 8
 comp_14=#define wave_thing
-comp_15=//#define city 1
-comp_16=
+comp_15=
+comp_16=// #define city 1
 comp_17=
 comp_18=#define disable_sound_texture_sampling
 comp_19=
 comp_20=#ifndef disable_sound_texture_sampling
 comp_21=#undef speed
 comp_22=#define speed 5.
-comp_23=#endif
-comp_24=
-comp_25=#define audio_vibration_amplitude .125
-comp_26=
-comp_27=float jTime;
-comp_28=
-comp_29=#ifdef disable_sound_texture_sampling
-comp_30=#define textureMirror(a, b) float4(0,0,0,0)
-comp_31=#else
-comp_32=float4 textureMirror(sampler2D tex, float2 c){
-comp_33=float2 cf = frac(c);
-comp_34=return tex2D(tex,lerp(cf,1.-cf,mod_conv(floor(c),2.)));
-comp_35=}
-comp_36=#endif
-comp_37=
-comp_38=float amp(float2 p){
-comp_39=return smoothstep(1,8.,abs(p.x));
-comp_40=}
-comp_41=
-comp_42=float pow512(float a){
-comp_43=a*=a;//^2
-comp_44=a*=a;//^4
-comp_45=a*=a;//^8
-comp_46=a*=a;//^16
-comp_47=a*=a;//^32
-comp_48=a*=a;//^64
-comp_49=a*=a;//^128
-comp_50=a*=a;//^256
-comp_51=return a*a;
-comp_52=}
-comp_53=
-comp_54=float pow1d5(float a){
-comp_55=return a*sqrt(a);
-comp_56=}
-comp_57=
-comp_58=float hash21(float2 co){
-comp_59=return frac(sin(dot(co.xy,float2(1.9898,7.233)))*45758.5433);
-comp_60=}
-comp_61=
-comp_62=float hash(float2 uv_conv){
-comp_63=float a = amp(uv_conv);
-comp_64=#ifdef wave_thing
-comp_65=float w = a>0.?(1.-.4*pow512(.51+.49*sin((.02*(uv_conv.y+.5*uv_conv.x)-jTime)*2.))):0.;
-comp_66=#else
-comp_67=float w=1.;
-comp_68=#endif
-comp_69=return (a>0 ? a*pow1d5(hash21(uv_conv))*w:0.)-(textureMirror(iChannel0,float2((uv_conv.x*29.uv_conv.y)*.03125,1.)).x)*audio_vibration_amplitude;
-comp_70=}
-comp_71=
-comp_72=float edgeMin(float dx_c,float2 da, float2 db,float2 uv_conv){
-comp_73=uv_conv.x+=5.;
-comp_74=float3 c = frac((round(float3(uv_conv,uv_conv.x+uv_conv.y)))*(float3(0,1,2)+0.61803398875));
-comp_75=
-comp_76=float a1 = 1;
-comp_77=float a2 = textureMirror(iChannel0,float2(c.x,0.)).x>.6?.15:1.;
-comp_78=float a3 = textureMirror(iChannel0,float2(c.z,0.)).x>.6?.15:1.;
-comp_79=
-comp_80=return min(min((1-dx_c)*db.y*a3,da.x*a2),da.y*a1);
-comp_81=}
-comp_82=
-comp_83=float2 trinoise(float2 uv_conv){
-comp_84=const float sq = sqrt(3./2.);
-comp_85=uv_conv.x *= sq;
-comp_86=uv_conv.y -= .5*uv_conv.x;
-comp_87=float2 d = frac(uv_conv);
-comp_88=uv_conv -= d;
-comp_89=
-comp_90=bool c = dot(d,float2(1, 1))>1.;
+comp_23=
+comp_24=#endif
+comp_25=
+comp_26=#define audio_vibration_amplitude .125
+comp_27=
+comp_28=float jTime;
+comp_29=
+comp_30=#ifdef disable_sound_texture_sampling
+comp_31=#define textureMirror(a, b) float4(0,0,0,0)
+comp_32=
+comp_33=#else
+comp_34=float4 textureMirror(sampler2D tex, float2 c){
+comp_35=  float2 cf = frac(c);
+comp_36=  return tex2D(tex,lerp(cf,1.-cf,mod_conv(floor(c),2.)));
+comp_37=}
+comp_38=
+comp_39=#endif
+comp_40=
+comp_41=float amp(float2 p){
+comp_42=  return smoothstep(1,8,abs(p.x));
+comp_43=}
+comp_44=
+comp_45=float pow512(float a){
+comp_46=  a*=a;
+comp_47=  // ^2
+comp_48=  a*=a;
+comp_49=  // ^4
+comp_50=  a*=a;
+comp_51=  // ^8
+comp_52=  a*=a;
+comp_53=  // ^16
+comp_54=  a*=a;
+comp_55=  // ^32
+comp_56=  a*=a;
+comp_57=  // ^64
+comp_58=  a*=a;
+comp_59=  // ^128
+comp_60=  a*=a;
+comp_61=  // ^256
+comp_62=  return a*a;
+comp_63=}
+comp_64=
+comp_65=float pow1d5(float a){
+comp_66=  return a*sqrt(a);
+comp_67=}
+comp_68=
+comp_69=float hash21(float2 co){
+comp_70=  return frac(sin(dot(co.xy,float2(1.9898,7.233)))*45758.5433);
+comp_71=}
+comp_72=
+comp_73=float hash(float2 uv_conv){
+comp_74=  float a = amp(uv_conv);
+comp_75=  
+comp_76=  #ifdef bass_smooth
+comp_77=    float fac = (0.5 + smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_78=  #else
+comp_79=    float fac = 0.9 + 0.2*smoothstep(0,2,bass_att);
+comp_80=  #endif  
+comp_81=  a*= fac;
+comp_82=  
+comp_83=  #ifdef wave_thing
+comp_84=    float w = a>0.?(1.-.4*pow512(.51+.49*sin((.02*(uv_conv.y+.5*uv_conv.x)-jTime)*2.))):0.;
+comp_85=  #else
+comp_86=    float w=1.;
+comp_87=  #endif
+comp_88=  
+comp_89=  return (a>0 ? a*pow1d5(hash21(uv_conv))*w:0.)-(textureMirror(iChannel0,float2((uv_conv.x*29.uv_conv.y)*.03125,1.)).x)*audio_vibration_amplitude;
+comp_90=}
 comp_91=
-comp_92=float2 dd = 1.-d;
-comp_93=float2 da = c?dd:d,db = c?d:dd;
-comp_94=
-comp_95=float nn = hash(uv_conv+float(c));
-comp_96=float n2 = hash(uv_conv+float2(1,0));
-comp_97=float n3 = hash(uv_conv+float2(0,1));
-comp_98=
-comp_99=float nmid = lerp(n2,n3,d.y);
-comp_100=float ns = lerp(nn,c?n2:n3,da.y);
-comp_101=float dx = da.x/db.y;
-comp_102=return float2(lerp(ns,nmid,dx),edgeMin(dx,da, db,uv_conv+d));
-comp_103=}
-comp_104=
-comp_105=float2 map(float3 p){
-comp_106=float2 n = trinoise(p.xz);
-comp_107=return float2(p.y-2.*n.x,n.y);
-comp_108=}
+comp_92=float edgeMin(float dx_c,float2 da, float2 db,float2 uv_conv){
+comp_93=  uv_conv.x+=5.;
+comp_94=  float3 c = frac((round(float3(uv_conv,uv_conv.x+uv_conv.y)))*(float3(0,1,2)+0.61803398875));
+comp_95=
+comp_96=  float a1 = 1;
+comp_97=  float a2 = textureMirror(iChannel0,float2(c.x,0.)).x>.6?.15:1.;
+comp_98=  float a3 = textureMirror(iChannel0,float2(c.z,0.)).x>.6?.15:1.;
+comp_99=
+comp_100=  return min(min((1-dx_c)*db.y*a3,da.x*a2),da.y*a1);
+comp_101=}
+comp_102=
+comp_103=float2 trinoise(float2 uv_conv){
+comp_104=  const float sq = sqrt(3./2.);
+comp_105=  uv_conv.x *= sq;
+comp_106=  uv_conv.y -= .5*uv_conv.x;
+comp_107=  float2 d = frac(uv_conv);
+comp_108=  uv_conv -= d;
 comp_109=
-comp_110=float3 grad(float3 p){
-comp_111=const float2 e = float2(.005,0);
-comp_112=float a =map(p).x;
-comp_113=return float3(map(p+e.xyy).x-a
-comp_114=,map(p+e.yxy).x-a
-comp_115=,map(p+e.yyx).x-a)/e.x;
-comp_116=}
-comp_117=
-comp_118=float2 intersect(float3 ro,float3 rd){
-comp_119=float d=0,h=0;
-comp_120=float2 ret_c=0;
-comp_121=
-comp_122=for(int i = 0;i<120;i++){ //look nice with 50 iterations
-comp_123=float3 p = ro+d*rd;
-comp_124=float2 s = map(p);
-comp_125=
-comp_126=h = s.x;
-comp_127=d+= h*.5;
-comp_128=
-comp_129=if(abs(h)<0.005*d) {
-comp_130= ret_c = float2(d,s.y);
-comp_131=} else {
-comp_132= // CONV: break unsupported, see Milkwave manual
-comp_133= if(d>150.|| p.y>2.) {
-comp_134=  i=500;
-comp_135= }
-comp_136= else {
-comp_137=  ret_c = float2(-1, -1);
-comp_138= }
-comp_139=}
-comp_140=} // end for
-comp_141=return ret_c;
-comp_142=}
-comp_143=
-comp_144=void addsun(float3 rd,float3 ld,inout float3 col){
-comp_145=
-comp_146=float sun = smoothstep(.21,.2,distance(rd,ld));
-comp_147=
-comp_148=if(sun>0.){
-comp_149=float yd = (rd.y-ld.y);
-comp_150=
-comp_151=float a = sin(3.1*exp(-(yd)*14.));
-comp_152=
-comp_153=sun *= smoothstep(-.8,0,a);
-comp_154=
-comp_155=col = lerp(col,float3(1.,.8,.4)*.75,sun);
-comp_156=}
-comp_157=}
-comp_158=
-comp_159=float starnoise(float3 rd){
-comp_160=float c = 0.;
-comp_161=float3 p = normalize(rd)*300.;
-comp_162=for (float i=0.;i<4.;i++)
-comp_163={
-comp_164=float3 q = frac(p)-.5;
-comp_165=float3 id = floor(p);
-comp_166=float c2 = smoothstep(.5,0.,length(q));
-comp_167=c2 *= step(hash21(id.xz/id.y),.06-i*i*0.005);
-comp_168=c += c2;
-comp_169=p = mul(p*.6+.5*p, transpose(float3x3(3./5.,0,4./5.,0,1,0,-4./5.,0,3./5.)));
-comp_170=}
-comp_171=c*=c;
-comp_172=float g = dot(sin(rd*10.512),cos(rd.yzx*10.512));
-comp_173=c*=smoothstep(-3.14,-.9,g)*.5+.5*smoothstep(-.3,1.,g);
-comp_174=return c*c;
-comp_175=}
-comp_176=
-comp_177=float3 gsky(float3 rd,float3 ld,bool mask){
-comp_178=float haze = exp2(-5.*(abs(rd.y)-.2*dot(rd,ld)));
+comp_110=  bool c = dot(d,float2(1, 1))>1.;
+comp_111=
+comp_112=  float2 dd = 1.-d;
+comp_113=  float2 da = c?dd:d,db = c?d:dd;
+comp_114=
+comp_115=  float nn = hash(uv_conv+float(c));
+comp_116=  float n2 = hash(uv_conv+float2(1,0));
+comp_117=  float n3 = hash(uv_conv+float2(0,1));
+comp_118=
+comp_119=  float nmid = lerp(n2,n3,d.y);
+comp_120=  float ns = lerp(nn,c?n2:n3,da.y);
+comp_121=  float dx = da.x/db.y;
+comp_122=  return float2(lerp(ns,nmid,dx),edgeMin(dx,da, db,uv_conv+d));
+comp_123=}
+comp_124=
+comp_125=float2 map(float3 p){
+comp_126=  float2 n = trinoise(p.xz);
+comp_127=  return float2(p.y-2.*n.x,n.y);
+comp_128=}
+comp_129=
+comp_130=float3 grad(float3 p){
+comp_131=  const float2 e = float2(.005,0);
+comp_132=  float a =map(p).x;
+comp_133=  return float3(map(p+e.xyy).x-a
+comp_134=  ,map(p+e.yxy).x-a
+comp_135=  ,map(p+e.yyx).x-a)/e.x;
+comp_136=}
+comp_137=
+comp_138=float2 intersect(float3 ro,float3 rd){
+comp_139=  float d=0,h=0;
+comp_140=  float2 ret_c=0;
+comp_141=
+comp_142=  for(int i = 0;i<120;i++){
+comp_143=  // look nice with 50 iterations
+comp_144=  float3 p = ro+d*rd;
+comp_145=  float2 s = map(p);
+comp_146=
+comp_147=  h = s.x;
+comp_148=  d+= h*.5;
+comp_149=
+comp_150=  if(abs(h)<0.005*d) {
+comp_151=    ret_c = float2(d,s.y);
+comp_152=    } else {
+comp_153=      // CONV: break unsupported, see Milkwave manual
+comp_154=      if(d>150.|| p.y>2.) {
+comp_155=        i=500;
+comp_156=      }
+comp_157=
+comp_158=      else {
+comp_159=        ret_c = float2(-1, -1);
+comp_160=      }
+comp_161=
+comp_162=    }
+comp_163=
+comp_164=    }
+comp_165=    // end for
+comp_166=    return ret_c;
+comp_167=  }
+comp_168=
+comp_169=  void addsun(float3 rd,float3 ld,inout float3 col){
+comp_170=
+comp_171=    float sun = smoothstep(.21,.2,distance(rd,ld));
+comp_172=
+comp_173=    if(sun>0.){
+comp_174=      float yd = (rd.y-ld.y);
+comp_175=
+comp_176=      float a = sin(3.1*exp(-(yd)*14.));
+comp_177=
+comp_178=      sun *= smoothstep(-.8,0,a);
 comp_179=
-comp_180=float st = mask?(starnoise(rd))*(1.-min(haze,1.)):0.;
-comp_181=float3 back = float3(.4,.1,.7)*(1.-.5*textureMirror(iChannel0,float2(.5+.05*rd.x/rd.y,0.)).x
-comp_182=*exp2(-.1*abs(length(rd.xz)/rd.y))
-comp_183=*max(sign(rd.y),0.));
+comp_180=      col = lerp(col,float3(1.,.8,.4)*.75,sun);
+comp_181=    }
+comp_182=
+comp_183=  }
 comp_184=
-comp_185=#ifdef city
-comp_186=float x = round(rd.x*30.);
-comp_187=float h = hash21(float2(x-166.,x-166.));
-comp_188=bool building = (h*h*.125*exp2(-x*x*x*x*.0025)>rd.y);
-comp_189=if(mask && building)
-comp_190=back*=0.,haze=.8, mask=mask && !building;
-comp_191=#endif
-comp_192=
-comp_193=float3 col=clamp(lerp(back,float3(.7,.1,.4),haze)+st,0.,1.);
-comp_194=if(mask) addsun(rd,ld,col);
-comp_195=return col;
-comp_196=}
+comp_185=  float starnoise(float3 rd){
+comp_186=    float c = 0.;
+comp_187=    float3 p = normalize(rd)*300.;
+comp_188=    for (float i=0.;i<4.;i++)
+comp_189=    {
+comp_190=      float3 q = frac(p)-.5;
+comp_191=      float3 id = floor(p);
+comp_192=      float c2 = smoothstep(.5,0.,length(q));
+comp_193=      c2 *= step(hash21(id.xz/id.y),.06-i*i*0.005);
+comp_194=      c += c2;
+comp_195=      p = mul(p*.6+.5*p, transpose(float3x3(3./5.,0,4./5.,0,1,0,-4./5.,0,3./5.)));
+comp_196=    }
 comp_197=
-comp_198=shader_body {
-comp_199=float4 fragColor = 0;
-comp_200=// CONV: Center on screen, then try some aspect correction
-comp_201=uv = (uv*2) - 1;
-comp_202=uv *= aspect.xy;
-comp_203=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_204=uv = float2(uv.x, -uv.y);
-comp_205=float2 fragCoord  = uv;
+comp_198=    c*=c;
+comp_199=    float g = dot(sin(rd*10.512),cos(rd.yzx*10.512));
+comp_200=    c*=smoothstep(-3.14,-.9,g)*.5+.5*smoothstep(-.3,1.,g);
+comp_201=    return c*c;
+comp_202=  }
+comp_203=
+comp_204=  float3 gsky(float3 rd,float3 ld,bool mask){
+comp_205=    float haze = exp2(-5.*(abs(rd.y)-.2*dot(rd,ld)));
 comp_206=
-comp_207=
-comp_208=#ifdef AA
-comp_209=for(float x = 0.;x<1.;x+=1./float(AA)){
-comp_210=for(float y = 0.;y<1.;y+=1./float(AA)){
-comp_211=#else
-comp_212=const float AA=1.,x=0.,y=0.;
-comp_213=#endif
-comp_214=
-comp_215=//uv = (2.*(fragCoord+float2(x,y))-uv.xy)/uv.y;
-comp_216=
-comp_217=const float shutter_speed = .25; // for motion blur
-comp_218=
-comp_219=//float dt = frac(tex2D(iChannel0,float(AA)*(fragCoord+float2(x,y))/uv.xy).r+time)*shutter_speed;
-comp_220=
-comp_221=float dt = frac(hash21(float(AA)*(fragCoord+float2(x,y)))+time)*shutter_speed;
-comp_222=
-comp_223=jTime = time;
+comp_207=    float st = mask?(starnoise(rd))*(1.-min(haze,1.)):0.;
+comp_208=    float3 back = float3(.4,.1,.7)*(1.-.5*textureMirror(iChannel0,float2(.5+.05*rd.x/rd.y,0.)).x
+comp_209=    *exp2(-.1*abs(length(rd.xz)/rd.y))
+comp_210=    *max(sign(rd.y),0.));
+comp_211=
+comp_212=    #ifdef city
+comp_213=    float x = round(rd.x*30.);
+comp_214=    float h = hash21(float2(x-166.,x-166.));
+comp_215=    bool building = (h*h*.125*exp2(-x*x*x*x*.0025)>rd.y);
+comp_216=    if(mask && building)
+comp_217=    back*=0.,haze=.8, mask=mask && !building;
+comp_218=    #endif
+comp_219=
+comp_220=    float3 col=clamp(lerp(back,float3(.7,.1,.4),haze)+st,0.,1.);
+comp_221=    if(mask) addsun(rd,ld,col);
+comp_222=    return col;
+comp_223=  }
 comp_224=
-comp_225=float fx = sin(time*0.3)*0.3;
-comp_226=#ifdef bass_smooth
-comp_227=float fy = 0.6+0.2*bass_smooth;
-comp_228=#else
-comp_229=float fy = sin(time*0.3)*0.3+1.1;
-comp_230=#endif
-comp_231=float fz = (-20000.+jTime*speed);
-comp_232=float3 ro = float3(fx,fy,fz);
+comp_225=  shader_body {
+comp_226=    float4 fragColor = 0;
+comp_227=    // CONV: Center on screen, then try some aspect correction
+comp_228=    uv = (uv*2) - 1;
+comp_229=    uv *= aspect.xy;
+comp_230=    // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_231=    uv = float2(uv.x, -uv.y);
+comp_232=    float2 fragCoord  = uv;
 comp_233=
-comp_234=#ifdef stereo
-comp_235=ro+=stereo*float3(.2*(float(uv.x>0.)-.5),0.,0.);
-comp_236=const float de = .9;
-comp_237=uv.x=uv.x+.5*(uv.x>0.?-de:de);
-comp_238=uv*=2.;
-comp_239=#endif
-comp_240=float dis = 1.2;
-comp_241=float3 rd = normalize(float3(uv,dis));
-comp_242=//float3 rd = normalize(float3(uv,sqrt(1.-dot(uv,uv))));
-comp_243=
-comp_244=float2 i = intersect(ro,rd);
-comp_245=float d = i.x;
-comp_246=float sunheight = .16;
-comp_247=float f1 = sunheight+.05*0.35*cos(jTime*0.1);
-comp_248=float3 ld = normalize(float3(0,f1,0.7));
-comp_249=float3 fog = d>0.?exp2(-d*float3(.14,.1,.28)):float3(0,0,0);
-comp_250=float3 sky = gsky(rd,ld,d<0.);
+comp_234=    #ifdef AA
+comp_235=    for(float x = 0.;x<1.;x+=1./float(AA)){
+comp_236=      for(float y = 0.;y<1.;y+=1./float(AA)){
+comp_237=        #else
+comp_238=        const float AA=1.,x=0.,y=0.;
+comp_239=        #endif
+comp_240=
+comp_241=        // uv = (2.*(fragCoord+float2(x,y))-uv.xy)/uv.y;
+comp_242=
+comp_243=        const float shutter_speed = .25;
+comp_244=        // for motion blur
+comp_245=
+comp_246=        // float dt = frac(tex2D(iChannel0,float(AA)*(fragCoord+float2(x,y))/uv.xy).r+time)*shutter_speed;
+comp_247=
+comp_248=        float dt = frac(hash21(float(AA)*(fragCoord+float2(x,y)))+time)*shutter_speed;
+comp_249=
+comp_250=        jTime = time;
 comp_251=
-comp_252=float3 p = ro+d*rd;
-comp_253=float3 n = normalize(grad(p));
-comp_254=
-comp_255=float diff = dot(n,ld)+.1*n.y;
-comp_256=float3 col = float3(.1,.11,.18)*diff;
-comp_257=
-comp_258=float3 rfd = reflect(rd,n);
-comp_259=float3 rfcol = gsky(rfd,ld,true);
-comp_260=
-comp_261=// floor
-comp_262=//col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),0.),5.));
-comp_263=  
-comp_264=float shiny = 0.88;
-comp_265=col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),shiny),5.));
-comp_266=
-comp_267=#ifdef VAPORWAVE
-comp_268=col = lerp(col,float3(.4,.5,1.),smoothstep(.05,.0,i.y));
-comp_269=col = lerp(sky,col,fog);
-comp_270=col = sqrt(col);
-comp_271=#else
-comp_272=col = lerp(col,float3(.8,.1,.92),smoothstep(.05,0,i.y));
-comp_273=col = lerp(sky,col,fog);
-comp_274=//no gamma for that old cg look
-comp_275=#endif
-comp_276=
-comp_277=if(d<0.) d=1e6;
-comp_278=d=min(d,10.);
-comp_279=
-comp_280=fragColor += float4(clamp(col,0,1),d<0. ? 0 : 0.1+exp2(-d));
-comp_281=
-comp_282=#ifdef AA 
-comp_283=fragColor/=float(AA*AA); 
-comp_284=}}
-comp_285=#endif
-comp_286=ret = fragColor;
-comp_287=}
+comp_252=        float fx = sin(time*0.3)*0.3;
+comp_253=
+comp_254=        #ifdef bass_smooth
+comp_255=          float fy = (0.6+0.2*bass_smooth)*vis_intensity+vis_shift;
+comp_256=        #else
+comp_257=          float fy = sin(time*0.3)*0.3+1.1;
+comp_258=        #endif
+comp_259=        
+comp_260=        float fz = (-20000.+jTime*speed);
+comp_261=        float3 ro = float3(fx,fy,fz);
+comp_262=
+comp_263=        #ifdef stereo
+comp_264=        ro+=stereo*float3(.2*(float(uv.x>0.)-.5),0.,0.);
+comp_265=        const float de = .9;
+comp_266=        uv.x=uv.x+.5*(uv.x>0.?-de:de);
+comp_267=        uv*=2.;
+comp_268=        #endif
+comp_269=        float dis = 1.2;
+comp_270=        float3 rd = normalize(float3(uv,dis));
+comp_271=        // float3 rd = normalize(float3(uv,sqrt(1.-dot(uv,uv))));
+comp_272=
+comp_273=        float2 i = intersect(ro,rd);
+comp_274=        float d = i.x;
+comp_275=        float sunheight = .16;
+comp_276=        float f1 = sunheight+.05*0.35*cos(jTime*0.1);
+comp_277=        float3 ld = normalize(float3(0,f1,0.7));
+comp_278=        float3 fog = d>0.?exp2(-d*float3(.14,.1,.28)):float3(0,0,0);
+comp_279=        float3 sky = gsky(rd,ld,d<0.);
+comp_280=
+comp_281=        float3 p = ro+d*rd;
+comp_282=        float3 n = normalize(grad(p));
+comp_283=
+comp_284=        float diff = dot(n,ld)+.1*n.y;
+comp_285=        float3 col = float3(.1,.11,.18)*diff;
+comp_286=
+comp_287=        float3 rfd = reflect(rd,n);
+comp_288=        float3 rfcol = gsky(rfd,ld,true);
+comp_289=
+comp_290=        // floor
+comp_291=        // col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),0.),5.));
+comp_292=
+comp_293=        float shiny = 0.88;
+comp_294=        col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),shiny),5.));
+comp_295=
+comp_296=        #ifdef VAPORWAVE
+comp_297=        col = lerp(col,float3(.4,.5,1.),smoothstep(.05,.0,i.y));
+comp_298=        col = lerp(sky,col,fog);
+comp_299=        col = sqrt(col);
+comp_300=        #else
+comp_301=        col = lerp(col,float3(.8,.1,.92),smoothstep(.05,0,i.y));
+comp_302=        col = lerp(sky,col,fog);
+comp_303=        // no gamma for that old cg look
+comp_304=        #endif
+comp_305=
+comp_306=        if(d<0.) d=1e6;
+comp_307=        d=min(d,10.);
+comp_308=
+comp_309=        fragColor += float4(clamp(col,0,1),d<0. ? 0 : 0.1+exp2(-d));
+comp_310=
+comp_311=        #ifdef AA
+comp_312=        fragColor/=float(AA*AA);
+comp_313=        }}
+comp_314=        #endif
+comp_315=        ret = fragColor;
+comp_316=      }

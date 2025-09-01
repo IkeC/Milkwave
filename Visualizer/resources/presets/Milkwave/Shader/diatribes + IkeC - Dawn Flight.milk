@@ -1,0 +1,66 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// diatribes + IkeC - Dawn Flight / https://www.shadertoy.com/view/WXdGzn
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx sin(time)*0.5+1
+comp_5=#define STEPS 64
+comp_6=
+comp_7=shader_body {
+comp_8=  float4 o = 0;
+comp_9=  // CONV: Center on screen, then try some aspect correction
+comp_10=  uv = uv*2-1;
+comp_11=  uv *= aspect.xy;
+comp_12=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_13=  //uv = float2(uv.x, -uv.y);
+comp_14=  float2 u = uv;
+comp_15=
+comp_16=  u.y+=-0.4;
+comp_17=  
+comp_18=  uv.x*=0.8;
+comp_19=  uv.y+=-1.0;
+comp_20=  
+comp_21=  float T = time*2;
+comp_22=  float i=0,d,s,t=T;
+comp_23=  float3  q,p = float3(uv,1);
+comp_24=  u = (u-p.xy/2.)/p.y;
+comp_25=  
+comp_26=  // sway camera side-to-side and up-and-down
+comp_27=  
+comp_28=  #ifdef bass_smooth
+comp_29=    float fac = (0.8+0.4*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_30=  #else
+comp_31=    float fac = 0.95+0.1*smoothstep(0,2,bass_att);
+comp_32=  #endif
+comp_33=  
+comp_34=  u += float2(cos(t*.2)*.3, 0.5*fac*cos(t*.2)*.1);
+comp_35=  
+comp_36=  float f1 = 0.7;
+comp_37=  
+comp_38=  for(o*=i; i++<STEPS;
+comp_39=  // min of cloud plane (8.-q.y) and terrain plane (2. + p.y)
+comp_40=  d += s = f1 * min(.05+abs(8.-q.y)*.25, 2. + p.y) * .7,
+comp_41=  // grayscale color, with minimum amount
+comp_42=  o += max(s,.01))
+comp_43=  // we're now in the above for-loop body
+comp_44=  // march, float3(u*d,d+t),p.x+=t*2. is equivalent to
+comp_45=  // p = ro + rd * d, p.x += t * 2., p.z += t;
+comp_46=  // or march a step, move to the right, and move forward
+comp_47=  for (q = p = float3(u*d,d+t),p.x+=t*2.,s = .04; s < 1.;
+comp_48=  // we're in the noise loop now
+comp_49=  // apply noise to the terrain plane
+comp_50=  p += abs(dot(sin(p * s * 4.), p-p+.05)) / s,
+comp_51=  // apply noise to the cloud plane
+comp_52=  q += abs(dot(sin(t+q * s * 16.), p-p+.008)) / s,
+comp_53=  // shift x because the noise has a directional bias,
+comp_54=  // this just "un-does" the bias a bit
+comp_55=  p.x++,
+comp_56=  // grow noise by s += s
+comp_57=  s += s);
+comp_58=  // tanh is good easy tone mapping, multiply by color float4,
+comp_59=  // divide down the brightness, add the sun ( / length(u))
+comp_60=  o = tanh(float4(4,2,fac,1)*o*o / 1e4 / pow(length(u-.02),.5));
+comp_61=  ret = o;
+comp_62=}

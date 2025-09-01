@@ -5,50 +5,63 @@ PSVERSION_COMP=4
 comp_1=// nocrex + IkeC - Tunnel of Lights / https://www.shadertoy.com/view/w3KGRK
 comp_2=// Transpiled to HLSL using Milkwave
 comp_3=
-comp_4=float mod_conv(float x, float y) { return x - y * floor(x / y); }
-comp_5=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
-comp_6=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
-comp_7=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
-comp_8=
-comp_9=float sdf(in float3 pos){
-comp_10=    pos = mod_conv(pos, 10.);
-comp_11=    return length(pos - float3(5., 5., 5.)) - 1.;
-comp_12=}
-comp_13=
-comp_14=
-comp_15=shader_body {
-comp_16=float4 fragColor;
-comp_17=float2 fragCoord;
-comp_18=// CONV: Center on screen, then try some aspect correction
-comp_19=uv = (uv*2) - 1;
-comp_20=uv *= aspect.xy;
-comp_21=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_22=uv = float2(uv.x, -uv.y);
-comp_23=
-comp_24=//     float2 uv = (fragCoord * 2. - texsize.xy)/max(texsize.x, texsize.y);
-comp_25=
-comp_26=    // Move and rotate camera over time
-comp_27=    float3 origin = float3(0., 5., 0.) * time;
-comp_28=    float angle = radians(time*3.);
-comp_29=    uv = mul(uv, transpose(float2x2(cos(angle), -sin(angle), sin(angle), cos(angle))));
-comp_30=    
-comp_31=    // Use spherical projection for ray direction
-comp_32=    float3 ray_dir = float3(sin(uv.x), cos(uv.x)*cos(uv.y), sin(uv.y));
-comp_33=    float3 ray_pos = float3(origin);
-comp_34=    
-comp_35=    float ray_length = 0.;
-comp_36=    
-comp_37=    for(float i = 0.; i < 7.; i++){
-comp_38=        float dist = sdf(ray_pos);
-comp_39=        ray_length += dist;
-comp_40=        ray_pos += ray_dir * dist;
-comp_41=        // Push rays outward with increasing distance
-comp_42=        ray_dir = normalize(ray_dir + float3(uv.x, 0., uv.y) * dist * .3);
-comp_43=    }
-comp_44=    
-comp_45=    float3 o = float3(sdf(ray_pos), sdf(ray_pos), sdf(ray_pos));
-comp_46=    o = cos(o + float3(6.,0,.5));
-comp_47=    o *= smoothstep(38., 20., ray_length);
+comp_4=#define tx sin(time)*0.5+1
+comp_5=
+comp_6=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_7=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_8=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_9=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_10=
+comp_11=float sdf(in float3 pos){
+comp_12=  pos = mod_conv(pos, 10.);
+comp_13=  return length(pos - float3(5., 5., 5.)) - 1.;
+comp_14=}
+comp_15=
+comp_16=shader_body {
+comp_17=  float4 fragColor;
+comp_18=  float2 fragCoord;
+comp_19=  // CONV: Center on screen, then try some aspect correction
+comp_20=  uv = (uv*2) - 1;
+comp_21=  uv *= aspect.xy;
+comp_22=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_23=  uv = float2(uv.x, -uv.y);
+comp_24=
+comp_25=  // float2 uv = (fragCoord * 2. - texsize.xy)/max(texsize.x, texsize.y);
+comp_26=
+comp_27=  // Move and rotate camera over time
+comp_28=  float3 origin = float3(0., 5., 0.) * time;
+comp_29=  float angle = radians(time*3.);
+comp_30=  uv = mul(uv, transpose(float2x2(cos(angle), -sin(angle), sin(angle), cos(angle))));
+comp_31=
+comp_32=  // Use spherical projection for ray direction
+comp_33=  float3 ray_dir = float3(sin(uv.x), cos(uv.x)*cos(uv.y), sin(uv.y));
+comp_34=  float3 ray_pos = float3(origin);
+comp_35=
+comp_36=  float ray_length = 0.;
+comp_37=
+comp_38=
+comp_39=  for(float i = 0.; i < 7.; i++){
+comp_40=    float dist = sdf(ray_pos);
+comp_41=    ray_length += dist;
+comp_42=    ray_pos += ray_dir * dist;
+comp_43=    // Push rays outward with increasing distance
+comp_44=    ray_dir = normalize(ray_dir + float3(uv.x, 0., uv.y) * dist * .3);
+comp_45=  }
+comp_46=    
+comp_47=  float3 o = float3(sdf(ray_pos), sdf(ray_pos), sdf(ray_pos));
 comp_48=
-comp_49=    ret = float4(o, 1.);
-comp_50=}
+comp_49=  #ifdef bass_smooth
+comp_50=    float fac = (1.2-0.2*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_51=    float faccol = (1.05-0.1*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_52=  #else
+comp_53=    float fac = 1;
+comp_54=    float faccol = 1.05-0.1*smoothstep(0,2,bass_att);
+comp_55=  #endif
+comp_56=
+comp_57=  ray_length *= fac;
+comp_58=
+comp_59=  o = cos(o + float3(faccol*6.,0,.5));
+comp_60=  o *= smoothstep(38., 20., ray_length);
+comp_61=
+comp_62=  ret = float4(o, 1.);
+comp_63=}

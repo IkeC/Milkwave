@@ -2,83 +2,86 @@ MILKDROP_PRESET_VERSION=201
 PSVERSION=4
 PSVERSION_WARP=4
 PSVERSION_COMP=4
-comp_1=// 4rknova + IkeC - The Blob (smooth) / https://www.shadertoy.com/view/XsXGRS
+comp_1=// 4rknova + IkeC - The Blob / https://www.shadertoy.com/view/XsXGRS
 comp_2=// Transpiled to HLSL using Milkwave
 comp_3=
 comp_4=#define AA 4.
-comp_5=#ifndef bass_smooth
-comp_6=#define bass_smooth bass_att
-comp_7=#endif
-comp_8=#define CI float3(.1,.9,.3)
-comp_9=//#define CO float3(0.0745, 0.0862, 0.1058)
-comp_10=#define CO float3(.1, .1, .5)
-comp_11=
-comp_12=#define CM float3(0,0,0)
-comp_13=#define CE float3(.8,.7,.5)
-comp_14=
-comp_15=float metaball(float2 p, float ry)
-comp_16={
-comp_17=return ry / dot(p, p);
-comp_18=}
-comp_19=
-comp_20=float3 samplef(in float2 uv_conv)
-comp_21={
-comp_22=float fac = time * 0.5;
-comp_23=float t0 = sin(fac * 1.9) * .46;
-comp_24=//t0*=1.1;
-comp_25=float t1 = sin(fac * 2.4) * .49;
-comp_26=//t1*=1.1;
-comp_27=float t2 = cos(fac * 1.4) * .57;
-comp_28=//t2*=1.1;
-comp_29=
-comp_30=float rc = metaball(uv_conv + float2(t0, t2), .33) * metaball(uv_conv - float2(t0, t1), .27) * metaball(uv_conv + float2(t1, t2), .59);
-comp_31=
-comp_32=float a1 = step(.1, rc*rc*rc);
-comp_33=
-comp_34=float3 ci = float3(0,0,0);
-comp_35=float f2 = 0.3+bass_smooth*0.5;
-comp_36=float f3 = 0;//treb_smooth;
-comp_37=
-comp_38=//float f2 = sin(bass_smooth);
-comp_39=// listen to the beat
-comp_40=f3*=0.5;
-comp_41=ci.r= f2;
-comp_42=ci.g = f3;
-comp_43=ci.b = f2/2;
-comp_44=
-comp_45=
-comp_46=
-comp_47=float3 alt = rc < .9 ? (rc < .7 ? CO: CM) : ci;
-comp_48=float3 cc = (rc > .4 && rc < .7) ? float3(a1,a1,a1) * CE : alt;
-comp_49=
-comp_50=return cc;
-comp_51=}
-comp_52=
-comp_53=
-comp_54=shader_body {
-comp_55=float4 fragColor = 0;
-comp_56=float2 fragCoord  = uv;
-comp_57=// CONV: Center on screen, then try some aspect correction
-comp_58=uv = (uv*2) - 1;
-comp_59=uv *= aspect.xy;
-comp_60=// CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_61=uv = float2(uv.x, -uv.y);
-comp_62=
-comp_63=// 	float2 uv = (fragCoord.xy / texsize.xy * 2. - 1.) * float2(texsize.x / texsize.y, 1) * 1.25;
-comp_64=
-comp_65=float3 col = float3(0, 0, 0);
-comp_66=
-comp_67=#ifdef AA
-comp_68=// Antialiasing via supersampling
-comp_69=float e = 1. / min(texsize.y , texsize.x);
-comp_70=for (float i = -AA; i < AA; ++i) {
-comp_71=for (float j = -AA; j < AA; ++j) {
-comp_72=col += samplef(uv + float2(i, j) * (e/AA)) / (4.*AA*AA);
-comp_73=}
-comp_74=}
-comp_75=#else
-comp_76=col += samplef(uv);
-comp_77=#endif /* AA */
-comp_78=
-comp_79=ret = float4(clamp(col, 0., 1.), 1);
-comp_80=}
+comp_5=
+comp_6=#define CI float3(.1,.9,.3)
+comp_7=
+comp_8=// #define CO float3(0.0745, 0.0862, 0.1058)
+comp_9=#define CO float3(.1, .1, .5)
+comp_10=
+comp_11=#define CM float3(0,0,0)
+comp_12=#define CE float3(.8,.7,.5)
+comp_13=
+comp_14=float metaball(float2 p, float ry)
+comp_15={
+comp_16=  return ry / dot(p, p);
+comp_17=}
+comp_18=
+comp_19=float3 samplef(in float2 uv_conv)
+comp_20={
+comp_21=  float fac = time * 0.5;
+comp_22=  float t0 = sin(fac * 1.9) * .46;
+comp_23=  // t0*=1.1;
+comp_24=  float t1 = sin(fac * 2.4) * .49;
+comp_25=  // t1*=1.1;
+comp_26=  float t2 = cos(fac * 1.4) * .57;
+comp_27=  // t2*=1.1;
+comp_28=
+comp_29=  float rc = metaball(uv_conv + float2(t0, t2), .33) * metaball(uv_conv - float2(t0, t1), .27) * metaball(uv_conv + float2(t1, t2), .59);
+comp_30=
+comp_31=  float a1 = step(.1, rc*rc*rc);
+comp_32=
+comp_33=  float3 ci = float3(0,0,0);
+comp_34=
+comp_35=  #ifdef bass_smooth
+comp_36=    float f2 = (0.3+smoothstep(0,2,bass_smooth)*0.5)*vis_intensity+vis_shift;
+comp_37=  #else
+comp_38=    float f2 = 0.3+smoothstep(0,2,bass_att)*0.1;
+comp_39=  #endif
+comp_40=  
+comp_41=  float f3 = 0;
+comp_42=
+comp_43=  // listen to the beat
+comp_44=  f3*=0.5;
+comp_45=  ci.r= f2;
+comp_46=  ci.g = f3;
+comp_47=  ci.b = f2/2;
+comp_48=
+comp_49=  float3 alt = rc < .9 ? (rc < .7 ? CO: CM) : ci;
+comp_50=  float3 cc = (rc > .4 && rc < .7) ? float3(a1,a1,a1) * CE : alt;
+comp_51=
+comp_52=  return cc;
+comp_53=}
+comp_54=
+comp_55=shader_body {
+comp_56=  float4 fragColor = 0;
+comp_57=  float2 fragCoord  = uv;
+comp_58=  // CONV: Center on screen, then try some aspect correction
+comp_59=  uv = (uv*2) - 1;
+comp_60=  uv *= aspect.xy;
+comp_61=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_62=  uv = float2(uv.x, -uv.y);
+comp_63=
+comp_64=  // float2 uv = (fragCoord.xy / texsize.xy * 2. - 1.) * float2(texsize.x / texsize.y, 1) * 1.25;
+comp_65=
+comp_66=  float3 col = float3(0, 0, 0);
+comp_67=
+comp_68=  #ifdef AA
+comp_69=  // Antialiasing via supersampling
+comp_70=  float e = 1. / min(texsize.y , texsize.x);
+comp_71=  for (float i = -AA; i < AA; ++i) {
+comp_72=    for (float j = -AA; j < AA; ++j) {
+comp_73=      col += samplef(uv + float2(i, j) * (e/AA)) / (4.*AA*AA);
+comp_74=    }
+comp_75=
+comp_76=  }
+comp_77=
+comp_78=  #else
+comp_79=  col += samplef(uv);
+comp_80=  #endif /* AA */
+comp_81=
+comp_82=  ret = float4(clamp(col, 0., 1.), 1);
+comp_83=}

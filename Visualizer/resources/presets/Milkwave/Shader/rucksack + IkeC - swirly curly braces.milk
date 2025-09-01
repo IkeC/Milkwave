@@ -1,0 +1,71 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// rucksack + IkeC - swirly curly braces / https://www.shadertoy.com/view/wf2cRm
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx sin(time)*0.5+1
+comp_5=
+comp_6=// 0.5 <= tx <= 1.5
+comp_7=
+comp_8=float tunnel(float3 p) {
+comp_9=  return 1. - (length(p.xy) - .9);
+comp_10=}
+comp_11=
+comp_12=float dist(float3 p) {
+comp_13=  return tunnel(p);
+comp_14=}
+comp_15=
+comp_16=shader_body {
+comp_17=  float4 fragColor = 0;
+comp_18=  float2 fragCoord  = uv;
+comp_19=  // CONV: Center on screen, then try some aspect correction
+comp_20=  uv = (uv*2) - 1;
+comp_21=  uv *= aspect.xy;
+comp_22=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_23=  uv = float2(uv.x, -uv.y);
+comp_24=
+comp_25=  // Normalized pixel coordinates (from 0 to 1)
+comp_26=  // float2 uv = (fragCoord-.5*uv.xy)/uv.y;
+comp_27=  float3 rd = normalize(float3(uv, 1.));
+comp_28=
+comp_29=  float t = time*.9;
+comp_30=  float3 ro = float3(0, 0, t);
+comp_31=
+comp_32=  #ifdef bass_smooth
+comp_33=    float fac = (0.8+0.4*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_34=  #else
+comp_35=    float fac = 0.95+0.1*smoothstep(0,2,bass_att);
+comp_36=  #endif
+comp_37=  
+comp_38=  float d = 0.;
+comp_39=  float3 col = float3(0, 0, 0);
+comp_40=  for (int i = 0; i < 100; i++) {
+comp_41=    float3 p = ro + rd*d;
+comp_42=
+comp_43=    // Warp
+comp_44=    for (float s = 1.; s < 2.; s *= 1.39)
+comp_45=    p += sin(t + p.zyx*3.)*.2;
+comp_46=
+comp_47=    // Translucent step
+comp_48=    float dd = .005 + abs(dist(p)) * .15;
+comp_49=    d += dd;
+comp_50=
+comp_51=    // funky color stuff
+comp_52=    // so it just offsets each color component
+comp_53=    // then puts it through cos to wrap it
+comp_54=    float3 phase_offset = float3(fac*3,1.9,0.1);
+comp_55=    col += (1. + cos(d+phase_offset)) / dd;
+comp_56=  }
+comp_57=
+comp_58=  // and then back from cos space I suppose
+comp_59=  col = tanh(col / 3000.);
+comp_60=  // tried
+comp_61=  // col *= .0001;
+comp_62=  // and that just makes very dark version that looks worse
+comp_63=
+comp_64=  // Output gamma corrected
+comp_65=  fragColor = float4(pow(col, float3(2.2, 2.2, 2.2)),1.0);
+comp_66=  ret = fragColor;
+comp_67=}
