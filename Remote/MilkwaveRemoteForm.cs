@@ -211,7 +211,10 @@ namespace MilkwaveRemote {
       TimeFactor,
       FrameFactor,
       FpsFactor,
+      VisIntensity,
+      VisShift
     }
+
     private void SetAllControlFontSizes(Control parent, float fontSize) {
       foreach (Control ctrl in parent.Controls) {
         ctrl.Font = new Font(ctrl.Font.FontFamily, fontSize, ctrl.Font.Style);
@@ -637,6 +640,10 @@ namespace MilkwaveRemote {
               message = "VAR_FRAME=" + numFactorFrame.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.FpsFactor) {
               message = "VAR_FPS=" + numFactorFPS.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.VisIntensity) {
+              message = "VAR_INTENSITY=" + numVisIntensity.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.VisShift) {
+              message = "VAR_SHIFT=" + numVisShift.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.PresetLink) {
               message = "LINK=" + messageToSend;
             } else if (type == MessageType.Message) {
@@ -3220,6 +3227,24 @@ namespace MilkwaveRemote {
       SendToMilkwaveVisualizer("", MessageType.FpsFactor);
     }
 
+    private void numVisIntensity_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        numVisIntensity.Increment = 0.05M;
+      } else {
+        numVisIntensity.Increment = 0.01M;
+      }
+      SendToMilkwaveVisualizer("", MessageType.VisIntensity);
+    }
+
+    private void numVisShift_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        numVisShift.Increment = 0.05M;
+      } else {
+        numVisShift.Increment = 0.01M;
+      }
+      SendToMilkwaveVisualizer("", MessageType.VisShift);
+    }
+
     private void lblFactorTime_Click(object sender, EventArgs e) {
       numFactorTime.Value = 1;
     }
@@ -3232,6 +3257,13 @@ namespace MilkwaveRemote {
       numFactorFPS.Value = 1;
     }
 
+    private void lblVisIntensity_Click(object sender, EventArgs e) {
+      numVisIntensity.Value = 1;
+    }
+
+    private void lblVisShift_Click(object sender, EventArgs e) {
+      numVisShift.Value = 0;
+    }
     private void OpenFile(string filePath) {
       filePath = Path.Combine(BaseDir, filePath);
       if (File.Exists(filePath)) {

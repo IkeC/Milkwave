@@ -114,6 +114,8 @@ Changes are saved to the _Fonts_ section in _settings.ini_. Of course you may ed
 
 Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
 
+The "Intensity" and "Shift" values can be read by presets that support the Milkwave specific vis_intensity and vis_shift variables (see below). As above, you can change these values live while a preset is running.
+
 Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
 
 ## Milkwave specifics
@@ -135,7 +137,19 @@ Or wrap your code in a conditional block:
 float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 #endif
 ```
+### "vis_intensity" and "vis_shift" preset variables
+
+Also introduced in Milkwave 3. Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default value is 1 for vis_intensity and 0 for vis_shift. Users can adjust these values live from the "Settings" tab in the Remote while the preset is running.
+
+See the Shader presets included with Milkwave for examples that make use of these parameters.
+
+As with the _smooth parameters above, you may want to use defines like this in your preset to stay compatible with other MilkDrop based visualizers:
+```
+#ifndef vis_intensity
+#define vis_intensity 1
+#endif
+```
 
 ## Closing Notes
 
-This manual was written by IkeC. If you want to contribute to this manual or need further help, it's a good idea to [open an issue on GitHub](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord). The latter is also a good place to share your preset or discuss with other users.
+This manual was written by IkeC. If you want to contribute to this manual or need further help, it's a good idea to [open an issue on GitHub](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord). The latter is also a good place to share your presets or discuss with other users.

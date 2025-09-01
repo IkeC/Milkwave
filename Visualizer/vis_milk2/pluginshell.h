@@ -162,6 +162,9 @@ protected:
   float m_timeFactor = 1.0f;
   float m_fpsFactor = 1.0f;
 
+  float m_VisIntensity = 1.0f;
+  float m_VisShift = 0.0f;
+
   //=====================================================================================================================
 private:
 

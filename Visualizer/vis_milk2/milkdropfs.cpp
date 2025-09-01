@@ -522,7 +522,7 @@ void CPlugin::LoadPerFrameEvallibVars(CState* pState) {
   *pState->var_pf_bass_smooth = (double)mysound.smooth[0];
   *pState->var_pf_mid_smooth = (double)mysound.smooth[1];
   *pState->var_pf_treb_smooth = (double)mysound.smooth[2];
-
+  
   *pState->var_pf_frame = (double)GetFrame();
   //*pState->var_pf_monitor     = 0;   -leave this as it was set in the per-frame INIT code!
   for (int vi = 0; vi < NUM_Q_VAR; vi++)
@@ -694,6 +694,7 @@ void CPlugin::RunPerFrameEquations(int code) {
     *pState->var_pv_bass_smooth = *pState->var_pf_bass_smooth;
     *pState->var_pv_mid_smooth = *pState->var_pf_mid_smooth;
     *pState->var_pv_treb_smooth = *pState->var_pf_treb_smooth;
+
 
     *pState->var_pv_meshx = (double)m_nGridX;
     *pState->var_pv_meshy = (double)m_nGridY;
@@ -4773,7 +4774,7 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   float blur_min[3], blur_max[3];
   GetSafeBlurMinMax(pState, blur_min, blur_max);
 
-  // bind float4's
+  // bind float4's (C-Variables!)
   if (p->rand_frame) pCT->SetVector(lpDevice, p->rand_frame, &m_rand_frame);
   if (p->rand_preset) pCT->SetVector(lpDevice, p->rand_preset, &pState->m_rand_preset);
   D3DXHANDLE* h = p->const_handles;
@@ -4807,7 +4808,9 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   ));
   if (h[12]) pCT->SetVector(lpDevice, h[12], &D3DXVECTOR4(mip_x, mip_y, mip_avg, 0));
   if (h[13]) pCT->SetVector(lpDevice, h[13], &D3DXVECTOR4(blur_min[1], blur_max[1], blur_min[2], blur_max[2]));
+  
   if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
+  if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(m_VisIntensity, m_VisShift, 0, 0));
 
   // write q vars
   int num_q_float4s = sizeof(p->q_const_handles) / sizeof(p->q_const_handles[0]);

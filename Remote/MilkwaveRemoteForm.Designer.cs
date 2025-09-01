@@ -180,6 +180,10 @@ namespace MilkwaveRemote
       chkShaderLeft = new CheckBox();
       btnHLSLSave = new Button();
       btnHLSLLoad = new Button();
+      lblVisIntensity = new Label();
+      lblVisShift = new Label();
+      numVisShift = new NumericUpDown();
+      numVisIntensity = new NumericUpDown();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -279,6 +283,8 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numPSVersion).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numVisShift).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numVisIntensity).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).BeginInit();
       tableLayoutPanel1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -2056,7 +2062,7 @@ namespace MilkwaveRemote
       numOffset.TabIndex = 141;
       numOffset.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numOffset, "Adjust this value if the line marked as error is wrong");
-      numOffset.Value = new decimal(new int[] { 174, 0, 0, 0 });
+      numOffset.Value = new decimal(new int[] { 181, 0, 0, 0 });
       numOffset.ValueChanged += numOffset_ValueChanged;
       // 
       // cboShadertoyType
@@ -2151,6 +2157,58 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(btnHLSLLoad, "Load HLSL shader code from HLSL or preset file\r\n(restoring Shaderinfo lines)");
       btnHLSLLoad.UseVisualStyleBackColor = true;
       btnHLSLLoad.Click += btnHLSLLoad_Click;
+      // 
+      // lblVisIntensity
+      // 
+      lblVisIntensity.Location = new Point(137, 5);
+      lblVisIntensity.Name = "lblVisIntensity";
+      lblVisIntensity.Size = new Size(65, 23);
+      lblVisIntensity.TabIndex = 150;
+      lblVisIntensity.Text = "Intensity";
+      lblVisIntensity.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblVisIntensity, resources.GetString("lblVisIntensity.ToolTip"));
+      lblVisIntensity.Click += lblVisIntensity_Click;
+      // 
+      // lblVisShift
+      // 
+      lblVisShift.Location = new Point(137, 33);
+      lblVisShift.Name = "lblVisShift";
+      lblVisShift.Size = new Size(65, 23);
+      lblVisShift.TabIndex = 152;
+      lblVisShift.Text = "Shift";
+      lblVisShift.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblVisShift, resources.GetString("lblVisShift.ToolTip"));
+      lblVisShift.Click += lblVisShift_Click;
+      // 
+      // numVisShift
+      // 
+      numVisShift.DecimalPlaces = 2;
+      numVisShift.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numVisShift.Location = new Point(208, 35);
+      numVisShift.Margin = new Padding(3, 2, 3, 2);
+      numVisShift.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numVisShift.Minimum = new decimal(new int[] { 99999, 0, 0, -2147352576 });
+      numVisShift.Name = "numVisShift";
+      numVisShift.Size = new Size(56, 23);
+      numVisShift.TabIndex = 151;
+      numVisShift.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numVisShift, "Hold Alt: Set increment to 0.05");
+      numVisShift.ValueChanged += numVisShift_ValueChanged;
+      // 
+      // numVisIntensity
+      // 
+      numVisIntensity.DecimalPlaces = 2;
+      numVisIntensity.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numVisIntensity.Location = new Point(208, 7);
+      numVisIntensity.Margin = new Padding(3, 2, 3, 2);
+      numVisIntensity.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numVisIntensity.Name = "numVisIntensity";
+      numVisIntensity.Size = new Size(56, 23);
+      numVisIntensity.TabIndex = 149;
+      numVisIntensity.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numVisIntensity, "Hold Alt: Set increment to 0.05");
+      numVisIntensity.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numVisIntensity.ValueChanged += numVisIntensity_ValueChanged;
       // 
       // cboParameters
       // 
@@ -3317,6 +3375,10 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(numVisShift);
+      tabSettings.Controls.Add(lblVisShift);
+      tabSettings.Controls.Add(numVisIntensity);
+      tabSettings.Controls.Add(lblVisIntensity);
       tabSettings.Controls.Add(btnOpenTagsRemote);
       tabSettings.Controls.Add(btnOpenSettingsRemote);
       tabSettings.Controls.Add(btnOpenScriptDefault);
@@ -3415,6 +3477,8 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numPSVersion).EndInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).EndInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numVisShift).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numVisIntensity).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).EndInit();
       tableLayoutPanel1.ResumeLayout(false);
       splitContainer1.Panel1.ResumeLayout(false);
@@ -3691,5 +3755,9 @@ namespace MilkwaveRemote
     private CheckBox chkShaderLeft;
     private Button btnHLSLLoad;
     private Button btnHLSLSave;
+    private NumericUpDown numVisShift;
+    private Label lblVisShift;
+    private NumericUpDown numVisIntensity;
+    private Label lblVisIntensity;
   }
 }
