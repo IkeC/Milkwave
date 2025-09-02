@@ -1,4 +1,4 @@
-## v3.1 (2025-09-02)
+## v3.1 (2025-09-03)
 
 - 10 new shader-based presets in Milkwave/Shader directory
 - All 30 Milkwave shader presets now react to audio input
@@ -7,7 +7,8 @@
 - Set default audio device using Ctrl+D (eg. after disconnecting Bluetooth headphones)
 - New message parameter "fadeout" (also for custom messages)
 - New shortcuts: Ctrl+B for toggling button panel, Ctrl+O for opening Visualizer window
-- Stability improvements
+- Force soft preset transition type using "Mixtype" in settings.ini
+- Miscellaneous stability improvements
 
 ## v3.0.2 (2025-08-26)
 

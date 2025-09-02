@@ -335,6 +335,7 @@ public:
   int     m_nTexBitsPerCh;
   int			m_nGridX;
   int			m_nGridY;
+  int			m_nMixType = -1; // -1 = Random
 
   // bool		m_bShowPressF1ForHelp;
   //char		m_szMonitorName[256];

@@ -100,7 +100,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // or applications that are running, so change this to something
 // that will probably be unique.  For example, if your plugin was
 // called Libido, then "LibidoClass" would probably be a safe bet.
-#define CLASSNAME       L"BeatDrop"
+#define CLASSNAME       L"Milkwave"
 
 // Here you can give names to the buttons (~tabs) along the top
 // of the config panel.  Each button, when clicked, will bring

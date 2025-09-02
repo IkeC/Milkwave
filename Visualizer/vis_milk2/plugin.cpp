@@ -1053,7 +1053,7 @@ void CPlugin::MyPreInitialize() {
   // EnableSpoutLog(); // Shows Spout logs on the console
     // OpenSpoutConsole(); // Empty console
 
-  sprintf(WinampSenderName, "BeatDrop");
+  sprintf(WinampSenderName, "Milkwave");
   bInitialized = false;
   bSpoutOut = true; // User on/off toggle
   bSpoutChanged = false; // set to write config on exit
@@ -1413,6 +1413,7 @@ void CPlugin::MyReadConfig() {
   if (m_MinPSVersionConfig < 0) m_MinPSVersionConfig = 2;
   m_MaxPSVersionConfig = GetPrivateProfileIntW(L"Settings", L"MaxPSVersion", m_MaxPSVersionConfig, pIni);
   if (m_MaxPSVersionConfig < 0) m_MaxPSVersionConfig = 4;
+  m_nMixType = GetPrivateProfileIntW(L"Settings", L"Mixtype", m_nMixType, pIni);
 
   m_ShowUpArrowInDescriptionIfPSMinVersionForced = GetPrivateProfileBoolW(L"Milkwave", L"ShowUpArrowInDescriptionIfPSMinVersionForced", m_ShowUpArrowInDescriptionIfPSMinVersionForced, pIni);
 
@@ -7983,7 +7984,8 @@ void CPlugin::RandomizeBlendPattern() {
 
   // note: we now avoid constant uniform blend b/c it's half-speed for shader blending.
   //       (both old & new shaders would have to run on every pixel...)           reenabled due to further notice
-  int mixtype = 0 + (rand() % 19);//rand()%4;
+  int mixtype = 0 + (rand() % 19);
+  if (m_nMixType > -1) mixtype = m_nMixType;
 
   if (mixtype == 0) {
     // constant, uniform blend
