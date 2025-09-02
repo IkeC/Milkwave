@@ -2341,7 +2341,9 @@ LRESULT CPluginShell::PluginShellWindowProc(HWND hWnd, unsigned uMsg, WPARAM wPa
     }
     return 0;
   }
-
+  if (uMsg == WM_WINDOWPOSCHANGING || uMsg == WM_WINDOWPOSCHANGED) {
+    return 0;
+  }
   return MyWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
