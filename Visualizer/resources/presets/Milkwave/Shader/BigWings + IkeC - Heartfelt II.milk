@@ -1,0 +1,314 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// BigWings + IkeC - Heartfelt II / https://www.shadertoy.com/view/ltffzl
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx sin(time)*0.5+1
+comp_5=// 0.5 <= tx <= 1.5
+comp_6=
+comp_7=// CONV: setting iChannel samplers to default noise texture
+comp_8=#define iChannel0 sampler_heartfelt2
+comp_9=sampler iChannel0;
+comp_10=
+comp_11=// CONV: adding helper functions
+comp_12=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_13=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_14=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_15=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_16=
+comp_17=#define S(a, b, t) smoothstep(a, b, t)
+comp_18=#define HAS_HEART
+comp_19=#define USE_POST_PROCESSING
+comp_20=
+comp_21=#define stime 60
+comp_22=
+comp_23=// #define stime 110
+comp_24=#define stimetotal 1.2*stime
+comp_25=
+comp_26=float3 N13(float p) {
+comp_27=  float3 p3 = frac(float3(p,p,p) * float3(.1031,.11369,.13787));
+comp_28=  p3 += dot(p3, p3.yzx + 19.19);
+comp_29=  return frac(float3((p3.x + p3.y)*p3.z, (p3.x+p3.z)*p3.y, (p3.y+p3.z)*p3.x));
+comp_30=}
+comp_31=
+comp_32=float4 N14(float t) {
+comp_33=  return frac(sin(t*float4(123., 1024., 1456., 264.))*float4(6547., 345., 8799., 1564.));
+comp_34=}
+comp_35=
+comp_36=float N(float t) {
+comp_37=  return frac(sin(t*12345.564)*7658.76);
+comp_38=}
+comp_39=
+comp_40=float Saw(float b, float t) {
+comp_41=  return S(0., b, t)*S(1., b, t);
+comp_42=}
+comp_43=
+comp_44=float2 DropLayer2(float2 uv_conv,  float t) {
+comp_45=  float2 UV = uv_conv;
+comp_46=
+comp_47=  uv_conv.y += t*0.75;
+comp_48=  float2 a = float2(6., 1.);
+comp_49=  float2 grid = a*2.;
+comp_50=  float2 id = floor(uv_conv*grid);
+comp_51=
+comp_52=  float colShift = N(id.x);
+comp_53=  uv_conv.y += colShift;
+comp_54=
+comp_55=  id = floor(uv_conv*grid);
+comp_56=  float3 n = N13(id.x*35.2+id.y*2376.1);
+comp_57=  float2 st = frac(uv_conv*grid)-float2(.5, 0);
+comp_58=
+comp_59=  float x = n.x-.5;
+comp_60=
+comp_61=  float y = UV.y*20.;
+comp_62=  float wiggle = sin(y+sin(y));
+comp_63=  x += wiggle*(.5-abs(x))*(n.z-.5);
+comp_64=  x *= .7;
+comp_65=  float ti = frac(t+n.z);
+comp_66=  y = (Saw(.85, ti)-.5)*.9+.5;
+comp_67=  float2 p = float2(x, y);
+comp_68=
+comp_69=  float d = length((st-p)*a.yx);
+comp_70=
+comp_71=  float mainDrop = S(.4, .0, d);
+comp_72=
+comp_73=  float r = sqrt(S(1., y, st.y));
+comp_74=  float cd = abs(st.x-x);
+comp_75=  float trail = S(.23*r, .15*r*r, cd);
+comp_76=  float trailFront = S(-.02, .02, st.y-y);
+comp_77=  trail *= trailFront*r*r;
+comp_78=
+comp_79=  y = UV.y;
+comp_80=  float trail2 = S(.2*r, .0, cd);
+comp_81=  float droplets = max(0., (sin(y*(1.-y)*120.)-st.y))*trail2*trailFront*n.z;
+comp_82=  y = frac(y*10.)+(st.y-.5);
+comp_83=  float dd = length(st-float2(x, y));
+comp_84=  droplets = S(.3, 0., dd);
+comp_85=  float m = mainDrop+droplets*r*trailFront;
+comp_86=
+comp_87=  return float2(m, trail);
+comp_88=}
+comp_89=
+comp_90=float StaticDrops(float2 uv_conv,  float t) {
+comp_91=  uv_conv *= 40.;
+comp_92=
+comp_93=  float2 id = floor(uv_conv);
+comp_94=  uv_conv = frac(uv_conv)-.5;
+comp_95=  float3 n = N13(id.x*107.45+id.y*3543.654);
+comp_96=  float2 p = (n.xy-.5)*.7;
+comp_97=  float d = length(uv_conv-p);
+comp_98=
+comp_99=  float fade = Saw(.025, frac(t+n.z));
+comp_100=  float c = S(.3, 0., d)*frac(n.z*10.)*fade;
+comp_101=  return c;
+comp_102=}
+comp_103=
+comp_104=float2 Drops(float2 uv_conv,  float t, float l0, float l1, float l2) {
+comp_105=  float s = StaticDrops(uv_conv, t)*l0;
+comp_106=  float2 m1 = DropLayer2(uv_conv, t)*l1;
+comp_107=  float2 m2 = DropLayer2(uv_conv*1.85, t)*l2;
+comp_108=
+comp_109=  float c = s+m1.x+m2.x;
+comp_110=  c = S(.3, 1., c);
+comp_111=
+comp_112=  return float2(c, max(m1.y*l0, m2.y*l1));
+comp_113=}
+comp_114=
+comp_115=shader_body {
+comp_116=  float4 fragColor = 0;
+comp_117=  // CONV: Center on screen, then try some aspect correction
+comp_118=  uv = (uv*2) - 1;
+comp_119=  uv *= aspect.xy;
+comp_120=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_121=  uv = float2(uv.x, -uv.y);
+comp_122=
+comp_123=  float2 fragCoord  = uv;
+comp_124=  // uv = (fragCoord.xy-.5*uv.xy) / uv.y;
+comp_125=
+comp_126=  float2 UV = fragCoord.xy/uv.xy;
+comp_127=  // float2 UV = uv;
+comp_128=
+comp_129=  // CONV: iMouse unsupported
+comp_130=  // float3 M = iMouse.xyz/uv.xyz;
+comp_131=  // float3 M = tx;
+comp_132=  float f = 0.3;
+comp_133=
+comp_134=  // drop flow speed?
+comp_135=  float3 M = 5;
+comp_136=  // float T = time+M.x*2.;
+comp_137=  float T;
+comp_138=
+comp_139=  //#ifdef HAS_HEART
+comp_140=  // T = mod_conv(time, 102.);
+comp_141=  // T = lerp(T, M.x*102., M.z>0.?1.:0.);
+comp_142=  // T = lerp(T, M.x*102., 0);
+comp_143=  // T = fmod(time, stime);
+comp_144=  float fullT = fmod(time, stimetotal);  
+comp_145=  float halfT = fmod(time, stimetotal/2);
+comp_146=  if (fullT > halfT) {
+comp_147=    T = stimetotal/2 - halfT;
+comp_148=  } else {
+comp_149=    T = halfT;
+comp_150=  }
+comp_151=  //#endif
+comp_152=
+comp_153=  float t = T*.2;
+comp_154=
+comp_155=  // CONV: iMouse unsupported
+comp_156=  // float3 iMouse = float3(sin(time), sin(time), 1);
+comp_157=  // float3 iMouse = tx;
+comp_158=  float3 iMouse = 1;
+comp_159=
+comp_160=  float rainAmount = iMouse.z>0. ? M.y : sin(T*.05)*.3+.7;
+comp_161=
+comp_162=  // float rainAmount = 1;
+comp_163=
+comp_164=  float maxBlur = lerp(3., 6., rainAmount);
+comp_165=  float minBlur = 2.;
+comp_166=
+comp_167=  float story = 0.;
+comp_168=  float heart = 0.;
+comp_169=
+comp_170=  #ifdef HAS_HEART
+comp_171=  story = S(0., stime, T);
+comp_172=
+comp_173=  //t = min(1., fullT/stime);
+comp_174=  t = time*2;
+comp_175=  // remap drop time so it goes slower when it freezes
+comp_176=  //t = 1-t;
+comp_177=  //t = (1-t*t)*time;
+comp_178=
+comp_179=  // float zoom= lerp(.3, 1.2, story); // slowly zoom out
+comp_180=  float zoom= lerp(.4, 1.1, story);
+comp_181=  // slowly zoom out
+comp_182=  // uv = uv*zoom*0.2;
+comp_183=
+comp_184=  uv = uv*zoom*0.8;
+comp_185=  
+comp_186=  minBlur = 4.+S(.5, 1., story)*3.;
+comp_187=  // more opaque glass towards the end
+comp_188=  maxBlur = 6.+S(.5, 1., story)*1.5;
+comp_189=
+comp_190=  float2 hv = uv-float2(.0, -.1);
+comp_191=  // build heart
+comp_192=  hv.x *= .5;
+comp_193=  float s = S(stimetotal, stime, T);
+comp_194=  // heart gets smaller and fades towards the end
+comp_195=  hv.y-=sqrt(abs(hv.x))*.5*s;
+comp_196=  heart = length(hv);
+comp_197=  heart = S(.4*s, .2*s, heart)*s;
+comp_198=
+comp_199=  //rainAmount = heart;
+comp_200=  // the rain is where the heart is
+comp_201=  
+comp_202=  maxBlur-=heart;
+comp_203=  // inside the heart slighly less foggy
+comp_204=
+comp_205=  float2 uvtx = uv*0.2;
+comp_206=
+comp_207=  uv *= 1.5;
+comp_208=  // zoom out a bit more
+comp_209=
+comp_210=  t *= .25;
+comp_211=  #else
+comp_212=  float zoom = -cos(T*.2);
+comp_213=  uv *= .7+zoom*.3;
+comp_214=  #endif
+comp_215=
+comp_216=  UV = (UV-.5)*(.9+zoom*.1)+.5;
+comp_217=
+comp_218=  float staticDrops = S(-.5, 1., rainAmount)*2.;
+comp_219=  float layer1 = S(.25, .75, rainAmount);
+comp_220=  float layer2 = S(.0, .5, rainAmount);
+comp_221=
+comp_222=  float2 c = Drops(uv, t, staticDrops, layer1, layer2);
+comp_223=
+comp_224=  #ifdef CHEAP_NORMALS
+comp_225=  float2 n = float2(dFdx(c.x), dFdy(c.x));
+comp_226=  // cheap normals (3x cheaper, but 2 times shittier ;))
+comp_227=  #else
+comp_228=  float2 e = float2(.001, 0.);
+comp_229=  float cx = Drops(uv+e, t, staticDrops, layer1, layer2).x;
+comp_230=  float cy = Drops(uv+e.yx, t, staticDrops, layer1, layer2).x;
+comp_231=  float2 n = float2(cx-c.x, cy-c.x);
+comp_232=  // expensive normals
+comp_233=  #endif
+comp_234=
+comp_235=  #ifdef HAS_HEART
+comp_236=  // drop fading?
+comp_237=  n *= 1.-S(60., 85., T);
+comp_238=  c.y *= 1.-S(80., 100., T)*.8;
+comp_239=  #endif
+comp_240=
+comp_241=  float focus = lerp(maxBlur-c.y, minBlur, S(.1, .2, c.x));
+comp_242=  // float3 col = textureLod(iChannel0, UV+n, focus).rgb;
+comp_243=  // float3 col = iChannel0.SampleLevel(sampler0, UV + n, focus).rgb;
+comp_244=  // float3 col = tex2Dlod(iChannel0, float4(uv+n, 0, focus)).rgb;
+comp_245=  // float3 col = tex2Dlod(iChannel0, float4(uv+n, 0, focus)).rgb;
+comp_246=
+comp_247=  // focus=1; n=0;
+comp_248=  // float fac = 2.5;
+comp_249=  float facx = 2.5;
+comp_250=  float facy = 6;
+comp_251=  float2 flippedUV = float2(uvtx.x*facx+0.5, 0.5-uvtx.y*facy);
+comp_252=  // float2 flippedUV = float2(UV.x+0.5, 0.5-UV.y);
+comp_253=
+comp_254=  float3 col = tex2Dlod(iChannel0, float4(flippedUV+n, 0, focus)).rgb;
+comp_255=
+comp_256=  #ifdef USE_POST_PROCESSING
+comp_257=  t = (T+3.)*.5;
+comp_258=  // make time sync with first lightning
+comp_259=  float colFade = sin(t*.2)*.5+.5+story;
+comp_260=  col *= lerp(float3(1., 1., 1.), float3(.8, .9, 1.3), colFade);
+comp_261=  // subtle color shift
+comp_262=
+comp_263=  float fade = S(0., 10., T*3);
+comp_264=  // fade in at the start
+comp_265=
+comp_266=  // float lightning = sin(t*sin(t*10)); // lighting flicker
+comp_267=
+comp_268=  // Pseudo-random gate based on time
+comp_269=  float chaos = frac(sin(floor(t * 0.5) * 12.9898) * 43758.5453);
+comp_270=  // changes every ~2s
+comp_271=  float gate = step(0.1, chaos);
+comp_272=  // ~15% chance to allow flash
+comp_273=
+comp_274=  // Smooth flash shape
+comp_275=  float flashShape = pow(max(0.0, sin(t + sin(t * 0.5))), 12);
+comp_276=
+comp_277=  // Lightning intensity
+comp_278=  float lightning = sin(t*sin(t*10)) * 0.2;
+comp_279=  // lighting flicker
+comp_280=  lightning *= flashShape * gate;
+comp_281=
+comp_282=  // Composite
+comp_283=  col *= 1.0 + lightning * fade * lerp(1.0, 0.1, story * story);
+comp_284=
+comp_285=  /*  float lightning = sin(t * sin(t * 3.0)) * 0.3;
+comp_286=  lightning *= pow(max(0., sin(t+sin(t))), 10);
+comp_287=  // lightning flash
+comp_288=  */
+comp_289=
+comp_290=  // col *= 1.+lightning*fade*lerp(1., .1, story*story); // composite lightning
+comp_291=
+comp_292=  #ifdef bass_smooth
+comp_293=  col = (col+0.05*(clamp(bass_smooth, 0, 2)-1))*vis_intensity+vis_shift;
+comp_294=  #endif
+comp_295=
+comp_296=  // col *= 1.-dot(UV-=.5, UV); // vignette
+comp_297=
+comp_298=  #ifdef HAS_HEART
+comp_299=  col = lerp(pow(col, float3(1.2, 1.2, 1.2)), col, heart);
+comp_300=  fade *= S(stimetotal, stimetotal-5, T);
+comp_301=  #endif
+comp_302=
+comp_303=  // col *= fade;
+comp_304=  // composite start and end fade
+comp_305=  #endif
+comp_306=
+comp_307=  // col = float3(heart,heart,heart);
+comp_308=  fragColor = float4(col, 1);
+comp_309=  ret = fragColor;
+comp_310=}
