@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using Windows.Media.Capture;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
 
@@ -774,17 +775,10 @@ namespace MilkwaveRemote {
     }
 
     private void chkAutoplay_CheckedChanged(object sender, EventArgs e) {
-      if (chkAutoplay.Checked) {
-        ResetAndStartTimer(true);
-      } else {
-        autoplayTimer.Stop();
-        SetStatusText("");
-        autoplayRemainingBeats = 0;
-      }
-
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         if (chkAutoplay.Checked) {
           // Press Windows Media Play Key
+          LoadMessages(lastScriptFileName);
           keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
           keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
         } else {
@@ -792,6 +786,14 @@ namespace MilkwaveRemote {
           keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
           keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
         }
+      }
+
+      if (chkAutoplay.Checked) {
+        ResetAndStartTimer(true);
+      } else {
+        autoplayTimer.Stop();
+        SetStatusText("");
+        autoplayRemainingBeats = 0;
       }
     }
 
@@ -867,6 +869,8 @@ namespace MilkwaveRemote {
                   int.TryParse(valuesRGB[1], out int g) &&
                   int.TryParse(valuesRGB[2], out int b)) {
                 pnlColorMessage.BackColor = Color.FromArgb(r, g, b);
+                colorDialogMessage.Color = pnlColorMessage.BackColor;
+                SetFormattedMessage();
               }
             } else if (tokenUpper.StartsWith("STYLE=")) {
               string preset = tokenUpper.Substring(6);
@@ -924,7 +928,17 @@ namespace MilkwaveRemote {
               if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
                 numFactorFPS.Value = (decimal)parsedValue;
               }
-            } else { // no known command, send as message
+            } else if (tokenUpper.StartsWith("INTENSITY=")) {
+              string value = token.Substring(10);
+              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+                numVisIntensity.Value = (decimal)parsedValue;
+              }
+            } else if (tokenUpper.StartsWith("SHIFT=")) {
+              string value = token.Substring(6);
+              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+                numVisShift.Value = (decimal)parsedValue;
+              }
+            } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
               SendToMilkwaveVisualizer(token, MessageType.Message);
             }
           }
@@ -1955,6 +1969,8 @@ namespace MilkwaveRemote {
         string colorB = GetParam("b", cboParameters.Text);
         if (colorR.Length > 0 && colorG.Length > 0 && colorB.Length > 0) {
           pnlColorMessage.BackColor = Color.FromArgb(int.Parse(colorR), int.Parse(colorG), int.Parse(colorB));
+          colorDialogMessage.Color = pnlColorMessage.BackColor;
+          SetFormattedMessage();
         }
 
         int fontSize;
@@ -2036,6 +2052,7 @@ namespace MilkwaveRemote {
       dm.ApplyTheme(Settings.DarkMode);
       SetBarIcon(Settings.DarkMode);
       pnlColorMessage.BackColor = tmpColorMessage;
+      colorDialogMessage.Color = pnlColorMessage.BackColor;
       pnlColorWave.BackColor = tmpColorWave;
       SetFormattedMessage();
     }
@@ -2189,13 +2206,31 @@ namespace MilkwaveRemote {
       FillCboPresetsFromDir(dirToLoad, includeSubdirs, "");
       SetStatusText($"Loaded {cboPresets.Items.Count} presets from '{dirToLoad}'");
       if (cboPresets.Items.Count > 0) {
-        cboPresets.SelectedIndex = 0;
+        SelectFirstPreset();
         UpdateTagsDisplay(false, false);
       }
     }
 
+    private void SelectFirstPreset() {
+      int index = 0;
+      foreach (var item in cboPresets.Items) {
+        if (item is Data.Preset preset && !preset.DisplayName.Contains("\\")) {
+          cboPresets.SelectedIndex = index;
+          break;
+        }
+        index++;
+      }
+      cboPresets.SelectedIndex = index;
+    }
+
     private void FillCboPresetsFromDir(string dirToLoad, bool includeSubdirs, string displayDirPrefix) {
       int relIndex = -1;
+      if (includeSubdirs) {
+        foreach (string subDir in Directory.GetDirectories(dirToLoad)) {
+          string? prefix = Path.GetFileName(subDir) + "\\";
+          FillCboPresetsFromDir(subDir, true, prefix);
+        }
+      }
       foreach (string fileName in Directory.GetFiles(dirToLoad)) {
         if (relIndex == -1) {
           relIndex = fileName.IndexOf(VisualizerPresetsFolder, StringComparison.CurrentCultureIgnoreCase);
@@ -2226,12 +2261,6 @@ namespace MilkwaveRemote {
               cboPresets.Items.Add(newPreset);
             }
           }
-        }
-      }
-      if (includeSubdirs) {
-        foreach (string subDir in Directory.GetDirectories(dirToLoad)) {
-          string? prefix = Path.GetFileName(subDir) + "\\";
-          FillCboPresetsFromDir(subDir, true, prefix);
         }
       }
     }
@@ -2704,7 +2733,7 @@ namespace MilkwaveRemote {
 
       SetStatusText($"Loaded {cboPresets.Items.Count} filtered presets");
       if (cboPresets.Items.Count > 0) {
-        cboPresets.SelectedIndex = 0;
+        SelectFirstPreset();
         UpdateTagsDisplay(false, false);
       }
 

@@ -34,6 +34,8 @@
 # TIME=1.2: Set time factor to 1.2 (Settings tab)
 # FRAME=1.5: Set frame factor to 1.5 (Settings tab)
 # FPS=0.1: Set FPS factor to 0.1 (Settings tab)
+# INTENSITY=1.2: Set intensity to 1.2 (Settings tab)
+# SHIFT=-0.2: Set shift to -0.2 (Settings tab)
 #
 BPM=120|BEATS=8|STYLE=Style A|PRESET=resources\presets\Milkwave\01 - Martin - blue haze.milk|Welcome to Milkwave!
 STYLE=Style B|Switched to "Style B"
