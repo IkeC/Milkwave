@@ -29,6 +29,9 @@ namespace MilkwaveRemote {
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+    
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
     [DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -142,6 +145,11 @@ namespace MilkwaveRemote {
 
     private const int VK_ENTER = 0x0D;
     private const int VK_BACKSPACE = 0x08;
+
+    public const byte VK_MEDIA_PLAY_PAUSE = 0xB3;
+    public const byte VK_MEDIA_STOP = 0xB2;
+    public const uint KEYEVENTF_EXTENDEDKEY = 0x1;
+    public const uint KEYEVENTF_KEYUP = 0x2;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct COPYDATASTRUCT {
@@ -772,6 +780,18 @@ namespace MilkwaveRemote {
         autoplayTimer.Stop();
         SetStatusText("");
         autoplayRemainingBeats = 0;
+      }
+
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        if (chkAutoplay.Checked) {
+          // Press Windows Media Play Key
+          keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
+          keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        } else {
+          // Press Windows Media Stop Key
+          keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
+          keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        }
       }
     }
 

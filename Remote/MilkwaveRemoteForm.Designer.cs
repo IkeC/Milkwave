@@ -658,7 +658,7 @@ namespace MilkwaveRemote
       chkAutoplay.Text = "Autoplay";
       chkAutoplay.TextAlign = ContentAlignment.MiddleCenter;
       chkAutoplay.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkAutoplay, "Autoplay on/off\r\n(Ctrl+Y)");
+      toolTip1.SetToolTip(chkAutoplay, "Autoplay on/off (Ctrl+Y)\r\nHold Alt: Press Play/Stop Media Key\r\n");
       chkAutoplay.UseVisualStyleBackColor = true;
       chkAutoplay.CheckedChanged += chkAutoplay_CheckedChanged;
       // 
