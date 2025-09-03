@@ -2212,15 +2212,19 @@ namespace MilkwaveRemote {
     }
 
     private void SelectFirstPreset() {
-      int index = 0;
-      foreach (var item in cboPresets.Items) {
-        if (item is Data.Preset preset && !preset.DisplayName.Contains("\\")) {
-          cboPresets.SelectedIndex = index;
-          break;
+      try {
+        int index = -1;
+        foreach (var item in cboPresets.Items) {
+          index++;
+          if (item is Data.Preset preset && !preset.DisplayName.Contains("\\")) {
+            cboPresets.SelectedIndex = index;
+            return;
+          }
         }
-        index++;
+        cboPresets.SelectedIndex = 0;
+      } catch (Exception e) {
+        // ignore
       }
-      cboPresets.SelectedIndex = index;
     }
 
     private void FillCboPresetsFromDir(string dirToLoad, bool includeSubdirs, string displayDirPrefix) {
