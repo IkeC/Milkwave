@@ -166,6 +166,14 @@ typedef struct {
   float fEaseFactor = 2.0f; // 1.0f = linear, 2.0f = ease-in/out, 3.0f = more pronounced ease-in/out
   float fShadowOffset = 2.0f;
   float fBurnTime; // seconds
+  float fBoxAlpha = 0.0f; // 0 = transparent, 255 = opaque
+  int fBoxColR = 0;
+  int fBoxColG = 0;
+  int fBoxColB = 0;
+  float fBoxLeft = 1.0f;
+  float fBoxRight = 1.0f;
+  float fBoxTop = 1.0f;
+  float fBoxBottom = 1.0f;
 }
 td_supertext;
 

@@ -393,7 +393,6 @@ if (m_supertext[supertextIndex].bIsSongTitle)
           ++lineCount;
         }
       }
-
       // do actual drawing + set m_supertext[supertextIndex].nFontSizeUsed; use 'lo' size
       int h = d3dx_font->DrawTextW(NULL, szTextToDraw, -1, &temp, DT_SINGLELINE | DT_CALCRECT /*| DT_NOPREFIX*/ | DT_CENTER, 0xFFFFFFFF);
 
@@ -522,7 +521,7 @@ void CPlugin::LoadPerFrameEvallibVars(CState* pState) {
   *pState->var_pf_bass_smooth = (double)mysound.smooth[0];
   *pState->var_pf_mid_smooth = (double)mysound.smooth[1];
   *pState->var_pf_treb_smooth = (double)mysound.smooth[2];
-  
+
   *pState->var_pf_frame = (double)GetFrame();
   //*pState->var_pf_monitor     = 0;   -leave this as it was set in the per-frame INIT code!
   for (int vi = 0; vi < NUM_Q_VAR; vi++)
@@ -4808,7 +4807,7 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   ));
   if (h[12]) pCT->SetVector(lpDevice, h[12], &D3DXVECTOR4(mip_x, mip_y, mip_avg, 0));
   if (h[13]) pCT->SetVector(lpDevice, h[13], &D3DXVECTOR4(blur_min[1], blur_max[1], blur_min[2], blur_max[2]));
-  
+
   if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
   if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(m_VisIntensity, m_VisShift, 0, 0));
 
@@ -5366,6 +5365,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   ZeroMemory(v3, sizeof(SPRITEVERTEX) * 128);
 
   float dx, dy;
+  float currentX = m_supertexts[supertextIndex].fX;
+  float currentY = m_supertexts[supertextIndex].fY;
+
   if (m_supertexts[supertextIndex].bIsSongTitle) {
     // positioning:
     float fSizeX = 50.0f / (float)m_supertexts[supertextIndex].nFontSizeUsed * powf(1.5f, m_supertexts[supertextIndex].fFontSize - 2.0f);
@@ -5454,13 +5456,11 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
         tFactor = 1.0f - powf(1.0f - tFactor, m_supertexts[supertextIndex].fEaseFactor);
       }
 
-      float currentX = m_supertexts[supertextIndex].fX;
       if (startTimeProgress < 1 && m_supertexts[supertextIndex].fStartX != -100 && m_supertexts[supertextIndex].fStartX != m_supertexts[supertextIndex].fX) {
         currentX -= (m_supertexts[supertextIndex].fX - m_supertexts[supertextIndex].fStartX) * (1 - tFactor);
       }
       dx = (currentX * 2 - 1);
 
-      float currentY = m_supertexts[supertextIndex].fY;
       if (startTimeProgress < 1 && m_supertexts[supertextIndex].fStartY != -100 && m_supertexts[supertextIndex].fStartY != m_supertexts[supertextIndex].fY) {
         currentY -= (m_supertexts[supertextIndex].fY - m_supertexts[supertextIndex].fStartY) * (1 - tFactor);
       }
@@ -5542,13 +5542,13 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
 
   float t = 1.0f;
   float currentTime = GetTime();
-  
+
   float fadeInProgress = 1.0f;
   if (m_supertexts[supertextIndex].fFadeInTime > 0) {
     fadeInProgress = (currentTime - m_supertexts[supertextIndex].fStartTime) / m_supertexts[supertextIndex].fFadeInTime;
   }
   float fadeOutStartTime = m_supertexts[supertextIndex].fStartTime + m_supertexts[supertextIndex].fDuration - m_supertexts[supertextIndex].fFadeOutTime;
-  
+
   float fadeOutProgress = 0.0f;
   if (m_supertexts[supertextIndex].fFadeOutTime > 0) {
     fadeOutProgress = (currentTime - fadeOutStartTime) / m_supertexts[supertextIndex].fFadeOutTime;
@@ -5556,10 +5556,12 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
 
   if (m_supertexts[supertextIndex].bIsSongTitle) {
     t = powf(fProgress, 0.3f) * 1.0f;
-  } else if (fadeInProgress < 1.0f) {
-    // Fasde-in phase
+  }
+  else if (fadeInProgress < 1.0f) {
+    // Fade-in phase
     t = CosineInterp(max(0.0f, min(1.0f, fadeInProgress)));
-  } else if (fadeOutProgress >= 0.0f) {
+  }
+  else if (fadeOutProgress >= 0.0f) {
     // Fade-out phase
     t = 1.0f - CosineInterp(max(0.0f, min(1.0f, fadeOutProgress)));
   }
@@ -5567,7 +5569,62 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   if (t < 0) {
     t = 0;
   }
-  
+
+  int boxAlpha = m_supertexts[supertextIndex].fBoxAlpha * 255;
+  boxAlpha = std::clamp(boxAlpha, 0, 255);
+  boxAlpha *= t;
+
+  if (boxAlpha > 0) {
+
+    float minX = +1e9f, minY = +1e9f;
+    float maxX = -1e9f, maxY = -1e9f;
+    for (int i = 0; i < 128; ++i) {
+      minX = min(minX, v3[i].x);
+      minY = min(minY, v3[i].y);
+      maxX = max(maxX, v3[i].x);
+      maxY = max(maxY, v3[i].y);
+    }
+
+    // some reasonable default values
+    float centerX = (minX + maxX) * 0.5f;
+    float centerY = (minY + maxY) * 0.5f;
+    
+    float halfWidth = (maxX - minX) * 0.5f;
+    float halfHeight = (maxY - minY) * 0.5f;
+
+    minX = centerX - halfWidth * 1.05f * m_supertexts[supertextIndex].fBoxLeft;
+    maxX = centerX + halfWidth * 1.1f * m_supertexts[supertextIndex].fBoxRight;
+
+    minY = centerY - halfHeight * 0.8f * m_supertexts[supertextIndex].fBoxTop;
+    maxY = centerY + halfHeight * 0.8f * m_supertexts[supertextIndex].fBoxBottom;
+
+    int boxColR = std::clamp(m_supertexts[supertextIndex].fBoxColR, 0, 255);
+    int boxColG = std::clamp(m_supertexts[supertextIndex].fBoxColG, 0, 255);
+    int boxColB = std::clamp(m_supertexts[supertextIndex].fBoxColB, 0, 255);
+
+    D3DCOLOR boxCol = D3DCOLOR_ARGB(boxAlpha, boxColR, boxColG, boxColB);
+
+    SPRITEVERTEX box[4] = {
+      { minX, minY, 1.0f, boxCol, 0,0 }, { maxX, minY, 1.0f, boxCol, 1,0 },
+      { minX, maxY, 1.0f, boxCol, 0,1 }, { maxX, maxY, 1.0f, boxCol, 1,1 },
+    };
+
+    lpDevice->SetTexture(0, NULL);
+    lpDevice->SetFVF(SPRITEVERTEX_FORMAT);
+
+    lpDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+    lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+    lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, box, sizeof(SPRITEVERTEX));
+
+    // 4) Restore state
+    lpDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+    lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+    lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+    lpDevice->SetTexture(stage, m_lpDDSTitle[texIndex]);
+  }
 
   // nudge down & right for shadow, up & left for solid text
   float offset_x = 0, offset_y = 0;

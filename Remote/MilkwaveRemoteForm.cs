@@ -1664,7 +1664,13 @@ namespace MilkwaveRemote {
           "easemode={int:0|1|2}  // Moving animation smoothing: 0=linear, 1=ease-in, 2=ease-out (default=2)" + Environment.NewLine +
           "easefactor={float:1..5}  // Smoothing strengh (default=2.0)" + Environment.NewLine +
           "shadowoffset={float}  // Text drop shadow offsetNum: 0=no shadow (default=2.0)" + Environment.NewLine +
-          "burntime={float}  // The duration (in seconds) the text will \"burn in\" at the end (default=0.1)" + Environment.NewLine;
+          "burntime={float}  // The duration (in seconds) the text will \"burn in\" at the end (default=0.1)" + Environment.NewLine +
+          "box_alpha={float:0..1}  // Text background box alpha (0=transparent, 1=opaque, default=0)" + Environment.NewLine +
+          "box_col={int:0..255,int:0..255,int:0..255}  // Text background RGB box color, (default=0,0,0)" + Environment.NewLine +
+          "box_left={float}  // Text background box left side adjustment factor (default=1.0)" + Environment.NewLine +
+          "box_right={float}  // Text background box right side adjustment factor (default=1.0)" + Environment.NewLine +
+          "box_top={float}  // Text background box top side adjustment factor (default=1.0)" + Environment.NewLine +
+          "box_bottom={float}  // Text background box bottom side adjustment factor (default=1.0)" + Environment.NewLine;
 
         new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Parameters", helpText, 9, 800, 600);
       }

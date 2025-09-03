@@ -10592,13 +10592,6 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       m_supertexts[nextFreeSupertextIndex].nColorB = 255; // Default blue color
     }
 
-    if (params.find(L"b") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].nColorB = std::stoi(params[L"b"]);
-    }
-    else {
-      m_supertexts[nextFreeSupertextIndex].nColorB = 255; // Default blue color
-    }
-
     if (params.find(L"randr") != params.end()) {
       m_supertexts[nextFreeSupertextIndex].nColorR += (int)(std::stof(params[L"randr"]) * ((rand() % 1037) / 1037.0f * 2.0f - 1.0f));
     }
@@ -10648,6 +10641,43 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
     else {
       m_supertexts[nextFreeSupertextIndex].fBurnTime = m_MessageDefaultBurnTime;
+    }
+
+    if (params.find(L"box_alpha") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fBoxAlpha = std::stof(params[L"box_alpha"]);
+    }
+    if (params.find(L"box_col") != params.end()) {
+      std::wstring colorStr = params[L"box_col"];
+      std::wistringstream ss(colorStr);
+      std::wstring token;
+      std::vector<float> rgb;
+
+      while (std::getline(ss, token, L',')) {
+        try {
+          rgb.push_back(std::stof(token));
+        } catch (...) {
+          rgb.push_back(0.0f); // fallback if parsing fails
+        }
+      }
+
+      if (rgb.size() == 3) {
+        m_supertexts[nextFreeSupertextIndex].fBoxColR = rgb[0];
+        m_supertexts[nextFreeSupertextIndex].fBoxColG = rgb[1];
+        m_supertexts[nextFreeSupertextIndex].fBoxColB = rgb[2];
+      }
+    }
+
+    if (params.find(L"box_left") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fBoxLeft = std::stof(params[L"box_left"]);
+    }
+    if (params.find(L"box_right") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fBoxRight = std::stof(params[L"box_right"]);
+    }
+    if (params.find(L"box_top") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fBoxTop = std::stof(params[L"box_top"]);
+    }
+    if (params.find(L"box_bottom") != params.end()) {
+      m_supertexts[nextFreeSupertextIndex].fBoxBottom = std::stof(params[L"box_bottom"]);
     }
 
     m_supertexts[nextFreeSupertextIndex].fStartTime = GetTime();
