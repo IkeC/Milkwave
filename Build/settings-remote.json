@@ -1,39 +1,40 @@
 {
-  "Styles": [
-    {
-      "Name": "Style A",
-      "Value": "time=5.0|growth=2.0"
+    "Styles": [
+        {
+            "Name": "Style A",
+            "Value": "time=5.0|growth=2.0"
+        },
+        {
+            "Name": "Style B",
+            "Value": "size=23|time=4.0|growth=2.0|randx=0.2|randy=0.2|r=0|g=195|b=0"
+        }
+    ],
+    "LoadFilters": [
+        "calm \u0026 dark",
+        "watermark \u0026 !colorful",
+        "vibrant, colorful"
+    ],
+    "ShadertoyIDs": [
+        "mtyGWy",
+        "Wt33Wf",
+        "w3KGRK"
+    ],
+    "RemoteWindowLocation": {
+        "IsEmpty": false,
+        "X": 54,
+        "Y": 48
     },
-    {
-      "Name": "Style B",
-      "Value": "size=23|time=4.0|growth=2.0|randx=0.2|randy=0.2|r=0|g=195|b=0"
-    }
-  ],
-  "LoadFilters": [
-    "calm \u0026 dark",
-    "watermark \u0026 !colorful",
-    "vibrant, colorful"
-  ],
-  "ShadertoyIDs": [
-    "mtyGWy",
-    "Wt33Wf",
-    "w3KGRK"
-  ],
-  "RemoteWindowLocation": {
-    "IsEmpty": false,
-    "X": 54,
-    "Y": 48
-  },
-  "RemoteWindowSize": {
-    "IsEmpty": false,
-    "Width": 791,
-    "Height": 573
-  },
-  "SplitterDistance1": 257,
-  "DarkMode": true,
-  "ShowTabsPanel": true,
-  "ShowButtonPanel": true,
-  "CloseVisualizerWithRemote": false,
-  "SelectedTabIndex": 0,
-  "ShaderFileChecked": true
+    "RemoteWindowSize": {
+        "IsEmpty": false,
+        "Width": 791,
+        "Height": 573
+    },
+    "SplitterDistance1": 257,
+    "DarkMode": true,
+    "ShowTabsPanel": true,
+    "ShowButtonPanel": true,
+    "CloseVisualizerWithRemote": false,
+    "SelectedTabIndex": 0,
+    "ShaderFileChecked": true,
+    "WrapChecked": true
 }

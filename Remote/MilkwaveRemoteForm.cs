@@ -2821,6 +2821,7 @@ namespace MilkwaveRemote {
         // igonre
       }
       chkShaderFile.Checked = Settings.ShaderFileChecked;
+      chkWrap.Checked = Settings.WrapChecked;
     }
 
     private void SetAndSaveSettings() {
@@ -2834,6 +2835,7 @@ namespace MilkwaveRemote {
       Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
       Settings.ShaderFileChecked = chkShaderFile.Checked;
+      Settings.WrapChecked = chkWrap.Checked;
       SaveSettingsToFile();
     }
 

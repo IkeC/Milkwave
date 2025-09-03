@@ -16,5 +16,6 @@
     public bool CloseVisualizerWithRemote { get; set; } = false;
     public int SelectedTabIndex { get; set; } = 0;
     public bool ShaderFileChecked { get; set; } = true;
+    public bool WrapChecked { get; set; } = true;
   }
 }
