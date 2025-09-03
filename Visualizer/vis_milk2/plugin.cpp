@@ -1403,7 +1403,7 @@ void CPlugin::MyReadConfig() {
 
   m_blackmode = GetPrivateProfileBoolW(L"Milkwave", L"BlackMode", m_blackmode, pIni);
   m_AMDDetectionMode = GetPrivateProfileIntW(L"Milkwave", L"AMDDetectionMode", m_AMDDetectionMode, pIni);
-  
+
   m_MessageDefaultBurnTime = GetPrivateProfileFloatW(L"Milkwave", L"MessageDefaultBurnTime", m_MessageDefaultBurnTime, pIni);
   m_MessageDefaultFadeinTime = GetPrivateProfileFloatW(L"Milkwave", L"MessageDefaultFadeinTime", m_MessageDefaultFadeinTime, pIni);
   m_MessageDefaultFadeoutTime = GetPrivateProfileFloatW(L"Milkwave", L"MessageDefaultFadeoutTime", m_MessageDefaultFadeoutTime, pIni);
@@ -5990,71 +5990,83 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           //return 0; // we processed (or absorbed) the key
     case VK_F3:
     {
-      ToggleFPSNumPressed++;
-      if (ToggleFPSNumPressed == 1) {
-        m_max_fps_fs = 60;
-        m_max_fps_dm = 60;
-        m_max_fps_w = 60;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"60 fps", tmp, 64);
+      if ((GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+        wchar_t buf[1024];
+        if (m_max_fps_fs == 0) {
+          swprintf(buf, L"Unlimited fps");
+        }
+        else {
+          swprintf(buf, 1024, L"%d fps", m_max_fps_fs);
+        }
         AddNotification(buf);
       }
-      else if (ToggleFPSNumPressed == 2) {
-        m_max_fps_fs = 90;
-        m_max_fps_dm = 90;
-        m_max_fps_w = 90;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"90 fps", tmp, 64);
-        AddNotification(buf);
-      }
-      else if (ToggleFPSNumPressed == 3) {
-        m_max_fps_fs = 120;
-        m_max_fps_dm = 120;
-        m_max_fps_w = 120;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"120 fps", tmp, 64);
-        AddNotification(buf);
-      }
-      else if (ToggleFPSNumPressed == 4) {
-        m_max_fps_fs = 144;
-        m_max_fps_dm = 144;
-        m_max_fps_w = 144;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"144 fps", tmp, 64);
-        AddNotification(buf);
-      }
-      else if (ToggleFPSNumPressed == 5) {
-        m_max_fps_fs = 240;
-        m_max_fps_dm = 240;
-        m_max_fps_w = 240;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"240 fps", tmp, 64);
-        AddNotification(buf);
-      }
-      else if (ToggleFPSNumPressed == 6) {
-        m_max_fps_fs = 360;
-        m_max_fps_dm = 360;
-        m_max_fps_w = 360;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"360 fps", tmp, 64);
-        AddNotification(buf);
-      }
-      else if (ToggleFPSNumPressed == 7) {
-        m_max_fps_fs = 0;
-        m_max_fps_dm = 0;
-        m_max_fps_w = 0;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Unlimited fps", tmp, 64);
-        AddNotification(buf);
-      }
-      else if (ToggleFPSNumPressed == 8) {
-        ToggleFPSNumPressed = 0;
-        m_max_fps_fs = 30;
-        m_max_fps_dm = 30;
-        m_max_fps_w = 30;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"30 fps", tmp, 64);
-        AddNotification(buf);
+      else {
+        ToggleFPSNumPressed++;
+        if (ToggleFPSNumPressed == 1) {
+          m_max_fps_fs = 60;
+          m_max_fps_dm = 60;
+          m_max_fps_w = 60;
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"60 fps", tmp, 64);
+          AddNotification(buf);
+        }
+        else if (ToggleFPSNumPressed == 2) {
+          m_max_fps_fs = 90;
+          m_max_fps_dm = 90;
+          m_max_fps_w = 90;
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"90 fps", tmp, 64);
+          AddNotification(buf);
+        }
+        else if (ToggleFPSNumPressed == 3) {
+          m_max_fps_fs = 120;
+          m_max_fps_dm = 120;
+          m_max_fps_w = 120;
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"120 fps", tmp, 64);
+          AddNotification(buf);
+        }
+        else if (ToggleFPSNumPressed == 4) {
+          m_max_fps_fs = 144;
+          m_max_fps_dm = 144;
+          m_max_fps_w = 144;
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"144 fps", tmp, 64);
+          AddNotification(buf);
+        }
+        else if (ToggleFPSNumPressed == 5) {
+          m_max_fps_fs = 240;
+          m_max_fps_dm = 240;
+          m_max_fps_w = 240;
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"240 fps", tmp, 64);
+          AddNotification(buf);
+        }
+        else if (ToggleFPSNumPressed == 6) {
+          m_max_fps_fs = 360;
+          m_max_fps_dm = 360;
+          m_max_fps_w = 360;
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"360 fps", tmp, 64);
+          AddNotification(buf);
+        }
+        else if (ToggleFPSNumPressed == 7) {
+          m_max_fps_fs = 0;
+          m_max_fps_dm = 0;
+          m_max_fps_w = 0;
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"Unlimited fps", tmp, 64);
+          AddNotification(buf);
+        }
+        else if (ToggleFPSNumPressed == 8) {
+          ToggleFPSNumPressed = 0;
+          m_max_fps_fs = 30;
+          m_max_fps_dm = 30;
+          m_max_fps_w = 30;
+          wchar_t buf[1024], tmp[64];
+          swprintf(buf, L"30 fps", tmp, 64);
+          AddNotification(buf);
+        }
       }
     }
     return 0; // we processed (or absorbed) the key
@@ -9244,7 +9256,7 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
     if (Now - LastSentMilkwaveMessage < 500) {
       // Skipping message send to Milkwave Remote to avoid flooding
       return 0;
-    } 
+    }
     LastSentMilkwaveMessage = Now;
 
     // Find the Milkwave Remote window
@@ -10305,11 +10317,11 @@ void CPlugin::ReadCustomMessages() {
 
       m_CustomMessage[n].growth = GetPrivateProfileFloatW(szSectionName, L"growth", m_CustomMessage[n].growth, m_szMsgIniFile);
       m_CustomMessage[n].fTime = GetPrivateProfileFloatW(szSectionName, L"time", m_CustomMessage[n].fTime, m_szMsgIniFile);
-      
+
       m_CustomMessage[n].fFade = GetPrivateProfileFloatW(szSectionName, L"fade", m_MessageDefaultFadeinTime, m_szMsgIniFile);
       m_CustomMessage[n].fFadeOut = GetPrivateProfileFloatW(szSectionName, L"fadeout", m_MessageDefaultFadeoutTime, m_szMsgIniFile);
       m_CustomMessage[n].fBurnTime = GetPrivateProfileFloatW(szSectionName, L"burntime", m_MessageDefaultBurnTime, m_szMsgIniFile);
-      
+
       m_CustomMessage[n].nColorR = GetPrivateProfileIntW(szSectionName, L"r", m_CustomMessage[n].nColorR, m_szMsgIniFile);
       m_CustomMessage[n].nColorG = GetPrivateProfileIntW(szSectionName, L"g", m_CustomMessage[n].nColorG, m_szMsgIniFile);
       m_CustomMessage[n].nColorB = GetPrivateProfileIntW(szSectionName, L"b", m_CustomMessage[n].nColorB, m_szMsgIniFile);

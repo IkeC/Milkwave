@@ -9,6 +9,7 @@ F2 / 2xR MOUSEBUTTON    Toggle borderless window (unless in fullscreen/stretch m
 CTRL + F2               Reset window
 CTRL + SHIFT + F2       Set window to fixed dimensions from config file
 F3                      Set fps to 30/60/90/120/144/240/360/Unlimited
+CTRL + F3               Display current fps setting
 F4                      Show/hide preset info
 F5                      Show/hide fps
 F6                      Show/hide rating
