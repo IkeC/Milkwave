@@ -50,12 +50,13 @@
   - Change and preview font face, style and size instantly
 * Settings
   - Change internal time, FPS and frame counters to slow down or speed up some presets
+  - Adjust "Intensity", "Shift" and "Version" live for supported presets (eg. Milkwaves shader presets)
   - Quick access to configuration files
 * Customizable interface - show only what you need
 * Send common key combinations using buttons
+* Set audio device without restarting Visualizer
 * Support for input devices (eg. microphones)
-* Change the used audio device on the fly
-* Amplify the virtual audio signal to make the Visualizer more (or less) responsive
+* Amplify virtual audio signal to make Visualizer more (or less) responsive
 
 There are many tooltips explaining all features when you hover over the form elements. Clicking the "Autoplay" button on the Message tab will run the default script file, demonstrating many Milkwave features.
 

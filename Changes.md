@@ -1,4 +1,4 @@
-## v3.1 (2025-09-03)
+## v3.1 (2025-09-04)
 
 - 10 new shader-based presets in Milkwave/Shader directory
 - All 30 Milkwave shader presets now react to audio input
