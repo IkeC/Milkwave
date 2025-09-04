@@ -6,7 +6,7 @@
 
 [**Click here**](https://github.com/IkeC/Milkwave/releases/latest) to get the latest version.
 
-![Milkwave](https://github.com/user-attachments/assets/973b7bad-6a85-445f-94af-fe2805d961f2)
+<img width="1250" height="457" alt="Milkwave-31" src="https://github.com/user-attachments/assets/4fa29a36-a8c1-4bb1-b262-433280b9a2b4" />
 
 ## Visualizer Features
  
