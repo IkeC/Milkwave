@@ -1,0 +1,79 @@
+# Script file used for the Milkwave 3.1 YouTube video
+# 
+# Lines starting with # are ignored when parsing this file.
+# You can load other files by right-clicking "From File" in the Milkwave Remote window.
+#
+# You can add 0..n commands per line separated by | 
+# If it's not a known command, the text is treated as message
+#
+# Possible commmands: 
+#
+# NEXT: Next preset (like pressing the Space key in the Visualizer)
+# PREV: Previous preset (like pressing the Backspace key in the Visualizer)
+# STYLE=My Style: Switch to saved messenger style named "My Style"
+# FONT=Arial: Set font in Remote to Arial
+# SIZE=20: Set font size in Remote to 20
+# COLOR=255,0,0: Set Color in Remote to the given R,G,B value
+# BPM=123: Set BPM to 123
+# BEATS=8: Set Beats to 8
+# STOP: Stop autoplay
+# SEND=00: Send this string to the Visualizer window, eg. for triggering sprite 00
+# PRESET=C:\Path\To\Preset.milk: Run preset file in Visualizer, the path can bAe 
+#   absolute or relative to the Milkwave base directory
+# RESET: Reset the Remote form timer. The timer may run out of sync after a while,
+#   depending on the set BPM, beats and your computer. This command resets the 
+#   timer. The same can be achieved by double-clicking the "BPM"-label in the 
+#   Remote window.
+# CLEARSPRITES: Clear all sprites
+# CLEARTEXTS: Clear all texts
+# CLEARPARAMS: Clears the parameters definition in Remote
+# MSG=time=5.0;growth=1.5;text=This is the message
+#   Raw message sending: Send message using parameters separated by semicolon (;). 
+#   If font face, size and color parameters are not included, the current Remote settings 
+#   are used.
+# TIME=1.2: Set time factor to 1.2 (Settings tab)
+# FRAME=1.5: Set frame factor to 1.5 (Settings tab)
+# FPS=0.1: Set FPS factor to 0.1 (Settings tab)
+# INTENSITY=1.2: Set intensity to 1.2 (Settings tab)
+# SHIFT=-0.2: Set shift to -0.2 (Settings tab)
+# VERSION=-2: Set version to 2 (Settings tab)
+# MEDIA_PLAY: Press the Windows Media "Play/Pause" key
+# MEDIA_STOP: Press the Windows Media "Stop" key
+#
+# "Style A" preset definition: "time=10.0|growth=1.4|y=0.8|starty=0.85|fade=1|fadeout=1"
+#
+BEATS=4|MEDIA_STOP|COLOR=91, 116, 249|BPM=88.9|STYLE=Style A|INTENSITY=2|SHIFT=-0.2|VERSION=1|PRESET=resources\presets\Milkwave\Shader\diatribes + IkeC - Night Cloud Dance.milk
+BEATS=2|MEDIA_PLAY
+BEATS=14|MSG=y=0.3;size=50;time=7;fade=3;fadeout=3;text=Milkwave 3
+BEATS=16|diatribes - Night Cloud Dance
+BEATS=24|Music://NIMBVS - Ultra Violet
+BEATS=6|PRESET=resources\presets\Milkwave\Shader\ProSureString + IkeC - cube go spinny.milk
+BEATS=25|RESET|COLOR=177, 0, 100|ProSureString - cube go spinny
+BEATS=32|COLOR=255,255,255|MSG=y=0.85;size=25;time=8;fade=3;fadeout=3;text=All texts and transitions//automated via Milkwave script
+BEATS=6|PRESET=resources\presets\Milkwave\Shader\rucksack + IkeC - swirly curly braces.milk
+BEATS=18|COLOR=253,185,48|MSG=box_alpha=0.3;box_top=0.75;y=0.8;starty=0.85;fade=1;fadeout=1;text=rucksack - swirly curly braces
+BEATS=31|RESET|VERSION=2|INTENSITY=1|SHIFT=0|MSG=box_alpha=0.5;box_left=0.6;box_right=0.6;box_top=0.9;y=0.8;starty=0.85;time=8;fade=1;fadeout=1;text=Live switch to Version 2//(reacting to bass_att)
+BEATS=6|VERSION=1|PRESET=resources\presets\Milkwave\Shader\diatribes + IkeC - Dawn Flight.milk
+BEATS=58|COLOR=191, 115, 69|diatribes - Dawn Flight
+BEATS=2|PRESET=resources\presets\Milkwave\Shader\diatribes + IkeC - Starfire1.milk
+BEATS=2|INTENSITY=1.7|SHIFT=-0.1
+BEATS=2|INTENSITY=2|SHIFT=-0.2
+BEATS=2|INTENSITY=2.5|SHIFT=-0.3
+BEATS=37|COLOR=252, 140, 19|MSG=box_alpha=0.5;y=0.8;starty=0.85;time=10;fade=1;fadeout=1;text=diatribes - Starfire1
+BEATS=2|INTENSITY=2|SHIFT=-0.35
+BEATS=6|VERSION=1|INTENSITY=1.5|SHIFT=-0.5|PRESET=resources\presets\Milkwave\Shader\aiekick + IkeC - HexaGold.milk
+BEATS=26|COLOR=240, 240, 0|aiekick - HexaGold
+BEATS=16|VERSION=2|INTENSITY=0.8|SHIFT=0|Version 2
+BEATS=6|VERSION=1|PRESET=resources\presets\Milkwave\Shader\prattitude + IkeC - Acidic.milk
+BEATS=26|COLOR=255, 128, 192|MSG=box_alpha=0.8;y=0.8;starty=0.85;fade=1;fadeout=1;text=prattitude - Acidic
+BEATS=24|VERSION=2|MSG=box_alpha=0.8;box_top=1.3;box_bottom=1.3;y=0.8;starty=0.85;fade=1;fadeout=1;text=Version 2
+BEATS=6|VERSION=1|INTENSITY=1.5|SHIFT=0|PRESET=resources\presets\Milkwave\Shader\diatribes + IkeC - a basic thing.milk
+BEATS=18|COLOR=69, 166, 143|diatribes - a basic thing
+BEATS=16|VERSION=2|INTENSITY=1|SHIFT=0|Version 2
+BEATS=6|VERSION=1|INTENSITY=1|SHIFT=0|PRESET=resources\presets\Milkwave\Shader\yufengjie + IkeC - sqrt tile.milk
+BEATS=25|COLOR=0, 255, 255|MSG=box_alpha=0.8;y=0.8;starty=0.85;fade=1;fadeout=1;text=yufengjie - sqrt tile
+BEATS=16|VERSION=2|MSG=box_alpha=0.8;box_top=1.3;box_bottom=1.3;y=0.8;starty=0.85;fade=1;fadeout=1;text=Version 2
+BEATS=6|INTENSITY=1|SHIFT=0|PRESET=resources\presets\Milkwave\Shader\BigWings + IkeC - Heartfelt II.milk
+BEATS=42|VERSION=1|INTENSITY=1|SHIFT=0|COLOR=255, 0, 255|BigWings - Heartfelt II
+BEATS=6|COLOR=255, 255, 255|github.com/IkeC/Milkwave
+STOP

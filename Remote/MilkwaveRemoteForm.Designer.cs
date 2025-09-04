@@ -499,11 +499,13 @@ namespace MilkwaveRemote
       // numBPM
       // 
       numBPM.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numBPM.Location = new Point(363, 153);
+      numBPM.DecimalPlaces = 1;
+      numBPM.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+      numBPM.Location = new Point(352, 153);
       numBPM.Margin = new Padding(3, 2, 3, 2);
       numBPM.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numBPM.Name = "numBPM";
-      numBPM.Size = new Size(46, 23);
+      numBPM.Size = new Size(57, 23);
       numBPM.TabIndex = 18;
       numBPM.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numBPM, "BPM");
@@ -513,9 +515,9 @@ namespace MilkwaveRemote
       // lblBPM
       // 
       lblBPM.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      lblBPM.Location = new Point(311, 153);
+      lblBPM.Location = new Point(312, 153);
       lblBPM.Name = "lblBPM";
-      lblBPM.Size = new Size(49, 23);
+      lblBPM.Size = new Size(38, 23);
       lblBPM.TabIndex = 97;
       lblBPM.Text = "BPM";
       lblBPM.TextAlign = ContentAlignment.MiddleRight;
@@ -661,7 +663,7 @@ namespace MilkwaveRemote
       chkAutoplay.Text = "Autoplay";
       chkAutoplay.TextAlign = ContentAlignment.MiddleCenter;
       chkAutoplay.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkAutoplay, "Autoplay on/off (Ctrl+Y)\r\nHold Alt: Press Play/Stop Media Key and reload script file\r\n");
+      toolTip1.SetToolTip(chkAutoplay, "Autoplay on/off (Ctrl+Y)\r\nHold Alt: Reload script file");
       chkAutoplay.UseVisualStyleBackColor = true;
       chkAutoplay.CheckedChanged += chkAutoplay_CheckedChanged;
       // 
@@ -999,7 +1001,7 @@ namespace MilkwaveRemote
       cboAutoplay.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
       cboAutoplay.Location = new Point(74, 153);
       cboAutoplay.Name = "cboAutoplay";
-      cboAutoplay.Size = new Size(246, 23);
+      cboAutoplay.Size = new Size(237, 23);
       cboAutoplay.TabIndex = 107;
       toolTip1.SetToolTip(cboAutoplay, "From file");
       cboAutoplay.SelectedIndexChanged += cboAutoplay_SelectedIndexChanged;

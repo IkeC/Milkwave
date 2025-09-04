@@ -5634,7 +5634,14 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
   swprintf(debugMsg, sizeof(debugMsg) / sizeof(debugMsg[0]), L"ShowSongTitleAnim: t=%.2f offset=%.2f\n", t, offset);
   OutputDebugStringW(debugMsg);
 
-  for (int it = 0; it < 2; it++) {
+  int start_it = 0;
+  if (m_supertexts[supertextIndex].fBoxAlpha > 0) {
+    start_it = 1;
+    baseOffsetX = 0;
+    baseOffsetY = 0;
+  }
+
+  for (int it = start_it; it < 2; it++) {
     // colors
     {
       if (it == 0)
@@ -5665,7 +5672,6 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     if (it == 0) {
       lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);//SRCALPHA);
       lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCCOLOR);
-
     }
     else {
       lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);//SRCALPHA);

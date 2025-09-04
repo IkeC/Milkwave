@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using Windows.Graphics.Printing.OptionDetails;
 using Windows.Media.Capture;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
@@ -780,14 +781,7 @@ namespace MilkwaveRemote {
     private void chkAutoplay_CheckedChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         if (chkAutoplay.Checked) {
-          // Press Windows Media Play Key
           LoadMessages(lastScriptFileName);
-          keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
-          keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-        } else {
-          // Press Windows Media Stop Key
-          keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
-          keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
         }
       }
 
@@ -798,6 +792,16 @@ namespace MilkwaveRemote {
         SetStatusText("");
         autoplayRemainingBeats = 0;
       }
+    }
+
+    private void PressMediaKeyPlayPause() {
+      keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
+      keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+    }
+
+    private void PressMediaKeyStop() {
+      keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
+      keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
     }
 
     private void ResetAndStartTimer(bool startInstant) {
@@ -847,9 +851,9 @@ namespace MilkwaveRemote {
             } else if (tokenUpper.Equals("RESET")) {
               ResetAndStartTimer(false);
             } else if (tokenUpper.StartsWith("BPM=")) {
-              string BPM = tokenUpper.Substring(4);
-              if (int.TryParse(BPM, out int bpm)) {
-                numBPM.Text = BPM;
+              string value = tokenUpper.Substring(4);
+              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+                numBPM.Value = (decimal)parsedValue;
               }
             } else if (tokenUpper.StartsWith("BEATS=")) {
               string beats = tokenUpper.Substring(6);
@@ -946,6 +950,10 @@ namespace MilkwaveRemote {
               if (int.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out int parsedValue)) {
                 numVisVersion.Value = (int)parsedValue;
               }
+            } else if (tokenUpper.Equals("MEDIA_PLAY")) {
+              PressMediaKeyPlayPause();
+            } else if (tokenUpper.Equals("MEDIA_STOP")) {
+              PressMediaKeyStop();
             } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
               SendToMilkwaveVisualizer(token, MessageType.Message);
             }
@@ -1560,6 +1568,7 @@ namespace MilkwaveRemote {
             btnSendFile_Click(null, null);
           }
           if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
+            e.SuppressKeyPress = true;
             SelectNextAutoplayEntry();
           }
         } else if (e.KeyCode == Keys.Y) {

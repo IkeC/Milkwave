@@ -36,5 +36,8 @@
     "CloseVisualizerWithRemote": false,
     "SelectedTabIndex": 0,
     "ShaderFileChecked": true,
-    "WrapChecked": true
+    "WrapChecked": true,
+    "VisIntensity": 1.0,
+    "VisShift": 0.0,
+    "VisVersion": 1
 }

@@ -5,9 +5,10 @@
 - New "vis_intensity", "vis_shift" and "vis_version" preset variables
 - Adjust "Intensity", "Shift" and "Version" live from Remote for supported presets (eg. Milkwaves shader presets)
 - Set default audio device using Ctrl+D (eg. after disconnecting Bluetooth headphones)
-- New message parameter "fadeout" (also for custom messages)
 - Draw a background box for text messages with custom transparency and color using box_* message parameters
+- New message parameter "fadeout" (also for custom messages)
 - New shortcuts: Ctrl+B for toggling button panel, Ctrl+O for opening Visualizer window
+- Press Windows Media "Play/Pause" and "Stop" keys from script
 - Force soft preset transition type using "Mixtype" in settings.ini
 - Miscellaneous stability improvements
 
