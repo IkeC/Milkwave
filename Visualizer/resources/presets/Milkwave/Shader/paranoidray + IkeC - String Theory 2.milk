@@ -26,7 +26,7 @@ comp_21=  float t = time;
 comp_22=  float3 p;
 comp_23=  
 comp_24=  #ifdef bass_smooth
-comp_25=    float fac = (0.8+0.2*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_25=    float fac = (int)vis_version > 2 ? 0.9 : (0.8+0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_26=  #else
 comp_27=    float fac = 0.9+0.05*smoothstep(0,2,bass_att);
 comp_28=  #endif

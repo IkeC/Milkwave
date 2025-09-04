@@ -30,7 +30,7 @@ namespace MilkwaveRemote {
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
-    
+
     [DllImport("user32.dll", SetLastError = true)]
     static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
@@ -221,7 +221,8 @@ namespace MilkwaveRemote {
       FrameFactor,
       FpsFactor,
       VisIntensity,
-      VisShift
+      VisShift,
+      VisVersion
     }
 
     private void SetAllControlFontSizes(Control parent, float fontSize) {
@@ -653,6 +654,8 @@ namespace MilkwaveRemote {
               message = "VAR_INTENSITY=" + numVisIntensity.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.VisShift) {
               message = "VAR_SHIFT=" + numVisShift.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.VisVersion) {
+              message = "VAR_VERSION=" + numVisVersion.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.PresetLink) {
               message = "LINK=" + messageToSend;
             } else if (type == MessageType.Message) {
@@ -937,6 +940,11 @@ namespace MilkwaveRemote {
               string value = token.Substring(6);
               if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
                 numVisShift.Value = (decimal)parsedValue;
+              }
+            } else if (tokenUpper.StartsWith("VERSION=")) {
+              string value = token.Substring(8);
+              if (int.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out int parsedValue)) {
+                numVisVersion.Value = (int)parsedValue;
               }
             } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
               SendToMilkwaveVisualizer(token, MessageType.Message);
@@ -2822,6 +2830,10 @@ namespace MilkwaveRemote {
       }
       chkShaderFile.Checked = Settings.ShaderFileChecked;
       chkWrap.Checked = Settings.WrapChecked;
+
+      numVisIntensity.Value = (decimal)Settings.VisIntensity;
+      numVisShift.Value = (decimal)Settings.VisShift;
+      numVisVersion.Value = Settings.VisVersion;
     }
 
     private void SetAndSaveSettings() {
@@ -2836,6 +2848,11 @@ namespace MilkwaveRemote {
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
       Settings.ShaderFileChecked = chkShaderFile.Checked;
       Settings.WrapChecked = chkWrap.Checked;
+
+      Settings.VisIntensity = numVisIntensity.Value;
+      Settings.VisShift = numVisShift.Value;
+      Settings.VisVersion = (int)numVisVersion.Value;
+
       SaveSettingsToFile();
     }
 
@@ -3307,6 +3324,10 @@ namespace MilkwaveRemote {
       SendToMilkwaveVisualizer("", MessageType.VisShift);
     }
 
+    private void numVisVersion_ValueChanged(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.VisVersion);
+    }
+
     private void lblFactorTime_Click(object sender, EventArgs e) {
       numFactorTime.Value = 1;
     }
@@ -3326,6 +3347,11 @@ namespace MilkwaveRemote {
     private void lblVisShift_Click(object sender, EventArgs e) {
       numVisShift.Value = 0;
     }
+
+    private void lblVisVersion_Click(object sender, EventArgs e) {
+      numVisVersion.Value = 1;
+    }
+
     private void OpenFile(string filePath) {
       filePath = Path.Combine(BaseDir, filePath);
       if (File.Exists(filePath)) {

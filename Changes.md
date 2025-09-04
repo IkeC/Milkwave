@@ -2,8 +2,8 @@
 
 - 10 new shader-based presets in Milkwave/Shader directory
 - All 30 Milkwave shader presets now react to audio input
-- New "vis_intensity" and "vis_shift" preset variables
-- Adjust "Intensity" and "Shift" live from Remote for supported presets (eg. Milkwaves shader presets)
+- New "vis_intensity", "vis_shift" and "vis_version" preset variables
+- Adjust "Intensity", "Shift" and "Version" live from Remote for supported presets (eg. Milkwaves shader presets)
 - Set default audio device using Ctrl+D (eg. after disconnecting Bluetooth headphones)
 - New message parameter "fadeout" (also for custom messages)
 - Draw a background box for text messages with custom transparency and color using box_* message parameters

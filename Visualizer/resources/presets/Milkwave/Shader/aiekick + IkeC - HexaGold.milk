@@ -158,7 +158,7 @@ comp_153=  rgb = rgb*rgb*(3.0-2.0*rgb);
 comp_154=  // cubic smoothing
 comp_155=
 comp_156=  #ifdef bass_smooth
-comp_157=    float fac = (0.65 + smoothstep(0,2,bass_smooth)*0.5)*vis_intensity+vis_shift;
+comp_157=    float fac = (int)vis_version > 2 ? 1 : (0.65 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.5)*vis_intensity+vis_shift;
 comp_158=  #else
 comp_159=    float fac = 0.8 + clamp(bass_att,0.6,1.2)*0.2;
 comp_160=  #endif

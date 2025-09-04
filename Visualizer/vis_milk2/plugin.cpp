@@ -10870,6 +10870,10 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 10);
     g_plugin.m_VisShift = std::stof(message);
   }
+  else if (wcsncmp(sMessage, L"VAR_VERSION=", 12) == 0) {
+    std::wstring message(sMessage + 12);
+    g_plugin.m_VisVersion = std::stof(message);
+  }
 }
 
 void CPlugin::SendPresetChangedInfoToMilkwaveRemote() {

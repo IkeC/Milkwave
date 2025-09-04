@@ -269,7 +269,7 @@ comp_264=
 comp_265=  //col *= 1.+lightning*fade*lerp(1., .1, story*story); // composite lightning  
 comp_266=
 comp_267=  #ifdef bass_smooth
-comp_268=    col = (col+0.05*(clamp(bass_smooth, 0, 2)-1))*vis_intensity+vis_shift;
+comp_268=    col = (int)vis_version > 2 ? col : (col+0.05*(clamp((int)vis_version == 1 ? bass_smooth : bass_att, 0, 2)-1))*vis_intensity+vis_shift;
 comp_269=  #endif
 comp_270=  
 comp_271=  //col *= 1.-dot(UV-=.5, UV); // vignette

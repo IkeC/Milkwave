@@ -552,13 +552,21 @@ Examples:
   <data name="lblVisIntensity.ToolTip" xml:space="preserve">
     <value>A parameter introduced by Milkwave which presets can read to adjust the intensity of a preset effect
 For Milkwaves "Shader" presets, this will adjust how much the preset reacts to audio input
-Double-click: Set 1
+Click: Set 1
 </value>
   </data>
   <data name="lblVisShift.ToolTip" xml:space="preserve">
     <value>A parameter introduced by Milkwave which presets can use to "shift" a preset effect
 For Milkwaves "Shader" presets, this will adjust the initial value of the effect that is linked to the audio signal
-Double-click: Set 0</value>
+Click: Set 0</value>
+  </data>
+  <data name="lblVisVersion.ToolTip" xml:space="preserve">
+    <value>A parameter introduced by Milkwave which presets can use to present a different version
+For Milkwaves "Shader" presets this means:
+Version = 1: Effect depends on value of "bass_smooth" (slow reaction)
+Version = 2: Effect depends on value of "bass_att" (fast and intense reaction)
+Version &gt; 2: No audio reaction
+Click: Set 1</value>
   </data>
   <metadata name="colorDialogMessage.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>420, 0</value>

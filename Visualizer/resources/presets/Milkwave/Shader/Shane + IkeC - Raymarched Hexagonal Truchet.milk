@@ -71,7 +71,7 @@ comp_66=
 comp_67=  edge = smoothstep(0., 1., sqrt(edge/e.x*2.));
 comp_68=  
 comp_69=  #ifdef bass_smooth
-comp_70=    edge *= (1.1-0.2*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_70=    edge *= (int)vis_version > 2 ? 1 : (1.1-0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_71=  #else
 comp_72=    edge *= 1.05-0.1*smoothstep(0,2,bass_att);
 comp_73=  #endif

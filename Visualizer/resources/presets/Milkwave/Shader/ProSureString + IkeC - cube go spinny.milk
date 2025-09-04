@@ -34,7 +34,7 @@ comp_29=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
 comp_30=  uv = float2(uv.x, -uv.y);
 comp_31=
 comp_32=  #ifdef bass_smooth
-comp_33=    uv *= (1-0.4*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_33=    uv *= (int)vis_version > 2 ? 1 : (1-0.4*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_34=  #else
 comp_35=    uv *= 1-0.1*smoothstep(0,2,bass_att);
 comp_36=  #endif

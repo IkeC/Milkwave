@@ -184,6 +184,8 @@ namespace MilkwaveRemote
       lblVisShift = new Label();
       numVisShift = new NumericUpDown();
       numVisIntensity = new NumericUpDown();
+      lblVisVersion = new Label();
+      numVisVersion = new NumericUpDown();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
       chkWaveDarken = new CheckBox();
@@ -285,6 +287,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numVisVersion).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).BeginInit();
       tableLayoutPanel1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -1793,7 +1796,7 @@ namespace MilkwaveRemote
       lblFactorFrame.TabIndex = 140;
       lblFactorFrame.Text = "Frame";
       lblFactorFrame.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorFrame, "Value by which the internal frame counter is incremented on every loop\r\nHigher values may trigger counter-based preset events more often\r\nDouble-click: Set 1");
+      toolTip1.SetToolTip(lblFactorFrame, "Value by which the internal frame counter is incremented on every loop\r\nHigher values may trigger counter-based preset events more often\r\nClick: Set 1");
       lblFactorFrame.Click += lblFactorFrame_Click;
       // 
       // lblFactorTime
@@ -1804,7 +1807,7 @@ namespace MilkwaveRemote
       lblFactorTime.TabIndex = 138;
       lblFactorTime.Text = "Time";
       lblFactorTime.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorTime, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nDouble-click: Set 1");
+      toolTip1.SetToolTip(lblFactorTime, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nClick: Set 1");
       lblFactorTime.Click += lblFactorTime_Click;
       // 
       // lblFactorFPS
@@ -1815,7 +1818,7 @@ namespace MilkwaveRemote
       lblFactorFPS.TabIndex = 142;
       lblFactorFPS.Text = "FPS";
       lblFactorFPS.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblFactorFPS, "Values < 1 may speed up rendering of the preset, not affecting sprites and notifications\r\nDouble-click: Set 1");
+      toolTip1.SetToolTip(lblFactorFPS, "Values < 1 may speed up rendering of the preset, not affecting sprites and notifications\r\nClick: Set 1");
       lblFactorFPS.Click += lblFactorFPS_Click;
       // 
       // btnOpenSettingsIni
@@ -2062,7 +2065,7 @@ namespace MilkwaveRemote
       numOffset.TabIndex = 141;
       numOffset.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numOffset, "Adjust this value if the line marked as error is wrong");
-      numOffset.Value = new decimal(new int[] { 181, 0, 0, 0 });
+      numOffset.Value = new decimal(new int[] { 182, 0, 0, 0 });
       numOffset.ValueChanged += numOffset_ValueChanged;
       // 
       // cboShadertoyType
@@ -2209,6 +2212,30 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(numVisIntensity, "Hold Alt: Set increment to 0.05");
       numVisIntensity.Value = new decimal(new int[] { 1, 0, 0, 0 });
       numVisIntensity.ValueChanged += numVisIntensity_ValueChanged;
+      // 
+      // lblVisVersion
+      // 
+      lblVisVersion.Location = new Point(137, 61);
+      lblVisVersion.Name = "lblVisVersion";
+      lblVisVersion.Size = new Size(65, 23);
+      lblVisVersion.TabIndex = 154;
+      lblVisVersion.Text = "Version";
+      lblVisVersion.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblVisVersion, resources.GetString("lblVisVersion.ToolTip"));
+      lblVisVersion.Click += lblVisVersion_Click;
+      // 
+      // numVisVersion
+      // 
+      numVisVersion.Location = new Point(208, 63);
+      numVisVersion.Margin = new Padding(3, 2, 3, 2);
+      numVisVersion.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
+      numVisVersion.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+      numVisVersion.Name = "numVisVersion";
+      numVisVersion.Size = new Size(56, 23);
+      numVisVersion.TabIndex = 153;
+      numVisVersion.TextAlign = HorizontalAlignment.Center;
+      numVisVersion.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numVisVersion.ValueChanged += numVisVersion_ValueChanged;
       // 
       // cboParameters
       // 
@@ -3375,6 +3402,8 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(numVisVersion);
+      tabSettings.Controls.Add(lblVisVersion);
       tabSettings.Controls.Add(numVisShift);
       tabSettings.Controls.Add(lblVisShift);
       tabSettings.Controls.Add(numVisIntensity);
@@ -3479,6 +3508,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numVisVersion).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveMode).EndInit();
       tableLayoutPanel1.ResumeLayout(false);
       splitContainer1.Panel1.ResumeLayout(false);
@@ -3759,5 +3789,7 @@ namespace MilkwaveRemote
     private Label lblVisShift;
     private NumericUpDown numVisIntensity;
     private Label lblVisIntensity;
+    private NumericUpDown numVisVersion;
+    private Label lblVisVersion;
   }
 }

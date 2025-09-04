@@ -18,7 +18,7 @@ float4   _c13;  //.xy = blur2_min,blur2_max; .zw = blur3_min, blur3_max.
 
 // Introduced by Milkwave
 float4   _c14 = float4(0, 0, 0, 0); // bass_smooth, mid_smooth, treb_smooth, vol_smooth
-float4   _c15 = float4(1, 0, 0, 0); // vis_intensity, vis_shift
+float4   _c15 = float4(1, 0, 1, 0); // vis_intensity, vis_shift, vis_version
 
 float4   _qa;  // q vars bank 1 [q1-q4]
 float4   _qb;  // q vars bank 2 [q5-q8]
@@ -79,6 +79,7 @@ float4x3 rot_rand4;
 
 #define vis_intensity _c15.x
 #define vis_shift     _c15.y
+#define vis_version   _c15.z
 
 #define q1 _qa.x
 #define q2 _qa.y

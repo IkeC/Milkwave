@@ -37,7 +37,7 @@ comp_32=  float hb_hei = sin(uv.x / hb_size * PI);
 comp_33=  hei = lerp(hei, hb_hei, hb_mult);
 comp_34=
 comp_35=  #ifdef bass_smooth
-comp_36=    float fac = (0.75 + 0.5*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_36=    float fac = (int)vis_version > 2 ? 1 : (0.75 + 0.5*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_37=  #else
 comp_38=    float fac = 0.8 + 0.4*smoothstep(0,2,bass_att);
 comp_39=  #endif

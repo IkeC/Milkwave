@@ -114,7 +114,7 @@ Changes are saved to the _Fonts_ section in _settings.ini_. Of course you may ed
 
 Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
 
-The "Intensity" and "Shift" values can be read by presets that support the Milkwave specific vis_intensity and vis_shift variables (see below). As above, you can change these values live while a preset is running.
+The "Intensity", "Shift" and "Version" values can be read by presets that support the Milkwave specific vis_intensity, vis_shift and vis_version variables (see below). As above, you can change these values live while a preset is running.
 
 Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
 
@@ -137,9 +137,9 @@ Or wrap your code in a conditional block:
 float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 #endif
 ```
-### "vis_intensity" and "vis_shift" preset variables
+### "vis_intensity", "vis_shift" and "vis_version" preset variables
 
-Also introduced in Milkwave 3. Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default value is 1 for vis_intensity and 0 for vis_shift. Users can adjust these values live from the "Settings" tab in the Remote while the preset is running.
+Also introduced in Milkwave 3. Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running.
 
 See the Shader presets included with Milkwave for examples that make use of these parameters.
 

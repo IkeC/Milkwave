@@ -4809,7 +4809,7 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   if (h[13]) pCT->SetVector(lpDevice, h[13], &D3DXVECTOR4(blur_min[1], blur_max[1], blur_min[2], blur_max[2]));
 
   if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
-  if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(m_VisIntensity, m_VisShift, 0, 0));
+  if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0));
 
   // write q vars
   int num_q_float4s = sizeof(p->q_const_handles) / sizeof(p->q_const_handles[0]);

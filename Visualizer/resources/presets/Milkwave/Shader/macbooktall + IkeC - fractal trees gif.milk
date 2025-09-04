@@ -183,7 +183,7 @@ comp_178=  // background
 comp_179=  float3 bgcol = float3(0.7,0,0);
 comp_180=  
 comp_181=  #ifdef bass_smooth
-comp_182=    float fac = (smoothstep(0,2,bass_smooth)*0.4)*vis_intensity+vis_shift;
+comp_182=    float fac = (int)vis_version > 2 ? 0 : (smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.4)*vis_intensity+vis_shift;
 comp_183=  #else
 comp_184=    float fac = smoothstep(0,2,vol_att)*0.2;
 comp_185=  #endif
