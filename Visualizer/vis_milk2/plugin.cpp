@@ -11589,10 +11589,9 @@ bool CPlugin::CheckForDirectX9c() {
     if (major == 4 && minor == 9 && revision == 904)
       return true;
   }
-  else {
-    ShowDirectXMissingMessage();
-    return false;
-  }
+  // If we get here, DirectX 9c is not installed
+  ShowDirectXMissingMessage();
+  return false;
 }
 
 void CPlugin::ShowDirectXMissingMessage() {

@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
+﻿using MilkwaveRemote.Helper;
+using System.Diagnostics;
 
 namespace MilkwaveRemote.Data.Tests {
   [TestClass()]
   public class ShaderTests {
 
-    private Shader shader = new Shader();
+    private ShaderHelper shader = new ShaderHelper();
 
     [TestMethod()]
     public void FixMatrixMultiplicationTest() {

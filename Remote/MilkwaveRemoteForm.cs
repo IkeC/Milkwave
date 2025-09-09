@@ -7,8 +7,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using Windows.Graphics.Printing.OptionDetails;
-using Windows.Media.Capture;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
 
@@ -101,8 +99,10 @@ namespace MilkwaveRemote {
     Random rnd = new Random();
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
-    private Shader Shader = new Shader();
-    private RemoteHelper helper;
+
+    private ShaderHelper ShaderHelper = new ShaderHelper();
+    private MidiHelper MidiHelper;
+    private RemoteHelper RemoteHelper;
 
     private OpenFileDialog ofd;
     private OpenFileDialog ofdShader;
@@ -329,8 +329,8 @@ namespace MilkwaveRemote {
       txtShaderHLSL.Font = new Font(txtShaderHLSL.Font.FontFamily, 10f, txtShaderHLSL.Font.Style);
       txtShaderGLSL.Font = txtShaderHLSL.Font;
 
-      helper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
-      helper.FillAudioDevices(cboAudioDevice);
+      RemoteHelper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
+      RemoteHelper.FillAudioDevices(cboAudioDevice);
     }
 
     private IntPtr StartVisualizerIfNotFound(bool onlyIfNotFound) {
@@ -404,6 +404,25 @@ namespace MilkwaveRemote {
       numShadertoyQueryIndex.Maximum = shadertoyQueryPageSize;
 
       SendToMilkwaveVisualizer("", MessageType.GetState);
+
+      MidiHelper = new MidiHelper();
+      PopulateMidiDevicesList();
+    }
+
+    private void PopulateMidiDevicesList() {
+      try {
+        var devices = MidiHelper.GetInputDevices();
+        cboMidiDevice.DataSource = devices;
+        cboMidiDevice.DisplayMember = nameof(MidiDeviceEntry.DeviceName);
+        cboMidiDevice.ValueMember = nameof(MidiDeviceEntry.DeviceIndex);
+
+        // Optionally select the first device by default
+        if (devices.Count > 0) {
+          cboMidiDevice.SelectedIndex = 0;
+        }
+      } catch (Exception ex) {
+        SetStatusText(ex.Message);
+      }
     }
 
     protected override void WndProc(ref Message m) {
@@ -525,7 +544,7 @@ namespace MilkwaveRemote {
             }
           } else if (receivedString.StartsWith("DEVICE=")) {
             string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            helper.SelectDeviceByName(cboAudioDevice, device);
+            RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
           }
         }
       }
@@ -1534,7 +1553,7 @@ namespace MilkwaveRemote {
               txtShaderFind.SelectAll();
               txtShaderFind.Focus();
             } else if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-              txtShaderHLSL.Text = Shader.BasicFormatShaderCode(txtShaderHLSL.Text);
+              txtShaderHLSL.Text = ShaderHelper.BasicFormatShaderCode(txtShaderHLSL.Text);
               SetStatusText("HLSL code formatted");
             } else {
               FindShaderString();
@@ -2470,7 +2489,7 @@ namespace MilkwaveRemote {
     }
 
     private void lblAudioDevice_DoubleClick(object sender, EventArgs e) {
-      helper.ReloadAudioDevices(cboAudioDevice);
+      RemoteHelper.ReloadAudioDevices(cboAudioDevice);
       SetStatusText($"Audio device list reloaded");
     }
 
@@ -2731,7 +2750,7 @@ namespace MilkwaveRemote {
 
     private void lblAudioDevice_MouseClick(object sender, MouseEventArgs e) {
       if (e.Button == MouseButtons.Right) {
-        helper.SelectDefaultDevice(cboAudioDevice);
+        RemoteHelper.SelectDefaultDevice(cboAudioDevice);
         btnSetAudioDevice_Click(null, null);
         SetStatusText($"Default audio device selected and set");
       }
@@ -2982,107 +3001,107 @@ namespace MilkwaveRemote {
     private void LoadVisualizerSettings() {
       try {
         // Notify
-        string fontFace1 = helper.GetIniValueFonts("FontFace1", "Bahnschrift");
+        string fontFace1 = RemoteHelper.GetIniValueFonts("FontFace1", "Bahnschrift");
         cboFont1.SelectedItem = fontFace1;
-        string fontSize1 = helper.GetIniValueFonts("FontSize1", "20");
+        string fontSize1 = RemoteHelper.GetIniValueFonts("FontSize1", "20");
         numFont1.Value = int.Parse(fontSize1);
 
-        string fontBold1 = helper.GetIniValueFonts("FontBold1", "0");
+        string fontBold1 = RemoteHelper.GetIniValueFonts("FontBold1", "0");
         chkFontBold1.Checked = !fontBold1.Equals("0");
-        string fontItalic1 = helper.GetIniValueFonts("FontItalic1", "0");
+        string fontItalic1 = RemoteHelper.GetIniValueFonts("FontItalic1", "0");
         chkFontItalic1.Checked = !fontItalic1.Equals("0");
-        string fontAA1 = helper.GetIniValueFonts("FontAA1", "1");
+        string fontAA1 = RemoteHelper.GetIniValueFonts("FontAA1", "1");
         chkFontAA1.Checked = !fontAA1.Equals("0");
 
-        string fontColorR1 = helper.GetIniValueFonts("FontColorR1", "255");
+        string fontColorR1 = RemoteHelper.GetIniValueFonts("FontColorR1", "255");
         int fontColorR1Val = int.Parse(fontColorR1);
-        string fontColorG1 = helper.GetIniValueFonts("FontColorG1", "255");
+        string fontColorG1 = RemoteHelper.GetIniValueFonts("FontColorG1", "255");
         int fontColorG1Val = int.Parse(fontColorG1);
-        string fontColorB1 = helper.GetIniValueFonts("FontColorB1", "0");
+        string fontColorB1 = RemoteHelper.GetIniValueFonts("FontColorB1", "0");
         int fontColorB1Val = int.Parse(fontColorB1);
         pnlColorFont1.BackColor = Color.FromArgb(fontColorR1Val, fontColorG1Val, fontColorB1Val);
 
         // Preset
-        string fontFace2 = helper.GetIniValueFonts("FontFace2", "Bahnschrift");
+        string fontFace2 = RemoteHelper.GetIniValueFonts("FontFace2", "Bahnschrift");
         cboFont2.SelectedItem = fontFace2;
-        string fontSize2 = helper.GetIniValueFonts("FontSize2", "25");
+        string fontSize2 = RemoteHelper.GetIniValueFonts("FontSize2", "25");
         numFont2.Value = int.Parse(fontSize2);
 
-        string fontBold2 = helper.GetIniValueFonts("FontBold2", "0");
+        string fontBold2 = RemoteHelper.GetIniValueFonts("FontBold2", "0");
         chkFontBold2.Checked = !fontBold2.Equals("0");
-        string fontItalic2 = helper.GetIniValueFonts("FontItalic2", "0");
+        string fontItalic2 = RemoteHelper.GetIniValueFonts("FontItalic2", "0");
         chkFontItalic2.Checked = !fontItalic2.Equals("0");
-        string fontAA2 = helper.GetIniValueFonts("FontAA2", "1");
+        string fontAA2 = RemoteHelper.GetIniValueFonts("FontAA2", "1");
         chkFontAA2.Checked = !fontAA2.Equals("0");
 
-        string fontColorR2 = helper.GetIniValueFonts("FontColorR2", "255");
+        string fontColorR2 = RemoteHelper.GetIniValueFonts("FontColorR2", "255");
         int fontColorR2Val = int.Parse(fontColorR2);
-        string fontColorG2 = helper.GetIniValueFonts("FontColorG2", "86");
+        string fontColorG2 = RemoteHelper.GetIniValueFonts("FontColorG2", "86");
         int fontColorG2Val = int.Parse(fontColorG2);
-        string fontColorB2 = helper.GetIniValueFonts("FontColorB2", "0");
+        string fontColorB2 = RemoteHelper.GetIniValueFonts("FontColorB2", "0");
         int fontColorB2Val = int.Parse(fontColorB2);
         pnlColorFont2.BackColor = Color.FromArgb(fontColorR2Val, fontColorG2Val, fontColorB2Val);
 
         // Artist: Ini-Index is 5!
-        string fontFace3 = helper.GetIniValueFonts("FontFace5", "Bahnschrift");
+        string fontFace3 = RemoteHelper.GetIniValueFonts("FontFace5", "Bahnschrift");
         cboFont3.SelectedItem = fontFace3;
-        string fontSize3 = helper.GetIniValueFonts("FontSize5", "30");
+        string fontSize3 = RemoteHelper.GetIniValueFonts("FontSize5", "30");
         numFont3.Value = int.Parse(fontSize3);
 
-        string fontBold3 = helper.GetIniValueFonts("FontBold5", "0");
+        string fontBold3 = RemoteHelper.GetIniValueFonts("FontBold5", "0");
         chkFontBold3.Checked = !fontBold3.Equals("0");
-        string fontItalic3 = helper.GetIniValueFonts("FontItalic5", "0");
+        string fontItalic3 = RemoteHelper.GetIniValueFonts("FontItalic5", "0");
         chkFontItalic3.Checked = !fontItalic3.Equals("0");
-        string fontAA3 = helper.GetIniValueFonts("FontAA5", "1");
+        string fontAA3 = RemoteHelper.GetIniValueFonts("FontAA5", "1");
         chkFontAA3.Checked = !fontAA3.Equals("0");
 
-        string fontColorR3 = helper.GetIniValueFonts("FontColorR5", "211");
+        string fontColorR3 = RemoteHelper.GetIniValueFonts("FontColorR5", "211");
         int fontColorR3Val = int.Parse(fontColorR3);
-        string fontColorG3 = helper.GetIniValueFonts("FontColorG5", "0");
+        string fontColorG3 = RemoteHelper.GetIniValueFonts("FontColorG5", "0");
         int fontColorG3Val = int.Parse(fontColorG3);
-        string fontColorB3 = helper.GetIniValueFonts("FontColorB5", "9");
+        string fontColorB3 = RemoteHelper.GetIniValueFonts("FontColorB5", "9");
         int fontColorB3Val = int.Parse(fontColorB3);
         pnlColorFont3.BackColor = Color.FromArgb(fontColorR3Val, fontColorG3Val, fontColorB3Val);
 
         // Title: Ini-Index is 6!
-        string fontFace4 = helper.GetIniValueFonts("FontFace6", "Bahnschrift");
+        string fontFace4 = RemoteHelper.GetIniValueFonts("FontFace6", "Bahnschrift");
         cboFont4.SelectedItem = fontFace4;
-        string fontSize4 = helper.GetIniValueFonts("FontSize6", "40");
+        string fontSize4 = RemoteHelper.GetIniValueFonts("FontSize6", "40");
         numFont4.Value = int.Parse(fontSize4);
 
-        string fontBold4 = helper.GetIniValueFonts("FontBold6", "1");
+        string fontBold4 = RemoteHelper.GetIniValueFonts("FontBold6", "1");
         chkFontBold4.Checked = !fontBold4.Equals("0");
-        string fontItalic4 = helper.GetIniValueFonts("FontItalic6", "0");
+        string fontItalic4 = RemoteHelper.GetIniValueFonts("FontItalic6", "0");
         chkFontItalic4.Checked = !fontItalic4.Equals("0");
-        string fontAA4 = helper.GetIniValueFonts("FontAA6", "1");
+        string fontAA4 = RemoteHelper.GetIniValueFonts("FontAA6", "1");
         chkFontAA4.Checked = !fontAA4.Equals("0");
 
-        string fontColorR4 = helper.GetIniValueFonts("FontColorR6", "255");
+        string fontColorR4 = RemoteHelper.GetIniValueFonts("FontColorR6", "255");
         int fontColorR4Val = int.Parse(fontColorR4);
-        string fontColorG4 = helper.GetIniValueFonts("FontColorG6", "86");
+        string fontColorG4 = RemoteHelper.GetIniValueFonts("FontColorG6", "86");
         int fontColorG4Val = int.Parse(fontColorG4);
-        string fontColorB4 = helper.GetIniValueFonts("FontColorB6", "0");
+        string fontColorB4 = RemoteHelper.GetIniValueFonts("FontColorB6", "0");
         int fontColorB4Val = int.Parse(fontColorB4);
         pnlColorFont4.BackColor = Color.FromArgb(fontColorR4Val, fontColorG4Val, fontColorB4Val);
 
         // Album: Ini-Index is 7!
-        string fontFace5 = helper.GetIniValueFonts("FontFace7", "Bahnschrift");
+        string fontFace5 = RemoteHelper.GetIniValueFonts("FontFace7", "Bahnschrift");
         cboFont5.SelectedItem = fontFace5;
-        string fontSize5 = helper.GetIniValueFonts("FontSize7", "25");
+        string fontSize5 = RemoteHelper.GetIniValueFonts("FontSize7", "25");
         numFont5.Value = int.Parse(fontSize5);
 
-        string fontBold5 = helper.GetIniValueFonts("FontBold7", "0");
+        string fontBold5 = RemoteHelper.GetIniValueFonts("FontBold7", "0");
         chkFontBold5.Checked = !fontBold5.Equals("0");
-        string fontItalic5 = helper.GetIniValueFonts("FontItalic7", "0");
+        string fontItalic5 = RemoteHelper.GetIniValueFonts("FontItalic7", "0");
         chkFontItalic5.Checked = !fontItalic5.Equals("0");
-        string fontAA5 = helper.GetIniValueFonts("FontAA7", "1");
+        string fontAA5 = RemoteHelper.GetIniValueFonts("FontAA7", "1");
         chkFontAA5.Checked = !fontAA5.Equals("0");
 
-        string fontColorR5 = helper.GetIniValueFonts("FontColorR7", "211");
+        string fontColorR5 = RemoteHelper.GetIniValueFonts("FontColorR7", "211");
         int fontColorR5Val = int.Parse(fontColorR5);
-        string fontColorG5 = helper.GetIniValueFonts("FontColorG7", "0");
+        string fontColorG5 = RemoteHelper.GetIniValueFonts("FontColorG7", "0");
         int fontColorG5Val = int.Parse(fontColorG5);
-        string fontColorB5 = helper.GetIniValueFonts("FontColorB7", "9");
+        string fontColorB5 = RemoteHelper.GetIniValueFonts("FontColorB7", "9");
         int fontColorB5Val = int.Parse(fontColorB5);
         pnlColorFont5.BackColor = Color.FromArgb(fontColorR5Val, fontColorG5Val, fontColorB5Val);
 
@@ -3094,54 +3113,54 @@ namespace MilkwaveRemote {
     private void btnSettingsSave_Click(object? sender, EventArgs? e) {
 
       // Notify
-      helper.SetIniValueFonts("FontFace1", cboFont1.Text);
-      helper.SetIniValueFonts("FontSize1", numFont1.Value.ToString());
-      helper.SetIniValueFonts("FontBold1", chkFontBold1.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontItalic1", chkFontItalic1.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontAA1", chkFontAA1.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontColorR1", pnlColorFont1.BackColor.R.ToString());
-      helper.SetIniValueFonts("FontColorG1", pnlColorFont1.BackColor.G.ToString());
-      helper.SetIniValueFonts("FontColorB1", pnlColorFont1.BackColor.B.ToString());
+      RemoteHelper.SetIniValueFonts("FontFace1", cboFont1.Text);
+      RemoteHelper.SetIniValueFonts("FontSize1", numFont1.Value.ToString());
+      RemoteHelper.SetIniValueFonts("FontBold1", chkFontBold1.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontItalic1", chkFontItalic1.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontAA1", chkFontAA1.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontColorR1", pnlColorFont1.BackColor.R.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorG1", pnlColorFont1.BackColor.G.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorB1", pnlColorFont1.BackColor.B.ToString());
 
       // Preset
-      helper.SetIniValueFonts("FontFace2", cboFont2.Text);
-      helper.SetIniValueFonts("FontSize2", numFont2.Value.ToString());
-      helper.SetIniValueFonts("FontBold2", chkFontBold2.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontItalic2", chkFontItalic2.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontAA2", chkFontAA2.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontColorR2", pnlColorFont2.BackColor.R.ToString());
-      helper.SetIniValueFonts("FontColorG2", pnlColorFont2.BackColor.G.ToString());
-      helper.SetIniValueFonts("FontColorB2", pnlColorFont2.BackColor.B.ToString());
+      RemoteHelper.SetIniValueFonts("FontFace2", cboFont2.Text);
+      RemoteHelper.SetIniValueFonts("FontSize2", numFont2.Value.ToString());
+      RemoteHelper.SetIniValueFonts("FontBold2", chkFontBold2.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontItalic2", chkFontItalic2.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontAA2", chkFontAA2.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontColorR2", pnlColorFont2.BackColor.R.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorG2", pnlColorFont2.BackColor.G.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorB2", pnlColorFont2.BackColor.B.ToString());
 
       // Artist: Ini-Index is 5!
-      helper.SetIniValueFonts("FontFace5", cboFont3.Text);
-      helper.SetIniValueFonts("FontSize5", numFont3.Value.ToString());
-      helper.SetIniValueFonts("FontBold5", chkFontBold3.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontItalic5", chkFontItalic3.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontAA5", chkFontAA3.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontColorR5", pnlColorFont3.BackColor.R.ToString());
-      helper.SetIniValueFonts("FontColorG5", pnlColorFont3.BackColor.G.ToString());
-      helper.SetIniValueFonts("FontColorB5", pnlColorFont3.BackColor.B.ToString());
+      RemoteHelper.SetIniValueFonts("FontFace5", cboFont3.Text);
+      RemoteHelper.SetIniValueFonts("FontSize5", numFont3.Value.ToString());
+      RemoteHelper.SetIniValueFonts("FontBold5", chkFontBold3.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontItalic5", chkFontItalic3.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontAA5", chkFontAA3.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontColorR5", pnlColorFont3.BackColor.R.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorG5", pnlColorFont3.BackColor.G.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorB5", pnlColorFont3.BackColor.B.ToString());
 
       // Title: Ini-Index is 6!
-      helper.SetIniValueFonts("FontFace6", cboFont4.Text);
-      helper.SetIniValueFonts("FontSize6", numFont4.Value.ToString());
-      helper.SetIniValueFonts("FontBold6", chkFontBold4.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontItalic6", chkFontItalic4.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontAA6", chkFontAA4.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontColorR6", pnlColorFont4.BackColor.R.ToString());
-      helper.SetIniValueFonts("FontColorG6", pnlColorFont4.BackColor.G.ToString());
-      helper.SetIniValueFonts("FontColorB6", pnlColorFont4.BackColor.B.ToString());
+      RemoteHelper.SetIniValueFonts("FontFace6", cboFont4.Text);
+      RemoteHelper.SetIniValueFonts("FontSize6", numFont4.Value.ToString());
+      RemoteHelper.SetIniValueFonts("FontBold6", chkFontBold4.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontItalic6", chkFontItalic4.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontAA6", chkFontAA4.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontColorR6", pnlColorFont4.BackColor.R.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorG6", pnlColorFont4.BackColor.G.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorB6", pnlColorFont4.BackColor.B.ToString());
 
       // Album: Ini-Index is 7!
-      helper.SetIniValueFonts("FontFace7", cboFont5.Text);
-      helper.SetIniValueFonts("FontSize7", numFont5.Value.ToString());
-      helper.SetIniValueFonts("FontBold7", chkFontBold5.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontItalic7", chkFontItalic5.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontAA7", chkFontAA5.Checked ? "1" : "0");
-      helper.SetIniValueFonts("FontColorR7", pnlColorFont5.BackColor.R.ToString());
-      helper.SetIniValueFonts("FontColorG7", pnlColorFont5.BackColor.G.ToString());
-      helper.SetIniValueFonts("FontColorB7", pnlColorFont5.BackColor.B.ToString());
+      RemoteHelper.SetIniValueFonts("FontFace7", cboFont5.Text);
+      RemoteHelper.SetIniValueFonts("FontSize7", numFont5.Value.ToString());
+      RemoteHelper.SetIniValueFonts("FontBold7", chkFontBold5.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontItalic7", chkFontItalic5.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontAA7", chkFontAA5.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontColorR7", pnlColorFont5.BackColor.R.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorG7", pnlColorFont5.BackColor.G.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorB7", pnlColorFont5.BackColor.B.ToString());
 
       SendToMilkwaveVisualizer("", MessageType.Config);
       SendToMilkwaveVisualizer("", MessageType.TestFonts);
@@ -3219,7 +3238,7 @@ namespace MilkwaveRemote {
 
     private void cboFont1_SelectedIndexChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontFace1", cboFont1.Text);
+        RemoteHelper.SetIniValueFonts("FontFace1", cboFont1.Text);
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3227,7 +3246,7 @@ namespace MilkwaveRemote {
 
     private void cboFont2_SelectedIndexChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontFace2", cboFont2.Text);
+        RemoteHelper.SetIniValueFonts("FontFace2", cboFont2.Text);
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3235,7 +3254,7 @@ namespace MilkwaveRemote {
 
     private void cboFont3_SelectedIndexChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontFace5", cboFont3.Text);
+        RemoteHelper.SetIniValueFonts("FontFace5", cboFont3.Text);
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3243,7 +3262,7 @@ namespace MilkwaveRemote {
 
     private void cboFont4_SelectedIndexChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontFace6", cboFont4.Text);
+        RemoteHelper.SetIniValueFonts("FontFace6", cboFont4.Text);
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3251,7 +3270,7 @@ namespace MilkwaveRemote {
 
     private void cboFont5_SelectedIndexChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontFace7", cboFont5.Text);
+        RemoteHelper.SetIniValueFonts("FontFace7", cboFont5.Text);
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3259,7 +3278,7 @@ namespace MilkwaveRemote {
 
     private void numFont1_ValueChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontSize1", numFont1.Value.ToString());
+        RemoteHelper.SetIniValueFonts("FontSize1", numFont1.Value.ToString());
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3267,7 +3286,7 @@ namespace MilkwaveRemote {
 
     private void numFont2_ValueChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontSize2", numFont2.Value.ToString());
+        RemoteHelper.SetIniValueFonts("FontSize2", numFont2.Value.ToString());
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3275,7 +3294,7 @@ namespace MilkwaveRemote {
 
     private void numFont3_ValueChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontSize5", numFont3.Value.ToString());
+        RemoteHelper.SetIniValueFonts("FontSize5", numFont3.Value.ToString());
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3283,7 +3302,7 @@ namespace MilkwaveRemote {
 
     private void numFont4_ValueChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontSize6", numFont4.Value.ToString());
+        RemoteHelper.SetIniValueFonts("FontSize6", numFont4.Value.ToString());
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3291,7 +3310,7 @@ namespace MilkwaveRemote {
 
     private void numFont5_ValueChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
-        helper.SetIniValueFonts("FontSize7", numFont5.Value.ToString());
+        RemoteHelper.SetIniValueFonts("FontSize7", numFont5.Value.ToString());
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -3571,10 +3590,10 @@ namespace MilkwaveRemote {
     }
 
     private void ConvertShader() {
-      txtShaderHLSL.Text = Shader.ConvertGLSLtoHLSL(txtShaderGLSL.Text);
-      if (Shader.ConversionErrors.Length > 0) {
+      txtShaderHLSL.Text = ShaderHelper.ConvertGLSLtoHLSL(txtShaderGLSL.Text);
+      if (ShaderHelper.ConversionErrors.Length > 0) {
         picShaderError.Visible = true;
-        toolTip1.SetToolTip(picShaderError, Shader.ConversionErrors.ToString());
+        toolTip1.SetToolTip(picShaderError, ShaderHelper.ConversionErrors.ToString());
       } else {
         picShaderError.Visible = false;
       }
@@ -3783,7 +3802,7 @@ namespace MilkwaveRemote {
               sb.AppendLine(line);
             }
           }
-          txtShaderHLSL.Text = Shader.BasicFormatShaderCode(sb.ToString());
+          txtShaderHLSL.Text = ShaderHelper.BasicFormatShaderCode(sb.ToString());
         }
         txtShaderinfo.SelectionStart = 0;
         txtShaderinfo.ScrollToCaret();
@@ -3847,6 +3866,35 @@ namespace MilkwaveRemote {
 
         e.SuppressKeyPress = true;
       }
+    }
+
+    private void chkMidiLearn1_CheckedChanged(object sender, EventArgs e) {
+      LearnMidiKey(chkMidiLearn1.Checked);
+    }
+
+    private void LearnMidiKey(bool start) {
+      if (start) {
+        MidiHelper.NoteLearned += note => {
+          SetStatusText($"Learned note: {note}");
+          // You can now bind or persist it
+        };
+        MidiHelper.Start();
+      } else {
+        MidiHelper.Stop();
+
+      }
+    }
+
+    private void cboMidiDevice_SelectedIndexChanged(object sender, EventArgs e) {
+      MidiDeviceEntry? entry = (MidiDeviceEntry?)cboMidiDevice.SelectedValue;
+      int deviceIndex = entry?.DeviceIndex ?? -1;
+      if (deviceIndex >= 0) {
+        MidiHelper.SelectDevice(deviceIndex);
+      }
+    }
+
+    private void btnMidiDeviceScan_Click(object sender, EventArgs e) {
+      PopulateMidiDevicesList();
     }
 
   } // end class

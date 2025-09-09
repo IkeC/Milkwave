@@ -185,6 +185,10 @@ namespace MilkwaveRemote
       numVisShift = new NumericUpDown();
       numVisIntensity = new NumericUpDown();
       lblVisVersion = new Label();
+      chkMidiLearn1 = new CheckBox();
+      cboMidiDevice = new ComboBox();
+      lblMidiDevice = new Label();
+      btnMidiDeviceScan = new Button();
       numVisVersion = new NumericUpDown();
       cboParameters = new ComboBox();
       chkWaveBrighten = new CheckBox();
@@ -265,6 +269,7 @@ namespace MilkwaveRemote
       numFactorFPS = new NumericUpDown();
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
+      tabMidi = new TabPage();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -318,6 +323,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorFPS).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
+      tabMidi.SuspendLayout();
       SuspendLayout();
       // 
       // statusStrip1
@@ -1826,7 +1832,7 @@ namespace MilkwaveRemote
       // btnOpenSettingsIni
       // 
       btnOpenSettingsIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSettingsIni.Location = new Point(510, 6);
+      btnOpenSettingsIni.Location = new Point(507, 7);
       btnOpenSettingsIni.Name = "btnOpenSettingsIni";
       btnOpenSettingsIni.Size = new Size(125, 23);
       btnOpenSettingsIni.TabIndex = 143;
@@ -1838,7 +1844,7 @@ namespace MilkwaveRemote
       // btnOpenSpritesIni
       // 
       btnOpenSpritesIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSpritesIni.Location = new Point(510, 34);
+      btnOpenSpritesIni.Location = new Point(507, 35);
       btnOpenSpritesIni.Name = "btnOpenSpritesIni";
       btnOpenSpritesIni.Size = new Size(125, 23);
       btnOpenSpritesIni.TabIndex = 144;
@@ -1850,7 +1856,7 @@ namespace MilkwaveRemote
       // btnOpenMessagesIni
       // 
       btnOpenMessagesIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenMessagesIni.Location = new Point(510, 62);
+      btnOpenMessagesIni.Location = new Point(507, 63);
       btnOpenMessagesIni.Name = "btnOpenMessagesIni";
       btnOpenMessagesIni.Size = new Size(125, 23);
       btnOpenMessagesIni.TabIndex = 145;
@@ -1862,7 +1868,7 @@ namespace MilkwaveRemote
       // btnOpenScriptDefault
       // 
       btnOpenScriptDefault.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenScriptDefault.Location = new Point(377, 6);
+      btnOpenScriptDefault.Location = new Point(374, 7);
       btnOpenScriptDefault.Name = "btnOpenScriptDefault";
       btnOpenScriptDefault.Size = new Size(125, 23);
       btnOpenScriptDefault.TabIndex = 146;
@@ -1874,7 +1880,7 @@ namespace MilkwaveRemote
       // btnOpenSettingsRemote
       // 
       btnOpenSettingsRemote.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSettingsRemote.Location = new Point(377, 34);
+      btnOpenSettingsRemote.Location = new Point(374, 35);
       btnOpenSettingsRemote.Name = "btnOpenSettingsRemote";
       btnOpenSettingsRemote.Size = new Size(125, 23);
       btnOpenSettingsRemote.TabIndex = 147;
@@ -1886,7 +1892,7 @@ namespace MilkwaveRemote
       // btnOpenTagsRemote
       // 
       btnOpenTagsRemote.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenTagsRemote.Location = new Point(377, 62);
+      btnOpenTagsRemote.Location = new Point(374, 63);
       btnOpenTagsRemote.Name = "btnOpenTagsRemote";
       btnOpenTagsRemote.Size = new Size(125, 23);
       btnOpenTagsRemote.TabIndex = 148;
@@ -2225,6 +2231,55 @@ namespace MilkwaveRemote
       lblVisVersion.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(lblVisVersion, resources.GetString("lblVisVersion.ToolTip"));
       lblVisVersion.Click += lblVisVersion_Click;
+      // 
+      // chkMidiLearn1
+      // 
+      chkMidiLearn1.Appearance = Appearance.Button;
+      chkMidiLearn1.FlatStyle = FlatStyle.System;
+      chkMidiLearn1.Location = new Point(18, 35);
+      chkMidiLearn1.Margin = new Padding(3, 2, 3, 2);
+      chkMidiLearn1.Name = "chkMidiLearn1";
+      chkMidiLearn1.Size = new Size(70, 23);
+      chkMidiLearn1.TabIndex = 30;
+      chkMidiLearn1.Text = "Learn";
+      chkMidiLearn1.TextAlign = ContentAlignment.MiddleCenter;
+      chkMidiLearn1.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkMidiLearn1, "Link amp for both channels");
+      chkMidiLearn1.UseVisualStyleBackColor = true;
+      chkMidiLearn1.CheckedChanged += chkMidiLearn1_CheckedChanged;
+      // 
+      // cboMidiDevice
+      // 
+      cboMidiDevice.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboMidiDevice.FormattingEnabled = true;
+      cboMidiDevice.Location = new Point(71, 7);
+      cboMidiDevice.Name = "cboMidiDevice";
+      cboMidiDevice.Size = new Size(246, 23);
+      cboMidiDevice.TabIndex = 35;
+      toolTip1.SetToolTip(cboMidiDevice, "Alt+Mousewheel: Set in Visualizer");
+      cboMidiDevice.SelectedIndexChanged += cboMidiDevice_SelectedIndexChanged;
+      // 
+      // lblMidiDevice
+      // 
+      lblMidiDevice.Location = new Point(1, 6);
+      lblMidiDevice.Name = "lblMidiDevice";
+      lblMidiDevice.Size = new Size(67, 24);
+      lblMidiDevice.TabIndex = 99;
+      lblMidiDevice.Text = "Device";
+      lblMidiDevice.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblMidiDevice, "Click: Copy full path to clipboard\r\nDouble-click: Clear all items\r\nCtrl+Click: Open file in editor");
+      // 
+      // btnMidiDeviceScan
+      // 
+      btnMidiDeviceScan.FlatStyle = FlatStyle.System;
+      btnMidiDeviceScan.Location = new Point(323, 6);
+      btnMidiDeviceScan.Name = "btnMidiDeviceScan";
+      btnMidiDeviceScan.Size = new Size(70, 23);
+      btnMidiDeviceScan.TabIndex = 100;
+      btnMidiDeviceScan.Text = "Scan";
+      toolTip1.SetToolTip(btnMidiDeviceScan, "Scan for MIDI devices");
+      btnMidiDeviceScan.UseVisualStyleBackColor = true;
+      btnMidiDeviceScan.Click += btnMidiDeviceScan_Click;
       // 
       // numVisVersion
       // 
@@ -2750,6 +2805,7 @@ namespace MilkwaveRemote
       tabControl.Controls.Add(tabWave);
       tabControl.Controls.Add(tabFonts);
       tabControl.Controls.Add(tabSettings);
+      tabControl.Controls.Add(tabMidi);
       tabControl.Dock = DockStyle.Fill;
       tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
       tabControl.ItemSize = new Size(80, 20);
@@ -3425,7 +3481,6 @@ namespace MilkwaveRemote
       tabSettings.Location = new Point(4, 24);
       tabSettings.Margin = new Padding(0);
       tabSettings.Name = "tabSettings";
-      tabSettings.Padding = new Padding(3);
       tabSettings.Size = new Size(645, 183);
       tabSettings.TabIndex = 4;
       tabSettings.Text = "Settings";
@@ -3469,6 +3524,20 @@ namespace MilkwaveRemote
       numFactorTime.TextAlign = HorizontalAlignment.Center;
       numFactorTime.Value = new decimal(new int[] { 1, 0, 0, 0 });
       numFactorTime.ValueChanged += numFactorTime_ValueChanged;
+      // 
+      // tabMidi
+      // 
+      tabMidi.BackColor = SystemColors.ControlLight;
+      tabMidi.Controls.Add(btnMidiDeviceScan);
+      tabMidi.Controls.Add(lblMidiDevice);
+      tabMidi.Controls.Add(cboMidiDevice);
+      tabMidi.Controls.Add(chkMidiLearn1);
+      tabMidi.Location = new Point(4, 24);
+      tabMidi.Margin = new Padding(0);
+      tabMidi.Name = "tabMidi";
+      tabMidi.Size = new Size(645, 183);
+      tabMidi.TabIndex = 6;
+      tabMidi.Text = "MIDI";
       // 
       // MilkwaveRemoteForm
       // 
@@ -3546,6 +3615,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorFPS).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
+      tabMidi.ResumeLayout(false);
       ResumeLayout(false);
       PerformLayout();
     }
@@ -3793,5 +3863,10 @@ namespace MilkwaveRemote
     private Label lblVisIntensity;
     private NumericUpDown numVisVersion;
     private Label lblVisVersion;
+    private TabPage tabMidi;
+    private CheckBox chkMidiLearn1;
+    private Label lblMidiDevice;
+    private ComboBox cboMidiDevice;
+    private Button btnMidiDeviceScan;
   }
 }

@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Text;
 
-namespace MilkwaveRemote.Data {
-  public class Shader {
+namespace MilkwaveRemote.Helper {
+  public class ShaderHelper {
     private string indent = "";
     public StringBuilder ConversionErrors = new StringBuilder();
 
@@ -179,9 +179,9 @@ namespace MilkwaveRemote.Data {
               // argument could be a vector
               if (float.TryParse(argsLine, out float dummy)
                 // number argument should be multiplied
-                || (args[0].Contains("(") && args[0].Contains(")"))
+                || args[0].Contains("(") && args[0].Contains(")")
                 // function call argument should be multiplied
-                || (fullContext.Contains("float " + args[0] + ",") || fullContext.Contains("float " + args[0] + ";"))
+                || fullContext.Contains("float " + args[0] + ",") || fullContext.Contains("float " + args[0] + ";")
                 // float variables should be multiplied
                 ) {
                 string newArgsLine = argsLine;
@@ -320,7 +320,7 @@ namespace MilkwaveRemote.Data {
       }
       if (!inpToCheck.Contains(" tx")) {
         // helpful for quick testing, multiply any value by tx to see the effect
-        sb.Insert(0, "#define tx sin(time)*0.5+1" + Environment.NewLine + Environment.NewLine);
+        sb.Insert(0, "#define tx (sin(time)*0.5+1)" + Environment.NewLine + Environment.NewLine);
       }
       sb.Append(inpToModify);
       return sb.ToString();
