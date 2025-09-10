@@ -567,7 +567,7 @@ Hold Alt while chaning value: Set increment to 0.05</value>
 For Milkwaves "Shader" presets this means:
 Version = 1: Effect depends on value of "bass_smooth" (slow reaction)
 Version = 2: Effect depends on value of "bass_att" (fast and intense reaction)
-Version &gt; 2: No audio reaction
+Version &gt; 2: No audio reaction (will still respond to "Intensity" and "Shift" changes)
 Click: Set 1</value>
   </data>
   <metadata name="colorDialogMessage.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

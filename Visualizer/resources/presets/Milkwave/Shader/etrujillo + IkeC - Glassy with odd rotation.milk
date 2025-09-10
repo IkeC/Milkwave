@@ -80,7 +80,7 @@ comp_75=    float4 baseColor = (1.0 + sin(0.5 * q.z + length(p.xyz - q.xyz) + fl
 comp_76=    / (0.5 + 2.0 * dot(q.xy, q.xy));
 comp_77=
 comp_78=    #ifdef bass_smooth
-comp_79=      float fac = (int)vis_version > 2 ? 1 : (1 + 4*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_79=      float fac = (int)vis_version > 2 ? 1+vis_intensity+vis_shift : (1 + 4*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_80=    #else
 comp_81=      float fac = 1 + 1*smoothstep(0,2,bass_att);
 comp_82=    #endif

@@ -10,7 +10,7 @@ comp_5=
 comp_6=float opSmoothUnion( float d1, float d2, float k )
 comp_7={
 comp_8=  #ifdef bass_smooth
-comp_9=    d1 -= (int)vis_version > 2 ? 0 : (0.25*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)))*vis_intensity+vis_shift;
+comp_9=    d1 -= (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.25*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)))*vis_intensity+vis_shift;
 comp_10=  #else
 comp_11=    d1 -= 0.05*(smoothstep(0,2,bass_att));
 comp_12=  #endif

@@ -51,8 +51,8 @@ comp_46=
 comp_47=  float3 o = float3(sdf(ray_pos), sdf(ray_pos), sdf(ray_pos));
 comp_48=
 comp_49=  #ifdef bass_smooth
-comp_50=    float fac = (int)vis_version > 2 ? 1 : (1.2-0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
-comp_51=    float faccol = (int)vis_version > 2 ? 1 : (1.05-0.1*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_50=    float fac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1.2-0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_51=    float faccol = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1.05-0.1*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_52=  #else
 comp_53=    float fac = 1;
 comp_54=    float faccol = 1.05-0.1*smoothstep(0,2,bass_att);

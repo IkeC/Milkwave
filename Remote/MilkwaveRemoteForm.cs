@@ -5,8 +5,10 @@ using System.Drawing.Text;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.Pkcs;
 using System.Text;
 using System.Text.Json;
+using Windows.UI.WebUI;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
 
@@ -96,7 +98,7 @@ namespace MilkwaveRemote {
 
     private List<String> shadertoyQueryList = new List<String>();
 
-    Random rnd = new Random();
+    private Random rnd = new Random();
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
 
@@ -107,8 +109,6 @@ namespace MilkwaveRemote {
     private OpenFileDialog ofd;
     private OpenFileDialog ofdShader;
     private OpenFileDialog ofdShaderHLSL;
-
-    private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
 
     private const int VK_F1 = 0x70;
     private const int VK_F2 = 0x71;
@@ -407,6 +407,7 @@ namespace MilkwaveRemote {
 
       MidiHelper = new MidiHelper();
       PopulateMidiDevicesList();
+      MidiHelper.MidiMessageReceived += MidiMessageReceived();
     }
 
     private void PopulateMidiDevicesList() {
@@ -3869,43 +3870,101 @@ namespace MilkwaveRemote {
     }
 
     private void chkMidiLearn1_CheckedChanged(object sender, EventArgs e) {
-      LearnMidiKey(chkMidi1Learn.Checked);
+      //ToggleMIDILearning(chkMidi1Learn.Checked);
     }
 
-    private void LearnMidiKey(bool start) {
-      if (start) {
-        MidiHelper.NoteLearned += MidiNoteLearned();
-        MidiHelper.Start();
-      } else {
-        MidiHelper.Stop();
-      }
+    private void ToggleMIDILearning(bool doLearn) {
+      MidiHelper.Learning = doLearn;
     }
 
-    private Action<MidiEventInfo> MidiNoteLearned() {
+    private Action<MidiEventInfo> MidiMessageReceived() {
       return note => {
-        SetStatusText($"Learned note: {note}");
+        //SetStatusText($"Received note: {note}");
         // Marshal all UI changes to the UI thread
         this.BeginInvoke((Action)(() => {
-          SetStatusText($"Learned note: {note}");
           bool isButton = note.Controller == 0;
-          if (chkMidi1Learn.Checked &&
-              (string.IsNullOrEmpty(txtMidi1Label.Text) || txtMidi1Label.Text.Equals("Button") || txtMidi1Label.Text.Equals("Knob"))) {
-            txtMidi1Label.Text = isButton ? "Button" : "Knob";
-          }
-          txtMidi1Ch.Text = note.Channel.ToString();
-          txtMidi1Val.Text = note.Value.ToString();
-          txtMidi1Con.Text = note.Controller.ToString();
 
-          if (isButton) {
+          // TODO: refactor if there are more rows
+          int rowIndex = GetLearningRowIndex(); // starts from 1
 
-          } else { // knob
-            cboMidi1Action.Items.Clear();
-            cboMidi1Action.Items.Add(new MidiActionEntry("", MidiActionEntry.Type.Undefined, MidiActionEntry.Id.Undefined));
-            cboMidi1Action.Items.Add(new MidiActionEntry("Intensity", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobIntensity));
-            cboMidi1Action.Items.Add(new MidiActionEntry("Shift", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobShift));
+          if (rowIndex > 0) {
+            TextBox txtMidiLabel = FindTextbox($"txtMidi{rowIndex}Label");
+            if ((string.IsNullOrEmpty(txtMidiLabel.Text) || txtMidiLabel.Text.Equals("Button") || txtMidiLabel.Text.Equals("Knob/Fader"))) {
+              txtMidiLabel.Text = isButton ? "Button" : "Knob/Fader";
+            }
+
+            TextBox txtMidiCh = FindTextbox($"txtMidi{rowIndex}Ch");
+            txtMidiCh.Text = note.Channel.ToString();
+
+            TextBox txtMidiVal = FindTextbox($"txtMidi{rowIndex}Val");
+            txtMidiVal.Text = note.Value.ToString();
+
+            TextBox txtMidiCon = FindTextbox($"txtMidi{rowIndex}Con");
+            txtMidiCon.Text = note.Controller.ToString();
+
+            // update row
+            var row = MidiHelper.MidiRows[rowIndex - 1];
+            row.Channel = note.Channel;
+            row.Value = note.Value;
+            row.Controller = note.Controller;
+
+            // Knob
+            if (!isButton) {
+              ComboBox cboMidiAction = FindCombobox($"cboMidi{rowIndex}Action");
+              cboMidiAction.Items.Clear();
+              cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
+              cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
+
+              cboMidiAction.Items.Add(new MidiActionEntry("", MidiActionEntry.Type.Undefined, MidiActionEntry.Id.Undefined));
+              cboMidiAction.Items.Add(new MidiActionEntry("Settings: Intensity", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobIntensity));
+              cboMidiAction.Items.Add(new MidiActionEntry("Settings: Shift", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobShift));
+            }
+          } else {
+            // Not in learning mode, check if it matches any of the configured rows
+            for (int i = 0; i < MidiHelper.MidiRows.Count; i++) {
+              var row = MidiHelper.MidiRows[i];
+              if (row.Active && row.Channel == note.Channel && row.Controller == note.Controller) {
+                // For a button, the value must match
+                if (row.Controller == 0 && row.Value == note.Value) {
+                  TriggerMidiButtonAction(row);
+                }
+                // For a knob, the value is irrelevant for matching
+                else if (row.Controller != 0) {
+                  // Knob
+                  TriggerMidiKnobAction(row, note.Value);
+                }
+              }
+            }
           }
         }));
       };
+    }
+
+    private void TriggerMidiKnobAction(MidiRow row, int value) {
+      decimal inc = 0.05M;
+      if (row.Increment.Length > 0) {
+        decimal.TryParse(row.Increment, NumberStyles.Number, CultureInfo.InvariantCulture, out inc);
+      }
+      if (row.ActionId == MidiActionEntry.Id.KnobIntensity) {
+        // intensity base value is 1.0
+        numVisIntensity.Value = Math.Clamp(1 + ((value - 64) * inc), numVisIntensity.Minimum, numVisIntensity.Maximum);
+      } else if (row.ActionId == MidiActionEntry.Id.KnobShift) {
+        // shift base value is 0.0
+        numVisShift.Value = Math.Clamp((value - 64) * inc, numVisShift.Minimum, numVisShift.Maximum);
+      }
+    }
+
+    private void TriggerMidiButtonAction(MidiRow row) {
+      throw new NotImplementedException();
+    }
+
+    private int GetLearningRowIndex() {
+      if (chkMidi1Learn.Checked) return 1;
+      // if (chkMidi2Learn.Checked) return 2;
+      // if (chkMidi3Learn.Checked) return 3;
+      // if (chkMidi4Learn.Checked) return 4;
+      // if (chkMidi5Learn.Checked) return 5;
+      return 0;
     }
 
     private void cboMidiDevice_SelectedIndexChanged(object sender, EventArgs e) {
@@ -3922,7 +3981,54 @@ namespace MilkwaveRemote {
 
     private void cboMidiAction_SelectedValueChanged(object sender, EventArgs e) {
       ComboBox cbo = (ComboBox)sender;
-      // TODO
+      int index = GetIndexFromMidiControl((Control)sender);
+      var chk = FindCheckbox($"chkMidi{index}Active");
+      if (chk != null) {
+        chk.Checked = true;
+      }
+
+      MidiActionEntry? entry = (MidiActionEntry?)cbo.SelectedItem;
+      if (entry != null) {
+        TextBox txtMidiInc = FindTextbox($"txtMidi{index}Inc");
+        if (entry.ActionId == MidiActionEntry.Id.KnobIntensity || entry.ActionId == MidiActionEntry.Id.KnobShift) {
+          txtMidiInc.Text = "0.02";
+        } else {
+          txtMidiInc.Text = "";
+        }
+
+        var row = MidiHelper.MidiRows[index - 1];
+        row.ActionId = entry.ActionId;
+        row.ActionType = entry.ActionType;
+        row.Increment = txtMidiInc.Text;
+        row.Active = true;
+      }
+    }
+
+    private static int GetIndexFromMidiControl(Control ctrl) {
+      return int.Parse(ctrl.Name.Substring(ctrl.Name.IndexOf("Midi") + 4, 1));
+    }
+
+    private TextBox FindTextbox(string name) {
+      return this.Controls.Find(name, true).FirstOrDefault() as TextBox
+        ?? throw new InvalidOperationException($"Control {name} missing");
+    }
+
+    private ComboBox FindCombobox(string name) {
+      return this.Controls.Find(name, true).FirstOrDefault() as ComboBox
+        ?? throw new InvalidOperationException($"Control {name} missing");
+    }
+
+    private CheckBox FindCheckbox(string name) {
+      return this.Controls.Find(name, true).FirstOrDefault() as CheckBox
+        ?? throw new InvalidOperationException($"Control {name} missing");
+    }
+
+    private void txtMidiInc_TextChanged(object sender, EventArgs e) {
+      TextBox txtMidiInc = (TextBox)sender;
+      int index = GetIndexFromMidiControl((Control)sender);
+      var cbo = FindCombobox($"cboMidi{index}Action");
+      var row = MidiHelper.MidiRows[index - 1];
+      row.Increment = txtMidiInc.Text;
     }
 
   } // end class

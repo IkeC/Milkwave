@@ -55,9 +55,9 @@ comp_50=  v = sin(26.28*(sin(time / 25.0) + 4.)*n),
 comp_51=  t = time*0.1;
 comp_52=
 comp_53=  #ifdef bass_smooth
-comp_54=  n += (int)vis_version > 2 ? 1 : (0.35*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
+comp_54=    n += (int)vis_version > 2 ? 0.2*vis_intensity+vis_shift : (0.35*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
 comp_55=  #else
-comp_56=  n += 0.2*(smoothstep(0,2,bass_att)-0.5);
+comp_56=    n += 0.2*(smoothstep(0,2,bass_att)-0.5);
 comp_57=  #endif
 comp_58=
 comp_59=  v = smoothstep(1.,0, .3*abs(v)/fwidth(v));

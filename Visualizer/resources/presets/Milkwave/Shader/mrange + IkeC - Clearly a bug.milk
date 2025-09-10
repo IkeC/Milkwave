@@ -22,7 +22,7 @@ comp_17=  C.y+=0.18;
 comp_18=
 comp_19=  // contraction
 comp_20=  #ifdef bass_smooth
-comp_21=    float fac = (int)vis_version > 2 ? 0 : (smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.3)*vis_intensity+vis_shift;
+comp_21=    float fac = (int)vis_version > 2 ? 0.1*vis_intensity+vis_shift : (smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.3)*vis_intensity+vis_shift;
 comp_22=  #else
 comp_23=    float fac = smoothstep(0,2,bass_att)*0.1;
 comp_24=  #endif

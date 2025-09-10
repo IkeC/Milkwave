@@ -196,7 +196,7 @@ comp_191=
 comp_192=  pos.z = 4.5-time*2.;
 comp_193=
 comp_194=  #ifdef bass_smooth
-comp_195=    pos.z += (int)vis_version > 2 ? 0 : (0.3*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_195=    pos.z += (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.3*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_196=  #else
 comp_197=    pos.z += 0.15*smoothstep(0,2,bass_att);
 comp_198=  #endif
@@ -217,7 +217,7 @@ comp_212=
 comp_213=  col *= 0.9;
 comp_214=
 comp_215=  #ifdef bass_smooth
-comp_216=    col.r += (int)vis_version > 2 ? 0 : (0.7*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
+comp_216=    col.r += (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.7*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
 comp_217=  #else
 comp_218=    col.r += 0.05*(smoothstep(0,2,bass_att)-0.5);
 comp_219=  #endif

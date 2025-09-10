@@ -225,7 +225,7 @@ comp_220=  float s=0.1,fade=1.;
 comp_221=  float3 v=float3(0., 0., 0.);
 comp_222=
 comp_223=  #ifdef bass_smooth
-comp_224=    float fac = (int)vis_version > 2 ? 0.9 : (0.8 + 0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_224=    float fac = (int)vis_version > 2 ? 0.9*vis_intensity+vis_shift : (0.8 + 0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_225=  #else
 comp_226=    float fac = 0.9 + 0.02*smoothstep(0,2,bass_att);
 comp_227=  #endif

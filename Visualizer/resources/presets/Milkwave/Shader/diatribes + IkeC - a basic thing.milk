@@ -48,7 +48,7 @@ comp_43=    // color: 1.+cos so we don't go negative, d+float4(1,2,3,4) samples 
 comp_44=    // divide by s for form and distance
 comp_45=
 comp_46=    #ifdef bass_smooth
-comp_47=      fl.z += (int)vis_version > 2 ? 1 : (0.15*smoothstep(0.5,3,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_47=      fl.z += (int)vis_version > 2 ? 0.1*vis_intensity+vis_shift : (0.15*smoothstep(0.5,3,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_48=    #else
 comp_49=      fl.z += 0.1*smoothstep(0.5,20,bass_att);
 comp_50=    #endif

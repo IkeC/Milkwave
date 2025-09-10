@@ -187,6 +187,7 @@ namespace MilkwaveRemote
       txtMidi1Con = new TextBox();
       txtMidi1Val = new TextBox();
       txtMidi1Ch = new TextBox();
+      numMidiBank = new NumericUpDown();
       numVisShift = new NumericUpDown();
       numVisIntensity = new NumericUpDown();
       chkMidi1Learn = new CheckBox();
@@ -274,6 +275,7 @@ namespace MilkwaveRemote
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
       tabMidi = new TabPage();
+      label1 = new Label();
       lblMidi1Action = new Label();
       cboMidi1Action = new ComboBox();
       txtMidi1Label = new TextBox();
@@ -300,6 +302,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numPSVersion).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numMidiBank).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisVersion).BeginInit();
@@ -2254,6 +2257,20 @@ namespace MilkwaveRemote
       txtMidi1Ch.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(txtMidi1Ch, "Channel");
       // 
+      // numMidiBank
+      // 
+      numMidiBank.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numMidiBank.Location = new Point(559, 7);
+      numMidiBank.Margin = new Padding(3, 2, 3, 2);
+      numMidiBank.Maximum = new decimal(new int[] { 9, 0, 0, 0 });
+      numMidiBank.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+      numMidiBank.Name = "numMidiBank";
+      numMidiBank.Size = new Size(47, 23);
+      numMidiBank.TabIndex = 153;
+      numMidiBank.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numMidiBank, "Load the nth ID from the query");
+      numMidiBank.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      // 
       // numVisShift
       // 
       numVisShift.DecimalPlaces = 2;
@@ -2319,9 +2336,9 @@ namespace MilkwaveRemote
       // btnMidiDeviceScan
       // 
       btnMidiDeviceScan.FlatStyle = FlatStyle.System;
-      btnMidiDeviceScan.Location = new Point(316, 9);
+      btnMidiDeviceScan.Location = new Point(316, 8);
       btnMidiDeviceScan.Name = "btnMidiDeviceScan";
-      btnMidiDeviceScan.Size = new Size(70, 23);
+      btnMidiDeviceScan.Size = new Size(50, 23);
       btnMidiDeviceScan.TabIndex = 100;
       btnMidiDeviceScan.Text = "Scan";
       btnMidiDeviceScan.UseVisualStyleBackColor = true;
@@ -3575,6 +3592,8 @@ namespace MilkwaveRemote
       // 
       tabMidi.BackColor = SystemColors.ControlLight;
       tabMidi.BorderStyle = BorderStyle.FixedSingle;
+      tabMidi.Controls.Add(label1);
+      tabMidi.Controls.Add(numMidiBank);
       tabMidi.Controls.Add(lblMidi1Action);
       tabMidi.Controls.Add(cboMidi1Action);
       tabMidi.Controls.Add(button1);
@@ -3596,6 +3615,17 @@ namespace MilkwaveRemote
       tabMidi.TabIndex = 6;
       tabMidi.Text = "MIDI";
       // 
+      // label1
+      // 
+      label1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      label1.AutoSize = true;
+      label1.Location = new Point(520, 7);
+      label1.Name = "label1";
+      label1.Size = new Size(33, 15);
+      label1.TabIndex = 154;
+      label1.Text = "Bank";
+      label1.TextAlign = ContentAlignment.MiddleRight;
+      // 
       // lblMidi1Action
       // 
       lblMidi1Action.AutoSize = true;
@@ -3609,7 +3639,6 @@ namespace MilkwaveRemote
       // cboMidi1Action
       // 
       cboMidi1Action.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-      cboMidi1Action.Items.AddRange(new object[] { "Intensity", "Shift" });
       cboMidi1Action.Location = new Point(359, 38);
       cboMidi1Action.Name = "cboMidi1Action";
       cboMidi1Action.Size = new Size(165, 23);
@@ -3651,10 +3680,10 @@ namespace MilkwaveRemote
       // 
       txtMidi1Inc.Location = new Point(559, 38);
       txtMidi1Inc.Name = "txtMidi1Inc";
-      txtMidi1Inc.ReadOnly = true;
       txtMidi1Inc.Size = new Size(30, 23);
       txtMidi1Inc.TabIndex = 145;
       txtMidi1Inc.TextAlign = HorizontalAlignment.Center;
+      txtMidi1Inc.TextChanged += txtMidiInc_TextChanged;
       // 
       // MilkwaveRemoteForm
       // 
@@ -3694,6 +3723,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numPSVersion).EndInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).EndInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numMidiBank).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisVersion).EndInit();
@@ -3996,5 +4026,7 @@ namespace MilkwaveRemote
     private Button button1;
     private Label lblMidi1Action;
     private ComboBox cboMidi1Action;
+    private Label label1;
+    private NumericUpDown numMidiBank;
   }
 }

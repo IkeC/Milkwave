@@ -64,7 +64,7 @@ comp_59=
 comp_60=  uv = uv*(0.9-0.4*sin(time*0.2));
 comp_61=  
 comp_62=  #ifdef bass_smooth
-comp_63=    uv *= (int)vis_version > 2 ? 1 : (1-(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.25))*vis_intensity+vis_shift;
+comp_63=    uv *= (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1-(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.25))*vis_intensity+vis_shift;
 comp_64=  #else
 comp_65=    uv *= (1-(smoothstep(0,2,bass_att)*0.05));
 comp_66=  #endif
