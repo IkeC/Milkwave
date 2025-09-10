@@ -6,7 +6,7 @@ namespace MilkwaveRemote.Helper {
   public class MidiHelper : IDisposable {
 
     private MidiIn? midiInDevice;
-    public event Action<int>? NoteLearned;
+    public event Action<MidiEventInfo>? NoteLearned;
 
     public void SelectDevice(int deviceIndex) {
       Stop();
@@ -42,16 +42,24 @@ namespace MilkwaveRemote.Helper {
     }
 
     private void MidiIn_MessageReceived(object? sender, MidiInMessageEventArgs e) {
+      MidiEvent midiEvent = e.MidiEvent;
+      MidiEventInfo midiEventInfo = new MidiEventInfo();
       // Filter for NoteOn with velocity > 0
-      if (e.MidiEvent is NoteEvent note &&
-          note.CommandCode == MidiCommandCode.NoteOn &&
-          note.Velocity > 0) {
-        int noteNumber = note.NoteNumber;
-
+      if (midiEvent is NoteEvent eNote &&
+          midiEvent.CommandCode == MidiCommandCode.NoteOn &&
+          eNote.Velocity > 0) {
+        midiEventInfo.Channel = eNote.Channel;
+        midiEventInfo.Value = eNote.NoteNumber;
         // Capture the first note as the learned key
-        if (noteNumber >= 0) {
-          NoteLearned?.Invoke(noteNumber);
+        if (midiEventInfo.Value >= 0) {
+          NoteLearned?.Invoke(midiEventInfo);
         }
+      } else if (midiEvent is ControlChangeEvent eCC) {
+        midiEventInfo.Channel = eCC.Channel;
+        midiEventInfo.Controller = (int)eCC.Controller;
+        midiEventInfo.Value = eCC.ControllerValue;
+        
+        NoteLearned?.Invoke(midiEventInfo);
       }
     }
 

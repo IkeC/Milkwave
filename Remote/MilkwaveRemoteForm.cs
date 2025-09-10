@@ -3869,24 +3869,47 @@ namespace MilkwaveRemote {
     }
 
     private void chkMidiLearn1_CheckedChanged(object sender, EventArgs e) {
-      LearnMidiKey(chkMidiLearn1.Checked);
+      LearnMidiKey(chkMidi1Learn.Checked);
     }
 
     private void LearnMidiKey(bool start) {
       if (start) {
-        MidiHelper.NoteLearned += note => {
-          SetStatusText($"Learned note: {note}");
-          // You can now bind or persist it
-        };
+        MidiHelper.NoteLearned += MidiNoteLearned();
         MidiHelper.Start();
       } else {
         MidiHelper.Stop();
-
       }
     }
 
+    private Action<MidiEventInfo> MidiNoteLearned() {
+      return note => {
+        SetStatusText($"Learned note: {note}");
+        // Marshal all UI changes to the UI thread
+        this.BeginInvoke((Action)(() => {
+          SetStatusText($"Learned note: {note}");
+          bool isButton = note.Controller == 0;
+          if (chkMidi1Learn.Checked &&
+              (string.IsNullOrEmpty(txtMidi1Label.Text) || txtMidi1Label.Text.Equals("Button") || txtMidi1Label.Text.Equals("Knob"))) {
+            txtMidi1Label.Text = isButton ? "Button" : "Knob";
+          }
+          txtMidi1Ch.Text = note.Channel.ToString();
+          txtMidi1Val.Text = note.Value.ToString();
+          txtMidi1Con.Text = note.Controller.ToString();
+
+          if (isButton) {
+
+          } else { // knob
+            cboMidi1Action.Items.Clear();
+            cboMidi1Action.Items.Add(new MidiActionEntry("", MidiActionEntry.Type.Undefined, MidiActionEntry.Id.Undefined));
+            cboMidi1Action.Items.Add(new MidiActionEntry("Intensity", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobIntensity));
+            cboMidi1Action.Items.Add(new MidiActionEntry("Shift", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobShift));
+          }
+        }));
+      };
+    }
+
     private void cboMidiDevice_SelectedIndexChanged(object sender, EventArgs e) {
-      MidiDeviceEntry? entry = (MidiDeviceEntry?)cboMidiDevice.SelectedValue;
+      MidiDeviceEntry? entry = (MidiDeviceEntry?)cboMidiDevice.SelectedItem;
       int deviceIndex = entry?.DeviceIndex ?? -1;
       if (deviceIndex >= 0) {
         MidiHelper.SelectDevice(deviceIndex);
@@ -3895,6 +3918,11 @@ namespace MilkwaveRemote {
 
     private void btnMidiDeviceScan_Click(object sender, EventArgs e) {
       PopulateMidiDevicesList();
+    }
+
+    private void cboMidiAction_SelectedValueChanged(object sender, EventArgs e) {
+      ComboBox cbo = (ComboBox)sender;
+      // TODO
     }
 
   } // end class

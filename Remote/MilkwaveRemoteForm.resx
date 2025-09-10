@@ -553,12 +553,14 @@ Examples:
     <value>A parameter introduced by Milkwave which presets can read to adjust the intensity of a preset effect
 For Milkwaves "Shader" presets, this will adjust how much the preset reacts to audio input
 Click: Set 1
+Hold Alt while changing value: Set increment to 0.05
 </value>
   </data>
   <data name="lblVisShift.ToolTip" xml:space="preserve">
     <value>A parameter introduced by Milkwave which presets can use to "shift" a preset effect
 For Milkwaves "Shader" presets, this will adjust the initial value of the effect that is linked to the audio signal
-Click: Set 0</value>
+Click: Set 0
+Hold Alt while chaning value: Set increment to 0.05</value>
   </data>
   <data name="lblVisVersion.ToolTip" xml:space="preserve">
     <value>A parameter introduced by Milkwave which presets can use to present a different version

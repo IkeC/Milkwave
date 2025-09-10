@@ -182,10 +182,14 @@ namespace MilkwaveRemote
       btnHLSLLoad = new Button();
       lblVisIntensity = new Label();
       lblVisShift = new Label();
+      lblVisVersion = new Label();
+      button1 = new Button();
+      txtMidi1Con = new TextBox();
+      txtMidi1Val = new TextBox();
+      txtMidi1Ch = new TextBox();
       numVisShift = new NumericUpDown();
       numVisIntensity = new NumericUpDown();
-      lblVisVersion = new Label();
-      chkMidiLearn1 = new CheckBox();
+      chkMidi1Learn = new CheckBox();
       cboMidiDevice = new ComboBox();
       lblMidiDevice = new Label();
       btnMidiDeviceScan = new Button();
@@ -270,6 +274,12 @@ namespace MilkwaveRemote
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
       tabMidi = new TabPage();
+      lblMidi1Action = new Label();
+      cboMidi1Action = new ComboBox();
+      txtMidi1Label = new TextBox();
+      chkMidi1Active = new CheckBox();
+      label5 = new Label();
+      txtMidi1Inc = new TextBox();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -2191,6 +2201,59 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblVisShift, resources.GetString("lblVisShift.ToolTip"));
       lblVisShift.Click += lblVisShift_Click;
       // 
+      // lblVisVersion
+      // 
+      lblVisVersion.Location = new Point(137, 61);
+      lblVisVersion.Name = "lblVisVersion";
+      lblVisVersion.Size = new Size(65, 23);
+      lblVisVersion.TabIndex = 154;
+      lblVisVersion.Text = "Version";
+      lblVisVersion.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblVisVersion, resources.GetString("lblVisVersion.ToolTip"));
+      lblVisVersion.Click += lblVisVersion_Click;
+      // 
+      // button1
+      // 
+      button1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      button1.FlatStyle = FlatStyle.System;
+      button1.Location = new Point(613, 6);
+      button1.Name = "button1";
+      button1.Size = new Size(23, 23);
+      button1.TabIndex = 150;
+      button1.Text = "?";
+      toolTip1.SetToolTip(button1, "Help");
+      button1.UseVisualStyleBackColor = true;
+      // 
+      // txtMidi1Con
+      // 
+      txtMidi1Con.Location = new Point(280, 38);
+      txtMidi1Con.Name = "txtMidi1Con";
+      txtMidi1Con.ReadOnly = true;
+      txtMidi1Con.Size = new Size(30, 23);
+      txtMidi1Con.TabIndex = 143;
+      txtMidi1Con.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(txtMidi1Con, "Controller");
+      // 
+      // txtMidi1Val
+      // 
+      txtMidi1Val.Location = new Point(244, 38);
+      txtMidi1Val.Name = "txtMidi1Val";
+      txtMidi1Val.ReadOnly = true;
+      txtMidi1Val.Size = new Size(30, 23);
+      txtMidi1Val.TabIndex = 141;
+      txtMidi1Val.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(txtMidi1Val, "Value");
+      // 
+      // txtMidi1Ch
+      // 
+      txtMidi1Ch.Location = new Point(208, 38);
+      txtMidi1Ch.Name = "txtMidi1Ch";
+      txtMidi1Ch.ReadOnly = true;
+      txtMidi1Ch.Size = new Size(30, 23);
+      txtMidi1Ch.TabIndex = 139;
+      txtMidi1Ch.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(txtMidi1Ch, "Channel");
+      // 
       // numVisShift
       // 
       numVisShift.DecimalPlaces = 2;
@@ -2203,7 +2266,6 @@ namespace MilkwaveRemote
       numVisShift.Size = new Size(56, 23);
       numVisShift.TabIndex = 151;
       numVisShift.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numVisShift, "Hold Alt: Set increment to 0.05");
       numVisShift.ValueChanged += numVisShift_ValueChanged;
       // 
       // numVisIntensity
@@ -2217,67 +2279,51 @@ namespace MilkwaveRemote
       numVisIntensity.Size = new Size(56, 23);
       numVisIntensity.TabIndex = 149;
       numVisIntensity.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numVisIntensity, "Hold Alt: Set increment to 0.05");
       numVisIntensity.Value = new decimal(new int[] { 1, 0, 0, 0 });
       numVisIntensity.ValueChanged += numVisIntensity_ValueChanged;
       // 
-      // lblVisVersion
+      // chkMidi1Learn
       // 
-      lblVisVersion.Location = new Point(137, 61);
-      lblVisVersion.Name = "lblVisVersion";
-      lblVisVersion.Size = new Size(65, 23);
-      lblVisVersion.TabIndex = 154;
-      lblVisVersion.Text = "Version";
-      lblVisVersion.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblVisVersion, resources.GetString("lblVisVersion.ToolTip"));
-      lblVisVersion.Click += lblVisVersion_Click;
-      // 
-      // chkMidiLearn1
-      // 
-      chkMidiLearn1.Appearance = Appearance.Button;
-      chkMidiLearn1.FlatStyle = FlatStyle.System;
-      chkMidiLearn1.Location = new Point(18, 35);
-      chkMidiLearn1.Margin = new Padding(3, 2, 3, 2);
-      chkMidiLearn1.Name = "chkMidiLearn1";
-      chkMidiLearn1.Size = new Size(70, 23);
-      chkMidiLearn1.TabIndex = 30;
-      chkMidiLearn1.Text = "Learn";
-      chkMidiLearn1.TextAlign = ContentAlignment.MiddleCenter;
-      chkMidiLearn1.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkMidiLearn1, "Link amp for both channels");
-      chkMidiLearn1.UseVisualStyleBackColor = true;
-      chkMidiLearn1.CheckedChanged += chkMidiLearn1_CheckedChanged;
+      chkMidi1Learn.Appearance = Appearance.Button;
+      chkMidi1Learn.FlatStyle = FlatStyle.System;
+      chkMidi1Learn.Location = new Point(56, 36);
+      chkMidi1Learn.Margin = new Padding(3, 2, 3, 2);
+      chkMidi1Learn.Name = "chkMidi1Learn";
+      chkMidi1Learn.Size = new Size(45, 23);
+      chkMidi1Learn.TabIndex = 30;
+      chkMidi1Learn.Text = "Learn";
+      chkMidi1Learn.TextAlign = ContentAlignment.MiddleCenter;
+      chkMidi1Learn.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkMidi1Learn.UseVisualStyleBackColor = true;
+      chkMidi1Learn.CheckedChanged += chkMidiLearn1_CheckedChanged;
       // 
       // cboMidiDevice
       // 
       cboMidiDevice.DropDownStyle = ComboBoxStyle.DropDownList;
       cboMidiDevice.FormattingEnabled = true;
-      cboMidiDevice.Location = new Point(71, 7);
+      cboMidiDevice.Location = new Point(56, 9);
       cboMidiDevice.Name = "cboMidiDevice";
-      cboMidiDevice.Size = new Size(246, 23);
+      cboMidiDevice.Size = new Size(254, 23);
       cboMidiDevice.TabIndex = 35;
-      toolTip1.SetToolTip(cboMidiDevice, "Alt+Mousewheel: Set in Visualizer");
       cboMidiDevice.SelectedIndexChanged += cboMidiDevice_SelectedIndexChanged;
       // 
       // lblMidiDevice
       // 
-      lblMidiDevice.Location = new Point(1, 6);
+      lblMidiDevice.Location = new Point(5, 9);
       lblMidiDevice.Name = "lblMidiDevice";
-      lblMidiDevice.Size = new Size(67, 24);
+      lblMidiDevice.Size = new Size(48, 24);
       lblMidiDevice.TabIndex = 99;
       lblMidiDevice.Text = "Device";
       lblMidiDevice.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblMidiDevice, "Click: Copy full path to clipboard\r\nDouble-click: Clear all items\r\nCtrl+Click: Open file in editor");
       // 
       // btnMidiDeviceScan
       // 
       btnMidiDeviceScan.FlatStyle = FlatStyle.System;
-      btnMidiDeviceScan.Location = new Point(323, 6);
+      btnMidiDeviceScan.Location = new Point(316, 9);
       btnMidiDeviceScan.Name = "btnMidiDeviceScan";
       btnMidiDeviceScan.Size = new Size(70, 23);
       btnMidiDeviceScan.TabIndex = 100;
       btnMidiDeviceScan.Text = "Scan";
-      toolTip1.SetToolTip(btnMidiDeviceScan, "Scan for MIDI devices");
       btnMidiDeviceScan.UseVisualStyleBackColor = true;
       btnMidiDeviceScan.Click += btnMidiDeviceScan_Click;
       // 
@@ -3528,16 +3574,87 @@ namespace MilkwaveRemote
       // tabMidi
       // 
       tabMidi.BackColor = SystemColors.ControlLight;
+      tabMidi.BorderStyle = BorderStyle.FixedSingle;
+      tabMidi.Controls.Add(lblMidi1Action);
+      tabMidi.Controls.Add(cboMidi1Action);
+      tabMidi.Controls.Add(button1);
+      tabMidi.Controls.Add(txtMidi1Label);
+      tabMidi.Controls.Add(chkMidi1Active);
+      tabMidi.Controls.Add(label5);
+      tabMidi.Controls.Add(txtMidi1Inc);
+      tabMidi.Controls.Add(txtMidi1Con);
+      tabMidi.Controls.Add(txtMidi1Val);
+      tabMidi.Controls.Add(txtMidi1Ch);
       tabMidi.Controls.Add(btnMidiDeviceScan);
       tabMidi.Controls.Add(lblMidiDevice);
       tabMidi.Controls.Add(cboMidiDevice);
-      tabMidi.Controls.Add(chkMidiLearn1);
+      tabMidi.Controls.Add(chkMidi1Learn);
       tabMidi.Location = new Point(4, 24);
       tabMidi.Margin = new Padding(0);
       tabMidi.Name = "tabMidi";
       tabMidi.Size = new Size(645, 183);
       tabMidi.TabIndex = 6;
       tabMidi.Text = "MIDI";
+      // 
+      // lblMidi1Action
+      // 
+      lblMidi1Action.AutoSize = true;
+      lblMidi1Action.Location = new Point(313, 40);
+      lblMidi1Action.Name = "lblMidi1Action";
+      lblMidi1Action.Size = new Size(42, 15);
+      lblMidi1Action.TabIndex = 152;
+      lblMidi1Action.Text = "Action";
+      lblMidi1Action.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // cboMidi1Action
+      // 
+      cboMidi1Action.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboMidi1Action.Items.AddRange(new object[] { "Intensity", "Shift" });
+      cboMidi1Action.Location = new Point(359, 38);
+      cboMidi1Action.Name = "cboMidi1Action";
+      cboMidi1Action.Size = new Size(165, 23);
+      cboMidi1Action.TabIndex = 151;
+      cboMidi1Action.SelectedValueChanged += cboMidiAction_SelectedValueChanged;
+      // 
+      // txtMidi1Label
+      // 
+      txtMidi1Label.Location = new Point(107, 38);
+      txtMidi1Label.Name = "txtMidi1Label";
+      txtMidi1Label.Size = new Size(95, 23);
+      txtMidi1Label.TabIndex = 148;
+      // 
+      // chkMidi1Active
+      // 
+      chkMidi1Active.Appearance = Appearance.Button;
+      chkMidi1Active.FlatStyle = FlatStyle.System;
+      chkMidi1Active.Location = new Point(7, 36);
+      chkMidi1Active.Margin = new Padding(3, 2, 3, 2);
+      chkMidi1Active.Name = "chkMidi1Active";
+      chkMidi1Active.Size = new Size(45, 23);
+      chkMidi1Active.TabIndex = 147;
+      chkMidi1Active.Text = "Active";
+      chkMidi1Active.TextAlign = ContentAlignment.MiddleCenter;
+      chkMidi1Active.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkMidi1Active.UseVisualStyleBackColor = true;
+      // 
+      // label5
+      // 
+      label5.AutoSize = true;
+      label5.Location = new Point(530, 40);
+      label5.Name = "label5";
+      label5.Size = new Size(23, 15);
+      label5.TabIndex = 146;
+      label5.Text = "Inc";
+      label5.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // txtMidi1Inc
+      // 
+      txtMidi1Inc.Location = new Point(559, 38);
+      txtMidi1Inc.Name = "txtMidi1Inc";
+      txtMidi1Inc.ReadOnly = true;
+      txtMidi1Inc.Size = new Size(30, 23);
+      txtMidi1Inc.TabIndex = 145;
+      txtMidi1Inc.TextAlign = HorizontalAlignment.Center;
       // 
       // MilkwaveRemoteForm
       // 
@@ -3616,6 +3733,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
       tabMidi.ResumeLayout(false);
+      tabMidi.PerformLayout();
       ResumeLayout(false);
       PerformLayout();
     }
@@ -3864,9 +3982,19 @@ namespace MilkwaveRemote
     private NumericUpDown numVisVersion;
     private Label lblVisVersion;
     private TabPage tabMidi;
-    private CheckBox chkMidiLearn1;
+    private CheckBox chkMidi1Learn;
     private Label lblMidiDevice;
     private ComboBox cboMidiDevice;
     private Button btnMidiDeviceScan;
+    private TextBox txtMidi1Ch;
+    private TextBox txtMidi1Con;
+    private TextBox txtMidi1Val;
+    private CheckBox chkMidi1Active;
+    private Label label5;
+    private TextBox txtMidi1Inc;
+    private TextBox txtMidi1Label;
+    private Button button1;
+    private Label lblMidi1Action;
+    private ComboBox cboMidi1Action;
   }
 }
