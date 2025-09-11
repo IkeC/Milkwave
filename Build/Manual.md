@@ -118,9 +118,13 @@ The "Intensity", "Shift" and "Version" values can be read by presets that suppor
 
 Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
 
-## Milkwave specifics
+## Tab "MIDI"
 
-### "_smooth" preset variables
+Inc: For knobs and faders, this is the amount the target control will be changed with every MIDI step (0-127). The default value of a control (eg. 1.0 for "Intensity") is assigned to the "middle setting" of the fader/knob (MIDI step 64).
+
+# Milkwave specifics
+
+## "_smooth" preset variables
 
 Milkwave 3 introduced these addtional variables for preset authors to use:
 -  _bass_smooth, mid_smooth, treb_smooth, vol_smooth_
@@ -137,7 +141,7 @@ Or wrap your code in a conditional block:
 float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 #endif
 ```
-### "vis_intensity", "vis_shift" and "vis_version" preset variables
+## "vis_intensity", "vis_shift" and "vis_version" preset variables
 
 Also introduced in Milkwave 3. Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running.
 
@@ -150,6 +154,6 @@ As with the _smooth parameters above, you may want to use defines like this in y
 #endif
 ```
 
-## Closing Notes
+# Closing Notes
 
 This manual was written by IkeC. If you want to contribute to this manual or need further help, it's a good idea to [open an issue on GitHub](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord). The latter is also a good place to share your presets or discuss with other users.

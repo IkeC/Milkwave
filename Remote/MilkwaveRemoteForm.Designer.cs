@@ -183,10 +183,17 @@ namespace MilkwaveRemote
       lblVisIntensity = new Label();
       lblVisShift = new Label();
       lblVisVersion = new Label();
-      button1 = new Button();
+      btnMIDIHelp = new Button();
       txtMidi1Con = new TextBox();
       txtMidi1Val = new TextBox();
       txtMidi1Ch = new TextBox();
+      txtMidi1Label = new TextBox();
+      chkMidi1Active = new CheckBox();
+      lblMidi1Inc = new Label();
+      txtMidi2Label = new TextBox();
+      txtMidi3Label = new TextBox();
+      txtMidi4Label = new TextBox();
+      txtMidi5Label = new TextBox();
       numMidiBank = new NumericUpDown();
       numVisShift = new NumericUpDown();
       numVisIntensity = new NumericUpDown();
@@ -275,12 +282,14 @@ namespace MilkwaveRemote
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
       tabMidi = new TabPage();
-      label1 = new Label();
+      lblMidi5Row = new Label();
+      lblMidi4Row = new Label();
+      lblMidi3Row = new Label();
+      lblMidi2Row = new Label();
       lblMidi1Action = new Label();
+      lblMidi1Row = new Label();
+      lblBank = new Label();
       cboMidi1Action = new ComboBox();
-      txtMidi1Label = new TextBox();
-      chkMidi1Active = new CheckBox();
-      label5 = new Label();
       txtMidi1Inc = new TextBox();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
@@ -2215,21 +2224,22 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblVisVersion, resources.GetString("lblVisVersion.ToolTip"));
       lblVisVersion.Click += lblVisVersion_Click;
       // 
-      // button1
+      // btnMIDIHelp
       // 
-      button1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      button1.FlatStyle = FlatStyle.System;
-      button1.Location = new Point(613, 6);
-      button1.Name = "button1";
-      button1.Size = new Size(23, 23);
-      button1.TabIndex = 150;
-      button1.Text = "?";
-      toolTip1.SetToolTip(button1, "Help");
-      button1.UseVisualStyleBackColor = true;
+      btnMIDIHelp.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnMIDIHelp.FlatStyle = FlatStyle.System;
+      btnMIDIHelp.Location = new Point(613, 6);
+      btnMIDIHelp.Name = "btnMIDIHelp";
+      btnMIDIHelp.Size = new Size(23, 23);
+      btnMIDIHelp.TabIndex = 150;
+      btnMIDIHelp.Text = "?";
+      toolTip1.SetToolTip(btnMIDIHelp, "Help");
+      btnMIDIHelp.UseVisualStyleBackColor = true;
+      btnMIDIHelp.Click += btnMIDIHelp_Click;
       // 
       // txtMidi1Con
       // 
-      txtMidi1Con.Location = new Point(280, 38);
+      txtMidi1Con.Location = new Point(207, 38);
       txtMidi1Con.Name = "txtMidi1Con";
       txtMidi1Con.ReadOnly = true;
       txtMidi1Con.Size = new Size(30, 23);
@@ -2239,7 +2249,7 @@ namespace MilkwaveRemote
       // 
       // txtMidi1Val
       // 
-      txtMidi1Val.Location = new Point(244, 38);
+      txtMidi1Val.Location = new Point(171, 38);
       txtMidi1Val.Name = "txtMidi1Val";
       txtMidi1Val.ReadOnly = true;
       txtMidi1Val.Size = new Size(30, 23);
@@ -2249,7 +2259,7 @@ namespace MilkwaveRemote
       // 
       // txtMidi1Ch
       // 
-      txtMidi1Ch.Location = new Point(208, 38);
+      txtMidi1Ch.Location = new Point(135, 38);
       txtMidi1Ch.Name = "txtMidi1Ch";
       txtMidi1Ch.ReadOnly = true;
       txtMidi1Ch.Size = new Size(30, 23);
@@ -2257,19 +2267,83 @@ namespace MilkwaveRemote
       txtMidi1Ch.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(txtMidi1Ch, "Channel");
       // 
+      // txtMidi1Label
+      // 
+      txtMidi1Label.Location = new Point(34, 38);
+      txtMidi1Label.Name = "txtMidi1Label";
+      txtMidi1Label.Size = new Size(95, 23);
+      txtMidi1Label.TabIndex = 148;
+      toolTip1.SetToolTip(txtMidi1Label, "Set a custom label");
+      // 
+      // chkMidi1Active
+      // 
+      chkMidi1Active.Appearance = Appearance.Button;
+      chkMidi1Active.FlatStyle = FlatStyle.System;
+      chkMidi1Active.Location = new Point(294, 37);
+      chkMidi1Active.Margin = new Padding(3, 2, 3, 2);
+      chkMidi1Active.Name = "chkMidi1Active";
+      chkMidi1Active.Size = new Size(45, 23);
+      chkMidi1Active.TabIndex = 147;
+      chkMidi1Active.Text = "Active";
+      chkMidi1Active.TextAlign = ContentAlignment.MiddleCenter;
+      chkMidi1Active.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkMidi1Active, "Action will be triggered when matching MIDI event is received");
+      chkMidi1Active.UseVisualStyleBackColor = true;
+      // 
+      // lblMidi1Inc
+      // 
+      lblMidi1Inc.Location = new Point(560, 37);
+      lblMidi1Inc.Name = "lblMidi1Inc";
+      lblMidi1Inc.Size = new Size(31, 24);
+      lblMidi1Inc.TabIndex = 158;
+      lblMidi1Inc.Text = "Inc";
+      lblMidi1Inc.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblMidi1Inc, resources.GetString("lblMidi1Inc.ToolTip"));
+      // 
+      // txtMidi2Label
+      // 
+      txtMidi2Label.Location = new Point(34, 67);
+      txtMidi2Label.Name = "txtMidi2Label";
+      txtMidi2Label.Size = new Size(95, 23);
+      txtMidi2Label.TabIndex = 159;
+      toolTip1.SetToolTip(txtMidi2Label, "Set a custom label");
+      // 
+      // txtMidi3Label
+      // 
+      txtMidi3Label.Location = new Point(34, 96);
+      txtMidi3Label.Name = "txtMidi3Label";
+      txtMidi3Label.Size = new Size(95, 23);
+      txtMidi3Label.TabIndex = 161;
+      toolTip1.SetToolTip(txtMidi3Label, "Set a custom label");
+      // 
+      // txtMidi4Label
+      // 
+      txtMidi4Label.Location = new Point(34, 125);
+      txtMidi4Label.Name = "txtMidi4Label";
+      txtMidi4Label.Size = new Size(95, 23);
+      txtMidi4Label.TabIndex = 163;
+      toolTip1.SetToolTip(txtMidi4Label, "Set a custom label");
+      // 
+      // txtMidi5Label
+      // 
+      txtMidi5Label.Location = new Point(34, 154);
+      txtMidi5Label.Name = "txtMidi5Label";
+      txtMidi5Label.Size = new Size(95, 23);
+      txtMidi5Label.TabIndex = 165;
+      toolTip1.SetToolTip(txtMidi5Label, "Set a custom label");
+      // 
       // numMidiBank
       // 
-      numMidiBank.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numMidiBank.Location = new Point(559, 7);
+      numMidiBank.Location = new Point(396, 9);
       numMidiBank.Margin = new Padding(3, 2, 3, 2);
-      numMidiBank.Maximum = new decimal(new int[] { 9, 0, 0, 0 });
+      numMidiBank.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
       numMidiBank.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
       numMidiBank.Name = "numMidiBank";
       numMidiBank.Size = new Size(47, 23);
       numMidiBank.TabIndex = 153;
       numMidiBank.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numMidiBank, "Load the nth ID from the query");
       numMidiBank.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numMidiBank.ValueChanged += numMidiBank_ValueChanged;
       // 
       // numVisShift
       // 
@@ -2303,7 +2377,7 @@ namespace MilkwaveRemote
       // 
       chkMidi1Learn.Appearance = Appearance.Button;
       chkMidi1Learn.FlatStyle = FlatStyle.System;
-      chkMidi1Learn.Location = new Point(56, 36);
+      chkMidi1Learn.Location = new Point(243, 37);
       chkMidi1Learn.Margin = new Padding(3, 2, 3, 2);
       chkMidi1Learn.Name = "chkMidi1Learn";
       chkMidi1Learn.Size = new Size(45, 23);
@@ -2320,7 +2394,7 @@ namespace MilkwaveRemote
       cboMidiDevice.FormattingEnabled = true;
       cboMidiDevice.Location = new Point(56, 9);
       cboMidiDevice.Name = "cboMidiDevice";
-      cboMidiDevice.Size = new Size(254, 23);
+      cboMidiDevice.Size = new Size(232, 23);
       cboMidiDevice.TabIndex = 35;
       cboMidiDevice.SelectedIndexChanged += cboMidiDevice_SelectedIndexChanged;
       // 
@@ -2336,9 +2410,9 @@ namespace MilkwaveRemote
       // btnMidiDeviceScan
       // 
       btnMidiDeviceScan.FlatStyle = FlatStyle.System;
-      btnMidiDeviceScan.Location = new Point(316, 8);
+      btnMidiDeviceScan.Location = new Point(294, 8);
       btnMidiDeviceScan.Name = "btnMidiDeviceScan";
-      btnMidiDeviceScan.Size = new Size(50, 23);
+      btnMidiDeviceScan.Size = new Size(45, 23);
       btnMidiDeviceScan.TabIndex = 100;
       btnMidiDeviceScan.Text = "Scan";
       btnMidiDeviceScan.UseVisualStyleBackColor = true;
@@ -3592,14 +3666,23 @@ namespace MilkwaveRemote
       // 
       tabMidi.BackColor = SystemColors.ControlLight;
       tabMidi.BorderStyle = BorderStyle.FixedSingle;
-      tabMidi.Controls.Add(label1);
-      tabMidi.Controls.Add(numMidiBank);
+      tabMidi.Controls.Add(lblMidi5Row);
+      tabMidi.Controls.Add(txtMidi5Label);
+      tabMidi.Controls.Add(lblMidi4Row);
+      tabMidi.Controls.Add(txtMidi4Label);
+      tabMidi.Controls.Add(lblMidi3Row);
+      tabMidi.Controls.Add(txtMidi3Label);
+      tabMidi.Controls.Add(lblMidi2Row);
+      tabMidi.Controls.Add(txtMidi2Label);
+      tabMidi.Controls.Add(lblMidi1Inc);
       tabMidi.Controls.Add(lblMidi1Action);
+      tabMidi.Controls.Add(lblMidi1Row);
+      tabMidi.Controls.Add(lblBank);
+      tabMidi.Controls.Add(numMidiBank);
       tabMidi.Controls.Add(cboMidi1Action);
-      tabMidi.Controls.Add(button1);
+      tabMidi.Controls.Add(btnMIDIHelp);
       tabMidi.Controls.Add(txtMidi1Label);
       tabMidi.Controls.Add(chkMidi1Active);
-      tabMidi.Controls.Add(label5);
       tabMidi.Controls.Add(txtMidi1Inc);
       tabMidi.Controls.Add(txtMidi1Con);
       tabMidi.Controls.Add(txtMidi1Val);
@@ -3615,70 +3698,81 @@ namespace MilkwaveRemote
       tabMidi.TabIndex = 6;
       tabMidi.Text = "MIDI";
       // 
-      // label1
+      // lblMidi5Row
       // 
-      label1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      label1.AutoSize = true;
-      label1.Location = new Point(520, 7);
-      label1.Name = "label1";
-      label1.Size = new Size(33, 15);
-      label1.TabIndex = 154;
-      label1.Text = "Bank";
-      label1.TextAlign = ContentAlignment.MiddleRight;
+      lblMidi5Row.Location = new Point(8, 153);
+      lblMidi5Row.Name = "lblMidi5Row";
+      lblMidi5Row.Size = new Size(20, 24);
+      lblMidi5Row.TabIndex = 166;
+      lblMidi5Row.Text = "5";
+      lblMidi5Row.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // lblMidi4Row
+      // 
+      lblMidi4Row.Location = new Point(8, 124);
+      lblMidi4Row.Name = "lblMidi4Row";
+      lblMidi4Row.Size = new Size(20, 24);
+      lblMidi4Row.TabIndex = 164;
+      lblMidi4Row.Text = "4";
+      lblMidi4Row.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // lblMidi3Row
+      // 
+      lblMidi3Row.Location = new Point(8, 95);
+      lblMidi3Row.Name = "lblMidi3Row";
+      lblMidi3Row.Size = new Size(20, 24);
+      lblMidi3Row.TabIndex = 162;
+      lblMidi3Row.Text = "3";
+      lblMidi3Row.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // lblMidi2Row
+      // 
+      lblMidi2Row.Location = new Point(8, 66);
+      lblMidi2Row.Name = "lblMidi2Row";
+      lblMidi2Row.Size = new Size(20, 24);
+      lblMidi2Row.TabIndex = 160;
+      lblMidi2Row.Text = "2";
+      lblMidi2Row.TextAlign = ContentAlignment.MiddleRight;
       // 
       // lblMidi1Action
       // 
-      lblMidi1Action.AutoSize = true;
-      lblMidi1Action.Location = new Point(313, 40);
+      lblMidi1Action.Location = new Point(342, 37);
       lblMidi1Action.Name = "lblMidi1Action";
-      lblMidi1Action.Size = new Size(42, 15);
-      lblMidi1Action.TabIndex = 152;
+      lblMidi1Action.Size = new Size(48, 24);
+      lblMidi1Action.TabIndex = 157;
       lblMidi1Action.Text = "Action";
       lblMidi1Action.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // lblMidi1Row
+      // 
+      lblMidi1Row.Location = new Point(8, 37);
+      lblMidi1Row.Name = "lblMidi1Row";
+      lblMidi1Row.Size = new Size(20, 24);
+      lblMidi1Row.TabIndex = 156;
+      lblMidi1Row.Text = "1";
+      lblMidi1Row.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // lblBank
+      // 
+      lblBank.Location = new Point(342, 8);
+      lblBank.Name = "lblBank";
+      lblBank.Size = new Size(48, 24);
+      lblBank.TabIndex = 155;
+      lblBank.Text = "Bank";
+      lblBank.TextAlign = ContentAlignment.MiddleRight;
       // 
       // cboMidi1Action
       // 
       cboMidi1Action.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-      cboMidi1Action.Location = new Point(359, 38);
+      cboMidi1Action.Location = new Point(395, 38);
       cboMidi1Action.Name = "cboMidi1Action";
       cboMidi1Action.Size = new Size(165, 23);
       cboMidi1Action.TabIndex = 151;
       cboMidi1Action.SelectedValueChanged += cboMidiAction_SelectedValueChanged;
       // 
-      // txtMidi1Label
-      // 
-      txtMidi1Label.Location = new Point(107, 38);
-      txtMidi1Label.Name = "txtMidi1Label";
-      txtMidi1Label.Size = new Size(95, 23);
-      txtMidi1Label.TabIndex = 148;
-      // 
-      // chkMidi1Active
-      // 
-      chkMidi1Active.Appearance = Appearance.Button;
-      chkMidi1Active.FlatStyle = FlatStyle.System;
-      chkMidi1Active.Location = new Point(7, 36);
-      chkMidi1Active.Margin = new Padding(3, 2, 3, 2);
-      chkMidi1Active.Name = "chkMidi1Active";
-      chkMidi1Active.Size = new Size(45, 23);
-      chkMidi1Active.TabIndex = 147;
-      chkMidi1Active.Text = "Active";
-      chkMidi1Active.TextAlign = ContentAlignment.MiddleCenter;
-      chkMidi1Active.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkMidi1Active.UseVisualStyleBackColor = true;
-      // 
-      // label5
-      // 
-      label5.AutoSize = true;
-      label5.Location = new Point(530, 40);
-      label5.Name = "label5";
-      label5.Size = new Size(23, 15);
-      label5.TabIndex = 146;
-      label5.Text = "Inc";
-      label5.TextAlign = ContentAlignment.MiddleRight;
-      // 
       // txtMidi1Inc
       // 
-      txtMidi1Inc.Location = new Point(559, 38);
+      txtMidi1Inc.Location = new Point(597, 38);
       txtMidi1Inc.Name = "txtMidi1Inc";
       txtMidi1Inc.Size = new Size(30, 23);
       txtMidi1Inc.TabIndex = 145;
@@ -4020,13 +4114,22 @@ namespace MilkwaveRemote
     private TextBox txtMidi1Con;
     private TextBox txtMidi1Val;
     private CheckBox chkMidi1Active;
-    private Label label5;
     private TextBox txtMidi1Inc;
     private TextBox txtMidi1Label;
-    private Button button1;
-    private Label lblMidi1Action;
+    private Button btnMIDIHelp;
     private ComboBox cboMidi1Action;
-    private Label label1;
     private NumericUpDown numMidiBank;
+    private Label lblMidi1Row;
+    private Label lblBank;
+    private Label lblMidi1Inc;
+    private Label lblMidi1Action;
+    private Label lblMidi5Row;
+    private TextBox txtMidi5Label;
+    private Label lblMidi4Row;
+    private TextBox txtMidi4Label;
+    private Label lblMidi3Row;
+    private TextBox txtMidi3Label;
+    private Label lblMidi2Row;
+    private TextBox txtMidi2Label;
   }
 }

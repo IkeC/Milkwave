@@ -570,6 +570,11 @@ Version = 2: Effect depends on value of "bass_att" (fast and intense reaction)
 Version &gt; 2: No audio reaction (will still respond to "Intensity" and "Shift" changes)
 Click: Set 1</value>
   </data>
+  <data name="lblMidi1Inc.ToolTip" xml:space="preserve">
+    <value>For knobs and faders, this is the amount the target control will be changed with every MIDI step (0-127)
+The default value of a control (eg. 1.0 for "Intensity") is assigned to the "middle setting" of the fader/knob (MIDI step 64)
+</value>
+  </data>
   <metadata name="colorDialogMessage.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>420, 0</value>
   </metadata>

@@ -3915,7 +3915,6 @@ namespace MilkwaveRemote {
               cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
               cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
 
-              cboMidiAction.Items.Add(new MidiActionEntry("", MidiActionEntry.Type.Undefined, MidiActionEntry.Id.Undefined));
               cboMidiAction.Items.Add(new MidiActionEntry("Settings: Intensity", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobIntensity));
               cboMidiAction.Items.Add(new MidiActionEntry("Settings: Shift", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobShift));
             }
@@ -4031,5 +4030,17 @@ namespace MilkwaveRemote {
       row.Increment = txtMidiInc.Text;
     }
 
+    private void btnMIDIHelp_Click(object sender, EventArgs e) {
+      OpenURL("https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md#tab-midi");
+    }
+
+    private void numMidiBank_ValueChanged(object sender, EventArgs e) {
+      int baseVal = ((int)numMidiBank.Value - 1) * 5;
+      lblMidi1Row.Text = (baseVal + 1).ToString();
+      lblMidi2Row.Text = (baseVal + 2).ToString();
+      lblMidi3Row.Text = (baseVal + 3).ToString();
+      lblMidi4Row.Text = (baseVal + 4).ToString();
+      lblMidi5Row.Text = (baseVal + 5).ToString();
+    }
   } // end class
 } // end namespace
