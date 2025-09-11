@@ -13,8 +13,8 @@ namespace MilkwaveRemote.Helper {
     public event Action<MidiEventInfo>? MidiMessageReceived;
 
     public MidiHelper() {
-      for (int i = 0; i < 9*5; i++) { // 5 rows, 9 banks
-        MidiRows.Add(new MidiRow());
+      for (int i = 0; i < 5 * 10; i++) { // 5 rows, 10 banks
+        MidiRows.Add(new MidiRow() {Row = i + 1});
       }
     }
 

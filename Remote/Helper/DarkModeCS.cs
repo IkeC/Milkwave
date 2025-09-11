@@ -429,6 +429,7 @@ namespace MilkwaveRemote.Helper {
         //prevent applying a theme multiple times to the same control
         //without this, it happens at least is some MDI forms
         //if the Control already has the current theme, exit (otherwise we are going to re-theme it)
+        
         if (info.LastThemeAppliedIsDark == IsDarkMode) return;
 
         //we remember it will soon have the current theme
@@ -813,6 +814,10 @@ namespace MilkwaveRemote.Helper {
     /// </summary>
     public static void ExcludeFromProcessing(Control control) {
       controlStatusStorage.ExcludeFromProcessing(control);
+    }
+
+    public static void RemoveControl(Control control) {
+      controlStatusStorage.RemoveControl(control);
     }
 
     /// <summary>Returns Windows Color Mode for Applications.
@@ -1503,7 +1508,9 @@ namespace MilkwaveRemote.Helper {
       _controlsProcessed.Remove(control);
       _controlsProcessed.Add(control, new ControlStatusInfo() { IsExcluded = true });
     }
-
+    public void RemoveControl(Control control) {
+      _controlsProcessed.Remove(control);
+    }
     /// <summary>
     /// Gets the additional info associated with a Control
     /// </summary>

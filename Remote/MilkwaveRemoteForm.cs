@@ -5,10 +5,9 @@ using System.Drawing.Text;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.Pkcs;
 using System.Text;
 using System.Text.Json;
-using Windows.UI.WebUI;
+using static MilkwaveRemote.Data.MidiRow;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
 
@@ -89,12 +88,14 @@ namespace MilkwaveRemote {
 
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
+    private string milkwaveMidiFile = "midi-remote.json";
 
     // please request your own appKey at https://www.shadertoy.com/howto if you build your own version
     private string shadertoyAppKey = "ftrlhm";
     private string shadertoyQueryType = "";
     private int shadertoyQueryPageSize = 500;
     private string ShaderinfoLinePrefix = "// Shaderinfo: ";
+    private bool AllowMidiRowDataUpdate = true;
 
     private List<String> shadertoyQueryList = new List<String>();
 
@@ -406,6 +407,7 @@ namespace MilkwaveRemote {
       SendToMilkwaveVisualizer("", MessageType.GetState);
 
       MidiHelper = new MidiHelper();
+      LoadMIDISettings();
       PopulateMidiDevicesList();
       MidiHelper.MidiMessageReceived += MidiMessageReceived();
     }
@@ -857,127 +859,9 @@ namespace MilkwaveRemote {
 
       if (cboAutoplay.Items?.Count > 0) {
         if (autoplayRemainingBeats == 0 || manualSend) {
-          string[] strings = cboAutoplay.Text.Split('|');
-          foreach (string s in strings) {
-            string token = s.Trim();
-            string tokenUpper = token.ToUpper();
-            if (tokenUpper.Equals("NEXT")) {
-              btnSpace.PerformClick();
-              Thread.Sleep(100);
-            } else if (tokenUpper.Equals("PREV")) {
-              btnBackspace.PerformClick();
-            } else if (tokenUpper.Equals("STOP")) {
-              chkAutoplay.CheckState = CheckState.Unchecked;
-            } else if (tokenUpper.Equals("RESET")) {
-              ResetAndStartTimer(false);
-            } else if (tokenUpper.StartsWith("BPM=")) {
-              string value = tokenUpper.Substring(4);
-              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
-                numBPM.Value = (decimal)parsedValue;
-              }
-            } else if (tokenUpper.StartsWith("BEATS=")) {
-              string beats = tokenUpper.Substring(6);
-              if (int.TryParse(beats, out int b)) {
-                numBeats.Text = beats;
-              }
-            } else if (tokenUpper.StartsWith("FONT=")) {
-              string font = token.Substring(5);
-              cboFonts.Text = font;
-            } else if (tokenUpper.StartsWith("SIZE=")) {
-              string size = token.Substring(5);
-              if (float.TryParse(size, out float parsedSize)) {
-                numSize.Value = (decimal)parsedSize;
-              }
-            } else if (tokenUpper.StartsWith("COLOR=")) {
-              string colorRGB = token.Substring(6);
-              string[] valuesRGB = colorRGB.Split(",");
-              if (valuesRGB.Length == 3 &&
-                  int.TryParse(valuesRGB[0], out int r) &&
-                  int.TryParse(valuesRGB[1], out int g) &&
-                  int.TryParse(valuesRGB[2], out int b)) {
-                pnlColorMessage.BackColor = Color.FromArgb(r, g, b);
-                colorDialogMessage.Color = pnlColorMessage.BackColor;
-                SetFormattedMessage();
-              }
-            } else if (tokenUpper.StartsWith("STYLE=")) {
-              string preset = tokenUpper.Substring(6);
-              var foundItem = from item in cboParameters.Items.Cast<Style>()
-                              where item.Name.ToUpper() == preset
-                              select item;
-              if (foundItem != null && foundItem.Any()) {
-                cboParameters.SelectedItem = foundItem.First();
-              } else {
-                SetStatusText($"Style '{preset}' not found");
-              }
-            } else if (tokenUpper.StartsWith("PRESET=")) {
-              string presetFilePath = token.Substring(7);
-              if (!File.Exists(presetFilePath)) {
-                presetFilePath = Path.Combine(BaseDir, presetFilePath);
-              }
-              if (File.Exists(presetFilePath)) {
-                SendToMilkwaveVisualizer(presetFilePath, MessageType.PresetFilePath);
-              }
-            } else if (tokenUpper.StartsWith("FILE=")) {
-              string fileName = token.Substring(5);
-              if (fileName.Length > 0) {
-                LoadMessages(fileName);
-                lastScriptFileName = fileName;
-                if (!manualSend) {
-                  SetStatusText($"Next line in {autoplayRemainingBeats} beats");
-                }
-              }
-            } else if (tokenUpper.StartsWith("SEND=")) {
-              string sendString = token.Substring(5);
-              if (sendString.Length > 0) {
-                SendUnicodeChars(sendString);
-              }
-            } else if (tokenUpper.StartsWith("MSG=")) {
-              string sendString = "MSG|" + token.Substring(4).Replace(";", "|");
-              SendToMilkwaveVisualizer(sendString, MessageType.Raw);
-            } else if (tokenUpper.Equals("CLEARSPRITES")) {
-              SendToMilkwaveVisualizer("", MessageType.ClearSprites);
-            } else if (tokenUpper.Equals("CLEARTEXTS")) {
-              SendToMilkwaveVisualizer("", MessageType.ClearTexts);
-            } else if (tokenUpper.Equals("CLEARPARAMS")) {
-              cboParameters.Text = "";
-            } else if (tokenUpper.StartsWith("TIME=")) {
-              string value = token.Substring(5);
-              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
-                numFactorTime.Value = (decimal)parsedValue;
-              }
-            } else if (tokenUpper.StartsWith("FRAME=")) {
-              string value = token.Substring(6);
-              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
-                numFactorFrame.Value = (decimal)parsedValue;
-              }
-            } else if (tokenUpper.StartsWith("FPS=")) {
-              string value = token.Substring(4);
-              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
-                numFactorFPS.Value = (decimal)parsedValue;
-              }
-            } else if (tokenUpper.StartsWith("INTENSITY=")) {
-              string value = token.Substring(10);
-              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
-                numVisIntensity.Value = (decimal)parsedValue;
-              }
-            } else if (tokenUpper.StartsWith("SHIFT=")) {
-              string value = token.Substring(6);
-              if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
-                numVisShift.Value = (decimal)parsedValue;
-              }
-            } else if (tokenUpper.StartsWith("VERSION=")) {
-              string value = token.Substring(8);
-              if (int.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out int parsedValue)) {
-                numVisVersion.Value = (int)parsedValue;
-              }
-            } else if (tokenUpper.Equals("MEDIA_PLAY")) {
-              PressMediaKeyPlayPause();
-            } else if (tokenUpper.Equals("MEDIA_STOP")) {
-              PressMediaKeyStop();
-            } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
-              SendToMilkwaveVisualizer(token, MessageType.Message);
-            }
-          }
+          string line = cboAutoplay.Text;
+
+          HandleScriptLine(manualSend, line);
 
           if (!manualSend) {
             try {
@@ -1008,6 +892,130 @@ namespace MilkwaveRemote {
           // SelectNextAutoplayEntry();
           SetStatusText($"Next line in {autoplayRemainingBeats} beats");
           autoplayRemainingBeats--;
+        }
+      }
+    }
+
+    private void HandleScriptLine(bool manualSend, string line) {
+      string[] strings = line.Split('|');
+      foreach (string s in strings) {
+        string token = s.Trim();
+        string tokenUpper = token.ToUpper();
+        if (tokenUpper.Equals("NEXT")) {
+          btnSpace.PerformClick();
+          Thread.Sleep(100);
+        } else if (tokenUpper.Equals("PREV")) {
+          btnBackspace.PerformClick();
+        } else if (tokenUpper.Equals("STOP")) {
+          chkAutoplay.CheckState = CheckState.Unchecked;
+        } else if (tokenUpper.Equals("RESET")) {
+          ResetAndStartTimer(false);
+        } else if (tokenUpper.StartsWith("BPM=")) {
+          string value = tokenUpper.Substring(4);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numBPM.Value = (decimal)parsedValue;
+          }
+        } else if (tokenUpper.StartsWith("BEATS=")) {
+          string beats = tokenUpper.Substring(6);
+          if (int.TryParse(beats, out int b)) {
+            numBeats.Text = beats;
+          }
+        } else if (tokenUpper.StartsWith("FONT=")) {
+          string font = token.Substring(5);
+          cboFonts.Text = font;
+        } else if (tokenUpper.StartsWith("SIZE=")) {
+          string size = token.Substring(5);
+          if (float.TryParse(size, out float parsedSize)) {
+            numSize.Value = (decimal)parsedSize;
+          }
+        } else if (tokenUpper.StartsWith("COLOR=")) {
+          string colorRGB = token.Substring(6);
+          string[] valuesRGB = colorRGB.Split(",");
+          if (valuesRGB.Length == 3 &&
+              int.TryParse(valuesRGB[0], out int r) &&
+              int.TryParse(valuesRGB[1], out int g) &&
+              int.TryParse(valuesRGB[2], out int b)) {
+            pnlColorMessage.BackColor = Color.FromArgb(r, g, b);
+            colorDialogMessage.Color = pnlColorMessage.BackColor;
+            SetFormattedMessage();
+          }
+        } else if (tokenUpper.StartsWith("STYLE=")) {
+          string preset = tokenUpper.Substring(6);
+          var foundItem = from item in cboParameters.Items.Cast<Style>()
+                          where item.Name.ToUpper() == preset
+                          select item;
+          if (foundItem != null && foundItem.Any()) {
+            cboParameters.SelectedItem = foundItem.First();
+          } else {
+            SetStatusText($"Style '{preset}' not found");
+          }
+        } else if (tokenUpper.StartsWith("PRESET=")) {
+          string presetFilePath = token.Substring(7);
+          if (!File.Exists(presetFilePath)) {
+            presetFilePath = Path.Combine(BaseDir, presetFilePath);
+          }
+          if (File.Exists(presetFilePath)) {
+            SendToMilkwaveVisualizer(presetFilePath, MessageType.PresetFilePath);
+          }
+        } else if (tokenUpper.StartsWith("FILE=")) {
+          string fileName = token.Substring(5);
+          if (fileName.Length > 0) {
+            LoadMessages(fileName);
+            lastScriptFileName = fileName;
+            if (!manualSend) {
+              SetStatusText($"Next line in {autoplayRemainingBeats} beats");
+            }
+          }
+        } else if (tokenUpper.StartsWith("SEND=")) {
+          string sendString = token.Substring(5);
+          if (sendString.Length > 0) {
+            SendUnicodeChars(sendString);
+          }
+        } else if (tokenUpper.StartsWith("MSG=")) {
+          string sendString = "MSG|" + token.Substring(4).Replace(";", "|");
+          SendToMilkwaveVisualizer(sendString, MessageType.Raw);
+        } else if (tokenUpper.Equals("CLEARSPRITES")) {
+          SendToMilkwaveVisualizer("", MessageType.ClearSprites);
+        } else if (tokenUpper.Equals("CLEARTEXTS")) {
+          SendToMilkwaveVisualizer("", MessageType.ClearTexts);
+        } else if (tokenUpper.Equals("CLEARPARAMS")) {
+          cboParameters.Text = "";
+        } else if (tokenUpper.StartsWith("TIME=")) {
+          string value = token.Substring(5);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numFactorTime.Value = (decimal)parsedValue;
+          }
+        } else if (tokenUpper.StartsWith("FRAME=")) {
+          string value = token.Substring(6);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numFactorFrame.Value = (decimal)parsedValue;
+          }
+        } else if (tokenUpper.StartsWith("FPS=")) {
+          string value = token.Substring(4);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numFactorFPS.Value = (decimal)parsedValue;
+          }
+        } else if (tokenUpper.StartsWith("INTENSITY=")) {
+          string value = token.Substring(10);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numVisIntensity.Value = (decimal)parsedValue;
+          }
+        } else if (tokenUpper.StartsWith("SHIFT=")) {
+          string value = token.Substring(6);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numVisShift.Value = (decimal)parsedValue;
+          }
+        } else if (tokenUpper.StartsWith("VERSION=")) {
+          string value = token.Substring(8);
+          if (int.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out int parsedValue)) {
+            numVisVersion.Value = (int)parsedValue;
+          }
+        } else if (tokenUpper.Equals("MEDIA_PLAY")) {
+          PressMediaKeyPlayPause();
+        } else if (tokenUpper.Equals("MEDIA_STOP")) {
+          PressMediaKeyStop();
+        } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
+          SendToMilkwaveVisualizer(token, MessageType.Message);
         }
       }
     }
@@ -1764,6 +1772,7 @@ namespace MilkwaveRemote {
       try {
 
         SetAndSaveSettings();
+        SaveMIDISettings();
 
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
@@ -2783,7 +2792,6 @@ namespace MilkwaveRemote {
         SelectFirstPreset();
         UpdateTagsDisplay(false, false);
       }
-
     }
 
     private List<KeyValuePair<string, TagEntry>> FilterTagEntries() {
@@ -3869,8 +3877,16 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void chkMidiLearn1_CheckedChanged(object sender, EventArgs e) {
-      //ToggleMIDILearning(chkMidi1Learn.Checked);
+    private void chkMidiLearn_CheckedChanged(object sender, EventArgs e) {
+      int index = GetIndexFromMidiControl((Control)sender);
+      var chk = (CheckBox)sender;
+      if (chk.Checked && index > 0) {
+        if (index != 1) chkMidi1Learn.Checked = false;
+        if (index != 2) chkMidi2Learn.Checked = false;
+        // if (index != 3) chkMidi3Learn.Checked = false;
+        // if (index != 4) chkMidi4Learn.Checked = false;
+        // if (index != 5) chkMidi5Learn.Checked = false;
+      }
     }
 
     private void ToggleMIDILearning(bool doLearn) {
@@ -3889,8 +3905,8 @@ namespace MilkwaveRemote {
 
           if (rowIndex > 0) {
             TextBox txtMidiLabel = FindTextbox($"txtMidi{rowIndex}Label");
-            if ((string.IsNullOrEmpty(txtMidiLabel.Text) || txtMidiLabel.Text.Equals("Button") || txtMidiLabel.Text.Equals("Knob/Fader"))) {
-              txtMidiLabel.Text = isButton ? "Button" : "Knob/Fader";
+            if ((string.IsNullOrEmpty(txtMidiLabel.Text) || txtMidiLabel.Text.Equals("Button/Note") || txtMidiLabel.Text.Equals("Knob/Fader"))) {
+              txtMidiLabel.Text = isButton ? "Button/Note" : "Knob/Fader";
             }
 
             TextBox txtMidiCh = FindTextbox($"txtMidi{rowIndex}Ch");
@@ -3903,20 +3919,14 @@ namespace MilkwaveRemote {
             txtMidiCon.Text = note.Controller.ToString();
 
             // update row
-            var row = MidiHelper.MidiRows[rowIndex - 1];
-            row.Channel = note.Channel;
-            row.Value = note.Value;
-            row.Controller = note.Controller;
-
-            // Knob
-            if (!isButton) {
-              ComboBox cboMidiAction = FindCombobox($"cboMidi{rowIndex}Action");
-              cboMidiAction.Items.Clear();
-              cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
-              cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
-
-              cboMidiAction.Items.Add(new MidiActionEntry("Settings: Intensity", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobIntensity));
-              cboMidiAction.Items.Add(new MidiActionEntry("Settings: Shift", MidiActionEntry.Type.Knob, MidiActionEntry.Id.KnobShift));
+            UpdateRowData(rowIndex);
+            UpdateRowDataActionType(rowIndex, note.Controller == 0 ? MidiActionType.Button : MidiActionType.Knob);
+            
+            ComboBox cboMidiAction = FindCombobox($"cboMidi{rowIndex}Action");
+            if (isButton) {
+              PopulateMidiActionComboBoxForButton(cboMidiAction);
+            } else {
+              PopulateMidiActionComboBoxForKnob(cboMidiAction);
             }
           } else {
             // Not in learning mode, check if it matches any of the configured rows
@@ -3939,27 +3949,55 @@ namespace MilkwaveRemote {
       };
     }
 
+    private void PopulateMidiActionComboBoxForKnob(ComboBox cboMidiAction) {
+      if (cboMidiAction.DropDownStyle != ComboBoxStyle.DropDownList) {
+        cboMidiAction.DropDownStyle = ComboBoxStyle.DropDownList;
+        DarkModeCS.RemoveControl(cboMidiAction);
+        dm.ThemeControl(cboMidiAction);
+        cboMidiAction.Items.Clear();
+        cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
+        cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Intensity", MidiActionId.KnobIntensity));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Shift", MidiActionId.KnobShift));
+        cboMidiAction.SelectedIndex = 0;
+      }
+    }
+
+    private void PopulateMidiActionComboBoxForButton(ComboBox cboMidiAction) {
+      if (cboMidiAction.DropDownStyle != ComboBoxStyle.DropDown) {
+        cboMidiAction.DropDownStyle = ComboBoxStyle.DropDown;
+        DarkModeCS.RemoveControl(cboMidiAction);
+        dm.ThemeControl(cboMidiAction);
+        cboMidiAction.Text = "";
+        cboMidiAction.Items.Clear();
+        cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
+        cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
+        cboMidiAction.Items.Add(new MidiActionEntry("Hello from Midi!", MidiActionId.Message));
+      }
+    }
+
     private void TriggerMidiKnobAction(MidiRow row, int value) {
-      decimal inc = 0.05M;
+      decimal inc = 0.02M;
       if (row.Increment.Length > 0) {
         decimal.TryParse(row.Increment, NumberStyles.Number, CultureInfo.InvariantCulture, out inc);
       }
-      if (row.ActionId == MidiActionEntry.Id.KnobIntensity) {
+      if (row.ActionId == MidiActionId.KnobIntensity) {
         // intensity base value is 1.0
         numVisIntensity.Value = Math.Clamp(1 + ((value - 64) * inc), numVisIntensity.Minimum, numVisIntensity.Maximum);
-      } else if (row.ActionId == MidiActionEntry.Id.KnobShift) {
+      } else if (row.ActionId == MidiActionId.KnobShift) {
         // shift base value is 0.0
         numVisShift.Value = Math.Clamp((value - 64) * inc, numVisShift.Minimum, numVisShift.Maximum);
       }
     }
 
     private void TriggerMidiButtonAction(MidiRow row) {
-      throw new NotImplementedException();
+      HandleScriptLine(true, row.ActionText);
     }
 
     private int GetLearningRowIndex() {
       if (chkMidi1Learn.Checked) return 1;
-      // if (chkMidi2Learn.Checked) return 2;
+      if (chkMidi2Learn.Checked) return 2;
+      // TODO
       // if (chkMidi3Learn.Checked) return 3;
       // if (chkMidi4Learn.Checked) return 4;
       // if (chkMidi5Learn.Checked) return 5;
@@ -3979,28 +4017,24 @@ namespace MilkwaveRemote {
     }
 
     private void cboMidiAction_SelectedValueChanged(object sender, EventArgs e) {
+      if (!AllowMidiRowDataUpdate) return;
+
       ComboBox cbo = (ComboBox)sender;
-      int index = GetIndexFromMidiControl((Control)sender);
-      var chk = FindCheckbox($"chkMidi{index}Active");
-      if (chk != null) {
+      int rowIndex = GetIndexFromMidiControl((Control)sender);
+      var chk = FindCheckbox($"chkMidi{rowIndex}Active");
+      if (chk != null && !chk.Checked) {
         chk.Checked = true;
       }
 
-      MidiActionEntry? entry = (MidiActionEntry?)cbo.SelectedItem;
-      if (entry != null) {
-        TextBox txtMidiInc = FindTextbox($"txtMidi{index}Inc");
-        if (entry.ActionId == MidiActionEntry.Id.KnobIntensity || entry.ActionId == MidiActionEntry.Id.KnobShift) {
-          txtMidiInc.Text = "0.02";
-        } else {
-          txtMidiInc.Text = "";
-        }
+      var rowData = MidiHelper.MidiRows[rowIndex - 1];
+      TextBox txtMidiInc = FindTextbox($"txtMidi{rowIndex}Inc");
+      txtMidiInc.Text = "";
 
-        var row = MidiHelper.MidiRows[index - 1];
-        row.ActionId = entry.ActionId;
-        row.ActionType = entry.ActionType;
-        row.Increment = txtMidiInc.Text;
-        row.Active = true;
+      if (rowData.ActionType == MidiActionType.Knob) {
+        txtMidiInc.Text = "0.02";
       }
+
+      UpdateRowData(rowIndex);
     }
 
     private static int GetIndexFromMidiControl(Control ctrl) {
@@ -4023,11 +4057,8 @@ namespace MilkwaveRemote {
     }
 
     private void txtMidiInc_TextChanged(object sender, EventArgs e) {
-      TextBox txtMidiInc = (TextBox)sender;
-      int index = GetIndexFromMidiControl((Control)sender);
-      var cbo = FindCombobox($"cboMidi{index}Action");
-      var row = MidiHelper.MidiRows[index - 1];
-      row.Increment = txtMidiInc.Text;
+      int rowIndex = GetIndexFromMidiControl((Control)sender);
+      UpdateRowData(rowIndex);
     }
 
     private void btnMIDIHelp_Click(object sender, EventArgs e) {
@@ -4041,6 +4072,135 @@ namespace MilkwaveRemote {
       lblMidi3Row.Text = (baseVal + 3).ToString();
       lblMidi4Row.Text = (baseVal + 4).ToString();
       lblMidi5Row.Text = (baseVal + 5).ToString();
+      FillRowsFromData();
     }
+
+    private void btnMIDISave_Click(object sender, EventArgs e) {
+      SaveMIDISettings();
+    }
+
+    private void btnMIDILoad_Click(object sender, EventArgs e) {
+      LoadMIDISettings();
+    }
+
+    private void SaveMIDISettings() {
+      string jsonString = JsonSerializer.Serialize(MidiHelper.MidiRows, new JsonSerializerOptions { WriteIndented = true });
+      string settingsFile = Path.Combine(BaseDir, milkwaveMidiFile);
+      try {
+        File.WriteAllText(settingsFile, jsonString);
+      } catch (UnauthorizedAccessException ex) {
+        MessageBox.Show($"Unable to save settings to {settingsFile}." +
+          Environment.NewLine + Environment.NewLine +
+          "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
+          "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Error");
+      }
+    }
+
+    private void LoadMIDISettings() {
+      try {
+        string jsonString = File.ReadAllText(Path.Combine(BaseDir, milkwaveMidiFile));
+        List<MidiRow>? MidiRows = JsonSerializer.Deserialize<List<MidiRow>>(jsonString, new JsonSerializerOptions {
+          PropertyNameCaseInsensitive = true
+        });
+        if (MidiRows != null) {
+          MidiHelper.MidiRows = MidiRows;
+        }
+      } catch (Exception) {
+        // ignore
+      }
+      FillRowsFromData();
+    }
+
+    private void txtMidiLabel_TextChanged(object sender, EventArgs e) {
+      int rowIndex = GetIndexFromMidiControl((Control)sender);
+      UpdateRowData(rowIndex);
+    }
+
+    private void UpdateRowData(int rowIndex) {
+      if (!AllowMidiRowDataUpdate) return;
+
+      var row = MidiHelper.MidiRows[rowIndex - 1];
+      ComboBox cboAction = FindCombobox($"cboMidi{rowIndex}Action");
+      MidiActionEntry? cboActionEntry = cboAction.SelectedItem as MidiActionEntry;
+      if (cboActionEntry != null) {
+        row.ActionId = cboActionEntry.ActionId;
+      }
+
+      row.Label = FindTextbox($"txtMidi{rowIndex}Label").Text;
+
+      if (int.TryParse(FindTextbox($"txtMidi{rowIndex}Ch").Text, out var channel)) {
+        row.Channel = channel;
+      }
+
+      if (row.ActionType == MidiActionType.Knob) {
+        row.Value = 0; // value is not relevant for knobs
+      } else if (int.TryParse(FindTextbox($"txtMidi{rowIndex}Val").Text, out var value)) {
+        row.Value = value;
+      }
+
+      if (int.TryParse(FindTextbox($"txtMidi{rowIndex}Con").Text, out var controller)) {
+        row.Controller = controller;
+      }
+
+      row.Active = FindCheckbox($"chkMidi{rowIndex}Active").Checked;
+      row.Increment = FindTextbox($"txtMidi{rowIndex}Inc").Text;
+
+      if (row.ActionType == MidiActionType.Button) {
+        row.ActionText = cboAction.Text;
+      } else {
+        row.ActionText = "";
+      }
+    }
+
+    private void UpdateRowDataActionType(int rowIndex, MidiActionType type) {
+      if (!AllowMidiRowDataUpdate) return;
+      var row = MidiHelper.MidiRows[rowIndex - 1];
+      row.ActionType = type;
+    }
+    private void FillRowsFromData() {
+      AllowMidiRowDataUpdate = false;
+      try {
+        int dataIndex = ((int)numMidiBank.Value - 1) * 5;
+        for (int rowIndex = 1; rowIndex <= 5; rowIndex++, dataIndex++) {
+          FindTextbox($"txtMidi{rowIndex}Label").Text = MidiHelper.MidiRows[dataIndex].Label;
+          FindTextbox($"txtMidi{rowIndex}Ch").Text = MidiHelper.MidiRows[dataIndex].Channel.ToString();
+          FindTextbox($"txtMidi{rowIndex}Val").Text = MidiHelper.MidiRows[dataIndex].Value.ToString();
+          FindTextbox($"txtMidi{rowIndex}Con").Text = MidiHelper.MidiRows[dataIndex].Controller.ToString();
+          FindCheckbox($"chkMidi{rowIndex}Active").Checked = MidiHelper.MidiRows[dataIndex].Active;
+          FindTextbox($"txtMidi{rowIndex}Inc").Text = MidiHelper.MidiRows[dataIndex].Increment;
+
+          ComboBox cboMidiAction = FindCombobox($"cboMidi{rowIndex}Action");
+          if (cboMidiAction != null) {
+            cboMidiAction.Text = "";
+            cboMidiAction.Items.Clear();
+            if (MidiHelper.MidiRows[dataIndex].ActionType == MidiActionType.Button) {
+              PopulateMidiActionComboBoxForButton(cboMidiAction);
+              cboMidiAction.Text = MidiHelper.MidiRows[dataIndex].ActionText;
+            } else if (MidiHelper.MidiRows[dataIndex].ActionType == MidiActionType.Knob) {
+              PopulateMidiActionComboBoxForKnob(cboMidiAction);
+              // Try to select the existing action
+              foreach (var item in cboMidiAction.Items) {
+                if (item is MidiActionEntry entry && entry.ActionId == MidiHelper.MidiRows[dataIndex].ActionId) {
+                  cboMidiAction.SelectedItem = item;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error: {ex.Message}");
+      } finally {
+        AllowMidiRowDataUpdate = true;
+      }
+    }
+
+    private void chkMidiActive_CheckedChanged(object sender, EventArgs e) {
+      int rowIndex = GetIndexFromMidiControl((Control)sender);
+      UpdateRowData(rowIndex);
+    }
+
   } // end class
 } // end namespace
