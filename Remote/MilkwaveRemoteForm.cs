@@ -82,6 +82,8 @@ namespace MilkwaveRemote {
     private string PresetsShaderConvFolder = "";
 
     private string lastScriptFileName = "script-default.txt";
+    private string midiDefaultFileName = "midi-default.txt";
+
     private string windowNotFound = "Milkwave Visualizer Window not found";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
@@ -1014,6 +1016,35 @@ namespace MilkwaveRemote {
           PressMediaKeyPlayPause();
         } else if (tokenUpper.Equals("MEDIA_STOP")) {
           PressMediaKeyStop();
+        } else if (tokenUpper.StartsWith("LINE=")) {
+          try {
+            string value = token.Substring(tokenUpper.IndexOf("=") + 1);
+            if (value.Equals("CURR")) {
+              SendAutoplayLine(true);
+            } else if (value.Equals("PREV")) {
+              SelectPreviousAutoplayEntry();
+              SendAutoplayLine(true);
+            } else if (value.Equals("NEXT")) {
+              SelectNextAutoplayEntry();
+              SendAutoplayLine(true);
+            } else if (int.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out int parsedValue)) {
+              string cmd = cboAutoplay.Items[parsedValue - 1]?.ToString();
+              if (cmd != null) {
+                HandleScriptLine(true, cmd);
+              }
+            }
+          } catch (Exception) {
+            // ignore
+          }
+        } else if (tokenUpper.StartsWith("EXEC=")) {
+          string value = token.Substring(tokenUpper.IndexOf("=") + 1);
+          if (!string.IsNullOrEmpty(value)) {
+            try {
+              Process.Start(new ProcessStartInfo(value) { UseShellExecute = true });
+            } catch (Exception ex) {
+              SetStatusText($"Unable to execute '{value}': {ex.Message}");
+            }
+          }
         } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
           SendToMilkwaveVisualizer(token, MessageType.Message);
         }
@@ -1027,6 +1058,17 @@ namespace MilkwaveRemote {
           cboAutoplay.SelectedIndex++;
         } else {
           cboAutoplay.SelectedIndex = 0;
+        }
+      }
+    }
+
+    private void SelectPreviousAutoplayEntry() {
+      if (cboAutoplay.Items.Count > 0) {
+        // Move to the previous item or loop back to the last
+        if (cboAutoplay.SelectedIndex > 0) {
+          cboAutoplay.SelectedIndex--;
+        } else {
+          cboAutoplay.SelectedIndex = cboAutoplay.Items.Count;
         }
       }
     }
@@ -3921,7 +3963,7 @@ namespace MilkwaveRemote {
             // update row
             UpdateRowData(rowIndex);
             UpdateRowDataActionType(rowIndex, note.Controller == 0 ? MidiActionType.Button : MidiActionType.Knob);
-            
+
             ComboBox cboMidiAction = FindCombobox($"cboMidi{rowIndex}Action");
             if (isButton) {
               PopulateMidiActionComboBoxForButton(cboMidiAction);
@@ -3957,8 +3999,15 @@ namespace MilkwaveRemote {
         cboMidiAction.Items.Clear();
         cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
         cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
-        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Intensity", MidiActionId.KnobIntensity));
-        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Shift", MidiActionId.KnobShift));
+        cboMidiAction.Items.Add(new MidiActionEntry("Preset: Amp (L)", MidiActionId.KnobPresetAmpL));
+        cboMidiAction.Items.Add(new MidiActionEntry("Preset: Amp (R)", MidiActionId.KnobPresetAmpR));
+        cboMidiAction.Items.Add(new MidiActionEntry("Message: BPM", MidiActionId.KnobMessageBPM));
+        cboMidiAction.Items.Add(new MidiActionEntry("Message: Beats", MidiActionId.KnobMessageBeats));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Time", MidiActionId.KnobSettingsTime));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: FPS", MidiActionId.KnobSettingsFPS));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Intensity", MidiActionId.KnobSettingsIntensity));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Shift", MidiActionId.KnobSettingsShift));
+
         cboMidiAction.SelectedIndex = 0;
       }
     }
@@ -3972,7 +4021,18 @@ namespace MilkwaveRemote {
         cboMidiAction.Items.Clear();
         cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
         cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
-        cboMidiAction.Items.Add(new MidiActionEntry("Hello from Midi!", MidiActionId.Message));
+        string filePath = midiDefaultFileName;
+        if (!midiDefaultFileName.Contains("\\")) {
+          filePath = Path.Combine(BaseDir, midiDefaultFileName);
+        }
+        if (File.Exists(filePath)) {
+          string[] strings = File.ReadAllLines(filePath);
+          foreach (string line in strings) {
+            if (!line.StartsWith("#")) {
+              cboMidiAction.Items.Add(line);
+            }
+          }
+        }
       }
     }
 
@@ -3981,11 +4041,29 @@ namespace MilkwaveRemote {
       if (row.Increment.Length > 0) {
         decimal.TryParse(row.Increment, NumberStyles.Number, CultureInfo.InvariantCulture, out inc);
       }
-      if (row.ActionId == MidiActionId.KnobIntensity) {
-        // intensity base value is 1.0
+      if (row.ActionId == MidiActionId.KnobPresetAmpL) {
+        // base value is 1.0
+        numAmpLeft.Value = Math.Clamp(1 + ((value - 64) * inc), numAmpLeft.Minimum, numAmpLeft.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobPresetAmpR) {
+        // base value is 1.0
+        numAmpRight.Value = Math.Clamp(1 + ((value - 64) * inc), numAmpRight.Minimum, numAmpRight.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobMessageBPM) {
+        // base value is 120
+        numBPM.Value = Math.Clamp(120 + ((value - 64) * inc), numBPM.Minimum, numBPM.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobMessageBeats) {
+        // base value is 8
+        numBeats.Value = Math.Clamp(8 + ((value - 64) * inc), numBeats.Minimum, numBeats.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobSettingsTime) {
+        // base value is 1.0
+        numFactorTime.Value = Math.Clamp(1 + ((value - 64) * inc), numFactorTime.Minimum, numFactorTime.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobSettingsFPS) {
+        // base value is 1.0
+        numFactorFPS.Value = Math.Clamp(1 + ((value - 64) * inc), numFactorFPS.Minimum, numFactorFPS.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobSettingsIntensity) {
+        // base value is 1.0
         numVisIntensity.Value = Math.Clamp(1 + ((value - 64) * inc), numVisIntensity.Minimum, numVisIntensity.Maximum);
-      } else if (row.ActionId == MidiActionId.KnobShift) {
-        // shift base value is 0.0
+      } else if (row.ActionId == MidiActionId.KnobSettingsShift) {
+        // base value is 0.0
         numVisShift.Value = Math.Clamp((value - 64) * inc, numVisShift.Minimum, numVisShift.Maximum);
       }
     }
@@ -4031,7 +4109,19 @@ namespace MilkwaveRemote {
       txtMidiInc.Text = "";
 
       if (rowData.ActionType == MidiActionType.Knob) {
-        txtMidiInc.Text = "0.02";
+        if (rowData.ActionId == MidiActionId.KnobPresetAmpL || rowData.ActionId == MidiActionId.KnobPresetAmpR) {
+          // default increment is 0.1
+          txtMidiInc.Text = "0.1";
+        } else if (rowData.ActionId == MidiActionId.KnobMessageBPM || rowData.ActionId == MidiActionId.KnobMessageBeats) {
+          // default increment is 1
+          txtMidiInc.Text = "1.0";
+        } else if (rowData.ActionId == MidiActionId.KnobSettingsTime || rowData.ActionId == MidiActionId.KnobSettingsFPS) {
+          // default increment is 0.1
+          txtMidiInc.Text = "0.1";
+        } else if (rowData.ActionId == MidiActionId.KnobSettingsIntensity || rowData.ActionId == MidiActionId.KnobSettingsShift) {
+          // default increment is 0.02
+          txtMidiInc.Text = "0.02";
+        }
       }
 
       UpdateRowData(rowIndex);

@@ -10,8 +10,14 @@
     public enum MidiActionId {
       Undefined = 0,
       Message = 1,
-      KnobIntensity = 100,
-      KnobShift = 101
+      KnobPresetAmpL = 100,
+      KnobPresetAmpR = 101,
+      KnobMessageBPM = 200,
+      KnobMessageBeats = 201,
+      KnobSettingsTime = 600,
+      KnobSettingsFPS = 601,
+      KnobSettingsIntensity = 610,
+      KnobSettingsShift = 611,
     }
 
     public int Row { get; set; } = 0;

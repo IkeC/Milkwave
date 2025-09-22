@@ -36,9 +36,14 @@
 # FPS=0.1: Set FPS factor to 0.1 (Settings tab)
 # INTENSITY=1.2: Set intensity to 1.2 (Settings tab)
 # SHIFT=-0.2: Set shift to -0.2 (Settings tab)
-# VERSION=-2: Set version to 2 (Settings tab)
+# VERSION=2: Set version to 2 (Settings tab)
 # MEDIA_PLAY: Press the Windows Media "Play/Pause" key
 # MEDIA_STOP: Press the Windows Media "Stop" key
+# LINE=5: Jump to Line 5 of the current script file and run it immediately (Commented lines are not counted)
+# LINE=CURR: Run currently selected autoplay line (useful in MIDI automation)
+# LINE=NEXT: Jump to next autoplay line and run it (useful in MIDI automation)
+# LINE=PREV: Jump to previous autoplay line and run it (useful in MIDI automation)
+# EXEC=C:\Tools\MySuperScript.bat: Open/run anything
 #
 BPM=120|BEATS=8|STYLE=Style A|PRESET=resources\presets\Milkwave\01 - Martin - blue haze.milk|Welcome to Milkwave!
 STYLE=Style B|Switched to "Style B"
