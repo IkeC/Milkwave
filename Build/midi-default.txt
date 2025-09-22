@@ -1,0 +1,17 @@
+# Default selectable Combobox lines for MIDI Buttons commands
+# Lines starting with # are ignored when parsing this file.
+# Add/remove lines as you like.
+#
+# For a list of possible commands, refer to script-default.txt.
+# Please refer to the Milkwave manual for more details:
+# https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md#tab-midi 
+#
+Hello from MIDI!
+NEXT
+INTENSITY=1|VERSION=2
+SEND=00
+LINE=5
+LINE=CURR
+LINE=PREV
+LINE=NEXT
+EXEC=C:\Portable\BeatDrop\BeatDrop.exe

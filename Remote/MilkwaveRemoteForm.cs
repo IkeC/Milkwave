@@ -1,5 +1,6 @@
 ﻿using MilkwaveRemote.Data;
 using MilkwaveRemote.Helper;
+using System;
 using System.Diagnostics;
 using System.Drawing.Text;
 using System.Globalization;
@@ -3925,9 +3926,9 @@ namespace MilkwaveRemote {
       if (chk.Checked && index > 0) {
         if (index != 1) chkMidi1Learn.Checked = false;
         if (index != 2) chkMidi2Learn.Checked = false;
-        // if (index != 3) chkMidi3Learn.Checked = false;
-        // if (index != 4) chkMidi4Learn.Checked = false;
-        // if (index != 5) chkMidi5Learn.Checked = false;
+        if (index != 3) chkMidi3Learn.Checked = false;
+        if (index != 4) chkMidi4Learn.Checked = false;
+        if (index != 5) chkMidi5Learn.Checked = false;
       }
     }
 
@@ -3937,12 +3938,9 @@ namespace MilkwaveRemote {
 
     private Action<MidiEventInfo> MidiMessageReceived() {
       return note => {
-        //SetStatusText($"Received note: {note}");
         // Marshal all UI changes to the UI thread
         this.BeginInvoke((Action)(() => {
           bool isButton = note.Controller == 0;
-
-          // TODO: refactor if there are more rows
           int rowIndex = GetLearningRowIndex(); // starts from 1
 
           if (rowIndex > 0) {
@@ -4018,19 +4016,19 @@ namespace MilkwaveRemote {
         DarkModeCS.RemoveControl(cboMidiAction);
         dm.ThemeControl(cboMidiAction);
         cboMidiAction.Text = "";
-        cboMidiAction.Items.Clear();
-        cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
-        cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
-        string filePath = midiDefaultFileName;
-        if (!midiDefaultFileName.Contains("\\")) {
-          filePath = Path.Combine(BaseDir, midiDefaultFileName);
-        }
-        if (File.Exists(filePath)) {
-          string[] strings = File.ReadAllLines(filePath);
-          foreach (string line in strings) {
-            if (!line.StartsWith("#")) {
-              cboMidiAction.Items.Add(line);
-            }
+      }
+      cboMidiAction.Items.Clear();
+      cboMidiAction.DisplayMember = nameof(MidiActionEntry.ActionText);
+      cboMidiAction.ValueMember = nameof(MidiActionEntry.ActionId);
+      string filePath = midiDefaultFileName;
+      if (!midiDefaultFileName.Contains("\\")) {
+        filePath = Path.Combine(BaseDir, midiDefaultFileName);
+      }
+      if (File.Exists(filePath)) {
+        string[] strings = File.ReadAllLines(filePath);
+        foreach (string line in strings) {
+          if (!line.StartsWith("#")) {
+            cboMidiAction.Items.Add(line);
           }
         }
       }
@@ -4075,10 +4073,9 @@ namespace MilkwaveRemote {
     private int GetLearningRowIndex() {
       if (chkMidi1Learn.Checked) return 1;
       if (chkMidi2Learn.Checked) return 2;
-      // TODO
-      // if (chkMidi3Learn.Checked) return 3;
-      // if (chkMidi4Learn.Checked) return 4;
-      // if (chkMidi5Learn.Checked) return 5;
+      if (chkMidi3Learn.Checked) return 3;
+      if (chkMidi4Learn.Checked) return 4;
+      if (chkMidi5Learn.Checked) return 5;
       return 0;
     }
 
@@ -4162,6 +4159,11 @@ namespace MilkwaveRemote {
       lblMidi3Row.Text = (baseVal + 3).ToString();
       lblMidi4Row.Text = (baseVal + 4).ToString();
       lblMidi5Row.Text = (baseVal + 5).ToString();
+      chkMidi1Learn.Checked = false;
+      chkMidi2Learn.Checked = false;
+      chkMidi3Learn.Checked = false;
+      chkMidi4Learn.Checked = false;
+      chkMidi5Learn.Checked = false;
       FillRowsFromData();
     }
 
@@ -4211,7 +4213,9 @@ namespace MilkwaveRemote {
     private void UpdateRowData(int rowIndex) {
       if (!AllowMidiRowDataUpdate) return;
 
-      var row = MidiHelper.MidiRows[rowIndex - 1];
+      var dataRowIndex = (rowIndex - 1) + ((int)numMidiBank.Value-1) * 5;
+      var row = MidiHelper.MidiRows[dataRowIndex];
+
       ComboBox cboAction = FindCombobox($"cboMidi{rowIndex}Action");
       MidiActionEntry? cboActionEntry = cboAction.SelectedItem as MidiActionEntry;
       if (cboActionEntry != null) {
@@ -4246,9 +4250,12 @@ namespace MilkwaveRemote {
 
     private void UpdateRowDataActionType(int rowIndex, MidiActionType type) {
       if (!AllowMidiRowDataUpdate) return;
-      var row = MidiHelper.MidiRows[rowIndex - 1];
+
+      var dataRowIndex = (rowIndex - 1) + ((int)numMidiBank.Value - 1) * 5;
+      var row = MidiHelper.MidiRows[dataRowIndex];
       row.ActionType = type;
     }
+
     private void FillRowsFromData() {
       AllowMidiRowDataUpdate = false;
       try {
