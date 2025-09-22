@@ -8,9 +8,9 @@
 !define MUI_ICON "..\Resources\MilkwaveVisualizer.ico"
 !define MUI_UNICON "..\Resources\MilkwaveVisualizer.ico"
 
-!define VERSION "3.1"
+!define VERSION "3.2"
 !define VER_MAJOR 3
-!define VER_MINOR 1
+!define VER_MINOR 2
 
 !define RELDIR "..\Release\"
 
