@@ -285,10 +285,6 @@ namespace MilkwaveRemote
       chkFontBold2 = new CheckBox();
       chkFontItalic1 = new CheckBox();
       chkFontBold1 = new CheckBox();
-      tabSettings = new TabPage();
-      numFactorFPS = new NumericUpDown();
-      numFactorFrame = new NumericUpDown();
-      numFactorTime = new NumericUpDown();
       tabMidi = new TabPage();
       label6 = new Label();
       label8 = new Label();
@@ -329,6 +325,10 @@ namespace MilkwaveRemote
       lblBank = new Label();
       cboMidi1Action = new ComboBox();
       txtMidi1Inc = new TextBox();
+      tabSettings = new TabPage();
+      numFactorFPS = new NumericUpDown();
+      numFactorFrame = new NumericUpDown();
+      numFactorTime = new NumericUpDown();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -379,11 +379,11 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWavePushY).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).BeginInit();
       tabFonts.SuspendLayout();
+      tabMidi.SuspendLayout();
       tabSettings.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numFactorFPS).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
-      tabMidi.SuspendLayout();
       SuspendLayout();
       // 
       // statusStrip1
@@ -3722,75 +3722,6 @@ namespace MilkwaveRemote
       chkFontBold1.TextImageRelation = TextImageRelation.ImageAboveText;
       chkFontBold1.UseVisualStyleBackColor = true;
       // 
-      // tabSettings
-      // 
-      tabSettings.BackColor = SystemColors.ControlLight;
-      tabSettings.BorderStyle = BorderStyle.FixedSingle;
-      tabSettings.Controls.Add(numVisVersion);
-      tabSettings.Controls.Add(lblVisVersion);
-      tabSettings.Controls.Add(numVisShift);
-      tabSettings.Controls.Add(lblVisShift);
-      tabSettings.Controls.Add(numVisIntensity);
-      tabSettings.Controls.Add(lblVisIntensity);
-      tabSettings.Controls.Add(btnOpenTagsRemote);
-      tabSettings.Controls.Add(btnOpenSettingsRemote);
-      tabSettings.Controls.Add(btnOpenScriptDefault);
-      tabSettings.Controls.Add(btnOpenMessagesIni);
-      tabSettings.Controls.Add(btnOpenSpritesIni);
-      tabSettings.Controls.Add(btnOpenSettingsIni);
-      tabSettings.Controls.Add(numFactorFPS);
-      tabSettings.Controls.Add(lblFactorFPS);
-      tabSettings.Controls.Add(numFactorFrame);
-      tabSettings.Controls.Add(numFactorTime);
-      tabSettings.Controls.Add(lblFactorFrame);
-      tabSettings.Controls.Add(lblFactorTime);
-      tabSettings.Location = new Point(4, 24);
-      tabSettings.Margin = new Padding(0);
-      tabSettings.Name = "tabSettings";
-      tabSettings.Size = new Size(645, 183);
-      tabSettings.TabIndex = 4;
-      tabSettings.Text = "Settings";
-      // 
-      // numFactorFPS
-      // 
-      numFactorFPS.DecimalPlaces = 2;
-      numFactorFPS.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFactorFPS.Location = new Point(75, 35);
-      numFactorFPS.Margin = new Padding(3, 2, 3, 2);
-      numFactorFPS.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
-      numFactorFPS.Name = "numFactorFPS";
-      numFactorFPS.Size = new Size(56, 23);
-      numFactorFPS.TabIndex = 141;
-      numFactorFPS.TextAlign = HorizontalAlignment.Center;
-      numFactorFPS.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numFactorFPS.ValueChanged += numFactorFPS_ValueChanged;
-      // 
-      // numFactorFrame
-      // 
-      numFactorFrame.Location = new Point(75, 63);
-      numFactorFrame.Margin = new Padding(3, 2, 3, 2);
-      numFactorFrame.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
-      numFactorFrame.Name = "numFactorFrame";
-      numFactorFrame.Size = new Size(56, 23);
-      numFactorFrame.TabIndex = 139;
-      numFactorFrame.TextAlign = HorizontalAlignment.Center;
-      numFactorFrame.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numFactorFrame.ValueChanged += munFactorFrame_ValueChanged;
-      // 
-      // numFactorTime
-      // 
-      numFactorTime.DecimalPlaces = 2;
-      numFactorTime.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFactorTime.Location = new Point(75, 7);
-      numFactorTime.Margin = new Padding(3, 2, 3, 2);
-      numFactorTime.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
-      numFactorTime.Name = "numFactorTime";
-      numFactorTime.Size = new Size(56, 23);
-      numFactorTime.TabIndex = 137;
-      numFactorTime.TextAlign = HorizontalAlignment.Center;
-      numFactorTime.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numFactorTime.ValueChanged += numFactorTime_ValueChanged;
-      // 
       // tabMidi
       // 
       tabMidi.BackColor = SystemColors.ControlLight;
@@ -4275,6 +4206,75 @@ namespace MilkwaveRemote
       txtMidi1Inc.TextAlign = HorizontalAlignment.Center;
       txtMidi1Inc.TextChanged += txtMidiInc_TextChanged;
       // 
+      // tabSettings
+      // 
+      tabSettings.BackColor = SystemColors.ControlLight;
+      tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(numVisVersion);
+      tabSettings.Controls.Add(lblVisVersion);
+      tabSettings.Controls.Add(numVisShift);
+      tabSettings.Controls.Add(lblVisShift);
+      tabSettings.Controls.Add(numVisIntensity);
+      tabSettings.Controls.Add(lblVisIntensity);
+      tabSettings.Controls.Add(btnOpenTagsRemote);
+      tabSettings.Controls.Add(btnOpenSettingsRemote);
+      tabSettings.Controls.Add(btnOpenScriptDefault);
+      tabSettings.Controls.Add(btnOpenMessagesIni);
+      tabSettings.Controls.Add(btnOpenSpritesIni);
+      tabSettings.Controls.Add(btnOpenSettingsIni);
+      tabSettings.Controls.Add(numFactorFPS);
+      tabSettings.Controls.Add(lblFactorFPS);
+      tabSettings.Controls.Add(numFactorFrame);
+      tabSettings.Controls.Add(numFactorTime);
+      tabSettings.Controls.Add(lblFactorFrame);
+      tabSettings.Controls.Add(lblFactorTime);
+      tabSettings.Location = new Point(4, 24);
+      tabSettings.Margin = new Padding(0);
+      tabSettings.Name = "tabSettings";
+      tabSettings.Size = new Size(645, 183);
+      tabSettings.TabIndex = 4;
+      tabSettings.Text = "Settings";
+      // 
+      // numFactorFPS
+      // 
+      numFactorFPS.DecimalPlaces = 2;
+      numFactorFPS.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFactorFPS.Location = new Point(75, 35);
+      numFactorFPS.Margin = new Padding(3, 2, 3, 2);
+      numFactorFPS.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorFPS.Name = "numFactorFPS";
+      numFactorFPS.Size = new Size(56, 23);
+      numFactorFPS.TabIndex = 141;
+      numFactorFPS.TextAlign = HorizontalAlignment.Center;
+      numFactorFPS.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorFPS.ValueChanged += numFactorFPS_ValueChanged;
+      // 
+      // numFactorFrame
+      // 
+      numFactorFrame.Location = new Point(75, 63);
+      numFactorFrame.Margin = new Padding(3, 2, 3, 2);
+      numFactorFrame.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorFrame.Name = "numFactorFrame";
+      numFactorFrame.Size = new Size(56, 23);
+      numFactorFrame.TabIndex = 139;
+      numFactorFrame.TextAlign = HorizontalAlignment.Center;
+      numFactorFrame.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorFrame.ValueChanged += munFactorFrame_ValueChanged;
+      // 
+      // numFactorTime
+      // 
+      numFactorTime.DecimalPlaces = 2;
+      numFactorTime.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFactorTime.Location = new Point(75, 7);
+      numFactorTime.Margin = new Padding(3, 2, 3, 2);
+      numFactorTime.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorTime.Name = "numFactorTime";
+      numFactorTime.Size = new Size(56, 23);
+      numFactorTime.TabIndex = 137;
+      numFactorTime.TextAlign = HorizontalAlignment.Center;
+      numFactorTime.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorTime.ValueChanged += numFactorTime_ValueChanged;
+      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -4348,12 +4348,12 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWavePushY).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).EndInit();
       tabFonts.ResumeLayout(false);
+      tabMidi.ResumeLayout(false);
+      tabMidi.PerformLayout();
       tabSettings.ResumeLayout(false);
       ((System.ComponentModel.ISupportInitialize)numFactorFPS).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
-      tabMidi.ResumeLayout(false);
-      tabMidi.PerformLayout();
       ResumeLayout(false);
       PerformLayout();
     }

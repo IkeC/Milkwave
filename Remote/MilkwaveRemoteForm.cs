@@ -114,6 +114,8 @@ namespace MilkwaveRemote {
     private OpenFileDialog ofdShader;
     private OpenFileDialog ofdShaderHLSL;
 
+    private readonly Dictionary<int, CancellationTokenSource> KnobActionDelays = new();
+
     private const int VK_F1 = 0x70;
     private const int VK_F2 = 0x71;
     private const int VK_F3 = 0x72;
@@ -3973,17 +3975,27 @@ namespace MilkwaveRemote {
             for (int i = 0; i < MidiHelper.MidiRows.Count; i++) {
               var row = MidiHelper.MidiRows[i];
               if (row.Active && row.Channel == note.Channel && row.Controller == note.Controller) {
-                // For a button, the value must match
                 if (row.Controller == 0 && row.Value == note.Value) {
                   TriggerMidiButtonAction(row);
-                }
-                // For a knob, the value is irrelevant for matching
-                else if (row.Controller != 0) {
-                  // Knob
-                  TriggerMidiKnobAction(row, note.Value);
+                } else if (row.Controller != 0) {
+                  // Cancel any pending knob action for this controller
+                  if (KnobActionDelays.TryGetValue((int)row.Controller, out var existingCts)) {
+                    existingCts.Cancel();
+                    existingCts.Dispose();
+                  }
+
+                  var cts = new CancellationTokenSource();
+                  KnobActionDelays[(int)row.Controller] = cts;
+
+                  Task.Delay(50, cts.Token).ContinueWith(t => {
+                    if (!t.IsCanceled) {
+                      TriggerMidiKnobAction(row, note.Value);
+                    }
+                  }, TaskScheduler.FromCurrentSynchronizationContext());
                 }
               }
             }
+
           }
         }));
       };
