@@ -78,7 +78,7 @@ public:
 
   void SaveWindow();
   HWND GetHwnd();
-  bool OnUserResizeWindow(RECT* w, RECT* c);
+  bool OnUserResizeWindow(RECT* w, RECT* c, bool bSetBackBuffer);
   bool TempIgnoreDestroyMessages();
 
   // PUBLIC DATA - DO NOT WRITE TO THESE FROM OUTSIDE THE CLASS

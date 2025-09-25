@@ -383,7 +383,6 @@ void spoutDX9::ReleaseDX9sender()
 	m_Height = 0;
 	m_SenderName[0] = 0;
 	m_bSpoutInitialized = false;
-
 }
 
 

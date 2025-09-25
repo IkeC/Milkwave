@@ -1301,6 +1301,9 @@ void CPlugin::MyReadConfig() {
   // ======================================
   // SPOUT - save whether in DirectX11 (true) or DirectX 9 (false) mode, default true
   bSpoutOut = GetPrivateProfileBoolW(L"Settings", L"bSpoutOut", bSpoutOut, pIni);
+  bSpoutFixedSize = GetPrivateProfileBoolW(L"Settings", L"bSpoutFixedSize", bSpoutFixedSize, pIni);
+  nSpoutFixedWidth = GetPrivateProfileIntW(L"Settings", L"nSpoutFixedWidth", nSpoutFixedWidth, pIni);
+  nSpoutFixedHeight = GetPrivateProfileIntW(L"Settings", L"nSpoutFixedHeight", nSpoutFixedHeight, pIni);
   // ======================================
 
   m_bFirstRun = !GetPrivateProfileBoolW(L"Settings", L"bConfigured", false, pIni);
@@ -1476,6 +1479,9 @@ void CPlugin::MyWriteConfig() {
   // ================================
   // SPOUT
   WritePrivateProfileIntW(bSpoutOut, L"bSpoutOut", pIni, L"Settings");
+  WritePrivateProfileIntW(bSpoutFixedSize, L"bSpoutFixedSize", pIni, L"Settings");
+  WritePrivateProfileIntW(nSpoutFixedWidth, L"nSpoutFixedWidth", pIni, L"Settings");
+  WritePrivateProfileIntW(nSpoutFixedHeight, L"nSpoutFixedHeight", pIni, L"Settings");
   // ================================
 
   WritePrivateProfileIntW(m_bSongTitleAnims, L"bSongTitleAnims", pIni, L"Settings");
@@ -4582,6 +4588,7 @@ void CPlugin::MyRenderUI(
       wchar_t buf4[512] = { 0 };
       SelectFont(DECORATIVE_FONT);
       GetSongTitle(buf4, sizeof(buf4)); // defined in utility.h/cpp
+
       MyTextOut_Shadow(buf4, MTO_LOWER_LEFT);
     }
 
@@ -5954,8 +5961,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
   case WM_KEYDOWN:    // virtual-key codes
 
-
-
     // Note that some keys will never reach this point, since they are
     //   intercepted by the plugin shell (see PluginShellWindowProc(),
     //   at the end of pluginshell.cpp for which ones).
@@ -5983,11 +5988,11 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
     switch (wParam) {
       //case VK_F9:
-            //m_bShowSongTitle = !m_bShowSongTitle; // we processed (or absorbed) the key
-        //m_bShowSongTime = !m_bShowSongTime;
-        //m_bShowSongLen  = !m_bShowSongLen;
-        //m_bShowPresetInfo = !m_bShowPresetInfo; //I didn't need this.
-          //return 0; // we processed (or absorbed) the key
+      //m_bShowSongTitle = !m_bShowSongTitle; // we processed (or absorbed) the key
+      //m_bShowSongTime = !m_bShowSongTime;
+      //m_bShowSongLen  = !m_bShowSongLen;
+      //m_bShowPresetInfo = !m_bShowPresetInfo; //I didn't need this.
+      //return 0; // we processed (or absorbed) the key
     case VK_F3:
     {
       if ((GetKeyState(VK_CONTROL) & 0x8000) != 0) {
@@ -6006,212 +6011,162 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           m_max_fps_fs = 60;
           m_max_fps_dm = 60;
           m_max_fps_w = 60;
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"60 fps", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"60 fps");
         }
         else if (ToggleFPSNumPressed == 2) {
           m_max_fps_fs = 90;
           m_max_fps_dm = 90;
           m_max_fps_w = 90;
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"90 fps", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"90 fps");
         }
         else if (ToggleFPSNumPressed == 3) {
           m_max_fps_fs = 120;
           m_max_fps_dm = 120;
           m_max_fps_w = 120;
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"120 fps", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"120 fps");
         }
         else if (ToggleFPSNumPressed == 4) {
           m_max_fps_fs = 144;
           m_max_fps_dm = 144;
           m_max_fps_w = 144;
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"144 fps", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"144 fps");
         }
         else if (ToggleFPSNumPressed == 5) {
           m_max_fps_fs = 240;
           m_max_fps_dm = 240;
           m_max_fps_w = 240;
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"240 fps", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"240 fps");
         }
         else if (ToggleFPSNumPressed == 6) {
           m_max_fps_fs = 360;
           m_max_fps_dm = 360;
           m_max_fps_w = 360;
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"360 fps", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"360 fps");
         }
         else if (ToggleFPSNumPressed == 7) {
           m_max_fps_fs = 0;
           m_max_fps_dm = 0;
           m_max_fps_w = 0;
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Unlimited fps", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"Unlimited fps");
         }
         else if (ToggleFPSNumPressed == 8) {
           ToggleFPSNumPressed = 0;
           m_max_fps_fs = 30;
           m_max_fps_dm = 30;
           m_max_fps_w = 30;
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"30 fps", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"30 fps");
         }
       }
     }
     return 0; // we processed (or absorbed) the key
-    case VK_F5:		m_bShowFPS = !m_bShowFPS;				return 0; // we processed (or absorbed) the key
-    case VK_F6:		m_bShowRating = !m_bShowRating;			return 0; // we processed (or absorbed) the key
-    case VK_F4:		m_bShowPresetInfo = !m_bShowPresetInfo;         return 0; // we processed (or absorbed) the key
+    case VK_F4: m_bShowPresetInfo = !m_bShowPresetInfo; return 0; // we processed (or absorbed) the key
+    case VK_F5: m_bShowFPS = !m_bShowFPS; return 0; // we processed (or absorbed) the key
+    case VK_F6: m_bShowRating = !m_bShowRating; return 0; // we processed (or absorbed) the key
     case VK_F7:
       m_bAlwaysOnTop = !m_bAlwaysOnTop;
       if (m_bAlwaysOnTop) {
         ToggleAlwaysOnTop(hWnd);
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Always On Top enabled", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Always On Top enabled");
       }
       else {
         ToggleAlwaysOnTop(hWnd);
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Always On Top disabled", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Always On Top disabled");
       }
       return 0;
     case VK_F12:
       if ((GetKeyState(VK_CONTROL) & 0x8000) != 0) {
         m_blackmode = !m_blackmode;
         if (m_blackmode) {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Black Mode enabled", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"Black Mode enabled");
         }
         else {
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Black Mode disabled", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"Black Mode disabled");
         }
       }
       else {
         TranspaMode = !TranspaMode;
         if (TranspaMode) {
           ToggleTransparency(hWnd);
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Transparency Mode enabled", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"Transparency Mode enabled");
         }
         else {
           ToggleTransparency(hWnd);
-          wchar_t buf[1024], tmp[64];
-          swprintf(buf, L"Transparency Mode disabled", tmp, 64);
-          AddNotification(buf);
+          AddNotification(L"Transparency Mode disabled");
         }
       }
-
       return 0;
     case VK_F8:
       OpenMilkwaveRemote();
       return 0;
       // F9 is handled in Milkdrop2PcmVisualizer.cpp
     case VK_F10:
-      ToggleSpout();
+      if (bShiftHeldDown) {
+        SetSpoutFixedSize(true);
+      }
+      else {
+        ToggleSpout();
+      }
       return 0;
-    case VK_F11:   //Only changing the HardcutModes value!
+    case VK_F11:
+      //Only changing the HardcutModes value!
       //Functionalities are moved on void MyRenderFn()
     {
       HardcutMode++;
       if (HardcutMode == 1) {
         m_bHardCutsDisabled = false;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Normal", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Normal");
       }
       if (HardcutMode == 2) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Bass Blend", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Bass Blend");
       }
-
       if (HardcutMode == 3) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Bass", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Bass");
       }
       if (HardcutMode == 4) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Middle", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Middle");
       }
       if (HardcutMode == 5) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Treble", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Treble");
       }
       if (HardcutMode == 6) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Bass Fast Blend", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Bass Fast Blend");
       }
       if (HardcutMode == 7) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Treble Fast Blend", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Treble Fast Blend");
       }
       if (HardcutMode == 8) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Bass Blend and Hardcut Treble", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Bass Blend and Hardcut Treble");
       }
       if (HardcutMode == 9) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Rhythmic Hardcut", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Rhythmic Hardcut");
       }
       if (HardcutMode == 10) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: 2 beats", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: 2 beats");
         beatcount = -1;
       }
       if (HardcutMode == 11) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: 4 beats", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: 4 beats");
         beatcount = -1;
       }
       if (HardcutMode == 12) {
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: Kinetronix (Vizikord)", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: Kinetronix (Vizikord)");
         beatcount = -1;
       }
       if (HardcutMode == 13) {
         HardcutMode = 0;
         m_bHardCutsDisabled = true;
-        wchar_t buf[1024], tmp[64];
-        swprintf(buf, L"Hard cut Mode: OFF", tmp, 64);
-        AddNotification(buf);
+        AddNotification(L"Hard Cut Mode: OFF");
       }
     }
     return 0; // we processed (or absorbed) the key
@@ -6289,7 +6244,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         }
       }
 
-      if (bCtrlHeldDown)		// copy/cut/paste
+      if (bCtrlHeldDown)  // copy/cut/paste
       {
         switch (wParam) {
         case 'c':
@@ -6984,7 +6939,12 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       //
     case 'Z':
       if (bCtrlHeldDown) {
-        ToggleSpout();
+        if (bShiftHeldDown) {
+          SetSpoutFixedSize(true);
+        }
+        else {
+          ToggleSpout();
+        }
       }
       else {
         AddError(L"Previous", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
@@ -7083,7 +7043,6 @@ bool CPlugin::ChangePresetDir(wchar_t* newDir, wchar_t* oldDir) {
 
     // save new path to registry
     WritePrivateProfileStringW(L"Settings", L"szPresetDir", g_plugin.m_szPresetDir, GetConfigIniFile());
-
   }
   else {
     // new dir. was invalid -> allow them to try again
@@ -7101,17 +7060,11 @@ int CPlugin::ToggleSpout() {
   bSpoutOut = !bSpoutOut;
   if (bSpoutOut) {
     // Start spout
-    wchar_t buf[1024], tmp[64];
-    swprintf(buf, L"Spout output enabled.", tmp, 64);
-    SendMessageToMilkwaveRemote(L"STATUS=Spout output enabled");
-    // AddNotification(buf);
+    AddNotification(L"Spout output enabled");
   }
   else {
     // Stop Spout
-    wchar_t buf[1024], tmp[64];
-    swprintf(buf, L"Spout output disabled.", tmp, 64);
-    SendMessageToMilkwaveRemote(L"STATUS=Spout output disabled");
-    // AddNotification(buf);
+    AddNotification(L"Spout output disabled");
   }
   if (bInitialized) {
     spoutsender.ReleaseDX9sender();
@@ -7119,6 +7072,45 @@ int CPlugin::ToggleSpout() {
     // Initialized next render frame
     // milkdropfs.cpp - RenderFrame / OpenSender
   }
+  SendSpoutInfoToMilkwaveRemote();
+  return 0;
+}
+
+int CPlugin::SetSpoutFixedSize(bool toggleSwitch) {
+  bSpoutChanged = true; // write config on exit
+  if (toggleSwitch) {
+    bSpoutFixedSize = !bSpoutFixedSize;
+  }
+  if (bSpoutFixedSize) {
+    if (toggleSwitch) {
+      std::wstring msg = L"Fixed Spout output size enabled ("
+        + std::to_wstring(nSpoutFixedWidth) + L"x"
+        + std::to_wstring(nSpoutFixedHeight) + L")";
+      AddNotification(msg.data());
+    }
+    else {
+      std::wstring msg = L"Spout output size set to "
+        + std::to_wstring(nSpoutFixedWidth) + L"x"
+        + std::to_wstring(nSpoutFixedHeight);
+      AddNotification(msg.data());
+    }
+    d3dPp.BackBufferWidth = nSpoutFixedWidth;
+    d3dPp.BackBufferHeight = nSpoutFixedHeight;
+    GetDevice()->Reset(&d3dPp);
+  }
+  else {
+    // Stop Spout
+    // Update window properties
+    RECT c;
+    GetClientRect(m_hRenderWnd, &c);
+    d3dPp.BackBufferWidth = c.right - c.left;
+    d3dPp.BackBufferHeight = c.bottom - c.top;
+    GetDevice()->Reset(&d3dPp);
+    if (toggleSwitch) {
+      AddNotification(L"Fixed Spout output size disabled");
+    }
+  }
+  SendSpoutInfoToMilkwaveRemote();
   return 0;
 }
 
@@ -7258,7 +7250,6 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     m_pState->m_fWarpAmount *= 1.1f;
     SendPresetWaveInfoToMilkwaveRemote();
     return 0; // we processed (or absorbed) the key
-
   case '!':
     // randomize warp shader
   {
@@ -9242,8 +9233,11 @@ void CPlugin::OnFinishedLoadingPreset() {
 
   SendPresetChangedInfoToMilkwaveRemote();
 }
-
 int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
+  return SendMessageToMilkwaveRemote(messageToSend, false);
+}
+
+int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend, bool doForce) {
   using namespace std::chrono;
   try {
     if (!messageToSend || !*messageToSend) {
@@ -9253,7 +9247,7 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
 
     // Get current time since epoch in milliseconds
     uint64_t Now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    if (Now - LastSentMilkwaveMessage < 500) {
+    if (!doForce && Now - LastSentMilkwaveMessage < 100) {
       // Skipping message send to Milkwave Remote to avoid flooding
       return 0;
     }
@@ -10817,6 +10811,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
     SendPresetChangedInfoToMilkwaveRemote();
+    SendSpoutInfoToMilkwaveRemote();
   }
   else if (wcsncmp(sMessage, L"LINK=", 5) == 0) {
     std::wstring message(sMessage + 5);
@@ -10874,11 +10869,34 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 12);
     g_plugin.m_VisVersion = std::stof(message);
   }
+  else if (wcsncmp(sMessage, L"SPOUT_ACTIVE=", 13) == 0) {
+    wchar_t status = sMessage[13];
+    if ((status == L'0' && bSpoutOut) || (status == L'1' && !bSpoutOut)) {
+      ToggleSpout();
+    }
+  }
+  else if (wcsncmp(sMessage, L"SPOUT_FIXEDSIZE=", 16) == 0) {
+    wchar_t status = sMessage[16];
+    if ((status == L'0' && bSpoutFixedSize) || (status == L'1' && !bSpoutFixedSize)) {
+      SetSpoutFixedSize(true);
+    }
+  }
+  else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
+    std::wstring message(sMessage + 17);
+    size_t pos = message.find(L'x');
+    if (pos != std::wstring::npos) {
+      std::wstring width = message.substr(0, pos);
+      std::wstring height = message.substr(pos + 1);
+      nSpoutFixedWidth = std::stof(width);
+      nSpoutFixedHeight = std::stof(height);
+      SetSpoutFixedSize(false);
+    }
+  }
 }
 
 void CPlugin::SendPresetChangedInfoToMilkwaveRemote() {
   std::wstring msg = L"PRESET=" + std::wstring(m_szCurrentPresetFile);
-  SendMessageToMilkwaveRemote(msg.c_str());
+  SendMessageToMilkwaveRemote(msg.c_str(), true);
   SendPresetWaveInfoToMilkwaveRemote();
 }
 
@@ -10904,7 +10922,16 @@ void CPlugin::SendPresetWaveInfoToMilkwaveRemote() {
     + L"|DOTTED=" + (g_plugin.m_pState->m_bWaveDots ? L"1" : L"0")
     + L"|THICK=" + (g_plugin.m_pState->m_bWaveThick ? L"1" : L"0")
     + L"|VOLALPHA=" + (g_plugin.m_pState->m_bModWaveAlphaByVolume ? L"1" : L"0");
-  SendMessageToMilkwaveRemote(msg.c_str());
+  SendMessageToMilkwaveRemote(msg.c_str(), true);
+}
+
+void CPlugin::SendSpoutInfoToMilkwaveRemote() {
+  std::wstring msg = L"SPOUT|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0")
+    + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0")
+    + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth)
+    + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight);
+
+  SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 
 void CPlugin::SetWaveParamsFromMessage(std::wstring& message) {

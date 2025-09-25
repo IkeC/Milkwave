@@ -225,10 +225,12 @@ int       CPluginShell::GetHeight() {
   if (m_lpDX) return m_lpDX->m_client_height; else return 0;
 };
 int       CPluginShell::GetCanvasMarginX() {
-  if (m_lpDX) return (m_lpDX->m_client_width - m_lpDX->m_REAL_client_width) / 2; else return 0;
+  if (m_lpDX) return (m_lpDX->m_client_width - m_lpDX->m_REAL_client_width) / 2;
+  else return 0;
 };
 int       CPluginShell::GetCanvasMarginY() {
-  if (m_lpDX) return (m_lpDX->m_client_height - m_lpDX->m_REAL_client_height) / 2; else return 0;
+  if (m_lpDX) return (m_lpDX->m_client_height - m_lpDX->m_REAL_client_height) / 2;
+  else return 0;
 };
 HINSTANCE CPluginShell::GetInstance() {
   return m_hInstance;
@@ -733,12 +735,13 @@ void CPluginShell::OnUserResizeWindow() {
       //CleanUpVJStuff();
 
       CleanUpDX9Stuff(0);
-
-      if (!m_lpDX->OnUserResizeWindow(&w, &c)) {
-        // note: a basic warning messagebox will have already been given.
-        // now suggest specific advice on how to regain more video memory:
-        SuggestHowToFreeSomeMem();
-        return;
+      if (true) {
+        if (!m_lpDX->OnUserResizeWindow(&w, &c, !bSpoutFixedSize)) {
+          // note: a basic warning messagebox will have already been given.
+          // now suggest specific advice on how to regain more video memory:
+          SuggestHowToFreeSomeMem();
+          return;
+        }
       }
       if (!AllocateDX9Stuff()) {
         m_lpDX->m_ready = false;   // flag to exit
@@ -934,7 +937,7 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   m_lpDX = NULL;
   m_szPluginsDirPath[0] = 0;  // will be set further down
   m_szConfigIniFile[0] = 0;  // will be set further down
-  
+
   wcscpy(m_szPluginsDirPath, m_szBaseDir);
 
   wchar_t* p = m_szPluginsDirPath + wcslen(m_szPluginsDirPath);
@@ -1366,6 +1369,10 @@ void CPluginShell::DrawAndDisplay(int redraw) {
       cx = min(cx, (int)desc.Width);
       cy = min(cy, (int)desc.Height);
     }
+  }
+  if (bSpoutFixedSize) {
+    cx = nSpoutFixedWidth;
+    cy = nSpoutFixedHeight;
   }
   m_upper_left_corner_y = TEXT_MARGIN + GetCanvasMarginY();
   m_upper_right_corner_y = TEXT_MARGIN + GetCanvasMarginY();

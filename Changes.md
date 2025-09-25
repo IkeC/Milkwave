@@ -1,3 +1,15 @@
+## v3.2 (unreleased)
+
+- MIDI automation
+- Window independent Spout output (#14)
+- HiRes audio support (by @OfficialIncubo)
+- 5 new shader-based presets:
+ - chronos + IkeC - Astral Jelly Journey
+ - diatribes + IkeC - Deep Cloud Mix
+ - diatribes + IkeC - Neon Chill
+ - Kali + IkeC - Fractal Land
+ - kasari39 + IkeC - Phantom Star for CineShader
+ 
 ## v3.1 (2025-09-04)
 
 - 10 new shader-based presets in Milkwave/Shader directory

@@ -352,6 +352,12 @@ protected:
 
   // CHANGES:
   friend class CShaderParams;
+
+public:
+  bool bSpoutOut; // Spout output on or off
+  bool bSpoutFixedSize; // Use Spout output fixed size
+  int nSpoutFixedWidth = 1280;
+  int nSpoutFixedHeight = 720;
 };
 
 #endif

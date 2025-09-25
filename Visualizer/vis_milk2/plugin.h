@@ -290,6 +290,8 @@ public:
 // =========================================================
 // SPOUT variables
   spoutDX9 spoutsender;	// A spout DX9 sender object
+  D3DPRESENT_PARAMETERS d3dPp;
+
   char WinampSenderName[256]; // The sender name
   bool bInitialized; // did it work ?
   bool OpenSender(unsigned int width, unsigned int height);
@@ -307,7 +309,7 @@ public:
   void ShowDirectXMissingMessage();
 
   bool bSpoutChanged; // set to write config on exit
-  bool bSpoutOut; // Spout output on or off
+
   bool bEnablePresetStartup;
   bool bAutoLockPresetWhenNoMusic;
   //bool StartupPresetLoaded = false;
@@ -529,6 +531,7 @@ public:
   void NextPreset(float fBlendTime);  // if not retracing our former steps, it will choose a random one.
   void OnFinishedLoadingPreset();
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile);
+  int SendMessageToMilkwaveRemote(const wchar_t* presetFile, bool doForce);
   void PostMessageToMilkwaveRemote(UINT msg);
 
 #define WM_USER_NEXT_PRESET WM_USER + 100
@@ -703,6 +706,7 @@ public:
   void		LaunchMessage(wchar_t* sMessage);
   void    SendPresetChangedInfoToMilkwaveRemote();
   void    SendPresetWaveInfoToMilkwaveRemote();
+  void    SendSpoutInfoToMilkwaveRemote();
   void    SetWaveParamsFromMessage(std::wstring& message);
   void		ReadCustomMessages();
   void		LaunchSongTitleAnim(int supertextIndex);
@@ -763,6 +767,7 @@ public:
   void KillAllSupertexts();
   bool ChangePresetDir(wchar_t* newDir, wchar_t* oldDir);
   int ToggleSpout();
+  int SetSpoutFixedSize(bool toggleSwitch);
   virtual void OnAltK();
 };
 

@@ -196,6 +196,11 @@ namespace MilkwaveRemote
       btnMIDISave = new Button();
       btnMIDILoad = new Button();
       lblMidi1Action = new Label();
+      label9 = new Label();
+      chkSpoutActive = new CheckBox();
+      chkSpoutFixedSize = new CheckBox();
+      cboSpoutWidth = new ComboBox();
+      cboSpoutHeight = new ComboBox();
       txtMidi2Label = new TextBox();
       lblMidi2Inc = new Label();
       chkMidi2Active = new CheckBox();
@@ -1892,9 +1897,9 @@ namespace MilkwaveRemote
       // btnOpenSettingsIni
       // 
       btnOpenSettingsIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSettingsIni.Location = new Point(507, 7);
+      btnOpenSettingsIni.Location = new Point(535, 7);
       btnOpenSettingsIni.Name = "btnOpenSettingsIni";
-      btnOpenSettingsIni.Size = new Size(125, 23);
+      btnOpenSettingsIni.Size = new Size(97, 23);
       btnOpenSettingsIni.TabIndex = 143;
       btnOpenSettingsIni.Text = "settings.ini\r\n";
       toolTip1.SetToolTip(btnOpenSettingsIni, "Open file in associated editor");
@@ -1904,9 +1909,9 @@ namespace MilkwaveRemote
       // btnOpenSpritesIni
       // 
       btnOpenSpritesIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSpritesIni.Location = new Point(507, 35);
+      btnOpenSpritesIni.Location = new Point(535, 35);
       btnOpenSpritesIni.Name = "btnOpenSpritesIni";
-      btnOpenSpritesIni.Size = new Size(125, 23);
+      btnOpenSpritesIni.Size = new Size(97, 23);
       btnOpenSpritesIni.TabIndex = 144;
       btnOpenSpritesIni.Text = "sprites.ini\r\n";
       toolTip1.SetToolTip(btnOpenSpritesIni, "Open file in associated editor");
@@ -1916,9 +1921,9 @@ namespace MilkwaveRemote
       // btnOpenMessagesIni
       // 
       btnOpenMessagesIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenMessagesIni.Location = new Point(507, 63);
+      btnOpenMessagesIni.Location = new Point(535, 63);
       btnOpenMessagesIni.Name = "btnOpenMessagesIni";
-      btnOpenMessagesIni.Size = new Size(125, 23);
+      btnOpenMessagesIni.Size = new Size(97, 23);
       btnOpenMessagesIni.TabIndex = 145;
       btnOpenMessagesIni.Text = "messages.ini\r\n";
       toolTip1.SetToolTip(btnOpenMessagesIni, "Open file in associated editor");
@@ -1928,9 +1933,9 @@ namespace MilkwaveRemote
       // btnOpenScriptDefault
       // 
       btnOpenScriptDefault.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenScriptDefault.Location = new Point(374, 7);
+      btnOpenScriptDefault.Location = new Point(535, 92);
       btnOpenScriptDefault.Name = "btnOpenScriptDefault";
-      btnOpenScriptDefault.Size = new Size(125, 23);
+      btnOpenScriptDefault.Size = new Size(97, 23);
       btnOpenScriptDefault.TabIndex = 146;
       btnOpenScriptDefault.Text = "script-default.txt";
       toolTip1.SetToolTip(btnOpenScriptDefault, "Open file in associated editor");
@@ -1940,9 +1945,9 @@ namespace MilkwaveRemote
       // btnOpenSettingsRemote
       // 
       btnOpenSettingsRemote.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSettingsRemote.Location = new Point(374, 35);
+      btnOpenSettingsRemote.Location = new Point(535, 120);
       btnOpenSettingsRemote.Name = "btnOpenSettingsRemote";
-      btnOpenSettingsRemote.Size = new Size(125, 23);
+      btnOpenSettingsRemote.Size = new Size(97, 23);
       btnOpenSettingsRemote.TabIndex = 147;
       btnOpenSettingsRemote.Text = "settings-remote.json";
       toolTip1.SetToolTip(btnOpenSettingsRemote, "Open file in associated editor");
@@ -1952,9 +1957,9 @@ namespace MilkwaveRemote
       // btnOpenTagsRemote
       // 
       btnOpenTagsRemote.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenTagsRemote.Location = new Point(374, 63);
+      btnOpenTagsRemote.Location = new Point(535, 148);
       btnOpenTagsRemote.Name = "btnOpenTagsRemote";
-      btnOpenTagsRemote.Size = new Size(125, 23);
+      btnOpenTagsRemote.Size = new Size(97, 23);
       btnOpenTagsRemote.TabIndex = 148;
       btnOpenTagsRemote.Text = "tags-remote.json";
       toolTip1.SetToolTip(btnOpenTagsRemote, "Open file in associated editor");
@@ -2231,7 +2236,7 @@ namespace MilkwaveRemote
       // 
       // lblVisIntensity
       // 
-      lblVisIntensity.Location = new Point(137, 5);
+      lblVisIntensity.Location = new Point(4, 88);
       lblVisIntensity.Name = "lblVisIntensity";
       lblVisIntensity.Size = new Size(65, 23);
       lblVisIntensity.TabIndex = 150;
@@ -2242,7 +2247,7 @@ namespace MilkwaveRemote
       // 
       // lblVisShift
       // 
-      lblVisShift.Location = new Point(137, 33);
+      lblVisShift.Location = new Point(4, 116);
       lblVisShift.Name = "lblVisShift";
       lblVisShift.Size = new Size(65, 23);
       lblVisShift.TabIndex = 152;
@@ -2253,7 +2258,7 @@ namespace MilkwaveRemote
       // 
       // lblVisVersion
       // 
-      lblVisVersion.Location = new Point(137, 61);
+      lblVisVersion.Location = new Point(4, 144);
       lblVisVersion.Name = "lblVisVersion";
       lblVisVersion.Size = new Size(65, 23);
       lblVisVersion.TabIndex = 154;
@@ -2401,6 +2406,68 @@ namespace MilkwaveRemote
       lblMidi1Action.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(lblMidi1Action, "Actions become selectable as soon as a MIDI control is learned\r\nDifferent actions are available for MIDI buttons/notes and faders/knobs\r\nSee the Milkwave manual for details (press \"?\" button)");
       // 
+      // label9
+      // 
+      label9.Location = new Point(148, 5);
+      label9.Name = "label9";
+      label9.Size = new Size(45, 23);
+      label9.TabIndex = 155;
+      label9.Text = "Spout";
+      label9.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label9, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nClick: Set 1");
+      // 
+      // chkSpoutActive
+      // 
+      chkSpoutActive.Appearance = Appearance.Button;
+      chkSpoutActive.FlatStyle = FlatStyle.System;
+      chkSpoutActive.Location = new Point(199, 6);
+      chkSpoutActive.Name = "chkSpoutActive";
+      chkSpoutActive.Size = new Size(63, 23);
+      chkSpoutActive.TabIndex = 156;
+      chkSpoutActive.Text = "Active";
+      chkSpoutActive.TextAlign = ContentAlignment.MiddleCenter;
+      chkSpoutActive.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkSpoutActive, "Activate Spout output (F10)");
+      chkSpoutActive.UseVisualStyleBackColor = true;
+      chkSpoutActive.CheckedChanged += chkSpoutActive_CheckedChanged;
+      // 
+      // chkSpoutFixedSize
+      // 
+      chkSpoutFixedSize.Appearance = Appearance.Button;
+      chkSpoutFixedSize.FlatStyle = FlatStyle.System;
+      chkSpoutFixedSize.Location = new Point(268, 6);
+      chkSpoutFixedSize.Name = "chkSpoutFixedSize";
+      chkSpoutFixedSize.Size = new Size(63, 23);
+      chkSpoutFixedSize.TabIndex = 157;
+      chkSpoutFixedSize.Text = "Fixed";
+      chkSpoutFixedSize.TextAlign = ContentAlignment.MiddleCenter;
+      chkSpoutFixedSize.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkSpoutFixedSize, "Check to force Spout output to this resolution\r\nIf unchecked, output will depend on the Visualizer window size");
+      chkSpoutFixedSize.UseVisualStyleBackColor = true;
+      chkSpoutFixedSize.CheckedChanged += chkSpoutFixedSize_CheckedChanged;
+      // 
+      // cboSpoutWidth
+      // 
+      cboSpoutWidth.Items.AddRange(new object[] { "3840", "2560", "1920", "1600", "1280", "1024", "800", "640" });
+      cboSpoutWidth.Location = new Point(337, 7);
+      cboSpoutWidth.Name = "cboSpoutWidth";
+      cboSpoutWidth.Size = new Size(58, 23);
+      cboSpoutWidth.TabIndex = 158;
+      toolTip1.SetToolTip(cboSpoutWidth, "Fixed output width");
+      cboSpoutWidth.TextUpdate += cboSpoutRes_ValueChanged;
+      cboSpoutWidth.SelectedValueChanged += cboSpoutRes_ValueChanged;
+      // 
+      // cboSpoutHeight
+      // 
+      cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "600", "480" });
+      cboSpoutHeight.Location = new Point(401, 7);
+      cboSpoutHeight.Name = "cboSpoutHeight";
+      cboSpoutHeight.Size = new Size(58, 23);
+      cboSpoutHeight.TabIndex = 159;
+      toolTip1.SetToolTip(cboSpoutHeight, "Fixed output height");
+      cboSpoutHeight.TextUpdate += cboSpoutRes_ValueChanged;
+      cboSpoutHeight.SelectedValueChanged += cboSpoutRes_ValueChanged;
+      // 
       // txtMidi2Label
       // 
       txtMidi2Label.Location = new Point(34, 67);
@@ -2478,7 +2545,7 @@ namespace MilkwaveRemote
       // 
       numVisShift.DecimalPlaces = 2;
       numVisShift.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numVisShift.Location = new Point(208, 35);
+      numVisShift.Location = new Point(75, 118);
       numVisShift.Margin = new Padding(3, 2, 3, 2);
       numVisShift.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numVisShift.Minimum = new decimal(new int[] { 99999, 0, 0, -2147352576 });
@@ -2492,7 +2559,7 @@ namespace MilkwaveRemote
       // 
       numVisIntensity.DecimalPlaces = 2;
       numVisIntensity.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numVisIntensity.Location = new Point(208, 7);
+      numVisIntensity.Location = new Point(75, 90);
       numVisIntensity.Margin = new Padding(3, 2, 3, 2);
       numVisIntensity.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numVisIntensity.Name = "numVisIntensity";
@@ -2549,7 +2616,7 @@ namespace MilkwaveRemote
       // 
       // numVisVersion
       // 
-      numVisVersion.Location = new Point(208, 63);
+      numVisVersion.Location = new Point(75, 146);
       numVisVersion.Margin = new Padding(3, 2, 3, 2);
       numVisVersion.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numVisVersion.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -4210,6 +4277,11 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(cboSpoutHeight);
+      tabSettings.Controls.Add(cboSpoutWidth);
+      tabSettings.Controls.Add(chkSpoutFixedSize);
+      tabSettings.Controls.Add(chkSpoutActive);
+      tabSettings.Controls.Add(label9);
       tabSettings.Controls.Add(numVisVersion);
       tabSettings.Controls.Add(lblVisVersion);
       tabSettings.Controls.Add(numVisShift);
@@ -4665,5 +4737,10 @@ namespace MilkwaveRemote
     private TextBox txtMidi3Val;
     private TextBox txtMidi3Ch;
     private CheckBox chkMidi3Learn;
+    private CheckBox chkSpoutFixedSize;
+    private CheckBox chkSpoutActive;
+    private Label label9;
+    private ComboBox cboSpoutWidth;
+    private ComboBox cboSpoutHeight;
   }
 }

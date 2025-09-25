@@ -178,8 +178,6 @@ BOOL CALLBACK GetWindowNames(HWND h, LPARAM l); // Window enumerator callback
 static IDirect3D9Ex* pD3D9 = nullptr;
 static IDirect3DDevice9Ex* pD3DDevice = nullptr;
 
-static D3DPRESENT_PARAMETERS d3dPp;
-
 static LONG lastWindowStyle = 0;
 static LONG lastWindowStyleEx = 0;
 
@@ -251,20 +249,20 @@ void InitD3d(HWND hwnd, int width, int height) {
     adapterId = D3DADAPTER_DEFAULT;
   }
 
-  memset(&d3dPp, 0, sizeof(d3dPp));
+  memset(&g_plugin.d3dPp, 0, sizeof(g_plugin.d3dPp));
 
-  d3dPp.BackBufferCount = 1;
-  d3dPp.BackBufferFormat = D3DFMT_UNKNOWN;// mode.Format;
-  d3dPp.BackBufferWidth = width;
-  d3dPp.BackBufferHeight = height;
-  d3dPp.SwapEffect = D3DSWAPEFFECT_COPY;
-  d3dPp.Flags = 0;
-  d3dPp.EnableAutoDepthStencil = FALSE;// TRUE;
-  d3dPp.AutoDepthStencilFormat = D3DFMT_D24S8;// D3DFMT_D24X8;
-  d3dPp.Windowed = TRUE;
-  d3dPp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-  d3dPp.MultiSampleType = D3DMULTISAMPLE_NONE;
-  d3dPp.hDeviceWindow = (HWND)hwnd;
+  g_plugin.d3dPp.BackBufferCount = 1;
+  g_plugin.d3dPp.BackBufferFormat = D3DFMT_UNKNOWN;// mode.Format;
+  g_plugin.d3dPp.BackBufferWidth = width;
+  g_plugin.d3dPp.BackBufferHeight = height;
+  g_plugin.d3dPp.SwapEffect = D3DSWAPEFFECT_COPY;
+  g_plugin.d3dPp.Flags = 0;
+  g_plugin.d3dPp.EnableAutoDepthStencil = FALSE;// TRUE;
+  g_plugin.d3dPp.AutoDepthStencilFormat = D3DFMT_D24S8;// D3DFMT_D24X8;
+  g_plugin.d3dPp.Windowed = TRUE;
+  g_plugin.d3dPp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+  g_plugin.d3dPp.MultiSampleType = D3DMULTISAMPLE_NONE;
+  g_plugin.d3dPp.hDeviceWindow = (HWND)hwnd;
 
   // Test for hardware vertex processing capability and set up as needed
   // D3DCREATE_MULTITHREADED required by interop spec
@@ -284,7 +282,7 @@ void InitD3d(HWND hwnd, int width, int height) {
     D3DDEVTYPE_HAL,
     (HWND)hwnd,
     dwBehaviorFlags,
-    &d3dPp,
+    &g_plugin.d3dPp,
     NULL,
     &pD3DDevice);
 }
@@ -317,10 +315,11 @@ void ToggleStretch(HWND hwnd) {
       GetWindowRect(hwnd, &lastRect);
     }
 
-    d3dPp.BackBufferWidth = width;
-    d3dPp.BackBufferHeight = height;
-
-    pD3DDevice->Reset(&d3dPp);
+    if (!g_plugin.bSpoutFixedSize) {
+      g_plugin.d3dPp.BackBufferWidth = width;
+      g_plugin.d3dPp.BackBufferHeight = height;
+    }
+    pD3DDevice->Reset(&g_plugin.d3dPp);
 
     SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
     SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
@@ -338,10 +337,12 @@ void ToggleStretch(HWND hwnd) {
     int width = lastRect.right - lastRect.left;
     int height = lastRect.bottom - lastRect.top;
 
-    d3dPp.BackBufferWidth = width;
-    d3dPp.BackBufferHeight = height;
+    if (!g_plugin.bSpoutFixedSize) {
+      g_plugin.d3dPp.BackBufferWidth = width;
+      g_plugin.d3dPp.BackBufferHeight = height;
+    }
 
-    pD3DDevice->Reset(&d3dPp);
+    pD3DDevice->Reset(&g_plugin.d3dPp);
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     stretch = false;
 
@@ -539,10 +540,12 @@ static void ToggleFullScreen(HWND hwnd) {
     SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
     SetWindowPos(hwnd, HWND_TOPMOST, info.rcMonitor.left, info.rcMonitor.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
 
-    d3dPp.BackBufferWidth = width;
-    d3dPp.BackBufferHeight = height;
+    if (!g_plugin.bSpoutFixedSize) {
+      g_plugin.d3dPp.BackBufferWidth = width;
+      g_plugin.d3dPp.BackBufferHeight = height;
+    }
 
-    HRESULT hr = pD3DDevice->Reset(&d3dPp);
+    HRESULT hr = pD3DDevice->Reset(&g_plugin.d3dPp);
     if (FAILED(hr)) {
       switch (hr) {
       case D3DERR_DEVICELOST:
@@ -595,10 +598,12 @@ static void ToggleFullScreen(HWND hwnd) {
     int width = lastRect.right - lastRect.left;
     int height = lastRect.bottom - lastRect.top;
 
-    d3dPp.BackBufferWidth = width;
-    d3dPp.BackBufferHeight = height;
+    if (!g_plugin.bSpoutFixedSize) {
+      g_plugin.d3dPp.BackBufferWidth = width;
+      g_plugin.d3dPp.BackBufferHeight = height;
+    }
 
-    pD3DDevice->Reset(&d3dPp);
+    pD3DDevice->Reset(&g_plugin.d3dPp);
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     fullscreen = false;
 
@@ -1133,28 +1138,6 @@ void RenderFrame() {
 
 }
 
-// SPOUT
-void ResizeBeatDrop(int newWidth, int newHeight) {
-  // Client window size
-  int width = 640;
-  int height = 360;
-  // If the window is square - 512x512, otherwise 640x360
-  if (newWidth == newHeight) {
-    width = 512;
-    height = 512;
-  }
-  HWND hw = FindWindowA("Direct3DWindowClass", "Milkwave Visualizer");
-  // Client to window
-  RECT rc;
-  SetRect(&rc, 0, 0, width, height);
-  AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
-  width = rc.right - rc.left;
-  height = rc.bottom - rc.top;
-  // Resize but do not move
-  SetWindowPos(hw, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
-}
-
-
 unsigned __stdcall CreateWindowAndRun(void* data) {
 
   HINSTANCE instance = (HINSTANCE)data;
@@ -1309,32 +1292,24 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   unsigned int frame = 0;
 
-  // SPOUT - defaults if no GUI
-    // Change the values here to set the fixed sender size
-  unsigned int SpoutWidth = g_plugin.m_WindowWidth;
-  unsigned int SpoutHeight = g_plugin.m_WindowHeight;
-
-  // Set to windowWidth/windowHeight for a variable sender size
-  // See milkDropfs.cpp RenderFrame - change to SendDX9surface(back_buffer, true); 
-  // SpoutWidth = windowWidth;
-  // SpoutHeight = windowHeight;
-
-  unsigned int SpoutWidthOld = 0;
-  unsigned int SpoutHeightOld = 0;
-  // Read values if UI is open
-  SpoutWidthOld = SpoutWidth;
-  SpoutHeightOld = SpoutHeight;
 
   // Milkwave: Moved to StartThreads()
   // g_plugin.PluginPreInitialize(0, 0);
 
-    // SPOUT
-  // InitD3d(hwnd, windowWidth, windowHeight);
+  // SPOUT
+
+  unsigned int SpoutWidth = g_plugin.m_WindowWidth;
+  unsigned int SpoutHeight = g_plugin.m_WindowHeight;
+  if (g_plugin.bSpoutFixedSize) {
+    SpoutWidth = g_plugin.nSpoutFixedWidth;
+    SpoutHeight = g_plugin.nSpoutFixedHeight;
+  }
+
   InitD3d(hwnd, SpoutWidth, SpoutHeight);
 
   g_plugin.PluginInitialize(
     pD3DDevice,
-    &d3dPp,
+    &g_plugin.d3dPp,
     hwnd,
     // windowWidth,
     // windowHeight);
@@ -1356,7 +1331,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
         }
         else if (!pauseRender) {
           GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
-          RenderFrame();
+           RenderFrame();
         }
       } catch (...) {
         // ignore

@@ -116,7 +116,7 @@ void DXContext::WriteSafeWindowPos() {
   WritePrivateProfileIntW(256, L"avs_wh", m_szIniFile, L"Settings");
 }
 
-bool DXContext::OnUserResizeWindow(RECT* new_window_rect, RECT* new_client_rect) {
+bool DXContext::OnUserResizeWindow(RECT* new_window_rect, RECT* new_client_rect, bool bSetBackBuffer) {
   // call this function on WM_EXITSIZEMOVE when running windowed.
   // don't bother calling this when fullscreen.
   // be sure to clean up all your DirectX stuff first (textures, vertex buffers,
@@ -138,13 +138,15 @@ bool DXContext::OnUserResizeWindow(RECT* new_window_rect, RECT* new_client_rect)
   m_window_height = new_window_rect->bottom - new_window_rect->top;
   m_client_width = m_REAL_client_width = new_client_rect->right - new_client_rect->left;
   m_client_height = m_REAL_client_height = new_client_rect->bottom - new_client_rect->top;
-
-  m_d3dpp->BackBufferWidth = m_client_width;
-  m_d3dpp->BackBufferHeight = m_client_height;
-  if (m_lpDevice->Reset(m_d3dpp) != D3D_OK) {
-    WriteSafeWindowPos();
-    m_lastErr = DXC_ERR_RESIZEFAILED;
-    return FALSE;
+  
+  if (bSetBackBuffer) {
+    m_d3dpp->BackBufferWidth = m_client_width;
+    m_d3dpp->BackBufferHeight = m_client_height;
+    if (m_lpDevice->Reset(m_d3dpp) != D3D_OK) {
+      WriteSafeWindowPos();
+      m_lastErr = DXC_ERR_RESIZEFAILED;
+      return FALSE;
+    }
   }
 
   SetViewport();

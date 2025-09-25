@@ -70,7 +70,9 @@ namespace MilkwaveRemote {
     private int lastLineIndex = 0;
     private int lastReceivedShaderErrorLineNumber = -1;
     private float autoplayRemainingBeats = 1;
+
     private bool updatingWaveParams = false;
+    private bool updatingSpoutParams = false;
 
 #if DEBUG
     private string BaseDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\Release"));
@@ -229,7 +231,10 @@ namespace MilkwaveRemote {
       FpsFactor,
       VisIntensity,
       VisShift,
-      VisVersion
+      VisVersion,
+      SpoutActive,
+      SpoutFixedSize,
+      SpoutResolution
     }
 
     private void SetAllControlFontSizes(Control parent, float fontSize) {
@@ -553,6 +558,31 @@ namespace MilkwaveRemote {
           } else if (receivedString.StartsWith("DEVICE=")) {
             string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
             RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
+          } else if (receivedString.StartsWith("SPOUT|")) {
+            string spoutInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
+            string[] spoutParams = spoutInfo.Split('|');
+            updatingSpoutParams = true;
+            foreach (string param in spoutParams) {
+              string[] keyValue = param.Split('=');
+              if (keyValue.Length == 2) {
+                string key = keyValue[0].Trim();
+                string value = keyValue[1].Trim();
+                try {
+                  if (key.Equals("ACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                    chkSpoutActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("FIXEDSIZE", StringComparison.OrdinalIgnoreCase)) {
+                    chkSpoutFixedSize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("FIXEDWIDTH", StringComparison.OrdinalIgnoreCase)) {
+                    cboSpoutWidth.Text = value;
+                  } else if (key.Equals("FIXEDHEIGHT", StringComparison.OrdinalIgnoreCase)) {
+                    cboSpoutHeight.Text = value;
+                  }
+                } catch (Exception ex) {
+                  // ignore
+                }
+              }
+            }
+            updatingSpoutParams = false;
           }
         }
       }
@@ -686,6 +716,16 @@ namespace MilkwaveRemote {
               message = "VAR_VERSION=" + numVisVersion.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.PresetLink) {
               message = "LINK=" + messageToSend;
+            } else if (type == MessageType.SpoutActive) {
+              message = "SPOUT_ACTIVE=" + (chkSpoutActive.Checked ? "1" : "0");
+            } else if (type == MessageType.SpoutFixedSize) {
+              message = "SPOUT_FIXEDSIZE=" + (chkSpoutFixedSize.Checked ? "1" : "0");
+            } else if (type == MessageType.SpoutResolution) {
+              if (int.TryParse(cboSpoutWidth.Text, out int spoutWidth) && int.TryParse(cboSpoutHeight.Text, out int spoutHeight)) {
+                if (spoutHeight > 9 && spoutWidth > 9) {
+                  message = "SPOUT_RESOLUTION=" + spoutWidth + "x" + spoutHeight;
+                }
+              }
             } else if (type == MessageType.Message) {
               if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
                 // try auto-wrap
@@ -4225,7 +4265,7 @@ namespace MilkwaveRemote {
     private void UpdateRowData(int rowIndex) {
       if (!AllowMidiRowDataUpdate) return;
 
-      var dataRowIndex = (rowIndex - 1) + ((int)numMidiBank.Value-1) * 5;
+      var dataRowIndex = (rowIndex - 1) + ((int)numMidiBank.Value - 1) * 5;
       var row = MidiHelper.MidiRows[dataRowIndex];
 
       ComboBox cboAction = FindCombobox($"cboMidi{rowIndex}Action");
@@ -4311,5 +4351,27 @@ namespace MilkwaveRemote {
       UpdateRowData(rowIndex);
     }
 
+    private void cboSpoutRes_ValueChanged(object sender, EventArgs e) {
+      ComboBox cbo = (ComboBox)sender;
+      if (cbo.Text.Length > 0) {
+        // remove any non-digit characters
+        cbo.Text = new string(cbo.Text.Where(char.IsDigit).ToArray());
+      }
+      if (!updatingSpoutParams) {
+        SendToMilkwaveVisualizer("", MessageType.SpoutResolution);
+      }
+    }
+
+    private void chkSpoutActive_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSpoutParams) {
+        SendToMilkwaveVisualizer("", MessageType.SpoutActive);
+      }
+    }
+
+    private void chkSpoutFixedSize_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSpoutParams) {
+        SendToMilkwaveVisualizer("", MessageType.SpoutFixedSize);
+      }
+    }
   } // end class
 } // end namespace
