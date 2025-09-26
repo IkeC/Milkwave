@@ -18,6 +18,7 @@
       KnobSettingsFPS = 601,
       KnobSettingsIntensity = 610,
       KnobSettingsShift = 611,
+      KnobSettingsQuality = 620
     }
 
     public int Row { get; set; } = 0;

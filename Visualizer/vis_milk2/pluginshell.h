@@ -76,6 +76,12 @@ public:
   wchar_t* GetPluginsDirPath(); // usually returns 'c:\\program files\\winamp\\plugins\\'
   wchar_t* GetConfigIniFile();  // usually returns 'c:\\program files\\winamp\\plugins\\something.ini' - filename is determined from identifiers in 'defines.h'
   char* GetConfigIniFileA();
+  void SetVariableBackBuffer(int width, int height);
+
+  void ResetBufferAndFonts();
+
+  D3DPRESENT_PARAMETERS d3dPp;
+  DXContext* m_lpDX;            // pointer to DXContext object
 
 protected:
 
@@ -166,6 +172,7 @@ protected:
   float m_VisShift = 0.0f;
   float m_VisVersion = 1.0f;
 
+  float m_fRenderQuality = 1.0f;
   //=====================================================================================================================
 private:
 
@@ -174,7 +181,6 @@ private:
   double        m_time;            // current animation time in seconds; starts at zero.
   float        m_fps;             // current estimate of frames per second
   HINSTANCE    m_hInstance;       // handle to application instance
-  DXContext* m_lpDX;            // pointer to DXContext object
   wchar_t      m_szPluginsDirPath[MAX_PATH];  // usually 'c:\\program files\\winamp\\plugins\\'
   wchar_t      m_szConfigIniFile[MAX_PATH];   // usually 'c:\\program files\\winamp\\plugins\\something.ini' - filename is determined from identifiers in 'defines.h'
   char         m_szConfigIniFileA[MAX_PATH];   // usually 'c:\\program files\\winamp\\plugins\\something.ini' - filename is determined from identifiers in 'defines.h'
@@ -259,6 +265,11 @@ public:
   int  AllocateDX9Stuff();
   DWORD GetFontColor(int fontIndex);
 
+  bool IsSpoutActiveAndFixed();
+  void OnUserResizeWindow();
+  void CleanUpFonts();
+  int  AllocateFonts(IDirect3DDevice9* pDevice);
+
   // config panel / windows messaging processes:
   static LRESULT CALLBACK WindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
   static LRESULT CALLBACK DesktopWndProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
@@ -286,10 +297,7 @@ private:
   void CleanUpNondx9Stuff();
   int  InitVJStuff(RECT* pClientRect = NULL);
   void CleanUpVJStuff();
-  int  AllocateFonts(IDirect3DDevice9* pDevice);
-  void CleanUpFonts();
   void AllocateTextSurface();
-  void OnUserResizeWindow();
   void OnUserResizeTextWindow();
   void PrepareFor2DDrawing_B(IDirect3DDevice9* pDevice, int w, int h);
   void RenderBuiltInTextMsgs();

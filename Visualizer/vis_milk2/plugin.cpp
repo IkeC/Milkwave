@@ -1305,6 +1305,7 @@ void CPlugin::MyReadConfig() {
   nSpoutFixedWidth = GetPrivateProfileIntW(L"Settings", L"nSpoutFixedWidth", nSpoutFixedWidth, pIni);
   nSpoutFixedHeight = GetPrivateProfileIntW(L"Settings", L"nSpoutFixedHeight", nSpoutFixedHeight, pIni);
   // ======================================
+  m_fRenderQuality = GetPrivateProfileFloatW(L"Settings", L"fRenderQuality", m_fRenderQuality, pIni);
 
   m_bFirstRun = !GetPrivateProfileBoolW(L"Settings", L"bConfigured", false, pIni);
   m_bEnableRating = GetPrivateProfileBoolW(L"Settings", L"bEnableRating", m_bEnableRating, pIni);
@@ -1483,6 +1484,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(nSpoutFixedWidth, L"nSpoutFixedWidth", pIni, L"Settings");
   WritePrivateProfileIntW(nSpoutFixedHeight, L"nSpoutFixedHeight", pIni, L"Settings");
   // ================================
+  WritePrivateProfileFloatW(m_fRenderQuality, L"fRenderQuality", pIni, L"Settings");
 
   WritePrivateProfileIntW(m_bSongTitleAnims, L"bSongTitleAnims", pIni, L"Settings");
   WritePrivateProfileIntW(m_bHardCutsDisabled, L"bHardCutsDisabled", pIni, L"Settings");
@@ -6101,7 +6103,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       // F9 is handled in Milkdrop2PcmVisualizer.cpp
     case VK_F10:
       if (bShiftHeldDown) {
-        SetSpoutFixedSize(true);
+        SetSpoutFixedSize(true, true);
       }
       else {
         ToggleSpout();
@@ -6940,7 +6942,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     case 'Z':
       if (bCtrlHeldDown) {
         if (bShiftHeldDown) {
-          SetSpoutFixedSize(true);
+          SetSpoutFixedSize(true, true);
         }
         else {
           ToggleSpout();
@@ -7066,51 +7068,55 @@ int CPlugin::ToggleSpout() {
     // Stop Spout
     AddNotification(L"Spout output disabled");
   }
+  SetSpoutFixedSize(false, false);
+
   if (bInitialized) {
     spoutsender.ReleaseDX9sender();
     bInitialized = false;
     // Initialized next render frame
     // milkdropfs.cpp - RenderFrame / OpenSender
   }
-  SendSpoutInfoToMilkwaveRemote();
+
+  ResetBufferAndFonts();
+  SendSettingsInfoToMilkwaveRemote();
   return 0;
 }
 
-int CPlugin::SetSpoutFixedSize(bool toggleSwitch) {
+int CPlugin::SetSpoutFixedSize(bool toggleSwitch, bool showNotifications) {
   bSpoutChanged = true; // write config on exit
   if (toggleSwitch) {
     bSpoutFixedSize = !bSpoutFixedSize;
   }
-  if (bSpoutFixedSize) {
-    if (toggleSwitch) {
+  if (IsSpoutActiveAndFixed()) {
+    if (toggleSwitch && showNotifications) {
       std::wstring msg = L"Fixed Spout output size enabled ("
         + std::to_wstring(nSpoutFixedWidth) + L"x"
         + std::to_wstring(nSpoutFixedHeight) + L")";
       AddNotification(msg.data());
     }
-    else {
+    else if (showNotifications) {
       std::wstring msg = L"Spout output size set to "
         + std::to_wstring(nSpoutFixedWidth) + L"x"
         + std::to_wstring(nSpoutFixedHeight);
       AddNotification(msg.data());
     }
+    ResetBufferAndFonts();
+
     d3dPp.BackBufferWidth = nSpoutFixedWidth;
     d3dPp.BackBufferHeight = nSpoutFixedHeight;
     GetDevice()->Reset(&d3dPp);
   }
   else {
-    // Stop Spout
+    // bSpoutFixedSize OR bSpoutOut is false
     // Update window properties
-    RECT c;
-    GetClientRect(m_hRenderWnd, &c);
-    d3dPp.BackBufferWidth = c.right - c.left;
-    d3dPp.BackBufferHeight = c.bottom - c.top;
+    SetVariableBackBuffer(m_WindowWidth, m_WindowFixedHeight);
     GetDevice()->Reset(&d3dPp);
-    if (toggleSwitch) {
+    if (toggleSwitch && showNotifications && bSpoutOut) {
       AddNotification(L"Fixed Spout output size disabled");
     }
+    ResetBufferAndFonts();
   }
-  SendSpoutInfoToMilkwaveRemote();
+  SendSettingsInfoToMilkwaveRemote();
   return 0;
 }
 
@@ -10811,7 +10817,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
     SendPresetChangedInfoToMilkwaveRemote();
-    SendSpoutInfoToMilkwaveRemote();
+    SendSettingsInfoToMilkwaveRemote();
   }
   else if (wcsncmp(sMessage, L"LINK=", 5) == 0) {
     std::wstring message(sMessage + 5);
@@ -10869,6 +10875,12 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 12);
     g_plugin.m_VisVersion = std::stof(message);
   }
+  else if (wcsncmp(sMessage, L"VAR_QUALITY=", 12) == 0) {
+    std::wstring message(sMessage + 12);
+    g_plugin.m_fRenderQuality = std::stof(message);
+    
+    ResetBufferAndFonts();
+  }
   else if (wcsncmp(sMessage, L"SPOUT_ACTIVE=", 13) == 0) {
     wchar_t status = sMessage[13];
     if ((status == L'0' && bSpoutOut) || (status == L'1' && !bSpoutOut)) {
@@ -10878,7 +10890,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"SPOUT_FIXEDSIZE=", 16) == 0) {
     wchar_t status = sMessage[16];
     if ((status == L'0' && bSpoutFixedSize) || (status == L'1' && !bSpoutFixedSize)) {
-      SetSpoutFixedSize(true);
+      SetSpoutFixedSize(true, true);
     }
   }
   else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
@@ -10889,7 +10901,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       std::wstring height = message.substr(pos + 1);
       nSpoutFixedWidth = std::stof(width);
       nSpoutFixedHeight = std::stof(height);
-      SetSpoutFixedSize(false);
+      SetSpoutFixedSize(false, true);
     }
   }
 }
@@ -10925,12 +10937,12 @@ void CPlugin::SendPresetWaveInfoToMilkwaveRemote() {
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 
-void CPlugin::SendSpoutInfoToMilkwaveRemote() {
-  std::wstring msg = L"SPOUT|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0")
+void CPlugin::SendSettingsInfoToMilkwaveRemote() {
+  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0")
     + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0")
     + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth)
-    + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight);
-
+    + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight)
+    + L"|QUALITY=" + std::to_wstring(m_fRenderQuality);
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 

@@ -144,6 +144,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mmsystem.h>
 #pragma comment(lib,"winmm.lib")    // for timeGetTime
 
+#define clamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
+
 // STATE VALUES & VERTEX FORMATS FOR HELP SCREEN TEXTURE:
 #define TEXT_SURFACE_NOT_READY  0
 #define TEXT_SURFACE_REQUESTED  1
@@ -244,10 +246,18 @@ wchar_t* CPluginShell::GetConfigIniFile() {
 char* CPluginShell::GetConfigIniFileA() {
   return m_szConfigIniFileA;
 }
-int       CPluginShell::GetFontHeight(eFontIndex idx) {
-  if (idx >= 0 && idx < NUM_BASIC_FONTS + NUM_EXTRA_FONTS) return m_fontinfo[idx].nSize; else return 0;
+int  CPluginShell::GetFontHeight(eFontIndex idx) {
+  if (idx >= 0 && idx < NUM_BASIC_FONTS + NUM_EXTRA_FONTS) {
+    if (IsSpoutActiveAndFixed()) {
+      return (int)m_fontinfo[idx].nSize;
+    }
+    else {
+      return (int)m_fontinfo[idx].nSize * m_fRenderQuality;
+    }
+  }
+  else return 0;
 };
-int       CPluginShell::GetBitDepth() {
+int CPluginShell::GetBitDepth() {
   return m_lpDX->GetBitDepth();
 };
 
@@ -266,7 +276,10 @@ D3DFORMAT CPluginShell::GetBackBufZFormat() {
   if (m_lpDX) return m_lpDX->GetZFormat(); else return D3DFMT_UNKNOWN;
 };
 LPD3DXFONT CPluginShell::GetFont(eFontIndex idx) {
-  if (idx >= 0 && idx < NUM_BASIC_FONTS + NUM_EXTRA_FONTS) return m_d3dx_font[idx]; else return NULL;
+  if (idx >= 0 && idx < NUM_BASIC_FONTS + NUM_EXTRA_FONTS) {
+    return m_d3dx_font[idx];
+  }
+  else return NULL;
 };
 char* CPluginShell::GetDriverFilename() {
   if (m_lpDX) return m_lpDX->GetDriver(); else return NULL;
@@ -563,10 +576,14 @@ void CPluginShell::CleanUpVJStuff() {
 
 int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
   // Create D3DX system font:
-  for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
+  for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
+    int fSize = m_fontinfo[i].nSize;
+    if (!IsSpoutActiveAndFixed()) {
+      fSize *= m_fRenderQuality;
+    }
     if (D3DXCreateFontW(pDevice,  //m_font[i],
-      m_fontinfo[i].nSize,
-      m_fontinfo[i].nSize * 4 / 10,
+      fSize,
+      fSize * 4 / 10,
       m_fontinfo[i].bBold ? 900 : 400,
       1,  // mip levels
       m_fontinfo[i].bItalic,
@@ -583,13 +600,13 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
         MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
       return false;
     }
-
+  }
   // get actual font heights
   for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     RECT r;
     SetRect(&r, 0, 0, 1024, 1024);
     int h = m_d3dx_font[i]->DrawText(NULL, "M", -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-    if (h > 0) m_fontinfo[i].nSize = h;
+    //if (h > 0) m_fontinfo[i].nSize = h;
   }
 
   return true;
@@ -730,23 +747,31 @@ void CPluginShell::OnUserResizeWindow() {
     int new_REAL_client_h = c.bottom - c.top;
 
     // kiv: could we just resize when the *snapped* w/h changes?  slightly more ideal...
-    if (m_lpDX->m_REAL_client_width != new_REAL_client_w ||
-      m_lpDX->m_REAL_client_height != new_REAL_client_h) {
-      //CleanUpVJStuff();
+    if (m_lpDX->m_REAL_client_width != new_REAL_client_w || m_lpDX->m_REAL_client_height != new_REAL_client_h) {
 
-      CleanUpDX9Stuff(0);
+      //if (true) {
+        //CleanUpVJStuff();
+
       if (true) {
-        if (!m_lpDX->OnUserResizeWindow(&w, &c, !bSpoutFixedSize)) {
+
+        //if (m_lpDX->m_REAL_client_width != new_REAL_client_w || m_lpDX->m_REAL_client_height != new_REAL_client_h) {
+        CleanUpDX9Stuff(0);
+        //}
+        if (!m_lpDX->OnUserResizeWindow(&w, &c, false)) {
           // note: a basic warning messagebox will have already been given.
           // now suggest specific advice on how to regain more video memory:
           SuggestHowToFreeSomeMem();
           return;
         }
+        SetVariableBackBuffer(c.right - c.left, c.bottom - c.top);
+        GetDevice()->Reset(&d3dPp);
       }
+      //if (m_lpDX->m_REAL_client_width != new_REAL_client_w || m_lpDX->m_REAL_client_height != new_REAL_client_h) {
       if (!AllocateDX9Stuff()) {
         m_lpDX->m_ready = false;   // flag to exit
         return;
       }
+      //}
       /*if (!InitVJStuff())
       {
           m_lpDX->m_ready = false;   // flag to exit
@@ -1066,6 +1091,7 @@ void CPluginShell::READ_FONT(int n) {
   int iniIndex = n + 1;
   GetPrivateProfileStringW(L"Fonts", BuildSettingName(L"FontFace", iniIndex), m_fontinfo[n].szFace, m_fontinfo[n].szFace, sizeof(m_fontinfo[n].szFace), m_szConfigIniFile);
   m_fontinfo[n].nSize = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontSize", iniIndex), m_fontinfo[n].nSize, m_szConfigIniFile);
+
   m_fontinfo[n].bBold = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontBold", iniIndex), m_fontinfo[n].bBold, m_szConfigIniFile);
   m_fontinfo[n].bItalic = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontItalic", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
   m_fontinfo[n].bAntiAliased = GetPrivateProfileIntW(L"Fonts", BuildSettingName(L"FontAA", iniIndex), m_fontinfo[n].bItalic, m_szConfigIniFile);
@@ -1363,6 +1389,7 @@ int CPluginShell::PluginRender(unsigned char* pWaveL, unsigned char* pWaveR)//, 
 void CPluginShell::DrawAndDisplay(int redraw) {
   int cx = m_vjd3d9_device ? m_nTextWndWidth : m_lpDX->m_client_width;
   int cy = m_vjd3d9_device ? m_nTextWndHeight : m_lpDX->m_client_height;
+  
   if (m_lpDDSText) {
     D3DSURFACE_DESC desc;
     if (D3D_OK == m_lpDDSText->GetLevelDesc(0, &desc)) {
@@ -1370,16 +1397,30 @@ void CPluginShell::DrawAndDisplay(int redraw) {
       cy = min(cy, (int)desc.Height);
     }
   }
-  if (bSpoutFixedSize) {
+
+  int textMargin = TEXT_MARGIN;
+  if (IsSpoutActiveAndFixed()) {
     cx = nSpoutFixedWidth;
     cy = nSpoutFixedHeight;
   }
-  m_upper_left_corner_y = TEXT_MARGIN + GetCanvasMarginY();
-  m_upper_right_corner_y = TEXT_MARGIN + GetCanvasMarginY();
-  m_lower_left_corner_y = cy - TEXT_MARGIN - GetCanvasMarginY();
-  m_lower_right_corner_y = cy - TEXT_MARGIN - GetCanvasMarginY();
-  m_left_edge = TEXT_MARGIN + GetCanvasMarginX();
-  m_right_edge = cx - TEXT_MARGIN - GetCanvasMarginX();
+  else {
+    cx = (int)(cx * m_fRenderQuality);
+    cy = (int)(cy * m_fRenderQuality);
+    textMargin *= m_fRenderQuality;
+  }
+  
+  int marginTop = textMargin + GetCanvasMarginY();
+  int marginBottom = cy - textMargin - GetCanvasMarginY();
+  int marginLeft = textMargin + GetCanvasMarginX();
+  int marginRight = cx - textMargin - GetCanvasMarginX();
+
+  m_upper_left_corner_y = marginTop;
+  m_upper_right_corner_y = marginTop;
+  m_lower_left_corner_y = marginBottom;
+  m_lower_right_corner_y = marginBottom;
+
+  m_left_edge = marginLeft;
+  m_right_edge = marginRight;
 
   if (D3D_OK == m_lpDX->m_lpDevice->BeginScene()) {
     MyRenderFn(redraw);
@@ -1389,7 +1430,9 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     if (!m_vjd3d9_device)   // in VJ mode, this renders to different context, so do it after BeginScene() on 2nd device.
       RenderBuiltInTextMsgs();    // to m_lpDDSText?
 
-    MyRenderUI(&m_upper_left_corner_y, &m_upper_right_corner_y, &m_lower_left_corner_y, &m_lower_right_corner_y, m_left_edge, m_right_edge);
+    MyRenderUI(&m_upper_left_corner_y, &m_upper_right_corner_y,
+      &m_lower_left_corner_y, &m_lower_right_corner_y,
+      m_left_edge, m_right_edge);
     RenderPlaylist();
 
     if (!m_vjd3d9_device)
@@ -2605,4 +2648,28 @@ DWORD CPluginShell::GetFontColor(int fontIndex) {
   alpha = 255;
   DWORD z = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
   return z;
+}
+
+bool CPluginShell::IsSpoutActiveAndFixed() {
+  return (bSpoutOut && bSpoutFixedSize);
+}
+
+void CPluginShell::SetVariableBackBuffer(int width, int height) {
+  if (IsSpoutActiveAndFixed()) return;
+  float q = clamp(m_fRenderQuality, 0.01, 1);
+  d3dPp.BackBufferWidth = (int)width * q;
+  d3dPp.BackBufferHeight = (int)height * q;
+}
+
+void CPluginShell::ResetBufferAndFonts() {
+  RECT w, c;
+  GetWindowRect(m_lpDX->GetHwnd(), &w);
+  GetClientRect(m_lpDX->GetHwnd(), &c);
+  m_lpDX->OnUserResizeWindow(&w, &c, false);
+
+  SetVariableBackBuffer(m_lpDX->m_client_width, m_lpDX->m_client_height);
+  GetDevice()->Reset(&d3dPp);
+
+  CleanUpFonts();
+  AllocateFonts(GetDevice());
 }

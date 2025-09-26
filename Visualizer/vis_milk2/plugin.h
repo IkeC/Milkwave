@@ -290,7 +290,6 @@ public:
 // =========================================================
 // SPOUT variables
   spoutDX9 spoutsender;	// A spout DX9 sender object
-  D3DPRESENT_PARAMETERS d3dPp;
 
   char WinampSenderName[256]; // The sender name
   bool bInitialized; // did it work ?
@@ -706,7 +705,7 @@ public:
   void		LaunchMessage(wchar_t* sMessage);
   void    SendPresetChangedInfoToMilkwaveRemote();
   void    SendPresetWaveInfoToMilkwaveRemote();
-  void    SendSpoutInfoToMilkwaveRemote();
+  void    SendSettingsInfoToMilkwaveRemote();
   void    SetWaveParamsFromMessage(std::wstring& message);
   void		ReadCustomMessages();
   void		LaunchSongTitleAnim(int supertextIndex);
@@ -767,7 +766,7 @@ public:
   void KillAllSupertexts();
   bool ChangePresetDir(wchar_t* newDir, wchar_t* oldDir);
   int ToggleSpout();
-  int SetSpoutFixedSize(bool toggleSwitch);
+  int SetSpoutFixedSize(bool toggleSwitch, bool showNotifications);
   virtual void OnAltK();
 };
 

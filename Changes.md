@@ -2,6 +2,7 @@
 
 - MIDI automation
 - Window independent Spout output (#14)
+- Adjust render quality from Remote
 - HiRes audio support (by @OfficialIncubo)
 - 5 new shader-based presets:
  - chronos + IkeC - Astral Jelly Journey

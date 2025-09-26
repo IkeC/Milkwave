@@ -72,7 +72,7 @@ namespace MilkwaveRemote {
     private float autoplayRemainingBeats = 1;
 
     private bool updatingWaveParams = false;
-    private bool updatingSpoutParams = false;
+    private bool updatingSettingsParams = false;
 
 #if DEBUG
     private string BaseDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\Release"));
@@ -234,7 +234,8 @@ namespace MilkwaveRemote {
       VisVersion,
       SpoutActive,
       SpoutFixedSize,
-      SpoutResolution
+      SpoutResolution,
+      RenderQuality
     }
 
     private void SetAllControlFontSizes(Control parent, float fontSize) {
@@ -558,11 +559,11 @@ namespace MilkwaveRemote {
           } else if (receivedString.StartsWith("DEVICE=")) {
             string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
             RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
-          } else if (receivedString.StartsWith("SPOUT|")) {
-            string spoutInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
-            string[] spoutParams = spoutInfo.Split('|');
-            updatingSpoutParams = true;
-            foreach (string param in spoutParams) {
+          } else if (receivedString.StartsWith("SETTINGS|")) {
+            string settingsInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
+            string[] settingsParams = settingsInfo.Split('|');
+            updatingSettingsParams = true;
+            foreach (string param in settingsParams) {
               string[] keyValue = param.Split('=');
               if (keyValue.Length == 2) {
                 string key = keyValue[0].Trim();
@@ -576,13 +577,15 @@ namespace MilkwaveRemote {
                     cboSpoutWidth.Text = value;
                   } else if (key.Equals("FIXEDHEIGHT", StringComparison.OrdinalIgnoreCase)) {
                     cboSpoutHeight.Text = value;
+                  } else if (key.Equals("QUALITY", StringComparison.OrdinalIgnoreCase)) {
+                    numQuality.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
                   }
                 } catch (Exception ex) {
                   // ignore
                 }
               }
             }
-            updatingSpoutParams = false;
+            updatingSettingsParams = false;
           }
         }
       }
@@ -726,6 +729,8 @@ namespace MilkwaveRemote {
                   message = "SPOUT_RESOLUTION=" + spoutWidth + "x" + spoutHeight;
                 }
               }
+            } else if (type == MessageType.RenderQuality) {
+              message = "VAR_QUALITY=" + numQuality.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.Message) {
               if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
                 // try auto-wrap
@@ -3474,6 +3479,10 @@ namespace MilkwaveRemote {
       numVisVersion.Value = 1;
     }
 
+    private void lblQuality_Click(object sender, EventArgs e) {
+      numQuality.Value = 1;
+    }
+
     private void OpenFile(string filePath) {
       filePath = Path.Combine(BaseDir, filePath);
       if (File.Exists(filePath)) {
@@ -4057,6 +4066,7 @@ namespace MilkwaveRemote {
         cboMidiAction.Items.Add(new MidiActionEntry("Settings: FPS", MidiActionId.KnobSettingsFPS));
         cboMidiAction.Items.Add(new MidiActionEntry("Settings: Intensity", MidiActionId.KnobSettingsIntensity));
         cboMidiAction.Items.Add(new MidiActionEntry("Settings: Shift", MidiActionId.KnobSettingsShift));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Quality", MidiActionId.KnobSettingsQuality));
 
         cboMidiAction.SelectedIndex = 0;
       }
@@ -4115,6 +4125,9 @@ namespace MilkwaveRemote {
       } else if (row.ActionId == MidiActionId.KnobSettingsShift) {
         // base value is 0.0
         numVisShift.Value = Math.Clamp((value - 64) * inc, numVisShift.Minimum, numVisShift.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobSettingsQuality) {
+        // 0..1
+        numQuality.Value = Math.Clamp((decimal)value / 127, numQuality.Minimum, numQuality.Maximum);
       }
     }
 
@@ -4167,7 +4180,7 @@ namespace MilkwaveRemote {
         } else if (rowData.ActionId == MidiActionId.KnobSettingsTime || rowData.ActionId == MidiActionId.KnobSettingsFPS) {
           // default increment is 0.1
           txtMidiInc.Text = "0.1";
-        } else if (rowData.ActionId == MidiActionId.KnobSettingsIntensity || rowData.ActionId == MidiActionId.KnobSettingsShift) {
+        } else if (rowData.ActionId == MidiActionId.KnobSettingsIntensity || rowData.ActionId == MidiActionId.KnobSettingsShift || rowData.ActionId == MidiActionId.KnobSettingsQuality) {
           // default increment is 0.02
           txtMidiInc.Text = "0.02";
         }
@@ -4357,21 +4370,32 @@ namespace MilkwaveRemote {
         // remove any non-digit characters
         cbo.Text = new string(cbo.Text.Where(char.IsDigit).ToArray());
       }
-      if (!updatingSpoutParams) {
+      if (!updatingSettingsParams) {
         SendToMilkwaveVisualizer("", MessageType.SpoutResolution);
       }
     }
 
     private void chkSpoutActive_CheckedChanged(object sender, EventArgs e) {
-      if (!updatingSpoutParams) {
+      if (!updatingSettingsParams) {
         SendToMilkwaveVisualizer("", MessageType.SpoutActive);
       }
     }
 
     private void chkSpoutFixedSize_CheckedChanged(object sender, EventArgs e) {
-      if (!updatingSpoutParams) {
+      if (!updatingSettingsParams) {
         SendToMilkwaveVisualizer("", MessageType.SpoutFixedSize);
       }
+    }
+
+    private void numQuality_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        numQuality.Increment = 0.05M;
+      } else {
+        numQuality.Increment = 0.02M;
+      }
+      SendToMilkwaveVisualizer("", MessageType.RenderQuality);
     }
   } // end class
 } // end namespace

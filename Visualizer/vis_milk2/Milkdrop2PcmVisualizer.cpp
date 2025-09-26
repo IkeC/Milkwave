@@ -253,8 +253,14 @@ void InitD3d(HWND hwnd, int width, int height) {
 
   g_plugin.d3dPp.BackBufferCount = 1;
   g_plugin.d3dPp.BackBufferFormat = D3DFMT_UNKNOWN;// mode.Format;
-  g_plugin.d3dPp.BackBufferWidth = width;
-  g_plugin.d3dPp.BackBufferHeight = height;
+  
+  if (g_plugin.IsSpoutActiveAndFixed()) {
+    g_plugin.d3dPp.BackBufferWidth = width;
+    g_plugin.d3dPp.BackBufferHeight = height;
+  } else {
+    g_plugin.SetVariableBackBuffer(width, height);
+  }
+  
   g_plugin.d3dPp.SwapEffect = D3DSWAPEFFECT_COPY;
   g_plugin.d3dPp.Flags = 0;
   g_plugin.d3dPp.EnableAutoDepthStencil = FALSE;// TRUE;
@@ -315,10 +321,7 @@ void ToggleStretch(HWND hwnd) {
       GetWindowRect(hwnd, &lastRect);
     }
 
-    if (!g_plugin.bSpoutFixedSize) {
-      g_plugin.d3dPp.BackBufferWidth = width;
-      g_plugin.d3dPp.BackBufferHeight = height;
-    }
+    g_plugin.SetVariableBackBuffer(width, height);
     pD3DDevice->Reset(&g_plugin.d3dPp);
 
     SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
@@ -337,12 +340,9 @@ void ToggleStretch(HWND hwnd) {
     int width = lastRect.right - lastRect.left;
     int height = lastRect.bottom - lastRect.top;
 
-    if (!g_plugin.bSpoutFixedSize) {
-      g_plugin.d3dPp.BackBufferWidth = width;
-      g_plugin.d3dPp.BackBufferHeight = height;
-    }
-
+    g_plugin.SetVariableBackBuffer(width, height);
     pD3DDevice->Reset(&g_plugin.d3dPp);
+
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     stretch = false;
 
@@ -540,11 +540,7 @@ static void ToggleFullScreen(HWND hwnd) {
     SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
     SetWindowPos(hwnd, HWND_TOPMOST, info.rcMonitor.left, info.rcMonitor.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
 
-    if (!g_plugin.bSpoutFixedSize) {
-      g_plugin.d3dPp.BackBufferWidth = width;
-      g_plugin.d3dPp.BackBufferHeight = height;
-    }
-
+    g_plugin.SetVariableBackBuffer(width, height);
     HRESULT hr = pD3DDevice->Reset(&g_plugin.d3dPp);
     if (FAILED(hr)) {
       switch (hr) {
@@ -598,12 +594,9 @@ static void ToggleFullScreen(HWND hwnd) {
     int width = lastRect.right - lastRect.left;
     int height = lastRect.bottom - lastRect.top;
 
-    if (!g_plugin.bSpoutFixedSize) {
-      g_plugin.d3dPp.BackBufferWidth = width;
-      g_plugin.d3dPp.BackBufferHeight = height;
-    }
-
+    g_plugin.SetVariableBackBuffer(width, height);
     pD3DDevice->Reset(&g_plugin.d3dPp);
+
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     fullscreen = false;
 
@@ -1175,7 +1168,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   // SPOUT
   // Make the window a fixed size
     // The sender resolution is independent - see SpoutWidth/SpoutHeight below
-  int windowWidth = 720; // standalone version 1280x720
+  int windowWidth = 1280; // standalone version 1280x720
   int windowHeight = 720;
 
   RECT rc;
@@ -1298,14 +1291,14 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   // SPOUT
 
-  unsigned int SpoutWidth = g_plugin.m_WindowWidth;
-  unsigned int SpoutHeight = g_plugin.m_WindowHeight;
-  if (g_plugin.bSpoutFixedSize) {
-    SpoutWidth = g_plugin.nSpoutFixedWidth;
-    SpoutHeight = g_plugin.nSpoutFixedHeight;
+  unsigned int BackbufferWidth = g_plugin.m_WindowWidth;
+  unsigned int BackbufferHeight = g_plugin.m_WindowHeight;
+  if (g_plugin.IsSpoutActiveAndFixed()) {
+    BackbufferWidth = g_plugin.nSpoutFixedWidth;
+    BackbufferHeight = g_plugin.nSpoutFixedHeight;
   }
 
-  InitD3d(hwnd, SpoutWidth, SpoutHeight);
+  InitD3d(hwnd, BackbufferWidth, BackbufferHeight);
 
   g_plugin.PluginInitialize(
     pD3DDevice,
@@ -1313,8 +1306,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     hwnd,
     // windowWidth,
     // windowHeight);
-    SpoutWidth,
-    SpoutHeight);
+    BackbufferWidth,
+    BackbufferHeight);
 
   MSG msg;
   msg.message = WM_NULL;
