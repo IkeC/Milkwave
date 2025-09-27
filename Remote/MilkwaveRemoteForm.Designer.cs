@@ -42,9 +42,14 @@ namespace MilkwaveRemote
       toolStripSeparator3 = new ToolStripSeparator();
       toolStripMenuItemTabsPanel = new ToolStripMenuItem();
       toolStripMenuItemButtonPanel = new ToolStripMenuItem();
+      toolStripSeparator4 = new ToolStripSeparator();
+      toolStripMenuItemMonitorCPU = new ToolStripMenuItem();
+      toolStripMenuItemMonitorGPU = new ToolStripMenuItem();
       toolStripSeparator2 = new ToolStripSeparator();
       toolStripMenuItemDarkMode = new ToolStripMenuItem();
       toolStripMenuItemOpenVisualizer = new ToolStripMenuItem();
+      toolStripStatusLabelMonitorCPU = new ToolStripStatusLabel();
+      toolStripStatusLabelMonitorGPU = new ToolStripStatusLabel();
       toolTip1 = new ToolTip(components);
       chkPreview = new CheckBox();
       btnAppendSize = new Button();
@@ -397,7 +402,7 @@ namespace MilkwaveRemote
       // statusStrip1
       // 
       statusStrip1.ImageScalingSize = new Size(20, 20);
-      statusStrip1.Items.AddRange(new ToolStripItem[] { statusBar, toolStripDropDownButton });
+      statusStrip1.Items.AddRange(new ToolStripItem[] { statusBar, toolStripStatusLabelMonitorCPU, toolStripStatusLabelMonitorGPU, toolStripDropDownButton });
       statusStrip1.Location = new Point(0, 401);
       statusStrip1.Name = "statusStrip1";
       statusStrip1.Padding = new Padding(1, 0, 12, 0);
@@ -411,14 +416,14 @@ namespace MilkwaveRemote
       statusBar.AutoToolTip = true;
       statusBar.Margin = new Padding(7, 4, 0, 2);
       statusBar.Name = "statusBar";
-      statusBar.Size = new Size(552, 20);
+      statusBar.Size = new Size(497, 20);
       statusBar.Spring = true;
       statusBar.TextAlign = ContentAlignment.TopLeft;
       statusBar.Click += statusBar_Click;
       // 
       // toolStripDropDownButton
       // 
-      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
+      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripSeparator4, toolStripMenuItemMonitorCPU, toolStripMenuItemMonitorGPU, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
       toolStripDropDownButton.Image = (Image)resources.GetObject("toolStripDropDownButton.Image");
       toolStripDropDownButton.ImageTransparentColor = Color.Magenta;
       toolStripDropDownButton.Name = "toolStripDropDownButton";
@@ -429,40 +434,40 @@ namespace MilkwaveRemote
       // toolStripMenuItemHomepage
       // 
       toolStripMenuItemHomepage.Name = "toolStripMenuItemHomepage";
-      toolStripMenuItemHomepage.Size = new Size(155, 22);
+      toolStripMenuItemHomepage.Size = new Size(180, 22);
       toolStripMenuItemHomepage.Text = "Milkwave";
       toolStripMenuItemHomepage.Click += toolStripMenuItemReleases_Click;
       // 
       // toolStripSeparator1
       // 
       toolStripSeparator1.Name = "toolStripSeparator1";
-      toolStripSeparator1.Size = new Size(152, 6);
+      toolStripSeparator1.Size = new Size(177, 6);
       // 
       // toolStripMenuItemHelp
       // 
       toolStripMenuItemHelp.Name = "toolStripMenuItemHelp";
-      toolStripMenuItemHelp.Size = new Size(155, 22);
+      toolStripMenuItemHelp.Size = new Size(180, 22);
       toolStripMenuItemHelp.Text = "Help";
       toolStripMenuItemHelp.Click += toolStripMenuItemHelp_Click;
       // 
       // toolStripMenuItemSupporters
       // 
       toolStripMenuItemSupporters.Name = "toolStripMenuItemSupporters";
-      toolStripMenuItemSupporters.Size = new Size(155, 22);
+      toolStripMenuItemSupporters.Size = new Size(180, 22);
       toolStripMenuItemSupporters.Text = "Supporters";
       toolStripMenuItemSupporters.Click += toolStripMenuItemSupporters_Click;
       // 
       // toolStripSeparator3
       // 
       toolStripSeparator3.Name = "toolStripSeparator3";
-      toolStripSeparator3.Size = new Size(152, 6);
+      toolStripSeparator3.Size = new Size(177, 6);
       // 
       // toolStripMenuItemTabsPanel
       // 
       toolStripMenuItemTabsPanel.Checked = true;
       toolStripMenuItemTabsPanel.CheckState = CheckState.Checked;
       toolStripMenuItemTabsPanel.Name = "toolStripMenuItemTabsPanel";
-      toolStripMenuItemTabsPanel.Size = new Size(155, 22);
+      toolStripMenuItemTabsPanel.Size = new Size(180, 22);
       toolStripMenuItemTabsPanel.Text = "Tabs Panel";
       toolStripMenuItemTabsPanel.Click += toolStripMenuItemTabsPanel_Click;
       // 
@@ -471,32 +476,69 @@ namespace MilkwaveRemote
       toolStripMenuItemButtonPanel.Checked = true;
       toolStripMenuItemButtonPanel.CheckState = CheckState.Checked;
       toolStripMenuItemButtonPanel.Name = "toolStripMenuItemButtonPanel";
-      toolStripMenuItemButtonPanel.Size = new Size(155, 22);
+      toolStripMenuItemButtonPanel.Size = new Size(180, 22);
       toolStripMenuItemButtonPanel.Text = "Button Panel";
       toolStripMenuItemButtonPanel.ToolTipText = "Ctrl+B";
       toolStripMenuItemButtonPanel.Click += toolStripMenuItemButtonPanel_Click;
       // 
+      // toolStripSeparator4
+      // 
+      toolStripSeparator4.Name = "toolStripSeparator4";
+      toolStripSeparator4.Size = new Size(177, 6);
+      // 
+      // toolStripMenuItemMonitorCPU
+      // 
+      toolStripMenuItemMonitorCPU.Checked = true;
+      toolStripMenuItemMonitorCPU.CheckState = CheckState.Checked;
+      toolStripMenuItemMonitorCPU.Name = "toolStripMenuItemMonitorCPU";
+      toolStripMenuItemMonitorCPU.Size = new Size(180, 22);
+      toolStripMenuItemMonitorCPU.Text = "CPU Monitor";
+      toolStripMenuItemMonitorCPU.Click += toolStripMenuItemMonitorCPU_Click;
+      // 
+      // toolStripMenuItemMonitorGPU
+      // 
+      toolStripMenuItemMonitorGPU.Checked = true;
+      toolStripMenuItemMonitorGPU.CheckState = CheckState.Checked;
+      toolStripMenuItemMonitorGPU.Name = "toolStripMenuItemMonitorGPU";
+      toolStripMenuItemMonitorGPU.Size = new Size(180, 22);
+      toolStripMenuItemMonitorGPU.Text = "GPU Monitor";
+      toolStripMenuItemMonitorGPU.Click += toolStripMenuItemMonitorGPU_Click;
+      // 
       // toolStripSeparator2
       // 
       toolStripSeparator2.Name = "toolStripSeparator2";
-      toolStripSeparator2.Size = new Size(152, 6);
+      toolStripSeparator2.Size = new Size(177, 6);
       // 
       // toolStripMenuItemDarkMode
       // 
       toolStripMenuItemDarkMode.Checked = true;
       toolStripMenuItemDarkMode.CheckState = CheckState.Checked;
       toolStripMenuItemDarkMode.Name = "toolStripMenuItemDarkMode";
-      toolStripMenuItemDarkMode.Size = new Size(155, 22);
+      toolStripMenuItemDarkMode.Size = new Size(180, 22);
       toolStripMenuItemDarkMode.Text = "Dark Mode";
       toolStripMenuItemDarkMode.Click += toolStripMenuItemDarkMode_Click;
       // 
       // toolStripMenuItemOpenVisualizer
       // 
       toolStripMenuItemOpenVisualizer.Name = "toolStripMenuItemOpenVisualizer";
-      toolStripMenuItemOpenVisualizer.Size = new Size(155, 22);
+      toolStripMenuItemOpenVisualizer.Size = new Size(180, 22);
       toolStripMenuItemOpenVisualizer.Text = "Open Visualizer";
       toolStripMenuItemOpenVisualizer.ToolTipText = "Ctrl+O";
       toolStripMenuItemOpenVisualizer.Click += toolStripMenuItemOpenVisualizer_Click;
+      // 
+      // toolStripStatusLabelMonitorCPU
+      // 
+      toolStripStatusLabelMonitorCPU.Name = "toolStripStatusLabelMonitorCPU";
+      toolStripStatusLabelMonitorCPU.Size = new Size(12, 21);
+      toolStripStatusLabelMonitorCPU.Text = "-";
+      toolStripStatusLabelMonitorCPU.ToolTipText = "CPU usage";
+      // 
+      // toolStripStatusLabelMonitorGPU
+      // 
+      toolStripStatusLabelMonitorGPU.Name = "toolStripStatusLabelMonitorGPU";
+      toolStripStatusLabelMonitorGPU.Size = new Size(12, 21);
+      toolStripStatusLabelMonitorGPU.Text = "-";
+      toolStripStatusLabelMonitorGPU.ToolTipText = "GPU usage";
       // 
       // chkPreview
       // 
@@ -2451,7 +2493,7 @@ namespace MilkwaveRemote
       // 
       // cboSpoutWidth
       // 
-      cboSpoutWidth.Items.AddRange(new object[] { "3840", "2560", "1920", "1600", "1280", "1024", "800", "640" });
+      cboSpoutWidth.Items.AddRange(new object[] { "3840", "2560", "1920", "1600", "1280", "1024", "800", "640", "320" });
       cboSpoutWidth.Location = new Point(319, 7);
       cboSpoutWidth.Name = "cboSpoutWidth";
       cboSpoutWidth.Size = new Size(58, 23);
@@ -2462,7 +2504,7 @@ namespace MilkwaveRemote
       // 
       // cboSpoutHeight
       // 
-      cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "600", "480" });
+      cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "600", "480", "240", "200" });
       cboSpoutHeight.Location = new Point(383, 7);
       cboSpoutHeight.Name = "cboSpoutHeight";
       cboSpoutHeight.Size = new Size(58, 23);
@@ -4776,5 +4818,10 @@ namespace MilkwaveRemote
     private ComboBox cboSpoutHeight;
     private NumericUpDown numQuality;
     private Label lblQuality;
+    private ToolStripStatusLabel toolStripStatusLabelMonitorCPU;
+    private ToolStripMenuItem toolStripMenuItemMonitorCPU;
+    private ToolStripStatusLabel toolStripStatusLabelMonitorGPU;
+    private ToolStripMenuItem toolStripMenuItemMonitorGPU;
+    private ToolStripSeparator toolStripSeparator4;
   }
 }

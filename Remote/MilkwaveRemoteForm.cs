@@ -66,6 +66,8 @@ namespace MilkwaveRemote {
     private DarkModeCS dm;
 
     private System.Windows.Forms.Timer autoplayTimer;
+    private System.Windows.Forms.Timer monitorTimer;
+
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
     private int lastReceivedShaderErrorLineNumber = -1;
@@ -316,6 +318,12 @@ namespace MilkwaveRemote {
 
       autoplayTimer = new System.Windows.Forms.Timer();
       autoplayTimer.Tick += AutoplayTimer_Tick;
+
+      monitorTimer = new System.Windows.Forms.Timer();
+      monitorTimer.Tick += MonitorTimer_Tick;
+      monitorTimer.Interval = Settings.MonitorPollingInterval;
+      toolStripStatusLabelMonitorCPU.Text = "";
+      toolStripStatusLabelMonitorGPU.Text = "";
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
       cboWindowTitle.SelectedIndex = 0;
@@ -2950,6 +2958,10 @@ namespace MilkwaveRemote {
       Size = Settings.RemoteWindowSize;
       toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
+      toolStripMenuItemMonitorCPU.Checked = Settings.EnableMonitorCPU;
+      toolStripMenuItemMonitorGPU.Checked = Settings.EnableMonitorGPU;
+      ToggleMonitors();
+
       try {
         splitContainer1.SplitterDistance = Settings.SplitterDistance1;
       } catch (Exception) {
@@ -4397,5 +4409,43 @@ namespace MilkwaveRemote {
       }
       SendToMilkwaveVisualizer("", MessageType.RenderQuality);
     }
+
+    private async void MonitorTimer_Tick(object? sender, EventArgs? e) {
+      float usageCPU = 0, usageGPU = 0;
+      if (toolStripMenuItemMonitorCPU.Checked) {
+        usageCPU = await Task.Run(() => MonitorHelper.GetCPUUsage());
+      }
+      if (toolStripMenuItemMonitorGPU.Checked) {
+        usageGPU = await Task.Run(() => MonitorHelper.GetGPUUsage());
+      }
+      if (toolStripMenuItemMonitorCPU.Checked) {
+        toolStripStatusLabelMonitorCPU.Text = $"{usageCPU:F0}";
+      }
+      if (toolStripMenuItemMonitorGPU.Checked) {
+        toolStripStatusLabelMonitorGPU.Text = $"{usageGPU:F0}";
+      }
+    }
+
+    private void toolStripMenuItemMonitorCPU_Click(object sender, EventArgs e) {
+      toolStripMenuItemMonitorCPU.Checked = !toolStripMenuItemMonitorCPU.Checked;
+      ToggleMonitors();
+    }
+
+    private void toolStripMenuItemMonitorGPU_Click(object sender, EventArgs e) {
+      toolStripMenuItemMonitorGPU.Checked = !toolStripMenuItemMonitorGPU.Checked;
+      ToggleMonitors();
+    }
+
+    private void ToggleMonitors() {
+      toolStripStatusLabelMonitorCPU.Visible = toolStripMenuItemMonitorCPU.Checked;
+      toolStripStatusLabelMonitorGPU.Visible = toolStripMenuItemMonitorGPU.Checked;
+
+      if (toolStripMenuItemMonitorCPU.Checked || toolStripMenuItemMonitorGPU.Checked) {
+        monitorTimer.Start();
+      } else {
+        monitorTimer.Stop();
+      }
+    }
+
   } // end class
 } // end namespace
