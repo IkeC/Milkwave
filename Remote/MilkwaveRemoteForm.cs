@@ -1084,7 +1084,7 @@ namespace MilkwaveRemote {
               SelectNextAutoplayEntry();
               SendAutoplayLine(true);
             } else if (int.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out int parsedValue)) {
-              string cmd = cboAutoplay.Items[parsedValue - 1]?.ToString();
+              string? cmd = cboAutoplay.Items[parsedValue - 1]?.ToString();
               if (cmd != null) {
                 HandleScriptLine(true, cmd);
               }
@@ -1100,6 +1100,11 @@ namespace MilkwaveRemote {
             } catch (Exception ex) {
               SetStatusText($"Unable to execute '{value}': {ex.Message}");
             }
+          }
+        } else if (tokenUpper.StartsWith("QUALITY=")) {
+          string value = token.Substring(token.IndexOf("=") + 1);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numQuality.Value = Math.Clamp((decimal)parsedValue, numQuality.Minimum, numQuality.Maximum);
           }
         } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
           SendToMilkwaveVisualizer(token, MessageType.Message);
@@ -4419,10 +4424,18 @@ namespace MilkwaveRemote {
         usageGPU = await Task.Run(() => MonitorHelper.GetGPUUsage());
       }
       if (toolStripMenuItemMonitorCPU.Checked) {
-        toolStripStatusLabelMonitorCPU.Text = $"{usageCPU:F0}";
+        if (usageCPU >= 0) {
+          toolStripStatusLabelMonitorCPU.Text = $"{usageCPU:F0}";
+        } else {
+          toolStripStatusLabelMonitorCPU.Text = "?";
+        }
       }
       if (toolStripMenuItemMonitorGPU.Checked) {
-        toolStripStatusLabelMonitorGPU.Text = $"{usageGPU:F0}";
+        if (usageGPU >= 0) {
+          toolStripStatusLabelMonitorGPU.Text = $"{usageGPU:F0}";
+        } else {
+          toolStripStatusLabelMonitorGPU.Text = "?";
+        }
       }
     }
 

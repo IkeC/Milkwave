@@ -1421,6 +1421,11 @@ void CPluginShell::DrawAndDisplay(int redraw) {
 
   m_left_edge = marginLeft;
   m_right_edge = marginRight;
+  
+  if (m_fRenderQuality < 0.1) {
+    // stop trying to display texts properly when quality is too low anyways
+    m_left_edge = m_right_edge = -99999;
+  }
 
   if (D3D_OK == m_lpDX->m_lpDevice->BeginScene()) {
     MyRenderFn(redraw);

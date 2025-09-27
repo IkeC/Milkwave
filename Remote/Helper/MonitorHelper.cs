@@ -2,12 +2,12 @@
 
 namespace MilkwaveRemote.Helper {
   internal static class MonitorHelper {
-    // GPU counters (cached once)
-    private static readonly Lazy<List<PerformanceCounter>> _gpuCounters
-        = new Lazy<List<PerformanceCounter>>(InitGpuCounters, isThreadSafe: true);
+    // GPU counters
+    private static Lazy<List<PerformanceCounter>> GpuCounters
+        = new Lazy<List<PerformanceCounter>>(InitGpuCounters, true);
 
-    // CPU counter (cached once)
-    private static readonly Lazy<PerformanceCounter> _cpuCounter
+    // CPU counter
+    private static Lazy<PerformanceCounter> CpuCounter
         = new Lazy<PerformanceCounter>(InitCpuCounter, isThreadSafe: true);
 
     // Initialize and warm up GPU counters
@@ -32,21 +32,29 @@ namespace MilkwaveRemote.Helper {
       return cpu;
     }
 
-    /// <summary>
-    /// Returns the sum of NextValue() over all GPU engines (percent).
-    /// </summary>
+    // Returns the sum of NextValue() over all GPU engines (percent)
     public static float GetGPUUsage() {
-      var counters = _gpuCounters.Value;
-      // Sum across all engines
-      return counters.Sum(c => c.NextValue());
+      float res = -1f;
+      try {
+        var counters = GpuCounters.Value;
+        // Sum across all engines
+        res = counters.Sum(c => c.NextValue());
+      } catch (Exception e) {
+        GpuCounters = new Lazy<List<PerformanceCounter>>(InitGpuCounters, true);
+      }
+      return res;
     }
 
-    /// <summary>
-    /// Returns current total CPU utilization (percent).
-    /// </summary>
+    // Returns current total CPU utilization (percent)
     public static float GetCPUUsage() {
-      return _cpuCounter.Value.NextValue();
+      float res = -1f;
+      try {
+        res = CpuCounter.Value.NextValue();
+      } catch (Exception e) {
+        CpuCounter
+        = new Lazy<PerformanceCounter>(InitCpuCounter, isThreadSafe: true);
+      }
+      return res;
     }
   }
-
 }
