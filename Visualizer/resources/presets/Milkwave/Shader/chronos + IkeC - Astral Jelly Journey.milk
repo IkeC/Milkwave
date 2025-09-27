@@ -1,0 +1,199 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// chronos + IkeC - Astral Jelly Journey / https://www.shadertoy.com/view/3cjBR1
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx (sin(time)*0.5+1)
+comp_5=
+comp_6=// CONV: adding helper functions
+comp_7=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_8=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_9=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_10=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_11=
+comp_12=float sRGBencode(float C_linear) { return C_linear > 0.0031308 ? (1.055 * pow(C_linear, 1./2.4) - 0.055) : (12.92 * C_linear); }
+comp_13=float3 sRGBencode(float3 C_linear) { C_linear = clamp(C_linear, 0., 1.); return float3(sRGBencode(C_linear.x), sRGBencode(C_linear.y), sRGBencode(C_linear.z)); }
+comp_14=
+comp_15=float smin( float a, float b)
+comp_16={
+comp_17=  float x = (b-a)*5.;
+comp_18=  float g = (x> 1.) ? x :
+comp_19=  (x<-1.) ? 0. :
+comp_20=  (x*(2.+x)+1.)*.25;
+comp_21=  return b - .2 * g;
+comp_22=}
+comp_23=
+comp_24=float smax( float a, float b)
+comp_25={
+comp_26=  return -smin(-a, -b);
+comp_27=}
+comp_28=
+comp_29=float bubble(float3 p, float3 cell)
+comp_30={
+comp_31=  float2 pos = round(cell.xz);
+comp_32=  float height = 40.;
+comp_33=  float rnd = frac(4345.2134235*sin(dot(pos, float2(17.123, 11.54332))));
+comp_34=  float3 q = float3(0,height*rnd,0);
+comp_35=  q.xz = pos;
+comp_36=  q.y += time *  (.9+.1*rnd);
+comp_37=  q.y = mod_conv(q.y, height);
+comp_38=  q.y -= height*.5;
+comp_39=  
+comp_40=  // react to audio: bubble size
+comp_41=  float res = length(p - q)-.025+0.01;
+comp_42=  float fac = 0;
+comp_43=  #ifdef bass_smooth
+comp_44=    if (vis_version == 1) {
+comp_45=      fac = clamp(0,2,bass_smooth)*0.04;
+comp_46=    }
+comp_47=    else if (vis_version == 2) {
+comp_48=      fac = smoothstep(0,2,bass_att)*0.02;
+comp_49=    }
+comp_50=    fac = fac*vis_intensity+vis_shift;
+comp_51=  #endif
+comp_52=
+comp_53=  return res-fac;
+comp_54=}
+comp_55=
+comp_56=float bubbles(float3 p, float3 rd)
+comp_57={
+comp_58=  #if 0
+comp_59=  return min(bubble(p, p),
+comp_60=  min(
+comp_61=  min(
+comp_62=  bubble(p, p+float3(1,0,0)),
+comp_63=  bubble(p, p+float3(-1,0,0))
+comp_64=  ),
+comp_65=  min(
+comp_66=  bubble(p, p+float3(0,0,1)),
+comp_67=  bubble(p, p+float3(0,0,-1))
+comp_68=  )
+comp_69=  )
+comp_70=  );
+comp_71=  #else
+comp_72=  return
+comp_73=  min(
+comp_74=  bubble(p, p),
+comp_75=  min(
+comp_76=  bubble(p, p+.5*rd),
+comp_77=  bubble(p, p+rd)
+comp_78=  )
+comp_79=  );
+comp_80=  #endif
+comp_81=
+comp_82=}
+comp_83=
+comp_84=shader_body {
+comp_85=  float4 fragColor = 0;
+comp_86=  float2 fragCoord  = uv;
+comp_87=  // CONV: Center on screen, then try some aspect correction
+comp_88=  uv = (uv*2) - 1;
+comp_89=  uv *= aspect.xy;
+comp_90=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_91=  uv = float2(uv.x, -uv.y);
+comp_92=
+comp_93=  // float2 uv = (2. * fragCoord-uv.xy)/uv.y;
+comp_94=
+comp_95=  float3 color = float3(0, 0, 0);
+comp_96=
+comp_97=  float focal = 2.;
+comp_98=  float3 ro = float3(0,0.3+.5*sin(time*.3),4);
+comp_99=  float3 rd = normalize(float3(uv, -focal));
+comp_100=
+comp_101=  float time_conv = time*.2;
+comp_102=  float c = cos(time_conv), s = sin(time_conv);
+comp_103=  ro.xz = mul(ro.xz, transpose(float2x2(c,s,-s,c)));
+comp_104=  rd.xz = mul(rd.xz, transpose(float2x2(c,s,-s,c)));
+comp_105=  c = cos(c), s = sin(c);
+comp_106=
+comp_107=  #if 1
+comp_108=  ro.yz = mul(ro.yz, transpose(float2x2(c,s,-s,c)));
+comp_109=  rd.yz = mul(rd.yz, transpose(float2x2(c,s,-s,c)));
+comp_110=  #endif
+comp_111=
+comp_112=  float t = 0.;
+comp_113=  for(int i = 0; i < 120; i++)
+comp_114=  {
+comp_115=    float3 p = rd * t + ro;
+comp_116=
+comp_117=    float3 jelly_hull_pos = float3(0, sin(-time*2.5)*.05, 0);
+comp_118=    float jelly_hull_size =  1.-sin(-time*2.5)*.1;
+comp_119=
+comp_120=    float jelly_hull  = length(p-jelly_hull_pos)-jelly_hull_size;
+comp_121=    float jelly_hole1 = length(p-float3(0,cos(-time*2.5)*.05-.85,0))-1.4-sin(time*2.5)*.1;
+comp_122=    float jelly_hole2 = length(p-float3(0,cos(-time*2.5)*.05,0))-.7-sin(time*2.5)*.1;
+comp_123=
+comp_124=    float jelly_sdf = jelly_hull;
+comp_125=    jelly_sdf = smax(jelly_sdf, -jelly_hole1);
+comp_126=    jelly_sdf = smax(jelly_sdf, -jelly_hole2);
+comp_127=    jelly_sdf += .008*cos(10. * atan2(p.z, p.x))*length(p.xz);
+comp_128=
+comp_129=    float bubbles_sdf = bubbles(p, rd);
+comp_130=
+comp_131=    float sdf = min(jelly_sdf, bubbles_sdf);
+comp_132=
+comp_133=    float3 jelly_color = lerp(float3(.2,.525,.85), float3(.1,.6,.7), max(1.-length(p.xz), 0.));
+comp_134=    color +=
+comp_135=    exp(-.0001*t*t*t) * jelly_color * .025/(.0175 + sqrt(abs(jelly_sdf * jelly_sdf *jelly_sdf)));
+comp_136=
+comp_137=    #if 0
+comp_138=    float3 q = normalize(p-jelly_hull_pos)*jelly_hull_size;
+comp_139=    float3 grad = q
+comp_140=    float f = smoothstep( 0.01, 0.1, length(q*5.-round(q*5.))/5.);
+comp_141=
+comp_142=    color += smoothstep(.1, .15, p.y) *
+comp_143=    exp(-.0001*t*t*t) *exp(-.2*dot(p-q, p-q)) * 3. * .01/(.0175 + (abs(f)));
+comp_144=    #endif
+comp_145=
+comp_146=    float3 bubble_color = float3(0.3, 0.7, 0.8);
+comp_147=    color +=
+comp_148=    exp(-.0001*t*t*t) * bubble_color * .025/(.0175 + sqrt(abs(bubbles_sdf)));
+comp_149=
+comp_150=    float lines_sdf = 9e9;
+comp_151=    const float PI = 3.14159265;
+comp_152=    for(float j = 1.; j <= 5.; j++)
+comp_153=    {
+comp_154=      float angle = (2.*PI)/(sqrt(5.)*.5+.5);
+comp_155=      float2 dir = float2(cos(j * angle), sin(j*angle));
+comp_156=      float2 line_pos = .75*(.11+.5*(j/5.))*dir;
+comp_157=
+comp_158=      line_pos += smoothstep(0.2, -3., p.y)*sin(j+p.y*5.+time)*.1*dir.yx;
+comp_159=
+comp_160=      float line_sdf = max(length(p.xz-line_pos), p.y-.8)-(2.0+.75*sin(15.*p.y) + .25*cos(5.*p.y))*.01;
+comp_161=      float3 line_color = float3(0.3, 0.7, 0.8);
+comp_162=      color +=
+comp_163=      exp(-.35*dot(p,p)) * exp(-.0001*t*t*t) * line_color * .025/(.0175 + abs(line_sdf));
+comp_164=
+comp_165=      lines_sdf = min(lines_sdf, line_sdf);
+comp_166=    }
+comp_167=
+comp_168=    sdf = smin(sdf, lines_sdf);
+comp_169=
+comp_170=    t += min(.5*abs(sdf) + 1e-4, .5);
+comp_171=    if(t > 1e2) j=5;
+comp_172=  }
+comp_173=
+comp_174=  color *= 1./120.;
+comp_175=
+comp_176=  color *= 1.-.09*length(uv);
+comp_177=  color = tanh(color);
+comp_178=  color = sRGBencode(color);
+comp_179=
+comp_180=  // react to audio: jelly color
+comp_181=  float fac = 0.8;
+comp_182=  #ifdef bass_smooth
+comp_183=    if (vis_version == 1) {
+comp_184=      fac = 1-clamp(0,2,bass_smooth)*0.4;
+comp_185=    }
+comp_186=    else if (vis_version == 2) {
+comp_187=      fac = 0.9-smoothstep(0,2,bass_att)*0.2;
+comp_188=    }
+comp_189=    fac = fac*vis_intensity+vis_shift;
+comp_190=  #endif
+comp_191=  color.g *= fac;
+comp_192=
+comp_193=  fragColor = float4(color, 1);
+comp_194=  ret = fragColor;
+comp_195=}

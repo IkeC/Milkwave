@@ -1,0 +1,66 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// diatribes + IkeC - Neon Chill / https://www.shadertoy.com/view/tcXfW8
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=shader_body {
+comp_5=  float4 o = 0;
+comp_6=  uv = (uv*2) - 1;
+comp_7=  uv *= aspect.xy;
+comp_8=  uv = float2(uv.x, -uv.y);
+comp_9=
+comp_10=  // zoom in and out over time
+comp_11=  uv*=sin(time*0.2)*0.4+1.2;
+comp_12=
+comp_13=  float2 u = uv;
+comp_14=  float t=time * .2;
+comp_15=  float3  p = float3(uv,1);
+comp_16=  // u =(u+u-p.xy)/p.y;
+comp_17=  u = mul(u, transpose(float2x2(cos(length(u*3.5)+float4(0,33,11,0)))));
+comp_18=
+comp_19=  // tanh doesn't work so well in HLSL/Milkwave, so we're using an alternative (see below)
+comp_20=  /*
+comp_21=  o  = tanh((float4(.5,.1,2,0)/(.001*length(u.x+sin(8. *t-u.y*1.)*.1))
+comp_22=  +  float4( 1,.1,0,0)/(.002*length(u.x+sin(4. *t-u.y*2.)*.2))
+comp_23=  +  float4( 1,.6,0,0)/(.003*length(u.x+sin(3. *t-u.y*4.)*.3))
+comp_24=  +  float4( 1, 2,0,0)/(.004*length(u.x+sin(2. *t-u.y*8.)*.4)))
+comp_25=  /2e4);
+comp_26=  */
+comp_27=
+comp_28=  float shift1 = 0, shift2 = 0, shift3 = 0, shift4 = 0; 
+comp_29=  #ifdef bass_smooth
+comp_30=    if (vis_version == 1) {
+comp_31=      shift1 = (-0.5+smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
+comp_32=      shift2 = (-0.5+smoothstep(0,2,mid_smooth))*vis_intensity+vis_shift;
+comp_33=      shift3 = (-0.5+smoothstep(0,2,treb_smooth))*vis_intensity+vis_shift;
+comp_34=      shift4 = (-0.5+smoothstep(0,2,vol_smooth))*vis_intensity+vis_shift;
+comp_35=    } 
+comp_36=    else if (vis_version == 2) {
+comp_37=      shift1 = 0.4*smoothstep(0,2,bass_att)*vis_intensity+vis_shift;
+comp_38=      shift2 = 0.4*smoothstep(0,2,mid_att)*vis_intensity+vis_shift;
+comp_39=      shift3 = 0.4*smoothstep(0,2,treb_att)*vis_intensity+vis_shift;
+comp_40=      shift4 = 0.4*smoothstep(0,2,vol_att)*vis_intensity+vis_shift;
+comp_41=    }
+comp_42=    else {
+comp_43=      shift1 = shift2 = shift3 = shift4 = (-1+vis_intensity)+vis_shift;
+comp_44=    }
+comp_45=  #else
+comp_46=    shift1 = 0.4*smoothstep(0,2,bass_att);
+comp_47=    shift2 = 0.4*smoothstep(0,2,mid_att);
+comp_48=    shift3 = 0.4*smoothstep(0,2,treb_att);
+comp_49=    shift4 = 0.4*smoothstep(0,2,vol_att);
+comp_50=  #endif
+comp_51=  
+comp_52=  float4 x = (
+comp_53=  float4(0.5+shift1, 0.1, 2, 0) / (0.001 * length(u.x + sin(8.0 * t - u.y * 1.0) * 0.1)) +
+comp_54=  float4(1.0+shift2, 0.1, 0, 0) / (0.002 * length(u.x + sin(4.0 * t - u.y * 2.0) * 0.2)) +
+comp_55=  float4(1.0, 0.6-shift3, 0, 0) / (0.003 * length(u.x + sin(3.0 * t - u.y * 4.0) * 0.3)) +
+comp_56=  float4(1.0, 2.0, shift4, 0) / (0.004 * length(u.x + sin(2.0 * t - u.y * 8.0) * 0.4))
+comp_57=  ) / 20000.0;
+comp_58=
+comp_59=  o = (2.0 / (1.0 + exp(-2.0 * x))) - 1.0;
+comp_60=
+comp_61=  ret = o;
+comp_62=}
