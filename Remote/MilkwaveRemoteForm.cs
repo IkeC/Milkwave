@@ -2882,8 +2882,19 @@ namespace MilkwaveRemote {
         var filteredEntries = FilterTagEntries();
         foreach (var entry in filteredEntries) {
           if (String.IsNullOrEmpty(txtFilter.Text) || entry.Key.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
+
+            string filenameWithoutExt = Path.GetFileNameWithoutExtension(entry.Value.PresetPath);
+            string displayName = filenameWithoutExt;
+            string? directory = Path.GetDirectoryName(entry.Value.PresetPath);
+            if (!string.IsNullOrEmpty(directory)) {
+              string lastDirectory = new DirectoryInfo(directory).Name;
+              if (!string.IsNullOrEmpty(lastDirectory)) {
+                displayName = $"{lastDirectory}\\{filenameWithoutExt}";
+              }
+            }
+
             Data.Preset newPreset = new Data.Preset {
-              DisplayName = entry.Key,
+              DisplayName = displayName,
               MaybeRelativePath = entry.Value.PresetPath
             };
             presetList.Add(newPreset);

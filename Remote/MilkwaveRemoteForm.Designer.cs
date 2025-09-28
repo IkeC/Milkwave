@@ -205,6 +205,7 @@ namespace MilkwaveRemote
       cboSpoutWidth = new ComboBox();
       cboSpoutHeight = new ComboBox();
       lblQuality = new Label();
+      lblMidi1Row = new Label();
       txtShaderGLSL = new TextBox();
       txtShaderHLSL = new TextBox();
       txtMidi2Label = new TextBox();
@@ -332,7 +333,6 @@ namespace MilkwaveRemote
       lblMidi4Row = new Label();
       lblMidi3Row = new Label();
       lblMidi2Row = new Label();
-      lblMidi1Row = new Label();
       lblBank = new Label();
       cboMidi1Action = new ComboBox();
       txtMidi1Inc = new TextBox();
@@ -2493,6 +2493,17 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblQuality, resources.GetString("lblQuality.ToolTip"));
       lblQuality.Click += lblQuality_Click;
       // 
+      // lblMidi1Row
+      // 
+      lblMidi1Row.Location = new Point(8, 36);
+      lblMidi1Row.Name = "lblMidi1Row";
+      lblMidi1Row.Size = new Size(20, 24);
+      lblMidi1Row.TabIndex = 156;
+      lblMidi1Row.Text = "1";
+      lblMidi1Row.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblMidi1Row, "Double-click: Clear assignment for row");
+      lblMidi1Row.DoubleClick += lblMidiRow_DoubleClick;
+      // 
       // txtShaderGLSL
       // 
       txtShaderGLSL.Dock = DockStyle.Fill;
@@ -4294,17 +4305,6 @@ namespace MilkwaveRemote
       lblMidi2Row.Text = "2";
       lblMidi2Row.TextAlign = ContentAlignment.MiddleRight;
       lblMidi2Row.DoubleClick += lblMidiRow_DoubleClick;
-      // 
-      // lblMidi1Row
-      // 
-      lblMidi1Row.Location = new Point(8, 36);
-      lblMidi1Row.Name = "lblMidi1Row";
-      lblMidi1Row.Size = new Size(20, 24);
-      lblMidi1Row.TabIndex = 156;
-      lblMidi1Row.Text = "1";
-      lblMidi1Row.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblMidi1Row, "Double-click: Clear assignment for row");
-      lblMidi1Row.DoubleClick += lblMidiRow_DoubleClick;
       // 
       // lblBank
       // 
