@@ -89,12 +89,14 @@ Some of the Shadertoy shaders that can be converted to a Milkwave preset using t
 
 Here are some common terms that cannot be converted automatically and need to be edited manually after conversion.
 
-| Term | Info |
+| Term | Fix  |
 | ---- | ---- |
 | `break` | Replace with a statement setting a condition to end the loop |
-| `radians(a)` | Multiply by π/180 directly: `a * (M_PI/180)` |
+| `myFloat3 *= myMatrix` | `myFloat3 = mul(myFloat3, transpose(myMatrix))` |
+| `float3(1)` | Explicity set all components: `float3(1,1,1)` |
 | `atan(a,b)` | `atan2(a,b)` |
 | `float[3] arr` | `float arr[3]` |
+| `radians(a)` | Multiply by π/180 directly: `a * (M_PI/180)` |
 | `int[3] arr = int[](1,2,3)` | `int arr[3] = {1,2,3}` |
 | `int ix = i & 1` (bitwise) | `int ix = i % 2` |
 | `int yx = y >> 1` (bitwise) | `int yx = y / 2` |
