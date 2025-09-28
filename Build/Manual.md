@@ -4,6 +4,8 @@ Welcome to the Milkwave manual! This document will help you get started with the
 
 In general, make sure to hover the mouse over all labels and buttons to see some inline help tooltips describing most of the features and displaying keyboard shortcuts.
 
+If you need help with the Visualizer itself, press F1 there to see the on-screen help pages.
+
 # Interface
 
 The Tabs panel holds most features available in the Remote, described in detail below.
@@ -56,7 +58,7 @@ The "File" checkbox determines whether the preset name is built from the shaderi
 
 Note that the conversion process will most likely not produce a working preset right away, as some logical statements, terms and expressions cannot be converted easily. Some common problems are listed below, and I highly recommend at least watching the great [How to create Presets from OpenGL Shaders](https://www.youtube.com/watch?v=Ur2gPa996Aw) video by Patrick Pomerleau (also listed below) to understand the process.
 
-If you get conversion errors, they will be displayed in the Remote status bar. Milkwave will try to find the correct error line in the right pane and jump there, but it's not always exact due to the way the Visualizer compiles the preset file. You can use the number box ("offset") in the upper right corner to highlight the acutal error line. A common pratice is to add a deliberate error (like "xxx;") to the code, set the offset to the correct line, then remove it. Subsequent errors will then be marked more precisely.
+If you get conversion errors, they will be displayed in the Remote status bar. Milkwave will try to find the correct error line in the right pane and jump there, but it's not always exact due to the way the Visualizer compiles the preset file. You can use the number box ("offset") in the upper right corner to highlight the acutal error line. A common pratice is to add a deliberate error (like "xxx") to the code, set the offset to the correct line, then remove it. Subsequent errors will then be marked more precisely.
 
 The upper right corner also features a search box to find text within the right pane. Use Ctrl+Shift+F to jump to the search box, and Ctrl+F to actually find the next occurence of the search text. The "L" button allows you to load shader code from a file, or extract it from an existing preset (comp shader lines only). The "?" button opens this manual in your browser.
 
@@ -116,20 +118,44 @@ Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends t
 
 The "Intensity", "Shift" and "Version" values can be read by presets that support the Milkwave specific vis_intensity, vis_shift and vis_version variables (see below). As above, you can change these values live while a preset is running.
 
+For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size for display.
+
+With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" resolution is used.
+
 Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
+
+Keep in mind that most settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
 
 ## Tab "MIDI"
 
-Inc: For knobs and faders, this is the amount the target control will be changed with every MIDI step (0-127). The default value of a control (eg. 1.0 for "Intensity") is assigned to the "middle setting" of the fader/knob (MIDI step 64).
+You can control many of the Remote and Visualizer features using MIDI controllers. First, select your MIDI input device from the drop-down list. If your device is not listed, make sure it is connected and recognized by Windows, then click "Scan".
 
-# Milkwave specifics
+You can assign up to 50 actions for your controls. Switch to higher rows using the "Bank" control. Press "Learn" and push or turn your MIDI control for Milkwave to recognize it. You'll see the "Channel", "Value" and "Controller" boxes change their values if this works. When the control is learned, turn off "Learn" and select an "Action" for your control.
+
+When not in "learning" mode, all rows marked as "Active" will be taken into account when a MIDI event is received.
+
+Milkwave differentiates two types of MIDI controls: "Button/Note" and "Knob/Fader". A button or note is just a trigger for an action, while a knob or fader sends a MIDI value between 0 and 127.
+
+"Knob/Fader" actions are fixed, you can select the different options from the the drop-down list. The default value of a control is usually set to the middle setting of your knob or fader (MIDI value 64). In the "Inc" box, you can define how much the value of the target control is changed for every MIDI value change.
+
+Example: You assign a knob to "Settings: Intensity", with an "Inc" value of 0.05. The default value for "Intensity" is 1, which is assigned to the middle setting of your knob (MIDI value 64). Now if you turn your MIDI control all the way up to 127, the "Intensity" value will be set to 1+(63\*0.05)=3.15. If you turn it down, it will go down to 0. Values are capped between the possible values a control supports, so "Intensity" will never go below 0.
+
+"Button/Note" events can trigger a lot of actions. You can select some default actions from the drop-down list, but these are just some common examples - you can type freely into the box. You may also edit the default action list by editing _midi-default.txt_ in the Milkwave folder.
+
+An action can be any command or string of commands that can also be triggered by script. You can also trigger lines from the currently loaded script file. Actions include selecting and changing presets, sending messages, triggering sprites, starting external programs and lots more. Please read the documentation in _script-default.txt_ for a detailed description on possible commands and command chains.
+
+Your MIDI assignments are kept in _midi-remote.json_ and automatically loaded and saved when you open/close the Remote. You may also load and save settings manually using the "L" and "S" buttons in the upper right corner.
+
+# Milkwave Visualizer specifics
+
+Milkwave Visualizer is based on MilkDrop2, supporting all its options and settings. In addition, some new variables were introduced to give preset authors more possibilities while keeping presets compatible to other MilkDrop2 based visualizers (eg. NestDrop, BeatDrop Visualizer or MilkDrop 3).
 
 ## "_smooth" preset variables
 
 Milkwave 3 introduced these addtional variables for preset authors to use:
 -  _bass_smooth, mid_smooth, treb_smooth, vol_smooth_
 
-These provide much more softed versions than the standard _\*\_att_ variables, meaning the value change is much more subtle between each frame. If you want to use them in your preset but also stay compatible with other MilkDrop based visualizers (eg. BeatDrop Visualizer or MilkDrop 3), you can use the following code snippet:
+These provide much more softed versions than the standard _\*\_att_ variables, meaning the value change is much more subtle between each frame. If you want to use them in your preset but also stay compatible with other MilkDrop based visualizers, you can use the following code snippet:
 ```
 #ifndef bass_smooth
 #define bass_smooth bass_att
@@ -143,7 +169,7 @@ float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 ```
 ## "vis_intensity", "vis_shift" and "vis_version" preset variables
 
-Also introduced in Milkwave 3. Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running.
+Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running. They can also be assigned to MIDI controls.
 
 See the Shader presets included with Milkwave for examples that make use of these parameters.
 

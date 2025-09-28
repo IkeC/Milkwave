@@ -1,6 +1,6 @@
 ## v3.2 (unreleased)
 
-- MIDI automation
+- MIDI Tab: MIDI automation for up to 50 controls
 - Window independent Spout output (#14)
 - Adjust render quality from Remote
 - CPU/GPU monitoring
