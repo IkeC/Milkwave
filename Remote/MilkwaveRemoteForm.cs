@@ -4434,8 +4434,10 @@ namespace MilkwaveRemote {
 
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         numQuality.Increment = 0.05M;
-      } else {
+      } else if (numQuality.Value > 0.1M) {
         numQuality.Increment = 0.02M;
+      } else {
+        numQuality.Increment = 0.01M;
       }
       SendToMilkwaveVisualizer("", MessageType.RenderQuality);
     }
