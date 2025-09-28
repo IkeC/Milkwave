@@ -4515,5 +4515,12 @@ namespace MilkwaveRemote {
       UpdateRowData(rowIndex);
     }
 
+    private void btnQualityHalf_Click(object sender, EventArgs e) {
+      numQuality.Value = Math.Clamp(numQuality.Value / 2, numQuality.Minimum, numQuality.Maximum);
+    }
+
+    private void btnQualityDouble_Click(object sender, EventArgs e) {
+      numQuality.Value = Math.Clamp(numQuality.Value * 2, numQuality.Minimum, numQuality.Maximum);
+    }
   } // end class
 } // end namespace

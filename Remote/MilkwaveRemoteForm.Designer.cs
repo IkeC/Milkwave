@@ -337,6 +337,8 @@ namespace MilkwaveRemote
       cboMidi1Action = new ComboBox();
       txtMidi1Inc = new TextBox();
       tabSettings = new TabPage();
+      btnQualityDouble = new Button();
+      btnQualityHalf = new Button();
       numQuality = new NumericUpDown();
       numFactorFPS = new NumericUpDown();
       numFactorFrame = new NumericUpDown();
@@ -2449,7 +2451,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutFixedSize.Appearance = Appearance.Button;
       chkSpoutFixedSize.FlatStyle = FlatStyle.System;
-      chkSpoutFixedSize.Location = new Point(258, 6);
+      chkSpoutFixedSize.Location = new Point(259, 6);
       chkSpoutFixedSize.Name = "chkSpoutFixedSize";
       chkSpoutFixedSize.Size = new Size(56, 23);
       chkSpoutFixedSize.TabIndex = 157;
@@ -2463,7 +2465,7 @@ namespace MilkwaveRemote
       // cboSpoutWidth
       // 
       cboSpoutWidth.Items.AddRange(new object[] { "3840", "2560", "1920", "1600", "1280", "1024", "800", "640", "320" });
-      cboSpoutWidth.Location = new Point(319, 7);
+      cboSpoutWidth.Location = new Point(321, 7);
       cboSpoutWidth.Name = "cboSpoutWidth";
       cboSpoutWidth.Size = new Size(58, 23);
       cboSpoutWidth.TabIndex = 158;
@@ -2474,7 +2476,7 @@ namespace MilkwaveRemote
       // cboSpoutHeight
       // 
       cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "600", "480", "240", "200" });
-      cboSpoutHeight.Location = new Point(383, 7);
+      cboSpoutHeight.Location = new Point(385, 7);
       cboSpoutHeight.Name = "cboSpoutHeight";
       cboSpoutHeight.Size = new Size(58, 23);
       cboSpoutHeight.TabIndex = 159;
@@ -4339,6 +4341,8 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(btnQualityDouble);
+      tabSettings.Controls.Add(btnQualityHalf);
       tabSettings.Controls.Add(numQuality);
       tabSettings.Controls.Add(lblQuality);
       tabSettings.Controls.Add(cboSpoutHeight);
@@ -4371,6 +4375,26 @@ namespace MilkwaveRemote
       tabSettings.TabIndex = 4;
       tabSettings.Text = "Settings";
       // 
+      // btnQualityDouble
+      // 
+      btnQualityDouble.Location = new Point(320, 35);
+      btnQualityDouble.Name = "btnQualityDouble";
+      btnQualityDouble.Size = new Size(60, 23);
+      btnQualityDouble.TabIndex = 163;
+      btnQualityDouble.Text = "Double";
+      btnQualityDouble.UseVisualStyleBackColor = true;
+      btnQualityDouble.Click += btnQualityDouble_Click;
+      // 
+      // btnQualityHalf
+      // 
+      btnQualityHalf.Location = new Point(259, 35);
+      btnQualityHalf.Name = "btnQualityHalf";
+      btnQualityHalf.Size = new Size(56, 23);
+      btnQualityHalf.TabIndex = 162;
+      btnQualityHalf.Text = "Half";
+      btnQualityHalf.UseVisualStyleBackColor = true;
+      btnQualityHalf.Click += btnQualityHalf_Click;
+      // 
       // numQuality
       // 
       numQuality.DecimalPlaces = 2;
@@ -4380,7 +4404,7 @@ namespace MilkwaveRemote
       numQuality.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numQuality.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
       numQuality.Name = "numQuality";
-      numQuality.Size = new Size(56, 23);
+      numQuality.Size = new Size(54, 23);
       numQuality.TabIndex = 160;
       numQuality.TextAlign = HorizontalAlignment.Center;
       numQuality.Value = new decimal(new int[] { 1, 0, 0, 0 });
@@ -4829,5 +4853,7 @@ namespace MilkwaveRemote
     private ToolStripStatusLabel toolStripStatusLabelMonitorGPU;
     private ToolStripMenuItem toolStripMenuItemMonitorGPU;
     private ToolStripSeparator toolStripSeparator4;
+    private Button btnQualityHalf;
+    private Button btnQualityDouble;
   }
 }
