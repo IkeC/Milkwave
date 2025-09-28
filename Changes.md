@@ -1,16 +1,16 @@
 ## v3.2 (unreleased)
 
-- MIDI automation
+- MIDI Tab: MIDI automation for up to 50 controls
 - Window independent Spout output (#14)
 - Adjust render quality from Remote
 - CPU/GPU monitoring
 - HiRes audio support (by @OfficialIncubo)
 - 5 new shader-based presets:
- - chronos + IkeC - Astral Jelly Journey
- - diatribes + IkeC - Deep Cloud Mix
- - diatribes + IkeC - Neon Chill
- - Kali + IkeC - Fractal Land
- - kasari39 + IkeC - Phantom Star for CineShader
+  - chronos + IkeC - Astral Jelly Journey
+  - diatribes + IkeC - Deep Cloud Mix
+  - diatribes + IkeC - Neon Chill
+  - Kali + IkeC - Fractal Land
+  - kasari39 + IkeC - Phantom Star for CineShader
  
 ## v3.1 (2025-09-04)
 
