@@ -18,6 +18,8 @@
 # BEATS=8: Set Beats to 8
 # STOP: Stop autoplay
 # SEND=00: Send this string to the Visualizer window, eg. for triggering sprite 00
+#   If your string starts with 0x, it is treated as keycode, eg. 0x73 for F4 key
+#   See https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 # PRESET=C:\Path\To\Preset.milk: Run preset file in Visualizer, the path can be 
 #   absolute or relative to the Milkwave base directory
 # RESET: Reset the Remote form timer. The timer may run out of sync after a while,

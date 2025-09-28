@@ -1026,7 +1026,13 @@ namespace MilkwaveRemote {
         } else if (tokenUpper.StartsWith("SEND=")) {
           string sendString = token.Substring(5);
           if (sendString.Length > 0) {
-            SendUnicodeChars(sendString);
+            if (sendString.StartsWith("0x")) {
+              if (int.TryParse(sendString.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int charCode)) {
+                SendPostMessage(charCode, sendString);
+              }
+            } else {
+              SendUnicodeChars(sendString);
+            }
           }
         } else if (tokenUpper.StartsWith("MSG=")) {
           string sendString = "MSG|" + token.Substring(4).Replace(";", "|");
@@ -4161,10 +4167,14 @@ namespace MilkwaveRemote {
     }
 
     private void cboMidiDevice_SelectedIndexChanged(object sender, EventArgs e) {
-      MidiDeviceEntry? entry = (MidiDeviceEntry?)cboMidiDevice.SelectedItem;
-      int deviceIndex = entry?.DeviceIndex ?? -1;
-      if (deviceIndex >= 0) {
-        MidiHelper.SelectDevice(deviceIndex);
+      try {
+        MidiDeviceEntry? entry = (MidiDeviceEntry?)cboMidiDevice.SelectedItem;
+        int deviceIndex = entry?.DeviceIndex ?? -1;
+        if (deviceIndex >= 0) {
+          MidiHelper.SelectDevice(deviceIndex);
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error selecting MIDI device: {ex.Message}");
       }
     }
 
