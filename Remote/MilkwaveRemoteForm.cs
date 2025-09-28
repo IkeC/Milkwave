@@ -1,6 +1,5 @@
 ﻿using MilkwaveRemote.Data;
 using MilkwaveRemote.Helper;
-using System;
 using System.Diagnostics;
 using System.Drawing.Text;
 using System.Globalization;
@@ -4185,7 +4184,9 @@ namespace MilkwaveRemote {
 
       var rowData = MidiHelper.MidiRows[rowIndex - 1];
       TextBox txtMidiInc = FindTextbox($"txtMidi{rowIndex}Inc");
-      txtMidiInc.Text = "";
+      UpdateRowData(rowIndex);
+
+      AllowMidiRowDataUpdate = false;
 
       if (rowData.ActionType == MidiActionType.Knob) {
         if (rowData.ActionId == MidiActionId.KnobPresetAmpL || rowData.ActionId == MidiActionId.KnobPresetAmpR) {
@@ -4201,8 +4202,11 @@ namespace MilkwaveRemote {
           // default increment is 0.02
           txtMidiInc.Text = "0.02";
         }
+      } else {
+        txtMidiInc.Text = "";
       }
 
+      AllowMidiRowDataUpdate = true;
       UpdateRowData(rowIndex);
     }
 

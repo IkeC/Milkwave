@@ -134,21 +134,21 @@ You can assign up to 50 actions for your controls. Switch to higher rows using t
 
 When not in "learning" mode, all rows marked as "Active" will be taken into account when a MIDI event is received.
 
-Milkwave differentiates two types of MIDI controls: "Button/Note" and "Knob/Fader". A button or note is just a trigger for an action, while a knob or fader sends a MIDI value between 0 and 127.
+Milkwave differentiates between two types of MIDI controls: "Button/Note" and "Knob/Fader". A button or note is just a trigger for an action, while a knob or fader sends a MIDI value between 0 and 127.
 
 "Knob/Fader" actions are fixed, you can select the different options from the the drop-down list. The default value of a control is usually set to the middle setting of your knob or fader (MIDI value 64). In the "Inc" box, you can define how much the value of the target control is changed for every MIDI value change.
 
-Example: You assign a knob to "Settings: Intensity", with an "Inc" value of 0.05. The default value for "Intensity" is 1, which is assigned to the middle setting of your knob (MIDI value 64). Now if you turn your MIDI control all the way up to 127, the "Intensity" value will be set to 1+(63\*0.05)=3.15. If you turn it down, it will go down to 0. Values are capped between the possible values a control supports, so "Intensity" will never go below 0.
+Example: You assign a knob on your MIDI keyboard to "Settings: Intensity", with an "Inc" value of 0.05. The default value for "Intensity" is 1, which is assigned to the middle setting of your knob (MIDI value 64). Now if you turn your keyboard knob all the way up to 127, the "Intensity" value in the Remote will be set to 1+(63\*0.05)=3.15. If you turn it down, it will go down to 0 in the Remote. Values are capped between the possible values a control supports, so eg. "Intensity" will never go below 0.
 
 "Button/Note" events can trigger a lot of actions. You can select some default actions from the drop-down list, but these are just some common examples - you can type freely into the box. You may also edit the default action list by editing _midi-default.txt_ in the Milkwave folder.
 
-An action can be any command or string of commands that can also be triggered by script. You can also trigger lines from the currently loaded script file. Actions include selecting and changing presets, sending messages, triggering sprites, starting external programs and lots more. Please read the documentation in _script-default.txt_ for a detailed description on possible commands and command chains.
+An action can be any command or string of commands that can also be triggered by script. You can also trigger lines (current, next, previous or specific) from the currently loaded script file ("From File" in the "Message" tab). Actions include selecting and changing presets, sending messages, triggering sprites, starting external programs and lots more. Please read the documentation in _script-default.txt_ for a detailed description on possible commands and command chains.
 
 Your MIDI assignments are kept in _midi-remote.json_ and automatically loaded and saved when you open/close the Remote. You may also load and save settings manually using the "L" and "S" buttons in the upper right corner.
 
 # Milkwave Visualizer specifics
 
-Milkwave Visualizer is based on MilkDrop2, supporting all its options and settings. In addition, some new variables were introduced to give preset authors more possibilities while keeping presets compatible to other MilkDrop2 based visualizers (eg. NestDrop, BeatDrop Visualizer or MilkDrop 3).
+Milkwave Visualizer is based on MilkDrop2, supporting all its options and settings. In addition, some new variables were introduced to give preset authors more possibilities while keeping presets compatible to other MilkDrop2 based visualizers (eg. NestDrop, BeatDrop Music Visualizer or MilkDrop 3).
 
 ## "_smooth" preset variables
 

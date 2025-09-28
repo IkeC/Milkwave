@@ -1908,7 +1908,7 @@ namespace MilkwaveRemote
       // 
       // lblFactorFrame
       // 
-      lblFactorFrame.Location = new Point(4, 61);
+      lblFactorFrame.Location = new Point(4, 63);
       lblFactorFrame.Name = "lblFactorFrame";
       lblFactorFrame.Size = new Size(65, 23);
       lblFactorFrame.TabIndex = 140;
@@ -1930,7 +1930,7 @@ namespace MilkwaveRemote
       // 
       // lblFactorFPS
       // 
-      lblFactorFPS.Location = new Point(4, 34);
+      lblFactorFPS.Location = new Point(4, 35);
       lblFactorFPS.Name = "lblFactorFPS";
       lblFactorFPS.Size = new Size(65, 23);
       lblFactorFPS.TabIndex = 142;
@@ -2250,7 +2250,7 @@ namespace MilkwaveRemote
       // 
       // lblVisIntensity
       // 
-      lblVisIntensity.Location = new Point(4, 88);
+      lblVisIntensity.Location = new Point(4, 91);
       lblVisIntensity.Name = "lblVisIntensity";
       lblVisIntensity.Size = new Size(65, 23);
       lblVisIntensity.TabIndex = 150;
@@ -2261,7 +2261,7 @@ namespace MilkwaveRemote
       // 
       // lblVisShift
       // 
-      lblVisShift.Location = new Point(4, 116);
+      lblVisShift.Location = new Point(4, 120);
       lblVisShift.Name = "lblVisShift";
       lblVisShift.Size = new Size(65, 23);
       lblVisShift.TabIndex = 152;
@@ -2272,7 +2272,7 @@ namespace MilkwaveRemote
       // 
       // lblVisVersion
       // 
-      lblVisVersion.Location = new Point(4, 144);
+      lblVisVersion.Location = new Point(4, 149);
       lblVisVersion.Name = "lblVisVersion";
       lblVisVersion.Size = new Size(65, 23);
       lblVisVersion.TabIndex = 154;
@@ -2484,7 +2484,7 @@ namespace MilkwaveRemote
       // 
       // lblQuality
       // 
-      lblQuality.Location = new Point(148, 33);
+      lblQuality.Location = new Point(148, 35);
       lblQuality.Name = "lblQuality";
       lblQuality.Size = new Size(45, 23);
       lblQuality.TabIndex = 161;
@@ -2601,7 +2601,7 @@ namespace MilkwaveRemote
       // 
       numVisShift.DecimalPlaces = 2;
       numVisShift.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numVisShift.Location = new Point(75, 118);
+      numVisShift.Location = new Point(75, 122);
       numVisShift.Margin = new Padding(3, 2, 3, 2);
       numVisShift.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numVisShift.Minimum = new decimal(new int[] { 99999, 0, 0, -2147352576 });
@@ -2615,7 +2615,7 @@ namespace MilkwaveRemote
       // 
       numVisIntensity.DecimalPlaces = 2;
       numVisIntensity.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numVisIntensity.Location = new Point(75, 90);
+      numVisIntensity.Location = new Point(75, 93);
       numVisIntensity.Margin = new Padding(3, 2, 3, 2);
       numVisIntensity.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numVisIntensity.Name = "numVisIntensity";
@@ -2672,7 +2672,7 @@ namespace MilkwaveRemote
       // 
       // numVisVersion
       // 
-      numVisVersion.Location = new Point(75, 146);
+      numVisVersion.Location = new Point(75, 151);
       numVisVersion.Margin = new Padding(3, 2, 3, 2);
       numVisVersion.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numVisVersion.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -4369,7 +4369,7 @@ namespace MilkwaveRemote
       // 
       numQuality.DecimalPlaces = 2;
       numQuality.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numQuality.Location = new Point(199, 35);
+      numQuality.Location = new Point(199, 36);
       numQuality.Margin = new Padding(3, 2, 3, 2);
       numQuality.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numQuality.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
@@ -4384,7 +4384,7 @@ namespace MilkwaveRemote
       // 
       numFactorFPS.DecimalPlaces = 2;
       numFactorFPS.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFactorFPS.Location = new Point(75, 35);
+      numFactorFPS.Location = new Point(75, 36);
       numFactorFPS.Margin = new Padding(3, 2, 3, 2);
       numFactorFPS.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numFactorFPS.Name = "numFactorFPS";
@@ -4396,7 +4396,7 @@ namespace MilkwaveRemote
       // 
       // numFactorFrame
       // 
-      numFactorFrame.Location = new Point(75, 63);
+      numFactorFrame.Location = new Point(75, 65);
       numFactorFrame.Margin = new Padding(3, 2, 3, 2);
       numFactorFrame.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numFactorFrame.Name = "numFactorFrame";

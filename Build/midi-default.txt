@@ -7,11 +7,12 @@
 # https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md#tab-midi 
 #
 Hello from MIDI!
+PREV
 NEXT
-INTENSITY=1|VERSION=2
+INTENSITY=1|VERSION=2|QUALITY=1
 SEND=00
 LINE=5
 LINE=CURR
 LINE=PREV
 LINE=NEXT
-EXEC=C:\Portable\BeatDrop\BeatDrop.exe
+EXEC=C:\Windows\Notepad.exe
