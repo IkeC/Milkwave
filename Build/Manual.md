@@ -132,7 +132,7 @@ You can control many of the Remote and Visualizer features using MIDI controller
 
 You can assign up to 50 actions for your controls. Switch to higher rows using the "Bank" control. Press "Learn" and push or turn your MIDI control for Milkwave to recognize it. You'll see the "Channel", "Value" and "Controller" boxes change their values if this works. When the control is learned, turn off "Learn" and select an "Action" for your control.
 
-When not in "learning" mode, all rows marked as "Active" will be taken into account when a MIDI event is received.
+When not in "learning" mode, all rows marked as "Active" will be taken into account when a MIDI event is received. Double-click a row number to clear the row.
 
 Milkwave differentiates between two types of MIDI controls: "Button/Note" and "Knob/Fader". A button or note is just a trigger for an action, while a knob or fader sends a MIDI value between 0 and 127.
 

@@ -4037,9 +4037,9 @@ namespace MilkwaveRemote {
 
             ComboBox cboMidiAction = FindCombobox($"cboMidi{rowIndex}Action");
             if (isButton) {
-              PopulateMidiActionComboBoxForButton(cboMidiAction);
+              PopulateMidiActionComboBoxForButton(cboMidiAction, false);
             } else {
-              PopulateMidiActionComboBoxForKnob(cboMidiAction);
+              PopulateMidiActionComboBoxForKnob(cboMidiAction, false);
             }
           } else {
             // Not in learning mode, check if it matches any of the configured rows
@@ -4072,8 +4072,8 @@ namespace MilkwaveRemote {
       };
     }
 
-    private void PopulateMidiActionComboBoxForKnob(ComboBox cboMidiAction) {
-      if (cboMidiAction.DropDownStyle != ComboBoxStyle.DropDownList) {
+    private void PopulateMidiActionComboBoxForKnob(ComboBox cboMidiAction, bool force) {
+      if (cboMidiAction.DropDownStyle != ComboBoxStyle.DropDownList || force) {
         cboMidiAction.DropDownStyle = ComboBoxStyle.DropDownList;
         DarkModeCS.RemoveControl(cboMidiAction);
         dm.ThemeControl(cboMidiAction);
@@ -4094,8 +4094,8 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void PopulateMidiActionComboBoxForButton(ComboBox cboMidiAction) {
-      if (cboMidiAction.DropDownStyle != ComboBoxStyle.DropDown) {
+    private void PopulateMidiActionComboBoxForButton(ComboBox cboMidiAction, bool force) {
+      if (cboMidiAction.DropDownStyle != ComboBoxStyle.DropDown || force) {
         cboMidiAction.DropDownStyle = ComboBoxStyle.DropDown;
         DarkModeCS.RemoveControl(cboMidiAction);
         dm.ThemeControl(cboMidiAction);
@@ -4369,10 +4369,10 @@ namespace MilkwaveRemote {
             cboMidiAction.Text = "";
             cboMidiAction.Items.Clear();
             if (MidiHelper.MidiRows[dataIndex].ActionType == MidiActionType.Button) {
-              PopulateMidiActionComboBoxForButton(cboMidiAction);
+              PopulateMidiActionComboBoxForButton(cboMidiAction, true);
               cboMidiAction.Text = MidiHelper.MidiRows[dataIndex].ActionText;
             } else if (MidiHelper.MidiRows[dataIndex].ActionType == MidiActionType.Knob) {
-              PopulateMidiActionComboBoxForKnob(cboMidiAction);
+              PopulateMidiActionComboBoxForKnob(cboMidiAction, true);
               // Try to select the existing action
               foreach (var item in cboMidiAction.Items) {
                 if (item is MidiActionEntry entry && entry.ActionId == MidiHelper.MidiRows[dataIndex].ActionId) {
@@ -4472,6 +4472,36 @@ namespace MilkwaveRemote {
       } else {
         monitorTimer.Stop();
       }
+    }
+
+    private void lblMidiRow_DoubleClick(object sender, EventArgs e) {
+      int rowIndex = GetIndexFromMidiControl((Control)sender);
+      ClearRow(rowIndex);
+    }
+
+    private void ClearRow(int rowIndex) {
+      var chk = FindCheckbox($"chkMidi{rowIndex}Active");
+      if (chk != null && chk.Checked) {
+        chk.Checked = false;
+      }
+      chk = FindCheckbox($"chkMidi{rowIndex}Learn");
+      if (chk != null && chk.Checked) {
+        chk.Checked = false;
+      }
+      FindTextbox($"txtMidi{rowIndex}Label").Text = "";
+      FindTextbox($"txtMidi{rowIndex}Ch").Text = "0";
+      FindTextbox($"txtMidi{rowIndex}Val").Text = "0";
+      FindTextbox($"txtMidi{rowIndex}Con").Text = "0";
+      FindTextbox($"txtMidi{rowIndex}Inc").Text = "";
+      ComboBox cboMidiAction = FindCombobox($"cboMidi{rowIndex}Action");
+      if (cboMidiAction != null) {
+        cboMidiAction.DropDownStyle = ComboBoxStyle.DropDown;
+        DarkModeCS.RemoveControl(cboMidiAction);
+        dm.ThemeControl(cboMidiAction);
+        cboMidiAction.Text = "";
+        cboMidiAction.Items.Clear();
+      }
+      UpdateRowData(rowIndex);
     }
 
   } // end class

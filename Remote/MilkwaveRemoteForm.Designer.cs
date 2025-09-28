@@ -4263,6 +4263,7 @@ namespace MilkwaveRemote
       lblMidi5Row.TabIndex = 166;
       lblMidi5Row.Text = "5";
       lblMidi5Row.TextAlign = ContentAlignment.MiddleRight;
+      lblMidi5Row.DoubleClick += lblMidiRow_DoubleClick;
       // 
       // lblMidi4Row
       // 
@@ -4272,6 +4273,7 @@ namespace MilkwaveRemote
       lblMidi4Row.TabIndex = 164;
       lblMidi4Row.Text = "4";
       lblMidi4Row.TextAlign = ContentAlignment.MiddleRight;
+      lblMidi4Row.DoubleClick += lblMidiRow_DoubleClick;
       // 
       // lblMidi3Row
       // 
@@ -4281,6 +4283,7 @@ namespace MilkwaveRemote
       lblMidi3Row.TabIndex = 162;
       lblMidi3Row.Text = "3";
       lblMidi3Row.TextAlign = ContentAlignment.MiddleRight;
+      lblMidi3Row.DoubleClick += lblMidiRow_DoubleClick;
       // 
       // lblMidi2Row
       // 
@@ -4290,6 +4293,7 @@ namespace MilkwaveRemote
       lblMidi2Row.TabIndex = 160;
       lblMidi2Row.Text = "2";
       lblMidi2Row.TextAlign = ContentAlignment.MiddleRight;
+      lblMidi2Row.DoubleClick += lblMidiRow_DoubleClick;
       // 
       // lblMidi1Row
       // 
@@ -4299,6 +4303,8 @@ namespace MilkwaveRemote
       lblMidi1Row.TabIndex = 156;
       lblMidi1Row.Text = "1";
       lblMidi1Row.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblMidi1Row, "Double-click: Clear assignment for row");
+      lblMidi1Row.DoubleClick += lblMidiRow_DoubleClick;
       // 
       // lblBank
       // 

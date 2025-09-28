@@ -134,6 +134,60 @@
         "shader"
       ]
     },
+    "altunenes - milkdrop2077 - circuit network": {
+      "PresetPath": "Milkdrop2077\\Altunenes - MilkDrop2077 - circuit network.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "altunenes - milkdrop2077 - circuit network2": {
+      "PresetPath": "Milkdrop2077\\Altunenes - MilkDrop2077 - circuit network2.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "altunenes - milkdrop2077 - information process3": {
+      "PresetPath": "Milkdrop2077\\Altunenes - MilkDrop2077 - Information Process3.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
+    "altunenes - milkdrop2077 - information process4": {
+      "PresetPath": "Milkdrop2077\\Altunenes - MilkDrop2077 - Information Process4.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
+    "altunenes - milkdrop2077 - volumetric passage1o": {
+      "PresetPath": "Milkdrop2077\\Altunenes - MilkDrop2077 - Volumetric Passage1o.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "altunenes - milkdrop2077 - volumetric passage1x": {
+      "PresetPath": "Milkdrop2077\\Altunenes - MilkDrop2077 - Volumetric Passage1x.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "altunenes - milkdrop2077 - volumetric passage1y": {
+      "PresetPath": "Milkdrop2077\\Altunenes - MilkDrop2077 - Volumetric Passage1y.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "altunenes - milkdrop2077 - volumetric passage1z": {
+      "PresetPath": "Milkdrop2077\\Altunenes - MilkDrop2077 - Volumetric Passage1z.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
     "amandio c - embrace 07 y": {
       "PresetPath": "Milkdrop2077\\amandio c - embrace 07 y.milk",
       "Tags": [
@@ -425,6 +479,18 @@
         "shader"
       ]
     },
+    "bigwings \u002B ikec - heartfelt i": {
+      "PresetPath": "Milkwave\\Shader\\BigWings \u002B IkeC - Heartfelt I.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
+    "bigwings \u002B ikec - heartfelt ii": {
+      "PresetPath": "Milkwave\\Shader\\BigWings \u002B IkeC - Heartfelt II.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
     "bradjamesgrant \u002B ikec - fractal pyramid": {
       "PresetPath": "Milkwave\\Shader\\bradjamesgrant \u002B IkeC - fractal pyramid.milk",
       "Tags": [
@@ -444,6 +510,13 @@
       "Tags": [
         "calm",
         "top"
+      ]
+    },
+    "chronos \u002B ikec - astral jelly journey": {
+      "PresetPath": "Milkwave\\Shader\\chronos \u002B IkeC - Astral Jelly Journey.milk",
+      "Tags": [
+        "expensive",
+        "shader"
       ]
     },
     "chunderfpv \u002B ikec - undulating urchin": {
@@ -504,6 +577,19 @@
         "shader"
       ]
     },
+    "diatribes \u002B ikec - deep cloud mix": {
+      "PresetPath": "Milkwave\\Shader\\diatribes \u002B IkeC - Deep Cloud Mix.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "diatribes \u002B ikec - neon chill": {
+      "PresetPath": "Milkwave\\Shader\\diatribes \u002B IkeC - Neon Chill.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
     "diatribes \u002B ikec - night cloud dance": {
       "PresetPath": "Milkwave\\Shader\\diatribes \u002B IkeC - Night Cloud Dance.milk",
       "Tags": [
@@ -513,6 +599,34 @@
     },
     "diatribes \u002B ikec - starfire1": {
       "PresetPath": "Milkwave\\Shader\\diatribes \u002B IkeC - Starfire1.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "diatribes - milkdrop2077 - color ripples": {
+      "PresetPath": "Milkdrop2077\\diatribes - MilkDrop2077 - Color Ripples.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "diatribes - milkdrop2077 - deep cloud mix2": {
+      "PresetPath": "Milkdrop2077\\diatribes - MilkDrop2077 - Deep Cloud Mix2.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "diatribes - milkdrop2077 - spheres and turbulence": {
+      "PresetPath": "Milkdrop2077\\diatribes - MilkDrop2077 - Spheres and Turbulence.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "diatribes - milkdropp2077 - night cloud dance": {
+      "PresetPath": "Milkdrop2077\\diatribes - MilkDropp2077 - Night Cloud Dance.milk",
       "Tags": [
         "expensive",
         "shader"
@@ -972,6 +1086,12 @@
         "hypnotic"
       ]
     },
+    "gaggiuino - flyguy - rainbow twister": {
+      "PresetPath": "Milkdrop2077\\Gaggiuino - Flyguy - Rainbow Twister.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
     "geiss \u002B flexi \u002B martin - disconnected": {
       "PresetPath": "Butterchurn\\Geiss \u002B Flexi \u002B Martin - disconnected.milk",
       "Tags": [
@@ -1152,6 +1272,20 @@
     "kaiware007 \u002B ikec - cyber fuji 2020": {
       "PresetPath": "Milkwave\\Shader\\kaiware007 \u002B IkeC - Cyber Fuji 2020.milk",
       "Tags": [
+        "shader"
+      ]
+    },
+    "kali \u002B ikec - fractal land": {
+      "PresetPath": "Milkwave\\Shader\\Kali \u002B IkeC - Fractal Land.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "kasari39 \u002B ikec - phantom star for cineshader": {
+      "PresetPath": "Milkwave\\Shader\\kasari39 \u002B IkeC - Phantom Star for CineShader.milk",
+      "Tags": [
+        "expensive",
         "shader"
       ]
     },
@@ -1465,6 +1599,12 @@
         "vibrant"
       ]
     },
+    "milkdrop2077 - shader spirale2d2": {
+      "PresetPath": "Milkdrop2077\\MilkDrop2077 - Shader Spirale2d2.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
     "milkdrop2077.r002": {
       "PresetPath": "Butterchurn\\MilkDrop2077.R002.milk",
       "Tags": [
@@ -1494,6 +1634,27 @@
         "shader"
       ]
     },
+    "mrange - milkdrop2077 - saturday smoke1": {
+      "PresetPath": "Milkdrop2077\\mrange - MilkDrop2077 - Saturday smoke1.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "mrange - milkdrop2077 - saturday smoke2": {
+      "PresetPath": "Milkdrop2077\\mrange - MilkDrop2077 - Saturday smoke2.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "mrange - milkdrop2077 - saturday smoke3": {
+      "PresetPath": "Milkdrop2077\\mrange - MilkDrop2077 - Saturday smoke3.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
     "mw_new22": {
       "PresetPath": "Milkwave\\MW_new22.milk",
       "Tags": [
@@ -1518,6 +1679,13 @@
       "Tags": [
         "dark",
         "simple"
+      ]
+    },
+    "nivush - circus torus2077": {
+      "PresetPath": "Milkdrop2077\\Nivush - Circus Torus2077.milk",
+      "Tags": [
+        "expensive",
+        "shader"
       ]
     },
     "nivush - tunnel": {
@@ -1606,6 +1774,12 @@
     },
     "prattitude \u002B ikec - acidic": {
       "PresetPath": "Milkwave\\Shader\\prattitude \u002B IkeC - Acidic.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
+    "prosurestring \u002B ikec - cube go spinny": {
+      "PresetPath": "Milkwave\\Shader\\ProSureString \u002B IkeC - cube go spinny.milk",
       "Tags": [
         "shader"
       ]
@@ -2348,6 +2522,68 @@
         "hypnotic"
       ]
     },
+    "xordev - milkdrop2077 - flutter": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Flutter.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "xordev - milkdrop2077 - flutter2": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Flutter2.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "xordev - milkdrop2077 - flutter3": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Flutter3.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "xordev - milkdrop2077 - flutter4": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Flutter4.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "xordev - milkdrop2077 - fragments of dmt": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Fragments of DMT.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "xordev - milkdrop2077 - fragments of dmt2": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Fragments of DMT2.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "xordev - milkdrop2077 - radial1": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Radial1.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
+    "xordev - milkdrop2077 - tensor2": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Tensor2.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "xordev - milkdrop2077 - tensor4c": {
+      "PresetPath": "Milkdrop2077\\XorDev - MilkDrop2077 - Tensor4c.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
     "yin \u002B se7enslasher - 382 - magic ride (wavy) (absolutely destroyed by pressing a)": {
       "PresetPath": "Incubo_\\yin \u002B Se7enSlasher - 382 - Magic ride (wavy) (absolutely destroyed by pressing A).milk",
       "Tags": [
@@ -2382,6 +2618,75 @@
         "dark",
         "top",
         "watermark"
+      ]
+    },
+    "yoheinishitsuji - martin - milkdrop2077 - helix of wonder2": {
+      "PresetPath": "Milkdrop2077\\YoheiNishitsuji - martin - MilkDrop2077 - helix of wonder2.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "yoheinishitsuji - milkdrop2077 - snowball1": {
+      "PresetPath": "Milkdrop2077\\YoheiNishitsuji - MilkDrop2077 - SnowBall1.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "yoheinishitsuji - milkdrop2077 - snowball2": {
+      "PresetPath": "Milkdrop2077\\YoheiNishitsuji - MilkDrop2077 - SnowBall2.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "yoheinishitsuji - milkdrop2077 - snowball4": {
+      "PresetPath": "Milkdrop2077\\YoheiNishitsuji - MilkDrop2077 - SnowBall4.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "yoheinishitsuji - milkdrop2077 - snowball4e": {
+      "PresetPath": "Milkdrop2077\\YoheiNishitsuji - MilkDrop2077 - SnowBall4e.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "yoheinishitsuji - milkdrop2077 - snowball5": {
+      "PresetPath": "Milkdrop2077\\YoheiNishitsuji - MilkDrop2077 - SnowBall5.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "yoheinishitsuji - milkdrop2077 - snowball9": {
+      "PresetPath": "Milkdrop2077\\YoheiNishitsuji - MilkDrop2077 - SnowBall9.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "yonatan - milkdrop2077 - jello tunnel": {
+      "PresetPath": "Milkdrop2077\\yonatan - MilkDrop2077 - Jello Tunnel.milk",
+      "Tags": [
+        "expensive",
+        "shader"
+      ]
+    },
+    "yufengjie \u002B ikec - sqrt tile": {
+      "PresetPath": "Milkwave\\Shader\\yufengjie \u002B IkeC - sqrt tile.milk",
+      "Tags": [
+        "shader"
+      ]
+    },
+    "yufengjie - milkdrop2077 - bumpy sphere": {
+      "PresetPath": "Milkdrop2077\\yufengjie - MilkDrop2077 - bumpy sphere.milk",
+      "Tags": [
+        "expensive",
+        "shader"
       ]
     },
     "zachjukamashi - waves of sound": {
