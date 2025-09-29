@@ -41,5 +41,6 @@
     "WrapChecked": true,
     "VisIntensity": 1.0,
     "VisShift": 0.0,
-    "VisVersion": 1
+    "VisVersion": 1,
+    "MidiEnabled": true
 }

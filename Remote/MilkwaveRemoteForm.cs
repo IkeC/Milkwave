@@ -424,10 +424,14 @@ namespace MilkwaveRemote {
 
       SendToMilkwaveVisualizer("", MessageType.GetState);
 
-      MidiHelper = new MidiHelper();
-      LoadMIDISettings();
-      PopulateMidiDevicesList();
-      MidiHelper.MidiMessageReceived += MidiMessageReceived();
+      if (Settings.MidiEnabled) {
+        MidiHelper = new MidiHelper();
+        LoadMIDISettings();
+        PopulateMidiDevicesList();
+        MidiHelper.MidiMessageReceived += MidiMessageReceived();
+      } else {
+        tabControl.TabPages.Remove(tabMidi);
+      }
     }
 
     private void PopulateMidiDevicesList() {
@@ -1880,7 +1884,9 @@ namespace MilkwaveRemote {
       try {
 
         SetAndSaveSettings();
-        SaveMIDISettings();
+        if (Settings.MidiEnabled) {
+          SaveMIDISettings();
+        }
 
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {

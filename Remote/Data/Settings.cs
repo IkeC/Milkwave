@@ -24,5 +24,7 @@
     public decimal VisIntensity { get; set; } = 1.0M;
     public decimal VisShift { get; set; } = 0.0M;
     public int VisVersion { get; set; } = 1;
+
+    public bool MidiEnabled { get; set; } = true;
   }
 }

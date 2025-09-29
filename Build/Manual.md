@@ -148,6 +148,8 @@ An action can be any command or string of commands that can also be triggered by
 
 Your MIDI assignments are kept in _midi-remote.json_ and automatically loaded and saved when you open/close the Remote. You may also load and save settings manually using the "L" and "S" buttons in the upper right corner.
 
+If you want to hide the MIDI tab and prevent initialisation completely (eg. because it interferes with your MIDI setup in other programs), set MidiEnabled=false in _settings-remote.json_.
+
 # Milkwave Visualizer specifics
 
 Milkwave Visualizer is based on MilkDrop2, supporting all its options and settings. In addition, some new variables were introduced to give preset authors more possibilities while keeping presets compatible to other MilkDrop2 based visualizers (eg. NestDrop, BeatDrop Music Visualizer or MilkDrop 3).
