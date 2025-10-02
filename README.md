@@ -48,9 +48,15 @@
 * Font manipulation
   - Customize display of song information, preset name and notifications
   - Change and preview font face, style and size instantly
+* MIDI automation
+  - Assign up to 50 actions to your MIDI controller
+  - Select/change presets, send messages, trigger sprites, start external programs etc.
+  - Trigger command chains from script
 * Settings
   - Change internal time, FPS and frame counters to slow down or speed up some presets
   - Adjust "Intensity", "Shift" and "Version" live for supported presets (eg. Milkwaves shader presets)
+  - Control Spout output settings
+  - Adjust render quality to improve performance and/or pixellize output
   - Quick access to configuration files
 * Customizable interface - show only what you need
 * Send common key combinations using buttons
