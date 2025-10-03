@@ -1,4 +1,4 @@
-## v3.2 (unreleased)
+## v3.2 (2025-10-03)
 
 * MIDI Tab: MIDI automation for up to 50 controls
 * Window independent Spout output (#14)

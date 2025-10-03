@@ -221,11 +221,28 @@ HWND      CPluginShell::GetPluginWindow() {
   if (m_lpDX) return m_lpDX->GetHwnd();       else return NULL;
 };
 int       CPluginShell::GetWidth() {
-  if (m_lpDX) return m_lpDX->m_client_width;  else return 0;
+  if (m_lpDX) { 
+    if (IsSpoutActiveAndFixed()) {
+      return m_lpDX->m_backbuffer_width;
+    }
+    else {
+      return m_lpDX->m_client_width;
+    }
+  }
+  else return 0;
 };
+
 int       CPluginShell::GetHeight() {
-  if (m_lpDX) return m_lpDX->m_client_height; else return 0;
-};
+  if (m_lpDX) {
+    if (IsSpoutActiveAndFixed()) {
+      return m_lpDX->m_backbuffer_height;
+    }
+    else {
+      return m_lpDX->m_client_height;
+    }
+  }
+}
+
 int       CPluginShell::GetCanvasMarginX() {
   if (m_lpDX) return (m_lpDX->m_client_width - m_lpDX->m_REAL_client_width) / 2;
   else return 0;
@@ -2660,7 +2677,7 @@ bool CPluginShell::IsSpoutActiveAndFixed() {
 }
 
 void CPluginShell::SetVariableBackBuffer(int width, int height) {
-  if (IsSpoutActiveAndFixed()) return;
+  if (IsSpoutActiveAndFixed() || width == 0 || height == 0) return;
   float q = clamp(m_fRenderQuality, 0.01, 1);
   d3dPp.BackBufferWidth = (int)width * q;
   d3dPp.BackBufferHeight = (int)height * q;
@@ -2675,6 +2692,8 @@ void CPluginShell::ResetBufferAndFonts() {
   SetVariableBackBuffer(m_lpDX->m_client_width, m_lpDX->m_client_height);
   GetDevice()->Reset(&d3dPp);
 
-  CleanUpFonts();
-  AllocateFonts(GetDevice());
+  if (m_lpDX->m_client_width != 0 && m_lpDX->m_client_height != 0) {
+    CleanUpFonts();
+    AllocateFonts(GetDevice());
+  }
 }

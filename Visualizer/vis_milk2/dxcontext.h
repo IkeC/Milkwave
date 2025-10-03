@@ -86,6 +86,8 @@ public:
   HRESULT m_lastErr;
   int m_window_width;
   int m_window_height;
+  int m_backbuffer_width;
+  int m_backbuffer_height;
   int m_client_width;        //in windowed mode, these are the SNAPPED (locked to nearest 32x32)
   int m_client_height;       //  width and height
   int m_REAL_client_width;   //these are the ACTUAL (raw) width and height -

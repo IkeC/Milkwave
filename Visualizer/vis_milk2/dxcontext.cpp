@@ -141,7 +141,10 @@ bool DXContext::OnUserResizeWindow(RECT* new_window_rect, RECT* new_client_rect,
   
   if (bSetBackBuffer) {
     m_d3dpp->BackBufferWidth = m_client_width;
+    m_backbuffer_width = m_client_width;
+
     m_d3dpp->BackBufferHeight = m_client_height;
+    m_backbuffer_height = m_client_height;
     if (m_lpDevice->Reset(m_d3dpp) != D3D_OK) {
       WriteSafeWindowPos();
       m_lastErr = DXC_ERR_RESIZEFAILED;
