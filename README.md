@@ -20,7 +20,7 @@
  
 ## Remote Features
 
-![Milkwave 3.2Tabs](https://github.com/user-attachments/assets/a244f59b-8070-4314-be2d-ceb3259b33c5)
+![Milkwave 3.2 Tabs](https://github.com/user-attachments/assets/a244f59b-8070-4314-be2d-ceb3259b33c5)
 
 * Tabbed interface
   - Presets, Messaging, Wave, Fonts, Settings
