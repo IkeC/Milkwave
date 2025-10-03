@@ -6,7 +6,7 @@
 
 [**Click here**](https://github.com/IkeC/Milkwave/releases/latest) to get the latest version.
 
-<img width="1250" height="457" alt="Milkwave-31" src="https://github.com/user-attachments/assets/4fa29a36-a8c1-4bb1-b262-433280b9a2b4" />
+![Milkwave 3.2](https://github.com/user-attachments/assets/c828786e-d4fc-40bf-a84b-ec996eeff1b8)
 
 ## Visualizer Features
  
@@ -18,9 +18,9 @@
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
  
-![Milkwave-Tabs](https://github.com/user-attachments/assets/0c426917-f462-48a0-8e96-032d76ac558b)
-
 ## Remote Features
+
+![Milkwave 3.2 Tabs](https://github.com/user-attachments/assets/a244f59b-8070-4314-be2d-ceb3259b33c5)
 
 * Tabbed interface
   - Presets, Messaging, Wave, Fonts, Settings
