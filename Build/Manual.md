@@ -4,7 +4,7 @@ Welcome to the Milkwave manual! This document will help you get started with the
 
 In general, make sure to hover the mouse over all labels and buttons to see some inline help tooltips describing most of the features and displaying keyboard shortcuts.
 
-If you need help with the Visualizer itself, press F1 there to see the on-screen help pages.
+If you need help with the Visualizer itself, press F1 there to see the on-screen help pages. Also take a look at the documentation in the _resources/docs_ folder.
 
 # Interface
 
@@ -114,20 +114,6 @@ Modify most of the fonts used to display information in the Visualizer window. U
 
 Changes are saved to the _Fonts_ section in _settings.ini_. Of course you may edit them there manually as well.
 
-## Tab "Settings"
-
-Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
-
-The "Intensity", "Shift" and "Version" values can be read by presets that support the Milkwave specific vis_intensity, vis_shift and vis_version variables (see below). As above, you can change these values live while a preset is running.
-
-For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.
-
-With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" Spout resolution is used.
-
-Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
-
-Keep in mind that most settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
-
 ## Tab "MIDI"
 
 You can control many of the Remote and Visualizer features using MIDI controllers. First, select your MIDI input device from the drop-down list. If your device is not listed, make sure it is connected and recognized by Windows, then click "Scan".
@@ -149,6 +135,20 @@ An action can be any command or string of commands that can also be triggered by
 Your MIDI assignments are kept in _midi-remote.json_ and automatically loaded and saved when you open/close the Remote. You may also load and save settings manually using the "L" and "S" buttons in the upper right corner.
 
 If you want to hide the MIDI tab and prevent initialisation completely (eg. because it interferes with your MIDI setup in other programs), set MidiEnabled=false in _settings-remote.json_.
+
+## Tab "Settings"
+
+Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
+
+The "Intensity", "Shift" and "Version" values can be read by presets that support the Milkwave specific vis_intensity, vis_shift and vis_version variables (see below). As above, you can change these values live while a preset is running.
+
+For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.
+
+With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" Spout resolution is used.
+
+Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
+
+Keep in mind that most settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
 
 # Milkwave Visualizer specifics
 
