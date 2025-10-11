@@ -40,6 +40,9 @@
 # SHIFT=-0.2: Set shift to -0.2 (Settings tab)
 # VERSION=2: Set version to 2 (Settings tab)
 # QUALITY=0.5: Set quality to 0.5 (Settings tab)
+# HUE=-0.8: Shift hue by -0.8 (Settings tab)
+# SATURATION=0.77: Shift saturation by 0.77 (Settings tab)
+# BRIGHTNESS=0.1: Shift brightness by 0.1 (Settings tab)
 # MEDIA_PLAY: Press the Windows Media "Play/Pause" key
 # MEDIA_STOP: Press the Windows Media "Stop" key
 # LINE=5: Jump to Line 5 of the current script file and run it immediately (commented lines are not counted)

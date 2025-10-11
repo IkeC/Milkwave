@@ -1,3 +1,10 @@
+## v3.3 (unreleased)
+
+* Settings Tab: Shift Hue /Saturation/Brightness of the entire output
+* Presets Tab: Filter preset list (Ctrl+F)
+* New shaders
+  - diatribes + IkeC - Vibe Ride
+
 ## v3.2 (2025-10-03)
 
 * MIDI Tab: MIDI automation for up to 50 controls

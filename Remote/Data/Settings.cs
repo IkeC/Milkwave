@@ -26,5 +26,6 @@
     public int VisVersion { get; set; } = 1;
 
     public bool MidiEnabled { get; set; } = true;
+    public int MidiBufferDelay { get; set; } = 30;
   }
 }

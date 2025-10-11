@@ -3636,7 +3636,6 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   const char szWarpParams[] = "float4 _vDiffuse : COLOR, float4 _uv : TEXCOORD0, float2 _rad_ang : TEXCOORD1, out float4 _return_value : COLOR0";
   const char szCompParams[] = "float4 _vDiffuse : COLOR, float2 _uv : TEXCOORD0, float2 _rad_ang : TEXCOORD1, out float4 _return_value : COLOR0";
   const char szFirstLine[] = "    float3 ret = 0;";
-  const char szLastLine[] = "    _return_value = float4(ret.xyz, _vDiffuse.w);";
 
   char szWhichShader[64];
   switch (shaderType) {
@@ -3694,7 +3693,6 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   // (the include file was already stripped of comments)
   StripComments(&szShaderText[shaderStartPos]);
 
-
   //note: only do this stuff if type is WARP or COMP shader... not for blur, etc!
   //FIXME - hints on the inputs / output / samplers etc.
   //   can go in the menu header, NOT the preset!  =)
@@ -3747,8 +3745,10 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
         // find the ending curly brace
         p = strrchr(p, '}');
         // add the last line - "    _return_value = float4(ret.xyz, _vDiffuse.w);"
-        if (p)
+        if (p) {
+          char szLastLine[] = "    _return_value = float4(shiftHSV(ret.xyz), _vDiffuse.w);";
           sprintf(p, " %s\n}\n", szLastLine);
+        }
       }
     }
 
@@ -10875,10 +10875,22 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 12);
     g_plugin.m_VisVersion = std::stof(message);
   }
+  else if (wcsncmp(sMessage, L"COL_HUE=", 8) == 0) {
+    std::wstring message(sMessage + 8);
+    g_plugin.m_ColShiftHue = std::stof(message);
+  }
+  else if (wcsncmp(sMessage, L"COL_SATURATION=", 15) == 0) {
+    std::wstring message(sMessage + 15);
+    g_plugin.m_ColShiftSaturation = std::stof(message);
+  }
+  else if (wcsncmp(sMessage, L"COL_BRIGHTNESS=", 15) == 0) {
+    std::wstring message(sMessage + 15);
+    g_plugin.m_ColShiftBrightness = std::stof(message);
+  }
   else if (wcsncmp(sMessage, L"VAR_QUALITY=", 12) == 0) {
     std::wstring message(sMessage + 12);
     g_plugin.m_fRenderQuality = std::stof(message);
-    
+
     ResetBufferAndFonts();
   }
   else if (wcsncmp(sMessage, L"SPOUT_ACTIVE=", 13) == 0) {

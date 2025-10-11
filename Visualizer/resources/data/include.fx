@@ -2,52 +2,53 @@
 #define  M_PI_2 6.28318530718
 #define  M_INV_PI_2  0.159154943091895
 
-float4   rand_frame;		// random float4, updated each frame
-float4   rand_preset;   // random float4, updated once per *preset*
-float4   _c0;  // .xy: multiplier to use on UV's to paste an image fullscreen, *aspect-aware*; .zw = inverse.
-float4   _c1, _c2, _c3, _c4;
-float4   _c5;  //.xy = scale,bias for reading blur1; .zw = scale,bias for reading blur2; 
-float4   _c6;  //.xy = scale,bias for reading blur3; .zw = blur1_min,blur1_max
-float4   _c7;  // .xy ~= float2(1024,768); .zw ~= float2(1/1024.0, 1/768.0)
-float4   _c8;  // .xyzw ~= 0.5 + 0.5*cos(time * float4(~0.3, ~1.3, ~5, ~20))
-float4   _c9;  // .xyzw ~= same, but using sin()
-float4   _c10;  // .xyzw ~= 0.5 + 0.5*cos(time * float4(~0.005, ~0.008, ~0.013, ~0.022))
-float4   _c11;  // .xyzw ~= same, but using sin()
-float4   _c12;  // .xyz = mip info for main image (.x=#across, .y=#down, .z=avg); .w = unused
-float4   _c13;  //.xy = blur2_min,blur2_max; .zw = blur3_min, blur3_max.
+float4 rand_frame; // random float4, updated each frame
+float4 rand_preset; // random float4, updated once per *preset*
+float4 _c0; // .xy: multiplier to use on UV's to paste an image fullscreen, *aspect-aware*; .zw = inverse.
+float4 _c1, _c2, _c3, _c4;
+float4 _c5; //.xy = scale,bias for reading blur1; .zw = scale,bias for reading blur2; 
+float4 _c6; //.xy = scale,bias for reading blur3; .zw = blur1_min,blur1_max
+float4 _c7; // .xy ~= float2(1024,768); .zw ~= float2(1/1024.0, 1/768.0)
+float4 _c8; // .xyzw ~= 0.5 + 0.5*cos(time * float4(~0.3, ~1.3, ~5, ~20))
+float4 _c9; // .xyzw ~= same, but using sin()
+float4 _c10; // .xyzw ~= 0.5 + 0.5*cos(time * float4(~0.005, ~0.008, ~0.013, ~0.022))
+float4 _c11; // .xyzw ~= same, but using sin()
+float4 _c12; // .xyz = mip info for main image (.x=#across, .y=#down, .z=avg); .w = unused
+float4 _c13; //.xy = blur2_min,blur2_max; .zw = blur3_min, blur3_max.
 
 // Introduced by Milkwave
-float4   _c14 = float4(0, 0, 0, 0); // bass_smooth, mid_smooth, treb_smooth, vol_smooth
-float4   _c15 = float4(1, 0, 1, 0); // vis_intensity, vis_shift, vis_version
+float4 _c14 = float4(0, 0, 0, 0); // bass_smooth, mid_smooth, treb_smooth, vol_smooth
+float4 _c15 = float4(1, 0, 1, 0); // vis_intensity, vis_shift, vis_version
+float4 _c16 = float4(0, 0, 0, 0); // colshift_hue, colshift_saturation, colshift_brightness
 
-float4   _qa;  // q vars bank 1 [q1-q4]
-float4   _qb;  // q vars bank 2 [q5-q8]
-float4   _qc;  // q vars ...
-float4   _qd;  // q vars
-float4   _qe;  // q vars
-float4   _qf;  // q vars
-float4   _qg;  // q vars
-float4   _qh;  // q vars bank 8 [q29-q32]
+float4 _qa; // q vars bank 1 [q1-q4]
+float4 _qb; // q vars bank 2 [q5-q8]
+float4 _qc; // q vars ...
+float4 _qd; // q vars
+float4 _qe; // q vars
+float4 _qf; // q vars
+float4 _qg; // q vars
+float4 _qh; // q vars bank 8 [q29-q32]
 
 // note: in general, don't use the current time w/the *dynamic* rotations!
-float4x3 rot_s1;  // four random, static rotations.  randomized @ preset load time.
-float4x3 rot_s2;  // minor translation component (<1).
+float4x3 rot_s1; // four random, static rotations.  randomized @ preset load time.
+float4x3 rot_s2; // minor translation component (<1).
 float4x3 rot_s3;
 float4x3 rot_s4;
 
-float4x3 rot_d1;  // four random, slowly changing rotations.
-float4x3 rot_d2;  
+float4x3 rot_d1; // four random, slowly changing rotations.
+float4x3 rot_d2;
 float4x3 rot_d3;
 float4x3 rot_d4;
-float4x3 rot_f1;  // faster-changing.
+float4x3 rot_f1; // faster-changing.
 float4x3 rot_f2;
 float4x3 rot_f3;
 float4x3 rot_f4;
-float4x3 rot_vf1;  // very-fast-changing.
+float4x3 rot_vf1; // very-fast-changing.
 float4x3 rot_vf2;
 float4x3 rot_vf3;
 float4x3 rot_vf4;
-float4x3 rot_uf1;  // ultra-fast-changing.
+float4x3 rot_uf1; // ultra-fast-changing.
 float4x3 rot_uf2;
 float4x3 rot_uf3;
 float4x3 rot_uf4;
@@ -80,6 +81,10 @@ float4x3 rot_rand4;
 #define vis_intensity _c15.x
 #define vis_shift     _c15.y
 #define vis_version   _c15.z
+
+#define colshift_hue        _c16.x
+#define colshift_saturation _c16.y
+#define colshift_brightness _c16.z
 
 #define q1 _qa.x
 #define q2 _qa.y
@@ -141,12 +146,27 @@ float4x3 rot_rand4;
 #define tex3d tex3D
 
 // previous-frame-image samplers:
-texture   PrevFrameImage;
-sampler2D sampler_main    = sampler_state { Texture = <PrevFrameImage>; };
-sampler2D sampler_fc_main = sampler_state { Texture = <PrevFrameImage>; };
-sampler2D sampler_pc_main = sampler_state { Texture = <PrevFrameImage>; };
-sampler2D sampler_fw_main = sampler_state { Texture = <PrevFrameImage>; };
-sampler2D sampler_pw_main = sampler_state { Texture = <PrevFrameImage>; };
+texture PrevFrameImage;
+sampler2D sampler_main = sampler_state
+{
+    Texture = <PrevFrameImage>;
+};
+sampler2D sampler_fc_main = sampler_state
+{
+    Texture = <PrevFrameImage>;
+};
+sampler2D sampler_pc_main = sampler_state
+{
+    Texture = <PrevFrameImage>;
+};
+sampler2D sampler_fw_main = sampler_state
+{
+    Texture = <PrevFrameImage>;
+};
+sampler2D sampler_pw_main = sampler_state
+{
+    Texture = <PrevFrameImage>;
+};
 #define sampler_FC_main sampler_fc_main
 #define sampler_PC_main sampler_pc_main
 #define sampler_FW_main sampler_fw_main
@@ -170,3 +190,23 @@ float4 texsize_noisevol_hq;
 sampler2D sampler_blur1;
 sampler2D sampler_blur2;
 sampler2D sampler_blur3;
+
+float3 shiftHSV(float3 c)
+{
+    float3 rgb = c;
+    if (colshift_hue != 0.0 || colshift_saturation != 0.0 || colshift_brightness != 0.0)
+    {
+        float4 K = float4(0, -1.0 / 3.0, 2.0 / 3.0, -1);
+        float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
+        float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+        float d = q.x - min(q.w, q.y), e = 1e-10;
+        float h = frac(abs(q.z + (q.w - q.y) / (6.0 * d + e)) + colshift_hue * 0.5);
+        float s = d / (q.x + e);
+        float v = q.x;
+        s = (colshift_saturation <= 0.0) ? s * (1.0 + colshift_saturation) : s + (1.0 - s) * colshift_saturation;
+        v = (colshift_brightness <= 0.0) ? v * (1.0 + colshift_brightness) : v + (1.0 - v) * colshift_brightness;
+        float3 t = abs(frac(h + float3(0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+        rgb = v * lerp(float3(1, 1, 1), saturate(t - 1.0), s);
+    }
+    return rgb;
+}

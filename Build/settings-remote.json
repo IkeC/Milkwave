@@ -42,5 +42,6 @@
     "VisIntensity": 1.0,
     "VisShift": 0.0,
     "VisVersion": 1,
-    "MidiEnabled": true
+    "MidiEnabled": true,
+    "MidiBufferDelay": 30
 }

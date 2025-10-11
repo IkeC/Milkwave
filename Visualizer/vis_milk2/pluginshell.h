@@ -172,6 +172,10 @@ protected:
   float m_VisShift = 0.0f;
   float m_VisVersion = 1.0f;
 
+  float m_ColShiftHue = 0.0f;
+  float m_ColShiftSaturation = 0.0f;
+  float m_ColShiftBrightness = 0.0f;
+
   float m_fRenderQuality = 1.0f;
   //=====================================================================================================================
 private:

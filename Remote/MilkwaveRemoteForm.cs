@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using Windows.UI.ViewManagement;
 using static MilkwaveRemote.Data.MidiRow;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
@@ -103,6 +104,7 @@ namespace MilkwaveRemote {
     private string ShaderinfoLinePrefix = "// Shaderinfo: ";
     private bool AllowMidiRowDataUpdate = true;
 
+    private List<Data.Preset> PresetsMasterList = new List<Data.Preset>();
     private List<String> shadertoyQueryList = new List<String>();
 
     private Random rnd = new Random();
@@ -118,6 +120,8 @@ namespace MilkwaveRemote {
     private OpenFileDialog ofdShaderHLSL;
 
     private readonly Dictionary<int, CancellationTokenSource> KnobActionDelays = new();
+
+    private CancellationTokenSource CancellationTokenFilterPresetList;
 
     private const int VK_F1 = 0x70;
     private const int VK_F2 = 0x71;
@@ -236,7 +240,10 @@ namespace MilkwaveRemote {
       SpoutActive,
       SpoutFixedSize,
       SpoutResolution,
-      RenderQuality
+      RenderQuality,
+      ColHue,
+      ColSaturation,
+      ColBrightness
     }
 
     private void SetAllControlFontSizes(Control parent, float fontSize) {
@@ -728,6 +735,12 @@ namespace MilkwaveRemote {
               message = "VAR_SHIFT=" + numVisShift.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.VisVersion) {
               message = "VAR_VERSION=" + numVisVersion.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.ColHue) {
+              message = "COL_HUE=" + numSettingsHue.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.ColSaturation) {
+              message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.ColBrightness) {
+              message = "COL_BRIGHTNESS=" + numSettingsBrightness.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.PresetLink) {
               message = "LINK=" + messageToSend;
             } else if (type == MessageType.SpoutActive) {
@@ -1115,9 +1128,26 @@ namespace MilkwaveRemote {
           if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
             numQuality.Value = Math.Clamp((decimal)parsedValue, numQuality.Minimum, numQuality.Maximum);
           }
+        } else if (tokenUpper.StartsWith("HUE=")) {
+          string value = token.Substring(token.IndexOf("=") + 1);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numSettingsHue.Value = Math.Clamp((decimal)parsedValue, numSettingsHue.Minimum, numSettingsHue.Maximum);
+          }
+        } else if (tokenUpper.StartsWith("SATURATION=")) {
+          string value = token.Substring(token.IndexOf("=") + 1);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numSettingsSaturation.Value = Math.Clamp((decimal)parsedValue, numSettingsSaturation.Minimum, numSettingsSaturation.Maximum);
+          }
+        } else if (tokenUpper.StartsWith("BRIGHTNESS=")) {
+          string value = token.Substring(token.IndexOf("=") + 1);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numSettingsBrightness.Value = Math.Clamp((decimal)parsedValue, numSettingsBrightness.Minimum, numSettingsBrightness.Maximum);
+          }
         } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
           SendToMilkwaveVisualizer(token, MessageType.Message);
         }
+
+
       }
     }
 
@@ -1668,8 +1698,8 @@ namespace MilkwaveRemote {
         } else if (e.KeyCode == Keys.D) {
           btnPresetLoadDirectory_Click(null, null);
         } else if (e.KeyCode == Keys.F) {
+          e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
           if (tabControl.SelectedTab.Name.Equals("tabShader")) {
-            e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
             if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
               txtShaderFind.SelectAll();
               txtShaderFind.Focus();
@@ -1679,6 +1709,9 @@ namespace MilkwaveRemote {
             } else {
               FindShaderString();
             }
+          } else if (tabControl.SelectedTab.Name.Equals("tabPreset")) {
+            txtFilterPresets.SelectAll();
+            txtFilterPresets.Focus();
           }
         } else if (e.KeyCode == Keys.L) {
           if (tabControl.SelectedTab.Name.Equals("tabShader")) {
@@ -2264,8 +2297,9 @@ namespace MilkwaveRemote {
             DisplayName = Path.GetFileNameWithoutExtension(fileName),
             MaybeRelativePath = maybeRelativePath
           };
-          if (!cboPresets.Items.Contains(newPreset)) {
-            cboPresets.Items.Insert(0, newPreset);
+          if (!PresetsMasterList.Contains(newPreset)) {
+            PresetsMasterList.Insert(0, newPreset);
+            FillAndFilterPresetList();
           }
           cboPresets.SelectedItem = newPreset;
           cboPresets.Text = newPreset.DisplayName;
@@ -2338,7 +2372,8 @@ namespace MilkwaveRemote {
     }
 
     private void lblPreset_DoubleClick(object sender, EventArgs e) {
-      cboPresets.Items.Clear();
+      PresetsMasterList.Clear();
+      FillAndFilterPresetList();
       cboPresets.Text = "";
     }
 
@@ -2361,6 +2396,7 @@ namespace MilkwaveRemote {
     private void LoadPresetsFromDirectory(string dirToLoad, bool forceIncludeSubdirs) {
       cboPresets.Items.Clear();
       cboPresets.Text = "";
+      PresetsMasterList.Clear();
       bool includeSubdirs = false;
 
       if (Directory.GetDirectories(dirToLoad).Length > 0) {
@@ -2371,6 +2407,7 @@ namespace MilkwaveRemote {
       }
       FillCboPresetsFromDir(dirToLoad, includeSubdirs, "");
       SetStatusText($"Loaded {cboPresets.Items.Count} presets from '{dirToLoad}'");
+      FillAndFilterPresetList();
       if (cboPresets.Items.Count > 0) {
         SelectFirstPreset();
         UpdateTagsDisplay(false, false);
@@ -2415,20 +2452,20 @@ namespace MilkwaveRemote {
             DisplayName = displayDirPrefix + fileNameOnlyNoExtension,
             MaybeRelativePath = fileNameMaybeRelativePath
           };
-          if (txtFilter.Text.ToUpper().StartsWith("AGE=")) {
-            if (Int32.TryParse(txtFilter.Text.Substring(4), out int age) && age > 0) {
+          if (txtFilterTags.Text.ToUpper().StartsWith("AGE=")) {
+            if (Int32.TryParse(txtFilterTags.Text.Substring(4), out int age) && age > 0) {
               DateTime lastFileWriteTime = File.GetLastWriteTime(fileName);
               if ((DateTime.Now - lastFileWriteTime).TotalDays < age) {
-                // Check if the preset already exists in the combo box
-                if (!cboPresets.Items.Contains(newPreset)) {
-                  cboPresets.Items.Add(newPreset);
+                // Check if the preset already exists in the list
+                if (!PresetsMasterList.Contains(newPreset)) {
+                  PresetsMasterList.Add(newPreset);
                 }
               }
             }
-          } else if (String.IsNullOrEmpty(txtFilter.Text) || fileNameOnlyNoExtension.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
-            // Check if the preset already exists in the combo box
-            if (!cboPresets.Items.Contains(newPreset)) {
-              cboPresets.Items.Add(newPreset);
+          } else if (String.IsNullOrEmpty(txtFilterTags.Text) || fileNameOnlyNoExtension.Contains(txtFilterTags.Text, StringComparison.InvariantCultureIgnoreCase)) {
+            // Check if the preset already exists in the list
+            if (!PresetsMasterList.Contains(newPreset)) {
+              PresetsMasterList.Add(newPreset);
             }
           }
         }
@@ -2883,11 +2920,12 @@ namespace MilkwaveRemote {
     private void btnPresetLoadTags_Click(object? sender, EventArgs? e) {
       ReloadLoadFiltersList(true);
       cboPresets.Items.Clear();
-      var presetList = new List<Data.Preset>();
+      cboPresets.Text = "";
+      PresetsMasterList.Clear();
       if (cboTagsFilter.Text.Length > 0) {
         var filteredEntries = FilterTagEntries();
         foreach (var entry in filteredEntries) {
-          if (String.IsNullOrEmpty(txtFilter.Text) || entry.Key.Contains(txtFilter.Text, StringComparison.InvariantCultureIgnoreCase)) {
+          if (String.IsNullOrEmpty(txtFilterTags.Text) || entry.Key.Contains(txtFilterTags.Text, StringComparison.InvariantCultureIgnoreCase)) {
 
             string filenameWithoutExt = Path.GetFileNameWithoutExtension(entry.Value.PresetPath);
             string displayName = filenameWithoutExt;
@@ -2903,13 +2941,11 @@ namespace MilkwaveRemote {
               DisplayName = displayName,
               MaybeRelativePath = entry.Value.PresetPath
             };
-            presetList.Add(newPreset);
+            PresetsMasterList.Add(newPreset);
           }
         }
-        presetList.Sort((x, y) => string.Compare(x.DisplayName, y.DisplayName, StringComparison.OrdinalIgnoreCase));
-
-        // Fix: Convert the Preset list to an object array before adding to Items
-        cboPresets.Items.AddRange(presetList.Cast<object>().ToArray());
+        PresetsMasterList.Sort((x, y) => string.Compare(x.DisplayName, y.DisplayName, StringComparison.OrdinalIgnoreCase));
+        FillAndFilterPresetList();
       }
 
       SetStatusText($"Loaded {cboPresets.Items.Count} filtered presets");
@@ -3476,7 +3512,7 @@ namespace MilkwaveRemote {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         numVisIntensity.Increment = 0.05M;
       } else {
-        numVisIntensity.Increment = 0.01M;
+        numVisIntensity.Increment = 0.02M;
       }
       SendToMilkwaveVisualizer("", MessageType.VisIntensity);
     }
@@ -3485,13 +3521,40 @@ namespace MilkwaveRemote {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         numVisShift.Increment = 0.05M;
       } else {
-        numVisShift.Increment = 0.01M;
+        numVisShift.Increment = 0.02M;
       }
       SendToMilkwaveVisualizer("", MessageType.VisShift);
     }
 
     private void numVisVersion_ValueChanged(object sender, EventArgs e) {
       SendToMilkwaveVisualizer("", MessageType.VisVersion);
+    }
+
+    private void numSettingsHue_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        numSettingsHue.Increment = 0.05M;
+      } else {
+        numSettingsHue.Increment = 0.02M;
+      }
+      SendToMilkwaveVisualizer("", MessageType.ColHue);
+    }
+
+    private void numSettingsSaturation_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        numSettingsSaturation.Increment = 0.05M;
+      } else {
+        numSettingsSaturation.Increment = 0.02M;
+      }
+      SendToMilkwaveVisualizer("", MessageType.ColSaturation);
+    }
+
+    private void numSettingsBrightness_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        numSettingsBrightness.Increment = 0.05M;
+      } else {
+        numSettingsBrightness.Increment = 0.02M;
+      }
+      SendToMilkwaveVisualizer("", MessageType.ColBrightness);
     }
 
     private void lblFactorTime_Click(object sender, EventArgs e) {
@@ -4075,7 +4138,7 @@ namespace MilkwaveRemote {
                   var cts = new CancellationTokenSource();
                   KnobActionDelays[(int)row.Controller] = cts;
 
-                  Task.Delay(50, cts.Token).ContinueWith(t => {
+                  Task.Delay(Settings.MidiBufferDelay, cts.Token).ContinueWith(t => {
                     if (!t.IsCanceled) {
                       TriggerMidiKnobAction(row, note.Value);
                     }
@@ -4106,6 +4169,9 @@ namespace MilkwaveRemote {
         cboMidiAction.Items.Add(new MidiActionEntry("Settings: Intensity", MidiActionId.KnobSettingsIntensity));
         cboMidiAction.Items.Add(new MidiActionEntry("Settings: Shift", MidiActionId.KnobSettingsShift));
         cboMidiAction.Items.Add(new MidiActionEntry("Settings: Quality", MidiActionId.KnobSettingsQuality));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Hue", MidiActionId.KnobSettingsHue));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Saturation", MidiActionId.KnobSettingsSaturation));
+        cboMidiAction.Items.Add(new MidiActionEntry("Settings: Brightness", MidiActionId.KnobSettingsBrightness));
 
         cboMidiAction.SelectedIndex = 0;
       }
@@ -4167,6 +4233,15 @@ namespace MilkwaveRemote {
       } else if (row.ActionId == MidiActionId.KnobSettingsQuality) {
         // 0..1
         numQuality.Value = Math.Clamp((decimal)value / 127, numQuality.Minimum, numQuality.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobSettingsHue) {
+        // -1..1
+        numSettingsHue.Value = Math.Clamp((value - 64) * inc, numSettingsHue.Minimum, numSettingsHue.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobSettingsSaturation) {
+        // -1..1
+        numSettingsSaturation.Value = Math.Clamp((value - 64) * inc, numSettingsSaturation.Minimum, numSettingsSaturation.Maximum);
+      } else if (row.ActionId == MidiActionId.KnobSettingsBrightness) {
+        // -1..1
+        numSettingsBrightness.Value = Math.Clamp((value - 64) * inc, numSettingsBrightness.Minimum, numSettingsBrightness.Maximum);
       }
     }
 
@@ -4226,6 +4301,9 @@ namespace MilkwaveRemote {
           // default increment is 0.1
           txtMidiInc.Text = "0.1";
         } else if (rowData.ActionId == MidiActionId.KnobSettingsIntensity || rowData.ActionId == MidiActionId.KnobSettingsShift || rowData.ActionId == MidiActionId.KnobSettingsQuality) {
+          // default increment is 0.02
+          txtMidiInc.Text = "0.02";
+        } else if (rowData.ActionId == MidiActionId.KnobSettingsHue || rowData.ActionId == MidiActionId.KnobSettingsSaturation || rowData.ActionId == MidiActionId.KnobSettingsBrightness) {
           // default increment is 0.02
           txtMidiInc.Text = "0.02";
         }
@@ -4529,6 +4607,52 @@ namespace MilkwaveRemote {
 
     private void btnQualityDouble_Click(object sender, EventArgs e) {
       numQuality.Value = Math.Clamp(numQuality.Value * 2, numQuality.Minimum, numQuality.Maximum);
+    }
+
+    private void lblHue_Click(object sender, EventArgs e) {
+      numSettingsHue.Value = 0;
+    }
+
+    private void lblSaturation_Click(object sender, EventArgs e) {
+      numSettingsSaturation.Value = 0;
+    }
+
+    private void lblValue_Click(object sender, EventArgs e) {
+      numSettingsBrightness.Value = 0;
+    }
+
+    private async void txtPreset_TextChanged(object sender, EventArgs e) {
+      // Cancel any pending invocation
+      CancellationTokenFilterPresetList?.Cancel();
+      var cts = (CancellationTokenFilterPresetList = new CancellationTokenSource());
+
+      try {
+        // Wait delay or until cancelled
+        await Task.Delay(150, cts.Token);
+        FillAndFilterPresetList();
+      } catch (TaskCanceledException) {
+        // Swallow—new keystroke arrived
+      }
+    }
+
+    private void FillAndFilterPresetList() {
+      string filter = txtFilterPresets.Text.Trim().ToLowerInvariant();
+      cboPresets.BeginUpdate();
+      cboPresets.Items.Clear();
+      foreach (var preset in PresetsMasterList) {
+        if (string.IsNullOrEmpty(filter) || preset.DisplayName.ToLowerInvariant().Contains(filter)) {
+          cboPresets.Items.Add(preset);
+        }
+      }
+      if (cboPresets.Items.Count > 0) {
+        cboPresets.SelectedIndex = 0;
+      }
+      if (cboPresets.Items.Count != PresetsMasterList.Count) {
+        SetStatusText($"Showing {cboPresets.Items.Count} out of {PresetsMasterList.Count} presets");
+      } else {
+        SetStatusText($"{cboPresets.Items.Count} presets");
+      }
+      cboPresets.EndUpdate();
     }
   } // end class
 } // end namespace
