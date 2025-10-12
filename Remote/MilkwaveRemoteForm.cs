@@ -1690,6 +1690,7 @@ namespace MilkwaveRemote {
     private void MainForm_KeyDown(object sender, KeyEventArgs e) {
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
         if (e.KeyCode == Keys.A) {
+          e.SuppressKeyPress = true;
           txtMessage.Focus();
           txtMessage.SelectAll();
         } else if (e.KeyCode == Keys.B) {
@@ -1719,12 +1720,14 @@ namespace MilkwaveRemote {
             LoadShadertoyQuery();
           }
         } else if (e.KeyCode == Keys.N) {
+          e.SuppressKeyPress = true;
           SelectNextPreset();
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.O) {
           e.SuppressKeyPress = true;
           StartVisualizerIfNotFound(false);
         } else if (e.KeyCode == Keys.P) {
+          e.SuppressKeyPress = true;
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
           e.SuppressKeyPress = true;
@@ -1738,6 +1741,7 @@ namespace MilkwaveRemote {
           btnTagsSave_Click(null, null);
         } else if (e.KeyCode == Keys.X) {
           if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+            e.SuppressKeyPress = true;
             btnSendFile_Click(null, null);
           }
           if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
@@ -2740,13 +2744,20 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void txtTags_KeyDown(object sender, KeyEventArgs e) {
+    private void txtFilterTags_KeyDown(object sender, KeyEventArgs e) {
       if (e.KeyCode == Keys.Enter) {
         e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
         SaveTags();
         if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
           SendPostMessage(VK_SPACE, "Space");
         }
+      }
+    }
+
+    private void txtFilterPresets_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyCode == Keys.Enter) {
+        e.SuppressKeyPress = true;
+        btnPresetSend_Click(null, null);
       }
     }
 
@@ -4654,5 +4665,6 @@ namespace MilkwaveRemote {
       }
       cboPresets.EndUpdate();
     }
+
   } // end class
 } // end namespace

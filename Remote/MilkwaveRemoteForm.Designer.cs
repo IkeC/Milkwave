@@ -1173,7 +1173,7 @@ namespace MilkwaveRemote
       txtTags.TabIndex = 123;
       toolTip1.SetToolTip(txtTags, "Enter: Save\r\nCtrl+Enter: Save and select next preset");
       txtTags.Enter += txtTags_Enter;
-      txtTags.KeyDown += txtTags_KeyDown;
+      txtTags.KeyDown += txtFilterTags_KeyDown;
       txtTags.Leave += txtTags_Leave;
       // 
       // btnTagsSave
@@ -2558,6 +2558,7 @@ namespace MilkwaveRemote
       txtFilterPresets.TabIndex = 139;
       toolTip1.SetToolTip(txtFilterPresets, "Only show presets containing this text (Ctrl+F)\r\n");
       txtFilterPresets.TextChanged += txtPreset_TextChanged;
+      txtFilterPresets.KeyDown += txtFilterPresets_KeyDown;
       // 
       // txtShaderGLSL
       // 
