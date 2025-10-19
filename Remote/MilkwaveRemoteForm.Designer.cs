@@ -871,7 +871,7 @@ namespace MilkwaveRemote
       // 
       btnPresetLoadFile.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnPresetLoadFile.FlatStyle = FlatStyle.System;
-      btnPresetLoadFile.Location = new Point(380, 35);
+      btnPresetLoadFile.Location = new Point(456, 65);
       btnPresetLoadFile.Name = "btnPresetLoadFile";
       btnPresetLoadFile.Size = new Size(70, 23);
       btnPresetLoadFile.TabIndex = 23;
@@ -884,9 +884,9 @@ namespace MilkwaveRemote
       // 
       btnPresetSend.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnPresetSend.FlatStyle = FlatStyle.System;
-      btnPresetSend.Location = new Point(532, 35);
+      btnPresetSend.Location = new Point(532, 7);
       btnPresetSend.Name = "btnPresetSend";
-      btnPresetSend.Size = new Size(70, 53);
+      btnPresetSend.Size = new Size(70, 52);
       btnPresetSend.TabIndex = 25;
       btnPresetSend.Text = "Send";
       toolTip1.SetToolTip(btnPresetSend, "Send to Visualizer (Ctrl+P)\r\nRight-click: Send next to Visualizer (Ctrl+N)\r\nMiddle-click: Send previous to Visualizer");
@@ -898,7 +898,7 @@ namespace MilkwaveRemote
       // 
       btnPresetLoadDirectory.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnPresetLoadDirectory.FlatStyle = FlatStyle.System;
-      btnPresetLoadDirectory.Location = new Point(456, 35);
+      btnPresetLoadDirectory.Location = new Point(532, 65);
       btnPresetLoadDirectory.Name = "btnPresetLoadDirectory";
       btnPresetLoadDirectory.Size = new Size(70, 23);
       btnPresetLoadDirectory.TabIndex = 24;
@@ -910,10 +910,10 @@ namespace MilkwaveRemote
       // txtVisRunning
       // 
       txtVisRunning.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      txtVisRunning.Location = new Point(71, 66);
+      txtVisRunning.Location = new Point(71, 36);
       txtVisRunning.Name = "txtVisRunning";
       txtVisRunning.ReadOnly = true;
-      txtVisRunning.Size = new Size(456, 23);
+      txtVisRunning.Size = new Size(379, 23);
       txtVisRunning.TabIndex = 96;
       toolTip1.SetToolTip(txtVisRunning, "Currently running Visualizer preset");
       // 
@@ -977,7 +977,7 @@ namespace MilkwaveRemote
       // 
       // lblCurrentPreset
       // 
-      lblCurrentPreset.Location = new Point(1, 64);
+      lblCurrentPreset.Location = new Point(1, 34);
       lblCurrentPreset.Name = "lblCurrentPreset";
       lblCurrentPreset.Size = new Size(67, 23);
       lblCurrentPreset.TabIndex = 95;
@@ -1155,7 +1155,7 @@ namespace MilkwaveRemote
       // 
       btnPresetLoadTags.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnPresetLoadTags.FlatStyle = FlatStyle.System;
-      btnPresetLoadTags.Location = new Point(304, 35);
+      btnPresetLoadTags.Location = new Point(380, 65);
       btnPresetLoadTags.Name = "btnPresetLoadTags";
       btnPresetLoadTags.Size = new Size(70, 23);
       btnPresetLoadTags.TabIndex = 121;
@@ -1262,7 +1262,7 @@ namespace MilkwaveRemote
       chkPresetRandom.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkPresetRandom.Appearance = Appearance.Button;
       chkPresetRandom.FlatStyle = FlatStyle.System;
-      chkPresetRandom.Location = new Point(532, 6);
+      chkPresetRandom.Location = new Point(456, 35);
       chkPresetRandom.Margin = new Padding(3, 2, 3, 2);
       chkPresetRandom.Name = "chkPresetRandom";
       chkPresetRandom.Size = new Size(70, 23);
@@ -1270,12 +1270,12 @@ namespace MilkwaveRemote
       chkPresetRandom.Text = "Random";
       chkPresetRandom.TextAlign = ContentAlignment.MiddleCenter;
       chkPresetRandom.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkPresetRandom, "When checked and linked, Next Preset commands in Visualizer will trgger a random preset from this list");
+      toolTip1.SetToolTip(chkPresetRandom, "When checked AND linked, Next Preset commands in Visualizer will trgger a random preset from the preset list");
       chkPresetRandom.UseVisualStyleBackColor = true;
       // 
       // lblLoad
       // 
-      lblLoad.Location = new Point(1, 35);
+      lblLoad.Location = new Point(1, 64);
       lblLoad.Name = "lblLoad";
       lblLoad.Size = new Size(67, 24);
       lblLoad.TabIndex = 116;
@@ -1501,9 +1501,9 @@ namespace MilkwaveRemote
       // cboTagsFilter
       // 
       cboTagsFilter.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      cboTagsFilter.Location = new Point(71, 36);
+      cboTagsFilter.Location = new Point(71, 65);
       cboTagsFilter.Name = "cboTagsFilter";
-      cboTagsFilter.Size = new Size(151, 23);
+      cboTagsFilter.Size = new Size(227, 23);
       cboTagsFilter.TabIndex = 137;
       toolTip1.SetToolTip(cboTagsFilter, "Tags filter");
       cboTagsFilter.KeyDown += cboDirOrTagsFilter_KeyDown;
@@ -2026,7 +2026,7 @@ namespace MilkwaveRemote
       // txtFilterTags
       // 
       txtFilterTags.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      txtFilterTags.Location = new Point(228, 36);
+      txtFilterTags.Location = new Point(304, 65);
       txtFilterTags.Name = "txtFilterTags";
       txtFilterTags.Size = new Size(70, 23);
       txtFilterTags.TabIndex = 138;
@@ -3284,10 +3284,15 @@ namespace MilkwaveRemote
       // 
       tabPreset.BackColor = SystemColors.ControlLight;
       tabPreset.BorderStyle = BorderStyle.FixedSingle;
+      tabPreset.Controls.Add(lblMostUsed);
+      tabPreset.Controls.Add(lblTags);
+      tabPreset.Controls.Add(lblLoad);
+      tabPreset.Controls.Add(lblPreset);
+      tabPreset.Controls.Add(lblAudioDevice);
+      tabPreset.Controls.Add(lblCurrentPreset);
       tabPreset.Controls.Add(txtFilterPresets);
       tabPreset.Controls.Add(txtFilterTags);
       tabPreset.Controls.Add(cboTagsFilter);
-      tabPreset.Controls.Add(lblMostUsed);
       tabPreset.Controls.Add(btnTagsSave);
       tabPreset.Controls.Add(btnTag10);
       tabPreset.Controls.Add(btnTag9);
@@ -3314,11 +3319,6 @@ namespace MilkwaveRemote
       tabPreset.Controls.Add(btnPresetLoadFile);
       tabPreset.Controls.Add(txtVisRunning);
       tabPreset.Controls.Add(cboPresets);
-      tabPreset.Controls.Add(lblTags);
-      tabPreset.Controls.Add(lblLoad);
-      tabPreset.Controls.Add(lblPreset);
-      tabPreset.Controls.Add(lblAudioDevice);
-      tabPreset.Controls.Add(lblCurrentPreset);
       tabPreset.Controls.Add(lblAmp);
       tabPreset.Location = new Point(4, 24);
       tabPreset.Margin = new Padding(0);
