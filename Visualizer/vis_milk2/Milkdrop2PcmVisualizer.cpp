@@ -253,14 +253,15 @@ void InitD3d(HWND hwnd, int width, int height) {
 
   g_plugin.d3dPp.BackBufferCount = 1;
   g_plugin.d3dPp.BackBufferFormat = D3DFMT_UNKNOWN;// mode.Format;
-  
+
   if (g_plugin.IsSpoutActiveAndFixed()) {
     g_plugin.d3dPp.BackBufferWidth = width;
     g_plugin.d3dPp.BackBufferHeight = height;
-  } else {
+  }
+  else {
     g_plugin.SetVariableBackBuffer(width, height);
   }
-  
+
   g_plugin.d3dPp.SwapEffect = D3DSWAPEFFECT_COPY;
   g_plugin.d3dPp.Flags = 0;
   g_plugin.d3dPp.EnableAutoDepthStencil = FALSE;// TRUE;
@@ -915,7 +916,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         std::wstring sAudioDeviceDisplayName;
         GetDefaultAudioDeviceName(&m_pMMDevice, &sAudioDeviceDisplayName);
         wcscpy(g_plugin.m_szAudioDevice, sAudioDeviceDisplayName.c_str());
-        
+
         g_plugin.SetAudioDeviceDisplayName(sAudioDeviceDisplayName.c_str());
 
         // Restart audio
@@ -1217,15 +1218,12 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     }
   }
 
-  // ===============================================
+  milkwave.LogInfo(L"CreateWindowAndRun: Creating window");
 
-    // Create the render window
+  // Create the render window
   HWND hwnd = CreateWindowW(
     L"Direct3DWindowClass",
-    // ===========================
-        // L"Milkwave",
     VisualizerWindowTitle,
-    // ===========================
     WS_OVERLAPPEDWINDOW, // SPOUT
     //dwStyle,
     g_plugin.m_WindowX,
@@ -1236,9 +1234,9 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     NULL,
     instance,
     0);
-  // ====================================================
 
   if (!hwnd) {
+    milkwave.LogInfo(L"CreateWindowAndRun: No window handle!");
     DWORD dwError = GetLastError();
     return 0;
   }
@@ -1277,7 +1275,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   if (g_plugin.m_WindowBorderless && !borderless) {
     ToggleBorderlessWindow(hwnd);
   }
-  
+
   // always ensure .Init is called after the window is created (ShowWindow above)
   milkwave.Init(g_plugin.m_szBaseDir);
   milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
@@ -1298,8 +1296,10 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     BackbufferHeight = g_plugin.nSpoutFixedHeight;
   }
 
+  milkwave.LogInfo(L"CreateWindowAndRun: InitD3d");
   InitD3d(hwnd, BackbufferWidth, BackbufferHeight);
 
+  milkwave.LogInfo(L"CreateWindowAndRun: PluginInitialize");
   g_plugin.PluginInitialize(
     pD3DDevice,
     &g_plugin.d3dPp,
@@ -1324,7 +1324,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
         }
         else if (!pauseRender) {
           GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
-           RenderFrame();
+          RenderFrame();
         }
       } catch (...) {
         // ignore
@@ -1395,8 +1395,6 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
 
     hr = S_OK;
 
-
-    // parse command line
     CPrefs prefs(argc, argv, hr, g_plugin.m_nAudioDeviceRequestType);
     if (FAILED(hr)) {
       ERR(L"CPrefs::CPrefs constructor failed: hr = 0x%08x", hr);
@@ -1434,14 +1432,17 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
     threadArgs.hFile = prefs.m_hFile;
     threadArgs.hStartedEvent = hStartedEvent;
     threadArgs.hStopEvent = hStopEvent;
-    threadArgs.nFrames = 0;
+    threadArgs.nFrames =0;
+    threadArgs.pMilkwave = &milkwave; // provide milkwave instance for logging from the capture thread
 
+    milkwave.LogInfo(L"StartAudioCaptureThread: CreateThread LoopbackCaptureThreadFunction");
     hThreadLoopbackCapture = CreateThread(
       NULL, 0,
       LoopbackCaptureThreadFunction, &threadArgs,
       0, NULL
     );
     if (NULL == hThreadLoopbackCapture) {
+      milkwave.LogInfo(L"StartAudioCaptureThread: CreateThread failed");
       ERR(L"CreateThread failed: last error is %u", GetLastError());
       return -__LINE__;
     }
@@ -1456,11 +1457,13 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
     );
 
     if (WAIT_OBJECT_0 + 1 == dwWaitResult) {
+      milkwave.LogInfo(L"StartAudioCaptureThread: Thread aborted before starting to loopback capture: hr = 0x%08x");
       ERR(L"Thread aborted before starting to loopback capture: hr = 0x%08x", threadArgs.hr);
       return -__LINE__;
     }
 
     if (WAIT_OBJECT_0 != dwWaitResult) {
+      milkwave.LogInfo(L"StartAudioCaptureThread: Unexpected WaitForMultipleObjects return value");
       ERR(L"Unexpected WaitForMultipleObjects return value %u", dwWaitResult);
       return -__LINE__;
     }
@@ -1515,11 +1518,13 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
 
     DWORD exitCode;
     if (!GetExitCodeThread(hThreadLoopbackCapture, &exitCode)) {
+      milkwave.LogInfo(L"StartAudioCaptureThread: GetExitCodeThread failed");
       ERR(L"GetExitCodeThread failed: last error is %u", GetLastError());
       return -__LINE__;
     }
 
     if (0 != exitCode) {
+      milkwave.LogInfo(L"StartAudioCaptureThread: Loopback capture thread exit code unexpected");
       ERR(L"Loopback capture thread exit code is %u; expected 0", exitCode);
       return -__LINE__;
     }
@@ -1549,7 +1554,7 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
         statusMessage = ss.str();
         g_plugin.SendMessageToMilkwaveRemote(statusMessage.data());
         */
-        
+
         // if result > 1, we probably encountered a disconnection error earlier (eg. Bluetooth headphone disconnection), 
         // and the m_szAudioDevice was already set using Ctrl+D
         if (result < 0) {
@@ -1611,7 +1616,7 @@ unsigned __stdcall DoSetup(void* param) {
     // Set UTF-8 locale for the output stream
     compiledList.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t>));
 
-    g_plugin.AddNotification(L"Shader cache empty, precompiling shaders\nRendering performance limited, please be patient", 10*60);
+    g_plugin.AddNotification(L"Shader cache empty, precompiling shaders\nRendering performance limited, please be patient", 10 * 60);
 
     int compiledShaders = 0;
     std::string line;
@@ -1712,13 +1717,13 @@ int StartThreads(HINSTANCE instance) {
   try {
     // Milkwave: early init so we can read from settings
     g_plugin.PluginPreInitialize(0, 0);
-    
+
     // early assignment so we can use logging
     // milkwave.Init() may only be called after the window is created due to threading issues
     milkwave.logLevel = g_plugin.m_LogLevel;
     g_plugin.milkwave = &milkwave;
-    
-    milkwave.LogInfo(L"Milkwave initialized, LogLevel=" + std::to_wstring(milkwave.logLevel) 
+
+    milkwave.LogInfo(L"Milkwave initialized, LogLevel=" + std::to_wstring(milkwave.logLevel)
       + L" BaseDir=" + g_plugin.m_szBaseDir);
 
     if (g_plugin.m_CheckDirectXOnStartup) {
@@ -1735,11 +1740,14 @@ int StartThreads(HINSTANCE instance) {
       g_plugin.m_CheckDirectXOnStartup = false;
     }
 
+    milkwave.LogInfo(L"Starting render thread");
     StartRenderThread(instance);
     // WaitForSingleObject(threadRender, INFINITE);
 
+    milkwave.LogInfo(L"Starting setup thread");
     StartSetupThread(instance);
 
+    milkwave.LogInfo(L"Starting audio capture thread");
     StartAudioCaptureThread(instance, 0);
 
   } catch (const std::exception& e) {

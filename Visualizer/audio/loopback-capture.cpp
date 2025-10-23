@@ -1,6 +1,7 @@
 // loopback-capture.cpp
 
 #include "common.h"
+#include "..\vis_milk2\milkwave.h"
 
 HRESULT LoopbackCapture(
   IMMDevice* pMMDevice,
@@ -19,22 +20,43 @@ DWORD WINAPI LoopbackCaptureThreadFunction(LPVOID pContext) {
   LoopbackCaptureThreadFunctionArguments* pArgs =
     (LoopbackCaptureThreadFunctionArguments*)pContext;
 
+  // Log thread start if milkwave provided
+  if (pArgs && pArgs->pMilkwave) {
+    try {
+      pArgs->pMilkwave->LogInfo(L"LoopbackCaptureThreadFunction: thread starting");
+    } catch (...) {
+      // ignore
+    }
+  }
+
   pArgs->hr = CoInitialize(NULL);
   if (FAILED(pArgs->hr)) {
-    ERR(L"CoInitialize failed: hr = 0x%08x", pArgs->hr);
+    ERR(L"CoInitialize failed: hr =0x%08x", pArgs->hr);
     return 0;
   }
   CoUninitializeOnExit cuoe;
 
-  pArgs->hr = LoopbackCapture(
-    pArgs->pMMDevice,
-    pArgs->bIsRenderDevice,
-    pArgs->hFile,
-    pArgs->bInt16,
-    pArgs->hStartedEvent,
-    pArgs->hStopEvent,
-    &pArgs->nFrames
-  );
+  try {
+    pArgs->hr = LoopbackCapture(
+      pArgs->pMMDevice,
+      pArgs->bIsRenderDevice,
+      pArgs->hFile,
+      pArgs->bInt16,
+      pArgs->hStartedEvent,
+      pArgs->hStopEvent,
+      &pArgs->nFrames
+    );
+  } catch (const std::exception& e) {
+    if (pArgs && pArgs->pMilkwave) {
+      pArgs->pMilkwave->LogException(L"LoopbackCaptureThreadFunction: exception", e, true);
+    }
+    pArgs->hr = E_FAIL;
+  } catch (...) {
+    if (pArgs && pArgs->pMilkwave) {
+      pArgs->pMilkwave->LogInfo(L"LoopbackCaptureThreadFunction: unknown exception caught");
+    }
+    pArgs->hr = E_FAIL;
+  }
 
   return 0;
 }

@@ -1,5 +1,8 @@
 // loopback-capture.h
 
+// forward declarations
+class Milkwave;
+
 // call CreateThread on this function
 // feed it the address of a LoopbackCaptureThreadFunctionArguments
 // it will capture via loopback from the IMMDevice
@@ -16,6 +19,9 @@ struct LoopbackCaptureThreadFunctionArguments {
   HANDLE hStopEvent;
   UINT32 nFrames;
   HRESULT hr;
+
+  // pointer to milkwave instance for logging from the capture thread
+  Milkwave* pMilkwave;
 };
 
 DWORD WINAPI LoopbackCaptureThreadFunction(LPVOID pContext);

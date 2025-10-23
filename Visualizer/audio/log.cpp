@@ -2,7 +2,6 @@
 
 #include "log.h"
 
-
 #define LOG_SIZE 512
 
 //LPCTSTR UNICODE _UNICODE
@@ -74,7 +73,7 @@ void ERR(LPCWSTR format, ...) {
   vswprintf_s(&output_buff[sl], sizeof(output_buff) / sizeof(output_buff[0]) - sl, format, args_list);
   va_end(args_list);
 
-  OutputDebugStringW(output_buff);
+  OutputDebugStringW(output_buff);  
 }
 
 //--------------------------------------------------

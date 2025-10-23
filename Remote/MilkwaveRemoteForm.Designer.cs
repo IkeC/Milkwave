@@ -2461,7 +2461,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutFixedSize.Appearance = Appearance.Button;
       chkSpoutFixedSize.FlatStyle = FlatStyle.System;
-      chkSpoutFixedSize.Location = new Point(135, 94);
+      chkSpoutFixedSize.Location = new Point(137, 94);
       chkSpoutFixedSize.Name = "chkSpoutFixedSize";
       chkSpoutFixedSize.Size = new Size(56, 23);
       chkSpoutFixedSize.TabIndex = 157;
@@ -2475,7 +2475,7 @@ namespace MilkwaveRemote
       // cboSpoutWidth
       // 
       cboSpoutWidth.Items.AddRange(new object[] { "3840", "2560", "1920", "1600", "1280", "1024", "800", "640", "320" });
-      cboSpoutWidth.Location = new Point(197, 95);
+      cboSpoutWidth.Location = new Point(200, 95);
       cboSpoutWidth.Name = "cboSpoutWidth";
       cboSpoutWidth.Size = new Size(58, 23);
       cboSpoutWidth.TabIndex = 158;
@@ -2486,7 +2486,7 @@ namespace MilkwaveRemote
       // cboSpoutHeight
       // 
       cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "600", "480", "240", "200" });
-      cboSpoutHeight.Location = new Point(261, 95);
+      cboSpoutHeight.Location = new Point(265, 95);
       cboSpoutHeight.Name = "cboSpoutHeight";
       cboSpoutHeight.Size = new Size(58, 23);
       cboSpoutHeight.TabIndex = 159;
@@ -4480,7 +4480,7 @@ namespace MilkwaveRemote
       // 
       // btnQualityDouble
       // 
-      btnQualityDouble.Location = new Point(196, 123);
+      btnQualityDouble.Location = new Point(199, 123);
       btnQualityDouble.Name = "btnQualityDouble";
       btnQualityDouble.Size = new Size(60, 23);
       btnQualityDouble.TabIndex = 163;
@@ -4490,7 +4490,7 @@ namespace MilkwaveRemote
       // 
       // btnQualityHalf
       // 
-      btnQualityHalf.Location = new Point(135, 123);
+      btnQualityHalf.Location = new Point(137, 123);
       btnQualityHalf.Name = "btnQualityHalf";
       btnQualityHalf.Size = new Size(56, 23);
       btnQualityHalf.TabIndex = 162;
