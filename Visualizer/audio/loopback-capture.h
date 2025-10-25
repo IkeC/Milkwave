@@ -25,3 +25,15 @@ struct LoopbackCaptureThreadFunctionArguments {
 };
 
 DWORD WINAPI LoopbackCaptureThreadFunction(LPVOID pContext);
+
+// Add declaration for LoopbackCapture with Milkwave* parameter
+HRESULT LoopbackCapture(
+  IMMDevice* pMMDevice,
+  bool bIsRenderDevice,
+  HMMIO hFile,
+  bool bInt16,
+  Milkwave* pMilkwave,
+  HANDLE hStartedEvent,
+  HANDLE hStopEvent,
+  PUINT32 pnFrames
+);

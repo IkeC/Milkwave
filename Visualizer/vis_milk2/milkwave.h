@@ -48,8 +48,9 @@ public:
   void Init(wchar_t* exePath);
   void LogInfo(const wchar_t* info);
   void LogInfo(std::wstring info);
+  void LogDebug(std::wstring info);
+  void LogDebug(const wchar_t* info);
   void LogException(const wchar_t* context, const std::exception& e, bool showMessage);
   void PollMediaInfo();
   void SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
-  
 };

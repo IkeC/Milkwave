@@ -1,7 +1,8 @@
 ## v3.3 (unreleased)
 
-* Settings Tab: Shift Hue /Saturation/Brightness of the entire output
+* Settings Tab: Shift Hue/Saturation/Brightness of the entire output
 * Presets Tab: Filter preset list (Ctrl+F)
+* Option to disable audio capture (bEnableAudioCapture=0)
 * New shaders
   - diatribes + IkeC - Vibe Ride
 

@@ -112,6 +112,17 @@ void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
     LogException(L"SaveThumbnailToFile", e, false);
   }
 }
+
+void Milkwave::LogDebug(std::wstring info) {
+  if (logLevel < 3) return;
+  LogInfo(info.c_str());
+}
+
+void Milkwave::LogDebug(const wchar_t* info) {
+  if (logLevel < 3) return;
+  LogInfo(info);
+}
+
 void Milkwave::LogInfo(std::wstring info) {
   LogInfo(info.c_str());
 }

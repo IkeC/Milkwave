@@ -1326,13 +1326,23 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
           GetAudioBuf(pcmLeftIn, pcmRightIn, SAMPLE_SIZE);
           RenderFrame();
         }
+      } catch (const std::exception& e) {
+        try {
+          // Convert exception message (UTF-8) to wide string for logging
+          std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+          std::wstring emsg = converter.from_bytes(e.what());
+          std::wstring logMsg = L"Exception in render loop: " + emsg;
+          milkwave.LogInfo(logMsg);
+        } catch (...) {
+          milkwave.LogInfo(L"Exception in render loop (failed to convert exception message)");
+        }
       } catch (...) {
-        // ignore
+        milkwave.LogInfo(L"Unknown non-standard exception in render loop");
       }
       frame++;
     }
   } catch (const std::exception& e) {
-    milkwave.LogException(L"Exception in main loop", e, true);
+    milkwave.LogException(L"CreateWindowAndRun: Exception in main loop", e, true);
   }
   milkwave.LogInfo(L"CreateWindowAndRun: Message loop ended");
 
@@ -1697,6 +1707,7 @@ void PrecompilePresetShaders(std::wstring& wLine, std::wofstream& compiledList, 
     if (durationMs > 1000) {
       // if compilation took more than 1 second, add a warning
       warn = L"!";
+
     }
     compiledList << warn << std::setw(8) << std::setfill(L' ') << durationMs << " " << szFile << std::endl;
     compiledShaders++;
@@ -1747,8 +1758,16 @@ int StartThreads(HINSTANCE instance) {
     milkwave.LogInfo(L"Starting setup thread");
     StartSetupThread(instance);
 
-    milkwave.LogInfo(L"Starting audio capture thread");
-    StartAudioCaptureThread(instance, 0);
+    if (g_plugin.m_bEnableAudioCapture) {
+      milkwave.LogInfo(L"Starting audio capture thread");
+      StartAudioCaptureThread(instance, 0);
+    }
+    else {
+      milkwave.LogInfo(L"Audio capture disabled in settings");
+      while (true) {
+        Sleep(1000);
+      }
+    }
 
   } catch (const std::exception& e) {
     milkwave.LogException(L"StartThreads", e, true);
@@ -1780,9 +1799,23 @@ void MilkwaveTerminateHandler() {
   std::abort(); // Ensure abnormal termination
 }
 
+void SeTranslatorFunction(unsigned int code, _EXCEPTION_POINTERS* ep) {
+ try {
+ std::ostringstream oss;
+ oss << "SEH exception code0x" << std::hex << code;
+ throw std::runtime_error(oss.str());
+ } catch (...) {
+ // If translator itself fails, rethrow as runtime_error
+ throw std::runtime_error("SEH exception (unknown)");
+ }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
-  std::set_terminate(MilkwaveTerminateHandler);
-  api_orig_hinstance = hInstance;
+ std::set_terminate(MilkwaveTerminateHandler);
+ api_orig_hinstance = hInstance;
+
+ // Install SEH -> C++ translator so SEH (e.g., access violations) become catchable std::exception
+ _set_se_translator(SeTranslatorFunction);
 
 #ifdef _DEBUG
   // Set the current directory to the Release folder for debugging,
@@ -1793,11 +1826,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
   // swprintf(cwd, sizeof(cwd) / sizeof(cwd[0]), L"WinMain: WorkingDir=%s\n", cwd);
   // Append backslash if not present
   size_t len = wcslen(g_plugin.m_szBaseDir);
-  if (len > 0 && g_plugin.m_szBaseDir[len - 1] != L'\\') {
-    if (len < MAX_PATH - 1) { // Ensure space for backslash and null terminator
+  if (len >0 && g_plugin.m_szBaseDir[len -1] != L'\\') {
+ if (len < MAX_PATH -1) { // Ensure space for backslash and null terminator
       g_plugin.m_szBaseDir[len] = L'\\';
-      g_plugin.m_szBaseDir[len + 1] = L'\0';
-    }
+      g_plugin.m_szBaseDir[len +1] = L'\0';
+ }
   }
   OutputDebugStringW(g_plugin.m_szBaseDir);
   OutputDebugStringW(L"\n");
@@ -1815,14 +1848,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
   wcscpy_s(g_plugin.m_szBaseDir, MAX_PATH, baseDir.c_str());
 #endif
-  int res = 0;
-  try {
-    res = StartThreads(hInstance);
-  } catch (const std::exception& e) {
-    milkwave.LogException(L"WinMain", e, true);
-  }
-  milkwave.LogInfo(L"WinMain ended, result=" + std::to_wstring(res));
-  return res;
+ int res =0;
+ try {
+ res = StartThreads(hInstance);
+ } catch (const std::exception& e) {
+ milkwave.LogException(L"WinMain", e, true);
+ }
+ milkwave.LogInfo(L"WinMain ended, result=" + std::to_wstring(res));
+ return res;
 }
 
 static std::string title;

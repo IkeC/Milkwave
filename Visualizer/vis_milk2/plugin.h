@@ -363,6 +363,7 @@ public:
   int			m_nSongTitlesSpawned;
   int			m_nCustMsgsSpawned;
   bool    m_bEnablePresetStartup;
+  bool    m_bEnableAudioCapture = true;
   bool    m_bEnablePresetStartupSavingOnClose = true;
   bool    m_bAutoLockPresetWhenNoMusic;
   bool    m_bScreenDependentRenderMode;
