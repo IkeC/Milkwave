@@ -18,7 +18,7 @@ namespace MilkwaveRemote.Helper {
         inp = inp.Replace("refrac(", "refract(");
         inp = inp.Replace("iTimeDelta", "xTimeDelta"); // prevent replacing below
         inp = inp.Replace("iTime", "time").Replace("iResolution", "uv");
-        inp = inp.Replace("iFrame", "frame");
+        inp = inp.Replace("iFrame", "frame").Replace("iMouse", "mouse");
         inp = inp.Replace("texture(", "tex2D(");
         inp = inp.Replace("highp ", "");
         inp = inp.Replace("void mainImage(", "mainImage(");
@@ -106,12 +106,6 @@ namespace MilkwaveRemote.Helper {
           string currentLine = line;
           if (line.Contains("float2 uv =")) {
             currentLine = indent + "// " + line;
-          } else if (line.Contains("iMouse")) {
-            if (!iMouseFound) {
-              SetConvertorError("iMouse unsupported, introducing standard variable", sb);
-              currentLine = "float3 iMouse = float3(0.5, 0.5, 0);" + Environment.NewLine + currentLine;
-              iMouseFound = true;
-            }
           } else if (line.Contains("iDate")) {
             SetConvertorError("iDate unsupported", sb);
             currentLine = indent + "// " + line;

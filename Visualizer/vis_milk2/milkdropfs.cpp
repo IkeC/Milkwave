@@ -597,10 +597,10 @@ void CPlugin::LoadPerFrameEvallibVars(CState* pState) {
   *pState->var_pf_blur1_edge_darken = (double)pState->m_fBlur1EdgeDarken.eval(GetTime());
 
   // BMV/Milkwave
-  //*pState->var_pf_mousex = (double)m_mouseX;
-  //*pState->var_pf_mousey = (double)m_mouseY;
-  //*pState->var_pf_mousedown = m_mouseDown ? 1.0 : 0.0;
-  //*pState->var_pf_mouseclick = m_mouseClicked > 0 ? 1.0 : 0.0;
+  *pState->var_pf_mousex = (double)m_mouseX;
+  *pState->var_pf_mousey = (double)m_mouseY;
+  *pState->var_pf_mousedown = m_mouseDown ? 1.0 : 0.0;
+  *pState->var_pf_mouseclick = m_mouseClicked > 0 ? 1.0 : 0.0;
 }
 
 void CPlugin::RunPerFrameEquations(int code) {
@@ -700,11 +700,10 @@ void CPlugin::RunPerFrameEquations(int code) {
     *pState->var_pv_mid_smooth = *pState->var_pf_mid_smooth;
     *pState->var_pv_treb_smooth = *pState->var_pf_treb_smooth;
 
-    //*pState->var_pv_mousex = *pState->var_pf_mousex;
-    //*pState->var_pv_mousey = *pState->var_pf_mousey;
-    //*pState->var_pv_mousedown = *pState->var_pf_mousedown;
-    //*pState->var_pv_mouseclick = *pState->var_pf_mouseclick;
-
+    *pState->var_pv_mousex = *pState->var_pf_mousex;
+    *pState->var_pv_mousey = *pState->var_pf_mousey;
+    *pState->var_pv_mousedown = *pState->var_pf_mousedown;
+    *pState->var_pv_mouseclick = *pState->var_pf_mouseclick;
 
     *pState->var_pv_meshx = (double)m_nGridX;
     *pState->var_pv_meshy = (double)m_nGridY;
@@ -4826,7 +4825,10 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   if (h[13]) pCT->SetVector(lpDevice, h[13], &D3DXVECTOR4(blur_min[1], blur_max[1], blur_min[2], blur_max[2]));
   
   // BMV/Milkwave
-  if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(m_mouseX != -1 ? m_mouseX : -1, m_mouseY != -1 ? -m_mouseY + 1 : -1, m_mouseDown ? m_lastMouseX : -m_lastMouseX, m_mouseClicked > 0 ? m_lastMouseY : -m_lastMouseY));
+  if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(m_mouseX, 
+    m_mouseY != -1 ? -m_mouseY + 1 : -1, 
+    m_mouseDown ? 1 : 0, 
+    m_mouseClicked > 0 ? m_lastMouseY : -m_lastMouseY));
   if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
   if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0));
   if (h[17]) pCT->SetVector(lpDevice, h[17], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0));

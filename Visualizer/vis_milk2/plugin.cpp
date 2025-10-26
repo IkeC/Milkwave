@@ -4245,16 +4245,15 @@ void CPlugin::MyRenderFn(int redraw) {
     RECT clientRect;
     GetClientRect(GetPluginWindow(), &clientRect);
 
-    // Check if mouse is inside the client area
-    if (PtInRect(&clientRect, pt)) {
+    //if (PtInRect(&clientRect, pt)) { // Check if mouse is inside the client area
       m_mouseX = ((2.0f * pt.x / clientRect.right) - 1.0f) / 2 + .5; //both from [-1, 1], normalized to [0, 1]
       m_mouseY = (1.0f - (2.0f * pt.y / clientRect.bottom)) / 2 + .5;
-    }
-    else {
-      m_mouseX = -1;
-      m_mouseY = -1;
-    }
-
+    //}
+    //else {
+    //  m_mouseX = -1;
+    //  m_mouseY = -1;
+    //}
+    
     //Duration of the click called from WM_LBUTTONDOWN
     if (m_mouseClicked > 0) {
       m_mouseClicked--;
@@ -5993,11 +5992,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
 
   case WM_LBUTTONDOWN:
-    m_mouseDown = 1;
-    m_mouseClicked = 2; //no. of frames you set when you click (not to be confused with mouse held down)
-    m_lastMouseX = m_mouseX;
-    m_lastMouseY = -m_mouseY + 1;
-    break;
   case WM_RBUTTONDOWN:
     m_mouseDown = 1;
     m_mouseClicked = 2; //no. of frames you set when you click (not to be confused with mouse held down)
@@ -6006,8 +6000,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     break;
 
   case WM_LBUTTONUP:
-    m_mouseDown = 0;
-    break;
   case WM_RBUTTONUP:
     m_mouseDown = 0;
     break;
