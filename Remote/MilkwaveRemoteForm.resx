@@ -549,6 +549,14 @@ Examples:
 "calm &amp; dark" -&gt; must match both of there tags
 "calm &amp; !colorful" -&gt; must match first tag and may not contain second</value>
   </data>
+  <data name="btnLoadShadertoyQuery.ToolTip" xml:space="preserve">
+    <value>Load ID matching this query type and index using Shadertoy.com API (Ctrl+L)
+Results will be cached until type is changed
+Alt+Click: Force requery
+NOTE: If Shadertoy.com API is down/unreachable, copy code to left pane
+
+</value>
+  </data>
   <data name="lblVisIntensity.ToolTip" xml:space="preserve">
     <value>A parameter introduced by Milkwave which presets can read to adjust the intensity of a preset effect
 For Milkwaves "Shader" presets, this will adjust how much the preset reacts to audio input

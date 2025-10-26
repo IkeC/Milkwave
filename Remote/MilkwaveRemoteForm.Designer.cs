@@ -2001,7 +2001,7 @@ namespace MilkwaveRemote
       btnLoadShadertoyID.Size = new Size(49, 23);
       btnLoadShadertoyID.TabIndex = 34;
       btnLoadShadertoyID.Text = "Load";
-      toolTip1.SetToolTip(btnLoadShadertoyID, "Load shader using Shadertoy.com API, convert it and send it to the Visualizer");
+      toolTip1.SetToolTip(btnLoadShadertoyID, "Load shader using Shadertoy.com API, convert it and send it to the Visualizer\r\nNOTE: If Shadertoy.com API is down/unreachable, copy code to left pane");
       btnLoadShadertoyID.UseVisualStyleBackColor = true;
       btnLoadShadertoyID.Click += btnLoadShadertoyID_Click;
       // 
@@ -2134,7 +2134,7 @@ namespace MilkwaveRemote
       btnLoadShadertoyQuery.Size = new Size(49, 23);
       btnLoadShadertoyQuery.TabIndex = 144;
       btnLoadShadertoyQuery.Text = "Load";
-      toolTip1.SetToolTip(btnLoadShadertoyQuery, "Load ID matching this query type and index using Shadertoy.com API (Ctrl+L)\r\nResults will be cached until type is changed\r\nAlt+Click: Force requery");
+      toolTip1.SetToolTip(btnLoadShadertoyQuery, resources.GetString("btnLoadShadertoyQuery.ToolTip"));
       btnLoadShadertoyQuery.UseVisualStyleBackColor = true;
       btnLoadShadertoyQuery.Click += btnLoadShadertoyQuery_Click;
       // 
