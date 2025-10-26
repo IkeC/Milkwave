@@ -2093,14 +2093,14 @@ namespace MilkwaveRemote
       numOffset.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numOffset.Location = new Point(439, 7);
       numOffset.Margin = new Padding(3, 2, 3, 2);
-      numOffset.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+      numOffset.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numOffset.Minimum = new decimal(new int[] { 150, 0, 0, 0 });
       numOffset.Name = "numOffset";
       numOffset.Size = new Size(47, 23);
       numOffset.TabIndex = 141;
       numOffset.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numOffset, "Adjust this value if the line marked as error is wrong");
-      numOffset.Value = new decimal(new int[] { 187, 0, 0, 0 });
+      numOffset.Value = new decimal(new int[] { 227, 0, 0, 0 });
       numOffset.ValueChanged += numOffset_ValueChanged;
       // 
       // cboShadertoyType

@@ -439,6 +439,20 @@ namespace MilkwaveRemote {
       } else {
         tabControl.TabPages.Remove(tabMidi);
       }
+
+      // count the lines in data\include.fx
+      int lines = 0;
+      string includeFile = Path.Combine(BaseDir, "resources\\data\\include.fx");
+      try {
+        using (StreamReader sr = new StreamReader(includeFile)) {
+          while (sr.ReadLine() != null) {
+            lines++;
+          }
+        }
+        numOffset.Value = lines + 8;
+      } catch (Exception ex) {
+        // ignore
+      }
     }
 
     private void PopulateMidiDevicesList() {
