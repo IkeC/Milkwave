@@ -333,8 +333,8 @@ namespace MilkwaveRemote {
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
       cboWindowTitle.SelectedIndex = 0;
-
       cboShadertoyType.SelectedIndex = 0;
+      cboSettingsOpenFile.SelectedIndex = 3;
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
@@ -3613,27 +3613,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnOpenSettingsIni_Click(object sender, EventArgs e) {
-      OpenFile("settings.ini");
-    }
-
-    private void btnOpenSpritesIni_Click(object sender, EventArgs e) {
-      OpenFile("sprites.ini");
-    }
-
-    private void btnOpenMessagesIni_Click(object sender, EventArgs e) {
-      OpenFile("messages.ini");
-    }
-
-    private void btnOpenScriptDefault_Click(object sender, EventArgs e) {
-      OpenFile("script-default.txt");
-    }
-
-    private void btnOpenSettingsRemote_Click(object sender, EventArgs e) {
-      OpenFile("settings-remote.json");
-    }
-
-    private void btnOpenTagsRemote_Click(object sender, EventArgs e) {
-      OpenFile("tags-remote.json");
+      OpenFile(cboSettingsOpenFile.Text);
     }
 
     private void txtFilter_KeyDown(object sender, KeyEventArgs e) {

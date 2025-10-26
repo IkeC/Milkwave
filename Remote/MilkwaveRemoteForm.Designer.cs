@@ -158,12 +158,7 @@ namespace MilkwaveRemote
       lblFactorFrame = new Label();
       lblFactorTime = new Label();
       lblFactorFPS = new Label();
-      btnOpenSettingsIni = new Button();
-      btnOpenSpritesIni = new Button();
-      btnOpenMessagesIni = new Button();
-      btnOpenScriptDefault = new Button();
-      btnOpenSettingsRemote = new Button();
-      btnOpenTagsRemote = new Button();
+      btnOpenSettingsFile = new Button();
       txtFilterTags = new TextBox();
       btnSendShader = new Button();
       txtShaderinfo = new TextBox();
@@ -210,6 +205,7 @@ namespace MilkwaveRemote
       lblSaturation = new Label();
       lblHue = new Label();
       txtFilterPresets = new TextBox();
+      cboSettingsOpenFile = new ComboBox();
       txtShaderGLSL = new TextBox();
       txtShaderHLSL = new TextBox();
       txtMidi2Label = new TextBox();
@@ -341,6 +337,7 @@ namespace MilkwaveRemote
       cboMidi1Action = new ComboBox();
       txtMidi1Inc = new TextBox();
       tabSettings = new TabPage();
+      label9 = new Label();
       numSettingsBrightness = new NumericUpDown();
       numSettingsSaturation = new NumericUpDown();
       numSettingsHue = new NumericUpDown();
@@ -1951,77 +1948,16 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblFactorFPS, "Values < 1 may speed up rendering of the preset, not affecting sprites and notifications\r\nClick: Set 1");
       lblFactorFPS.Click += lblFactorFPS_Click;
       // 
-      // btnOpenSettingsIni
+      // btnOpenSettingsFile
       // 
-      btnOpenSettingsIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSettingsIni.Location = new Point(467, 7);
-      btnOpenSettingsIni.Name = "btnOpenSettingsIni";
-      btnOpenSettingsIni.Size = new Size(131, 23);
-      btnOpenSettingsIni.TabIndex = 143;
-      btnOpenSettingsIni.Text = "settings.ini\r\n";
-      toolTip1.SetToolTip(btnOpenSettingsIni, "Open file in associated editor");
-      btnOpenSettingsIni.UseVisualStyleBackColor = true;
-      btnOpenSettingsIni.Click += btnOpenSettingsIni_Click;
-      // 
-      // btnOpenSpritesIni
-      // 
-      btnOpenSpritesIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSpritesIni.Location = new Point(467, 35);
-      btnOpenSpritesIni.Name = "btnOpenSpritesIni";
-      btnOpenSpritesIni.Size = new Size(131, 23);
-      btnOpenSpritesIni.TabIndex = 144;
-      btnOpenSpritesIni.Text = "sprites.ini\r\n";
-      toolTip1.SetToolTip(btnOpenSpritesIni, "Open file in associated editor");
-      btnOpenSpritesIni.UseVisualStyleBackColor = true;
-      btnOpenSpritesIni.Click += btnOpenSpritesIni_Click;
-      // 
-      // btnOpenMessagesIni
-      // 
-      btnOpenMessagesIni.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenMessagesIni.Location = new Point(467, 63);
-      btnOpenMessagesIni.Name = "btnOpenMessagesIni";
-      btnOpenMessagesIni.Size = new Size(131, 23);
-      btnOpenMessagesIni.TabIndex = 145;
-      btnOpenMessagesIni.Text = "messages.ini\r\n";
-      toolTip1.SetToolTip(btnOpenMessagesIni, "Open file in associated editor");
-      btnOpenMessagesIni.UseVisualStyleBackColor = true;
-      btnOpenMessagesIni.Click += btnOpenMessagesIni_Click;
-      // 
-      // btnOpenScriptDefault
-      // 
-      btnOpenScriptDefault.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenScriptDefault.Location = new Point(467, 92);
-      btnOpenScriptDefault.Name = "btnOpenScriptDefault";
-      btnOpenScriptDefault.Size = new Size(131, 23);
-      btnOpenScriptDefault.TabIndex = 146;
-      btnOpenScriptDefault.Text = "script-default.txt";
-      toolTip1.SetToolTip(btnOpenScriptDefault, "Open file in associated editor");
-      btnOpenScriptDefault.UseVisualStyleBackColor = true;
-      btnOpenScriptDefault.Click += btnOpenScriptDefault_Click;
-      // 
-      // btnOpenSettingsRemote
-      // 
-      btnOpenSettingsRemote.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenSettingsRemote.Location = new Point(467, 120);
-      btnOpenSettingsRemote.Name = "btnOpenSettingsRemote";
-      btnOpenSettingsRemote.Size = new Size(131, 23);
-      btnOpenSettingsRemote.TabIndex = 147;
-      btnOpenSettingsRemote.Text = "settings-remote.json";
-      toolTip1.SetToolTip(btnOpenSettingsRemote, "Open file in associated editor");
-      btnOpenSettingsRemote.UseVisualStyleBackColor = true;
-      btnOpenSettingsRemote.Click += btnOpenSettingsRemote_Click;
-      // 
-      // btnOpenTagsRemote
-      // 
-      btnOpenTagsRemote.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnOpenTagsRemote.Location = new Point(467, 148);
-      btnOpenTagsRemote.Name = "btnOpenTagsRemote";
-      btnOpenTagsRemote.Size = new Size(131, 23);
-      btnOpenTagsRemote.TabIndex = 148;
-      btnOpenTagsRemote.Text = "tags-remote.json";
-      toolTip1.SetToolTip(btnOpenTagsRemote, "Open file in associated editor");
-      btnOpenTagsRemote.UseVisualStyleBackColor = true;
-      btnOpenTagsRemote.Click += btnOpenTagsRemote_Click;
+      btnOpenSettingsFile.Location = new Point(212, 151);
+      btnOpenSettingsFile.Name = "btnOpenSettingsFile";
+      btnOpenSettingsFile.Size = new Size(56, 23);
+      btnOpenSettingsFile.TabIndex = 143;
+      btnOpenSettingsFile.Text = "Open";
+      toolTip1.SetToolTip(btnOpenSettingsFile, "Open file in associated editor");
+      btnOpenSettingsFile.UseVisualStyleBackColor = true;
+      btnOpenSettingsFile.Click += btnOpenSettingsIni_Click;
       // 
       // txtFilterTags
       // 
@@ -2434,7 +2370,7 @@ namespace MilkwaveRemote
       // 
       // lblSpout
       // 
-      lblSpout.Location = new Point(24, 93);
+      lblSpout.Location = new Point(24, 121);
       lblSpout.Name = "lblSpout";
       lblSpout.Size = new Size(45, 23);
       lblSpout.TabIndex = 155;
@@ -2446,7 +2382,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutActive.Appearance = Appearance.Button;
       chkSpoutActive.FlatStyle = FlatStyle.System;
-      chkSpoutActive.Location = new Point(75, 94);
+      chkSpoutActive.Location = new Point(212, 122);
       chkSpoutActive.Name = "chkSpoutActive";
       chkSpoutActive.Size = new Size(56, 23);
       chkSpoutActive.TabIndex = 156;
@@ -2461,7 +2397,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutFixedSize.Appearance = Appearance.Button;
       chkSpoutFixedSize.FlatStyle = FlatStyle.System;
-      chkSpoutFixedSize.Location = new Point(137, 94);
+      chkSpoutFixedSize.Location = new Point(279, 122);
       chkSpoutFixedSize.Name = "chkSpoutFixedSize";
       chkSpoutFixedSize.Size = new Size(56, 23);
       chkSpoutFixedSize.TabIndex = 157;
@@ -2475,7 +2411,7 @@ namespace MilkwaveRemote
       // cboSpoutWidth
       // 
       cboSpoutWidth.Items.AddRange(new object[] { "3840", "2560", "1920", "1600", "1280", "1024", "800", "640", "320" });
-      cboSpoutWidth.Location = new Point(200, 95);
+      cboSpoutWidth.Location = new Point(75, 122);
       cboSpoutWidth.Name = "cboSpoutWidth";
       cboSpoutWidth.Size = new Size(58, 23);
       cboSpoutWidth.TabIndex = 158;
@@ -2486,7 +2422,7 @@ namespace MilkwaveRemote
       // cboSpoutHeight
       // 
       cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "600", "480", "240", "200" });
-      cboSpoutHeight.Location = new Point(265, 95);
+      cboSpoutHeight.Location = new Point(142, 122);
       cboSpoutHeight.Name = "cboSpoutHeight";
       cboSpoutHeight.Size = new Size(58, 23);
       cboSpoutHeight.TabIndex = 159;
@@ -2496,7 +2432,7 @@ namespace MilkwaveRemote
       // 
       // lblQuality
       // 
-      lblQuality.Location = new Point(24, 123);
+      lblQuality.Location = new Point(24, 92);
       lblQuality.Name = "lblQuality";
       lblQuality.Size = new Size(45, 23);
       lblQuality.TabIndex = 161;
@@ -2559,6 +2495,19 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(txtFilterPresets, "Only show presets containing this text (Ctrl+F)\r\n");
       txtFilterPresets.TextChanged += txtPreset_TextChanged;
       txtFilterPresets.KeyDown += txtFilterPresets_KeyDown;
+      // 
+      // cboSettingsOpenFile
+      // 
+      cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboSettingsOpenFile.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboSettingsOpenFile.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboSettingsOpenFile.FormattingEnabled = true;
+      cboSettingsOpenFile.Items.AddRange(new object[] { "settings.ini", "sprites.ini", "messages.ini", "script-default.txt", "settings-remote.json", "tags-remote.json" });
+      cboSettingsOpenFile.Location = new Point(75, 152);
+      cboSettingsOpenFile.Name = "cboSettingsOpenFile";
+      cboSettingsOpenFile.Size = new Size(125, 23);
+      cboSettingsOpenFile.TabIndex = 170;
+      toolTip1.SetToolTip(cboSettingsOpenFile, "Alt+Mousewheel: Send to Visualizer");
       // 
       // txtShaderGLSL
       // 
@@ -4396,6 +4345,8 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(label9);
+      tabSettings.Controls.Add(cboSettingsOpenFile);
       tabSettings.Controls.Add(numSettingsBrightness);
       tabSettings.Controls.Add(lblBrightness);
       tabSettings.Controls.Add(numSettingsSaturation);
@@ -4417,12 +4368,7 @@ namespace MilkwaveRemote
       tabSettings.Controls.Add(lblVisShift);
       tabSettings.Controls.Add(numVisIntensity);
       tabSettings.Controls.Add(lblVisIntensity);
-      tabSettings.Controls.Add(btnOpenTagsRemote);
-      tabSettings.Controls.Add(btnOpenSettingsRemote);
-      tabSettings.Controls.Add(btnOpenScriptDefault);
-      tabSettings.Controls.Add(btnOpenMessagesIni);
-      tabSettings.Controls.Add(btnOpenSpritesIni);
-      tabSettings.Controls.Add(btnOpenSettingsIni);
+      tabSettings.Controls.Add(btnOpenSettingsFile);
       tabSettings.Controls.Add(numFactorFPS);
       tabSettings.Controls.Add(lblFactorFPS);
       tabSettings.Controls.Add(numFactorFrame);
@@ -4435,6 +4381,15 @@ namespace MilkwaveRemote
       tabSettings.Size = new Size(611, 183);
       tabSettings.TabIndex = 4;
       tabSettings.Text = "Settings";
+      // 
+      // label9
+      // 
+      label9.Location = new Point(24, 151);
+      label9.Name = "label9";
+      label9.Size = new Size(45, 23);
+      label9.TabIndex = 171;
+      label9.Text = "File";
+      label9.TextAlign = ContentAlignment.MiddleRight;
       // 
       // numSettingsBrightness
       // 
@@ -4480,9 +4435,9 @@ namespace MilkwaveRemote
       // 
       // btnQualityDouble
       // 
-      btnQualityDouble.Location = new Point(199, 123);
+      btnQualityDouble.Location = new Point(212, 92);
       btnQualityDouble.Name = "btnQualityDouble";
-      btnQualityDouble.Size = new Size(60, 23);
+      btnQualityDouble.Size = new Size(56, 23);
       btnQualityDouble.TabIndex = 163;
       btnQualityDouble.Text = "Double";
       btnQualityDouble.UseVisualStyleBackColor = true;
@@ -4490,9 +4445,9 @@ namespace MilkwaveRemote
       // 
       // btnQualityHalf
       // 
-      btnQualityHalf.Location = new Point(137, 123);
+      btnQualityHalf.Location = new Point(142, 92);
       btnQualityHalf.Name = "btnQualityHalf";
-      btnQualityHalf.Size = new Size(56, 23);
+      btnQualityHalf.Size = new Size(58, 23);
       btnQualityHalf.TabIndex = 162;
       btnQualityHalf.Text = "Half";
       btnQualityHalf.UseVisualStyleBackColor = true;
@@ -4502,7 +4457,7 @@ namespace MilkwaveRemote
       // 
       numQuality.DecimalPlaces = 2;
       numQuality.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numQuality.Location = new Point(75, 124);
+      numQuality.Location = new Point(75, 93);
       numQuality.Margin = new Padding(3, 2, 3, 2);
       numQuality.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numQuality.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
@@ -4845,12 +4800,7 @@ namespace MilkwaveRemote
     private Label lblFactorTime;
     private NumericUpDown numFactorFPS;
     private Label lblFactorFPS;
-    private Button btnOpenSettingsIni;
-    private Button btnOpenScriptDefault;
-    private Button btnOpenMessagesIni;
-    private Button btnOpenSpritesIni;
-    private Button btnOpenTagsRemote;
-    private Button btnOpenSettingsRemote;
+    private Button btnOpenSettingsFile;
     private TextBox txtFilterTags;
     private TabPage tabShader;
     private TextBox txtShaderHLSL;
@@ -4968,5 +4918,7 @@ namespace MilkwaveRemote
     private NumericUpDown numSettingsHue;
     private Label lblHue;
     private TextBox txtFilterPresets;
+    private Label label9;
+    private ComboBox cboSettingsOpenFile;
   }
 }
