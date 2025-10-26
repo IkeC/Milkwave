@@ -1059,18 +1059,18 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   case WM_LBUTTONDOWN:
   case WM_NCLBUTTONDOWN: // Left mouse button pressed
     //if (g_plugin.m_bEnableMouseInteraction) {
-      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
     //}
     if (rightMouseButtonHeld) {
       // Right + Left
-      PostMessage(hWnd, WM_CLOSE,0,0); // Close the window
+      PostMessage(hWnd, WM_CLOSE, 0, 0); // Close the window
     }
     break;
 
   case WM_LBUTTONUP:
   case WM_NCLBUTTONUP: // Left mouse button released
     //if (g_plugin.m_bEnableMouseInteraction) {
-      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
     //}
     // no special action on left button up in existing logic
     break;
@@ -1078,7 +1078,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   case WM_MBUTTONDOWN:
   case WM_NCMBUTTONDOWN: // Middle mouse button clicked
     //if (g_plugin.m_bEnableMouseInteraction) {
-      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
     //}
     if (rightMouseButtonHeld) {
       // Right + Middle
@@ -1092,12 +1092,26 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_LBUTTONDBLCLK:
   {
-    //if (g_plugin.m_bEnableMouseInteraction) {
+    // If we're currently fullscreen, always exit fullscreen on a left-button double-click
+    // anywhere in the client area (there is no title bar in fullscreen).
+    if (fullscreen) {
+      ToggleFullScreen(hWnd);
+      return 0;
+    }
+
+    // Determine position relative to window
+    RECT rect; GetWindowRect(hWnd, &rect);
+    int y = GET_Y_LPARAM(lParam) - rect.top;
+    bool inTitle = (y <= TITLEBARWIDTH);
+
+    // If plugin mouse interaction is enabled and the dblclick is in client area,
+    // let the plugin handle it. Otherwise toggle fullscreen.
+    if (g_plugin.m_bEnableMouseInteraction && !inTitle) {
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-    //}
-    // only triggered when coming back from fullscreen
+    }
+
     ToggleFullScreen(hWnd);
-    break;
+    return 0;
   }
 
   case WM_RBUTTONDBLCLK:
@@ -1508,7 +1522,7 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
     threadArgs.hFile = prefs.m_hFile;
     threadArgs.hStartedEvent = hStartedEvent;
     threadArgs.hStopEvent = hStopEvent;
-    threadArgs.nFrames =0;
+    threadArgs.nFrames = 0;
     threadArgs.pMilkwave = &milkwave; // provide milkwave instance for logging from the capture thread
 
     milkwave.LogInfo(L"StartAudioCaptureThread: CreateThread LoopbackCaptureThreadFunction");
@@ -1866,22 +1880,22 @@ void MilkwaveTerminateHandler() {
 }
 
 void SeTranslatorFunction(unsigned int code, _EXCEPTION_POINTERS* ep) {
- try {
- std::ostringstream oss;
- oss << "SEH exception code0x" << std::hex << code;
- throw std::runtime_error(oss.str());
- } catch (...) {
- // If translator itself fails, rethrow as runtime_error
- throw std::runtime_error("SEH exception (unknown)");
- }
+  try {
+    std::ostringstream oss;
+    oss << "SEH exception code0x" << std::hex << code;
+    throw std::runtime_error(oss.str());
+  } catch (...) {
+    // If translator itself fails, rethrow as runtime_error
+    throw std::runtime_error("SEH exception (unknown)");
+  }
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
- std::set_terminate(MilkwaveTerminateHandler);
- api_orig_hinstance = hInstance;
+  std::set_terminate(MilkwaveTerminateHandler);
+  api_orig_hinstance = hInstance;
 
- // Install SEH -> C++ translator so SEH (e.g., access violations) become catchable std::exception
- _set_se_translator(SeTranslatorFunction);
+  // Install SEH -> C++ translator so SEH (e.g., access violations) become catchable std::exception
+  _set_se_translator(SeTranslatorFunction);
 
 #ifdef _DEBUG
   // Set the current directory to the Release folder for debugging,
@@ -1892,11 +1906,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
   // swprintf(cwd, sizeof(cwd) / sizeof(cwd[0]), L"WinMain: WorkingDir=%s\n", cwd);
   // Append backslash if not present
   size_t len = wcslen(g_plugin.m_szBaseDir);
-  if (len >0 && g_plugin.m_szBaseDir[len - 1] != L'\\') {
- if (len < MAX_PATH -1) { // Ensure space for backslash and null terminator
+  if (len > 0 && g_plugin.m_szBaseDir[len - 1] != L'\\') {
+    if (len < MAX_PATH - 1) { // Ensure space for backslash and null terminator
       g_plugin.m_szBaseDir[len] = L'\\';
-      g_plugin.m_szBaseDir[len +1] = L'\0';
- }
+      g_plugin.m_szBaseDir[len + 1] = L'\0';
+    }
   }
   OutputDebugStringW(g_plugin.m_szBaseDir);
   OutputDebugStringW(L"\n");
@@ -1914,14 +1928,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
   wcscpy_s(g_plugin.m_szBaseDir, MAX_PATH, baseDir.c_str());
 #endif
- int res =0;
- try {
- res = StartThreads(hInstance);
- } catch (const std::exception& e) {
- milkwave.LogException(L"WinMain", e, true);
- }
- milkwave.LogInfo(L"WinMain ended, result=" + std::to_wstring(res));
- return res;
+  int res = 0;
+  try {
+    res = StartThreads(hInstance);
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"WinMain", e, true);
+  }
+  milkwave.LogInfo(L"WinMain ended, result=" + std::to_wstring(res));
+  return res;
 }
 
 static std::string title;
