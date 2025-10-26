@@ -159,112 +159,116 @@ comp_154=  // 4.6: very bright, 7.6: small
 comp_155=
 comp_156=  float sunsize = 7.6;
 comp_157=  #ifdef bass_smooth
-comp_158=    sunsize -= 2*vis_shift;
-comp_159=    if (vis_version ==  1) {
-comp_160=      sunsize -= clamp(0,2,bass_smooth)*1.5*vis_intensity;
-comp_161=    } else if (vis_version ==  2) {    
-comp_162=      sunsize -= smoothstep(0,2,bass_att)*1.4*vis_intensity;
-comp_163=    } else {
-comp_164=      sunsize -= vis_intensity;
-comp_165=    }
-comp_166=  #else
-comp_167=    sunsize -= smoothstep(0,2,bass_att)*1.4;
-comp_168=  #endif
-comp_169=
-comp_170=  // responsive sun size
-comp_171=  float an=atan2(dir.x,dir.y)+time*1.5;
-comp_172=  // angle for drawing and rotating sun
-comp_173=  float s=pow(clamp(1.0-length(dir.xy)*sunsize-abs(.2-mod_conv(an,.4)),0.,1.),.1);
-comp_174=  // sun
-comp_175=  float sb=pow(clamp(1.0-length(dir.xy)*(sunsize-.2)-abs(.2-mod_conv(an,.4)),0.,1.),.1);
-comp_176=
-comp_177=  // sun border
-comp_178=  float sg=pow(clamp(1.0-length(dir.xy)*(sunsize-4.5)-.5*abs(.2-mod_conv(an,.4)),0.,1.),3.);
-comp_179=
-comp_180=  // sun rays
-comp_181=  float y=lerp(.45,1.2,pow(smoothstep(0.,1.,.75-dir.y),2.))*(1.-sb*.5);
-comp_182=
-comp_183=  // gradient sky
-comp_184=  float3 backg=float3(0.5,0.,1.)*((1.-s)*(1.-sg)*y+(1.-sb)*sg*float3(1.,.8,0.15)*3.);
-comp_185=  backg+=float3(1.,.9,.1)*s;
-comp_186=  backg=max(backg,sg*float3(1.,.9,.5));
+comp_158=  sunsize -= 2*vis_shift;
+comp_159=  if (vis_version ==  1) {
+comp_160=    sunsize -= clamp(0,2,bass_smooth)*1.5*vis_intensity;
+comp_161=  }
+comp_162=
+comp_163=  else if (vis_version ==  2) {
+comp_164=    sunsize -= smoothstep(0,2,bass_att)*1.4*vis_intensity;
+comp_165=  }
+comp_166=
+comp_167=  else {
+comp_168=    sunsize -= vis_intensity;
+comp_169=  }
+comp_170=
+comp_171=  #else
+comp_172=  sunsize -= smoothstep(0,2,bass_att)*1.4;
+comp_173=  #endif
+comp_174=
+comp_175=  // responsive sun size
+comp_176=  float an=atan2(dir.x,dir.y)+time*1.5;
+comp_177=  // angle for drawing and rotating sun
+comp_178=  float s=pow(clamp(1.0-length(dir.xy)*sunsize-abs(.2-mod_conv(an,.4)),0.,1.),.1);
+comp_179=  // sun
+comp_180=  float sb=pow(clamp(1.0-length(dir.xy)*(sunsize-.2)-abs(.2-mod_conv(an,.4)),0.,1.),.1);
+comp_181=
+comp_182=  // sun border
+comp_183=  float sg=pow(clamp(1.0-length(dir.xy)*(sunsize-4.5)-.5*abs(.2-mod_conv(an,.4)),0.,1.),3.);
+comp_184=
+comp_185=  // sun rays
+comp_186=  float y=lerp(.45,1.2,pow(smoothstep(0.,1.,.75-dir.y),2.))*(1.-sb*.5);
 comp_187=
-comp_188=  col=lerp(float3(1.,.9,.3),col,exp(-.004*totdist*totdist));
-comp_189=  // distant fading to sun color
-comp_190=  if (totdist>25.) col=backg;
-comp_191=
-comp_192=  // hit background
-comp_193=  col=pow(col,float3(GAMMA,GAMMA,GAMMA))*BRIGHTNESS;
-comp_194=  col=lerp(float3(length(col), length(col), length(col)),col,SATURATION);
-comp_195=
-comp_196=  #ifdef SHOWONLYEDGES
-comp_197=  col=1.-float3(length(col), length(col), length(col));
-comp_198=  #else
-comp_199=  col*=float3(1.,.9,.85);
-comp_200=  #ifdef NYAN
-comp_201=  dir.yx =mul(dir.yx,rot(dir.x));
-comp_202=  float2 ncatpos=(dir.xy+float2(-3.+mod_conv(-t,6.),-.27));
-comp_203=  float4 ncat=nyan(ncatpos*5.);
-comp_204=  float4 rain=rainbow(ncatpos*10.+float2(.8,.5));
-comp_205=  if (totdist>8.) col=lerp(col,max(float3(.2,.2,.2),rain.xyz),rain.a*.9);
-comp_206=  if (totdist>8.) col=lerp(col,max(float3(.2,.2,.2),ncat.xyz),ncat.a*.9);
-comp_207=  #endif
-comp_208=  #endif
-comp_209=  return col;
-comp_210=}
-comp_211=
-comp_212=float3 move(inout float3 dir) {
-comp_213=  float3 go=path(t);
-comp_214=  float3 adv=path(t+.7);
-comp_215=  float hd=de(adv);
-comp_216=  float3 advec=normalize(adv-go);
-comp_217=  float an=adv.x-go.x; an*=min(1.,abs(adv.z-go.z))*sign(adv.z-go.z)*.7;
-comp_218=  dir.xy = mul(dir.xy, transpose(float2x2(cos(an),sin(an),-sin(an),cos(an))));
-comp_219=  an=advec.y*1.7;
-comp_220=  dir.yz = mul(dir.yz, transpose(float2x2(cos(an),sin(an),-sin(an),cos(an))));
-comp_221=  an=atan2(advec.x,advec.z);
-comp_222=  dir.xz = mul(dir.xz, transpose(float2x2(cos(an),sin(an),-sin(an),cos(an))));
-comp_223=  return go;
-comp_224=}
-comp_225=
-comp_226=shader_body {
-comp_227=  float4 fragColor = 0;
-comp_228=  // CONV: Center on screen, then try some aspect correction
-comp_229=  uv = (uv*2) - 1;
-comp_230=  uv *= aspect.xy;
-comp_231=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_232=  uv = float2(uv.x, -uv.y);
-comp_233=  float2 fragCoord  = uv;
-comp_234=
-comp_235=  // uv = fragCoord.xy / uv.xy*2.-1.;
-comp_236=  float2 oriuv=uv;
-comp_237=  // uv.y*=uv.y/uv.x;
-comp_238=
-comp_239=  // CONV: iMouse unsupported, introducing standard variable
-comp_240=  float3 iMouse = float3(0.5, 0.5, 0);
-comp_241=  float2 mouse=(iMouse.xy/uv.xy-.5)*3.;
-comp_242=  if (iMouse.z<1.) mouse=float2(0.,-0.05);
+comp_188=  // gradient sky
+comp_189=  float3 backg=float3(0.5,0.,1.)*((1.-s)*(1.-sg)*y+(1.-sb)*sg*float3(1.,.8,0.15)*3.);
+comp_190=  backg+=float3(1.,.9,.1)*s;
+comp_191=  backg=max(backg,sg*float3(1.,.9,.5));
+comp_192=
+comp_193=  col=lerp(float3(1.,.9,.3),col,exp(-.004*totdist*totdist));
+comp_194=  // distant fading to sun color
+comp_195=  if (totdist>25.) col=backg;
+comp_196=
+comp_197=  // hit background
+comp_198=  col=pow(col,float3(GAMMA,GAMMA,GAMMA))*BRIGHTNESS;
+comp_199=  col=lerp(float3(length(col), length(col), length(col)),col,SATURATION);
+comp_200=
+comp_201=  #ifdef SHOWONLYEDGES
+comp_202=  col=1.-float3(length(col), length(col), length(col));
+comp_203=  #else
+comp_204=  col*=float3(1.,.9,.85);
+comp_205=  #ifdef NYAN
+comp_206=  dir.yx =mul(dir.yx,rot(dir.x));
+comp_207=  float2 ncatpos=(dir.xy+float2(-3.+mod_conv(-t,6.),-.27));
+comp_208=  float4 ncat=nyan(ncatpos*5.);
+comp_209=  float4 rain=rainbow(ncatpos*10.+float2(.8,.5));
+comp_210=  if (totdist>8.) col=lerp(col,max(float3(.2,.2,.2),rain.xyz),rain.a*.9);
+comp_211=  if (totdist>8.) col=lerp(col,max(float3(.2,.2,.2),ncat.xyz),ncat.a*.9);
+comp_212=  #endif
+comp_213=  #endif
+comp_214=  return col;
+comp_215=}
+comp_216=
+comp_217=float3 move(inout float3 dir) {
+comp_218=  float3 go=path(t);
+comp_219=  float3 adv=path(t+.7);
+comp_220=  float hd=de(adv);
+comp_221=  float3 advec=normalize(adv-go);
+comp_222=  float an=adv.x-go.x; an*=min(1.,abs(adv.z-go.z))*sign(adv.z-go.z)*.7;
+comp_223=  dir.xy = mul(dir.xy, transpose(float2x2(cos(an),sin(an),-sin(an),cos(an))));
+comp_224=  an=advec.y*1.7;
+comp_225=  dir.yz = mul(dir.yz, transpose(float2x2(cos(an),sin(an),-sin(an),cos(an))));
+comp_226=  an=atan2(advec.x,advec.z);
+comp_227=  dir.xz = mul(dir.xz, transpose(float2x2(cos(an),sin(an),-sin(an),cos(an))));
+comp_228=  return go;
+comp_229=}
+comp_230=
+comp_231=shader_body {
+comp_232=  float4 fragColor = 0;
+comp_233=  // CONV: Center on screen, then try some aspect correction
+comp_234=  uv = (uv*2) - 1;
+comp_235=  uv *= aspect.xy;
+comp_236=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_237=  uv = float2(uv.x, -uv.y);
+comp_238=  float2 fragCoord  = uv;
+comp_239=
+comp_240=  // uv = fragCoord.xy / uv.xy*2.-1.;
+comp_241=  float2 oriuv=uv;
+comp_242=  // uv.y*=uv.y/uv.x;
 comp_243=
-comp_244=  // "zoom"
-comp_245=  float fov=.9-max(0.,.7-time*.3);
-comp_246=  float3 dir=normalize(float3(uv*fov,1.));
+comp_244=  // float2 M=(mouse.xy/uv.xy-.5)*3.;
+comp_245=  float2 M = float2(-mouse.x+0.5, mouse.y-0.5)*1.5;
+comp_246=  if (mouse.z<1.) M=float2(0.,-0.05);
 comp_247=
-comp_248=  // dir.yz=mul(dir.yz,rot(mouse.y));
-comp_249=  // dir.xz=mul(dir.xz,rot(mouse.x));
-comp_250=
-comp_251=  float3 origin=float3(-1.,.7,0.);
-comp_252=  float3 from=origin+move(dir);
-comp_253=
-comp_254=  from.x += 2;
-comp_255=  from.y += 0.05;
-comp_256=
-comp_257=  // from.x += -1.1;
-comp_258=  // from.y += -0.9;
-comp_259=
-comp_260=  float3 color=raymarch(from,dir);
-comp_261=  #ifdef BORDER
-comp_262=  color=lerp(float3(0., 0., 0.),color,pow(max(0.,.95-length(oriuv*oriuv*oriuv*float2(1.05,1.1))),.3));
-comp_263=  #endif
-comp_264=  fragColor = float4(color,1.);
-comp_265=  ret = fragColor;
-comp_266=}
+comp_248=  // "zoom"
+comp_249=  float fov=.9-max(0.,.7-time*.3);
+comp_250=  float3 dir=normalize(float3(uv*fov,1.));
+comp_251=
+comp_252=  dir.yz=mul(dir.yz,rot(M.y));
+comp_253=  dir.xz=mul(dir.xz,rot(M.x));
+comp_254=
+comp_255=  float3 origin=float3(-1.,.7,0.);
+comp_256=  float3 from=origin+move(dir);
+comp_257=
+comp_258=  from.x += 2;
+comp_259=  from.y += 0.05;
+comp_260=
+comp_261=  // from.x += -1.1;
+comp_262=  // from.y += -0.9;
+comp_263=
+comp_264=  float3 color=raymarch(from,dir);
+comp_265=  #ifdef BORDER
+comp_266=  color=lerp(float3(0., 0., 0.),color,pow(max(0.,.95-length(oriuv*oriuv*oriuv*float2(1.05,1.1))),.3));
+comp_267=  #endif
+comp_268=  fragColor = float4(color,1.);
+comp_269=  ret = fragColor;
+comp_270=}
