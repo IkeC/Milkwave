@@ -15,11 +15,12 @@ float4 _c10; // .xyzw ~= 0.5 + 0.5*cos(time * float4(~0.005, ~0.008, ~0.013, ~0.
 float4 _c11; // .xyzw ~= same, but using sin()
 float4 _c12; // .xyz = mip info for main image (.x=#across, .y=#down, .z=avg); .w = unused
 float4 _c13; //.xy = blur2_min,blur2_max; .zw = blur3_min, blur3_max.
+float4 _c14; // mouse
 
 // Introduced by Milkwave
-float4 _c14 = float4(0, 0, 0, 0); // bass_smooth, mid_smooth, treb_smooth, vol_smooth
-float4 _c15 = float4(1, 0, 1, 0); // vis_intensity, vis_shift, vis_version
-float4 _c16 = float4(0, 0, 0, 0); // colshift_hue, colshift_saturation, colshift_brightness
+float4 _c15 = float4(0, 0, 0, 0); // bass_smooth, mid_smooth, treb_smooth, vol_smooth
+float4 _c16 = float4(1, 0, 1, 0); // vis_intensity, vis_shift, vis_version
+float4 _c17 = float4(0, 0, 0, 0); // colshift_hue, colshift_saturation, colshift_brightness
 
 float4 _qa; // q vars bank 1 [q1-q4]
 float4 _qb; // q vars bank 2 [q5-q8]
@@ -73,18 +74,23 @@ float4x3 rot_rand4;
 #define treb_att _c4.z
 #define vol_att  _c4.w
 
-#define bass_smooth _c14.x
-#define mid_smooth  _c14.y
-#define treb_smooth _c14.z
-#define vol_smooth  _c14.w
+#define mouse_x _c14.x
+#define mouse_y _c14.y
+#define mouse_pos _c14.xy
+#define mouse_clicked _c14.z
 
-#define vis_intensity _c15.x
-#define vis_shift     _c15.y
-#define vis_version   _c15.z
+#define bass_smooth _c15.x
+#define mid_smooth  _c15.y
+#define treb_smooth _c15.z
+#define vol_smooth  _c15.w
 
-#define colshift_hue        _c16.x
-#define colshift_saturation _c16.y
-#define colshift_brightness _c16.z
+#define vis_intensity _c16.x
+#define vis_shift     _c16.y
+#define vis_version   _c16.z
+
+#define colshift_hue        _c17.x
+#define colshift_saturation _c17.y
+#define colshift_brightness _c17.z
 
 #define q1 _qa.x
 #define q2 _qa.y

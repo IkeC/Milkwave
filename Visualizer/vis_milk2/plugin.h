@@ -386,6 +386,15 @@ public:
   int m_WindowFixedWidth = 960;
   int m_WindowFixedHeight = 540;
   
+  // Preset mouse interaction controls
+  bool m_bEnableMouseInteraction = false;
+  float m_mouseX;
+  float m_mouseY;
+  float m_lastMouseX;
+  float m_lastMouseY;
+  bool m_mouseDown;
+  int m_mouseClicked;
+
   float fOpacity = 1.0f; // 0.0f = 100% transparent, 1.0f = 100% opaque
   bool m_RemotePresetLink = false;
   float m_MediaKeyNotifyTime = 1.0f;

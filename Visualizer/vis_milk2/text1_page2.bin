@@ -12,6 +12,7 @@ CTRL + S                Quicksave preset to /presets/Quicksave folder
 SHIFT + CTRL + S        Quicksave preset to /presets/Quicksave2 folder
 CTRL + D                Set current audio device to default
 SHIFT + CTRL + D        Display current audio device
+CTRL + M                Toggle interative mouse control
 
 K                       Toggle sprite/message mode
 SHIFT + K               Enter sprite kill mode

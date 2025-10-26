@@ -123,6 +123,10 @@
 #define VK_D 0x44 // ASCII code for 'D'
 #endif
 
+#ifndef VK_M
+#define VK_M 0x4D // ASCII code for 'M'
+#endif
+
 #include <stdlib.h>
 #include <malloc.h>
 #include <crtdbg.h>
@@ -926,14 +930,24 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
     return 0;
   }
-  break;
+  else if (wParam == VK_M) {
+    if (GetKeyState(VK_CONTROL) & 0x8000) { // Check if Ctrl is pressed
+      g_plugin.m_bEnableMouseInteraction = !g_plugin.m_bEnableMouseInteraction;
+      if (g_plugin.m_bEnableMouseInteraction) {
+        g_plugin.AddNotification(L"Mouse interaction enabled");
+      }
+      else {
+        g_plugin.AddNotification(L"Mouse interaction disabled");
+      }
+    }
+  }
 
   case WM_NCHITTEST: //used for borderless window
   {
     // if (borderless)
     if (!fullscreen && !stretch) {
-      //resizable borderless
-      //from https://stackoverflow.com/questions/19106047/winapi-c-reprogramming-window-resize
+      // resizable borderless
+      // from https://stackoverflow.com/questions/19106047/winapi-c-reprogramming-window-resize
 #define BORDERWIDTH  10
 #define TITLEBARWIDTH  30
       RECT rect;
@@ -943,6 +957,31 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       x = GET_X_LPARAM(lParam) - rect.left;
       y = GET_Y_LPARAM(lParam) - rect.top;
 
+      // When mouse interaction is enabled, let the plugin handle client-area mouse events.
+      // Still allow resizing by returning the correct HT* edge codes for the border zones.
+      if (g_plugin.m_bEnableMouseInteraction) {
+        if (x < BORDERWIDTH && y < BORDERWIDTH)
+          return HTTOPLEFT;
+        else if (x > rect.right - rect.left - BORDERWIDTH && y < BORDERWIDTH)
+          return HTTOPRIGHT;
+        else if (x > rect.right - rect.left - BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
+          return HTBOTTOMRIGHT;
+        else if (x < BORDERWIDTH && y > rect.bottom - rect.top - BORDERWIDTH)
+          return HTBOTTOMLEFT;
+        else if (x < BORDERWIDTH)
+          return HTLEFT;
+        else if (y < BORDERWIDTH)
+          return HTTOP;
+        else if (x > rect.right - rect.left - BORDERWIDTH)
+          return HTRIGHT;
+        else if (y > rect.bottom - rect.top - BORDERWIDTH)
+          return HTBOTTOM;
+
+        // interior -> client area (so MyWindowProc receives mouse messages)
+        return HTCLIENT;
+      }
+
+      // Default (existing) behavior when mouse interaction is disabled:
       if (x >= BORDERWIDTH && x <= rect.right - rect.left - BORDERWIDTH && y >= BORDERWIDTH && y <= TITLEBARWIDTH)
         return HTCAPTION;
 
@@ -1002,24 +1041,45 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_RBUTTONDOWN:
   case WM_NCRBUTTONDOWN: // Right mouse button pressed
+    // If plugin-level mouse interaction is enabled, let the plugin handle the event.
+    if (g_plugin.m_bEnableMouseInteraction) {
+      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    }
     rightMouseButtonHeld = true;
     break;
 
   case WM_RBUTTONUP:
   case WM_NCRBUTTONUP: // Right mouse button released
+    if (g_plugin.m_bEnableMouseInteraction) {
+      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    }
     rightMouseButtonHeld = false;
     break;
 
   case WM_LBUTTONDOWN:
   case WM_NCLBUTTONDOWN: // Left mouse button pressed
+    if (g_plugin.m_bEnableMouseInteraction) {
+      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    }
     if (rightMouseButtonHeld) {
       // Right + Left
-      PostMessage(hWnd, WM_CLOSE, 0, 0); // Close the window
+      PostMessage(hWnd, WM_CLOSE,0,0); // Close the window
     }
+    break;
+
+  case WM_LBUTTONUP:
+  case WM_NCLBUTTONUP: // Left mouse button released
+    if (g_plugin.m_bEnableMouseInteraction) {
+      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    }
+    // no special action on left button up in existing logic
     break;
 
   case WM_MBUTTONDOWN:
   case WM_NCMBUTTONDOWN: // Middle mouse button clicked
+    if (g_plugin.m_bEnableMouseInteraction) {
+      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    }
     if (rightMouseButtonHeld) {
       // Right + Middle
       g_plugin.OpenMilkwaveRemote();
@@ -1032,6 +1092,9 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_LBUTTONDBLCLK:
   {
+    if (g_plugin.m_bEnableMouseInteraction) {
+      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    }
     // only triggered when coming back from fullscreen
     ToggleFullScreen(hWnd);
     break;
@@ -1039,6 +1102,9 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_RBUTTONDBLCLK:
   {
+    if (g_plugin.m_bEnableMouseInteraction) {
+      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    }
     ToggleBorderlessWindow(hWnd);
     break;
   }

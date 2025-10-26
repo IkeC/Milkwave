@@ -2,6 +2,7 @@
 
 * Settings Tab: Shift Hue/Saturation/Brightness of the entire output
 * Presets Tab: Filter preset list (Ctrl+F)
+* Mouse interation mode (Ctrl+M) (by @OfficialIncubo)
 * Option to disable audio capture (bEnableAudioCapture=0)
 * New shaders
   - diatribes + IkeC - Vibe Ride

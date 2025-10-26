@@ -1309,6 +1309,8 @@ void CPlugin::MyReadConfig() {
 
   m_bFirstRun = !GetPrivateProfileBoolW(L"Settings", L"bConfigured", false, pIni);
   m_bEnableRating = GetPrivateProfileBoolW(L"Settings", L"bEnableRating", m_bEnableRating, pIni);
+  m_bEnableMouseInteraction = GetPrivateProfileBoolW(L"Settings", L"bEnableMouseInteraction", m_bEnableMouseInteraction, pIni);
+
   //m_bInstaScan    = GetPrivateProfileBool("settings","bInstaScan",m_bInstaScan,pIni);
   m_bHardCutsDisabled = GetPrivateProfileBoolW(L"Settings", L"bHardCutsDisabled", m_bHardCutsDisabled, pIni);
   g_bDebugOutput = GetPrivateProfileBoolW(L"Settings", L"bDebugOutput", g_bDebugOutput, pIni);
@@ -1490,6 +1492,8 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_bSongTitleAnims, L"bSongTitleAnims", pIni, L"Settings");
   WritePrivateProfileIntW(m_bHardCutsDisabled, L"bHardCutsDisabled", pIni, L"Settings");
   WritePrivateProfileIntW(m_bEnableRating, L"bEnableRating", pIni, L"Settings");
+  WritePrivateProfileIntW(m_bEnableMouseInteraction, L"bEnableMouseInteraction", pIni, L"Settings");
+
   //WritePrivateProfileIntW(m_bInstaScan,            "bInstaScan",		    pIni, "settings");
   WritePrivateProfileIntW(g_bDebugOutput, L"bDebugOutput", pIni, L"Settings");
 
@@ -4232,6 +4236,31 @@ void CPlugin::MyRenderFn(int redraw) {
   }
   //END
 
+  if (m_bEnableMouseInteraction) {
+    // Update mouse control variables
+    POINT pt;
+    GetCursorPos(&pt);
+    ScreenToClient(GetPluginWindow(), &pt);
+
+    RECT clientRect;
+    GetClientRect(GetPluginWindow(), &clientRect);
+
+    // Check if mouse is inside the client area
+    if (PtInRect(&clientRect, pt)) {
+      m_mouseX = ((2.0f * pt.x / clientRect.right) - 1.0f) / 2 + .5; //both from [-1, 1], normalized to [0, 1]
+      m_mouseY = (1.0f - (2.0f * pt.y / clientRect.bottom)) / 2 + .5;
+    }
+    else {
+      m_mouseX = -1;
+      m_mouseY = -1;
+    }
+
+    //Duration of the click called from WM_LBUTTONDOWN
+    if (m_mouseClicked > 0) {
+      m_mouseClicked--;
+    }
+  }
+
   //Don't show the help message again when the "Press F1 for help" message is finished.
   //Useful when I press CTRL + T or when it reaches 250000 seconds, it shows the message again, so I did.
   if (GetTime() >= PRESS_F1_DUR)
@@ -5962,6 +5991,27 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     LoadPresetFilesViaDragAndDrop(wParam);
     return 0;
 
+
+  case WM_LBUTTONDOWN:
+    m_mouseDown = 1;
+    m_mouseClicked = 2; //no. of frames you set when you click (not to be confused with mouse held down)
+    m_lastMouseX = m_mouseX;
+    m_lastMouseY = -m_mouseY + 1;
+    break;
+  case WM_RBUTTONDOWN:
+    m_mouseDown = 1;
+    m_mouseClicked = 2; //no. of frames you set when you click (not to be confused with mouse held down)
+    m_lastMouseX = m_mouseX;
+    m_lastMouseY = -m_mouseY + 1;
+    break;
+
+  case WM_LBUTTONUP:
+    m_mouseDown = 0;
+    break;
+  case WM_RBUTTONUP:
+    m_mouseDown = 0;
+    break;
+
   case WM_KEYDOWN:    // virtual-key codes
 
     // Note that some keys will never reach this point, since they are
@@ -6618,11 +6668,13 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       else {
         // Don't close if esc pressed when vj window has focus
         if (GetFocus() == GetPluginWindow()) {
-          bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-          if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(You may also use SHIFT+ESC or RIGHT+LEFT MOUSE BUTTON\nto close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
-            PostMessage(hWnd, WM_CLOSE, 0, 0);
+          if (!IsBorderlessFullscreen(GetPluginWindow())) {
+            bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+            if (isShiftPressed || MessageBoxA(GetPluginWindow(), "Close Milkwave Visualizer?\n\n(You may also use SHIFT+ESC or RIGHT+LEFT MOUSE BUTTON\nto close without confirmation)", "Milkwave Visualizer", MB_YESNO | MB_TOPMOST) == IDYES) {
+              PostMessage(hWnd, WM_CLOSE, 0, 0);
+            }
+            return 0;
           }
-          return 0;
         }
       }
       /*else if (hwnd == GetPluginWindow())		// (don't close on ESC for text window)

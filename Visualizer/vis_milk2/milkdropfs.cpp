@@ -595,6 +595,12 @@ void CPlugin::LoadPerFrameEvallibVars(CState* pState) {
   *pState->var_pf_blur2max = (double)pState->m_fBlur2Max.eval(GetTime());
   *pState->var_pf_blur3max = (double)pState->m_fBlur3Max.eval(GetTime());
   *pState->var_pf_blur1_edge_darken = (double)pState->m_fBlur1EdgeDarken.eval(GetTime());
+
+  // BMV/Milkwave
+  //*pState->var_pf_mousex = (double)m_mouseX;
+  //*pState->var_pf_mousey = (double)m_mouseY;
+  //*pState->var_pf_mousedown = m_mouseDown ? 1.0 : 0.0;
+  //*pState->var_pf_mouseclick = m_mouseClicked > 0 ? 1.0 : 0.0;
 }
 
 void CPlugin::RunPerFrameEquations(int code) {
@@ -693,6 +699,11 @@ void CPlugin::RunPerFrameEquations(int code) {
     *pState->var_pv_bass_smooth = *pState->var_pf_bass_smooth;
     *pState->var_pv_mid_smooth = *pState->var_pf_mid_smooth;
     *pState->var_pv_treb_smooth = *pState->var_pf_treb_smooth;
+
+    //*pState->var_pv_mousex = *pState->var_pf_mousex;
+    //*pState->var_pv_mousey = *pState->var_pf_mousey;
+    //*pState->var_pv_mousedown = *pState->var_pf_mousedown;
+    //*pState->var_pv_mouseclick = *pState->var_pf_mouseclick;
 
 
     *pState->var_pv_meshx = (double)m_nGridX;
@@ -799,6 +810,12 @@ void CPlugin::RunPerFrameEquations(int code) {
     *m_pState->var_pf_blur2max = mix * (*m_pState->var_pf_blur2max) + mix2 * (*m_pOldState->var_pf_blur2max);
     *m_pState->var_pf_blur3max = mix * (*m_pState->var_pf_blur3max) + mix2 * (*m_pOldState->var_pf_blur3max);
     *m_pState->var_pf_blur1_edge_darken = mix * (*m_pState->var_pf_blur1_edge_darken) + mix2 * (*m_pOldState->var_pf_blur1_edge_darken);
+
+    // BMV/Milkwave mouse variables
+    *m_pState->var_pf_mousex = mix * (*m_pState->var_pf_mousex) + mix2 * (*m_pOldState->var_pf_mousex);
+    *m_pState->var_pf_mousey = mix * (*m_pState->var_pf_mousey) + mix2 * (*m_pOldState->var_pf_mousey);
+    *m_pState->var_pf_mousedown = (mix < m_fSnapPoint) ? *m_pOldState->var_pf_mousedown : *m_pState->var_pf_mousedown;
+    *m_pState->var_pf_mouseclick = (mix < m_fSnapPoint) ? *m_pOldState->var_pf_mouseclick : *m_pState->var_pf_mouseclick;
   }
 }
 
@@ -4807,10 +4824,12 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   ));
   if (h[12]) pCT->SetVector(lpDevice, h[12], &D3DXVECTOR4(mip_x, mip_y, mip_avg, 0));
   if (h[13]) pCT->SetVector(lpDevice, h[13], &D3DXVECTOR4(blur_min[1], blur_max[1], blur_min[2], blur_max[2]));
-
-  if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
-  if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0));
-  if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0));
+  
+  // BMV/Milkwave
+  if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(m_mouseX != -1 ? m_mouseX : -1, m_mouseY != -1 ? -m_mouseY + 1 : -1, m_mouseDown ? m_lastMouseX : -m_lastMouseX, m_mouseClicked > 0 ? m_lastMouseY : -m_lastMouseY));
+  if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
+  if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0));
+  if (h[17]) pCT->SetVector(lpDevice, h[17], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0));
 
   // write q vars
   int num_q_float4s = sizeof(p->q_const_handles) / sizeof(p->q_const_handles[0]);

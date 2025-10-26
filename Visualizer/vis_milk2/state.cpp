@@ -265,6 +265,8 @@ void CState::RegisterBuiltInVariables(int flags) {
     var_pf_mid_smooth = NSEEL_VM_regvar(m_pf_eel, "mid_smooth");	// i
     var_pf_treb_smooth = NSEEL_VM_regvar(m_pf_eel, "treb_smooth");	// i
     
+    
+
     var_pf_frame = NSEEL_VM_regvar(m_pf_eel, "frame");
     var_pf_decay = NSEEL_VM_regvar(m_pf_eel, "decay");
     var_pf_wave_a = NSEEL_VM_regvar(m_pf_eel, "wave_a");
@@ -321,6 +323,12 @@ void CState::RegisterBuiltInVariables(int flags) {
     var_pf_pixelsy = NSEEL_VM_regvar(m_pf_eel, "pixelsy");
     var_pf_aspectx = NSEEL_VM_regvar(m_pf_eel, "aspectx");
     var_pf_aspecty = NSEEL_VM_regvar(m_pf_eel, "aspecty");
+
+    var_pf_mousex = NSEEL_VM_regvar(m_pf_eel, "mousex");
+    var_pf_mousey = NSEEL_VM_regvar(m_pf_eel, "mousey");
+    var_pf_mousedown = NSEEL_VM_regvar(m_pf_eel, "mousedown");
+    var_pf_mouseclick = NSEEL_VM_regvar(m_pf_eel, "mouseclick");
+
     var_pf_blur1min = NSEEL_VM_regvar(m_pf_eel, "blur1_min");
     var_pf_blur2min = NSEEL_VM_regvar(m_pf_eel, "blur2_min");
     var_pf_blur3min = NSEEL_VM_regvar(m_pf_eel, "blur3_min");
@@ -357,6 +365,11 @@ void CState::RegisterBuiltInVariables(int flags) {
     var_pv_bass_smooth = NSEEL_VM_regvar(m_pv_eel, "bass_smooth");		// i
     var_pv_mid_smooth = NSEEL_VM_regvar(m_pv_eel, "mid_smooth");		// i
     var_pv_treb_smooth = NSEEL_VM_regvar(m_pv_eel, "treb_smooth");		// i
+
+    var_pv_mousex = NSEEL_VM_regvar(m_pv_eel, "mousex");		// i
+    var_pv_mousey = NSEEL_VM_regvar(m_pv_eel, "mousey");		// i
+    var_pv_mousedown = NSEEL_VM_regvar(m_pv_eel, "mousedown");		// i
+    var_pv_mouseclick = NSEEL_VM_regvar(m_pv_eel, "mouseclick");		// i
 
     var_pv_frame = NSEEL_VM_regvar(m_pv_eel, "frame");
     var_pv_x = NSEEL_VM_regvar(m_pv_eel, "x");			// i
@@ -1566,6 +1579,40 @@ void CState::RecompileExpressions(int flags, int bReInit) {
   // if we're recompiling init code, clear vars to zero, and re-register built-in variables.
   if (bReInit) {
     RegisterBuiltInVariables(flags);
+
+    // --- Reset monitor variable on recompile ---
+    monitor_after_init_code = 0;
+    *var_pf_monitor = 0;
+
+    // --- Reset per-frame q variables on recompile ---
+    for (int vi = 0; vi < NUM_Q_VAR; vi++) {
+      q_values_after_init_code[vi] = 0;
+      if (var_pf_q[vi]) *var_pf_q[vi] = 0;
+    }
+
+    // --- Reset custom shapes/waves q and t variables on recompile ---
+    // --- SHAPE ---
+    for (int i = 0; i < MAX_CUSTOM_SHAPES; i++) {
+      for (vi = 0; vi < NUM_Q_VAR; vi++)
+        if (m_shape[i].var_pf_q[vi]) *m_shape[i].var_pf_q[vi] = 0;
+
+      for (vi = 0; vi < NUM_T_VAR; vi++) {
+        m_shape[i].t_values_after_init_code[vi] = 0;
+        if (m_shape[i].var_pf_t[vi]) *m_shape[i].var_pf_t[vi] = 0;
+      }
+    }
+
+    // --- WAVE ---
+    for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+
+      for (vi = 0; vi < NUM_Q_VAR; vi++)
+        if (m_wave[i].var_pf_q[vi]) *m_wave[i].var_pf_q[vi] = 0;
+
+      for (vi = 0; vi < NUM_T_VAR; vi++) {
+        m_wave[i].t_values_after_init_code[vi] = 0;
+        if (m_wave[i].var_pf_t[vi]) *m_wave[i].var_pf_t[vi] = 0;
+      }
+    }
   }
 
   // QUICK FIX: if the code strings ONLY have spaces and linefeeds, erase them,

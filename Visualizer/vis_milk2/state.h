@@ -418,6 +418,7 @@ public:
   double* var_pf_blur2max;
   double* var_pf_blur3max;
   double* var_pf_blur1_edge_darken;
+  double* var_pf_mousex, * var_pf_mousey, * var_pf_mousedown, * var_pf_mouseclick;
 
   // for per-vertex expression evaluation:
   NSEEL_VMCTX m_pv_eel;
@@ -433,6 +434,7 @@ public:
   double* var_pv_meshx, * var_pv_meshy;
   double* var_pv_pixelsx, * var_pv_pixelsy;
   double* var_pv_aspectx, * var_pv_aspecty;
+  double* var_pv_mousex, * var_pv_mousey, * var_pv_mousedown, * var_pv_mouseclick;
 
   double q_values_after_init_code[NUM_Q_VAR];
   double monitor_after_init_code;
