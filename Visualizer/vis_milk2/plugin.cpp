@@ -1301,6 +1301,7 @@ void CPlugin::MyReadConfig() {
   // ======================================
   // SPOUT - save whether in DirectX11 (true) or DirectX 9 (false) mode, default true
   bSpoutOut = GetPrivateProfileBoolW(L"Settings", L"bSpoutOut", bSpoutOut, pIni);
+  bQualityAuto = GetPrivateProfileBoolW(L"Settings", L"bQualityAuto", bQualityAuto, pIni);
   bSpoutFixedSize = GetPrivateProfileBoolW(L"Settings", L"bSpoutFixedSize", bSpoutFixedSize, pIni);
   nSpoutFixedWidth = GetPrivateProfileIntW(L"Settings", L"nSpoutFixedWidth", nSpoutFixedWidth, pIni);
   nSpoutFixedHeight = GetPrivateProfileIntW(L"Settings", L"nSpoutFixedHeight", nSpoutFixedHeight, pIni);
@@ -1483,6 +1484,7 @@ void CPlugin::MyWriteConfig() {
   // ================================
   // SPOUT
   WritePrivateProfileIntW(bSpoutOut, L"bSpoutOut", pIni, L"Settings");
+  WritePrivateProfileIntW(bQualityAuto, L"bQualityAuto", pIni, L"Settings");
   WritePrivateProfileIntW(bSpoutFixedSize, L"bSpoutFixedSize", pIni, L"Settings");
   WritePrivateProfileIntW(nSpoutFixedWidth, L"nSpoutFixedWidth", pIni, L"Settings");
   WritePrivateProfileIntW(nSpoutFixedHeight, L"nSpoutFixedHeight", pIni, L"Settings");
@@ -10964,6 +10966,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     g_plugin.m_fRenderQuality = std::stof(message);
 
     ResetBufferAndFonts();
+  } 
+  else if (wcsncmp(sMessage, L"VAR_AUTO=", 9) == 0) {
+    g_plugin.bQualityAuto = (sMessage[9] == L'1');
   }
   else if (wcsncmp(sMessage, L"SPOUT_ACTIVE=", 13) == 0) {
     wchar_t status = sMessage[13];
@@ -11026,7 +11031,8 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0")
     + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth)
     + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight)
-    + L"|QUALITY=" + std::to_wstring(m_fRenderQuality);
+    + L"|QUALITY=" + std::to_wstring(m_fRenderQuality)
+    + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0");
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 

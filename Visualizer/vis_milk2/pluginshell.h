@@ -78,6 +78,8 @@ public:
   char* GetConfigIniFileA();
   void SetVariableBackBuffer(int width, int height);
 
+  float GetEffectiveRenderQuality(int width, int height);
+
   void ResetBufferAndFonts();
 
   D3DPRESENT_PARAMETERS d3dPp;
@@ -226,6 +228,7 @@ private:
   int m_left_edge;
   int m_right_edge;
   int m_force_accept_WM_WINDOWPOSCHANGING;
+  int m_screen_pixels = -1;
 
   // PRIVATE - DESKTOP MODE STUFF
   bool                m_bClearVJWindow;
@@ -370,6 +373,7 @@ public:
   bool bSpoutFixedSize; // Use Spout output fixed size
   int nSpoutFixedWidth = 1280;
   int nSpoutFixedHeight = 720;
+  bool bQualityAuto = false;
 };
 
 #endif

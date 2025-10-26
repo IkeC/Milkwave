@@ -206,6 +206,7 @@ namespace MilkwaveRemote
       lblHue = new Label();
       txtFilterPresets = new TextBox();
       cboSettingsOpenFile = new ComboBox();
+      chkQualityAuto = new CheckBox();
       txtShaderGLSL = new TextBox();
       txtShaderHLSL = new TextBox();
       txtMidi2Label = new TextBox();
@@ -2509,6 +2510,21 @@ namespace MilkwaveRemote
       cboSettingsOpenFile.TabIndex = 170;
       toolTip1.SetToolTip(cboSettingsOpenFile, "Alt+Mousewheel: Send to Visualizer");
       // 
+      // chkQualityAuto
+      // 
+      chkQualityAuto.Appearance = Appearance.Button;
+      chkQualityAuto.FlatStyle = FlatStyle.System;
+      chkQualityAuto.Location = new Point(279, 92);
+      chkQualityAuto.Name = "chkQualityAuto";
+      chkQualityAuto.Size = new Size(56, 23);
+      chkQualityAuto.TabIndex = 172;
+      chkQualityAuto.Text = "Auto";
+      chkQualityAuto.TextAlign = ContentAlignment.MiddleCenter;
+      chkQualityAuto.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkQualityAuto, "Adjust set quality based on window size, so the percieved quality stays the same");
+      chkQualityAuto.UseVisualStyleBackColor = true;
+      chkQualityAuto.CheckedChanged += chkQualityAuto_CheckedChanged;
+      // 
       // txtShaderGLSL
       // 
       txtShaderGLSL.Dock = DockStyle.Fill;
@@ -4345,6 +4361,7 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(chkQualityAuto);
       tabSettings.Controls.Add(label9);
       tabSettings.Controls.Add(cboSettingsOpenFile);
       tabSettings.Controls.Add(numSettingsBrightness);
@@ -4920,5 +4937,6 @@ namespace MilkwaveRemote
     private TextBox txtFilterPresets;
     private Label label9;
     private ComboBox cboSettingsOpenFile;
+    private CheckBox chkQualityAuto;
   }
 }

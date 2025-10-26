@@ -241,6 +241,7 @@ namespace MilkwaveRemote {
       SpoutFixedSize,
       SpoutResolution,
       RenderQuality,
+      QualityAuto,
       ColHue,
       ColSaturation,
       ColBrightness
@@ -611,6 +612,8 @@ namespace MilkwaveRemote {
                     cboSpoutHeight.Text = value;
                   } else if (key.Equals("QUALITY", StringComparison.OrdinalIgnoreCase)) {
                     numQuality.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                  } else if (key.Equals("AUTO", StringComparison.OrdinalIgnoreCase)) {
+                    chkQualityAuto.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                   }
                 } catch (Exception ex) {
                   // ignore
@@ -769,6 +772,8 @@ namespace MilkwaveRemote {
               }
             } else if (type == MessageType.RenderQuality) {
               message = "VAR_QUALITY=" + numQuality.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.QualityAuto) {
+              message = "VAR_AUTO=" + (chkQualityAuto.Checked ? "1" : "0");
             } else if (type == MessageType.Message) {
               if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
                 // try auto-wrap
@@ -4660,5 +4665,10 @@ namespace MilkwaveRemote {
       cboPresets.EndUpdate();
     }
 
+    private void chkQualityAuto_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.QualityAuto);
+      }
+    }
   } // end class
 } // end namespace

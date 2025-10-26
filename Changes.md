@@ -2,10 +2,11 @@
 
 * Settings Tab: Shift Hue/Saturation/Brightness of the entire output
 * Presets Tab: Filter preset list (Ctrl+F)
-* Mouse interation mode (Ctrl+M) (by @OfficialIncubo)
+* Mouse interation mode (Ctrl+M) (base by @OfficialIncubo)
 * Option to disable audio capture (bEnableAudioCapture=0)
-* New shaders
-  - diatribes + IkeC - Vibe Ride
+* New oder modified shaders
+  - New: diatribes + IkeC - Vibe Ride
+  - Mouse support: Kali + IkeC - Fractal Land
 
 ## v3.2 (2025-10-03)
 

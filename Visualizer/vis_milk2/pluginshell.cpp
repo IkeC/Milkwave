@@ -143,6 +143,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AutoCharFn.h"
 #include <mmsystem.h>
 #pragma comment(lib,"winmm.lib")    // for timeGetTime
+#pragma comment(lib,"user32.lib")  // ensure GetSystemMetrics (user32) is linked
 
 #define clamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 
@@ -1421,9 +1422,10 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     cy = nSpoutFixedHeight;
   }
   else {
-    cx = (int)(cx * m_fRenderQuality);
-    cy = (int)(cy * m_fRenderQuality);
-    textMargin *= m_fRenderQuality;
+    float q = GetEffectiveRenderQuality(cx, cy);
+    cx = (int)(cx * q);
+    cy = (int)(cy * q);
+    textMargin *= q;
   }
   
   int marginTop = textMargin + GetCanvasMarginY();
@@ -2678,9 +2680,38 @@ bool CPluginShell::IsSpoutActiveAndFixed() {
 
 void CPluginShell::SetVariableBackBuffer(int width, int height) {
   if (IsSpoutActiveAndFixed() || width == 0 || height == 0) return;
-  float q = clamp(m_fRenderQuality, 0.01, 1);
+  float q = GetEffectiveRenderQuality(width, height);
   d3dPp.BackBufferWidth = (int)width * q;
   d3dPp.BackBufferHeight = (int)height * q;
+}
+
+float CPluginShell::GetEffectiveRenderQuality(int width, int height) {
+  float q = clamp(m_fRenderQuality, 0.01, 1);
+  if (bQualityAuto) {
+    // adjust quality based on window/screen ratio
+    // Use runtime GetProcAddress to avoid depending on an import thunk (xGetSystemMetrics)
+    // which can cause unresolved externals with certain SDK / linker setups.
+    if (m_screen_pixels == -1) {
+      HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
+      typedef int(WINAPI* PFN_GetSystemMetrics)(int);
+      PFN_GetSystemMetrics pGetSystemMetrics = hUser32 ? (PFN_GetSystemMetrics)GetProcAddress(hUser32, "GetSystemMetrics") : NULL;
+      int cxScreen = 0, cyScreen = 0;
+      if (pGetSystemMetrics) {
+        cxScreen = pGetSystemMetrics(SM_CXSCREEN);
+        cyScreen = pGetSystemMetrics(SM_CYSCREEN);
+      }
+      else {
+        // fallback: assume 1920x1080 to avoid divide-by-zero if lookup fails
+        cxScreen = 1920;
+        cyScreen = 1080;
+      }
+      m_screen_pixels = cxScreen * cyScreen;
+    }
+    float avg_pixels = m_screen_pixels / 4;
+    float window_pixels = (float)width * (float)height;
+    q = q * sqrt(avg_pixels / window_pixels);
+  }
+  return q;
 }
 
 void CPluginShell::ResetBufferAndFonts() {
