@@ -4237,7 +4237,6 @@ void CPlugin::MyRenderFn(int redraw) {
   //END
 
   if (m_bEnableMouseInteraction) {
-    // Update mouse control variables
     POINT pt;
     GetCursorPos(&pt);
     ScreenToClient(GetPluginWindow(), &pt);
@@ -4245,19 +4244,45 @@ void CPlugin::MyRenderFn(int redraw) {
     RECT clientRect;
     GetClientRect(GetPluginWindow(), &clientRect);
 
-    //if (PtInRect(&clientRect, pt)) { // Check if mouse is inside the client area
-      m_mouseX = ((2.0f * pt.x / clientRect.right) - 1.0f) / 2 + .5; //both from [-1, 1], normalized to [0, 1]
-      m_mouseY = (1.0f - (2.0f * pt.y / clientRect.bottom)) / 2 + .5;
-    //}
-    //else {
-    //  m_mouseX = -1;
-    //  m_mouseY = -1;
-    //}
-    
-    //Duration of the click called from WM_LBUTTONDOWN
-    if (m_mouseClicked > 0) {
-      m_mouseClicked--;
+    int clientW = clientRect.right - clientRect.left;
+    int clientH = clientRect.bottom - clientRect.top;
+    if (clientW <= 1) clientW = 1;
+    if (clientH <= 1) clientH = 1;
+
+    // Prefer renderer/backbuffer size if the renderer uses a different internal resolution
+    int targetW = clientW;
+    int targetH = clientH;
+    if (g_plugin.d3dPp.BackBufferWidth > 0 && g_plugin.d3dPp.BackBufferHeight > 0) {
+      targetW = static_cast<int>(g_plugin.d3dPp.BackBufferWidth);
+      targetH = static_cast<int>(g_plugin.d3dPp.BackBufferHeight);
     }
+    else if (g_plugin.m_WindowWidth > 0 && g_plugin.m_WindowHeight > 0) {
+      targetW = g_plugin.m_WindowWidth;
+      targetH = g_plugin.m_WindowHeight;
+    }
+    if (targetW <= 1) targetW = 1;
+    if (targetH <= 1) targetH = 1;
+
+    // Map client pixel coords to target pixel space (handles stretched/backbuffer-fixed modes)
+    float sx = (static_cast<float>(pt.x) * targetW) / static_cast<float>(clientW);
+    float sy = (static_cast<float>(pt.y) * targetH) / static_cast<float>(clientH);
+
+    // Normalize [0 .. target-1] -> [0..1]
+    float fx = sx / static_cast<float>(targetW - 1);
+    float fy = sy / static_cast<float>(targetH - 1);
+
+    // clamp to [0,1]
+    fx = clamp(fx, 0.0f, 1.0f);
+    fy = clamp(fy, 0.0f, 1.0f);
+
+    // Convert to lower-left origin: (0,0)=lower-left, (1,1)=upper-right
+    m_mouseX = fx;        // 0 = left, 1 = right
+    m_mouseY = 1.0f - fy; // 0 = bottom, 1 = top
+  }
+
+  //Duration of the click called from WM_LBUTTONDOWN
+  if (m_mouseClicked > 0) {
+    m_mouseClicked--;
   }
 
   //Don't show the help message again when the "Press F1 for help" message is finished.
@@ -4595,8 +4620,10 @@ void CPlugin::MyRenderUI(
       swprintf(buf, L"%s %6.2f %s", ((double)mysound.smooth_rel[2] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_treb_smooth), L"treb_smooth");
       MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
 
-      // swprintf(buf, L"BeatDrop v1.3.2.2 RC1");
-      // MyTextOut_Shadow(buf, MTO_LOWER_RIGHT);
+      if (m_bEnableMouseInteraction) {
+        swprintf(buf, L"%s x=%0.2f y=%0.2f z=%s ", L"mouse", m_mouseX, m_mouseY, m_mouseDown ? L"1" : L"0");
+        MyTextOut_Color(buf, MTO_LOWER_RIGHT, color);
+      }
     }
     // NOTE: custom timed msg comes at the end!!
   }

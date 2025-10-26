@@ -387,9 +387,9 @@ public:
   int m_WindowFixedHeight = 540;
   
   // Preset mouse interaction controls
-  bool m_bEnableMouseInteraction = false;
-  float m_mouseX;
-  float m_mouseY;
+  bool m_bEnableMouseInteraction = true;
+  float m_mouseX = 0.5;
+  float m_mouseY = 0.5;
   float m_lastMouseX;
   float m_lastMouseY;
   bool m_mouseDown;

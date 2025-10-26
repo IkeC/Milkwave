@@ -15,7 +15,7 @@ float4 _c10; // .xyzw ~= 0.5 + 0.5*cos(time * float4(~0.005, ~0.008, ~0.013, ~0.
 float4 _c11; // .xyzw ~= same, but using sin()
 float4 _c12; // .xyz = mip info for main image (.x=#across, .y=#down, .z=avg); .w = unused
 float4 _c13; //.xy = blur2_min,blur2_max; .zw = blur3_min, blur3_max.
-float4 _c14; // mouse
+float4 _c14 = float4(0.5, 0.5, 0, 0); // mouse
 
 // Introduced by Milkwave
 float4 _c15 = float4(0, 0, 0, 0); // bass_smooth, mid_smooth, treb_smooth, vol_smooth
@@ -74,6 +74,7 @@ float4x3 rot_rand4;
 #define treb_att _c4.z
 #define vol_att  _c4.w
 
+#define mouse _c14
 #define mouse_x _c14.x
 #define mouse_y _c14.y
 #define mouse_pos _c14.xy

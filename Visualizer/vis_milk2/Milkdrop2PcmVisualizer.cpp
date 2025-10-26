@@ -1042,28 +1042,28 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   case WM_RBUTTONDOWN:
   case WM_NCRBUTTONDOWN: // Right mouse button pressed
     // If plugin-level mouse interaction is enabled, let the plugin handle the event.
+    rightMouseButtonHeld = true;
     if (g_plugin.m_bEnableMouseInteraction) {
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
     }
-    rightMouseButtonHeld = true;
     break;
 
   case WM_RBUTTONUP:
   case WM_NCRBUTTONUP: // Right mouse button released
+    rightMouseButtonHeld = false;
     if (g_plugin.m_bEnableMouseInteraction) {
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
     }
-    rightMouseButtonHeld = false;
     break;
 
   case WM_LBUTTONDOWN:
   case WM_NCLBUTTONDOWN: // Left mouse button pressed
-    //if (g_plugin.m_bEnableMouseInteraction) {
-    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-    //}
     if (rightMouseButtonHeld) {
       // Right + Left
       PostMessage(hWnd, WM_CLOSE, 0, 0); // Close the window
+    }
+    else {
+      return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
     }
     break;
 
@@ -1077,9 +1077,6 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_MBUTTONDOWN:
   case WM_NCMBUTTONDOWN: // Middle mouse button clicked
-    //if (g_plugin.m_bEnableMouseInteraction) {
-    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-    //}
     if (rightMouseButtonHeld) {
       // Right + Middle
       g_plugin.OpenMilkwaveRemote();
