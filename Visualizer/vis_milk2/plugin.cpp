@@ -5991,7 +5991,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     return 0;
 
 
-  case WM_LBUTTONDOWN:
+  //case WM_LBUTTONDOWN:
   case WM_RBUTTONDOWN:
     m_mouseDown = 1;
     m_mouseClicked = 2; //no. of frames you set when you click (not to be confused with mouse held down)
@@ -5999,7 +5999,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     m_lastMouseY = -m_mouseY + 1;
     break;
 
-  case WM_LBUTTONUP:
+  //case WM_LBUTTONUP:
   case WM_RBUTTONUP:
     m_mouseDown = 0;
     break;

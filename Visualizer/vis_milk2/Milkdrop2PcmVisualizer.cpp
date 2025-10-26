@@ -959,7 +959,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
       // When mouse interaction is enabled, let the plugin handle client-area mouse events.
       // Still allow resizing by returning the correct HT* edge codes for the border zones.
-      if (g_plugin.m_bEnableMouseInteraction) {
+      if (g_plugin.m_bEnableMouseInteraction && !(GetAsyncKeyState(VK_LBUTTON) & 0x8000)) {
         if (x < BORDERWIDTH && y < BORDERWIDTH)
           return HTTOPLEFT;
         else if (x > rect.right - rect.left - BORDERWIDTH && y < BORDERWIDTH)
@@ -1058,9 +1058,9 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_LBUTTONDOWN:
   case WM_NCLBUTTONDOWN: // Left mouse button pressed
-    if (g_plugin.m_bEnableMouseInteraction) {
+    //if (g_plugin.m_bEnableMouseInteraction) {
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-    }
+    //}
     if (rightMouseButtonHeld) {
       // Right + Left
       PostMessage(hWnd, WM_CLOSE,0,0); // Close the window
@@ -1069,17 +1069,17 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_LBUTTONUP:
   case WM_NCLBUTTONUP: // Left mouse button released
-    if (g_plugin.m_bEnableMouseInteraction) {
+    //if (g_plugin.m_bEnableMouseInteraction) {
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-    }
+    //}
     // no special action on left button up in existing logic
     break;
 
   case WM_MBUTTONDOWN:
   case WM_NCMBUTTONDOWN: // Middle mouse button clicked
-    if (g_plugin.m_bEnableMouseInteraction) {
+    //if (g_plugin.m_bEnableMouseInteraction) {
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-    }
+    //}
     if (rightMouseButtonHeld) {
       // Right + Middle
       g_plugin.OpenMilkwaveRemote();
@@ -1092,9 +1092,9 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_LBUTTONDBLCLK:
   {
-    if (g_plugin.m_bEnableMouseInteraction) {
+    //if (g_plugin.m_bEnableMouseInteraction) {
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
-    }
+    //}
     // only triggered when coming back from fullscreen
     ToggleFullScreen(hWnd);
     break;
@@ -1892,7 +1892,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
   // swprintf(cwd, sizeof(cwd) / sizeof(cwd[0]), L"WinMain: WorkingDir=%s\n", cwd);
   // Append backslash if not present
   size_t len = wcslen(g_plugin.m_szBaseDir);
-  if (len >0 && g_plugin.m_szBaseDir[len -1] != L'\\') {
+  if (len >0 && g_plugin.m_szBaseDir[len - 1] != L'\\') {
  if (len < MAX_PATH -1) { // Ensure space for backslash and null terminator
       g_plugin.m_szBaseDir[len] = L'\\';
       g_plugin.m_szBaseDir[len +1] = L'\0';
