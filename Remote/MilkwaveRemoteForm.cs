@@ -3707,15 +3707,27 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void statusBar_Click(object sender, EventArgs e) {
+    private void statusBar_MouseDown(object? sender, MouseEventArgs e) {
       try {
-        if (statusBar.Text != null && !statusBar.Text.StartsWith("Copied ")) {
+        if (e.Button == MouseButtons.Middle) {
+          // MMB action
+          Width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + 57;
+          Height = cboAudioDevice.Top + cboAudioDevice.Height + statusBar.Height + 137;
+          return;
+        }
+
+        if (e.Button == MouseButtons.Right) {
+          // right-click action (existing behavior)
+          // show help dialog or context menu...
+          return;
+        }
+
+        // left click (fallback)
+        if (!string.IsNullOrEmpty(statusBar.Text) && !statusBar.Text.StartsWith("Copied ")) {
           Clipboard.SetText(statusBar.Text);
           SetStatusText($"Copied '{statusBar.Text}' to clipboard");
         }
-      } catch (Exception) {
-        // ignore
-      }
+      } catch { /* ignore */ }
     }
 
     private void SetCurrentShaderLineNumber() {
@@ -4674,5 +4686,6 @@ namespace MilkwaveRemote {
         SendToMilkwaveVisualizer("", MessageType.QualityAuto);
       }
     }
+
   } // end class
 } // end namespace

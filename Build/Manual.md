@@ -148,6 +148,8 @@ For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolut
 
 With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" Spout resolution is used.
 
+If you select "Auto", Milkwave tries to make the "perceived" Visualizer quality similar on different window sizes by adjusting the backbuffer size accordingly.
+
 Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
 
 Keep in mind that most settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).

@@ -429,7 +429,7 @@ namespace MilkwaveRemote
       statusBar.Size = new Size(494, 20);
       statusBar.Spring = true;
       statusBar.TextAlign = ContentAlignment.TopLeft;
-      statusBar.Click += statusBar_Click;
+      statusBar.MouseDown += statusBar_MouseDown;
       // 
       // toolStripStatusLabelMonitorCPU
       // 

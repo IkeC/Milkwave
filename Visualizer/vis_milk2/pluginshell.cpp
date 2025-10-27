@@ -2711,7 +2711,7 @@ float CPluginShell::GetEffectiveRenderQuality(int width, int height) {
     float window_pixels = (float)width * (float)height;
     q = q * sqrt(avg_pixels / window_pixels);
   }
-  return q;
+  return clamp(q, 0.01, 1);
 }
 
 void CPluginShell::ResetBufferAndFonts() {

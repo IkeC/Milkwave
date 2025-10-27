@@ -3,6 +3,7 @@
 * Settings Tab: Shift Hue/Saturation/Brightness of the entire output
 * Presets Tab: Filter preset list (Ctrl+F)
 * Mouse interation mode (Ctrl+M) (base by @OfficialIncubo)
+* "Auto" quality setting for constant perceived quality on different window sizes
 * Option to disable audio capture (bEnableAudioCapture=0)
 * New oder modified shaders
   - New: diatribes + IkeC - Vibe Ride

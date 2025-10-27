@@ -10964,11 +10964,11 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"VAR_QUALITY=", 12) == 0) {
     std::wstring message(sMessage + 12);
     g_plugin.m_fRenderQuality = std::stof(message);
-
     ResetBufferAndFonts();
-  } 
+  }
   else if (wcsncmp(sMessage, L"VAR_AUTO=", 9) == 0) {
     g_plugin.bQualityAuto = (sMessage[9] == L'1');
+    ResetBufferAndFonts();
   }
   else if (wcsncmp(sMessage, L"SPOUT_ACTIVE=", 13) == 0) {
     wchar_t status = sMessage[13];
