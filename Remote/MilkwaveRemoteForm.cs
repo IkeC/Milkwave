@@ -3972,7 +3972,11 @@ namespace MilkwaveRemote {
     private void btnHLSLLoad_Click(object sender, EventArgs e) {
 
       if (string.IsNullOrEmpty(ofdShaderHLSL.InitialDirectory)) {
-        ofdShaderHLSL.InitialDirectory = Path.Combine(ShaderFilesFolder);
+        if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+          ofdShaderHLSL.InitialDirectory = Path.Combine(ShaderFilesFolder);
+        } else {
+          ofdShaderHLSL.InitialDirectory = Path.Combine(VisualizerPresetsFolder);
+        }
       }
 
       if (ofdShaderHLSL.ShowDialog() == DialogResult.OK) {

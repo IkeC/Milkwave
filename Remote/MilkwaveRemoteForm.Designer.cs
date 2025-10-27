@@ -2193,7 +2193,7 @@ namespace MilkwaveRemote
       btnHLSLLoad.Size = new Size(23, 23);
       btnHLSLLoad.TabIndex = 149;
       btnHLSLLoad.Text = "L";
-      toolTip1.SetToolTip(btnHLSLLoad, "Load HLSL shader code from HLSL or preset file\r\n(restoring Shaderinfo lines)");
+      toolTip1.SetToolTip(btnHLSLLoad, "Load HLSL shader code from .hlsl or .milk file\r\n(restoring Shaderinfo lines)");
       btnHLSLLoad.UseVisualStyleBackColor = true;
       btnHLSLLoad.Click += btnHLSLLoad_Click;
       // 

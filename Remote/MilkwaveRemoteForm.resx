@@ -594,7 +594,7 @@ Hold Alt while changing value: Set increment to 0.05</value>
     <value>/*
 Left pane: GLSL code to convert
 
-This tool is mainly aimed at preset authors. Most of the time, the converter will not produce a working preset without manual adjustments.
+This tool is mainly aimed at preset authors. Most of the time, the converter will not produce a working preset from HLSL code without some manual adjustments.
 
 Please refer to the Milkwave manual by pressing '?' in the upper left corner.
 */</value>
