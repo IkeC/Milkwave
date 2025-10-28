@@ -43,5 +43,7 @@
     "VisShift": 0.0,
     "VisVersion": 1,
     "MidiEnabled": true,
-    "MidiBufferDelay": 30
+    "MidiBufferDelay": 30,
+    "ShadertoyFilesDirectory": "",
+    "ShadertoyFileIndex": 1
 }

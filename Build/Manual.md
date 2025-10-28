@@ -50,11 +50,11 @@ If a burntime > 0 is defined, the message will be "baked" into the background an
 
 This tab can convert GLSL shader code (eg. from Shadertoy.com) to HLSL shader code, save it to a preset file and display it in the Visualizer instantly.
 
-You may load code from Shadertoy.com by entering an ID or URL and click "Load". You may load the n-th "newest", "hot" etc. entry from Shadertoy.com, or load code from a file. Of course, you can also simply paste code into the left pane. If loaded from Shadertoy, the shader author, name and URL will be put into the shaderinfo box below the panes.
+Click "Dir" to select a folder containing Shadertoy .json files. A possible source is [github.com/GabeRundlett/shadertoy-api-shaders](https://github.com/GabeRundlett/shadertoy-api-shaders). Select the file you want to load by changing the index number and clicking "Load". "Next" will automatically load the next file. Both "Load" and "Next" will convert and send the shader code to the Visualizer immediately. Your last selected directory and index number are saved to _settings-remote.json_ and restored upon restart.
 
 You can show/hide the left pane with the "<" button. Click "Convert" to convert the GLSL code from the left pane to HLSL code in the right pane. Use "Send" to save a preset from the code and send it to the Visualizer.
 
-The "File" checkbox determines whether the preset name is built from the shaderinfo line or not. If you test many different shader code snippets, you may not want to produce a (possibly not working) preset file everytime, so if "File" is unchecked, the default filename "Shader.milk" will be used (and overwritten each time). You can set the pixel shader version written to the preset file using the number box before the "Send" button. If unsure, leave it at 4.
+The "File" checkbox determines whether the preset filename is built from the shaderinfo line or not. If you test many different shader code snippets, you may not want to produce a (possibly not working) preset file everytime, so if "File" is unchecked, the default filename "Shader.milk" will be used (and overwritten each time). You can set the pixel shader version written to the preset file using the number box before the "Send" button. If unsure, leave it at 4.
 
 Note that the conversion process will most likely not produce a working preset right away, as some logical statements, terms and expressions cannot be converted easily. Some common problems are listed below, and I highly recommend at least watching the great [How to create Presets from OpenGL Shaders](https://www.youtube.com/watch?v=Ur2gPa996Aw) video by Patrick Pomerleau (also listed below) to understand the process.
 

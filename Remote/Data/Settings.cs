@@ -27,5 +27,8 @@
 
     public bool MidiEnabled { get; set; } = true;
     public int MidiBufferDelay { get; set; } = 30;
+
+    public string ShadertoyFilesDirectory { get; set; } = "";
+    public int ShadertoyFileIndex { get; set; } = 1;
   }
 }

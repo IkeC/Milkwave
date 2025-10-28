@@ -106,6 +106,7 @@ namespace MilkwaveRemote {
 
     private List<Data.Preset> PresetsMasterList = new List<Data.Preset>();
     private List<String> shadertoyQueryList = new List<String>();
+    private List<String> shadertoyFilesList = new List<String>();
 
     private Random rnd = new Random();
     private Settings Settings = new Settings();
@@ -403,7 +404,7 @@ namespace MilkwaveRemote {
       }
 
       ofdShader = new OpenFileDialog();
-      ofdShader.Filter = "GLSL files|*.glsl|All files (*.*)|*.*";
+      ofdShader.Filter = "GLSL files|*.glsl|Shadertoy files|*.json|All files (*.*)|*.*";
       ofdShader.InitialDirectory = Path.Combine(BaseDir, ShaderFilesFolder);
 
       ofdShaderHLSL = new OpenFileDialog();
@@ -453,6 +454,12 @@ namespace MilkwaveRemote {
         numOffset.Value = lines + 8;
       } catch (Exception ex) {
         // ignore
+      }
+
+      if (!string.IsNullOrEmpty(Settings.ShadertoyFilesDirectory)) {
+        setShadertoyFilesFromDir(Settings.ShadertoyFilesDirectory);
+        numShadertoyFileIndex.Value = Math.Clamp(Settings.ShadertoyFileIndex, 1, shadertoyFilesList.Count);
+        setShadertoyFileText();
       }
     }
 
@@ -3690,19 +3697,21 @@ namespace MilkwaveRemote {
 
       if (ofdShader.ShowDialog() == DialogResult.OK) {
         ofdShader.InitialDirectory = Path.GetDirectoryName(ofdShader.FileName);
-        String shaderInput = ofdShader.FileName;
-        if (File.Exists(shaderInput)) {
+        String shaderInputFile = ofdShader.FileName;
+        if (File.Exists(shaderInputFile)) {
+          string fileString = File.ReadAllText(shaderInputFile);
           try {
-            // Read the shader content from the input file
-            string shaderContent = File.ReadAllText(shaderInput);
-            txtShaderGLSL.Text = shaderContent;
-            // Notify the user
-            SetStatusText($"Shader loaded from {shaderInput}");
+            if (shaderInputFile.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) {
+              loadShaderFromJson(fileString, false);
+            } else {
+              txtShaderGLSL.Text = fileString;
+            }
+            SetStatusText($"Shader loaded from {shaderInputFile}");
           } catch (Exception ex) {
             SetStatusText($"Error loading shader: {ex.Message}");
           }
         } else {
-          SetStatusText($"Shader input file not found: {shaderInput}");
+          SetStatusText($"Shader input file not found: {shaderInputFile}");
         }
       }
     }
@@ -3713,17 +3722,12 @@ namespace MilkwaveRemote {
           // MMB action
           Width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + 57;
           Height = cboAudioDevice.Top + cboAudioDevice.Height + statusBar.Height + 137;
-          return;
-        }
-
-        if (e.Button == MouseButtons.Right) {
-          // right-click action (existing behavior)
-          // show help dialog or context menu...
-          return;
-        }
-
-        // left click (fallback)
-        if (!string.IsNullOrEmpty(statusBar.Text) && !statusBar.Text.StartsWith("Copied ")) {
+          toolStripMenuItemButtonPanel.Checked = false;
+          SetPanelsVisibility();
+        } else if (e.Button == MouseButtons.Right) {
+          toolStripMenuItemButtonPanel.Checked = true;
+          SetPanelsVisibility();
+        } else if (!string.IsNullOrEmpty(statusBar.Text) && !statusBar.Text.StartsWith("Copied ")) {
           Clipboard.SetText(statusBar.Text);
           SetStatusText($"Copied '{statusBar.Text}' to clipboard");
         }
@@ -3766,43 +3770,49 @@ namespace MilkwaveRemote {
       using var httpClient = new HttpClient();
       try {
         var jsonString = httpClient.GetStringAsync(url).Result;
-        JsonDocument doc = JsonDocument.Parse(jsonString);
-        if (doc.RootElement.TryGetProperty("Error", out JsonElement elError)) {
-          // If the error property exists, it means the shader was not found
-          SetStatusText($"Shadertoy.com says: {elError.GetString()}");
-          return;
-        }
-
-        JsonElement elShader = doc.RootElement.GetProperty("Shader");
-        JsonElement elInfo = elShader.GetProperty("info");
-        string? shaderId = elInfo.GetProperty("id").GetString();
-        string? shaderName = elInfo.GetProperty("name").GetString();
-        string? shaderUsername = elInfo.GetProperty("username").GetString();
-        string? date = elInfo.GetProperty("date").GetString();
-        if (long.TryParse(date, out long unixTimestamp)) {
-          DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp);
-          string formattedDate = dateTimeOffset.ToString("yyyy-MM-dd HH:mm:ss");
-          toolTip1.SetToolTip(txtShaderinfo, formattedDate);
-        }
-
-        JsonElement firstRenderpassElement = elShader.GetProperty("renderpass").EnumerateArray().First();
-        string? shaderCode = firstRenderpassElement.GetProperty("code").GetString();
-        if (shaderCode == null) {
-          SetStatusText("Shader code not found in the response");
-        } else {
-          txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"https://www.shadertoy.com/view/{shaderId}";
-          string? formattedShaderCode = shaderCode?.Replace("\n", Environment.NewLine);
-          txtShaderGLSL.Text = formattedShaderCode;
-
-          if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
-            ConvertShader();
-            btnSendShader_Click(null, null);
-          }
-          SetStatusText($"Shader code loaded and converted");
-        }
+        loadShaderFromJson(jsonString, true);
 
       } catch (Exception ex) {
         SetStatusText($"Loading failed: {ex.Message}");
+      }
+    }
+
+    private void loadShaderFromJson(string jsonString, bool autoSend) {
+      JsonDocument doc = JsonDocument.Parse(jsonString);
+      if (doc.RootElement.TryGetProperty("Error", out JsonElement elError)) {
+        // If the error property exists, it means the shader was not found
+        SetStatusText($"Error: {elError.GetString()}");
+        return;
+      }
+
+      JsonElement elShader = doc.RootElement.GetProperty("Shader");
+      JsonElement elInfo = elShader.GetProperty("info");
+      string? shaderId = elInfo.GetProperty("id").GetString();
+      string? shaderName = elInfo.GetProperty("name").GetString();
+      string? shaderUsername = elInfo.GetProperty("username").GetString();
+      string? date = elInfo.GetProperty("date").GetString();
+      if (long.TryParse(date, out long unixTimestamp)) {
+        DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp);
+        string formattedDate = dateTimeOffset.ToString("yyyy-MM-dd HH:mm:ss");
+        toolTip1.SetToolTip(txtShaderinfo, formattedDate);
+      }
+
+      JsonElement firstRenderpassElement = elShader.GetProperty("renderpass").EnumerateArray().First();
+      string? shaderCode = firstRenderpassElement.GetProperty("code").GetString();
+      if (shaderCode == null) {
+        SetStatusText("Shader code not found in the response");
+      } else {
+        txtShaderinfo.Text = $"{shaderUsername} - {shaderName}" + Environment.NewLine + $"https://www.shadertoy.com/view/{shaderId}";
+        string? formattedShaderCode = shaderCode?.Replace("\n", Environment.NewLine);
+        txtShaderGLSL.Text = formattedShaderCode;
+
+        if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
+          ConvertShader();
+          if (autoSend) {
+            btnSendShader_Click(null, null);
+          }
+        }
+        SetStatusText($"Shader code loaded and converted");
       }
     }
 
@@ -3951,8 +3961,12 @@ namespace MilkwaveRemote {
 
     private void cboShadertoyID_Click(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-        OpenURL($"https://www.shadertoy.com/view/{cboShadertoyID.Text}");
+        openShadertoyURLForId(cboShadertoyID.Text.Trim());
       }
+    }
+
+    private void openShadertoyURLForId(string id) {
+      OpenURL($"https://www.shadertoy.com/view/{id}");
     }
 
     private void chkShaderLeft_CheckedChanged(object sender, EventArgs e) {
@@ -4684,6 +4698,88 @@ namespace MilkwaveRemote {
     private void chkQualityAuto_CheckedChanged(object sender, EventArgs e) {
       if (!updatingSettingsParams) {
         SendToMilkwaveVisualizer("", MessageType.QualityAuto);
+      }
+    }
+
+    private void btnShadertoyFilesLoad_Click(object sender, EventArgs e) {
+      using (var fbd = new FolderBrowserDialog()) {
+        if (Directory.Exists(VisualizerPresetsFolder)) {
+          fbd.InitialDirectory = VisualizerPresetsFolder;
+        } else {
+          fbd.InitialDirectory = BaseDir;
+        }
+        if (fbd.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath)) {
+          // add all .json files in the selected folder without file extension
+          var files = Directory.GetFiles(fbd.SelectedPath, "*.json");
+          // remove .json extension for all files
+          Settings.ShadertoyFilesDirectory = fbd.SelectedPath;
+          setShadertoyFilesFromDir(Settings.ShadertoyFilesDirectory);
+          numShadertoyFileIndex.Value = 1;
+          setShadertoyFileText();
+
+          SetStatusText($"Found {files.Length} files");
+        }
+      }
+    }
+
+    private void setShadertoyFilesFromDir(string directory) {
+      shadertoyFilesList.Clear();
+      var files = Directory.GetFiles(directory, "*.json");
+      foreach (var file in files) {
+        shadertoyFilesList.Add(Path.GetFileNameWithoutExtension(file));
+      }
+      shadertoyFilesList.Sort(StringComparer.InvariantCultureIgnoreCase);
+      numShadertoyFileIndex.Maximum = Math.Max(1, shadertoyFilesList.Count);
+    }
+
+    private void btnShadertoyFileLoadThis_Click(object? sender, EventArgs? e) {
+      // get selected file from shadertoyFilesList based on numShadertoyFileIndex
+      int index = (int)numShadertoyFileIndex.Value - 1;
+      if (index >= 0 && index < shadertoyFilesList.Count) {
+        string selectedFile = shadertoyFilesList[index];
+        string filePath = Path.Combine(Settings.ShadertoyFilesDirectory, selectedFile + ".json");
+        if (File.Exists(filePath)) {
+          try {
+            string jsonString = File.ReadAllText(filePath);
+            loadShaderFromJson(jsonString, true);
+          } catch (Exception ex) {
+            SetStatusText($"Error loading file: {ex.Message}");
+          }
+        } else {
+          SetStatusText($"Error: File {selectedFile}.json not found");
+        }
+      }
+    }
+
+    private void setShadertoyFileText() {
+      if (shadertoyFilesList.Count < numShadertoyFileIndex.Value) {
+        txtShadertoyFile.Text = "";
+      } else {
+        txtShadertoyFile.Text = shadertoyFilesList[(int)numShadertoyFileIndex.Value - 1];
+      }
+    }
+
+    private void btnShadertoyFileLoadNext_Click(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        if (numShadertoyFileIndex.Value > numShadertoyFileIndex.Minimum) {
+          numShadertoyFileIndex.Value = numShadertoyFileIndex.Value - 1;
+        }
+      } else {
+        if (numShadertoyFileIndex.Value < numShadertoyFileIndex.Maximum) {
+          numShadertoyFileIndex.Value = numShadertoyFileIndex.Value + 1;
+        }
+      }
+      btnShadertoyFileLoadThis_Click(null, null);
+    }
+
+    private void numShadertoyFileIndex_ValueChanged(object sender, EventArgs e) {
+      setShadertoyFileText();
+      Settings.ShadertoyFileIndex = (int)numShadertoyFileIndex.Value;
+    }
+
+    private void txtShadertoyFile_MouseDown(object sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Middle) {
+        openShadertoyURLForId(txtShadertoyFile.Text);
       }
     }
 
