@@ -172,8 +172,8 @@ void SetAudioBuf(const BYTE* pData, const UINT32 nNumFramesToRead, const WAVEFOR
     // int8_t[-128 .. + 127] stored into uint8_t[0 .. 255]
     
     // Store averaged/downsampled values
-    pcmLeftLpb[(pcmPos + n) % SAMPLE_SIZE_LPB] = sumLeft / downsampleRatio;
-    pcmRightLpb[(pcmPos + n) % SAMPLE_SIZE_LPB] = sumRight / downsampleRatio;
+    pcmLeftLpb[(pcmPos + n) % SAMPLE_SIZE_LPB] = sumLeft / downsampleRatio * milkwave_amp_left;
+    pcmRightLpb[(pcmPos + n) % SAMPLE_SIZE_LPB] = sumRight / downsampleRatio * milkwave_amp_right;
   }
 
   pcmBufDrained = false;
