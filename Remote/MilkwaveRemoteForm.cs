@@ -4783,5 +4783,26 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void lblTags_MouseDown(object sender, MouseEventArgs e) {
+      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        if (MessageBox.Show("Remove tags for ALL presets?", "Please confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes) {
+          // remove tags-remote.json and reload tags to clear
+          string tagsFile = Path.Combine(BaseDir, "tags-remote.json");
+          if (File.Exists(tagsFile)) {
+            try {
+              File.Delete(tagsFile);
+              txtTags.Text = "";
+              Tags = new Tags();
+              SetTopTags();
+              SetStatusText("All tags cleared");
+            } catch (Exception ex) {
+              SetStatusText($"Error clearing tags: {ex.Message}");
+            }
+          } else {
+            SetStatusText("No tags file found to clear.");
+          }
+        }
+      }
+    }
   } // end class
 } // end namespace

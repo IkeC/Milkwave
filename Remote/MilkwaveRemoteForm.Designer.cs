@@ -1301,8 +1301,9 @@ namespace MilkwaveRemote
       lblTags.TabIndex = 122;
       lblTags.Text = "Tags";
       lblTags.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblTags, "Double-click: Clear tags");
+      toolTip1.SetToolTip(lblTags, "Double-click: Clear tags\r\nCtrl+Click: Clear ALL tags");
       lblTags.DoubleClick += lblTags_DoubleClick;
+      lblTags.MouseDown += lblTags_MouseDown;
       // 
       // chkWaveLink
       // 
