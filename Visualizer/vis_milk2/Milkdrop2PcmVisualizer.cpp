@@ -1703,7 +1703,7 @@ unsigned __stdcall DoSetup(void* param) {
     // Set UTF-8 locale for the output stream
     compiledList.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t>));
 
-    g_plugin.AddNotification(L"Shader cache empty, precompiling shaders\nRendering performance limited, please be patient", 10 * 60);
+    g_plugin.AddNotification(L"Shader cache empty, precompiling shaders", 10 * 60);
 
     int compiledShaders = 0;
     std::string line;

@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Build\precompile.txt = Build\precompile.txt
 		README.md = README.md
 		Build\README.txt = Build\README.txt
+		Install\release-zip.cmd = Install\release-zip.cmd
 		Build\release.cmd = Build\release.cmd
 		Build\script-default.txt = Build\script-default.txt
 		Build\settings-remote.json = Build\settings-remote.json

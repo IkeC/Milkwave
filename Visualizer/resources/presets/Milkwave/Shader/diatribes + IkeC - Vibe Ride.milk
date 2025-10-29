@@ -1,0 +1,93 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// diatribes + IkeC - Vibe Ride / https://www.shadertoy.com/view/wcBfR3
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx (sin(time)*0.5+1)
+comp_5=
+comp_6=#define T (time*.5)
+comp_7=#define P(z) (float3(cos((z) * .12) * 16., cos((z) * .1) * 16., (z)))
+comp_8=#define R(a) float2x2(cos(a), -sin(a), sin(a), cos(a))
+comp_9=#define N normalize
+comp_10=
+comp_11=float tunnel(float3 p) {
+comp_12=  p.xy -= P(p.z).xy;
+comp_13=  return cos(p.z*.2)*.45+.6 - length(p.xy);
+comp_14=}
+comp_15=
+comp_16=float fractal(float3 p) {
+comp_17=  float s,w,l;
+comp_18=
+comp_19=  p.z *= .3;
+comp_20=  p.x -= 1.25;
+comp_21=  p += cos(p.yzx*6.)*.3;
+comp_22=  for (s=0.,w=1.; s++ < 8.; p *= l, w *= l )
+comp_23=  p  = abs(sin(p))-1.,
+comp_24=  l = 1.25/dot(p,p);
+comp_25=
+comp_26=  return length(p)/w;
+comp_27=}
+comp_28=
+comp_29=float map(float3 p) {
+comp_30=  return max(fractal(p), tunnel(p));
+comp_31=}
+comp_32=
+comp_33=shader_body {
+comp_34=  float4 o = 0;
+comp_35=  // CONV: Center on screen, then try some aspect correction
+comp_36=  uv = (uv*2) - 1;
+comp_37=  uv *= aspect.xy;
+comp_38=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_39=  uv = float2(uv.x, -uv.y);
+comp_40=
+comp_41=  uv.x+=0.3;
+comp_42=
+comp_43=  float2 u = uv;
+comp_44=  float s=.1,d=0.,i=0.;
+comp_45=  
+comp_46=  float angle = sin(T * 0.2) * 0.4;
+comp_47=  float2 rotatedU = mul(R(angle), u); 
+comp_48=
+comp_49=
+comp_50=  float3 r = float3(uv,1);
+comp_51=  //u = (u-r.xy/2.)/r.y;
+comp_52=  
+comp_53=  float3  e = float3(.001,0,0),
+comp_54=  p = P(T),ro=p,
+comp_55=  Z = N( P(T+1.) - p),
+comp_56=
+comp_57=  X = N(float3(Z.z,0,-Z.z)),
+comp_58=  D = mul(float3(rotatedU, 1.0), float3x3(-X, cross(X, Z), Z));
+comp_59=
+comp_60=  o = float4(0, 0, 0, 0);
+comp_61=  for(;i++ < 128.;)
+comp_62=  p = ro + D * d * .5,
+comp_63=  d += s = map(p),
+comp_64=  o += 2.*float4(16,2,1,0) + .03*float4(1,2,5,4)/(.001+abs(s));
+comp_65=
+comp_66=  o *= o;
+comp_67=  //o = tanh(sqrt(o / 1e9 * exp(d/2.)));
+comp_68=  
+comp_69=  float fac = 1e9;
+comp_70=  float shift = 2.8;
+comp_71=  
+comp_72=  // react to audio
+comp_73=  #ifdef bass_smooth
+comp_74=    if (vis_version == 1) {
+comp_75=      float range = pow(4, vis_intensity);
+comp_76=      fac = fac * (1+2*range-clamp(0,2,bass_smooth)*range);
+comp_77=    } else if (vis_version == 2) {
+comp_78=      float range = pow(1.5, vis_intensity);
+comp_79=      fac = fac * (1+2*range-smoothstep(0,2,bass_att)*range);
+comp_80=    }
+comp_81=    shift += vis_shift;
+comp_82=  #else
+comp_83=    fac = fac * (4-smoothstep(0,2,bass_att)*1.5);
+comp_84=  #endif
+comp_85=  
+comp_86=  o = saturate(sqrt(o / fac * exp(d/shift)));
+comp_87=  
+comp_88=  ret = o;
+comp_89=}

@@ -5,6 +5,7 @@
 * Mouse interation mode (Ctrl+M) (base by @OfficialIncubo)
 * "Auto" quality setting for constant perceived quality on different window sizes
 * Option to disable audio capture (bEnableAudioCapture=0)
+* Fix: Restored amp functionality
 * New oder modified shaders
   - New: diatribes + IkeC - Vibe Ride
   - Mouse support: Kali + IkeC - Fractal Land
