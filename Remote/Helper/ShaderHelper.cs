@@ -22,6 +22,7 @@ namespace MilkwaveRemote.Helper {
         inp = inp.Replace("texture(", "tex2D(");
         inp = inp.Replace("highp ", "");
         inp = inp.Replace("void mainImage(", "mainImage(");
+        inp = inp.Replace("atan (", "atan(");
 
         int indexMainImage = inp.IndexOf("mainImage(");
 
@@ -119,6 +120,7 @@ namespace MilkwaveRemote.Helper {
 
           currentLine = FixMatrixMultiplication(currentLine);
           currentLine = FixFloatNumberOfArguments(currentLine, inp);
+          currentLine = FixAtan(currentLine);
 
           sb.AppendLine(currentLine);
         }
@@ -189,6 +191,24 @@ namespace MilkwaveRemote.Helper {
                   + result.Substring(index + 7 + indexcClosingBracket);
               }
             }
+          }
+        }
+      }
+      return result;
+    }
+
+    public string FixAtan(string inputLine) {
+      string result = inputLine;
+      int index = inputLine.IndexOf("atan(");
+      if (index > -1) {
+        string restOfLine = inputLine.Substring(index + 5);
+        // find closing bracket
+        int indexcClosingBracket = FindClosingBracketIndex(restOfLine, '(', ')', 1);
+        if (indexcClosingBracket > 0) {
+          string argsLine = restOfLine.Substring(0, indexcClosingBracket);
+          if (argsLine.Contains(",")) {
+            // two arguments
+            result = inputLine.Replace("atan(", "atan2(");
           }
         }
       }
