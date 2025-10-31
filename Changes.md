@@ -1,4 +1,4 @@
-## v3.3 (unreleased)
+## v3.3 (2025-10-31)
 
 * Settings Tab: Shift Hue/Saturation/Brightness of the entire output
 * Presets Tab: Filter preset list (Ctrl+F)
@@ -6,9 +6,11 @@
 * "Auto" quality setting for constant perceived quality on different window sizes
 * Option to disable audio capture (bEnableAudioCapture=0)
 * Fix: Restored amp functionality
-* New oder modified shaders
+* New or modified presets
   - New: diatribes + IkeC - Vibe Ride
+  - New: lara - MilkDrop2077 - Flexi Romanesco Uncompressed (mouse)
   - Mouse support: Kali + IkeC - Fractal Land
+  - Mouse support: chronos + IkeC - Astral Jelly Journey
 
 ## v3.2 (2025-10-03)
 
