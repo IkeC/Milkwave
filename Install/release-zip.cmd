@@ -9,7 +9,7 @@ set "SCRIPT_DIR=%~dp0"
 set "RELEASE_DIR=%SCRIPT_DIR%..\Release"
 set "SEVENZ=C:\Program Files\7-Zip\7z.exe"
 
-set "OUTPUT=%SCRIPT_DIR%\Milkwave-Portable-%VERSION%.zip"
+set "OUTPUT=%SCRIPT_DIR%\Milkwave-%VERSION%-Portable.zip"
 if exist "%OUTPUT%" del /f /q "%OUTPUT%" 2>nul
 
 pushd "%RELEASE_DIR%"
