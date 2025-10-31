@@ -4769,6 +4769,10 @@ namespace MilkwaveRemote {
           numShadertoyFileIndex.Value = numShadertoyFileIndex.Value + 1;
         }
       }
+      if (numShadertoyFileIndex.Value % 5 == 0) {
+        // every 5 files save the settings to prevent loss
+        SaveSettingsToFile();
+      }
       btnShadertoyFileLoadThis_Click(null, null);
     }
 

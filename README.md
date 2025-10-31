@@ -55,6 +55,7 @@
 * Settings
   - Change internal time, FPS and frame counters to slow down or speed up some presets
   - Adjust "Intensity", "Shift" and "Version" live for supported presets (eg. Milkwaves shader presets)
+  - Shift color output (hue, saturation, brightness) live for all presets
   - Control Spout output settings
   - Adjust render quality to improve performance and/or pixellize output
   - Quick access to configuration files
@@ -120,6 +121,12 @@ Milkwave Visualizer (as a BeatDrop fork) is licensed under the [3-Clause BSD Lic
 
 Although the original Matthew van Eerde's [loopback-capture](https://github.com/mvaneerde/blog) project didn't explicitly state the license, the author has been kind enough to provide a license clarification [here](
 https://blogs.msdn.microsoft.com/matthew_van_eerde/2014/11/05/draining-the-wasapi-capture-buffer-fully/). All changes in this repository to the original Matthew's code are published either under the terms of BSD license or the license provided by original author.
+
+## Public use of presets
+
+The presets themselves are not covered by either of these licenses, they either have their own license or none (in most cases). None of the presets in Milkwave should have a restrictive license preventing you from using them in public. All preset filenames from shaders I converted have the original author's name in them, with the full original source mentioned in the preset file itself.
+
+So, my pragmatic and common sense approach would be: Always keep in mind that you are using the artistic work of someone else. Respect the original authors work by showing the preset filename (at least briefly), and you should be fine.
 
 ## Contributions
 
