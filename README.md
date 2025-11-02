@@ -17,9 +17,13 @@
 * Over 5000 presets from skilled artists (more presets [here](https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets))
 * Improved window handling, input methods and stability
 * Use independently or in combination with Milkwave Remote
- 
+
 ## Remote Features
 
+* Customizable interface - show only what you need
+* Send common key combinations using buttons
+* Set audio device (in- or output) without restarting Visualizer
+* Amplify virtual audio signal to make Visualizer more (or less) responsive
 * Tabbed interface with hideable top and bottom panel
 
 ![Milkwave 3.2 Tabs](https://github.com/user-attachments/assets/a244f59b-8070-4314-be2d-ceb3259b33c5)
@@ -39,8 +43,7 @@
 * Shader code conversion
   - Convert GLSL shader code to HLSL
   - Preview converted code in the Visualizer instantly
-  - Load shaders by id or query from Shadertoy.com using Shadertoy API
-  - Load and save HLSL code to a file
+  - Load shader definitions from Shadertoy files
 * Wave manipulation
   - Clear current preset and start with a plain wave
   - Set wave type, zoom, warp, rotation etc. in the running preset
@@ -55,15 +58,10 @@
 * Settings
   - Change internal time, FPS and frame counters to slow down or speed up some presets
   - Adjust "Intensity", "Shift" and "Version" live for supported presets (eg. Milkwaves shader presets)
-  - Shift color output (hue, saturation, brightness) live for all presets
-  - Control Spout output settings
+  - Shift color output (Hue, Saturation, Brightness) live for all presets
+  - Control Spout output behaviour
   - Adjust render quality to improve performance and/or pixellize output
   - Quick access to configuration files
-* Customizable interface - show only what you need
-* Send common key combinations using buttons
-* Set audio device without restarting Visualizer
-* Support for input devices (eg. microphones)
-* Amplify virtual audio signal to make Visualizer more (or less) responsive
 
 There are many tooltips explaining all features when you hover over the form elements. Clicking the "Autoplay" button on the Message tab will run the default script file, demonstrating many Milkwave features.
 
@@ -122,11 +120,11 @@ Milkwave Visualizer (as a BeatDrop fork) is licensed under the [3-Clause BSD Lic
 Although the original Matthew van Eerde's [loopback-capture](https://github.com/mvaneerde/blog) project didn't explicitly state the license, the author has been kind enough to provide a license clarification [here](
 https://blogs.msdn.microsoft.com/matthew_van_eerde/2014/11/05/draining-the-wasapi-capture-buffer-fully/). All changes in this repository to the original Matthew's code are published either under the terms of BSD license or the license provided by original author.
 
-## Public use of presets
+## Public use of MilkDrop Presets
 
 The presets themselves are not covered by either of these licenses, they either have their own license or none (in most cases). None of the presets in Milkwave should have a restrictive license preventing you from using them in public. All preset filenames from shaders I converted have the original author's name in them, with the full original source mentioned in the preset file itself.
 
-So, my pragmatic and common sense approach would be: Always keep in mind that you are using the artistic work of someone else. Respect the original authors work by showing the preset filename (at least briefly), and you should be fine.
+So, my pragmatic and common sense approach would be: Always keep in mind that you are using the artistic work of someone else. Respect the original authors work by showing the preset filename (at least briefly), and you should be fine. If in doubt, always ask the creator of the piece you use.
 
 ## Contributions
 
