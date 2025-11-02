@@ -3747,7 +3747,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnShaderConvert_Click(object sender, EventArgs e) {
-      ConvertShader();
+      ConvertShader(true);
     }
 
     private void btnLoadShadertoyID_Click(object? sender, EventArgs? e) {
@@ -3797,7 +3797,13 @@ namespace MilkwaveRemote {
         toolTip1.SetToolTip(txtShaderinfo, formattedDate);
       }
 
-      JsonElement firstRenderpassElement = elShader.GetProperty("renderpass").EnumerateArray().First();
+      var renderpassElements = elShader.GetProperty("renderpass").EnumerateArray();
+      ShaderHelper.ConversionErrors.Clear();
+      if (renderpassElements.Count() > 1) {
+        ShaderHelper.ConversionErrors.AppendLine("Multipass shaders (" + renderpassElements.Count() + ") not supported");
+      }
+
+      JsonElement firstRenderpassElement = renderpassElements.First();
       string? shaderCode = firstRenderpassElement.GetProperty("code").GetString();
       if (shaderCode == null) {
         SetStatusText("Shader code not found in the response");
@@ -3807,7 +3813,7 @@ namespace MilkwaveRemote {
         txtShaderGLSL.Text = formattedShaderCode;
 
         if (!String.IsNullOrEmpty(txtShaderGLSL.Text)) {
-          ConvertShader();
+          ConvertShader(renderpassElements.Count() <= 1);
           if (autoSend) {
             btnSendShader_Click(null, null);
           }
@@ -3826,8 +3832,8 @@ namespace MilkwaveRemote {
       return sb.ToString();
     }
 
-    private void ConvertShader() {
-      txtShaderHLSL.Text = ShaderHelper.ConvertGLSLtoHLSL(txtShaderGLSL.Text);
+    private void ConvertShader(bool clearErrors) {
+      txtShaderHLSL.Text = ShaderHelper.ConvertGLSLtoHLSL(txtShaderGLSL.Text, clearErrors);
       if (ShaderHelper.ConversionErrors.Length > 0) {
         picShaderError.Visible = true;
         toolTip1.SetToolTip(picShaderError, ShaderHelper.ConversionErrors.ToString());
@@ -4773,7 +4779,11 @@ namespace MilkwaveRemote {
         // every 5 files save the settings to prevent loss
         SaveSettingsToFile();
       }
+      chkShaderFile.Checked = false;
       btnShadertoyFileLoadThis_Click(null, null);
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        openShadertoyURLForId(txtShadertoyFile.Text);
+      }
     }
 
     private void numShadertoyFileIndex_ValueChanged(object sender, EventArgs e) {

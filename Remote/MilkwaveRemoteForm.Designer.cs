@@ -2054,7 +2054,7 @@ namespace MilkwaveRemote
       // btnLoadShaderInputFromFile
       // 
       btnLoadShaderInputFromFile.FlatStyle = FlatStyle.System;
-      btnLoadShaderInputFromFile.Location = new Point(310, 5);
+      btnLoadShaderInputFromFile.Location = new Point(318, 5);
       btnLoadShaderInputFromFile.Name = "btnLoadShaderInputFromFile";
       btnLoadShaderInputFromFile.Size = new Size(49, 23);
       btnLoadShaderInputFromFile.TabIndex = 28;
@@ -2550,7 +2550,7 @@ namespace MilkwaveRemote
       // 
       // txtShadertoyFile
       // 
-      txtShadertoyFile.Location = new Point(48, 6);
+      txtShadertoyFile.Location = new Point(49, 6);
       txtShadertoyFile.Name = "txtShadertoyFile";
       txtShadertoyFile.ReadOnly = true;
       txtShadertoyFile.Size = new Size(79, 23);
@@ -2562,19 +2562,19 @@ namespace MilkwaveRemote
       // btnShadertoyFileLoadNext
       // 
       btnShadertoyFileLoadNext.FlatStyle = FlatStyle.System;
-      btnShadertoyFileLoadNext.Location = new Point(251, 5);
+      btnShadertoyFileLoadNext.Location = new Point(257, 5);
       btnShadertoyFileLoadNext.Name = "btnShadertoyFileLoadNext";
       btnShadertoyFileLoadNext.Size = new Size(55, 23);
       btnShadertoyFileLoadNext.TabIndex = 145;
       btnShadertoyFileLoadNext.Text = "Next";
-      toolTip1.SetToolTip(btnShadertoyFileLoadNext, "Go to next file, then load that shader\r\nCtrl+Click: Go to previous");
+      toolTip1.SetToolTip(btnShadertoyFileLoadNext, "Go to next file, then load that shader\r\nCtrl+Click: Go to previous\r\nAlt-Click: Also open on Shadertoy.com");
       btnShadertoyFileLoadNext.UseVisualStyleBackColor = true;
       btnShadertoyFileLoadNext.Click += btnShadertoyFileLoadNext_Click;
       // 
       // btnShadertoyFileLoadThis
       // 
       btnShadertoyFileLoadThis.FlatStyle = FlatStyle.System;
-      btnShadertoyFileLoadThis.Location = new Point(192, 5);
+      btnShadertoyFileLoadThis.Location = new Point(196, 5);
       btnShadertoyFileLoadThis.Name = "btnShadertoyFileLoadThis";
       btnShadertoyFileLoadThis.Size = new Size(55, 23);
       btnShadertoyFileLoadThis.TabIndex = 144;
@@ -2585,7 +2585,7 @@ namespace MilkwaveRemote
       // 
       // numShadertoyFileIndex
       // 
-      numShadertoyFileIndex.Location = new Point(131, 6);
+      numShadertoyFileIndex.Location = new Point(133, 6);
       numShadertoyFileIndex.Margin = new Padding(3, 2, 3, 2);
       numShadertoyFileIndex.Maximum = new decimal(new int[] { 99999, 0, 0, 0 });
       numShadertoyFileIndex.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -3552,9 +3552,9 @@ namespace MilkwaveRemote
       panShadertoyLocal.Controls.Add(btnShadertoyFilesLoadDir);
       panShadertoyLocal.Controls.Add(btnLoadShaderInputFromFile);
       panShadertoyLocal.Controls.Add(panShadertoyAPI);
-      panShadertoyLocal.Location = new Point(0, 0);
+      panShadertoyLocal.Location = new Point(0, 1);
       panShadertoyLocal.Name = "panShadertoyLocal";
-      panShadertoyLocal.Size = new Size(362, 32);
+      panShadertoyLocal.Size = new Size(370, 32);
       panShadertoyLocal.TabIndex = 150;
       // 
       // panShadertoyAPI
