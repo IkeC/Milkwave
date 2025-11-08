@@ -307,12 +307,12 @@ bool spoutDX9::SetSenderName(const char* sendername)
 	}
 
 	// If a sender with this name is already registered, create an incremented name
-	int i = 1;
+	int i = 2;
 	char name[256];
 	strcpy_s(name, 256, m_SenderName);
 	if (sendernames.FindSenderName(name)) {
 		do {
-			sprintf_s(name, 256, "%s_%d", m_SenderName, i);
+			sprintf_s(name, 256, "%s %d", m_SenderName, i);
 			i++;
 		} while (sendernames.FindSenderName(name));
 	}
