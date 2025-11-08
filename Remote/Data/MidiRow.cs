@@ -31,7 +31,7 @@
     public int? Value { get; set; } = null;
     public int? Channel { get; set; } = null;
     public int? Controller { get; set; } = null;
-    
+
     public MidiActionId ActionId { get; set; } = MidiActionId.Undefined;
     public MidiActionType ActionType { get; set; } = MidiActionType.Undefined;
     public string ActionText { get; set; } = "";

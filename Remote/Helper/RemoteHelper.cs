@@ -13,7 +13,7 @@ namespace MilkwaveRemote.Helper {
       this.iniFile = iniFile;
       this.includeInputDevices = GetIniValue("Milkwave", "IncludeInputDevices", "1") == "1";
     }
-    
+
     [DllImport("kernel32")]
     private static extern int GetPrivateProfileString(
        string section, string key, string defaultValue,

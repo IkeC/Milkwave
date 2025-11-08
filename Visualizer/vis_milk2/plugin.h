@@ -545,6 +545,7 @@ public:
 
 #define WM_USER_NEXT_PRESET WM_USER + 100
 #define WM_USER_PREV_PRESET WM_USER + 101
+#define WM_USER_COVER_CHANGED WM_USER + 102
 
   FFT            myfft;
   td_mysounddata mysound;

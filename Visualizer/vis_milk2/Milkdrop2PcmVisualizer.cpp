@@ -1140,6 +1140,10 @@ void RenderFrame() {
   }
 
   milkwave.PollMediaInfo();
+  if (milkwave.coverUpdated) {
+    g_plugin.PostMessageToMilkwaveRemote(WM_USER_COVER_CHANGED);
+    milkwave.coverUpdated = false;
+  }
   if (milkwave.updated) {
     if (milkwave.isSongChange && !milkwave.doPollExplicit) {
       if (g_plugin.m_ChangePresetWithSong) {

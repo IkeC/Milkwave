@@ -1,13 +1,14 @@
 ﻿using MilkwaveRemote.Data;
 using MilkwaveRemote.Helper;
 using System.Diagnostics;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using Windows.UI.ViewManagement;
 using static MilkwaveRemote.Data.MidiRow;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
@@ -60,6 +61,7 @@ namespace MilkwaveRemote {
     // must match definitions in Milkwave Visualizer
     private const int WM_NEXT_PRESET = 0x0400 + 100;
     private const int WM_PREV_PRESET = 0x0400 + 101;
+    private const int WM_COVER_CHANGED = 0x0400 + 102;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -96,8 +98,13 @@ namespace MilkwaveRemote {
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
     private string milkwaveMidiFile = "midi-remote.json";
+    private string milkwaveSpritesFile = "sprites.ini";
 
-    // please request your own appKey at https://www.shadertoy.com/howto if you build your own version
+    private readonly Dictionary<Button, string> spriteButtonSectionMap = new();
+    private readonly Dictionary<Button, string> spriteButtonLabelMap = new();
+    private readonly Dictionary<Button, Image?> spriteButtonImageCache = new();
+    private readonly Dictionary<string, string> spriteSectionImageMap = new(StringComparer.OrdinalIgnoreCase);
+
     private string shadertoyAppKey = "ftrlhm";
     private string shadertoyQueryType = "";
     private int shadertoyQueryPageSize = 500;
@@ -257,6 +264,482 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void InitializeSpriteButtonSupport() {
+      Button[] buttons = new[] { btn00, btn11, btn22, btn33, btn44, btn55, btn66, btn77, btn88, btn99 };
+      spriteButtonSectionMap.Clear();
+      spriteButtonLabelMap.Clear();
+
+      foreach (Button button in buttons) {
+        if (button == null) {
+          continue;
+        }
+
+        string buttonLabel = button.Text.Trim();
+        string section = "img" + buttonLabel;
+        spriteButtonSectionMap[button] = section;
+        spriteButtonLabelMap[button] = buttonLabel;
+        button.MouseUp += SpriteButton_MouseUp;
+        button.Resize += SpriteButton_Resize;
+      }
+
+      RefreshSpriteButtonImages();
+    }
+
+    private void RefreshSpriteButtonImages(bool reloadConfig = true) {
+      if (reloadConfig) {
+        LoadSpriteDefinitions();
+      }
+
+      foreach (Button button in spriteButtonSectionMap.Keys) {
+        UpdateSpriteButtonAppearance(button);
+      }
+    }
+
+    private void LoadSpriteDefinitions() {
+      spriteSectionImageMap.Clear();
+      string spritesPath = Path.Combine(BaseDir, milkwaveSpritesFile);
+
+      if (!File.Exists(spritesPath)) {
+        return;
+      }
+
+      try {
+        string? currentSection = null;
+        foreach (string rawLine in File.ReadAllLines(spritesPath)) {
+          string line = rawLine.Trim();
+          if (line.Length == 0 || line.StartsWith("//", StringComparison.Ordinal) || line.StartsWith(";", StringComparison.Ordinal)) {
+            continue;
+          }
+
+          if (line.StartsWith("[", StringComparison.Ordinal) && line.EndsWith("]", StringComparison.Ordinal)) {
+            currentSection = line.Substring(1, line.Length - 2).Trim();
+            continue;
+          }
+
+          if (string.IsNullOrEmpty(currentSection) || !currentSection.StartsWith("img", StringComparison.OrdinalIgnoreCase)) {
+            continue;
+          }
+
+          int equalsIndex = line.IndexOf('=');
+          if (equalsIndex <= 0) {
+            continue;
+          }
+
+          string key = line.Substring(0, equalsIndex).Trim();
+          if (!key.Equals("img", StringComparison.OrdinalIgnoreCase)) {
+            continue;
+          }
+
+          string value = StripInlineComment(line.Substring(equalsIndex + 1));
+          value = value.Replace('/', '\\');
+          if (value.Length == 0) {
+            continue;
+          }
+
+          spriteSectionImageMap[currentSection.ToLowerInvariant()] = value;
+        }
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Read sprites.ini");
+      }
+    }
+
+    private void UpdateSpriteButtonAppearance(Button button) {
+      if (!spriteButtonSectionMap.TryGetValue(button, out string? section)) {
+        return;
+      }
+
+      string sectionKey = section.ToLowerInvariant();
+      spriteSectionImageMap.TryGetValue(sectionKey, out string? configuredPath);
+      UpdateSpriteButtonTooltip(button, configuredPath);
+
+      if (!Settings.EnableSpriteButtonImage) {
+        ShowSpriteLabel(button);
+        return;
+      }
+
+      if (string.IsNullOrWhiteSpace(configuredPath)) {
+        ShowSpriteLabel(button);
+        return;
+      }
+
+      string resolvedPath = ResolveSpriteImagePath(configuredPath);
+      if (string.IsNullOrEmpty(resolvedPath) || !File.Exists(resolvedPath)) {
+        ShowSpriteLabel(button);
+        return;
+      }
+
+      if (button.ClientSize.Width <= 0 || button.ClientSize.Height <= 0) {
+        return;
+      }
+
+      try {
+        Image? preview = CreateMonochromePreview(resolvedPath, button.ClientSize);
+        if (preview != null) {
+          ApplySpriteButtonImage(button, preview);
+        } else {
+          ShowSpriteLabel(button);
+        }
+      } catch (Exception ex) {
+        ShowSpriteLabel(button);
+        Program.SaveErrorToFile(ex, "Sprite preview");
+      }
+    }
+
+    private void ApplySpriteButtonImage(Button button, Image preview) {
+      DisposeSpriteButtonImage(button);
+      button.Image = preview;
+      spriteButtonImageCache[button] = preview;
+      button.Text = string.Empty;
+      button.Padding = new Padding(2);
+      button.ImageAlign = ContentAlignment.MiddleCenter;
+      button.TextImageRelation = TextImageRelation.Overlay;
+    }
+
+    private void DisposeSpriteButtonImage(Button button) {
+      if (spriteButtonImageCache.TryGetValue(button, out Image? cached) && cached != null) {
+        if (button.Image == cached) {
+          button.Image = null;
+        }
+        cached.Dispose();
+        spriteButtonImageCache.Remove(button);
+      } else {
+        button.Image = null;
+      }
+    }
+
+    private void ShowSpriteLabel(Button button) {
+      DisposeSpriteButtonImage(button);
+      if (spriteButtonLabelMap.TryGetValue(button, out string? label)) {
+        button.Text = label;
+      }
+      button.Padding = new Padding(0);
+      button.TextAlign = ContentAlignment.MiddleCenter;
+      button.ImageAlign = ContentAlignment.MiddleCenter;
+      button.TextImageRelation = TextImageRelation.Overlay;
+    }
+
+    private void UpdateSpriteButtonTooltip(Button button, string? configuredPath) {
+      if (toolTip1 == null) {
+        return;
+      }
+
+      if (button == btn00) {
+        toolTip1.SetToolTip(button, "Cover slot");
+        return;
+      }
+
+      string header = string.IsNullOrWhiteSpace(configuredPath) ? "(no image assigned)" : configuredPath;
+      string text = header + Environment.NewLine + "Right-click to change image";
+      toolTip1.SetToolTip(button, text);
+    }
+
+    private string ResolveSpriteImagePath(string configuredPath) {
+      string normalized = configuredPath.Replace('/', Path.DirectorySeparatorChar).Trim();
+      if (string.IsNullOrWhiteSpace(normalized)) {
+        return string.Empty;
+      }
+
+      try {
+        if (Path.IsPathRooted(normalized)) {
+          return Path.GetFullPath(normalized);
+        }
+
+        string candidate = Path.GetFullPath(Path.Combine(BaseDir, normalized));
+        if (File.Exists(candidate)) {
+          return candidate;
+        }
+
+        string resourcesFallback = Path.GetFullPath(Path.Combine(BaseDir, "resources", normalized));
+        if (File.Exists(resourcesFallback)) {
+          return resourcesFallback;
+        }
+
+        return candidate;
+      } catch (Exception) {
+        return string.Empty;
+      }
+    }
+
+    private Image? CreateMonochromePreview(string imagePath, Size targetSize) {
+      if (targetSize.Width <= 0 || targetSize.Height <= 0) {
+        return null;
+      }
+
+      using FileStream stream = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+      using Image temp = Image.FromStream(stream, useEmbeddedColorManagement: false, validateImageData: false);
+      using Bitmap source = new Bitmap(temp);
+
+      Rectangle destRect = CalculatePreviewBounds(source.Size, targetSize);
+      if (destRect.Width <= 0 || destRect.Height <= 0) {
+        return null;
+      }
+
+      Bitmap preview = new Bitmap(targetSize.Width, targetSize.Height, PixelFormat.Format32bppArgb);
+      using (Graphics g = Graphics.FromImage(preview)) {
+        g.Clear(Color.Transparent);
+        g.CompositingQuality = CompositingQuality.HighQuality;
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        g.SmoothingMode = SmoothingMode.HighQuality;
+
+        using ImageAttributes attributes = new ImageAttributes();
+        ColorMatrix grayscale = new ColorMatrix(new float[][] {
+          new float[] { 0.299f, 0.299f, 0.299f, 0, 0 },
+          new float[] { 0.587f, 0.587f, 0.587f, 0, 0 },
+          new float[] { 0.114f, 0.114f, 0.114f, 0, 0 },
+          new float[] { 0, 0, 0, 1, 0 },
+          new float[] { 0, 0, 0, 0, 1 }
+        });
+        attributes.SetColorMatrix(grayscale);
+
+        g.DrawImage(source, destRect, 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, attributes);
+      }
+
+      return preview;
+    }
+
+    private Rectangle CalculatePreviewBounds(Size original, Size target) {
+      if (original.Width <= 0 || original.Height <= 0 || target.Width <= 0 || target.Height <= 0) {
+        return Rectangle.Empty;
+      }
+
+      int margin = Math.Max(2, Math.Min(target.Width, target.Height) / 8);
+      int availableWidth = Math.Max(1, target.Width - margin * 2);
+      int availableHeight = Math.Max(1, target.Height - margin * 2);
+      float scaleX = (float)availableWidth / original.Width;
+      float scaleY = (float)availableHeight / original.Height;
+      float scale = Math.Min(scaleX, scaleY);
+      if (scale <= 0) {
+        scale = Math.Min((float)target.Width / original.Width, (float)target.Height / original.Height);
+      }
+
+      int width = Math.Max(1, (int)Math.Round(original.Width * scale));
+      int height = Math.Max(1, (int)Math.Round(original.Height * scale));
+      int x = (target.Width - width) / 2;
+      int y = (target.Height - height) / 2;
+      return new Rectangle(x, y, width, height);
+    }
+
+    private void SpriteButton_MouseUp(object? sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Right && sender is Button button && spriteButtonSectionMap.ContainsKey(button) && button != btn00) {
+        PromptSpriteImageSelection(button);
+      }
+    }
+
+    private void SpriteButton_Resize(object? sender, EventArgs e) {
+      if (sender is Button button && spriteButtonSectionMap.ContainsKey(button)) {
+        UpdateSpriteButtonAppearance(button);
+      }
+    }
+
+    private void PromptSpriteImageSelection(Button button) {
+      if (button == btn00) {
+        return;
+      }
+
+      if (!spriteButtonSectionMap.TryGetValue(button, out string? section)) {
+        return;
+      }
+
+      string? configuredPath = GetConfiguredSpritePath(section);
+      string initialDirectory = BaseDir;
+      if (!string.IsNullOrWhiteSpace(configuredPath)) {
+        string resolved = ResolveSpriteImagePath(configuredPath);
+        if (!string.IsNullOrEmpty(resolved) && File.Exists(resolved)) {
+          string? directory = Path.GetDirectoryName(resolved);
+          if (!string.IsNullOrEmpty(directory) && Directory.Exists(directory)) {
+            initialDirectory = directory;
+          }
+        }
+      }
+
+      using OpenFileDialog dialog = new OpenFileDialog {
+        Title = $"Select image for {section.ToUpperInvariant()}",
+        Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.dds;*.tga;*.tif;*.tiff|All files|*.*",
+        RestoreDirectory = true
+      };
+
+      if (Directory.Exists(initialDirectory)) {
+        dialog.InitialDirectory = initialDirectory;
+      }
+
+      if (dialog.ShowDialog(this) == DialogResult.OK) {
+        string storedPath = GetSpriteConfigPath(dialog.FileName);
+        if (UpdateSpriteDefinition(section, storedPath)) {
+          spriteSectionImageMap[section.ToLowerInvariant()] = storedPath;
+          RefreshSpriteButtonImages();
+          SetStatusText($"Sprite {section.ToUpperInvariant()} image updated");
+        } else {
+          SetStatusText($"Unable to update sprite {section.ToUpperInvariant()}");
+        }
+      }
+    }
+
+    private string? GetConfiguredSpritePath(string section) {
+      string key = section.ToLowerInvariant();
+      if (spriteSectionImageMap.TryGetValue(key, out string? value)) {
+        return value;
+      }
+      return null;
+    }
+
+    private string GetSpriteConfigPath(string absolutePath) {
+      try {
+        string fullPath = Path.GetFullPath(absolutePath);
+        string spritesRoot = Path.GetFullPath(Path.Combine(BaseDir, "sprites"));
+        string resourcesSpritesRoot = Path.GetFullPath(Path.Combine(BaseDir, Path.Combine("resources", "sprites")));
+
+        string? spriteRelative = TryBuildSpriteRelative(fullPath, spritesRoot);
+        if (spriteRelative != null) {
+          return spriteRelative;
+        }
+
+        spriteRelative = TryBuildSpriteRelative(fullPath, resourcesSpritesRoot);
+        if (spriteRelative != null) {
+          return spriteRelative;
+        }
+
+        string relative = Path.GetRelativePath(BaseDir, fullPath);
+        if (!string.IsNullOrEmpty(relative) && !relative.StartsWith("..", StringComparison.Ordinal)) {
+          relative = relative.Replace('/', '\\');
+          const string resourcesSpritesPrefix = "resources\\sprites\\";
+          if (relative.StartsWith(resourcesSpritesPrefix, StringComparison.OrdinalIgnoreCase)) {
+            return "sprites\\" + relative.Substring(resourcesSpritesPrefix.Length);
+          }
+          if (relative.Equals("resources\\sprites", StringComparison.OrdinalIgnoreCase) || relative.Equals("resources\\sprites\\", StringComparison.OrdinalIgnoreCase)) {
+            return "sprites";
+          }
+          return relative;
+        }
+      } catch (Exception) {
+        // ignore
+      }
+      return absolutePath.Replace('/', '\\');
+    }
+
+    private static string? TryBuildSpriteRelative(string fullPath, string root) {
+      if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase)) {
+        return null;
+      }
+
+      if (fullPath.Length == root.Length) {
+        return "sprites";
+      }
+
+      char separator = Path.DirectorySeparatorChar;
+      if (fullPath.Length > root.Length && fullPath[root.Length] != separator && fullPath[root.Length] != Path.AltDirectorySeparatorChar) {
+        return null;
+      }
+
+      string remainder = fullPath.Substring(root.Length).TrimStart(separator, Path.AltDirectorySeparatorChar);
+      return string.IsNullOrEmpty(remainder)
+        ? "sprites"
+        : ("sprites" + '\\' + remainder.Replace('/', '\\'));
+    }
+
+    private bool UpdateSpriteDefinition(string section, string newValue) {
+      string spritesPath = Path.Combine(BaseDir, milkwaveSpritesFile);
+      if (!File.Exists(spritesPath)) {
+        return false;
+      }
+
+      try {
+        List<string> lines = File.ReadAllLines(spritesPath).ToList();
+        string header = $"[{section}]";
+        bool inSection = false;
+        bool updated = false;
+
+        for (int i = 0; i < lines.Count; i++) {
+          string trimmed = lines[i].Trim();
+          if (trimmed.StartsWith("[", StringComparison.Ordinal) && trimmed.EndsWith("]", StringComparison.Ordinal)) {
+            if (string.Equals(trimmed, header, StringComparison.OrdinalIgnoreCase)) {
+              inSection = true;
+              continue;
+            }
+
+            if (inSection) {
+              break;
+            }
+
+            continue;
+          }
+
+          if (!inSection) {
+            continue;
+          }
+
+          string withoutComment = StripInlineComment(trimmed);
+          if (withoutComment.StartsWith("img=", StringComparison.OrdinalIgnoreCase)) {
+            int imgIndex = lines[i].IndexOf("img=", StringComparison.OrdinalIgnoreCase);
+            int commentIndex = FindInlineCommentIndex(lines[i], imgIndex + 4);
+            string commentSuffix = commentIndex >= 0 ? lines[i].Substring(commentIndex) : string.Empty;
+            string leading = lines[i].Substring(0, imgIndex);
+            lines[i] = $"{leading}img={newValue}{commentSuffix}";
+            updated = true;
+            break;
+          }
+        }
+
+        if (!updated) {
+          for (int i = 0; i < lines.Count; i++) {
+            if (string.Equals(lines[i].Trim(), header, StringComparison.OrdinalIgnoreCase)) {
+              lines.Insert(i + 1, $"img={newValue}");
+              updated = true;
+              break;
+            }
+          }
+        }
+
+        if (updated) {
+          File.WriteAllLines(spritesPath, lines);
+        }
+
+        return updated;
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Update sprites.ini");
+        return false;
+      }
+    }
+
+    private static string StripInlineComment(string value) {
+      string trimmed = value.Trim();
+      int commentIndex = trimmed.IndexOf("//", StringComparison.Ordinal);
+      if (commentIndex >= 0) {
+        trimmed = trimmed.Substring(0, commentIndex);
+      }
+      commentIndex = trimmed.IndexOf(';');
+      if (commentIndex >= 0) {
+        trimmed = trimmed.Substring(0, commentIndex);
+      }
+      return trimmed.Trim();
+    }
+
+    private static int FindInlineCommentIndex(string line, int startIndex) {
+      int slashIndex = line.IndexOf("//", startIndex, StringComparison.Ordinal);
+      int semicolonIndex = line.IndexOf(';', startIndex);
+      if (slashIndex >= 0 && semicolonIndex >= 0) {
+        return Math.Min(slashIndex, semicolonIndex);
+      }
+
+      if (slashIndex >= 0) {
+        return slashIndex;
+      }
+
+      return semicolonIndex;
+    }
+
+    private void DisposeSpriteButtonImages() {
+      foreach (KeyValuePair<Button, Image?> kvp in spriteButtonImageCache.ToList()) {
+        if (kvp.Value != null) {
+          kvp.Value.Dispose();
+        }
+        if (kvp.Key.Image == kvp.Value) {
+          kvp.Key.Image = null;
+        }
+      }
+      spriteButtonImageCache.Clear();
+    }
+
     public MilkwaveRemoteForm() {
       InitializeComponent();
 
@@ -337,10 +820,13 @@ namespace MilkwaveRemote {
       cboWindowTitle.SelectedIndex = 0;
       cboShadertoyType.SelectedIndex = 0;
       cboSettingsOpenFile.SelectedIndex = 3;
+
+      InitializeSpriteButtonSupport();
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
       LoadAndSetSettings();
+      RefreshSpriteButtonImages();
       SetPanelsVisibility();
 
 #if DEBUG
@@ -490,6 +976,8 @@ namespace MilkwaveRemote {
       } else if (m.Msg == WM_PREV_PRESET) {
         SelectPreviousPreset();
         btnPresetSend_Click(null, null);
+      } else if (m.Msg == WM_COVER_CHANGED) {
+        RefreshSpriteButtonImages(false);
       } else if (m.Msg == WM_COPYDATA) {
         // Extract the COPYDATASTRUCT from the message
         COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
@@ -497,7 +985,6 @@ namespace MilkwaveRemote {
           // Convert the received data to a string
           string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
           if (receivedString.StartsWith("WAVE|")) {
-
             string waveInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
             string[] waveParams = waveInfo.Split('|');
             updatingWaveParams = true;
@@ -1946,6 +2433,7 @@ namespace MilkwaveRemote {
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
       try {
 
+        DisposeSpriteButtonImages();
         SetAndSaveSettings();
         if (Settings.MidiEnabled) {
           SaveMIDISettings();
@@ -2304,6 +2792,12 @@ namespace MilkwaveRemote {
         toolStripMenuItemTabsPanel.Checked = true;
       }
       SetPanelsVisibility();
+    }
+
+    private void toolStripMenuItemSpriteButtonImages_Click(object? sender, EventArgs? e) {
+      toolStripMenuItemSpriteButtonImages.Checked = !toolStripMenuItemSpriteButtonImages.Checked;
+      Settings.EnableSpriteButtonImage = toolStripMenuItemSpriteButtonImages.Checked;
+      RefreshSpriteButtonImages(false);
     }
 
     private void SetPanelsVisibility() {
@@ -3058,6 +3552,7 @@ namespace MilkwaveRemote {
       Size = Settings.RemoteWindowSize;
       toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
+      toolStripMenuItemSpriteButtonImages.Checked = Settings.EnableSpriteButtonImage;
       toolStripMenuItemMonitorCPU.Checked = Settings.EnableMonitorCPU;
       toolStripMenuItemMonitorGPU.Checked = Settings.EnableMonitorGPU;
       ToggleMonitors();
@@ -3073,6 +3568,8 @@ namespace MilkwaveRemote {
       numVisIntensity.Value = (decimal)Settings.VisIntensity;
       numVisShift.Value = (decimal)Settings.VisShift;
       numVisVersion.Value = Settings.VisVersion;
+
+      RefreshSpriteButtonImages(false);
     }
 
     private void SetAndSaveSettings() {
@@ -3087,6 +3584,7 @@ namespace MilkwaveRemote {
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
       Settings.ShaderFileChecked = chkShaderFile.Checked;
       Settings.WrapChecked = chkWrap.Checked;
+      Settings.EnableSpriteButtonImage = toolStripMenuItemSpriteButtonImages.Checked;
 
       Settings.VisIntensity = numVisIntensity.Value;
       Settings.VisShift = numVisShift.Value;

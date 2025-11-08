@@ -33,6 +33,7 @@
     "DarkMode": true,
     "ShowTabsPanel": true,
     "ShowButtonPanel": true,
+    "EnableSpriteButtonImages": true,
     "EnableMonitorCPU": true,
     "EnableMonitorGPU": true,
     "CloseVisualizerWithRemote": false,

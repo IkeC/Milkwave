@@ -429,7 +429,7 @@ namespace MilkwaveRemote.Helper {
         //prevent applying a theme multiple times to the same control
         //without this, it happens at least is some MDI forms
         //if the Control already has the current theme, exit (otherwise we are going to re-theme it)
-        
+
         if (info.LastThemeAppliedIsDark == IsDarkMode) return;
 
         //we remember it will soon have the current theme
@@ -589,7 +589,7 @@ namespace MilkwaveRemote.Helper {
       if (control is FlatTabControl) {
         //control.GetType().GetProperty("BackColor")?.SetValue(control, OScolors.Background);
         control.GetType().GetProperty("BackColor")?.SetValue(control, OScolors.Surface);
-        
+
         control.GetType().GetProperty("BorderColor")?.SetValue(control, OScolors.BackgroundLight);
 
         control.GetType().GetProperty("TabColor")?.SetValue(control, OScolors.Surface);

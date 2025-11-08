@@ -217,10 +217,10 @@ namespace MilkwaveRemote.Helper {
         tabRect.Width -= 1;
         g.FillRectangle(brush, tabRect);
         if (isSelected) {
-          Point TopLeft = new Point(tabRect.Left-1, tabRect.Top);
-          Point TopRight = new Point(tabRect.Left-1 + tabRect.Width, tabRect.Top);
-          Point BottomLeft = new Point(tabRect.Left-1, tabRect.Top + tabRect.Height);
-          Point BottomRight = new Point(tabRect.Left-1 + tabRect.Width, tabRect.Top + tabRect.Height);
+          Point TopLeft = new Point(tabRect.Left - 1, tabRect.Top);
+          Point TopRight = new Point(tabRect.Left - 1 + tabRect.Width, tabRect.Top);
+          Point BottomLeft = new Point(tabRect.Left - 1, tabRect.Top + tabRect.Height);
+          Point BottomRight = new Point(tabRect.Left - 1 + tabRect.Width, tabRect.Top + tabRect.Height);
 
           //g.DrawRectangle(new Pen(BorderColor), tabRect);
           g.DrawLine(new Pen(BorderColor), TopLeft, TopRight);
@@ -233,8 +233,8 @@ namespace MilkwaveRemote.Helper {
           g.DrawLine(new Pen(Color.DodgerBlue),
             new Point(tabRect.Left + 3, tabRect.Top), new Point(tabRect.Left + tabRect.Width, tabRect.Top));
           */
-          }
         }
+      }
 
       // Draws a Close Button:
       if (ShowTabCloseButton) {

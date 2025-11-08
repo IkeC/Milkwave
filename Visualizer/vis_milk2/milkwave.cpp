@@ -70,13 +70,13 @@ void Milkwave::PollMediaInfo() {
   }
 }
 
-void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties) {
+bool Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties) {
   try {
     // Retrieve the thumbnail
     auto thumbnailRef = properties.Thumbnail();
     if (!thumbnailRef) {
       std::wcerr << L"No thumbnail available for the current media." << std::endl;
-      return;
+      return false;
     }
 
     // Open the thumbnail stream
@@ -95,7 +95,7 @@ void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
     std::ofstream outputFile(coverSpriteFilePath, std::ios::binary);
     if (!outputFile.is_open()) {
       std::wcerr << L"Failed to open file for writing: " << coverSpriteFilePath << std::endl;
-      return;
+      return false;
     }
 
     // Use DataReader to read the stream content
@@ -108,9 +108,12 @@ void Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
     outputFile.close();
 
     std::wcout << L"Thumbnail saved to: " << coverSpriteFilePath.wstring() << std::endl;
+    coverUpdated = true;
+    return true;
   } catch (const std::exception& e) {
     LogException(L"SaveThumbnailToFile", e, false);
   }
+  return false;
 }
 
 void Milkwave::LogDebug(std::wstring info) {

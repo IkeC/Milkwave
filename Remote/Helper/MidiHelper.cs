@@ -14,7 +14,7 @@ namespace MilkwaveRemote.Helper {
 
     public MidiHelper() {
       for (int i = 0; i < 5 * 10; i++) { // 5 rows, 10 banks
-        MidiRows.Add(new MidiRow() {Row = i + 1});
+        MidiRows.Add(new MidiRow() { Row = i + 1 });
       }
     }
 
@@ -68,7 +68,7 @@ namespace MilkwaveRemote.Helper {
         midiEventInfo.Channel = eCC.Channel;
         midiEventInfo.Controller = (int)eCC.Controller;
         midiEventInfo.Value = eCC.ControllerValue;
-        
+
         MidiMessageReceived?.Invoke(midiEventInfo);
       }
     }

@@ -13,6 +13,7 @@
     public bool DarkMode { get; set; } = true;
     public bool ShowTabsPanel { get; set; } = true;
     public bool ShowButtonPanel { get; set; } = true;
+    public bool EnableSpriteButtonImage { get; set; } = true;
     public bool EnableMonitorCPU { get; set; } = true;
     public bool EnableMonitorGPU { get; set; } = true;
     public int MonitorPollingInterval { get; set; } = 1500;

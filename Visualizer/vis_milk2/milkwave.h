@@ -42,6 +42,7 @@ public:
   bool doPollExplicit = false;
   bool isSongChange = false;
   bool doSaveCover = true;
+  bool coverUpdated = false;
   int logLevel = 1; // 0 = Off, 1 = Error, 2 = Info
 
   Milkwave();
@@ -52,5 +53,5 @@ public:
   void LogDebug(const wchar_t* info);
   void LogException(const wchar_t* context, const std::exception& e, bool showMessage);
   void PollMediaInfo();
-  void SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
+  bool SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
 };

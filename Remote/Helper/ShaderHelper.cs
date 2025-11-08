@@ -1,5 +1,4 @@
-﻿using NAudio.Wave;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 
 namespace MilkwaveRemote.Helper {

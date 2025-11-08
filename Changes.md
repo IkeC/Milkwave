@@ -1,5 +1,7 @@
 ## v3.4 (unreleased)
 
+* Remote: Select new sprite by right-clicking sprite button
+* Display current sprite preview image on button (configurable)
 * Fix: Audio capture not working on some systems (#16)
 * Fix: Inconsistent display of switched audio device
 

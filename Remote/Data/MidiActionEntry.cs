@@ -11,5 +11,5 @@ namespace MilkwaveRemote.Data {
 
     public string ActionText { get; set; } = "";
     public MidiActionId ActionId { get; set; } = MidiActionId.Undefined;
-  } 
+  }
 }
