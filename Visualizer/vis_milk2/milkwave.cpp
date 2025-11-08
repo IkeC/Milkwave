@@ -241,7 +241,7 @@ void Milkwave::LogException(const wchar_t* context, const std::exception& e, boo
     // Show a message box with the error details
     std::wstring message = L"An unexpected error occurred:\n\n";
     message += std::wstring(exceptionMessage.begin(), exceptionMessage.end());
-    message += L"\n\nDetails have been written to the log directory.\n\nDouble-click 'Window' in the Remote to restart Visualizer.";
+    message += L"\n\nDetails have been written to the log directory. Please open an issue on GitHub if the problem persists.\n\nPress Ctrl+O in the Remote to restart Visualizer.";
 
     MessageBoxW(NULL, message.c_str(), L"Milkwave Error", MB_OK | MB_ICONERROR);
   }

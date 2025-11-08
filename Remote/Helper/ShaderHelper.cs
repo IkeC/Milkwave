@@ -131,7 +131,7 @@ namespace MilkwaveRemote.Helper {
               sb.AppendLine("// CONV: no saved break condition, see Milkwave manual");
             } else {
               sb.AppendLine("// CONV: replaced break with breaking condition");
-              currentLine = currentLine.Replace("break", breakReplacement);
+              currentLine = indent + line.Replace("break", breakReplacement);
             }
           }
 

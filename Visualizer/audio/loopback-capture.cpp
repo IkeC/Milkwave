@@ -4,6 +4,7 @@
 #include "..\vis_milk2\milkwave.h"
 #include <string>
 #include <stdexcept>
+#include <vector>
 
 DWORD WINAPI LoopbackCaptureThreadFunction(LPVOID pContext);
 
@@ -142,6 +143,26 @@ HRESULT LoopbackCapture(
     }
   }
 
+  if (pMilkwave && pMMDevice) {
+    try {
+      LPWSTR deviceId = nullptr;
+      HRESULT hrDeviceId = pMMDevice->GetId(&deviceId);
+      if (SUCCEEDED(hrDeviceId)) {
+        CoTaskMemFreeOnExit freeId(deviceId);
+        wchar_t buf[512];
+        swprintf_s(buf, L"LoopbackCapture: deviceId=%ls isRender=%ls", deviceId, bIsRenderDevice ? L"true" : L"false");
+        pMilkwave->LogDebug(buf);
+      }
+      else {
+        wchar_t buf[256];
+        swprintf_s(buf, L"LoopbackCapture: GetId failed hr=0x%08x", hrDeviceId);
+        pMilkwave->LogDebug(buf);
+      }
+    } catch (...) {
+      // ignore logging failures
+    }
+  }
+
   try {
     // activate an IAudioClient
     if (pMilkwave) { try { pMilkwave->LogInfo(L"LoopbackCapture: calling IMMDevice::Activate"); } catch (...) {} }
@@ -168,6 +189,15 @@ HRESULT LoopbackCapture(
       return hr;
     }
 
+    if (pMilkwave) {
+      try {
+        double defaultPeriodMs = static_cast<double>(hnsDefaultDevicePeriod) / 10000.0;
+        wchar_t buf[256];
+        swprintf_s(buf, L"LoopbackCapture: default period %.3f ms", defaultPeriodMs);
+        pMilkwave->LogDebug(buf);
+      } catch (...) {}
+    }
+
     // get the default device format
     if (pMilkwave) { try { pMilkwave->LogInfo(L"LoopbackCapture: calling IAudioClient::GetMixFormat"); } catch (...) {} }
     WAVEFORMATEX* pwfx;
@@ -178,6 +208,22 @@ HRESULT LoopbackCapture(
       return hr;
     }
     CoTaskMemFreeOnExit freeMixFormat(pwfx);
+
+    if (pMilkwave && pwfx) {
+      try {
+        wchar_t buf[256];
+        swprintf_s(
+          buf,
+          L"LoopbackCapture: mix format rate=%lu channels=%u bits=%u blockAlign=%u avgBytesPerSec=%lu",
+          pwfx->nSamplesPerSec,
+          pwfx->nChannels,
+          pwfx->wBitsPerSample,
+          pwfx->nBlockAlign,
+          pwfx->nAvgBytesPerSec
+        );
+        pMilkwave->LogDebug(buf);
+      } catch (...) {}
+    }
 
     if (bInt16) {
       // coerce int-16 wave format
@@ -262,6 +308,19 @@ HRESULT LoopbackCapture(
       return hr;
     }
 
+    if (pMilkwave) {
+      try {
+        wchar_t buf[256];
+        swprintf_s(
+          buf,
+          L"LoopbackCapture: initialize flags loopback=%ls int16=%ls",
+          bIsRenderDevice ? L"true" : L"false",
+          bInt16 ? L"true" : L"false"
+        );
+        pMilkwave->LogDebug(buf);
+      } catch (...) {}
+    }
+
     // activate an IAudioCaptureClient
     if (pMilkwave) { try { pMilkwave->LogInfo(L"LoopbackCapture: calling IAudioClient::GetService for IAudioCaptureClient"); } catch (...) {} }
     IAudioCaptureClient* pAudioCaptureClient;
@@ -326,7 +385,7 @@ HRESULT LoopbackCapture(
         hr = pAudioCaptureClient->GetNextPacketSize(&nNextPacketSize)
         ) {
         // get the captured data
-        if (pMilkwave) { try { pMilkwave->LogDebug(L"LoopbackCapture: calling IAudioCaptureClient::GetBuffer (with retry)"); } catch (...) {} }
+        // if (pMilkwave) { try { pMilkwave->LogDebug(L"LoopbackCapture: calling IAudioCaptureClient::GetBuffer (with retry)"); } catch (...) {} }
         BYTE* pData = nullptr;
         UINT32 nNumFramesToRead = 0;
         DWORD dwFlags = 0;
@@ -342,11 +401,14 @@ HRESULT LoopbackCapture(
           return hr;
         }
 
-        if (bFirstPacket && AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY == dwFlags) {
+        const bool bSilentBuffer = (dwFlags & AUDCLNT_BUFFERFLAGS_SILENT) != 0;
+        DWORD dwFlagsWithoutSilent = dwFlags & ~AUDCLNT_BUFFERFLAGS_SILENT;
+
+        if (bFirstPacket && AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY == dwFlagsWithoutSilent) {
           //bErrorInAudioData = true;
           LOG(L"%s", L"Probably spurious glitch reported on first packet");
         }
-        else if (0 != dwFlags) {
+        else if (0 != dwFlagsWithoutSilent) {
           bErrorInAudioData = true;
           LOG(L"IAudioCaptureClient::GetBuffer set flags to0x%08x on pass %u after %u frames", dwFlags, nPasses, *pnFrames);
           if (pMilkwave) { try { wchar_t buf[256]; swprintf_s(buf, L"IAudioCaptureClient::GetBuffer set flags to0x%08x on pass %u after %u frames", dwFlags, nPasses, *pnFrames); pMilkwave->LogInfo(buf); } catch (...) {} }
@@ -365,15 +427,24 @@ HRESULT LoopbackCapture(
           ResetAudioBuf();
         }
         else {
+          // Ensure we have valid audio data even when WASAPI marks the buffer as silent
+          std::vector<BYTE> silentBuffer;
+          const BYTE* pDataForVisualizer = pData;
+          if (bSilentBuffer) {
+            silentBuffer.assign(static_cast<size_t>(nNumFramesToRead) * nBlockAlign, 0);
+            pDataForVisualizer = silentBuffer.data();
+          }
+
           // Saving audio data for visualizer
-          SetAudioBuf(pData, nNumFramesToRead, pwfx, bInt16);
+          SetAudioBuf(pDataForVisualizer, nNumFramesToRead, pwfx, bInt16);
 
           if (NULL != hFile) {
             // Writing the buffer captured to the output .wav file
             if (pMilkwave) { try { pMilkwave->LogInfo(L"LoopbackCapture: writing buffer to file via mmioWrite"); } catch (...) {} }
             LONG lBytesToWrite = nNumFramesToRead * nBlockAlign;
+            const BYTE* pDataForFile = bSilentBuffer ? pDataForVisualizer : pData;
 #pragma prefast(suppress: __WARNING_INCORRECT_ANNOTATION, "IAudioCaptureClient::GetBuffer SAL annotation implies a1-byte buffer")
-            LONG lBytesWritten = mmioWrite(hFile, reinterpret_cast<PCHAR>(pData), lBytesToWrite);
+            LONG lBytesWritten = mmioWrite(hFile, reinterpret_cast<PCHAR>(const_cast<BYTE*>(pDataForFile)), lBytesToWrite);
             if (lBytesToWrite != lBytesWritten) {
               ERR(L"mmioWrite wrote %u bytes on pass %u after %u frames: expected %u bytes", lBytesWritten, nPasses, *pnFrames, lBytesToWrite);
               if (pMilkwave) { try { wchar_t buf[256]; swprintf_s(buf, L"mmioWrite wrote %u bytes on pass %u after %u frames: expected %u bytes", lBytesWritten, nPasses, *pnFrames, lBytesToWrite); pMilkwave->LogInfo(buf); } catch (...) {} }
@@ -383,7 +454,7 @@ HRESULT LoopbackCapture(
           *pnFrames += nNumFramesToRead;
         }
 
-        if (pMilkwave) { try { pMilkwave->LogDebug(L"LoopbackCapture: calling IAudioCaptureClient::ReleaseBuffer"); } catch (...) {} }
+        // if (pMilkwave) { try { pMilkwave->LogDebug(L"LoopbackCapture: calling IAudioCaptureClient::ReleaseBuffer"); } catch (...) {} }
         hr = pAudioCaptureClient->ReleaseBuffer(nNumFramesToRead);
         if (FAILED(hr)) {
           ERR(L"IAudioCaptureClient::ReleaseBuffer failed on pass %u after %u frames: hr =0x%08x", nPasses, *pnFrames, hr);

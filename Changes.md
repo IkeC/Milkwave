@@ -1,3 +1,8 @@
+## v3.4 (unreleased)
+
+* Fix: Audio capture not working on some systems (#16)
+* Fix: Inconsistent display of switched audio device
+
 ## v3.3 (2025-10-31)
 
 * Settings Tab: Shift Hue/Saturation/Brightness of the entire output

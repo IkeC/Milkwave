@@ -4473,12 +4473,37 @@ void CPlugin::AddNotification(wchar_t* szMsg, float time) {
 }
 
 void CPlugin::AddNotificationAudioDevice() {
-  if (m_nAudioDeviceRequestType == 1) {
-    std::wstring statusMessage = std::wstring(m_szAudioDeviceDisplayName) + L" [In]";
-    AddNotification(statusMessage.data());
+  std::wstring statusMessage;
+  if (m_szAudioDeviceDisplayName[0] != L'\0') {
+    statusMessage = m_szAudioDeviceDisplayName;
   }
-  else if (m_nAudioDeviceRequestType == 2) {
-    std::wstring statusMessage = std::wstring(m_szAudioDeviceDisplayName) + L" [Out]";
+  else if (g_plugin.m_szAudioDeviceDisplayName[0] != L'\0') {
+    statusMessage = g_plugin.m_szAudioDeviceDisplayName;
+  }
+  else if (g_plugin.m_szAudioDevice[0] != L'\0') {
+    statusMessage = g_plugin.m_szAudioDevice;
+  }
+
+  int effectiveType = m_nAudioDeviceActiveType;
+  if (effectiveType == 0) {
+    effectiveType = m_nAudioDeviceRequestType;
+  }
+
+  const wchar_t* tag = nullptr;
+  if (effectiveType == 1) {
+    tag = L" [In]";
+  }
+  else if (effectiveType == 2) {
+    tag = L" [Out]";
+  }
+
+  if (!statusMessage.empty() && tag != nullptr) {
+    if (statusMessage.find(tag) == std::wstring::npos) {
+      statusMessage += tag;
+    }
+  }
+
+  if (!statusMessage.empty()) {
     AddNotification(statusMessage.data());
   }
   else {
@@ -10864,19 +10889,30 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   }
   else if (wcsncmp(sMessage, L"DEVICE=", 7) == 0) {
     std::wstring message(sMessage + 7);
+    int newRequestType = 0;
     if (wcsncmp(message.c_str(), L"IN|", 3) == 0) {
       message = message.substr(3);
-      m_nAudioDeviceRequestType = 1;
+      newRequestType = 1;
     }
     else if (wcsncmp(message.c_str(), L"OUT|", 4) == 0) {
       message = message.substr(4);
-      m_nAudioDeviceRequestType = 2;
+      newRequestType = 2;
     }
     else {
-      m_nAudioDeviceRequestType = 0;
+      newRequestType = 0;
     }
-    wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
+    m_nAudioDeviceRequestType = newRequestType;
+  wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
+  g_plugin.m_nAudioDevicePreviousType = g_plugin.m_nAudioDeviceActiveType;
     wcscpy(g_plugin.m_szAudioDevice, message.c_str());
+    bool isRenderDevice = true;
+    if (newRequestType == 1) {
+      isRenderDevice = false;
+    }
+    else if (newRequestType == 2) {
+      isRenderDevice = true;
+    }
+    g_plugin.SetAudioDeviceDisplayName(message.c_str(), isRenderDevice);
     // Restart audio
     m_nAudioLoopState = 1;
   }
@@ -11599,8 +11635,46 @@ void CPlugin::OpenMilkwaveRemote() {
   }
 }
 
-void CPlugin::SetAudioDeviceDisplayName(const wchar_t* displayName) {
-  wcscpy_s(m_szAudioDeviceDisplayName, MAX_PATH, displayName);
+void CPlugin::SetAudioDeviceDisplayName(const wchar_t* displayName, bool isRenderDevice) {
+  m_nAudioDeviceActiveType = isRenderDevice ? 2 : 1;
+
+  if (displayName == nullptr) {
+    m_szAudioDeviceDisplayName[0] = L'\0';
+    return;
+  }
+
+  std::wstring sanitized(displayName);
+
+  auto removeDuplicateTag = [&sanitized](const wchar_t* tag) {
+    size_t first = sanitized.find(tag);
+    if (first == std::wstring::npos) {
+      return;
+    }
+
+    size_t searchPos = first + wcslen(tag);
+    while (true) {
+      size_t next = sanitized.find(tag, searchPos);
+      if (next == std::wstring::npos) {
+        break;
+      }
+      sanitized.erase(next, wcslen(tag));
+      if (next > 0 && sanitized[next - 1] == L' ') {
+        sanitized.erase(next - 1, 1);
+      }
+      searchPos = next;
+    }
+  };
+
+  removeDuplicateTag(L" [In]");
+  removeDuplicateTag(L" [Out]");
+
+  // collapse duplicate spaces
+  size_t dupSpace;
+  while ((dupSpace = sanitized.find(L"  ")) != std::wstring::npos) {
+    sanitized.erase(dupSpace, 1);
+  }
+
+  wcsncpy_s(m_szAudioDeviceDisplayName, MAX_PATH, sanitized.c_str(), _TRUNCATE);
 }
 
 void CPlugin::SetAMDFlag() {

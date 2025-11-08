@@ -915,13 +915,14 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       }
       else {
         wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
+        g_plugin.m_nAudioDevicePreviousType = g_plugin.m_nAudioDeviceActiveType;
 
         IMMDevice* m_pMMDevice;
         std::wstring sAudioDeviceDisplayName;
         GetDefaultAudioDeviceName(&m_pMMDevice, &sAudioDeviceDisplayName);
         wcscpy(g_plugin.m_szAudioDevice, sAudioDeviceDisplayName.c_str());
 
-        g_plugin.SetAudioDeviceDisplayName(sAudioDeviceDisplayName.c_str());
+        g_plugin.SetAudioDeviceDisplayName(sAudioDeviceDisplayName.c_str(), true);
 
         // Restart audio
         g_plugin.m_nAudioDeviceRequestType = 2;
@@ -1508,7 +1509,28 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
     }
     CloseHandleOnExit closeStopEvent(hStopEvent);
 
-    g_plugin.SetAudioDeviceDisplayName(prefs.m_szAudioDeviceDisplayName.c_str());
+  g_plugin.SetAudioDeviceDisplayName(prefs.m_szAudioDeviceDisplayName.c_str(), prefs.m_bIsRenderDevice);
+
+    {
+      const wchar_t* requestTypeText = L"auto";
+      if (g_plugin.m_nAudioDeviceRequestType == 1) {
+        requestTypeText = L"capture";
+      }
+      else if (g_plugin.m_nAudioDeviceRequestType == 2) {
+        requestTypeText = L"render";
+      }
+
+      wchar_t configBuf[512];
+      swprintf_s(
+        configBuf,
+        L"StartAudioCaptureThread: device='%ls' requestType=%ls isRender=%ls int16=%ls",
+        prefs.m_szAudioDeviceDisplayName.c_str(),
+        requestTypeText,
+        prefs.m_bIsRenderDevice ? L"true" : L"false",
+        prefs.m_bInt16 ? L"true" : L"false"
+      );
+      milkwave.LogDebug(configBuf);
+    }
 
     // create arguments for loopback capture thread
     LoopbackCaptureThreadFunctionArguments threadArgs;
@@ -1646,6 +1668,9 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
         // and the m_szAudioDevice was already set using Ctrl+D
         if (result < 0) {
           wcscpy_s(g_plugin.m_szAudioDevice, g_plugin.m_szAudioDevicePrevious);
+          bool prevIsRender = (g_plugin.m_nAudioDevicePreviousType == 2);
+          g_plugin.SetAudioDeviceDisplayName(g_plugin.m_szAudioDevicePrevious, prevIsRender);
+          g_plugin.m_nAudioDeviceActiveType = g_plugin.m_nAudioDevicePreviousType;
         }
 
         std::wstring statusMessage = L"DEVICE=" + std::wstring(g_plugin.m_szAudioDevice);

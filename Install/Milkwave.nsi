@@ -8,9 +8,9 @@
 !define MUI_ICON "..\Resources\MilkwaveVisualizer.ico"
 !define MUI_UNICON "..\Resources\MilkwaveVisualizer.ico"
 
-!define VERSION "3.3"
+!define VERSION "3.4"
 !define VER_MAJOR 3
-!define VER_MINOR 3
+!define VER_MINOR 4
 
 !define RELDIR "..\Release\"
 
@@ -27,8 +27,8 @@ RequestExecutionLevel user
 
 !define MUI_DIRECTORYPAGE_TEXT_TOP "Milkwave needs FULL WRITE ACCESS to its directory! Do NOT install into $\"Program Files$\" or a similar protected location."
 
-!define MUI_FINISHPAGE_RUN "$INSTDIR\MilkwaveVisualizer.exe"
-!define MUI_FINISHPAGE_RUN_TEXT "Run Milkwave Visualizer now!"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\MilkwaveRemote.exe"
+!define MUI_FINISHPAGE_RUN_TEXT "Run Milkwave now!"
 
 !define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\README.txt"
 !define MUI_FINISHPAGE_SHOWREADME_TEXT "Show README.txt"

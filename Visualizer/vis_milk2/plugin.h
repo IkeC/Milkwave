@@ -295,7 +295,7 @@ public:
   bool bInitialized; // did it work ?
   bool OpenSender(unsigned int width, unsigned int height);
   void OpenMilkwaveRemote();
-  void SetAudioDeviceDisplayName(const wchar_t* displayName);
+  void SetAudioDeviceDisplayName(const wchar_t* displayName, bool isRenderDevice);
   void SetAMDFlag();
   
   void SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t checksum, char* prefix);
@@ -611,6 +611,8 @@ public:
   wchar_t     m_SongInfoFormat[MAX_PATH];
   int m_nAudioLoopState = 0; // 0: Running, 1: Cancel running thread, 2: Must restart
   int m_nAudioDeviceRequestType = 0; // 0: Undefined, 1: Capture (in), 2: Render (out)
+  int m_nAudioDeviceActiveType = 2;   // 0: Unknown, 1: Capture (in), 2: Render (out)
+  int m_nAudioDevicePreviousType = 2;
   float		m_fRandStart[4];
 
   // DIRECTX 9:
