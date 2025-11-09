@@ -1302,6 +1302,34 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   milkwave.LogInfo(L"CreateWindowAndRun: Creating window");
 
+  if (g_plugin.m_WindowX == 0 || g_plugin.m_WindowY == 0 || g_plugin.m_WindowWidth == 0 || g_plugin.m_WindowHeight == 0) {
+    RECT workArea{};
+    if (!SystemParametersInfoW(SPI_GETWORKAREA, 0, &workArea, 0)) {
+      workArea.left = 0;
+      workArea.top = 0;
+      workArea.right = GetSystemMetrics(SM_CXSCREEN);
+      workArea.bottom = GetSystemMetrics(SM_CYSCREEN);
+    }
+
+    const int gapPx = 50;
+    int spanWidth = workArea.right - workArea.left;
+    int spanHeight = workArea.bottom - workArea.top;
+    int defaultWidth = spanWidth > 0 ? spanWidth / 3 : 640;
+    int defaultHeight = spanHeight > 0 ? spanHeight / 3 : 360;
+    if (defaultWidth <= 0) {
+      defaultWidth = 640;
+    }
+    if (defaultHeight <= 0) {
+      defaultHeight = 360;
+    }
+
+    g_plugin.m_WindowWidth = defaultWidth;
+    g_plugin.m_WindowHeight = defaultHeight;
+    g_plugin.m_WindowX = (workArea.right - gapPx) - g_plugin.m_WindowWidth;
+    g_plugin.m_WindowY = workArea.top + gapPx;
+  }
+
+
   // Create the render window
   HWND hwnd = CreateWindowW(
     L"Direct3DWindowClass",

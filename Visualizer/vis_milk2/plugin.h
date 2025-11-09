@@ -379,10 +379,10 @@ public:
   
   bool m_WindowBorderless = false;
   float m_WindowWatermarkModeOpacity = 0.3f;
-  int m_WindowX = 850;
-  int m_WindowY = 50;
-  int m_WindowWidth = 640;
-  int m_WindowHeight = 360;
+  int m_WindowX = 0;
+  int m_WindowY = 0;
+  int m_WindowWidth = 0;
+  int m_WindowHeight = 0;
   int m_WindowFixedWidth = 960;
   int m_WindowFixedHeight = 540;
   
