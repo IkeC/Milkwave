@@ -7490,15 +7490,20 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     USHORT mask = 1 << (sizeof(SHORT) * 8 - 1);	// we want the highest-order bit
     bool bShiftHeldDown = (GetKeyState(VK_SHIFT) & mask) != 0;
 
-    if (bShiftHeldDown)
+    if (bShiftHeldDown) {
       m_nNumericInputMode = NUMERIC_INPUT_MODE_SPRITE_KILL;
+      SendMessageToMilkwaveRemote(L"STATUS=Sprite Mode set");
+      PostMessageToMilkwaveRemote(WM_USER_SPRITE_MODE);
+    }
     else if (m_nNumericInputMode == NUMERIC_INPUT_MODE_SPRITE) {
       m_nNumericInputMode = NUMERIC_INPUT_MODE_CUST_MSG;
       SendMessageToMilkwaveRemote(L"STATUS=Message Mode set");
+      PostMessageToMilkwaveRemote(WM_USER_MESSAGE_MODE);
     }
     else {
       m_nNumericInputMode = NUMERIC_INPUT_MODE_SPRITE;
       SendMessageToMilkwaveRemote(L"STATUS=Sprite Mode set");
+      PostMessageToMilkwaveRemote(WM_USER_SPRITE_MODE);
     }
 
     m_nNumericInputNum = 0;
@@ -10928,6 +10933,12 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
     SendPresetChangedInfoToMilkwaveRemote();
     SendSettingsInfoToMilkwaveRemote();
+    if (m_nNumericInputMode == NUMERIC_INPUT_MODE_CUST_MSG) {
+      PostMessageToMilkwaveRemote(WM_USER_MESSAGE_MODE);
+    }
+    else {
+      PostMessageToMilkwaveRemote(WM_USER_SPRITE_MODE);
+    }
   }
   else if (wcsncmp(sMessage, L"LINK=", 5) == 0) {
     std::wstring message(sMessage + 5);

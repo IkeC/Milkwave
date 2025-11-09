@@ -546,6 +546,8 @@ public:
 #define WM_USER_NEXT_PRESET WM_USER + 100
 #define WM_USER_PREV_PRESET WM_USER + 101
 #define WM_USER_COVER_CHANGED WM_USER + 102
+#define WM_USER_SPRITE_MODE WM_USER + 103
+#define WM_USER_MESSAGE_MODE WM_USER + 104
 
   FFT            myfft;
   td_mysounddata mysound;

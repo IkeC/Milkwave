@@ -62,6 +62,8 @@ namespace MilkwaveRemote {
     private const int WM_NEXT_PRESET = 0x0400 + 100;
     private const int WM_PREV_PRESET = 0x0400 + 101;
     private const int WM_COVER_CHANGED = 0x0400 + 102;
+  private const int WM_SPRITE_MODE = 0x0400 + 103;
+  private const int WM_MESSAGE_MODE = 0x0400 + 104;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -99,11 +101,13 @@ namespace MilkwaveRemote {
     private string milkwaveTagsFile = "tags-remote.json";
     private string milkwaveMidiFile = "midi-remote.json";
     private string milkwaveSpritesFile = "sprites.ini";
+  private string milkwaveMessagesFile = "messages.ini";
 
     private readonly Dictionary<Button, string> spriteButtonSectionMap = new();
     private readonly Dictionary<Button, string> spriteButtonLabelMap = new();
     private readonly Dictionary<Button, Image?> spriteButtonImageCache = new();
     private readonly Dictionary<string, string> spriteSectionImageMap = new(StringComparer.OrdinalIgnoreCase);
+  private readonly Dictionary<string, string> messageCodeTextMap = new(StringComparer.OrdinalIgnoreCase);
 
     private string shadertoyAppKey = "ftrlhm";
     private string shadertoyQueryType = "";
@@ -116,6 +120,7 @@ namespace MilkwaveRemote {
     private List<String> shadertoyFilesList = new List<String>();
 
     private Random rnd = new Random();
+    private bool visualizerSpriteModeActive = true;
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
 
@@ -289,6 +294,7 @@ namespace MilkwaveRemote {
       if (reloadConfig) {
         LoadSpriteDefinitions();
       }
+      LoadMessageDefinitions();
 
       foreach (Button button in spriteButtonSectionMap.Keys) {
         UpdateSpriteButtonAppearance(button);
@@ -343,6 +349,95 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void LoadMessageDefinitions() {
+      messageCodeTextMap.Clear();
+      string messagesPath = Path.Combine(BaseDir, milkwaveMessagesFile);
+
+      if (!File.Exists(messagesPath)) {
+        return;
+      }
+
+      try {
+        string? currentSection = null;
+        foreach (string rawLine in File.ReadAllLines(messagesPath)) {
+          string trimmed = rawLine.Trim();
+          if (trimmed.Length == 0 || trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.StartsWith(";", StringComparison.Ordinal)) {
+            continue;
+          }
+
+          if (trimmed.StartsWith("[", StringComparison.Ordinal) && trimmed.EndsWith("]", StringComparison.Ordinal)) {
+            currentSection = trimmed.Substring(1, trimmed.Length - 2).Trim();
+            continue;
+          }
+
+          if (string.IsNullOrEmpty(currentSection) || !currentSection.StartsWith("message", StringComparison.OrdinalIgnoreCase)) {
+            continue;
+          }
+
+          string cleanLine = StripInlineComment(trimmed);
+          int equalsIndex = cleanLine.IndexOf('=');
+          if (equalsIndex <= 0) {
+            continue;
+          }
+
+          string key = cleanLine.Substring(0, equalsIndex).Trim();
+          if (!key.Equals("text", StringComparison.OrdinalIgnoreCase)) {
+            continue;
+          }
+
+          string value = cleanLine.Substring(equalsIndex + 1).Trim();
+          if (value.Length == 0) {
+            continue;
+          }
+
+          if (value.StartsWith("{", StringComparison.Ordinal) && value.EndsWith("}", StringComparison.Ordinal) && value.Length > 1) {
+            value = value.Substring(1, value.Length - 2).Trim();
+          }
+
+          value = value.Replace("\\n", Environment.NewLine);
+
+          string messageCode = currentSection.Substring("message".Length).Trim();
+          if (messageCode.Length == 0) {
+            continue;
+          }
+
+          messageCodeTextMap[messageCode] = value;
+          messageCodeTextMap[currentSection] = value;
+        }
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Read messages.ini");
+      }
+    }
+
+    private bool TryGetMessageText(string code, out string messageText) {
+      messageText = string.Empty;
+      if (string.IsNullOrWhiteSpace(code)) {
+        return false;
+      }
+
+      if (messageCodeTextMap.TryGetValue(code, out string? mapped) && !string.IsNullOrWhiteSpace(mapped)) {
+        messageText = mapped;
+        return true;
+      }
+
+      string sectionKey = "message" + code;
+      if (messageCodeTextMap.TryGetValue(sectionKey, out string? sectionValue) && !string.IsNullOrWhiteSpace(sectionValue)) {
+        messageText = sectionValue;
+        return true;
+      }
+
+      return false;
+    }
+
+    private void ApplyVisualizerMode(bool isSpriteMode) {
+      if (visualizerSpriteModeActive == isSpriteMode) {
+        return;
+      }
+
+      visualizerSpriteModeActive = isSpriteMode;
+      RefreshSpriteButtonImages(false);
+    }
+
     private void UpdateSpriteButtonAppearance(Button button) {
       if (!spriteButtonSectionMap.TryGetValue(button, out string? section)) {
         return;
@@ -352,7 +447,7 @@ namespace MilkwaveRemote {
       spriteSectionImageMap.TryGetValue(sectionKey, out string? configuredPath);
       UpdateSpriteButtonTooltip(button, configuredPath);
 
-      if (!Settings.EnableSpriteButtonImage) {
+      if (!visualizerSpriteModeActive || !Settings.EnableSpriteButtonImage) {
         ShowSpriteLabel(button);
         return;
       }
@@ -420,6 +515,18 @@ namespace MilkwaveRemote {
 
     private void UpdateSpriteButtonTooltip(Button button, string? configuredPath) {
       if (toolTip1 == null) {
+        return;
+      }
+
+      if (!visualizerSpriteModeActive) {
+        string label = spriteButtonLabelMap.TryGetValue(button, out string? mappedLabel) ? mappedLabel : string.Empty;
+        if (!string.IsNullOrWhiteSpace(label) && TryGetMessageText(label, out string messageText)) {
+          toolTip1.SetToolTip(button, $"Message {label}: {messageText}");
+        } else if (!string.IsNullOrWhiteSpace(label)) {
+          toolTip1.SetToolTip(button, $"Message {label}: (not defined in {milkwaveMessagesFile})");
+        } else {
+          toolTip1.SetToolTip(button, "Message slot");
+        }
         return;
       }
 
@@ -521,7 +628,7 @@ namespace MilkwaveRemote {
     }
 
     private void SpriteButton_MouseUp(object? sender, MouseEventArgs e) {
-      if (e.Button == MouseButtons.Right && sender is Button button && spriteButtonSectionMap.ContainsKey(button) && button != btn00) {
+      if (e.Button == MouseButtons.Right && visualizerSpriteModeActive && sender is Button button && spriteButtonSectionMap.ContainsKey(button) && button != btn00) {
         PromptSpriteImageSelection(button);
       }
     }
@@ -978,6 +1085,10 @@ namespace MilkwaveRemote {
         btnPresetSend_Click(null, null);
       } else if (m.Msg == WM_COVER_CHANGED) {
         RefreshSpriteButtonImages(false);
+      } else if (m.Msg == WM_SPRITE_MODE) {
+        ApplyVisualizerMode(true);
+      } else if (m.Msg == WM_MESSAGE_MODE) {
+        ApplyVisualizerMode(false);
       } else if (m.Msg == WM_COPYDATA) {
         // Extract the COPYDATASTRUCT from the message
         COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
@@ -1063,6 +1174,11 @@ namespace MilkwaveRemote {
             string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
             if (status.Length > 0) {
               SetStatusText(status);
+            }
+            if (status.Equals("Sprite Mode set", StringComparison.OrdinalIgnoreCase)) {
+              ApplyVisualizerMode(true);
+            } else if (status.Equals("Message Mode set", StringComparison.OrdinalIgnoreCase)) {
+              ApplyVisualizerMode(false);
             }
             if (status.Contains(": error ")) {
               string errLine = status.Substring(1, status.IndexOf(")") - 1);
@@ -4223,7 +4339,7 @@ namespace MilkwaveRemote {
           toolStripMenuItemButtonPanel.Checked = false;
           SetPanelsVisibility();
         } else if (e.Button == MouseButtons.Right) {
-          toolStripMenuItemButtonPanel.Checked = true;
+          toolStripMenuItemButtonPanel.Checked = !toolStripMenuItemButtonPanel.Checked;
           SetPanelsVisibility();
         } else if (!string.IsNullOrEmpty(statusBar.Text) && !statusBar.Text.StartsWith("Copied ")) {
           Clipboard.SetText(statusBar.Text);
