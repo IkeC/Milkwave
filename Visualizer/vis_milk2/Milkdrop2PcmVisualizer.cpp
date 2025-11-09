@@ -1010,11 +1010,19 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_NCLBUTTONDBLCLK:
   {
-    // if (borderless)
-    // only triggered when going INTO fullscreen
+    if (fullscreen) {
+      ToggleFullScreen(hWnd);
+      return 0;
+    }
+
+    bool ctrlHeld = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    if (ctrlHeld) {
+      ToggleBorderlessWindow(hWnd);
+      return 0;
+    }
+
     ToggleFullScreen(hWnd);
     return 0;
-    // break;
   }
 
   case WM_NCRBUTTONDBLCLK:
@@ -1094,6 +1102,12 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     // anywhere in the client area (there is no title bar in fullscreen).
     if (fullscreen) {
       ToggleFullScreen(hWnd);
+      return 0;
+    }
+
+    bool ctrlHeld = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    if (ctrlHeld) {
+      ToggleBorderlessWindow(hWnd);
       return 0;
     }
 
