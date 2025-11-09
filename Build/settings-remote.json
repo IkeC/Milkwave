@@ -14,22 +14,22 @@
         "watermark \u0026 !colorful",
         "shader \u0026 !expensive"
     ],
-    "ShadertoyIDs": [
-        "mtyGWy",
-        "Wt33Wf",
-        "w3KGRK"
-    ],
     "RemoteWindowLocation": {
         "IsEmpty": false,
-        "X": 54,
-        "Y": 48
+        "X": 50,
+        "Y": 50
     },
     "RemoteWindowSize": {
         "IsEmpty": false,
-        "Width": 791,
-        "Height": 573
+        "Width": 0,
+        "Height": 0
     },
-    "SplitterDistance1": 257,
+    "RemoteWindowCompactSize": {
+        "IsEmpty": false,
+        "Width": 0,
+        "Height": 0
+    },
+    "SplitterDistance1": 0,
     "DarkMode": true,
     "ShowTabsPanel": true,
     "ShowButtonPanel": true,

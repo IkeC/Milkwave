@@ -1,6 +1,7 @@
 ﻿using MilkwaveRemote.Data;
 using MilkwaveRemote.Helper;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
@@ -62,8 +63,8 @@ namespace MilkwaveRemote {
     private const int WM_NEXT_PRESET = 0x0400 + 100;
     private const int WM_PREV_PRESET = 0x0400 + 101;
     private const int WM_COVER_CHANGED = 0x0400 + 102;
-  private const int WM_SPRITE_MODE = 0x0400 + 103;
-  private const int WM_MESSAGE_MODE = 0x0400 + 104;
+    private const int WM_SPRITE_MODE = 0x0400 + 103;
+    private const int WM_MESSAGE_MODE = 0x0400 + 104;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -101,13 +102,13 @@ namespace MilkwaveRemote {
     private string milkwaveTagsFile = "tags-remote.json";
     private string milkwaveMidiFile = "midi-remote.json";
     private string milkwaveSpritesFile = "sprites.ini";
-  private string milkwaveMessagesFile = "messages.ini";
+    private string milkwaveMessagesFile = "messages.ini";
 
     private readonly Dictionary<Button, string> spriteButtonSectionMap = new();
     private readonly Dictionary<Button, string> spriteButtonLabelMap = new();
     private readonly Dictionary<Button, Image?> spriteButtonImageCache = new();
     private readonly Dictionary<string, string> spriteSectionImageMap = new(StringComparer.OrdinalIgnoreCase);
-  private readonly Dictionary<string, string> messageCodeTextMap = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> messageCodeTextMap = new(StringComparer.OrdinalIgnoreCase);
 
     private string shadertoyAppKey = "ftrlhm";
     private string shadertoyQueryType = "";
@@ -925,7 +926,6 @@ namespace MilkwaveRemote {
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
       cboWindowTitle.SelectedIndex = 0;
-      cboShadertoyType.SelectedIndex = 0;
       cboSettingsOpenFile.SelectedIndex = 3;
 
       InitializeSpriteButtonSupport();
@@ -1013,16 +1013,9 @@ namespace MilkwaveRemote {
         cboTagsFilter.SelectedIndex = 0;
       }
 
-      if (Settings.ShadertoyIDs?.Count > 0) {
-        ReloadShadertoyIDsList(false);
-        cboShadertoyID.SelectedIndex = 0;
-      }
-
       picShaderError.Image = SystemIcons.GetStockIcon(StockIconId.Warning, 64).ToBitmap();
       picShaderError.Visible = false;
       LoadVisualizerSettings();
-
-      numShadertoyQueryIndex.Maximum = shadertoyQueryPageSize;
 
       SendToMilkwaveVisualizer("", MessageType.GetState);
 
@@ -2346,7 +2339,7 @@ namespace MilkwaveRemote {
         } else if (e.KeyCode == Keys.L) {
           if (tabControl.SelectedTab.Name.Equals("tabShader")) {
             e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
-            LoadShadertoyQuery();
+            btnShadertoyFilesLoad_Click(null, null);
           }
         } else if (e.KeyCode == Keys.N) {
           e.SuppressKeyPress = true;
@@ -2525,18 +2518,6 @@ namespace MilkwaveRemote {
       cboTagsFilter.Items.Clear();
       cboTagsFilter.Items.AddRange(Settings.LoadFilters.ToArray());
       cboTagsFilter.Refresh();
-    }
-
-    private void ReloadShadertoyIDsList(bool addCuurent) {
-      if (addCuurent && cboShadertoyID.Text.Length > 0 && !Settings.ShadertoyIDs.Contains(cboShadertoyID.Text)) {
-        Settings.ShadertoyIDs.Insert(0, cboShadertoyID.Text);
-        if (Settings.ShadertoyIDs.Count > 5) {
-          Settings.ShadertoyIDs.RemoveAt(5);
-        }
-      }
-      cboShadertoyID.Items.Clear();
-      cboShadertoyID.Items.AddRange(Settings.ShadertoyIDs.ToArray());
-      cboShadertoyID.Refresh();
     }
 
     private void txtStyle_KeyDown(object sender, KeyEventArgs e) {
@@ -3665,7 +3646,14 @@ namespace MilkwaveRemote {
 
     private void LoadAndSetSettings() {
       Location = Settings.RemoteWindowLocation;
-      Size = Settings.RemoteWindowSize;
+      Size optimalSize = GetCalculatedOptionalTopPanelSize();
+      if (Settings.RemoteWindowSize.Width > 0 && Settings.RemoteWindowSize.Height > 0) {
+        Size = Settings.RemoteWindowSize;
+      } else {
+        Height = optimalSize.Height + statusBar.Height + 500;
+        Width = optimalSize.Width;
+      }
+
       toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
       toolStripMenuItemSpriteButtonImages.Checked = Settings.EnableSpriteButtonImage;
@@ -3674,7 +3662,11 @@ namespace MilkwaveRemote {
       ToggleMonitors();
 
       try {
-        splitContainer1.SplitterDistance = Settings.SplitterDistance1;
+        if (Settings.SplitterDistance1 > 0) {
+          splitContainer1.SplitterDistance = Settings.SplitterDistance1;
+        } else {
+          splitContainer1.SplitterDistance = optimalSize.Height + 50;
+        }
       } catch (Exception) {
         // igonre
       }
@@ -4334,8 +4326,17 @@ namespace MilkwaveRemote {
       try {
         if (e.Button == MouseButtons.Middle) {
           // MMB action
-          Width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + 57;
-          Height = cboAudioDevice.Top + cboAudioDevice.Height + statusBar.Height + 137;
+          if (Settings.RemoteWindowCompactSize.Width > 0) {
+            Width = Settings.RemoteWindowCompactSize.Width;
+          } else {
+            Width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + 57;
+          }
+          if (Settings.RemoteWindowCompactSize.Height > 0) {
+            Height = Settings.RemoteWindowCompactSize.Height;
+          } else {
+            Height = cboAudioDevice.Top + cboAudioDevice.Height + statusBar.Height + 137;
+          }
+
           toolStripMenuItemButtonPanel.Checked = false;
           SetPanelsVisibility();
         } else if (e.Button == MouseButtons.Right) {
@@ -4362,33 +4363,6 @@ namespace MilkwaveRemote {
 
     private void btnShaderConvert_Click(object sender, EventArgs e) {
       ConvertShader(true);
-    }
-
-    private void btnLoadShadertoyID_Click(object? sender, EventArgs? e) {
-      string id = cboShadertoyID.Text.Trim();
-      int index = id.LastIndexOf("/");
-      if (index > 0) {
-        id = id.Substring(index + 1);
-        cboShadertoyID.Text = id; // Set the ID back to the combobox
-      }
-      ReloadShadertoyIDsList(true);
-
-      if (string.IsNullOrEmpty(id)) {
-        SetStatusText("Please enter a Shadertoy.com URL or ID");
-        return;
-      }
-
-      SetStatusText($"Loading code for Shadertoy ID {id}");
-
-      string url = $"https://www.shadertoy.com/api/v1/shaders/{id}?key={shadertoyAppKey}";
-      using var httpClient = new HttpClient();
-      try {
-        var jsonString = httpClient.GetStringAsync(url).Result;
-        loadShaderFromJson(jsonString, true);
-
-      } catch (Exception ex) {
-        SetStatusText($"Loading failed: {ex.Message}");
-      }
     }
 
     private void loadShaderFromJson(string jsonString, bool autoSend) {
@@ -4480,13 +4454,6 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void cboShadertoyURL_KeyDown(object sender, KeyEventArgs e) {
-      if (e.KeyCode == Keys.Enter) {
-        e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
-        btnLoadShadertoyID_Click(null, null);
-      }
-    }
-
     public int GetNthIndex(string s, char t, int n) {
       int count = 0;
       for (int i = 0; i < s.Length; i++) {
@@ -4516,75 +4483,6 @@ namespace MilkwaveRemote {
         MarkRow(lastReceivedShaderErrorLineNumber - (int)numOffset.Value);
       }
     }
-
-    private void btnLoadShadertoyQuery_Click(object? sender, EventArgs? e) {
-      LoadShadertoyQuery();
-    }
-
-    private bool LoadShadertoyQuery() {
-      try {
-        bool altPressed = ((Control.ModifierKeys & Keys.Alt) == Keys.Alt);
-        int selectIndex = (int)numShadertoyQueryIndex.Value - 1;
-        int page = (int)Math.Floor((decimal)selectIndex / shadertoyQueryPageSize);
-
-        if (altPressed || selectIndex >= shadertoyQueryList.Count || !cboShadertoyType.Text.Equals(shadertoyQueryType)) {
-          if (altPressed || !cboShadertoyType.Text.Equals(shadertoyQueryType)) {
-            page = 0;
-            shadertoyQueryList.Clear();
-          }
-          string url = "https://www.shadertoy.com/api/v1/shaders/query?" +
-            $"key={shadertoyAppKey}&" +
-            $"sort={cboShadertoyType.Text}&" +
-            $"from={page * shadertoyQueryPageSize}&" +
-            $"num={shadertoyQueryPageSize}";
-          using var httpClient = new HttpClient();
-          SetStatusText($"Trying to load {cboShadertoyType.Text} entries...");
-          var jsonString = httpClient.GetStringAsync(url).Result;
-          JsonDocument doc = JsonDocument.Parse(jsonString);
-          if (doc.RootElement.TryGetProperty("Error", out JsonElement elError)) {
-            SetStatusText($"Shadertoy.com says: {elError.GetString()}");
-            return false;
-          }
-
-          // JsonElement elShaders = doc.RootElement.GetProperty("Shaders");
-          JsonElement elResults = doc.RootElement.GetProperty("Results");
-
-          // using null-forgiving operator
-          shadertoyQueryList.AddRange(elResults.EnumerateArray().Select(e => e.GetString()!));
-
-          if (shadertoyQueryList.Count > 0) {
-            // seems like a proper query result, let's cache it
-            shadertoyQueryType = cboShadertoyType.Text;
-            numShadertoyQueryIndex.Maximum = shadertoyQueryPageSize * (page + 2);
-          }
-        }
-
-        if (shadertoyQueryList.Count > 0) {
-          if (selectIndex > shadertoyQueryList.Count - 1) {
-            numShadertoyQueryIndex.Value = 1;
-            selectIndex = 0;
-          }
-
-          string id = shadertoyQueryList[selectIndex];
-          if (!string.IsNullOrEmpty(id)) {
-            cboShadertoyID.Text = id;
-            btnLoadShadertoyID_Click(null, null);
-            numShadertoyQueryIndex.Value = (int)numShadertoyQueryIndex.Value + 1;
-          }
-        }
-      } catch (Exception ex) {
-        SetStatusText($"Loading failed: {ex.Message}");
-      }
-
-      return true;
-    }
-
-    private void cboShadertoyID_Click(object sender, EventArgs e) {
-      if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
-        openShadertoyURLForId(cboShadertoyID.Text.Trim());
-      }
-    }
-
     private void openShadertoyURLForId(string id) {
       OpenURL($"https://www.shadertoy.com/view/{id}");
     }
@@ -5321,7 +5219,7 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnShadertoyFilesLoad_Click(object sender, EventArgs e) {
+    private void btnShadertoyFilesLoad_Click(object? sender, EventArgs? e) {
       using (var fbd = new FolderBrowserDialog()) {
         if (Directory.Exists(VisualizerPresetsFolder)) {
           fbd.InitialDirectory = VisualizerPresetsFolder;
@@ -5431,6 +5329,12 @@ namespace MilkwaveRemote {
           }
         }
       }
+    }
+
+    private Size GetCalculatedOptionalTopPanelSize() {
+      int width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + cboPresets.Top * 4;
+      int height = cboAudioDevice.Top + cboAudioDevice.Height + cboPresets.Top;
+      return new Size(width, height);
     }
   } // end class
 } // end namespace

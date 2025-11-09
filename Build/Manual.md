@@ -16,7 +16,9 @@ Press K in Visualizer or the button "Sprite/Msg Mode" to change modes. When Visu
 
 Note that you can choose to hide either the Tabs or the Button panel with  the popup menu that opens by clicking "Milkwave" in the bottom right corner. You may also use the menu to access help resources, find or open the Visualizer window and switch between light and dark mode.
 
-At the bottom, you can left-click the status bar to copy its content to the clipboard, middle-click to set a default "compact" mode, or right-click to quickly toggle the visibility of the button panel. CPU and GPU usage are displayed at the bottom right if enabled. Click the "Milkwave" button at the bottom right to expand a menu giving access to diffent application settings and information resources.
+At the bottom, you can left-click the status bar to copy its content to the clipboard, middle-click to set a "compact" mode, or right-click to quickly toggle the visibility of the button panel. You can set the "compact" mode size in _settings-remote.json_ using the key _RemoteWindowCompactSize_.
+
+CPU and GPU usage are displayed at the bottom right if enabled. Click the "Milkwave" button at the bottom right to expand a menu providing quick access to additional application settings and information resources.
 
 ## Tab "Presets"
 

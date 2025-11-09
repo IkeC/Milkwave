@@ -93,7 +93,6 @@ namespace MilkwaveRemote
       numOpacity = new NumericUpDown();
       lblPercent = new Label();
       lblAudioDevice = new Label();
-      btn00 = new Button();
       btnSendFile = new Button();
       cboAutoplay = new ComboBox();
       chkPresetLink = new CheckBox();
@@ -163,18 +162,13 @@ namespace MilkwaveRemote
       txtFilterTags = new TextBox();
       btnSendShader = new Button();
       txtShaderinfo = new TextBox();
-      btnLoadShadertoyID = new Button();
       btnShaderConvert = new Button();
       txtLineNumberError = new TextBox();
       txtShaderFind = new TextBox();
       btnLoadShaderInputFromFile = new Button();
       btnShaderHelp = new Button();
-      cboShadertoyID = new ComboBox();
       numPSVersion = new NumericUpDown();
       numOffset = new NumericUpDown();
-      cboShadertoyType = new ComboBox();
-      numShadertoyQueryIndex = new NumericUpDown();
-      btnLoadShadertoyQuery = new Button();
       chkShaderFile = new CheckBox();
       chkShaderLeft = new CheckBox();
       btnHLSLSave = new Button();
@@ -213,6 +207,7 @@ namespace MilkwaveRemote
       btnShadertoyFileLoadNext = new Button();
       btnShadertoyFileLoadThis = new Button();
       numShadertoyFileIndex = new NumericUpDown();
+      btn00 = new Button();
       txtShaderGLSL = new TextBox();
       txtShaderHLSL = new TextBox();
       txtMidi2Label = new TextBox();
@@ -282,7 +277,6 @@ namespace MilkwaveRemote
       tabShader = new TabPage();
       pnlTabShader = new Panel();
       panShadertoyLocal = new Panel();
-      panShadertoyAPI = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
       tabWave = new TabPage();
@@ -375,7 +369,6 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFont5).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numPSVersion).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numMidiBank).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).BeginInit();
@@ -393,7 +386,6 @@ namespace MilkwaveRemote
       tabShader.SuspendLayout();
       pnlTabShader.SuspendLayout();
       panShadertoyLocal.SuspendLayout();
-      panShadertoyAPI.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)picShaderError).BeginInit();
       ((System.ComponentModel.ISupportInitialize)splitContainerShader).BeginInit();
       splitContainerShader.Panel1.SuspendLayout();
@@ -458,7 +450,7 @@ namespace MilkwaveRemote
       // 
       // toolStripDropDownButton
       // 
-  toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripMenuItemSpriteButtonImages, toolStripSeparator4, toolStripMenuItemMonitorCPU, toolStripMenuItemMonitorGPU, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
+      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripMenuItemSpriteButtonImages, toolStripSeparator4, toolStripMenuItemMonitorCPU, toolStripMenuItemMonitorGPU, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
       toolStripDropDownButton.Image = (Image)resources.GetObject("toolStripDropDownButton.Image");
       toolStripDropDownButton.ImageTransparentColor = Color.Magenta;
       toolStripDropDownButton.Name = "toolStripDropDownButton";
@@ -1114,18 +1106,6 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblAudioDevice, "Double-click to reload list\r\nRight-click to select and set default device\r\n");
       lblAudioDevice.DoubleClick += lblAudioDevice_DoubleClick;
       lblAudioDevice.MouseClick += lblAudioDevice_MouseClick;
-      // 
-      // btn00
-      // 
-      btn00.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      btn00.Location = new Point(7, 138);
-      btn00.Margin = new Padding(3, 2, 3, 2);
-      btn00.Name = "btn00";
-      btn00.Size = new Size(55, 41);
-    btn00.TabIndex = 12;
-    btn00.Text = "00";
-      btn00.UseVisualStyleBackColor = true;
-      btn00.Click += btn00_Click;
       // 
       // btnSendFile
       // 
@@ -2014,18 +1994,6 @@ namespace MilkwaveRemote
       txtShaderinfo.TabIndex = 35;
       toolTip1.SetToolTip(txtShaderinfo, "Shaderinfo used for filename and embedded into generated preset file\r\nCan be multiple lines, use cursor keys to scroll");
       // 
-      // btnLoadShadertoyID
-      // 
-      btnLoadShadertoyID.FlatStyle = FlatStyle.System;
-      btnLoadShadertoyID.Location = new Point(81, -1);
-      btnLoadShadertoyID.Name = "btnLoadShadertoyID";
-      btnLoadShadertoyID.Size = new Size(49, 23);
-      btnLoadShadertoyID.TabIndex = 34;
-      btnLoadShadertoyID.Text = "Load";
-      toolTip1.SetToolTip(btnLoadShadertoyID, "Load shader using Shadertoy.com API, convert it and send it to the Visualizer\r\nNOTE: If Shadertoy.com API is down/unreachable, copy code to left pane");
-      btnLoadShadertoyID.UseVisualStyleBackColor = true;
-      btnLoadShadertoyID.Click += btnLoadShadertoyID_Click;
-      // 
       // btnShaderConvert
       // 
       btnShaderConvert.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
@@ -2085,16 +2053,6 @@ namespace MilkwaveRemote
       btnShaderHelp.UseVisualStyleBackColor = true;
       btnShaderHelp.Click += btnShaderHelp_Click;
       // 
-      // cboShadertoyID
-      // 
-      cboShadertoyID.Location = new Point(0, 0);
-      cboShadertoyID.Name = "cboShadertoyID";
-      cboShadertoyID.Size = new Size(77, 23);
-      cboShadertoyID.TabIndex = 138;
-      toolTip1.SetToolTip(cboShadertoyID, "Shadertoy.com URL or ID\r\nCtrl+Click: Open in browser\r\n\r\n");
-      cboShadertoyID.Click += cboShadertoyID_Click;
-      cboShadertoyID.KeyDown += cboShadertoyURL_KeyDown;
-      // 
       // numPSVersion
       // 
       numPSVersion.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
@@ -2123,41 +2081,6 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(numOffset, "Adjust this value if the line marked as error is wrong");
       numOffset.Value = new decimal(new int[] { 227, 0, 0, 0 });
       numOffset.ValueChanged += numOffset_ValueChanged;
-      // 
-      // cboShadertoyType
-      // 
-      cboShadertoyType.DropDownStyle = ComboBoxStyle.DropDownList;
-      cboShadertoyType.Items.AddRange(new object[] { "newest", "name", "love", "popular", "hot" });
-      cboShadertoyType.Location = new Point(137, 0);
-      cboShadertoyType.Name = "cboShadertoyType";
-      cboShadertoyType.Size = new Size(76, 23);
-      cboShadertoyType.TabIndex = 142;
-      toolTip1.SetToolTip(cboShadertoyType, "Shadertoy.com query type");
-      // 
-      // numShadertoyQueryIndex
-      // 
-      numShadertoyQueryIndex.Location = new Point(217, 0);
-      numShadertoyQueryIndex.Margin = new Padding(3, 2, 3, 2);
-      numShadertoyQueryIndex.Maximum = new decimal(new int[] { 50, 0, 0, 0 });
-      numShadertoyQueryIndex.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-      numShadertoyQueryIndex.Name = "numShadertoyQueryIndex";
-      numShadertoyQueryIndex.Size = new Size(47, 23);
-      numShadertoyQueryIndex.TabIndex = 143;
-      numShadertoyQueryIndex.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numShadertoyQueryIndex, "Load the nth ID from the query");
-      numShadertoyQueryIndex.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      // 
-      // btnLoadShadertoyQuery
-      // 
-      btnLoadShadertoyQuery.FlatStyle = FlatStyle.System;
-      btnLoadShadertoyQuery.Location = new Point(271, -1);
-      btnLoadShadertoyQuery.Name = "btnLoadShadertoyQuery";
-      btnLoadShadertoyQuery.Size = new Size(49, 23);
-      btnLoadShadertoyQuery.TabIndex = 144;
-      btnLoadShadertoyQuery.Text = "Load";
-      toolTip1.SetToolTip(btnLoadShadertoyQuery, resources.GetString("btnLoadShadertoyQuery.ToolTip"));
-      btnLoadShadertoyQuery.UseVisualStyleBackColor = true;
-      btnLoadShadertoyQuery.Click += btnLoadShadertoyQuery_Click;
       // 
       // chkShaderFile
       // 
@@ -2605,6 +2528,18 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(numShadertoyFileIndex, "Directory file index");
       numShadertoyFileIndex.Value = new decimal(new int[] { 1, 0, 0, 0 });
       numShadertoyFileIndex.ValueChanged += numShadertoyFileIndex_ValueChanged;
+      // 
+      // btn00
+      // 
+      btn00.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+      btn00.Location = new Point(7, 138);
+      btn00.Margin = new Padding(3, 2, 3, 2);
+      btn00.Name = "btn00";
+      btn00.Size = new Size(55, 41);
+      btn00.TabIndex = 12;
+      btn00.Text = "00";
+      btn00.UseVisualStyleBackColor = true;
+      btn00.Click += btn00_Click;
       // 
       // txtShaderGLSL
       // 
@@ -3560,24 +3495,10 @@ namespace MilkwaveRemote
       panShadertoyLocal.Controls.Add(numShadertoyFileIndex);
       panShadertoyLocal.Controls.Add(btnShadertoyFilesLoadDir);
       panShadertoyLocal.Controls.Add(btnLoadShaderInputFromFile);
-      panShadertoyLocal.Controls.Add(panShadertoyAPI);
       panShadertoyLocal.Location = new Point(0, 1);
       panShadertoyLocal.Name = "panShadertoyLocal";
       panShadertoyLocal.Size = new Size(370, 32);
       panShadertoyLocal.TabIndex = 150;
-      // 
-      // panShadertoyAPI
-      // 
-      panShadertoyAPI.Controls.Add(cboShadertoyID);
-      panShadertoyAPI.Controls.Add(btnLoadShadertoyID);
-      panShadertoyAPI.Controls.Add(cboShadertoyType);
-      panShadertoyAPI.Controls.Add(numShadertoyQueryIndex);
-      panShadertoyAPI.Controls.Add(btnLoadShadertoyQuery);
-      panShadertoyAPI.Location = new Point(7, 3);
-      panShadertoyAPI.Name = "panShadertoyAPI";
-      panShadertoyAPI.Size = new Size(343, 23);
-      panShadertoyAPI.TabIndex = 29;
-      panShadertoyAPI.Visible = false;
       // 
       // picShaderError
       // 
@@ -4665,7 +4586,6 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFont5).EndInit();
       ((System.ComponentModel.ISupportInitialize)numPSVersion).EndInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numShadertoyQueryIndex).EndInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).EndInit();
       ((System.ComponentModel.ISupportInitialize)numMidiBank).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).EndInit();
@@ -4687,7 +4607,6 @@ namespace MilkwaveRemote
       pnlTabShader.PerformLayout();
       panShadertoyLocal.ResumeLayout(false);
       panShadertoyLocal.PerformLayout();
-      panShadertoyAPI.ResumeLayout(false);
       ((System.ComponentModel.ISupportInitialize)picShaderError).EndInit();
       splitContainerShader.Panel1.ResumeLayout(false);
       splitContainerShader.Panel1.PerformLayout();
@@ -4936,16 +4855,11 @@ namespace MilkwaveRemote
     private SplitContainer splitContainerShader;
     private Button btnShaderConvert;
     private TextBox txtShaderGLSL;
-    private Button btnLoadShadertoyID;
     private TextBox txtShaderinfo;
     private Button btnShaderHelp;
-    private ComboBox cboShadertoyID;
     private Panel pnlTabShader;
     private NumericUpDown numPSVersion;
     private NumericUpDown numOffset;
-    private Button btnLoadShadertoyQuery;
-    private NumericUpDown numShadertoyQueryIndex;
-    private ComboBox cboShadertoyType;
     private CheckBox chkShaderFile;
     private Button btnShaderError;
     private PictureBox picShaderError;
@@ -5046,7 +4960,6 @@ namespace MilkwaveRemote
     private Label label9;
     private ComboBox cboSettingsOpenFile;
     private CheckBox chkQualityAuto;
-    private Panel panShadertoyAPI;
     private Panel panShadertoyLocal;
     private Button btnShadertoyFilesLoadDir;
     private TextBox txtShadertoyFile;
