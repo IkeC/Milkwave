@@ -2834,6 +2834,7 @@ namespace MilkwaveRemote {
   Environment.NewLine +
   "• Shanev" + Environment.NewLine +
   "• Tures1955" + Environment.NewLine +
+  "• hatecubed" + Environment.NewLine +
   Environment.NewLine +
   "Milkwave is and will always be free software, being the collaborative effort of many diffent authors. " +
   "If you like it and want to appreciate and support our share of the work, please consider donating." + Environment.NewLine +
