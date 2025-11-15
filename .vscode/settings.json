@@ -1,0 +1,15 @@
+{
+  "files.associations": {
+    "*.vcxproj": "xml",
+    "*.csproj": "xml",
+    "*.milk": "plaintext",
+    "*.ini": "ini"
+  },
+  "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
+  "C_Cpp.default.intelliSenseMode": "windows-msvc-x86",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.errorSquiggles": "enabled",
+  "dotnet.defaultSolution": "Milkwave.sln",
+  "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
+  "msbuild.configuration.architecture": "Win32"
+}

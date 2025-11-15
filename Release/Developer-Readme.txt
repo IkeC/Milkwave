@@ -2,4 +2,4 @@ If you run the Visual Studio solution (Milkwave.sln) in DEBUG configuration, thi
 
 If you run the Visual Studio solution in RELEASE configuration, the base folder is that of the resulting executable. The file /Build/release.cmd is run as a post-build event, copying the executables, other required files and default config files to the /Release folder.
 
-Background and details here: https://github.com/IkeC/Milkwave/issues/12
+There are also working tasks and configurations to build and release the solution using VS Code.

@@ -1,0 +1,43 @@
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/Visualizer/vis_milk2",
+        "${workspaceFolder}/Visualizer/audio",
+        "${workspaceFolder}/Visualizer/spoutDX9",
+        "${workspaceFolder}/Visualizer/ns-eel2-shim",
+        "${workspaceFolder}/Visualizer/lib",
+        "${env:DXSDK_DIR}Include",
+        "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/um",
+        "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/shared",
+        "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/winrt",
+        "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include"
+      ],
+      "defines": [
+        "_DEBUG",
+        "WIN32",
+        "_WINDOWS",
+        "USE_VIS_HDR_HWND",
+        "_CRT_SECURE_NO_WARNINGS",
+        "_CRT_NON_CONFORMING_SWPRINTFS",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "windowsSdkVersion": "10.0.26100.0",
+      "compilerPath": "cl.exe",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-msvc-x86",
+      "browse": {
+        "path": [
+          "${workspaceFolder}"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "configurationProvider": "ms-vscode.cpptools"
+    }
+  ],
+  "version": 4
+}
