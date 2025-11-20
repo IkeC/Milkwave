@@ -5,6 +5,7 @@
 * Image or message tooltip information depending on set mode
 * Fix: Audio capture not working on some systems (#16)
 * Fix: Inconsistent display of switched audio device
+* Fix: Setting Spout output to Fixed may cause high GPU load
 
 ## v3.3 (2025-10-31)
 

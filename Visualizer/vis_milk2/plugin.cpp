@@ -7203,12 +7203,14 @@ int CPlugin::SetSpoutFixedSize(bool toggleSwitch, bool showNotifications) {
 
     d3dPp.BackBufferWidth = nSpoutFixedWidth;
     d3dPp.BackBufferHeight = nSpoutFixedHeight;
+    UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
     GetDevice()->Reset(&d3dPp);
   }
   else {
     // bSpoutFixedSize OR bSpoutOut is false
     // Update window properties
     SetVariableBackBuffer(m_WindowWidth, m_WindowFixedHeight);
+    UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
     GetDevice()->Reset(&d3dPp);
     if (toggleSwitch && showNotifications && bSpoutOut) {
       AddNotification(L"Fixed Spout output size disabled");

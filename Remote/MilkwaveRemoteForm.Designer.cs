@@ -2365,7 +2365,7 @@ namespace MilkwaveRemote
       // 
       // cboSpoutHeight
       // 
-      cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "600", "480", "240", "200" });
+      cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "720", "600", "480", "240", "200" });
       cboSpoutHeight.Location = new Point(142, 122);
       cboSpoutHeight.Name = "cboSpoutHeight";
       cboSpoutHeight.Size = new Size(58, 23);

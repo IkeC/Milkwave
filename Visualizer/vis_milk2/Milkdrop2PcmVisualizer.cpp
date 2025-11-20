@@ -300,12 +300,26 @@ void InitD3d(HWND hwnd, int width, int height) {
 
 void DeinitD3d() {
   if (pD3DDevice) {
-    pD3DDevice->Release();
+    __try {
+      pD3DDevice->Release();
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+      wchar_t msg[256];
+      swprintf_s(msg, L"DeinitD3d - Exception during device Release (0x%X)", GetExceptionCode());
+      milkwave.LogInfo(msg);
+    }
     pD3DDevice = nullptr;
   }
 
   if (pD3D9) {
-    pD3D9->Release();
+    __try {
+      pD3D9->Release();
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+      wchar_t msg[256];
+      swprintf_s(msg, L"DeinitD3d - Exception during D3D9 Release (0x%X)", GetExceptionCode());
+      milkwave.LogInfo(msg);
+    }
     pD3D9 = nullptr;
   }
 }

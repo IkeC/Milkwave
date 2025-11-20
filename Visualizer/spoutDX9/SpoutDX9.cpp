@@ -159,9 +159,20 @@ void spoutDX9::CloseDirectX9()
 
 	if (m_pD3D) {
 		// Release device before the object
-		if (m_pDevice)
-			m_pDevice->Release();
-		m_pD3D->Release();
+		if (m_pDevice) {
+			__try {
+				m_pDevice->Release();
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				SpoutLogWarning("spoutDX9::CloseDirectX9 - Exception during device Release (0x%X)", GetExceptionCode());
+			}
+		}
+		__try {
+			m_pD3D->Release();
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			SpoutLogWarning("spoutDX9::CloseDirectX9 - Exception during D3D Release (0x%X)", GetExceptionCode());
+		}
 	}
 	m_pDevice = nullptr;
 	m_pD3D = nullptr;
@@ -263,12 +274,23 @@ void spoutDX9::SetDX9device(IDirect3DDevice9Ex* pDevice)
 {
 	// The class DX9 object is not used if the device is set externally
 	if (m_pD3D) {
-		m_pD3D->Release();
+		__try {
+			m_pD3D->Release();
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			SpoutLogWarning("spoutDX9::SetDX9device - Exception during D3D Release (0x%X)", GetExceptionCode());
+		}
 		// The Spout DX9 device can be released here because
 		// it will not be released again if m_pD3D is NULL.
 		// If set externally, the device must also released externally
-		if (m_pDevice)
-			m_pDevice->Release();
+		if (m_pDevice) {
+			__try {
+				m_pDevice->Release();
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				SpoutLogWarning("spoutDX9::SetDX9device - Exception during device Release (0x%X)", GetExceptionCode());
+			}
+		}
 		m_pD3D = nullptr;
 		m_pDevice = nullptr;
 	}
@@ -856,19 +878,43 @@ bool spoutDX9::WriteDX9surface(IDirect3DDevice9Ex* pDevice, LPDIRECT3DSURFACE9 s
 		// StretchRect is a GPU copy
 		hr = pDevice->StretchRect(surface, NULL, texture_surface, NULL, D3DTEXF_NONE);
 		if(SUCCEEDED(hr)) {
-			// It is necessary to flush the command queue
-			// or the data is not ready for the receiver to read.
-			// Adapted from : https://msdn.microsoft.com/en-us/library/windows/desktop/bb172234%28v=vs.85%29.aspx
-			// Also see : http://www.ogre3d.org/forums/viewtopic.php?f=5&t=50486
-			IDirect3DQuery9* pEventQuery = nullptr;
-			pDevice->CreateQuery(D3DQUERYTYPE_EVENT, &pEventQuery) ;
-			if(pEventQuery) {
-				pEventQuery->Issue(D3DISSUE_END) ;
-				while(S_FALSE == pEventQuery->GetData(NULL, 0, D3DGETDATA_FLUSH)) ;
-				pEventQuery->Release(); // Must be released or causes a leak and reference count increment
+			// Flush without busy-waiting - recreate query after device reset events
+			struct QueryCache {
+				IDirect3DQuery9* query = nullptr;
+				IDirect3DDevice9Ex* device = nullptr;
+			};
+			static QueryCache s_query;
+
+			auto EnsureQuery = [&](IDirect3DDevice9Ex* currentDevice) {
+				if (s_query.query && s_query.device != currentDevice) {
+					s_query.query->Release();
+					s_query.query = nullptr;
+					s_query.device = nullptr;
+				}
+				if (!s_query.query) {
+					if (SUCCEEDED(currentDevice->CreateQuery(D3DQUERYTYPE_EVENT, &s_query.query))) {
+						s_query.device = currentDevice;
+					}
+				}
+				return s_query.query != nullptr;
+			};
+
+			if (EnsureQuery(pDevice)) {
+				HRESULT issueHr = s_query.query->Issue(D3DISSUE_END);
+				if (SUCCEEDED(issueHr)) {
+					// Single GetData call requests a flush but does not spin-wait
+					s_query.query->GetData(NULL, 0, D3DGETDATA_FLUSH);
+				}
+				else {
+					s_query.query->Release();
+					s_query.query = nullptr;
+					s_query.device = nullptr;
+				}
 			}
+			texture_surface->Release();
 			return true;
 		}
+		texture_surface->Release();
 	}
 
 	return false;

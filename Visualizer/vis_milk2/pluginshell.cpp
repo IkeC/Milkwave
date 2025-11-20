@@ -782,6 +782,11 @@ void CPluginShell::OnUserResizeWindow() {
           return;
         }
         SetVariableBackBuffer(c.right - c.left, c.bottom - c.top);
+        if (IsSpoutActiveAndFixed()) {
+          d3dPp.BackBufferWidth = nSpoutFixedWidth;
+          d3dPp.BackBufferHeight = nSpoutFixedHeight;
+        }
+        UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
         GetDevice()->Reset(&d3dPp);
       }
       //if (m_lpDX->m_REAL_client_width != new_REAL_client_w || m_lpDX->m_REAL_client_height != new_REAL_client_h) {
@@ -1081,6 +1086,7 @@ int CPluginShell::PluginInitialize(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAME
   m_lpDX->m_client_height = iHeight;
   m_lpDX->m_REAL_client_height = iHeight;
   m_lpDX->m_REAL_client_width = iWidth;
+  UpdateBackBufferTracking(iWidth, iHeight);
 
   if (!InitNondx9Stuff()) return FALSE;  // gives its own error messages
   if (!AllocateDX9Stuff()) return FALSE;  // gives its own error messages
@@ -2685,6 +2691,12 @@ void CPluginShell::SetVariableBackBuffer(int width, int height) {
   d3dPp.BackBufferHeight = (int)height * q;
 }
 
+void CPluginShell::UpdateBackBufferTracking(int width, int height) {
+  if (!m_lpDX) return;
+  m_lpDX->m_backbuffer_width = width;
+  m_lpDX->m_backbuffer_height = height;
+}
+
 float CPluginShell::GetEffectiveRenderQuality(int width, int height) {
   float q = clamp(m_fRenderQuality, 0.01, 1);
   if (bQualityAuto) {
@@ -2721,6 +2733,7 @@ void CPluginShell::ResetBufferAndFonts() {
   m_lpDX->OnUserResizeWindow(&w, &c, false);
 
   SetVariableBackBuffer(m_lpDX->m_client_width, m_lpDX->m_client_height);
+  UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
   GetDevice()->Reset(&d3dPp);
 
   if (m_lpDX->m_client_width != 0 && m_lpDX->m_client_height != 0) {

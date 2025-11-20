@@ -81,6 +81,7 @@ public:
   float GetEffectiveRenderQuality(int width, int height);
 
   void ResetBufferAndFonts();
+  void UpdateBackBufferTracking(int width, int height);
 
   D3DPRESENT_PARAMETERS d3dPp;
   DXContext* m_lpDX;            // pointer to DXContext object
