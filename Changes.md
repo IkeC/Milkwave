@@ -1,17 +1,21 @@
-## v3.4 (unreleased)
+## v3.4 (2025-11-22)
 
 * Remote: Display current sprite preview image on button
 * Select new sprite by right-clicking sprite button
 * Image or message tooltip information depending on set mode
 * Fix: Audio capture not working on some systems (#16)
 * Fix: Inconsistent display of switched audio device
-* Fix: Setting Spout output to Fixed may cause high GPU load
+* Fix: Setting Spout output to Fixed causing high GPU load
+* New presets
+  - Del + IkeC - glooper
+  - Shane + IkeC - Apollonian Structure
+  - SnoopethDuckDuck + IkeC - Breeze
 
 ## v3.3 (2025-10-31)
 
 * Settings Tab: Shift Hue/Saturation/Brightness of the entire output
 * Presets Tab: Filter preset list (Ctrl+F)
-* Mouse interation mode (Ctrl+M) (base by @OfficialIncubo)
+* Mouse interaction mode (Ctrl+M) (base by @OfficialIncubo)
 * "Auto" quality setting for constant perceived quality on different window sizes
 * Option to disable audio capture (bEnableAudioCapture=0)
 * Fix: Restored amp functionality
