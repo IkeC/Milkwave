@@ -1,0 +1,79 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Shane + IkeC - Apollonian Structure / https://www.shadertoy.com/view/4d2BW1
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=// CONV: adding helper functions
+comp_5=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_6=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_7=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_8=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_9=
+comp_10=float m(float3 p){
+comp_11=  p.z += time;
+comp_12=  float i = 0., s = 1., k;
+comp_13=  while(i++ < 6.) p *= k = 1.5/dot(p = mod_conv(p - 1., 2.) - 1., p), s *= k;
+comp_14=  return length(p)/s - .01;
+comp_15=}
+comp_16=
+comp_17=shader_body {
+comp_18=  float4 c = 0;
+comp_19=  // CONV: Center on screen, then try some aspect correction
+comp_20=  uv = (uv*2) - 1;
+comp_21=  uv *= aspect.xy;
+comp_22=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_23=  uv = float2(uv.x, -uv.y);
+comp_24=  float2 u = uv;
+comp_25=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_26=  uv += float2(0,0) + 0.5;
+comp_27=  uv *= float2(1,1) * 1;
+comp_28=  
+comp_29=  // mouse reactivity
+comp_30=  if (mouse.z == 1) {
+comp_31=    uv.x += 1.2*(mouse.x-0.5);
+comp_32=    uv.y -= 1.2*(mouse.y-0.5);
+comp_33=  }
+comp_34=
+comp_35=  // Direction ray and origin. By the way, you could use "o = d/d" (Thanks, Fabrice),
+comp_36=  // then do some shuffling around in the lighting calculation, but I didn't quite
+comp_37=  // like the end result, so I'll leave it alone, for now anyway.
+comp_38=  float3 d = float3(uv - .5, 1)/4., o = float3(1, 1, 0);
+comp_39=  // Initialize to zero.
+comp_40=  c -= c;
+comp_41=
+comp_42=  // CONV: no saved break condition, see Milkwave manual
+comp_43=  // Raymarching loop -- sans break, which always makes me cringe. :)
+comp_44=  while(c.w++<1e2) o += m(o)*d;
+comp_45=
+comp_46=  // Lame lighting - loosely based on directial derivative lighting and the
+comp_47=  // way occlusion is performed, but mostly made up. It'd be nice to get rid
+comp_48=  // of that "1.1," but it's kind of necessary.  Note that "o.z" serves as
+comp_49=  // a rough distance estimate, and to give a slight volumetric light feel.
+comp_50=  // c += (m(o - .01)*m(o - d)*4e1 + o.z*1.1 - 2.)/o.z;
+comp_51=  // I stared at the line above for ages and got nothing. Fabrice looked at it
+comp_52=  // instantly, and saw the obvious. :)
+comp_53=  c += (m(o - .01)*m(o - d)*4e1 - 2.)/o.z + 1.1;
+comp_54=  
+comp_55=  // audio reactivity
+comp_56=  #ifdef bass_smooth
+comp_57=    // bass_smooth is a Milkwave-specific parameter
+comp_58=    float f1 = vis_shift;
+comp_59=    float f2 = vis_intensity;
+comp_60=    if (vis_version == 1) {
+comp_61=      f1 += 0.5;
+comp_62=      f2 *= smoothstep(0,2,bass_smooth)*0.5;
+comp_63=    }
+comp_64=    else if (vis_version == 2) {
+comp_65=      f1 += 0.7;
+comp_66=      f2 *= smoothstep(0,2,bass_att)*0.3;
+comp_67=    }    
+comp_68=    c*= f1+f2;
+comp_69=  #else
+comp_70=    // no Milkwave fallback
+comp_71=    c *= 0.7+smoothstep(0,2,bass_att)*0.3;
+comp_72=  #endif
+comp_73=  
+comp_74=  ret = c;
+comp_75=}

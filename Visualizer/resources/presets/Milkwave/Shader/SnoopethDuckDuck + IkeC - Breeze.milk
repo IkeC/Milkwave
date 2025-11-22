@@ -1,0 +1,95 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// SnoopethDuckDuck + IkeC - Breeze / https://www.shadertoy.com/view/W3XfWH
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx (sin(time)*0.5+1)
+comp_5=#define txx (sin(time*0.1*0.5)*0.5+1)
+comp_6=#define txy (sin(time*0.14*0.5)*0.5+1)
+comp_7=
+comp_8=#define S sin(t+i*u
+comp_9=#define D u += .13*cos(o.xy/4. + sin(t/i + sin(t/i + 8.*i*u
+comp_10=
+comp_11=float3 myShiftHSV(float my_colshift_hue, float my_colshift_saturation, float my_colshift_brightness, float3 c) {
+comp_12=    float3 rgb = c;
+comp_13=    if (my_colshift_hue != 0.0 || my_colshift_saturation != 0.0 || my_colshift_brightness != 0.0)
+comp_14=    {
+comp_15=        float4 K = float4(0, -1.0 / 3.0, 2.0 / 3.0, -1);
+comp_16=        float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
+comp_17=        float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+comp_18=        float d = q.x - min(q.w, q.y), e = 1e-10;
+comp_19=        float h = frac(abs(q.z + (q.w - q.y) / (6.0 * d + e)) + my_colshift_hue * 0.5);
+comp_20=        float s = d / (q.x + e);
+comp_21=        float v = q.x;
+comp_22=        s = (my_colshift_saturation <= 0.0) ? s * (1.0 + my_colshift_saturation) : s + (1.0 - s) * my_colshift_saturation;
+comp_23=        v = (my_colshift_brightness <= 0.0) ? v * (1.0 + my_colshift_brightness) : v + (1.0 - v) * my_colshift_brightness;
+comp_24=        float3 t = abs(frac(h + float3(0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+comp_25=        rgb = v * lerp(float3(1, 1, 1), saturate(t - 1.0), s);
+comp_26=    }
+comp_27=    return rgb;
+comp_28=}
+comp_29=
+comp_30=shader_body {
+comp_31=  float4 o = 0;
+comp_32=  // CONV: Center on screen, then try some aspect correction
+comp_33=  float2 uvorig = uv;
+comp_34=  uv *= aspect.xy;
+comp_35=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_36=  // uv = float2(uv.x, -uv.y);
+comp_37=  float2 u = uv;
+comp_38=
+comp_39=  u.x -= 0;
+comp_40=  u.y += 5;
+comp_41=  
+comp_42=  u.x *= 1.4;
+comp_43=
+comp_44=  u.x += (txx)*3;
+comp_45=  u.y -= (txy)*5;
+comp_46=
+comp_47=  if (mouse.z==1) {
+comp_48=    u.x += 10*(mouse.x - 0.5);
+comp_49=    u.y += 10*(mouse.y - 0.5);
+comp_50=  }
+comp_51=
+comp_52=  //u = (u+u-(o.xy=uv.xy))/o.y/2.5;
+comp_53=  u.y++;
+comp_54=
+comp_55=  o = u.yxyx/3.;
+comp_56=
+comp_57=  for(float t = time/3., i; i++<9.; o = abs(o-.48).yxzw)
+comp_58=  D )   - 4.*u.yx*i)/i),
+comp_59=  D .yx*i) +  u*i*i)/i),
+comp_60=  o += length(sin(o.xy + i*u + S.yx
+comp_61=  + S   *2.
+comp_62=  + S.yx*4.
+comp_63=  + S   *8.))))
+comp_64=  ))/2.,
+comp_65=  u = mul(u, transpose(float2x2(cos(i-float4(8,19,41,8)))));
+comp_66=
+comp_67=  o.y = .47*(o.x+o.y);
+comp_68=  
+comp_69=  // react to audio
+comp_70=  float saturation = 0.5;
+comp_71=  float brightness = -0.4;
+comp_72=  
+comp_73=  #ifdef bass_smooth
+comp_74=    float fac1 = 1, fac2 = 1;
+comp_75=    if (vis_version == 1) {
+comp_76=      fac1 = 0.2+smoothstep(0,2,bass_smooth);
+comp_77=      fac2 = 1 + smoothstep(0,2,bass_smooth)*0.2;
+comp_78=    } 
+comp_79=    else if (vis_version == 2) {
+comp_80=      fac1 = smoothstep(0,2,bass_att)*0.5;
+comp_81=      fac2 = 1 + smoothstep(0,2,bass_att)*0.2;
+comp_82=    }
+comp_83=    saturation *= vis_intensity*fac1+vis_shift;
+comp_84=    brightness *= vis_intensity*fac2+vis_shift;
+comp_85=  #else
+comp_86=    saturation *= smoothstep(0,2,bass_att)*0.5;
+comp_87=    brightness *= 1 + smoothstep(0,2,bass_att)*0.2;
+comp_88=  #endif
+comp_89=  
+comp_90=  ret = myShiftHSV(0,saturation,brightness,o);
+comp_91=}

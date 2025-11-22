@@ -81,14 +81,9 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "Build Solution (Release)",
+      "label": "Build RELEASE",
       "type": "shell",
-      "command": "msbuild",
-      "args": [
-        "${workspaceFolder}\\Milkwave.sln",
-        "/p:Configuration=Release",
-        "/p:Platform=Win32"
-      ],
+      "command": "& { msbuild '${workspaceFolder}\\Milkwave.sln' /p:Configuration=Release /p:Platform=Win32; $buildExit = $LASTEXITCODE; if ($buildExit -ne 0) { exit $buildExit }; Push-Location -LiteralPath '${workspaceFolder}\\Build'; & '.\\release.cmd'; $releaseExit = $LASTEXITCODE; Pop-Location; if ($releaseExit -ne 0) { exit $releaseExit } }",
       "group": "build",
       "problemMatcher": "$msCompile"
     },

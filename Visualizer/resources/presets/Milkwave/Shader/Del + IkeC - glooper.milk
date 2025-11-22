@@ -1,0 +1,131 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Del + IkeC - glooper / https://www.shadertoy.com/view/3sKBRz
+comp_2=// Transpiled to HLSL using Milkwave
+comp_3=
+comp_4=#define tx (sin(time)*0.5+1)
+comp_5=
+comp_6=#define MAX_STEPS 100
+comp_7=#define MAX_DIST 400
+comp_8=#define SURF_DIST 0.01
+comp_9=
+comp_10=float sdSphere(float3 p, float4 s){
+comp_11=  return  length(p-s.xyz)-s.w;
+comp_12=}
+comp_13=
+comp_14=float getIntensity() {
+comp_15=  float res = 1;
+comp_16=  #ifdef vis_intensity
+comp_17=    res = 0.5+0.5/vis_intensity;
+comp_18=  #endif
+comp_19=  return res;
+comp_20=}
+comp_21=
+comp_22=float smin( float a, float b, float k )
+comp_23={
+comp_24=  float h = clamp(0.5+0.5*(b-a)/k, 0, 1.0);
+comp_25=  return lerp( b, a, h) - k*h*(1.0-h*getIntensity());
+comp_26=}
+comp_27=
+comp_28=float GetDist(float3 p){
+comp_29=
+comp_30=  float sd = sdSphere(p,float4(0,1,6,1));
+comp_31=  float v = 0.5+sin(time*2.4 + p.z*5.4+p.y*3.4+p.x*4.1)*0.5;
+comp_32=  sd += v*0.25;
+comp_33=  float k = 3.5+sin(p.y*3.2+time*3.16);
+comp_34=  float d = smin(sd*0.75,p.y+.5,k);
+comp_35=  return d;
+comp_36=}
+comp_37=
+comp_38=float RayMarch(float3 ro, float3 rd){
+comp_39=  float dO = 0;
+comp_40=  for(int i = 0; i < MAX_STEPS;i++){
+comp_41=    float3 p = ro + rd  * dO;
+comp_42=    float dS = GetDist(p);
+comp_43=    dO += dS;
+comp_44=    if(dO > MAX_DIST || dS < SURF_DIST) i = MAX_STEPS;
+comp_45=  }
+comp_46=  return dO;
+comp_47=}
+comp_48=
+comp_49=float3 GetNormal(float3 p){
+comp_50=  float d = GetDist(p);
+comp_51=  float2 e = float2(0.005,0);
+comp_52=
+comp_53=  float3 n = d - float3(GetDist(p - e.xyy),
+comp_54=  GetDist(p - e.yxy),
+comp_55=  GetDist(p - e.yyx));
+comp_56=  return normalize(n);
+comp_57=}
+comp_58=
+comp_59=float GetLight(float3 p,float3 rd)
+comp_60={
+comp_61=  float t = frac(time*0.54)*6.28;
+comp_62=  float3 lightPos = float3(0,8.+sin(t+p.z)*5.0,3);
+comp_63=  float3 l = normalize(lightPos - p);
+comp_64=  
+comp_65=
+comp_66=  float3 n = GetNormal(p);
+comp_67=
+comp_68=  float dif = clamp(dot(n,l),0.0,1.);
+comp_69=  float d = RayMarch(p+n*SURF_DIST*2., l);
+comp_70=
+comp_71=  if(d < length(lightPos-p))
+comp_72=  dif *= .5;
+comp_73=  else
+comp_74=  {
+comp_75=    float3 ref = reflect(rd, n);
+comp_76=    float spe = max(dot(ref, l), 0.0);
+comp_77=    dif += pow(spe,64.0);
+comp_78=  }
+comp_79=
+comp_80=  return dif;
+comp_81=}
+comp_82=
+comp_83=shader_body {
+comp_84=  float4 fragColor = 0;
+comp_85=  float2 fragCoord  = uv;
+comp_86=  // CONV: Center on screen, then try some aspect correction
+comp_87=  uv = (uv*2) - 1;
+comp_88=  uv *= aspect.xy;
+comp_89=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y) and set viewpoint
+comp_90=  uv = float2(uv.x, -uv.y);
+comp_91=  uv += float2(0.0, 0.0);
+comp_92=  uv *= float2(1.0, 1.0);
+comp_93=
+comp_94=  float3 col = float3(0.0, 0.0, 0.0);
+comp_95=  float3 ro = float3(0,2,-2.5);
+comp_96=  float3 rd = normalize(float3(uv.x,uv.y-.3,2.2));
+comp_97=  
+comp_98=  if (mouse.z == 1) {
+comp_99=    rd.x *= pow((mouse.x+0.5),2);
+comp_100=    rd.y *= pow((mouse.y+0.5),2);
+comp_101=  }  
+comp_102=  
+comp_103=  float d = RayMarch(ro,rd);
+comp_104=  float3 p = ro + rd *d;
+comp_105=  
+comp_106=  float dif = GetLight(p,rd);
+comp_107= 
+comp_108=  //col = float3(dif*(1.0+sin(rd.x)),dif,dif*0.8);
+comp_109=  col = float3(dif,dif,dif);
+comp_110=  
+comp_111=  float fac1 = 1;
+comp_112=  #ifdef bass_smooth
+comp_113=    if (vis_version == 1) {
+comp_114=      fac1 = fac1 + smoothstep(0,2,bass_smooth);
+comp_115=    }
+comp_116=    else if (vis_version == 2) {
+comp_117=      fac1 = fac1 + smoothstep(0,2,bass_att);
+comp_118=    }
+comp_119=    fac1 = vis_intensity*fac1+vis_shift; 
+comp_120=  #else
+comp_121=    fac1 = fac1 + smoothstep(0,2,bass_att);
+comp_122=  #endif
+comp_123=  col.b *= fac1;  
+comp_124=  
+comp_125=  fragColor = float4(col,1.0);
+comp_126=  ret = fragColor;
+comp_127=}
