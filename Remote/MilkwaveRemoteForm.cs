@@ -4005,7 +4005,7 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnTestFonts_Click(object sender, EventArgs e) {
+    private void btnTestFonts_Click(object? sender, EventArgs? e) {
       SendToMilkwaveVisualizer("", MessageType.TestFonts);
     }
 
@@ -5336,6 +5336,26 @@ namespace MilkwaveRemote {
       int width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + cboPresets.Top * 4;
       int height = cboAudioDevice.Top + cboAudioDevice.Height + cboPresets.Top;
       return new Size(width, height);
+    }
+
+    private void btnFontGlobalMinus_Click(object sender, EventArgs e) {
+      numFont1.Value = Math.Clamp(numFont1.Value - 2, numFont1.Minimum, numFont1.Maximum);
+      numFont2.Value = Math.Clamp(numFont2.Value - 2, numFont2.Minimum, numFont2.Maximum);
+      numFont3.Value = Math.Clamp(numFont3.Value - 2, numFont3.Minimum, numFont3.Maximum);
+      numFont4.Value = Math.Clamp(numFont4.Value - 2, numFont4.Minimum, numFont4.Maximum);
+      numFont5.Value = Math.Clamp(numFont5.Value - 2, numFont5.Minimum, numFont5.Maximum);
+      btnSettingsSave_Click(null, null);
+      btnTestFonts_Click(null, null);
+    }
+
+    private void btnFontGlobalPlus_Click(object sender, EventArgs e) {
+      numFont1.Value = Math.Clamp(numFont1.Value + 2, numFont1.Minimum, numFont1.Maximum);
+      numFont2.Value = Math.Clamp(numFont2.Value + 2, numFont2.Minimum, numFont2.Maximum);
+      numFont3.Value = Math.Clamp(numFont3.Value + 2, numFont3.Minimum, numFont3.Maximum);
+      numFont4.Value = Math.Clamp(numFont4.Value + 2, numFont4.Minimum, numFont4.Maximum);
+      numFont5.Value = Math.Clamp(numFont5.Value + 2, numFont5.Minimum, numFont5.Maximum);
+      btnSettingsSave_Click(null, null);
+      btnTestFonts_Click(null, null);
     }
   } // end class
 } // end namespace

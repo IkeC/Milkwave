@@ -207,6 +207,8 @@ namespace MilkwaveRemote
       btnShadertoyFileLoadNext = new Button();
       btnShadertoyFileLoadThis = new Button();
       numShadertoyFileIndex = new NumericUpDown();
+      btnFontGlobalPlus = new Button();
+      btnFontGlobalMinus = new Button();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
       txtShaderHLSL = new TextBox();
@@ -1586,9 +1588,9 @@ namespace MilkwaveRemote
       // 
       btnSettingsLoad.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnSettingsLoad.FlatStyle = FlatStyle.System;
-      btnSettingsLoad.Location = new Point(518, 66);
+      btnSettingsLoad.Location = new Point(518, 65);
       btnSettingsLoad.Name = "btnSettingsLoad";
-      btnSettingsLoad.Size = new Size(83, 53);
+      btnSettingsLoad.Size = new Size(83, 23);
       btnSettingsLoad.TabIndex = 130;
       btnSettingsLoad.Text = "Load";
       toolTip1.SetToolTip(btnSettingsLoad, "Load values from settings.ini");
@@ -2528,6 +2530,32 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(numShadertoyFileIndex, "Directory file index");
       numShadertoyFileIndex.Value = new decimal(new int[] { 1, 0, 0, 0 });
       numShadertoyFileIndex.ValueChanged += numShadertoyFileIndex_ValueChanged;
+      // 
+      // btnFontGlobalPlus
+      // 
+      btnFontGlobalPlus.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnFontGlobalPlus.FlatStyle = FlatStyle.System;
+      btnFontGlobalPlus.Location = new Point(562, 124);
+      btnFontGlobalPlus.Name = "btnFontGlobalPlus";
+      btnFontGlobalPlus.Size = new Size(39, 22);
+      btnFontGlobalPlus.TabIndex = 161;
+      btnFontGlobalPlus.Text = "+2";
+      toolTip1.SetToolTip(btnFontGlobalPlus, "Increase all, save and preview");
+      btnFontGlobalPlus.UseVisualStyleBackColor = true;
+      btnFontGlobalPlus.Click += btnFontGlobalPlus_Click;
+      // 
+      // btnFontGlobalMinus
+      // 
+      btnFontGlobalMinus.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnFontGlobalMinus.FlatStyle = FlatStyle.System;
+      btnFontGlobalMinus.Location = new Point(518, 124);
+      btnFontGlobalMinus.Name = "btnFontGlobalMinus";
+      btnFontGlobalMinus.Size = new Size(39, 22);
+      btnFontGlobalMinus.TabIndex = 160;
+      btnFontGlobalMinus.Text = "-2";
+      toolTip1.SetToolTip(btnFontGlobalMinus, "Decrease all, save and preview");
+      btnFontGlobalMinus.UseVisualStyleBackColor = true;
+      btnFontGlobalMinus.Click += btnFontGlobalMinus_Click;
       // 
       // btn00
       // 
@@ -3695,6 +3723,8 @@ namespace MilkwaveRemote
       // 
       tabFonts.BackColor = SystemColors.ControlLight;
       tabFonts.BorderStyle = BorderStyle.FixedSingle;
+      tabFonts.Controls.Add(btnFontGlobalPlus);
+      tabFonts.Controls.Add(btnFontGlobalMinus);
       tabFonts.Controls.Add(btnTestFonts);
       tabFonts.Controls.Add(chkFontAA5);
       tabFonts.Controls.Add(chkFontItalic5);
@@ -3744,9 +3774,9 @@ namespace MilkwaveRemote
       // 
       btnTestFonts.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnTestFonts.FlatStyle = FlatStyle.System;
-      btnTestFonts.Location = new Point(518, 124);
+      btnTestFonts.Location = new Point(516, 95);
       btnTestFonts.Name = "btnTestFonts";
-      btnTestFonts.Size = new Size(83, 22);
+      btnTestFonts.Size = new Size(85, 22);
       btnTestFonts.TabIndex = 159;
       btnTestFonts.Text = "Test";
       btnTestFonts.UseVisualStyleBackColor = true;
@@ -4966,5 +4996,7 @@ namespace MilkwaveRemote
     private NumericUpDown numShadertoyFileIndex;
     private Button btnShadertoyFileLoadNext;
     private Button btnShadertoyFileLoadThis;
+    private Button btnFontGlobalPlus;
+    private Button btnFontGlobalMinus;
   }
 }
