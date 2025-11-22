@@ -1,7 +1,6 @@
 ﻿using MilkwaveRemote.Data;
 using MilkwaveRemote.Helper;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
@@ -5339,21 +5338,21 @@ namespace MilkwaveRemote {
     }
 
     private void btnFontGlobalMinus_Click(object sender, EventArgs e) {
-      numFont1.Value = Math.Clamp(numFont1.Value - 2, numFont1.Minimum, numFont1.Maximum);
-      numFont2.Value = Math.Clamp(numFont2.Value - 2, numFont2.Minimum, numFont2.Maximum);
-      numFont3.Value = Math.Clamp(numFont3.Value - 2, numFont3.Minimum, numFont3.Maximum);
-      numFont4.Value = Math.Clamp(numFont4.Value - 2, numFont4.Minimum, numFont4.Maximum);
-      numFont5.Value = Math.Clamp(numFont5.Value - 2, numFont5.Minimum, numFont5.Maximum);
+      numFont1.Value = Math.Clamp(numFont1.Value - 5, numFont1.Minimum, numFont1.Maximum);
+      numFont2.Value = Math.Clamp(numFont2.Value - 5, numFont2.Minimum, numFont2.Maximum);
+      numFont3.Value = Math.Clamp(numFont3.Value - 5, numFont3.Minimum, numFont3.Maximum);
+      numFont4.Value = Math.Clamp(numFont4.Value - 5, numFont4.Minimum, numFont4.Maximum);
+      numFont5.Value = Math.Clamp(numFont5.Value - 5, numFont5.Minimum, numFont5.Maximum);
       btnSettingsSave_Click(null, null);
       btnTestFonts_Click(null, null);
     }
 
     private void btnFontGlobalPlus_Click(object sender, EventArgs e) {
-      numFont1.Value = Math.Clamp(numFont1.Value + 2, numFont1.Minimum, numFont1.Maximum);
-      numFont2.Value = Math.Clamp(numFont2.Value + 2, numFont2.Minimum, numFont2.Maximum);
-      numFont3.Value = Math.Clamp(numFont3.Value + 2, numFont3.Minimum, numFont3.Maximum);
-      numFont4.Value = Math.Clamp(numFont4.Value + 2, numFont4.Minimum, numFont4.Maximum);
-      numFont5.Value = Math.Clamp(numFont5.Value + 2, numFont5.Minimum, numFont5.Maximum);
+      numFont1.Value = Math.Clamp(numFont1.Value + 5, numFont1.Minimum, numFont1.Maximum);
+      numFont2.Value = Math.Clamp(numFont2.Value + 5, numFont2.Minimum, numFont2.Maximum);
+      numFont3.Value = Math.Clamp(numFont3.Value + 5, numFont3.Minimum, numFont3.Maximum);
+      numFont4.Value = Math.Clamp(numFont4.Value + 5, numFont4.Minimum, numFont4.Maximum);
+      numFont5.Value = Math.Clamp(numFont5.Value + 5, numFont5.Minimum, numFont5.Maximum);
       btnSettingsSave_Click(null, null);
       btnTestFonts_Click(null, null);
     }

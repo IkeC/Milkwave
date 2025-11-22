@@ -2535,11 +2535,11 @@ namespace MilkwaveRemote
       // 
       btnFontGlobalPlus.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnFontGlobalPlus.FlatStyle = FlatStyle.System;
-      btnFontGlobalPlus.Location = new Point(562, 124);
+      btnFontGlobalPlus.Location = new Point(563, 124);
       btnFontGlobalPlus.Name = "btnFontGlobalPlus";
-      btnFontGlobalPlus.Size = new Size(39, 22);
+      btnFontGlobalPlus.Size = new Size(38, 22);
       btnFontGlobalPlus.TabIndex = 161;
-      btnFontGlobalPlus.Text = "+2";
+      btnFontGlobalPlus.Text = "+5";
       toolTip1.SetToolTip(btnFontGlobalPlus, "Increase all, save and preview");
       btnFontGlobalPlus.UseVisualStyleBackColor = true;
       btnFontGlobalPlus.Click += btnFontGlobalPlus_Click;
@@ -2550,9 +2550,9 @@ namespace MilkwaveRemote
       btnFontGlobalMinus.FlatStyle = FlatStyle.System;
       btnFontGlobalMinus.Location = new Point(518, 124);
       btnFontGlobalMinus.Name = "btnFontGlobalMinus";
-      btnFontGlobalMinus.Size = new Size(39, 22);
+      btnFontGlobalMinus.Size = new Size(38, 22);
       btnFontGlobalMinus.TabIndex = 160;
-      btnFontGlobalMinus.Text = "-2";
+      btnFontGlobalMinus.Text = "-5";
       toolTip1.SetToolTip(btnFontGlobalMinus, "Decrease all, save and preview");
       btnFontGlobalMinus.UseVisualStyleBackColor = true;
       btnFontGlobalMinus.Click += btnFontGlobalMinus_Click;
