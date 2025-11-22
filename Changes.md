@@ -2,7 +2,6 @@
 
 * Remote: Display current sprite preview image on button
 * Select new sprite by right-clicking sprite button
-* Image or message tooltip information depending on set mode
 * Fix: Audio capture not working on some systems (#16)
 * Fix: Inconsistent display of switched audio device
 * Fix: Setting Spout output to Fixed causing high GPU load
