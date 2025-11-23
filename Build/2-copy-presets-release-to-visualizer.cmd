@@ -7,7 +7,7 @@ set DESTDIR=..\Visualizer\resources\presets
 robocopy %SRCDIR%\BeatDrop %DESTDIR%\BeatDrop
 robocopy %SRCDIR%\Butterchurn %DESTDIR%\Butterchurn
 robocopy %SRCDIR%\Incubo_ %DESTDIR%\Incubo_
-robocopy %SRCDIR%\Incubo_ Picks %DESTDIR%\Incubo_ Picks
+robocopy "%SRCDIR%\Incubo_ Picks" "%DESTDIR%\Incubo_ Picks"
 robocopy %SRCDIR%\Milkdrop2077 %DESTDIR%\Milkdrop2077
 robocopy %SRCDIR%\Milkwave %DESTDIR%\Milkwave
 robocopy %SRCDIR%\Milkwave\Shader %DESTDIR%\Milkwave\Shader
