@@ -48,7 +48,7 @@ comp_43=
 comp_44=  u.x += (txx)*3;
 comp_45=  u.y -= (txy)*5;
 comp_46=
-comp_47=  if (mouse.z==1) {
+comp_47=  if (mouse.z > 0) {
 comp_48=    u.x += 10*(mouse.x - 0.5);
 comp_49=    u.y += 10*(mouse.y - 0.5);
 comp_50=  }

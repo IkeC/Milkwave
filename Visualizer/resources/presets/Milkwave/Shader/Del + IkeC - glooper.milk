@@ -99,7 +99,7 @@ comp_94=  float3 col = float3(0.0, 0.0, 0.0);
 comp_95=  float3 ro = float3(0,2,-2.5);
 comp_96=  float3 rd = normalize(float3(uv.x,uv.y-.3,2.2));
 comp_97=  
-comp_98=  if (mouse.z == 1) {
+comp_98=  if (mouse.z > 0) {
 comp_99=    rd.x *= pow((mouse.x+0.5),2);
 comp_100=    rd.y *= pow((mouse.y+0.5),2);
 comp_101=  }  

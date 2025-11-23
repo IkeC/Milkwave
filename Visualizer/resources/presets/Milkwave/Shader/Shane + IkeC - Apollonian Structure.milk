@@ -31,7 +31,7 @@ comp_26=  uv += float2(0,0) + 0.5;
 comp_27=  uv *= float2(1,1) * 1;
 comp_28=  
 comp_29=  // mouse reactivity
-comp_30=  if (mouse.z == 1) {
+comp_30=  if (mouse.z > 0) {
 comp_31=    uv.x += 1.2*(mouse.x-0.5);
 comp_32=    uv.y -= 1.2*(mouse.y-0.5);
 comp_33=  }
