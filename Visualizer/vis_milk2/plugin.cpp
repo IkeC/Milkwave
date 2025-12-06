@@ -29,30 +29,14 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*
   ##########################################################################################
 
-  NOTE:
-
-  The DX9 SDK include & lib files for building MilkDrop 2 are right here, in the subdirectory:
-    .\dx9sdk_summer04\
-
-  The summer 2004 SDK statically links you to d3dx9.lib (5,820 kb).  It bloats vis_milk2.dll
-  a bit, but we (Ben Allison / Ryan Geiss) decided it's worth the stability.  We tinkered
-  with using the February 2005 sdk, which lets you dynamically link to d3dx9_31.dll (?),
-  but decided to skip it because it would cause too much hassle/confusion among users.
-
-  Summer 2004 sdk: http://www.microsoft.com/downloads/details.aspx?FamilyID=fd044a42-9912-42a3-9a9e-d857199f888e&DisplayLang=en
-  Feb 2005 sdk:    http://www.microsoft.com/downloads/details.aspx?FamilyId=77960733-06E9-47BA-914A-844575031B81&displaylang=en
-
-  ##########################################################################################
-*/
-
-/*
-Order of Function Calls
------------------------
-    The only code that will be called by the plugin framework are the
-    12 virtual functions in plugin.h.  But in what order are they called?
-    A breakdown follows.  A function name in { } means that it is only
-    called under certain conditions.
-
+  case 'q':
+    m_pState->m_fVideoEchoZoom /= 1.05f;
+    SendPresetWaveInfoToMilkwaveRemote();
+    return 0; // we processed (or absorbed) the key
+  case 'Q':
+    m_pState->m_fVideoEchoZoom *= 1.05f;
+    SendPresetWaveInfoToMilkwaveRemote();
+    return 0; // we processed (or absorbed) the key
     Order of function calls...
 
     When the PLUGIN launches
@@ -4647,6 +4631,9 @@ void CPlugin::MyRenderUI(
       swprintf(buf, L"%s %6.2f %s", ((double)mysound.smooth_rel[2] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_treb_smooth), L"treb_smooth");
       MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
 
+      swprintf(buf, L"q=%.2f hue=%.2f sat=%.2f bri=%.2f", m_fRenderQuality, m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness);
+      MyTextOut_Color(buf, MTO_LOWER_RIGHT, color);
+
       if (m_bEnableMouseInteraction) {
         swprintf(buf, L"%s x=%0.2f y=%0.2f z=%s ", L"mouse", m_mouseX, m_mouseY, m_mouseDown ? L"1" : L"0");
         MyTextOut_Color(buf, MTO_LOWER_RIGHT, color);
@@ -6214,6 +6201,40 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       if (HardcutMode == 1) {
         m_bHardCutsDisabled = false;
         AddNotification(L"Hard Cut Mode: Normal");
+    case 'Q':
+    {
+      if (bCtrlHeldDown) {
+        const float multiplier = bShiftHeldDown ? 2.0f : 0.5f;
+        float newQuality = clamp(m_fRenderQuality * multiplier, 0.01f, 1.0f);
+        if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
+          m_fRenderQuality = newQuality;
+          ResetBufferAndFonts();
+          SendSettingsInfoToMilkwaveRemote();
+        }
+        return 0;
+      }
+      break;
+    }
+    case 'H':
+    {
+      if (bCtrlHeldDown) {
+        if (bShiftHeldDown) {
+          m_ColShiftHue -= 0.02f;
+          if (m_ColShiftHue <= -1.0f) {
+            m_ColShiftHue = 1.0f;
+          }
+        }
+        else {
+          m_ColShiftHue += 0.02f;
+          if (m_ColShiftHue >= 1.0f) {
+            m_ColShiftHue = -1.0f;
+          }
+        }
+        SendSettingsInfoToMilkwaveRemote();
+        return 0;
+      }
+      break;
+    }
       }
       if (HardcutMode == 2) {
         m_bHardCutsDisabled = true;
@@ -7280,13 +7301,32 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
   // row 1 keys
   case 'q':
-    m_pState->m_fVideoEchoZoom /= 1.05f;
-    SendPresetWaveInfoToMilkwaveRemote();
-    return 0; // we processed (or absorbed) the key
   case 'Q':
-    m_pState->m_fVideoEchoZoom *= 1.05f;
-    SendPresetWaveInfoToMilkwaveRemote();
+  {
+    
+    USHORT mask = 1 << (sizeof(SHORT) * 8 - 1);	// we want the highest-order bit
+    bool bCtrlHeldDown = (GetKeyState(VK_CONTROL) & mask) != 0;
+
+    if (!bCtrlHeldDown) {
+      if (wParam == 'q') {
+        m_pState->m_fVideoEchoZoom /= 1.05f;
+      }
+      else {
+        m_pState->m_fVideoEchoZoom *= 1.05f;
+      }
+      SendPresetWaveInfoToMilkwaveRemote();
+    }
+    else {
+      const float multiplier = (wParam == 'q') ? 0.5f : 2.0f;
+      float newQuality = clamp(m_fRenderQuality * multiplier, 0.01f, 1.0f);
+      if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
+        m_fRenderQuality = newQuality;
+        ResetBufferAndFonts();
+        SendSettingsInfoToMilkwaveRemote();
+      }
+    }
     return 0; // we processed (or absorbed) the key
+  }
   case 'w':
     m_pState->m_nWaveMode++;
     if (m_pState->m_nWaveMode >= NUM_WAVES) m_pState->m_nWaveMode = 0;
@@ -7540,10 +7580,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
     m_show_help = 0;
     if (m_UI_mode == UI_REGULAR) {
       bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-      if (isCtrlPressed) {
-
-      }
-      else {
+      if (!isCtrlPressed) {
         //m_bPresetLockedByCode = true;
         m_UI_mode = UI_SAVEAS;
 
@@ -11001,6 +11038,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"COL_HUE=", 8) == 0) {
     std::wstring message(sMessage + 8);
     g_plugin.m_ColShiftHue = std::stof(message);
+    SendSettingsInfoToMilkwaveRemote();
   }
   else if (wcsncmp(sMessage, L"COL_SATURATION=", 15) == 0) {
     std::wstring message(sMessage + 15);
@@ -11081,7 +11119,8 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth)
     + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight)
     + L"|QUALITY=" + std::to_wstring(m_fRenderQuality)
-    + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0");
+    + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0")
+    + L"|HUE=" + std::to_wstring(m_ColShiftHue);
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 

@@ -1216,6 +1216,10 @@ namespace MilkwaveRemote {
                     numQuality.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
                   } else if (key.Equals("AUTO", StringComparison.OrdinalIgnoreCase)) {
                     chkQualityAuto.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("HUE", StringComparison.OrdinalIgnoreCase)) {
+                    if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsedHue)) {
+                      numSettingsHue.Value = Math.Clamp(parsedHue, numSettingsHue.Minimum, numSettingsHue.Maximum);
+                    }
                   }
                 } catch (Exception ex) {
                   // ignore
@@ -2811,38 +2815,69 @@ namespace MilkwaveRemote {
     }
 
     private void toolStripMenuItemHelp_Click(object sender, EventArgs e) {
-      string dialogtext =
-  "There are many tooltips explaining all features when you move your mouse over all the form elements." + Environment.NewLine +
-   Environment.NewLine +
-  "Manual: https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md" + Environment.NewLine +
-  "Readme: https://github.com/IkeC/Milkwave/blob/main/Build/README.txt" + Environment.NewLine +
-  Environment.NewLine +
-  "GitHub homepage: https://github.com/IkeC/Milkwave" + Environment.NewLine +
-  "GitHub issues: https://github.com/IkeC/Milkwave/issues" + Environment.NewLine +
-  "Discord: https://bit.ly/Ikes-Discord" + Environment.NewLine +
-  Environment.NewLine +
-  "More Presets: https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets" + Environment.NewLine +
-  Environment.NewLine +
-  "To uninstall Milkwave, run Uninstall.exe from the Milkwave folder.";
-      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Milkwave Help", dialogtext, 10, 800, 400);
+      var documentationLinks = new (string Label, string Url)[] {
+        ("Milkwave Manual", "https://github.com/IkeC/Milkwave/blob/main/Manual.md"),
+        ("Readme", "https://github.com/IkeC/Milkwave/blob/main/Build/README.txt"),
+        ("More Presets", "https://github.com/projectM-visualizer/projectm?tab=readme-ov-file#presets"),
+        ("Visualizer Help Menu (F1)", "https://github.com/IkeC/Milkwave/blob/main/Build/visualizer-keys.txt")
+      };
+
+      var communityLinks = new (string Label, string Url)[] {
+        ("GitHub homepage", "https://github.com/IkeC/Milkwave"),
+        ("GitHub issues", "https://github.com/IkeC/Milkwave/issues"),
+        ("Discord", "https://bit.ly/Ikes-Discord")
+      };
+
+      var builder = RtfBuilder.Create(toolStripMenuItemDarkMode.Checked)
+        .AppendText("There are many tooltips explaining all features when you move your mouse over all the form elements.")
+        .AppendParagraphBreak();
+
+      AppendLinkGroup(builder, documentationLinks);
+      builder.AppendLine();
+      
+      AppendLinkGroup(builder, communityLinks);
+      builder.AppendLine();
+      
+      string dialogtext = builder.Build();
+      var helpLinks = documentationLinks.Concat(communityLinks).ToArray();
+      
+      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked)
+        .ShowDialog("Milkwave Help", dialogtext, 10, 800, 600,  helpLinks);
+
+      static void AppendLinkGroup(RtfBuilder builder, (string Label, string Url)[] links) {
+        foreach (var (label, url) in links) {
+          builder.AppendLink(label, url).AppendLine();
+        }
+      }
     }
 
     private void toolStripMenuItemSupporters_Click(object sender, EventArgs e) {
-      string dialogtext =
-  "Milkwave Supporters — Thank you very much!  ❤️" + Environment.NewLine +
-  Environment.NewLine +
-  "• Shanev" + Environment.NewLine +
-  "• Tures1955" + Environment.NewLine +
-  "• hatecubed" + Environment.NewLine +
-  Environment.NewLine +
-  "Milkwave is and will always be free software, being the collaborative effort of many diffent authors. " +
-  "If you like it and want to appreciate and support our share of the work, please consider donating." + Environment.NewLine +
-  Environment.NewLine +
-  "Ko-fi: https://ko-fi.com/ikeserver" + Environment.NewLine +
-  "PayPal: https://www.paypal.com/ncp/payment/5XMP3S69PJLCU" + Environment.NewLine +
-  "" + Environment.NewLine +
-  "Any amount is valued! You'll be listed on this page unless you do not want to.";
-      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked).ShowDialog("Supporters", dialogtext);
+      var donationLinks = new (string Label, string Url)[] {
+        ("Ko-fi", "https://ko-fi.com/ikeserver"),
+        ("PayPal", "https://www.paypal.com/ncp/payment/5XMP3S69PJLCU")
+      };
+
+      var builder = RtfBuilder.Create(toolStripMenuItemDarkMode.Checked)
+        .AppendText("Milkwave Supporters — Thank you very much!  ❤️")
+        .AppendParagraphBreak()
+        .AppendText("• Shanev").AppendLine()
+        .AppendText("• Tures1955").AppendLine()
+        .AppendText("• hatecubed")
+        .AppendParagraphBreak()
+        .AppendText("Milkwave is and will always be free software, being the collaborative effort of many different authors. ")
+        .AppendText("If you like it and want to appreciate and support our share of the work, please consider donating.")
+        .AppendParagraphBreak();
+
+      foreach (var (label, url) in donationLinks) {
+        builder.AppendLink(label, url).AppendLine();
+      }
+
+      builder.AppendParagraphBreak()
+        .AppendText("Any amount is valued! You'll be listed on this page unless you do not want to.");
+
+      string dialogtext = builder.Build();
+      new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked)
+        .ShowDialog("Supporters", dialogtext, links: donationLinks);
     }
 
     private void SetBarIcon(bool isDarkMode) {
@@ -4174,6 +4209,7 @@ namespace MilkwaveRemote {
     }
 
     private void numSettingsHue_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         numSettingsHue.Increment = 0.05M;
       } else {
@@ -4431,7 +4467,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnShaderHelp_Click(object sender, EventArgs e) {
-      OpenURL("https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md#tab-shader");
+      OpenURL("https://github.com/IkeC/Milkwave/blob/main/Manual.md#tab-shader");
     }
 
     private void txtShader_MouseWheel(object sender, MouseEventArgs e) {
@@ -4898,7 +4934,7 @@ namespace MilkwaveRemote {
     }
 
     private void btnMIDIHelp_Click(object sender, EventArgs e) {
-      OpenURL("https://github.com/IkeC/Milkwave/blob/main/Build/Manual.md#tab-midi");
+      OpenURL("https://github.com/IkeC/Milkwave/blob/main/Manual.md#tab-midi");
     }
 
     private void numMidiBank_ValueChanged(object sender, EventArgs e) {

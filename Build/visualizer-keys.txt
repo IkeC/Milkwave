@@ -1,4 +1,40 @@
-Milkwave Help - Page 2/2 - F1 to switch page/close
+Visualizer Help Menu (F1) - Page 1
+
+ALT + ENTER             Toggle fullscreen (or double-click)
+ALT + S                 Toggle multiple monitor stretch
+SHIFT + UP / DOWN       Increase/decrease window opacity (or mousewheel)
+                        
+F1                      Show/hide help
+F2 / 2xR MOUSEBUTTON    Toggle borderless window (unless in fullscreen/stretch mode)
+CTRL + F2               Reset window
+CTRL + SHIFT + F2       Set window to fixed dimensions from config file
+F3                      Set fps to 30/60/90/120/144/240/360/Unlimited
+CTRL + F3               Display current fps setting
+F4                      Show/hide preset info
+F5                      Show/hide fps
+F6                      Show/hide rating
+F7                      Always on top
+F8 / R+M MOUSEBUTTON    Open Milkwave Remote
+F9                      Toggle clickthrough mode
+CTRL + F9               Toggle windowed fullscreen mode (cover screen except taskbar)
+CTRL + SHIFT + F9       Toggle watermark mode (windowed clickthrough fullscreen)
+F10 / CTRL + Z          Enable/disable Spout output / Holding SHIFT: set fixed Spout resolution
+F11                     Hardcut mode: normal/based of music
+F12                     Transparency mode (removes the black background)
+CTRL + F12              Toggle black mode (no preset rendering)
+                        
+LEFT ARROW / Z          previous track
+RIGHT ARROW / V         next track
+DOWN ARROW / X          play/pause track
+UP ARROW / C            stop track
+CTRL + L/R ARROW        fast forward/rewind track (5 seconds)
+B / M MOUSEBUTTON       show track info
+
+CTRL + A                toggle next preset when track changes
+CTRL + B                toggle track info polling
+CTRL + C                toggle cover display when track changes
+
+Visualizer Help Menu (F1) - Page 2
 
 SPACE / H               Soft / hard cut to next preset
 BACKSPACE               Go back to previous preset

@@ -44,6 +44,9 @@ namespace MilkwaveRemote {
       textBox.TabIndex = 0;
       textBox.Text = "Hello";
       textBox.LinkClicked += textBox_LinkClicked;
+      textBox.MouseClick += textBox_MouseClick;
+      textBox.MouseLeave += textBox_MouseLeave;
+      textBox.MouseMove += textBox_MouseMove;
       // 
       // btnClose
       // 
