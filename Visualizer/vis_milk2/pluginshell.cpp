@@ -222,7 +222,7 @@ HWND      CPluginShell::GetPluginWindow() {
   if (m_lpDX) return m_lpDX->GetHwnd();       else return NULL;
 };
 int       CPluginShell::GetWidth() {
-  if (m_lpDX) { 
+  if (m_lpDX) {
     if (IsSpoutActiveAndFixed()) {
       return m_lpDX->m_backbuffer_width;
     }
@@ -1413,7 +1413,7 @@ int CPluginShell::PluginRender(unsigned char* pWaveL, unsigned char* pWaveR)//, 
 void CPluginShell::DrawAndDisplay(int redraw) {
   int cx = m_vjd3d9_device ? m_nTextWndWidth : m_lpDX->m_client_width;
   int cy = m_vjd3d9_device ? m_nTextWndHeight : m_lpDX->m_client_height;
-  
+
   if (m_lpDDSText) {
     D3DSURFACE_DESC desc;
     if (D3D_OK == m_lpDDSText->GetLevelDesc(0, &desc)) {
@@ -1433,7 +1433,7 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     cy = (int)(cy * q);
     textMargin *= q;
   }
-  
+
   int marginTop = textMargin + GetCanvasMarginY();
   int marginBottom = cy - textMargin - GetCanvasMarginY();
   int marginLeft = textMargin + GetCanvasMarginX();
@@ -1446,7 +1446,7 @@ void CPluginShell::DrawAndDisplay(int redraw) {
 
   m_left_edge = marginLeft;
   m_right_edge = marginRight;
-  
+
   if (m_fRenderQuality < 0.1) {
     // stop trying to display texts properly when quality is too low anyways
     m_left_edge = m_right_edge = -99999;

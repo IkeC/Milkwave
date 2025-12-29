@@ -1,6 +1,7 @@
 ## v3.5 (unreleased)
 
 * Visualizer: Key bindings to alter Quality (Ctrl+Q) and Hue (Ctrl+H)
+* Remote: Automatically change Hue over time
 
 ## v3.4 (2025-11-22)
 

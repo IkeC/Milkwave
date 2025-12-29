@@ -200,7 +200,6 @@ namespace MilkwaveRemote
       lblSaturation = new Label();
       lblHue = new Label();
       txtFilterPresets = new TextBox();
-      cboSettingsOpenFile = new ComboBox();
       chkQualityAuto = new CheckBox();
       btnShadertoyFilesLoadDir = new Button();
       txtShadertoyFile = new TextBox();
@@ -209,6 +208,9 @@ namespace MilkwaveRemote
       numShadertoyFileIndex = new NumericUpDown();
       btnFontGlobalPlus = new Button();
       btnFontGlobalMinus = new Button();
+      numSettingsHueAuto = new NumericUpDown();
+      chkHueAuto = new CheckBox();
+      cboSettingsOpenFile = new ComboBox();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
       txtShaderHLSL = new TextBox();
@@ -372,6 +374,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numPSVersion).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsHueAuto).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numMidiBank).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).BeginInit();
@@ -2442,19 +2445,6 @@ namespace MilkwaveRemote
       txtFilterPresets.TextChanged += txtPreset_TextChanged;
       txtFilterPresets.KeyDown += txtFilterPresets_KeyDown;
       // 
-      // cboSettingsOpenFile
-      // 
-      cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-      cboSettingsOpenFile.AutoCompleteSource = AutoCompleteSource.ListItems;
-      cboSettingsOpenFile.DropDownStyle = ComboBoxStyle.DropDownList;
-      cboSettingsOpenFile.FormattingEnabled = true;
-      cboSettingsOpenFile.Items.AddRange(new object[] { "settings.ini", "sprites.ini", "messages.ini", "script-default.txt", "settings-remote.json", "tags-remote.json" });
-      cboSettingsOpenFile.Location = new Point(75, 152);
-      cboSettingsOpenFile.Name = "cboSettingsOpenFile";
-      cboSettingsOpenFile.Size = new Size(125, 23);
-      cboSettingsOpenFile.TabIndex = 170;
-      toolTip1.SetToolTip(cboSettingsOpenFile, "Alt+Mousewheel: Send to Visualizer");
-      // 
       // chkQualityAuto
       // 
       chkQualityAuto.Appearance = Appearance.Button;
@@ -2556,6 +2546,49 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(btnFontGlobalMinus, "Decrease all, save and preview");
       btnFontGlobalMinus.UseVisualStyleBackColor = true;
       btnFontGlobalMinus.Click += btnFontGlobalMinus_Click;
+      // 
+      // numSettingsHueAuto
+      // 
+      numSettingsHueAuto.DecimalPlaces = 2;
+      numSettingsHueAuto.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numSettingsHueAuto.Location = new Point(488, 7);
+      numSettingsHueAuto.Margin = new Padding(3, 2, 3, 2);
+      numSettingsHueAuto.Maximum = new decimal(new int[] { 999, 0, 0, 131072 });
+      numSettingsHueAuto.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
+      numSettingsHueAuto.Name = "numSettingsHueAuto";
+      numSettingsHueAuto.Size = new Size(56, 23);
+      numSettingsHueAuto.TabIndex = 173;
+      numSettingsHueAuto.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numSettingsHueAuto, "When Auto is selected: Seconds until Hue is incremented by 0.01\r\n");
+      numSettingsHueAuto.Value = new decimal(new int[] { 2, 0, 0, 65536 });
+      numSettingsHueAuto.ValueChanged += numSettingsHueAuto_ValueChanged;
+      // 
+      // chkHueAuto
+      // 
+      chkHueAuto.Appearance = Appearance.Button;
+      chkHueAuto.FlatStyle = FlatStyle.System;
+      chkHueAuto.Location = new Point(421, 6);
+      chkHueAuto.Name = "chkHueAuto";
+      chkHueAuto.Size = new Size(56, 23);
+      chkHueAuto.TabIndex = 174;
+      chkHueAuto.Text = "Auto";
+      chkHueAuto.TextAlign = ContentAlignment.MiddleCenter;
+      chkHueAuto.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkHueAuto, "Automatically shift Hue over time");
+      chkHueAuto.UseVisualStyleBackColor = true;
+      chkHueAuto.CheckedChanged += chkHueAuto_CheckedChanged;
+      // 
+      // cboSettingsOpenFile
+      // 
+      cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboSettingsOpenFile.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboSettingsOpenFile.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboSettingsOpenFile.FormattingEnabled = true;
+      cboSettingsOpenFile.Items.AddRange(new object[] { "settings.ini", "sprites.ini", "messages.ini", "script-default.txt", "settings-remote.json", "tags-remote.json" });
+      cboSettingsOpenFile.Location = new Point(75, 152);
+      cboSettingsOpenFile.Name = "cboSettingsOpenFile";
+      cboSettingsOpenFile.Size = new Size(125, 23);
+      cboSettingsOpenFile.TabIndex = 170;
       // 
       // btn00
       // 
@@ -4415,6 +4448,8 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(chkHueAuto);
+      tabSettings.Controls.Add(numSettingsHueAuto);
       tabSettings.Controls.Add(chkQualityAuto);
       tabSettings.Controls.Add(label9);
       tabSettings.Controls.Add(cboSettingsOpenFile);
@@ -4617,6 +4652,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numPSVersion).EndInit();
       ((System.ComponentModel.ISupportInitialize)numOffset).EndInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsHueAuto).EndInit();
       ((System.ComponentModel.ISupportInitialize)numMidiBank).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).EndInit();
@@ -4998,5 +5034,7 @@ namespace MilkwaveRemote
     private Button btnShadertoyFileLoadThis;
     private Button btnFontGlobalPlus;
     private Button btnFontGlobalMinus;
+    private NumericUpDown numSettingsHueAuto;
+    private CheckBox chkHueAuto;
   }
 }

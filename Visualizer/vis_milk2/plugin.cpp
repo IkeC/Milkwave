@@ -4304,6 +4304,17 @@ void CPlugin::MyRenderFn(int redraw) {
       if (m_bSongTitleAnims)
         LaunchSongTitleAnim(-1);
     }
+
+    if (m_AutoHue && m_AutoHueSeconds > 0) {
+      if (GetTime() > m_AutoHueTimeLastChange + m_AutoHueSeconds) {
+        m_AutoHueTimeLastChange = GetTime();
+        m_ColShiftHue += 0.01f;
+        if (m_ColShiftHue >= 1.0f) {
+          m_ColShiftHue = -1.0f;
+        }
+        SendSettingsInfoToMilkwaveRemote();
+      }
+    }
   }
 
   // 2. Clear the background:
@@ -11038,7 +11049,13 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"COL_HUE=", 8) == 0) {
     std::wstring message(sMessage + 8);
     g_plugin.m_ColShiftHue = std::stof(message);
-    SendSettingsInfoToMilkwaveRemote();
+  }
+  else if (wcsncmp(sMessage, L"HUE_AUTO=", 9) == 0) {
+    g_plugin.m_AutoHue = (sMessage[9] == L'1');
+  }
+  else if (wcsncmp(sMessage, L"HUE_AUTO_SECONDS=", 17) == 0) {
+    std::wstring message(sMessage + 17);
+    g_plugin.m_AutoHueSeconds = std::stof(message);
   }
   else if (wcsncmp(sMessage, L"COL_SATURATION=", 15) == 0) {
     std::wstring message(sMessage + 15);

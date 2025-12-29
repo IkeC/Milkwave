@@ -179,6 +179,10 @@ protected:
   float m_ColShiftSaturation = 0.0f;
   float m_ColShiftBrightness = 0.0f;
 
+  bool m_AutoHue = false;
+  float m_AutoHueSeconds = 0.02f;
+  float m_AutoHueTimeLastChange = 0.0f;
+
   float m_fRenderQuality = 1.0f;
   //=====================================================================================================================
 private:

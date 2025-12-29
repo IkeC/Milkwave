@@ -588,7 +588,7 @@ Left pane: GLSL code to convert
 
 This tool is mainly aimed at preset authors. Most of the time, the converter will not produce a working preset from HLSL code without some manual adjustments.
 
-Please refer to the Milkwave manual by pressing '?' in the upper left corner.
+Please refer to the Milkwave manual by pressing '?' in the upper right corner.
 */</value>
   </data>
   <metadata name="colorDialogMessage.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

@@ -257,7 +257,9 @@ namespace MilkwaveRemote {
       QualityAuto,
       ColHue,
       ColSaturation,
-      ColBrightness
+      ColBrightness,
+      HueAuto,
+      HueAutoSeconds
     }
 
     private void SetAllControlFontSizes(Control parent, float fontSize) {
@@ -1360,6 +1362,10 @@ namespace MilkwaveRemote {
               message = "VAR_VERSION=" + numVisVersion.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColHue) {
               message = "COL_HUE=" + numSettingsHue.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.HueAuto) {
+              message = "HUE_AUTO=" + (chkHueAuto.Checked ? "1" : "0");
+            } else if (type == MessageType.HueAutoSeconds) {
+              message = "HUE_AUTO_SECONDS=" + numSettingsHueAuto.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColSaturation) {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
@@ -2834,15 +2840,15 @@ namespace MilkwaveRemote {
 
       AppendLinkGroup(builder, documentationLinks);
       builder.AppendLine();
-      
+
       AppendLinkGroup(builder, communityLinks);
       builder.AppendLine();
-      
+
       string dialogtext = builder.Build();
       var helpLinks = documentationLinks.Concat(communityLinks).ToArray();
-      
+
       new MilkwaveInfoForm(toolStripMenuItemDarkMode.Checked)
-        .ShowDialog("Milkwave Help", dialogtext, 10, 800, 600,  helpLinks);
+        .ShowDialog("Milkwave Help", dialogtext, 10, 800, 600, helpLinks);
 
       static void AppendLinkGroup(RtfBuilder builder, (string Label, string Url)[] links) {
         foreach (var (label, url) in links) {
@@ -5391,6 +5397,17 @@ namespace MilkwaveRemote {
       numFont5.Value = Math.Clamp(numFont5.Value + 5, numFont5.Minimum, numFont5.Maximum);
       btnSettingsSave_Click(null, null);
       btnTestFonts_Click(null, null);
+    }
+
+    private void chkHueAuto_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.HueAuto);
+      }
+    }
+
+    private void numSettingsHueAuto_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.HueAutoSeconds);
     }
   } // end class
 } // end namespace
