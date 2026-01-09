@@ -4620,8 +4620,11 @@ void CPlugin::MyRenderUI(
 
       swprintf(buf, L"  %6.2f %s", (float)(*m_pState->var_pf_monitor), wasabiApiLangString(IDS_PF_MONITOR));
       MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
-      swprintf(buf, L"  %6.2f %s", (float)(GetTime() - m_fPresetStartTime), L"time");
-      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+
+      if (!m_bPresetLockedByUser && !m_bPresetLockedByCode) {
+        swprintf(buf, L"  %6.2f %s", (float)(GetTime() - m_fPresetStartTime), L"time");
+        MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+      }
 
       swprintf(buf, L"%s %6.2f %s", ((double)mysound.imm_rel[0] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_bass), L"bass");
       MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
@@ -6045,7 +6048,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     return 0;
 
 
-  //case WM_LBUTTONDOWN:
+    //case WM_LBUTTONDOWN:
   case WM_RBUTTONDOWN:
     m_mouseDown = 1;
     m_mouseClicked = 2; //no. of frames you set when you click (not to be confused with mouse held down)
@@ -6053,7 +6056,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     m_lastMouseY = -m_mouseY + 1;
     break;
 
-  //case WM_LBUTTONUP:
+    //case WM_LBUTTONUP:
   case WM_RBUTTONUP:
     m_mouseDown = 0;
     break;
@@ -7316,7 +7319,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   case 'q':
   case 'Q':
   {
-    
+
     USHORT mask = 1 << (sizeof(SHORT) * 8 - 1);	// we want the highest-order bit
     bool bCtrlHeldDown = (GetKeyState(VK_CONTROL) & mask) != 0;
 
@@ -10960,8 +10963,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       newRequestType = 0;
     }
     m_nAudioDeviceRequestType = newRequestType;
-  wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
-  g_plugin.m_nAudioDevicePreviousType = g_plugin.m_nAudioDeviceActiveType;
+    wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
+    g_plugin.m_nAudioDevicePreviousType = g_plugin.m_nAudioDeviceActiveType;
     wcscpy(g_plugin.m_szAudioDevice, message.c_str());
     bool isRenderDevice = true;
     if (newRequestType == 1) {
@@ -11003,13 +11006,12 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"CONFIG", 6) == 0) {
     ReadConfig();
     // to update fonts
-    m_fTimeBetweenPresets = GetPrivateProfileFloatW(L"Settings", L"fTimeBetweenPresets", m_fTimeBetweenPresets, GetConfigIniFile());
     AllocateDX9Stuff();
   }
   else if (wcsncmp(sMessage, L"SETTINGS", 8) == 0) {
     m_fTimeBetweenPresets = GetPrivateProfileFloatW(L"Settings", L"fTimeBetweenPresets", m_fTimeBetweenPresets, GetConfigIniFile());
-    float dt = m_fTimeBetweenPresetsRand * (rand() % 1000) * 0.001f;
-    m_fNextPresetTime = GetTime() + m_fBlendTimeAuto + m_fTimeBetweenPresets + dt;
+    m_fPresetStartTime = GetTime();
+    m_fNextPresetTime = -1.0f; // force recalculation
   }
   else if (wcsncmp(sMessage, L"TESTFONTS", 9) == 0) {
     ClearErrors(ERR_MSG_BOTTOM_EXTRA_1);
@@ -11742,7 +11744,7 @@ void CPlugin::SetAudioDeviceDisplayName(const wchar_t* displayName, bool isRende
       }
       searchPos = next;
     }
-  };
+    };
 
   removeDuplicateTag(L" [In]");
   removeDuplicateTag(L" [Out]");

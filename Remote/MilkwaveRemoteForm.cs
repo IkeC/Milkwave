@@ -5426,7 +5426,7 @@ namespace MilkwaveRemote {
       string fTimeBetweenPresets = numPresetChange.Value.ToString("F6", CultureInfo.InvariantCulture);
       RemoteHelper.SetIniValue("Settings", "fTimeBetweenPresets", fTimeBetweenPresets);
 
-      SendToMilkwaveVisualizer("", MessageType.Config);
+      SendToMilkwaveVisualizer("", MessageType.Settings);
     }
 
     private void chkPresetLocked_CheckedChanged(object sender, EventArgs e) {

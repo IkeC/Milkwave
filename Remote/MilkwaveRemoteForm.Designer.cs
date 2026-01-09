@@ -2588,9 +2588,9 @@ namespace MilkwaveRemote
       lblChangePreset.Name = "lblChangePreset";
       lblChangePreset.Size = new Size(136, 23);
       lblChangePreset.TabIndex = 176;
-      lblChangePreset.Text = "Change preset after";
+      lblChangePreset.Text = "Change Preset after";
       lblChangePreset.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblChangePreset, "Change preset after this many seconds (unless locked)\r\nNote that fBlendTimeAuto and 0..fTimeBetweenPresetsRand are added to determine the actual duration (see settings.ini)");
+      toolTip1.SetToolTip(lblChangePreset, "Next Preset after this many seconds (unless locked)\r\nNote that fBlendTimeAuto and 0..fTimeBetweenPresetsRand are added to determine the actual duration (see settings.ini)");
       // 
       // chkPresetLocked
       // 
@@ -4527,6 +4527,7 @@ namespace MilkwaveRemote
       numPresetChange.Location = new Point(421, 151);
       numPresetChange.Margin = new Padding(3, 2, 3, 2);
       numPresetChange.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
+      numPresetChange.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
       numPresetChange.Name = "numPresetChange";
       numPresetChange.Size = new Size(56, 23);
       numPresetChange.TabIndex = 175;
