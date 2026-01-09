@@ -160,8 +160,6 @@ Use the buttons on the right side to open some commonly used files instantly in 
 
 Keep in mind that most settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
 
-Set "Change preset after" to automatically change to the next preset after the defined time in seconds. Note that _fBlendTimeAuto_ and a value between 0 and _fTimeBetweenPresetsRand_ (defined in _settings.ini_) are added to determine the actual duration. If "Locked" is checked, automatic preset changing is disabled.
-
 # Milkwave Visualizer specifics
 
 Milkwave Visualizer is based on MilkDrop2, supporting all its options and settings. In addition, some new variables were introduced to give preset authors more possibilities while keeping presets compatible to other MilkDrop2 based visualizers (eg. NestDrop, BeatDrop Music Visualizer or MilkDrop 3).

@@ -4620,6 +4620,8 @@ void CPlugin::MyRenderUI(
 
       swprintf(buf, L"  %6.2f %s", (float)(*m_pState->var_pf_monitor), wasabiApiLangString(IDS_PF_MONITOR));
       MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
+      swprintf(buf, L"  %6.2f %s", (float)(GetTime() - m_fPresetStartTime), L"time");
+      MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
 
       swprintf(buf, L"%s %6.2f %s", ((double)mysound.imm_rel[0] >= 1.3) ? L"+" : L" ", (float)(*m_pState->var_pf_bass), L"bass");
       MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
@@ -7624,6 +7626,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
       swprintf(buf, L"Preset unlocked", tmp, 64);
       AddNotification(buf);
     }
+    SendSettingsInfoToMilkwaveRemote();
     return 0;
 
   case 'l': // LOAD PRESET
@@ -11000,7 +11003,13 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"CONFIG", 6) == 0) {
     ReadConfig();
     // to update fonts
+    m_fTimeBetweenPresets = GetPrivateProfileFloatW(L"Settings", L"fTimeBetweenPresets", m_fTimeBetweenPresets, GetConfigIniFile());
     AllocateDX9Stuff();
+  }
+  else if (wcsncmp(sMessage, L"SETTINGS", 8) == 0) {
+    m_fTimeBetweenPresets = GetPrivateProfileFloatW(L"Settings", L"fTimeBetweenPresets", m_fTimeBetweenPresets, GetConfigIniFile());
+    float dt = m_fTimeBetweenPresetsRand * (rand() % 1000) * 0.001f;
+    m_fNextPresetTime = GetTime() + m_fBlendTimeAuto + m_fTimeBetweenPresets + dt;
   }
   else if (wcsncmp(sMessage, L"TESTFONTS", 9) == 0) {
     ClearErrors(ERR_MSG_BOTTOM_EXTRA_1);
@@ -11137,7 +11146,8 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight)
     + L"|QUALITY=" + std::to_wstring(m_fRenderQuality)
     + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0")
-    + L"|HUE=" + std::to_wstring(m_ColShiftHue);
+    + L"|HUE=" + std::to_wstring(m_ColShiftHue)
+    + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0");
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 

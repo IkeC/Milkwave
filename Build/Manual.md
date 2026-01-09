@@ -160,6 +160,8 @@ Use the buttons on the right side to open some commonly used files instantly in 
 
 Keep in mind that most settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
 
+Set "Change preset after" to automatically change to the next preset after the defined time in seconds. Note that _fBlendTimeAuto_ and a value between 0 and _fTimeBetweenPresetsRand_ (defined in _settings.ini_) are added to determine the actual duration. If "Locked" is checked, automatic preset changing is disabled.
+
 # Milkwave Visualizer specifics
 
 Milkwave Visualizer is based on MilkDrop2, supporting all its options and settings. In addition, some new variables were introduced to give preset authors more possibilities while keeping presets compatible to other MilkDrop2 based visualizers (eg. NestDrop, BeatDrop Music Visualizer or MilkDrop 3).
@@ -193,6 +195,20 @@ As with the _smooth parameters above, you may want to use defines like this in y
 #define vis_intensity 1
 #endif
 ```
+
+## "colshift_hue", "colshift_saturation" and "colshift_brightness" preset variables
+
+These all default to 0 and can be changed in the Remote settings tab. The values are used in the _shiftHSV()_ function which is included in Milkwaves _include.fx_ file.
+
+If you've played around with one of these values and want to save it to the preset file, you would add something like this at the end of your comp shader definition: 
+
+```
+#ifdef colshift_saturation
+  colshift_saturation += 0.5;
+#endif
+```
+
+Note that this would be a Milkwave specific change that would not port over to other MilkDrop variants since they use a different _include.fx_. If you want a portable version, include your own version of _shiftHSV()_ in your preset and call that. See the "SnoopethDuckDuck + IkeC - Breeze" preset for an example.
 
 # Closing Notes
 

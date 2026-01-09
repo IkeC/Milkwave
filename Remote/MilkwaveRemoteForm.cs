@@ -241,6 +241,7 @@ namespace MilkwaveRemote {
       Opacity,
       GetState,
       Config,
+      Settings,
       TestFonts,
       ClearSprites,
       ClearTexts,
@@ -953,6 +954,12 @@ namespace MilkwaveRemote {
 
       RemoteHelper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
       RemoteHelper.FillAudioDevices(cboAudioDevice);
+
+      string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
+      if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
+        timeBetweenPresets = 60m;
+      }
+      numPresetChange.Value = Math.Clamp(timeBetweenPresets, numPresetChange.Minimum, numPresetChange.Maximum);
     }
 
     private IntPtr StartVisualizerIfNotFound(bool onlyIfNotFound) {
@@ -1222,6 +1229,8 @@ namespace MilkwaveRemote {
                     if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsedHue)) {
                       numSettingsHue.Value = Math.Clamp(parsedHue, numSettingsHue.Minimum, numSettingsHue.Maximum);
                     }
+                  } else if (key.Equals("LOCKED", StringComparison.OrdinalIgnoreCase)) {
+                    chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                   }
                 } catch (Exception ex) {
                   // ignore
@@ -1342,6 +1351,8 @@ namespace MilkwaveRemote {
               message = "QUICKSAVE";
             } else if (type == MessageType.Config) {
               message = "CONFIG";
+            } else if (type == MessageType.Settings) {
+              message = "SETTINGS";
             } else if (type == MessageType.TestFonts) {
               message = "TESTFONTS";
             } else if (type == MessageType.ClearSprites) {
@@ -5408,6 +5419,19 @@ namespace MilkwaveRemote {
     private void numSettingsHueAuto_ValueChanged(object sender, EventArgs e) {
       if (updatingSettingsParams) return;
       SendToMilkwaveVisualizer("", MessageType.HueAutoSeconds);
+    }
+
+    private void numPresetChange_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      string fTimeBetweenPresets = numPresetChange.Value.ToString("F6", CultureInfo.InvariantCulture);
+      RemoteHelper.SetIniValue("Settings", "fTimeBetweenPresets", fTimeBetweenPresets);
+
+      SendToMilkwaveVisualizer("", MessageType.Config);
+    }
+
+    private void chkPresetLocked_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendUnicodeChars("~");
     }
   } // end class
 } // end namespace

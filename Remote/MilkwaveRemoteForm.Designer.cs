@@ -210,6 +210,8 @@ namespace MilkwaveRemote
       btnFontGlobalMinus = new Button();
       numSettingsHueAuto = new NumericUpDown();
       chkHueAuto = new CheckBox();
+      lblChangePreset = new Label();
+      chkPresetLocked = new CheckBox();
       cboSettingsOpenFile = new ComboBox();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
@@ -344,6 +346,7 @@ namespace MilkwaveRemote
       cboMidi1Action = new ComboBox();
       txtMidi1Inc = new TextBox();
       tabSettings = new TabPage();
+      numPresetChange = new NumericUpDown();
       label9 = new Label();
       numSettingsBrightness = new NumericUpDown();
       numSettingsSaturation = new NumericUpDown();
@@ -408,6 +411,7 @@ namespace MilkwaveRemote
       tabFonts.SuspendLayout();
       tabMidi.SuspendLayout();
       tabSettings.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)numPresetChange).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsBrightness).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsSaturation).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsHue).BeginInit();
@@ -2578,6 +2582,31 @@ namespace MilkwaveRemote
       chkHueAuto.UseVisualStyleBackColor = true;
       chkHueAuto.CheckedChanged += chkHueAuto_CheckedChanged;
       // 
+      // lblChangePreset
+      // 
+      lblChangePreset.Location = new Point(279, 150);
+      lblChangePreset.Name = "lblChangePreset";
+      lblChangePreset.Size = new Size(136, 23);
+      lblChangePreset.TabIndex = 176;
+      lblChangePreset.Text = "Change preset after";
+      lblChangePreset.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblChangePreset, "Change preset after this many seconds (unless locked)\r\nNote that fBlendTimeAuto and 0..fTimeBetweenPresetsRand are added to determine the actual duration (see settings.ini)");
+      // 
+      // chkPresetLocked
+      // 
+      chkPresetLocked.Appearance = Appearance.Button;
+      chkPresetLocked.FlatStyle = FlatStyle.System;
+      chkPresetLocked.Location = new Point(488, 150);
+      chkPresetLocked.Name = "chkPresetLocked";
+      chkPresetLocked.Size = new Size(56, 23);
+      chkPresetLocked.TabIndex = 177;
+      chkPresetLocked.Text = "Locked";
+      chkPresetLocked.TextAlign = ContentAlignment.MiddleCenter;
+      chkPresetLocked.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkPresetLocked, "Lock/Unlock Preset\r\n(same as pressing ~ in Visualizer)");
+      chkPresetLocked.UseVisualStyleBackColor = true;
+      chkPresetLocked.CheckedChanged += chkPresetLocked_CheckedChanged;
+      // 
       // cboSettingsOpenFile
       // 
       cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
@@ -4448,6 +4477,9 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(chkPresetLocked);
+      tabSettings.Controls.Add(numPresetChange);
+      tabSettings.Controls.Add(lblChangePreset);
       tabSettings.Controls.Add(chkHueAuto);
       tabSettings.Controls.Add(numSettingsHueAuto);
       tabSettings.Controls.Add(chkQualityAuto);
@@ -4488,9 +4520,23 @@ namespace MilkwaveRemote
       tabSettings.TabIndex = 4;
       tabSettings.Text = "Settings";
       // 
+      // numPresetChange
+      // 
+      numPresetChange.DecimalPlaces = 1;
+      numPresetChange.Increment = new decimal(new int[] { 5, 0, 0, 0 });
+      numPresetChange.Location = new Point(421, 151);
+      numPresetChange.Margin = new Padding(3, 2, 3, 2);
+      numPresetChange.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
+      numPresetChange.Name = "numPresetChange";
+      numPresetChange.Size = new Size(56, 23);
+      numPresetChange.TabIndex = 175;
+      numPresetChange.TextAlign = HorizontalAlignment.Center;
+      numPresetChange.Value = new decimal(new int[] { 60, 0, 0, 0 });
+      numPresetChange.ValueChanged += numPresetChange_ValueChanged;
+      // 
       // label9
       // 
-      label9.Location = new Point(24, 151);
+      label9.Location = new Point(24, 150);
       label9.Name = "label9";
       label9.Size = new Size(45, 23);
       label9.TabIndex = 171;
@@ -4693,6 +4739,7 @@ namespace MilkwaveRemote
       tabMidi.ResumeLayout(false);
       tabMidi.PerformLayout();
       tabSettings.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)numPresetChange).EndInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsBrightness).EndInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsSaturation).EndInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsHue).EndInit();
@@ -5036,5 +5083,8 @@ namespace MilkwaveRemote
     private Button btnFontGlobalMinus;
     private NumericUpDown numSettingsHueAuto;
     private CheckBox chkHueAuto;
+    private NumericUpDown numPresetChange;
+    private Label lblChangePreset;
+    private CheckBox chkPresetLocked;
   }
 }
