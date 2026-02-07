@@ -6823,6 +6823,17 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
     case 'X':
       if (m_UI_mode == UI_REGULAR) {
+        if ((GetKeyState(VK_CONTROL) & mask) != 0) {
+          wchar_t filename[MAX_PATH];
+          if (CaptureScreenshotWithFilename(filename, MAX_PATH)) {
+            wchar_t msg[MAX_PATH + 32];
+            swprintf_s(msg, MAX_PATH + 32, L"Saved: capture/%s", filename);
+            AddNotification(msg);
+          } else {
+            AddNotification(L"Failed to save screenshot");
+          }
+          return 0;
+        }
         AddError(L"Play/Pause", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
         keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 0, 0);
         keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, 0);
@@ -11108,6 +11119,12 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       SetSpoutFixedSize(false, true);
     }
   }
+  else if (wcsncmp(sMessage, L"CAPTURE", 7) == 0) {
+    OutputDebugStringW(L"[CAPTURE] Message received\n");
+    milkwave->LogInfo(L"CAPTURE message received, calling CaptureScreenshot()");
+    CaptureScreenshot();
+    OutputDebugStringW(L"[CAPTURE] CaptureScreenshot() returned\n");
+  }
 }
 
 void CPlugin::SendPresetChangedInfoToMilkwaveRemote() {
@@ -11151,6 +11168,107 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|HUE=" + std::to_wstring(m_ColShiftHue)
     + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0");
   SendMessageToMilkwaveRemote(msg.c_str(), true);
+}
+
+void CPlugin::CaptureScreenshot() {
+  wchar_t filename[MAX_PATH];
+  CaptureScreenshotWithFilename(filename, MAX_PATH);
+}
+
+bool CPlugin::CaptureScreenshotWithFilename(wchar_t* outFilename, size_t outFilenameSize) {
+LPDIRECT3DDEVICE9EX pDevice = GetDevice();
+if (!pDevice) {
+  OutputDebugStringW(L"[CaptureScreenshot] ERROR: Device not available\n");
+  milkwave->LogInfo(L"CaptureScreenshot: Device not available");
+  return false;
+}
+
+  IDirect3DSurface9* pRenderTarget = nullptr;
+  HRESULT hr = pDevice->GetRenderTarget(0, &pRenderTarget);
+  if (FAILED(hr) || !pRenderTarget) {
+    wchar_t msg[256];
+    swprintf_s(msg, 256, L"CaptureScreenshot: Failed to get render target (HRESULT 0x%08X)", hr);
+    milkwave->LogInfo(msg);
+    return false;
+  }
+
+  wchar_t presetName[MAX_PATH] = L"unknown";
+  if (m_szCurrentPresetFile[0]) {
+    wchar_t* filenameOnly = wcsrchr(m_szCurrentPresetFile, L'\\');
+    if (filenameOnly) {
+      filenameOnly++;
+    } else {
+      filenameOnly = m_szCurrentPresetFile;
+    }
+    
+    wcsncpy_s(presetName, MAX_PATH, filenameOnly, _TRUNCATE);
+    
+    wchar_t* ext = wcsrchr(presetName, L'.');
+    if (ext) *ext = L'\0';
+    
+    for (wchar_t* p = presetName; *p; p++) {
+      if (*p == L'/' || *p == L':' || *p == L'*' || 
+          *p == L'?' || *p == L'"' || *p == L'<' || *p == L'>' || *p == L'|') {
+        *p = L'_';
+      }
+    }
+  }
+
+  wchar_t captureDir[MAX_PATH];
+  swprintf_s(captureDir, MAX_PATH, L"%scapture\\", m_szBaseDir);
+  
+  wchar_t debugMsg[MAX_PATH + 50];
+  swprintf_s(debugMsg, MAX_PATH + 50, L"[CaptureScreenshot] BaseDir: %s\n", m_szBaseDir);
+  OutputDebugStringW(debugMsg);
+  swprintf_s(debugMsg, MAX_PATH + 50, L"[CaptureScreenshot] CaptureDir: %s\n", captureDir);
+  OutputDebugStringW(debugMsg);
+  
+  CreateDirectoryW(captureDir, NULL);
+
+  SYSTEMTIME st;
+  GetLocalTime(&st);
+  
+  wchar_t justFilename[MAX_PATH];
+  swprintf_s(justFilename, MAX_PATH, L"%04d%02d%02d-%02d%02d%02d-%s.png",
+    st.wYear, st.wMonth, st.wDay,
+    st.wHour, st.wMinute, st.wSecond,
+    presetName);
+
+  wchar_t fullPath[MAX_PATH];
+  swprintf_s(fullPath, MAX_PATH, L"%s%s", captureDir, justFilename);
+
+  hr = D3DXSaveSurfaceToFileW(fullPath, D3DXIFF_PNG, pRenderTarget, NULL, NULL);
+  
+  wchar_t resultMsg[MAX_PATH + 100];
+  swprintf_s(resultMsg, MAX_PATH + 100, L"[CaptureScreenshot] D3DXSaveSurfaceToFileW result: 0x%08X\n", hr);
+  OutputDebugStringW(resultMsg);
+  
+  pRenderTarget->Release();
+
+  if (SUCCEEDED(hr)) {
+    wchar_t msg[512];
+    swprintf_s(msg, 512, L"Screenshot saved: %s", fullPath);
+    milkwave->LogInfo(msg);
+    
+    wchar_t successMsg[MAX_PATH + 50];
+    swprintf_s(successMsg, MAX_PATH + 50, L"[CaptureScreenshot] SUCCESS: %s\n", justFilename);
+    OutputDebugStringW(successMsg);
+    
+    if (outFilename && outFilenameSize > 0) {
+      wcsncpy_s(outFilename, outFilenameSize, justFilename, _TRUNCATE);
+    }
+    return true;
+  } else {
+    wchar_t msg[256];
+    swprintf_s(msg, 256, L"Failed to save screenshot: HRESULT 0x%08X", hr);
+    milkwave->LogInfo(msg);
+    
+    wchar_t errorMsg[100];
+    swprintf_s(errorMsg, 100, L"[CaptureScreenshot] FAILED: HRESULT 0x%08X\n", hr);
+    OutputDebugStringW(errorMsg);
+    
+    return false;
+  }
 }
 
 void CPlugin::SetWaveParamsFromMessage(std::wstring& message) {

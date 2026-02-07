@@ -14,6 +14,7 @@
     public bool ShowTabsPanel { get; set; } = true;
     public bool ShowButtonPanel { get; set; } = true;
     public bool EnableSpriteButtonImage { get; set; } = true;
+    public bool EnableColorButtonImages { get; set; } = true;
     public bool EnableMonitorCPU { get; set; } = true;
     public bool EnableMonitorGPU { get; set; } = true;
     public int MonitorPollingInterval { get; set; } = 1500;
@@ -31,5 +32,7 @@
 
     public string ShadertoyFilesDirectory { get; set; } = "";
     public int ShadertoyFileIndex { get; set; } = 1;
+
+    public bool IsPresetMode { get; set; } = false;
   }
 }

@@ -33,3 +33,4 @@ B / M MOUSEBUTTON       show track info
 CTRL + A                toggle next preset when track changes
 CTRL + B                toggle track info polling
 CTRL + C                toggle cover display when track changes
+CTRL + X                save screenshot to /capture folder
