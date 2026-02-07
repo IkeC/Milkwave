@@ -6827,7 +6827,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           wchar_t filename[MAX_PATH];
           if (CaptureScreenshotWithFilename(filename, MAX_PATH)) {
             wchar_t msg[MAX_PATH + 32];
-            swprintf_s(msg, MAX_PATH + 32, L"Saved: capture/%s", filename);
+            swprintf_s(msg, MAX_PATH + 32, L"capture/%s saved", filename);
             AddNotification(msg);
           } else {
             AddNotification(L"Failed to save screenshot");

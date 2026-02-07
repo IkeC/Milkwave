@@ -101,6 +101,8 @@ namespace MilkwaveRemote {
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
     private string milkwaveMidiFile = "midi-remote.json";
+    private string milkwavePresetDeckFile = "presetdeck-remote.json";
+
     private string milkwaveSpritesFile = "sprites.ini";
     private string milkwaveMessagesFile = "messages.ini";
 
@@ -126,7 +128,6 @@ namespace MilkwaveRemote {
     private Tags Tags = new Tags();
 
     private PresetDeck presetDeck = new PresetDeck();
-    private string presetDeckFile = "preset-deck.json";
     private Button[] presetDeckButtons = Array.Empty<Button>();
     private readonly Dictionary<int, PendingThumbnail> pendingThumbnailAssignments = new();
 
@@ -594,9 +595,16 @@ namespace MilkwaveRemote {
           return candidate;
         }
 
-        string resourcesFallback = Path.GetFullPath(Path.Combine(BaseDir, "resources", normalized));
-        if (File.Exists(resourcesFallback)) {
-          return resourcesFallback;
+        // Try resources fallback for: simple filenames, or paths starting with "sprites\"
+        bool isSimpleFilename = !normalized.Contains(Path.DirectorySeparatorChar) && !normalized.Contains(Path.AltDirectorySeparatorChar);
+        bool isSpritesPath = normalized.StartsWith("sprites" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                             normalized.StartsWith("sprites/", StringComparison.OrdinalIgnoreCase);
+        
+        if (isSimpleFilename || isSpritesPath) {
+          string resourcesFallback = Path.GetFullPath(Path.Combine(BaseDir, "resources", normalized));
+          if (File.Exists(resourcesFallback)) {
+            return resourcesFallback;
+          }
         }
 
         return candidate;
@@ -715,7 +723,7 @@ namespace MilkwaveRemote {
         return Rectangle.Empty;
       }
 
-      const int margin = 5;
+      const int margin = 10;
       int availableWidth = Math.Max(1, target.Width - margin * 2);
       int availableHeight = Math.Max(1, target.Height - margin * 2);
       
@@ -803,6 +811,7 @@ namespace MilkwaveRemote {
         string spritesRoot = Path.GetFullPath(Path.Combine(BaseDir, "sprites"));
         string resourcesSpritesRoot = Path.GetFullPath(Path.Combine(BaseDir, Path.Combine("resources", "sprites")));
 
+        // Try to make relative if inside sprites folders
         string? spriteRelative = TryBuildSpriteRelative(fullPath, spritesRoot);
         if (spriteRelative != null) {
           return spriteRelative;
@@ -813,18 +822,9 @@ namespace MilkwaveRemote {
           return spriteRelative;
         }
 
-        string relative = Path.GetRelativePath(BaseDir, fullPath);
-        if (!string.IsNullOrEmpty(relative) && !relative.StartsWith("..", StringComparison.Ordinal)) {
-          relative = relative.Replace('/', '\\');
-          const string resourcesSpritesPrefix = "resources\\sprites\\";
-          if (relative.StartsWith(resourcesSpritesPrefix, StringComparison.OrdinalIgnoreCase)) {
-            return "sprites\\" + relative.Substring(resourcesSpritesPrefix.Length);
-          }
-          if (relative.Equals("resources\\sprites", StringComparison.OrdinalIgnoreCase) || relative.Equals("resources\\sprites\\", StringComparison.OrdinalIgnoreCase)) {
-            return "sprites";
-          }
-          return relative;
-        }
+        // For files outside sprites folders (e.g., capture\), save absolute path
+        // This handles Debug/Release BaseDir differences and makes it clear where the file is
+        return fullPath.Replace('/', '\\');
       } catch (Exception) {
         // ignore
       }
@@ -5574,7 +5574,7 @@ namespace MilkwaveRemote {
 
     private void LoadPresetDeck() {
       try {
-        string path = Path.Combine(BaseDir, presetDeckFile);
+        string path = Path.Combine(BaseDir, milkwavePresetDeckFile);
         if (File.Exists(path)) {
           string json = File.ReadAllText(path);
           var loaded = JsonSerializer.Deserialize<PresetDeck>(json);
@@ -5589,7 +5589,7 @@ namespace MilkwaveRemote {
 
     private void SavePresetDeck() {
       try {
-        string path = Path.Combine(BaseDir, presetDeckFile);
+        string path = Path.Combine(BaseDir, milkwavePresetDeckFile);
         string json = JsonSerializer.Serialize(presetDeck, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(path, json);
       } catch (Exception ex) {
@@ -5815,6 +5815,15 @@ namespace MilkwaveRemote {
       int relIndex = fullPresetPath.IndexOf(VisualizerPresetsFolder, StringComparison.OrdinalIgnoreCase);
       if (relIndex >= 0) {
         maybeRelativePath = fullPresetPath.Substring(relIndex + VisualizerPresetsFolder.Length);
+      } else {
+        // Check if it's already a relative path starting with "resources\presets\" or "resources/presets/"
+        const string relativePrefix1 = "resources\\presets\\";
+        const string relativePrefix2 = "resources/presets/";
+        if (maybeRelativePath.StartsWith(relativePrefix1, StringComparison.OrdinalIgnoreCase)) {
+          maybeRelativePath = maybeRelativePath.Substring(relativePrefix1.Length);
+        } else if (maybeRelativePath.StartsWith(relativePrefix2, StringComparison.OrdinalIgnoreCase)) {
+          maybeRelativePath = maybeRelativePath.Substring(relativePrefix2.Length);
+        }
       }
 
       var pendingThumbnail = new PendingThumbnail {
