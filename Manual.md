@@ -8,13 +8,17 @@ If you need help with the Visualizer itself, press F1 there to see the on-screen
 
 # Interface
 
-The Tabs panel holds most features available in the Remote, described in detail below.
+The Tabs panel (top half) holds most features available in the Remote, described in detail below.
 
-The Buttons panel allows to trigger some commonly used functions in the Visualizer without having to focus the Visualizer window. At the bottom, the buttons will show preview images and trigger the sprites from _sprites.ini_ when Visualizer is in sprite mode (default). You can change the images for all buttons (except the first one) by right-clicking the button and selecting an image.
+The Buttons panel (bottom half) has two modes: "Command" mode and "Preset" mode. You can switch between modes using the blue arrows button in the lower right corner.
+
+**Command mode** allows to trigger some commonly used functions in the Visualizer without having to focus the Visualizer window. At the bottom, the buttons will show preview images and trigger the sprites from _sprites.ini_ when Visualizer is in sprite mode (default). You can change the images for all buttons (except the first one) by right-clicking the button and selecting an image.
 
 Press K in Visualizer or the button "Sprite/Msg Mode" to change modes. When Visualizer is in message mode, the Remote panel buttons will be labeled 00-99. The button tooltip will show what message will be sent (if a matching definition is defined in _messages.ini_).
 
-Note that you can choose to hide either the Tabs or the Button panel with  the popup menu that opens by clicking "Milkwave" in the bottom right corner. You may also use the menu to access help resources, find or open the Visualizer window and switch between light and dark mode.
+**Preset mode** allows you to assign the currently running preset to a button by right-clicking it. After assignmwent, the button will display a preview image of the preset. Left-clicking the button will start the preset in Visualizer, a middle-click will clear it.
+
+Note that you can choose to hide either the Tabs or the Button panel with the popup menu that opens by clicking "Milkwave" in the bottom right corner. You may also use the menu to access help resources, open the Visualizer window, switch between light and dark mode, and toggle color or monochrome button image display.
 
 At the bottom, you can left-click the status bar to copy its content to the clipboard, middle-click to set a "compact" mode, or right-click to quickly toggle the visibility of the button panel. You can set the "compact" mode size in _settings-remote.json_ using the key _RemoteWindowCompactSize_.
 
