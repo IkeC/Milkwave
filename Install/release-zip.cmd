@@ -18,6 +18,7 @@ pushd "%RELEASE_DIR%"
  -xr!log ^
  -xr!backup ^
  -xr!cache ^
+ -xr!capture ^
  -xr!resources\presets\Quicksave ^
  -xr!resources\presets\CreamOfTheCrop ^
  -xr!resources\presets\Milkwave\Shader\Conv\* ^

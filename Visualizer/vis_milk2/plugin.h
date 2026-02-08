@@ -724,6 +724,8 @@ public:
   void    SetWaveParamsFromMessage(std::wstring& message);
   void		ReadCustomMessages();
   void		LaunchSongTitleAnim(int supertextIndex);
+  void    CaptureScreenshot();
+  bool    CaptureScreenshotWithFilename(wchar_t* outFilename, size_t outFilenameSize);
 
   bool		RenderStringToTitleTexture(int supertextIndex);
   void		ShowSongTitleAnim(/*IDirect3DTexture9* lpRenderTarget,*/ int w, int h, float fProgress, int supertextIndex);
