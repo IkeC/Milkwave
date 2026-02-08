@@ -10,8 +10,12 @@ copy %releasePath%\script-default.json %backupPath%\script-default.json.bak
 
 del /q %releasePath%\capture\*.*
 del /q %releasePath%\presetdeck-remote.json
+del /q %releasePath%\midi-remote.json
 del /q %releasePath%\resources\buttons\btn-0*.png
 del /q %releasePath%\resources\buttons\btn-1*.png
+del /q %releasePath%\resources\buttons\btn-2*.png
+del /q %releasePath%\resources\buttons\btn-3*.png
+del /q %releasePath%\resources\buttons\btn-4*.png
 
 copy *.ini %releasePath%
 copy *.txt %releasePath%
