@@ -22,7 +22,7 @@ bBrighten=1
 bDarken=0
 bSolarize=0
 bInvert=0
-fWaveAlpha=0.001
+fWaveAlpha=0.000
 fWaveScale=0.119
 fWaveSmoothing=0.000
 fWaveParam=-0.000
@@ -256,8 +256,8 @@ shape_3_per_frame8=a = if(equal(q5+q6+q7,0),0,a);
 shape_3_per_frame9=a2=if(equal(q5+q6+q7,0),0,a2);
 shape_3_per_frame10=
 shape_3_per_frame11=mbass=bass*5;
-shape_3_per_frame12=xmov = 0.1*rand(10)*mbass*0.015*(1-2*above(rand(10),5));
-shape_3_per_frame13=ymov = pow(pow(mbass*0.015,2)-pow(xmovn,2),1/2)*(1-2*above(rand(10),5));
+shape_3_per_frame12=xmov = 0.1*int(rand(10))*mbass*0.015*(1-2*above(int(rand(10)),5));
+shape_3_per_frame13=ymov = pow(pow(mbass*0.015,2)-pow(xmovn,2),1/2)*(1-2*above(int(rand(10)),5));
 shape_3_per_frame14=x =  .5+xmov ;
 shape_3_per_frame15=y = .5+ymov;
 per_frame_1=wave_r = wave_r + 0.650*( 0.60*sin(1.437*time) + 0.40*sin(0.970*time) );

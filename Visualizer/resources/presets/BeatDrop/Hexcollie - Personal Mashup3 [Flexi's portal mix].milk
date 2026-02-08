@@ -150,7 +150,7 @@ shapecode_0_border_b=0.000
 shapecode_0_border_a=0.000
 shape_0_init1=bob = 1.5;
 shape_0_init2=ro = 0;
-shape_0_init3=red = rand(20);
+shape_0_init3=red = int(rand(20));
 shape_0_per_frame1=vol = 1 + 0.2*((bass_att+treb_att+mid_att)/3);
 shape_0_per_frame2=bob = bob*above(bob,0.01) - 0.01 + 1*(1 - above(bob,0.01));
 shape_0_per_frame3=bob = 0.4 + 0.4*sin(time*0.8);
@@ -309,7 +309,7 @@ per_frame_38=mv_r=.5*(ib_r+wave_r);mv_g=.5*(ib_g+wave_g);mv_b=.5*(ib_b+wave_b);
 per_frame_39=mv_a=.5*sqr(sin(.01*leccl+bccl));
 per_frame_40=
 per_frame_41=echo_alpha=.5+.2*cos(.07*leccl+.02*thccl);
-per_frame_42=eo=if(band(equal(bccl%3,0),beat),rand(4),eo);
+per_frame_42=eo=if(band(equal(bccl%3,0),beat),int(rand(4)),eo);
 per_frame_43=q3=(equal(eo,2)+equal(eo,1))*equal(bccl%2,0);
 per_frame_44=q4=(equal(eo,0)+equal(eo,3))*equal(bccl%2,0);
 per_frame_45=echo_orient=eo;
