@@ -34,5 +34,6 @@
     public int ShadertoyFileIndex { get; set; } = 1;
 
     public bool IsPresetMode { get; set; } = false;
+    public int CurrentPresetBank { get; set; } = 1;
   }
 }
