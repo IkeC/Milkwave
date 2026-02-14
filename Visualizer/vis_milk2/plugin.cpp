@@ -686,6 +686,7 @@ volatile HANDLE g_hThread;  // only r/w from our MAIN thread
 volatile bool g_bThreadAlive; // set true by MAIN thread, and set false upon exit from 2nd thread.
 volatile int  g_bThreadShouldQuit;  // set by MAIN thread to flag 2nd thread that it wants it to exit.
 static CRITICAL_SECTION g_cs;
+static CRITICAL_SECTION g_csRemoteMessage;  // for thread-safe remote messaging
 
 #define IsAlphabetChar(x) ((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z'))
 #define IsAlphanumericChar(x) ((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || (x >= '0' && x <= '9') || x == '.')
@@ -1656,6 +1657,7 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   g_bThreadAlive = false;
   g_bThreadShouldQuit = false;
   InitializeCriticalSection(&g_cs);
+  InitializeCriticalSection(&g_csRemoteMessage);
 
   // read in 'm_szShaderIncludeText'
   bool bSuccess = true;
@@ -1687,6 +1689,13 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   m_pOldState->Default();
   m_pNewState->Default();
 
+  // Initialize video capture
+  m_pVideoCapture = new VideoCapture();
+  m_pVideoCaptureTexture = nullptr;
+  m_fPresetOpacity = 0.5f;
+  m_bVideoInputEnabled = false;
+  m_nVideoDeviceIndex = -1;
+
   //LoadRandomPreset(0.0f);   -avoid this here; causes some DX9 stuff to happen.
 
   return true;
@@ -1717,6 +1726,14 @@ void CPlugin::CleanUpMyNonDx9Stuff() {
   // Be sure to clean up any objects here that were
   //   created/initialized in AllocateMyNonDx9Stuff.
 
+  // Clean up video capture
+  if (m_pVideoCapture) {
+    m_pVideoCapture->Stop();
+    m_pVideoCapture->Release();
+    delete m_pVideoCapture;
+    m_pVideoCapture = nullptr;
+  }
+
 // =========================================================
 // SPOUT cleanup on exit
 //
@@ -1730,9 +1747,10 @@ void CPlugin::CleanUpMyNonDx9Stuff() {
 
   //sound.Finish();
 
-    // NOTE: DO NOT DELETE m_gdi_titlefont_doublesize HERE!!!
+  // NOTE: DO NOT DELETE m_gdi_titlefont_doublesize HERE!!!
 
   DeleteCriticalSection(&g_cs);
+  DeleteCriticalSection(&g_csRemoteMessage);
 
   CancelThread(1000);
 
@@ -2258,6 +2276,13 @@ int CPlugin::AllocateMyDX9Stuff() {
   m_fAspectY = (m_nTexSizeX > m_nTexSizeY) ? m_nTexSizeY / (float)m_nTexSizeX : 1.0f;
   m_fInvAspectX = 1.0f / m_fAspectX;
   m_fInvAspectY = 1.0f / m_fAspectY;
+
+  // Create video capture texture
+  if (m_pVideoCaptureTexture) {
+    m_pVideoCaptureTexture->Release();
+    m_pVideoCaptureTexture = nullptr;
+  }
+  GetDevice()->CreateTexture(m_nTexSizeX, m_nTexSizeY, 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_MANAGED, &m_pVideoCaptureTexture, NULL);
 
 
   // BUILD VERTEX LIST for final composite blit
@@ -3896,6 +3921,9 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   }
   // just force this:
   m_pState->m_bBlending = false;
+
+  // Clean up video capture texture
+  SafeRelease(m_pVideoCaptureTexture);
 
 
 
@@ -7146,6 +7174,46 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     return 1;
     break;
 
+  case WM_USER_ENABLEVIDEOMIX:
+  {
+    bool enable = (bool)wParam;
+    m_bVideoInputEnabled = enable;
+
+    if (!enable && m_pVideoCapture) {
+      m_pVideoCapture->Stop();
+    }
+    else if (enable && m_pVideoCapture && m_nVideoDeviceIndex >= 0) {
+      if (!m_pVideoCapture->Start()) {
+        m_bVideoInputEnabled = false;
+        milkwave->LogInfo(L"Failed to start video capture");
+      }
+    }
+    return 0;
+  }
+
+  case WM_USER_SETVIDEODEVICE:
+  {
+    int deviceIndex = (int)wParam;
+    if (m_pVideoCapture && m_pVideoCaptureTexture) {
+      m_pVideoCapture->Stop();
+      m_pVideoCapture->Release();
+
+      if (m_pVideoCapture->Initialize(deviceIndex, m_nTexSizeX, m_nTexSizeY)) {
+        m_nVideoDeviceIndex = deviceIndex;
+        if (m_bVideoInputEnabled) {
+          if (!m_pVideoCapture->Start()) {
+            m_bVideoInputEnabled = false;
+            milkwave->LogInfo(L"Failed to start video capture for new device");
+          }
+        }
+      }
+      else {
+        milkwave->LogInfo(L"Failed to initialize video capture device");
+      }
+    }
+    return 0;
+  }
+
   default:
     return DefWindowProcW(hWnd, uMsg, wParam, lParam);
     break;
@@ -9422,18 +9490,27 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend, bool doFo
       return 0;
     }
 
-    // Get current time since epoch in milliseconds
+    // Thread-safe timing check
+    EnterCriticalSection(&g_csRemoteMessage);
     uint64_t Now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     if (!doForce && Now - LastSentMilkwaveMessage < 100) {
       // Skipping message send to Milkwave Remote to avoid flooding
+      LeaveCriticalSection(&g_csRemoteMessage);
       return 0;
     }
     LastSentMilkwaveMessage = Now;
+    LeaveCriticalSection(&g_csRemoteMessage);
 
     // Find the Milkwave Remote window
     HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
     if (!hRemoteWnd) {
       wprintf(L"Milkwave Remote window not found.\n");
+      return 0;
+    }
+
+    // Double-check window is still valid before sending
+    if (!IsWindow(hRemoteWnd)) {
+      wprintf(L"Milkwave Remote window is not valid.\n");
       return 0;
     }
 
@@ -9443,18 +9520,28 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend, bool doFo
     cds.cbData = (wcslen(messageToSend) + 1) * sizeof(wchar_t); // Size of the data in bytes
     cds.lpData = (void*)messageToSend; // Pointer to the data
 
-    if (IsWindow(hRemoteWnd)) {
-      // Send the WM_COPYDATA message
-      if (SendMessage(hRemoteWnd, WM_COPYDATA, (WPARAM)GetPluginWindow(), (LPARAM)&cds) != 0) {
-        wprintf(L"Failed to send WM_COPYDATA message to Milkwave Remote.\n");
-        return 0;
-      }
-      else {
-        wprintf(L"WM_COPYDATA message sent successfully to Milkwave Remote.\n");
-      }
+    // Use SendMessageTimeout to avoid hanging if receiver is busy
+    DWORD_PTR result = 0;
+    LRESULT lr = SendMessageTimeout(
+      hRemoteWnd,
+      WM_COPYDATA,
+      (WPARAM)GetPluginWindow(),
+      (LPARAM)&cds,
+      SMTO_ABORTIFHUNG | SMTO_BLOCK,
+      100,  // 100ms timeout
+      &result
+    );
+
+    if (lr == 0) {
+      wprintf(L"SendMessageTimeout failed or timed out.\n");
+      return 0;
     }
+    
+    wprintf(L"WM_COPYDATA message sent successfully to Milkwave Remote.\n");
   } catch (...) {
-    // ignore
+    // Ensure we leave critical section even if exception occurs
+    wprintf(L"Exception in SendMessageToMilkwaveRemote\n");
+    return 0;
   }
   return 1;
 }

@@ -1,6 +1,7 @@
 ﻿using NAudio.CoreAudioApi;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Management;
 
 namespace MilkwaveRemote.Helper {
 
@@ -155,6 +156,23 @@ namespace MilkwaveRemote.Helper {
         return Text;
       }
 
+    }
+
+    public static List<string> GetVideoInputDevices() {
+      var devices = new List<string>();
+      try {
+        using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE (PNPClass = 'Image' OR PNPClass = 'Camera')")) {
+          foreach (ManagementObject device in searcher.Get()) {
+            var name = device["Caption"]?.ToString();
+            if (!string.IsNullOrEmpty(name)) {
+              devices.Add(name);
+            }
+          }
+        }
+      } catch (Exception) {
+        // Fallback: return empty list if enumeration fails
+      }
+      return devices;
     }
   }
 }

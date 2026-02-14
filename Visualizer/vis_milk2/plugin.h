@@ -42,6 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "support.h"
 #include "texmgr.h"
 #include "state.h"
+#include "VideoCapture.h"
 #include <vector>
 #include <array>
 #include "../ns-eel2-shim/ns-eel.h"
@@ -667,6 +668,13 @@ public:
   int m_AMDDetectionMode = 0; // 0 = Auto detect, 1 = Force AMD, 2 = Force non-AMD
 
   IDirect3DTexture9* m_tracer_tex;
+
+  // Video input mixing
+  class VideoCapture* m_pVideoCapture;
+  IDirect3DTexture9* m_pVideoCaptureTexture;
+  float m_fPresetOpacity;          // 0.5f default - opacity of preset when video mixing is enabled
+  bool m_bVideoInputEnabled;
+  int m_nVideoDeviceIndex;
 
   int         m_nFramesSinceResize;
 

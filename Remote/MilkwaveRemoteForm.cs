@@ -65,6 +65,8 @@ namespace MilkwaveRemote {
     private const int WM_SPRITE_MODE = 0x0400 + 103;
     private const int WM_MESSAGE_MODE = 0x0400 + 104;
     private const int WM_CAPTURE_SCREENSHOT = 0x0400 + 105;
+    private const int WM_SETVIDEODEVICE = 0x0400 + 106;
+    private const int WM_ENABLEVIDEOMIX = 0x0400 + 107;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -1070,6 +1072,8 @@ namespace MilkwaveRemote {
 
       RemoteHelper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
       RemoteHelper.FillAudioDevices(cboAudioDevice);
+
+      PopulateVideoDevices();
 
       string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
       if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
@@ -6125,5 +6129,68 @@ namespace MilkwaveRemote {
 
       SetStatusText($"Preset unassigned from button {buttonIndex}");
     }
+
+    #region Video Input Mixing
+
+    private void PopulateVideoDevices() {
+      try {
+        cboVideoInput.Items.Clear();
+        var devices = RemoteHelper.GetVideoInputDevices();
+        foreach (var device in devices) {
+          cboVideoInput.Items.Add(device);
+        }
+        if (cboVideoInput.Items.Count > 0 && cboVideoInput.SelectedIndex < 0) {
+          cboVideoInput.SelectedIndex = 0;
+        }
+        cboVideoInput.Enabled = chkVideoMix.Checked;
+      } catch (Exception ex) {
+        SetStatusText($"Error enumerating video devices: {ex.Message}");
+      }
+    }
+
+    private void chkVideoMix_CheckedChanged(object sender, EventArgs e) {
+      try {
+        bool enabled = chkVideoMix.Checked;
+
+        IntPtr foundWindow = FindVisualizerWindow();
+        if (foundWindow != IntPtr.Zero) {
+          PostMessage(foundWindow, WM_ENABLEVIDEOMIX, (IntPtr)(enabled ? 1 : 0), IntPtr.Zero);
+
+          if (enabled && cboVideoInput.SelectedIndex >= 0) {
+            int deviceIndex = cboVideoInput.SelectedIndex;
+            PostMessage(foundWindow, WM_SETVIDEODEVICE, (IntPtr)deviceIndex, IntPtr.Zero);
+            SetStatusText($"Video mixing enabled: {cboVideoInput.Text}");
+          } else {
+            SetStatusText("Video mixing disabled");
+          }
+        } else {
+          SetStatusText(windowNotFound);
+        }
+
+        cboVideoInput.Enabled = enabled;
+      } catch (Exception ex) {
+        SetStatusText($"Error toggling video mix: {ex.Message}");
+      }
+    }
+
+    private void cboVideoInput_SelectedIndexChanged(object sender, EventArgs e) {
+      try {
+        if (chkVideoMix.Checked && cboVideoInput.SelectedIndex >= 0) {
+          IntPtr foundWindow = FindVisualizerWindow();
+          if (foundWindow != IntPtr.Zero) {
+            int deviceIndex = cboVideoInput.SelectedIndex;
+            PostMessage(foundWindow, WM_SETVIDEODEVICE, (IntPtr)deviceIndex, IntPtr.Zero);
+            SetStatusText($"Video source changed: {cboVideoInput.Text}");
+          } else {
+            SetStatusText(windowNotFound);
+          }
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error changing video device: {ex.Message}");
+      }
+    }
+
+    #endregion
+
   } // end class
 } // end namespace

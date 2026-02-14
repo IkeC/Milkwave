@@ -5298,6 +5298,49 @@ void CPlugin::ShowToUser_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, b
   else
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 
+  // Video input mixing: draw video capture texture first (bottom layer)
+  if (m_bVideoInputEnabled && m_pVideoCapture && m_pVideoCaptureTexture) {
+    // Copy latest frame from video capture to texture
+    if (m_pVideoCapture->CopyFrameToTexture(m_pVideoCaptureTexture, lpDevice)) {
+      // Draw video input at full screen with 100% opacity
+      lpDevice->SetTexture(0, m_pVideoCaptureTexture);
+      lpDevice->SetVertexShader(NULL);
+      lpDevice->SetPixelShader(NULL);
+      lpDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
+      lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+      
+      // Create fullscreen quad
+      struct VIDEOVERTEX {
+        float x, y, z, rhw;
+        float u, v;
+      };
+      VIDEOVERTEX verts[4] = {
+        { -0.5f,          -0.5f,           0.5f, 1.0f, 0.0f, 0.0f },
+        { GetWidth()-0.5f, -0.5f,           0.5f, 1.0f, 1.0f, 0.0f },
+        { -0.5f,          GetHeight()-0.5f, 0.5f, 1.0f, 0.0f, 1.0f },
+        { GetWidth()-0.5f, GetHeight()-0.5f, 0.5f, 1.0f, 1.0f, 1.0f }
+      };
+      lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, verts, sizeof(VIDEOVERTEX));
+    }
+  }
+
+  // Enable alpha blending for preset output if video mixing is active
+  if (m_bVideoInputEnabled && m_pVideoCapture) {
+    lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    // Modify vertex alpha for preset opacity
+    for (int vi = 0; vi < (FCGSX + 1) * (FCGSY + 1); vi++) {
+      DWORD color = m_comp_verts[vi].Diffuse;
+      int a = (color >> 24) & 0xFF;
+      int r = (color >> 16) & 0xFF;
+      int g = (color >> 8) & 0xFF;
+      int b = color & 0xFF;
+      a = (int)(a * m_fPresetOpacity);
+      m_comp_verts[vi].Diffuse = D3DCOLOR_ARGB(a, r, g, b);
+    }
+  }
+
   // Now do the final composite blit, fullscreen;
   //  or do it twice, alpha-blending, if we're blending between two sets of shaders.
 

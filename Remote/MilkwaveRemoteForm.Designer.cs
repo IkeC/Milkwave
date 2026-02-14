@@ -362,6 +362,7 @@ namespace MilkwaveRemote
       panShadertoyLocal = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
+      button1 = new Button();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -2626,7 +2627,7 @@ namespace MilkwaveRemote
       // 
       chkVideoMix.Appearance = Appearance.Button;
       chkVideoMix.FlatStyle = FlatStyle.System;
-      chkVideoMix.Location = new Point(294, 9);
+      chkVideoMix.Location = new Point(345, 9);
       chkVideoMix.Margin = new Padding(3, 2, 3, 2);
       chkVideoMix.Name = "chkVideoMix";
       chkVideoMix.Size = new Size(70, 23);
@@ -2634,8 +2635,9 @@ namespace MilkwaveRemote
       chkVideoMix.Text = "Mix";
       chkVideoMix.TextAlign = ContentAlignment.MiddleCenter;
       chkVideoMix.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkVideoMix, "Checked: Get tags from (and save to) currently running preset\r\nUnchecked: Get tags from (and save to) selected preset above\r\n");
+      toolTip1.SetToolTip(chkVideoMix, "Enable video mixing with preset output");
       chkVideoMix.UseVisualStyleBackColor = true;
+      chkVideoMix.CheckedChanged += chkVideoMix_CheckedChanged;
       // 
       // cboSettingsOpenFile
       // 
@@ -3738,6 +3740,7 @@ namespace MilkwaveRemote
       // 
       tabInput.BackColor = SystemColors.ControlLight;
       tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Controls.Add(button1);
       tabInput.Controls.Add(chkVideoMix);
       tabInput.Controls.Add(cboVideoInput);
       tabInput.Controls.Add(label10);
@@ -3756,6 +3759,7 @@ namespace MilkwaveRemote
       cboVideoInput.Name = "cboVideoInput";
       cboVideoInput.Size = new Size(232, 23);
       cboVideoInput.TabIndex = 101;
+      cboVideoInput.SelectedIndexChanged += cboVideoInput_SelectedIndexChanged;
       // 
       // label10
       // 
@@ -4723,6 +4727,16 @@ namespace MilkwaveRemote
       splitContainerShader.SplitterDistance = 286;
       splitContainerShader.TabIndex = 31;
       // 
+      // button1
+      // 
+      button1.FlatStyle = FlatStyle.System;
+      button1.Location = new Point(294, 9);
+      button1.Name = "button1";
+      button1.Size = new Size(45, 23);
+      button1.TabIndex = 127;
+      button1.Text = "Scan";
+      button1.UseVisualStyleBackColor = true;
+      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -5156,5 +5170,6 @@ namespace MilkwaveRemote
     private ComboBox cboVideoInput;
     private Label label10;
     private CheckBox chkVideoMix;
+    private Button button1;
   }
 }
