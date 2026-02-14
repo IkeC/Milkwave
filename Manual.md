@@ -16,7 +16,7 @@ The Buttons panel (bottom half) has two modes: "Command" mode and "Preset" mode.
 
 Press K in Visualizer or the button "Sprite/Msg Mode" to change modes. When Visualizer is in message mode, the Remote panel buttons will be labeled 00-99. The button tooltip will show what message will be sent (if a matching definition is defined in _messages.ini_).
 
-**Preset mode** allows you to assign the currently running preset to a button by right-clicking it. After assignmwent, the button will display a preview image of the preset. Left-clicking the button will start the preset in Visualizer, a middle-click will clear it.
+**Preset mode** allows you to assign the currently running preset to a button by right-clicking it. After assignmwent, the button will display a preview image of the preset. Left-clicking the button will start the preset in Visualizer, a middle-click will clear it. You can use blue numbered button in the lower right to switch between 3 banks of preset buttons, giving you a total of 45 assignable preset buttons. You can also press each of these buttons from script or MIDI using the command "BTN=<number>" (see _script-default.txt_ for details).
 
 Note that you can choose to hide either the Tabs or the Button panel with the popup menu that opens by clicking "Milkwave" in the bottom right corner. You may also use the menu to access help resources, open the Visualizer window, switch between light and dark mode, and toggle color or monochrome button image display.
 

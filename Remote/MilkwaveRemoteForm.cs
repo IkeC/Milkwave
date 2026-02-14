@@ -323,6 +323,10 @@ namespace MilkwaveRemote {
       }
 
       btnSwitchMode.Resize += BtnSwitchMode_Resize;
+
+      // btn88 is the bank switcher in preset mode
+      btn88.MouseDown += Btn88_MouseDown;
+      btn88.Resize += Btn88_Resize;
     }
 
     private void BtnSwitchMode_Resize(object? sender, EventArgs e) {
@@ -336,6 +340,10 @@ namespace MilkwaveRemote {
       LoadMessageDefinitions();
 
       foreach (Button button in spriteButtonSectionMap.Keys) {
+        // Skip btn88 in preset mode - it shows bank icon instead
+        if (Settings.IsPresetMode && button == btn88) {
+          continue;
+        }
         UpdateSpriteButtonAppearance(button);
       }
     }
@@ -599,7 +607,7 @@ namespace MilkwaveRemote {
         bool isSimpleFilename = !normalized.Contains(Path.DirectorySeparatorChar) && !normalized.Contains(Path.AltDirectorySeparatorChar);
         bool isSpritesPath = normalized.StartsWith("sprites" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
                              normalized.StartsWith("sprites/", StringComparison.OrdinalIgnoreCase);
-        
+
         if (isSimpleFilename || isSpritesPath) {
           string resourcesFallback = Path.GetFullPath(Path.Combine(BaseDir, "resources", normalized));
           if (File.Exists(resourcesFallback)) {
@@ -698,7 +706,7 @@ namespace MilkwaveRemote {
         g.SmoothingMode = SmoothingMode.HighQuality;
 
         Rectangle destRect = new Rectangle(margin, margin, contentWidth, contentHeight);
-        
+
         if (Settings.EnableColorButtonImages) {
           g.DrawImage(source, destRect, sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel);
         } else {
@@ -726,11 +734,11 @@ namespace MilkwaveRemote {
       const int margin = 10;
       int availableWidth = Math.Max(1, target.Width - margin * 2);
       int availableHeight = Math.Max(1, target.Height - margin * 2);
-      
+
       float scaleX = (float)availableWidth / original.Width;
       float scaleY = (float)availableHeight / original.Height;
       float scale = Math.Min(scaleX, scaleY);
-      
+
       if (scale <= 0) {
         scale = Math.Min((float)target.Width / original.Width, (float)target.Height / original.Height);
       }
@@ -1875,6 +1883,15 @@ namespace MilkwaveRemote {
               SetStatusText($"Unable to execute '{value}': {ex.Message}");
             }
           }
+        } else if (tokenUpper.StartsWith("BTN=")) {
+          string value = token.Substring(tokenUpper.IndexOf("=") + 1);
+          if (!string.IsNullOrEmpty(value) && int.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out int buttonIndex)) {
+            if (buttonIndex >= 1 && buttonIndex <= 45) {
+              TriggerPresetFromDeck(buttonIndex);
+            } else {
+              SetStatusText($"Button index {buttonIndex} out of range (1-45)");
+            }
+          }
         } else if (tokenUpper.StartsWith("QUALITY=")) {
           string value = token.Substring(token.IndexOf("=") + 1);
           if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
@@ -2438,6 +2455,7 @@ namespace MilkwaveRemote {
     }
 
     private void btn88_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendInputTwoKeys(VK_8, VK_8, "88");
       // SendUnicodeChars("88");
     }
@@ -5607,6 +5625,7 @@ namespace MilkwaveRemote {
 
     private void ApplyPresetMode() {
       UpdateModeToggleButton();
+      UpdateBankSwitchButton();
       for (int i = 0; i < presetDeckButtons.Length; i++) {
         UpdatePresetDeckButtonAppearance(i + 1);
       }
@@ -5614,14 +5633,90 @@ namespace MilkwaveRemote {
 
     private void ApplyCommandMode() {
       UpdateModeToggleButton();
+      RestoreBankSwitchButton();
       for (int i = 0; i < presetDeckButtons.Length; i++) {
         RestoreCommandButtonAppearance(i);
       }
     }
 
+    private void UpdateBankSwitchButton() {
+      if (!Settings.IsPresetMode) {
+        return;
+      }
+
+      string bankIconPath = Path.Combine(BaseDir, $"resources\\buttons\\btn-bank-{Settings.CurrentPresetBank}.png");
+
+      if (File.Exists(bankIconPath) && btn88.ClientSize.Width > 0 && btn88.ClientSize.Height > 0) {
+        try {
+          using (Image original = Image.FromFile(bankIconPath)) {
+            Rectangle destRect = CalculatePreviewBounds(original.Size, btn88.ClientSize);
+            if (destRect.Width > 0 && destRect.Height > 0) {
+              Bitmap preview = new Bitmap(btn88.ClientSize.Width, btn88.ClientSize.Height);
+              using (Graphics g = Graphics.FromImage(preview)) {
+                g.Clear(Color.Transparent);
+                g.CompositingQuality = CompositingQuality.HighQuality;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.SmoothingMode = SmoothingMode.HighQuality;
+                g.DrawImage(original, destRect);
+              }
+              ApplyButtonImage(btn88, preview);
+            }
+          }
+        } catch (Exception ex) {
+          Program.SaveErrorToFile(ex, "Load bank icon");
+          btn88.Text = $"Bank {Settings.CurrentPresetBank}";
+        }
+      } else {
+        btn88.Text = $"Bank {Settings.CurrentPresetBank}";
+      }
+
+      toolTip1.SetToolTip(btn88, $"Bank {Settings.CurrentPresetBank} (Click to cycle)");
+    }
+
+    private void RestoreBankSwitchButton() {
+      // In command mode, restore sprite button appearance
+      UpdateSpriteButtonAppearance(btn88);
+    }
+
+    private void Btn88_MouseDown(object? sender, MouseEventArgs e) {
+      if (!Settings.IsPresetMode) {
+        // In command mode, execute normal 88 action
+        SendInputTwoKeys(VK_8, VK_8, "88");
+        return;
+      }
+
+      // In preset mode, cycle banks
+      if (e.Button == MouseButtons.Left) {
+        Settings.CurrentPresetBank = (Settings.CurrentPresetBank % 3) + 1;
+        UpdateBankSwitchButton();
+
+        // Refresh all preset button appearances for new bank
+        for (int i = 0; i < presetDeckButtons.Length; i++) {
+          UpdatePresetDeckButtonAppearance(i + 1);
+        }
+
+        SaveSettingsToFile();
+        SetStatusText($"Switched to Bank {Settings.CurrentPresetBank}");
+      }
+    }
+
+    private void Btn88_Resize(object? sender, EventArgs e) {
+      if (Settings.IsPresetMode) {
+        UpdateBankSwitchButton();
+      }
+    }
+
+    private int GetBankOffsetButtonIndex(int buttonIndex) {
+      // buttonIndex is 1-15 (local button number)
+      // Returns the global button index accounting for bank offset
+      // Bank 1: 1-15, Bank 2: 16-30, Bank 3: 31-45
+      return buttonIndex + ((Settings.CurrentPresetBank - 1) * 15);
+    }
+
     private void UpdateModeToggleButton() {
       string switchIconPath = Path.Combine(BaseDir, "resources\\buttons\\btn-switch.png");
-      
+
       if (File.Exists(switchIconPath) && btnSwitchMode.ClientSize.Width > 0 && btnSwitchMode.ClientSize.Height > 0) {
         try {
           using (Image original = Image.FromFile(switchIconPath)) {
@@ -5643,7 +5738,7 @@ namespace MilkwaveRemote {
           Program.SaveErrorToFile(ex, "Load switch icon");
         }
       }
-      
+
       if (Settings.IsPresetMode) {
         toolTip1.SetToolTip(btnSwitchMode, "Switch to Command mode");
       } else {
@@ -5657,12 +5752,12 @@ namespace MilkwaveRemote {
       }
 
       Button btn = presetDeckButtons[buttonArrayIndex];
-      
+
       // Clear any preset deck assignment
       if (btn.Tag is int) {
         btn.Tag = null;
       }
-      
+
       // Dispose any image
       if (buttonImageCache.TryGetValue(btn, out Image? cached) && cached != null) {
         if (btn.Image == cached) {
@@ -5673,7 +5768,7 @@ namespace MilkwaveRemote {
       } else {
         btn.Image = null;
       }
-      
+
       // Restore original button text based on which button it is
       if (btn == btnSpace) btn.Text = "Next Preset\r\n(Space)";
       else if (btn == btnBackspace) btn.Text = "Previous Preset\r\n(Backspace)";
@@ -5690,7 +5785,7 @@ namespace MilkwaveRemote {
       else if (btn == btnDelete) btn.Text = "Clear Sprite/Msg\r\n(Delete)";
       else if (btn == btnWatermark) btn.Text = "Watermark Mode \r\n(Ctrl+Shift+F9)";
       else if (btn == btnTransparency) btn.Text = "Transparency\r\n(F12)";
-      
+
       // Reset button styling
       btn.Padding = new Padding(0);
       btn.TextAlign = ContentAlignment.MiddleCenter;
@@ -5707,7 +5802,9 @@ namespace MilkwaveRemote {
       Button btn = presetDeckButtons[buttonIndex - 1];
       btn.Tag = buttonIndex;
 
-      if (presetDeck.Assignments.TryGetValue(buttonIndex, out var assignment)) {
+      int globalIndex = GetBankOffsetButtonIndex(buttonIndex);
+
+      if (presetDeck.Assignments.TryGetValue(globalIndex, out var assignment)) {
         string thumbnailPath = Path.Combine(BaseDir, assignment.ThumbnailPath);
         if (File.Exists(thumbnailPath)) {
           try {
@@ -5720,18 +5817,18 @@ namespace MilkwaveRemote {
             if (thumbnail != null) {
               ApplyButtonImage(btn, thumbnail);
             } else {
-              ShowPresetDeckButtonNumber(btn, buttonIndex);
+              ShowPresetDeckButtonNumber(btn, globalIndex);
             }
           } catch {
-            ShowPresetDeckButtonNumber(btn, buttonIndex);
+            ShowPresetDeckButtonNumber(btn, globalIndex);
           }
         } else {
-          ShowPresetDeckButtonNumber(btn, buttonIndex);
+          ShowPresetDeckButtonNumber(btn, globalIndex);
         }
 
         toolTip1.SetToolTip(btn, assignment.PresetDisplayName);
       } else {
-        ShowPresetDeckButtonNumber(btn, buttonIndex);
+        ShowPresetDeckButtonNumber(btn, globalIndex);
         toolTip1.SetToolTip(btn, "Right-click to assign preset");
       }
     }
@@ -5751,7 +5848,8 @@ namespace MilkwaveRemote {
         return;
       }
 
-      if (presetDeck.Assignments.ContainsKey(buttonIndex)) {
+      int globalIndex = GetBankOffsetButtonIndex(buttonIndex);
+      if (presetDeck.Assignments.ContainsKey(globalIndex)) {
         UpdatePresetDeckButtonAppearance(buttonIndex);
       }
     }
@@ -5761,16 +5859,18 @@ namespace MilkwaveRemote {
         return;
       }
 
+      int globalIndex = GetBankOffsetButtonIndex(buttonIndex);
+
       if (e.Button == MouseButtons.Left) {
-        if (presetDeck.Assignments.ContainsKey(buttonIndex)) {
-          TriggerPresetFromDeck(buttonIndex);
+        if (presetDeck.Assignments.ContainsKey(globalIndex)) {
+          TriggerPresetFromDeck(globalIndex);
         } else {
           SetStatusText("Right-click to assign current preset");
         }
       } else if (e.Button == MouseButtons.Right) {
-        AssignCurrentPresetToDeckButton(buttonIndex);
+        AssignCurrentPresetToDeckButton(globalIndex);
       } else if (e.Button == MouseButtons.Middle) {
-        UnassignPresetFromDeckButton(buttonIndex);
+        UnassignPresetFromDeckButton(globalIndex);
       }
     }
 
@@ -5803,7 +5903,7 @@ namespace MilkwaveRemote {
       if (fullPresetPath.Contains("\\") || fullPresetPath.Contains("/")) {
         int lastSlash = Math.Max(fullPresetPath.LastIndexOf('\\'), fullPresetPath.LastIndexOf('/'));
         string fileNameWithExt = fullPresetPath.Substring(lastSlash + 1);
-        if (fileNameWithExt.EndsWith(".milk", StringComparison.OrdinalIgnoreCase) || 
+        if (fileNameWithExt.EndsWith(".milk", StringComparison.OrdinalIgnoreCase) ||
             fileNameWithExt.EndsWith(".milk2", StringComparison.OrdinalIgnoreCase)) {
           presetName = Path.GetFileNameWithoutExtension(fileNameWithExt);
         } else {
@@ -5835,19 +5935,19 @@ namespace MilkwaveRemote {
       };
 
       pendingThumbnailAssignments[buttonIndex] = pendingThumbnail;
-      
+
       string captureDir = Path.Combine(BaseDir, "capture");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] BaseDir: {BaseDir}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Capture dir: {captureDir}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Full preset path: {fullPresetPath}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Relative path: {maybeRelativePath}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Sending CAPTURE message to visualizer");
-      
+
       SetStatusText($"BaseDir={BaseDir}, Requesting screenshot for '{presetName}'...");
-      
+
       SendToMilkwaveVisualizer("CAPTURE", MessageType.CaptureScreenshot);
-      
-      
+
+
       Task.Run(() => PollForCaptureFile(buttonIndex));
     }
 
@@ -5858,7 +5958,7 @@ namespace MilkwaveRemote {
 
       string captureDir = Path.Combine(BaseDir, "capture");
       System.Diagnostics.Debug.WriteLine($"[PollCapture] Polling directory: {captureDir}");
-      
+
       if (!Directory.Exists(captureDir)) {
         Directory.CreateDirectory(captureDir);
         System.Diagnostics.Debug.WriteLine($"[PollCapture] Created directory: {captureDir}");
@@ -5872,17 +5972,17 @@ namespace MilkwaveRemote {
         pollCount++;
         try {
           var allFiles = Directory.GetFiles(captureDir, "*.png");
-          
+
           if (pollCount == 1) {
             System.Diagnostics.Debug.WriteLine($"[PollCapture] Poll #{pollCount}: {allFiles.Length} PNG files found");
             this.Invoke(() => SetStatusText($"Polling {captureDir}: {allFiles.Length} PNG files"));
           }
-          
+
           if (pollCount % 5 == 0) {
             System.Diagnostics.Debug.WriteLine($"[PollCapture] Poll #{pollCount}: Still waiting...");
             this.Invoke(() => SetStatusText($"Poll #{pollCount}: {allFiles.Length} files in capture dir"));
           }
-          
+
           var captureFile = allFiles
             .Select(f => new FileInfo(f))
             .Where(fi => fi.CreationTime >= startTime || fi.LastWriteTime >= startTime)
@@ -5939,11 +6039,29 @@ namespace MilkwaveRemote {
           };
 
           pendingThumbnailAssignments.Remove(buttonIndex);
-          UpdatePresetDeckButtonAppearance(buttonIndex);
+
+          // Calculate local button index (1-15) from global index for UI update
+          int localButtonIndex = ((buttonIndex - 1) % 15) + 1;
+          int buttonBank = ((buttonIndex - 1) / 15) + 1;
+
+          // Only update appearance if we're on the correct bank
+          if (buttonBank == Settings.CurrentPresetBank) {
+            UpdatePresetDeckButtonAppearance(localButtonIndex);
+          }
+
           SavePresetDeck();
 
           SetStatusText($"Preset '{pending.Preset.DisplayName}' assigned to button {buttonIndex}");
         });
+
+        // Delete the capture file after successful processing
+        try {
+          if (File.Exists(captureFilePath)) {
+            File.Delete(captureFilePath);
+          }
+        } catch (Exception deleteEx) {
+          Program.SaveErrorToFile(deleteEx, "Delete capture file");
+        }
 
       } catch (Exception ex) {
         this.Invoke(() => {
@@ -5993,7 +6111,16 @@ namespace MilkwaveRemote {
       }
 
       presetDeck.Assignments.Remove(buttonIndex);
-      UpdatePresetDeckButtonAppearance(buttonIndex);
+
+      // Calculate local button index (1-15) from global index for UI update
+      int localButtonIndex = ((buttonIndex - 1) % 15) + 1;
+      int buttonBank = ((buttonIndex - 1) / 15) + 1;
+
+      // Only update appearance if we're on the correct bank
+      if (buttonBank == Settings.CurrentPresetBank) {
+        UpdatePresetDeckButtonAppearance(localButtonIndex);
+      }
+
       SavePresetDeck();
 
       SetStatusText($"Preset unassigned from button {buttonIndex}");
