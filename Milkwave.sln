@@ -17,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Manual.md = Manual.md
 		Build\messages.ini = Build\messages.ini
 		Build\notes.md = Build\notes.md
+		Build\plan.md = Build\plan.md
 		Build\precompile.txt = Build\precompile.txt
 		README.md = README.md
 		Build\README.txt = Build\README.txt

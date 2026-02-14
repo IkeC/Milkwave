@@ -213,6 +213,7 @@ namespace MilkwaveRemote
       chkHueAuto = new CheckBox();
       lblChangePreset = new Label();
       chkPresetLocked = new CheckBox();
+      chkVideoMix = new CheckBox();
       cboSettingsOpenFile = new ComboBox();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
@@ -291,6 +292,8 @@ namespace MilkwaveRemote
       numWavePushY = new NumericUpDown();
       numWavePushX = new NumericUpDown();
       tabInput = new TabPage();
+      cboVideoInput = new ComboBox();
+      label10 = new Label();
       tabMidi = new TabPage();
       label6 = new Label();
       label8 = new Label();
@@ -402,6 +405,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveZoom).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushY).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).BeginInit();
+      tabInput.SuspendLayout();
       tabMidi.SuspendLayout();
       tabSettings.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numPresetChange).BeginInit();
@@ -2618,6 +2622,21 @@ namespace MilkwaveRemote
       chkPresetLocked.UseVisualStyleBackColor = true;
       chkPresetLocked.CheckedChanged += chkPresetLocked_CheckedChanged;
       // 
+      // chkVideoMix
+      // 
+      chkVideoMix.Appearance = Appearance.Button;
+      chkVideoMix.FlatStyle = FlatStyle.System;
+      chkVideoMix.Location = new Point(294, 9);
+      chkVideoMix.Margin = new Padding(3, 2, 3, 2);
+      chkVideoMix.Name = "chkVideoMix";
+      chkVideoMix.Size = new Size(70, 23);
+      chkVideoMix.TabIndex = 126;
+      chkVideoMix.Text = "Mix";
+      chkVideoMix.TextAlign = ContentAlignment.MiddleCenter;
+      chkVideoMix.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkVideoMix, "Checked: Get tags from (and save to) currently running preset\r\nUnchecked: Get tags from (and save to) selected preset above\r\n");
+      chkVideoMix.UseVisualStyleBackColor = true;
+      // 
       // cboSettingsOpenFile
       // 
       cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
@@ -3719,12 +3738,33 @@ namespace MilkwaveRemote
       // 
       tabInput.BackColor = SystemColors.ControlLight;
       tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Controls.Add(chkVideoMix);
+      tabInput.Controls.Add(cboVideoInput);
+      tabInput.Controls.Add(label10);
       tabInput.Location = new Point(4, 24);
       tabInput.Margin = new Padding(0);
       tabInput.Name = "tabInput";
       tabInput.Size = new Size(611, 183);
       tabInput.TabIndex = 7;
       tabInput.Text = "Input";
+      // 
+      // cboVideoInput
+      // 
+      cboVideoInput.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboVideoInput.FormattingEnabled = true;
+      cboVideoInput.Location = new Point(56, 9);
+      cboVideoInput.Name = "cboVideoInput";
+      cboVideoInput.Size = new Size(232, 23);
+      cboVideoInput.TabIndex = 101;
+      // 
+      // label10
+      // 
+      label10.Location = new Point(5, 8);
+      label10.Name = "label10";
+      label10.Size = new Size(48, 24);
+      label10.TabIndex = 100;
+      label10.Text = "Device";
+      label10.TextAlign = ContentAlignment.MiddleRight;
       // 
       // tabMidi
       // 
@@ -4746,6 +4786,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveZoom).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushY).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).EndInit();
+      tabInput.ResumeLayout(false);
       tabMidi.ResumeLayout(false);
       tabMidi.PerformLayout();
       tabSettings.ResumeLayout(false);
@@ -5111,5 +5152,9 @@ namespace MilkwaveRemote
     private Label lblChangePreset;
     private CheckBox chkPresetLocked;
     private TabPage tabInput;
+    private Button btnVideoInputSet;
+    private ComboBox cboVideoInput;
+    private Label label10;
+    private CheckBox chkVideoMix;
   }
 }
