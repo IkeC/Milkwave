@@ -45,6 +45,7 @@ namespace MilkwaveRemote
       toolStripMenuItemTabsPanel = new ToolStripMenuItem();
       toolStripMenuItemButtonPanel = new ToolStripMenuItem();
       toolStripMenuItemSpriteButtonImages = new ToolStripMenuItem();
+      toolStripMenuItemColorButtonImages = new ToolStripMenuItem();
       toolStripSeparator4 = new ToolStripSeparator();
       toolStripMenuItemMonitorCPU = new ToolStripMenuItem();
       toolStripMenuItemMonitorGPU = new ToolStripMenuItem();
@@ -244,7 +245,7 @@ namespace MilkwaveRemote
       label2 = new Label();
       txtStyle = new TextBox();
       tableLayoutPanel1 = new TableLayoutPanel();
-      btn99 = new Button();
+      btnSwitchMode = new Button();
       btn88 = new Button();
       btnTransparency = new Button();
       btnB = new Button();
@@ -460,7 +461,7 @@ namespace MilkwaveRemote
       // 
       // toolStripDropDownButton
       // 
-      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripMenuItemSpriteButtonImages, toolStripSeparator4, toolStripMenuItemMonitorCPU, toolStripMenuItemMonitorGPU, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
+      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripMenuItemSpriteButtonImages, toolStripMenuItemColorButtonImages, toolStripSeparator4, toolStripMenuItemMonitorCPU, toolStripMenuItemMonitorGPU, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
       toolStripDropDownButton.Image = (Image)resources.GetObject("toolStripDropDownButton.Image");
       toolStripDropDownButton.ImageTransparentColor = Color.Magenta;
       toolStripDropDownButton.Name = "toolStripDropDownButton";
@@ -526,6 +527,15 @@ namespace MilkwaveRemote
       toolStripMenuItemSpriteButtonImages.Size = new Size(155, 22);
       toolStripMenuItemSpriteButtonImages.Text = "Sprite Images";
       toolStripMenuItemSpriteButtonImages.Click += toolStripMenuItemSpriteButtonImages_Click;
+      // 
+      // toolStripMenuItemColorButtonImages
+      // 
+      toolStripMenuItemColorButtonImages.Checked = true;
+      toolStripMenuItemColorButtonImages.CheckState = CheckState.Checked;
+      toolStripMenuItemColorButtonImages.Name = "toolStripMenuItemColorButtonImages";
+      toolStripMenuItemColorButtonImages.Size = new Size(155, 22);
+      toolStripMenuItemColorButtonImages.Text = "Color Images";
+      toolStripMenuItemColorButtonImages.Click += toolStripMenuItemColorButtonImages_Click;
       // 
       // toolStripSeparator4
       // 
@@ -2993,7 +3003,7 @@ namespace MilkwaveRemote
       tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
       tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10.2874432F));
       tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 9.833586F));
-      tableLayoutPanel1.Controls.Add(btn99, 9, 3);
+      tableLayoutPanel1.Controls.Add(btnSwitchMode, 9, 3);
       tableLayoutPanel1.Controls.Add(btn88, 8, 3);
       tableLayoutPanel1.Controls.Add(btnWatermark, 6, 2);
       tableLayoutPanel1.Controls.Add(btnTransparency, 8, 2);
@@ -3032,17 +3042,16 @@ namespace MilkwaveRemote
       tableLayoutPanel1.Size = new Size(619, 185);
       tableLayoutPanel1.TabIndex = 34;
       // 
-      // btn99
+      // btnSwitchMode
       // 
-      btn99.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      btn99.Location = new Point(557, 138);
-      btn99.Margin = new Padding(3, 2, 3, 2);
-      btn99.Name = "btn99";
-      btn99.Size = new Size(55, 41);
-      btn99.TabIndex = 24;
-      btn99.Text = "99";
-      btn99.UseVisualStyleBackColor = true;
-      btn99.Click += btn99_Click;
+      btnSwitchMode.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+      btnSwitchMode.Location = new Point(557, 138);
+      btnSwitchMode.Margin = new Padding(3, 2, 3, 2);
+      btnSwitchMode.Name = "btnSwitchMode";
+      btnSwitchMode.Size = new Size(55, 41);
+      btnSwitchMode.TabIndex = 24;
+      btnSwitchMode.Text = "SW";
+      btnSwitchMode.Click += btnSwitchMode_Click;
       // 
       // btn88
       // 
@@ -4836,6 +4845,7 @@ namespace MilkwaveRemote
     private ToolStripMenuItem toolStripMenuItemOpenVisualizer;
     private ToolStripMenuItem toolStripMenuItemButtonPanel;
     private ToolStripMenuItem toolStripMenuItemSpriteButtonImages;
+    private ToolStripMenuItem toolStripMenuItemColorButtonImages;
     private ToolStripMenuItem toolStripMenuItemVisualizerPanel;
     private ToolStripSeparator toolStripSeparator2;
     private ToolStripMenuItem toolStripMenuItemTabsPanel;
@@ -4859,7 +4869,7 @@ namespace MilkwaveRemote
     private ToolStripSeparator toolStripSeparator3;
     private Button btnSendFile;
     private ComboBox cboAutoplay;
-    private Button btn99;
+    private Button btnSwitchMode;
     private Button btn88;
     private Button btnWatermark;
     private Button btnTransparency;

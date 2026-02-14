@@ -1,7 +1,7 @@
 # Example script file for Milkwave Remote
 #
 # Lines starting with # are ignored when parsing this file.
-# You can load other files by right-clicking "From File" in the Milkwave Remote window.
+# You can load other files by right-clicking the "From File" label on the "Message" tab in the Milkwave Remote window.
 #
 # You can add 0..n commands per line separated by | 
 # If it's not a known command, the text is treated as message
@@ -50,6 +50,7 @@
 # LINE=NEXT: Jump to next autoplay line and run it (useful in MIDI automation)
 # LINE=PREV: Jump to previous autoplay line and run it (useful in MIDI automation)
 # EXEC=C:\Tools\MySuperScript.bat: Open/run anything
+# BTN=1: Press button 1 on the button panel in "Preset" mode
 #
 BPM=120|BEATS=8|STYLE=Style A|PRESET=resources\presets\Milkwave\01 - Martin - blue haze.milk|Welcome to Milkwave!
 STYLE=Style B|Switched to "Style B"

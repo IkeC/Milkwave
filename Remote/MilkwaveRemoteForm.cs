@@ -64,6 +64,7 @@ namespace MilkwaveRemote {
     private const int WM_COVER_CHANGED = 0x0400 + 102;
     private const int WM_SPRITE_MODE = 0x0400 + 103;
     private const int WM_MESSAGE_MODE = 0x0400 + 104;
+    private const int WM_CAPTURE_SCREENSHOT = 0x0400 + 105;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -100,12 +101,14 @@ namespace MilkwaveRemote {
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
     private string milkwaveMidiFile = "midi-remote.json";
+    private string milkwavePresetDeckFile = "presetdeck-remote.json";
+
     private string milkwaveSpritesFile = "sprites.ini";
     private string milkwaveMessagesFile = "messages.ini";
 
     private readonly Dictionary<Button, string> spriteButtonSectionMap = new();
     private readonly Dictionary<Button, string> spriteButtonLabelMap = new();
-    private readonly Dictionary<Button, Image?> spriteButtonImageCache = new();
+    private readonly Dictionary<Button, Image?> buttonImageCache = new();
     private readonly Dictionary<string, string> spriteSectionImageMap = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> messageCodeTextMap = new(StringComparer.OrdinalIgnoreCase);
 
@@ -123,6 +126,10 @@ namespace MilkwaveRemote {
     private bool visualizerSpriteModeActive = true;
     private Settings Settings = new Settings();
     private Tags Tags = new Tags();
+
+    private PresetDeck presetDeck = new PresetDeck();
+    private Button[] presetDeckButtons = Array.Empty<Button>();
+    private readonly Dictionary<int, PendingThumbnail> pendingThumbnailAssignments = new();
 
     private ShaderHelper ShaderHelper = new ShaderHelper();
     private MidiHelper MidiHelper;
@@ -260,7 +267,13 @@ namespace MilkwaveRemote {
       ColSaturation,
       ColBrightness,
       HueAuto,
-      HueAutoSeconds
+      HueAutoSeconds,
+      CaptureScreenshot
+    }
+
+    private class PendingThumbnail {
+      public Preset Preset { get; set; } = new Preset();
+      public DateTime RequestTime { get; set; }
     }
 
     private void SetAllControlFontSizes(Control parent, float fontSize) {
@@ -273,7 +286,7 @@ namespace MilkwaveRemote {
     }
 
     private void InitializeSpriteButtonSupport() {
-      Button[] buttons = new[] { btn00, btn11, btn22, btn33, btn44, btn55, btn66, btn77, btn88, btn99 };
+      Button[] buttons = new[] { btn00, btn11, btn22, btn33, btn44, btn55, btn66, btn77, btn88 };
       spriteButtonSectionMap.Clear();
       spriteButtonLabelMap.Clear();
 
@@ -293,6 +306,33 @@ namespace MilkwaveRemote {
       RefreshSpriteButtonImages();
     }
 
+    private void InitializePresetDeckButtons() {
+      presetDeckButtons = new[] {
+        btnSpace, btnBackspace, btnN, btnB, btnTilde,
+        btnF2, btnF3, btnF4, btnF7, btnF10,
+        btnAltEnter, btnK, btnDelete, btnWatermark, btnTransparency
+      };
+
+      for (int i = 0; i < presetDeckButtons.Length; i++) {
+        Button button = presetDeckButtons[i];
+        if (button != null) {
+          button.Tag = i + 1;
+          button.MouseDown += PresetDeckButton_MouseDown;
+          button.Resize += PresetDeckButton_Resize;
+        }
+      }
+
+      btnSwitchMode.Resize += BtnSwitchMode_Resize;
+
+      // btn88 is the bank switcher in preset mode
+      btn88.MouseDown += Btn88_MouseDown;
+      btn88.Resize += Btn88_Resize;
+    }
+
+    private void BtnSwitchMode_Resize(object? sender, EventArgs e) {
+      UpdateModeToggleButton();
+    }
+
     private void RefreshSpriteButtonImages(bool reloadConfig = true) {
       if (reloadConfig) {
         LoadSpriteDefinitions();
@@ -300,6 +340,10 @@ namespace MilkwaveRemote {
       LoadMessageDefinitions();
 
       foreach (Button button in spriteButtonSectionMap.Keys) {
+        // Skip btn88 in preset mode - it shows bank icon instead
+        if (Settings.IsPresetMode && button == btn88) {
+          continue;
+        }
         UpdateSpriteButtonAppearance(button);
       }
     }
@@ -473,7 +517,7 @@ namespace MilkwaveRemote {
       try {
         Image? preview = CreateMonochromePreview(resolvedPath, button.ClientSize);
         if (preview != null) {
-          ApplySpriteButtonImage(button, preview);
+          ApplyButtonImage(button, preview);
         } else {
           ShowSpriteLabel(button);
         }
@@ -483,30 +527,30 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void ApplySpriteButtonImage(Button button, Image preview) {
-      DisposeSpriteButtonImage(button);
+    private void ApplyButtonImage(Button button, Image preview) {
+      DisposeButtonImage(button);
       button.Image = preview;
-      spriteButtonImageCache[button] = preview;
+      buttonImageCache[button] = preview;
       button.Text = string.Empty;
       button.Padding = new Padding(2);
       button.ImageAlign = ContentAlignment.MiddleCenter;
       button.TextImageRelation = TextImageRelation.Overlay;
     }
 
-    private void DisposeSpriteButtonImage(Button button) {
-      if (spriteButtonImageCache.TryGetValue(button, out Image? cached) && cached != null) {
+    private void DisposeButtonImage(Button button) {
+      if (buttonImageCache.TryGetValue(button, out Image? cached) && cached != null) {
         if (button.Image == cached) {
           button.Image = null;
         }
         cached.Dispose();
-        spriteButtonImageCache.Remove(button);
+        buttonImageCache.Remove(button);
       } else {
         button.Image = null;
       }
     }
 
     private void ShowSpriteLabel(Button button) {
-      DisposeSpriteButtonImage(button);
+      DisposeButtonImage(button);
       if (spriteButtonLabelMap.TryGetValue(button, out string? label)) {
         button.Text = label;
       }
@@ -559,9 +603,16 @@ namespace MilkwaveRemote {
           return candidate;
         }
 
-        string resourcesFallback = Path.GetFullPath(Path.Combine(BaseDir, "resources", normalized));
-        if (File.Exists(resourcesFallback)) {
-          return resourcesFallback;
+        // Try resources fallback for: simple filenames, or paths starting with "sprites\"
+        bool isSimpleFilename = !normalized.Contains(Path.DirectorySeparatorChar) && !normalized.Contains(Path.AltDirectorySeparatorChar);
+        bool isSpritesPath = normalized.StartsWith("sprites" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                             normalized.StartsWith("sprites/", StringComparison.OrdinalIgnoreCase);
+
+        if (isSimpleFilename || isSpritesPath) {
+          string resourcesFallback = Path.GetFullPath(Path.Combine(BaseDir, "resources", normalized));
+          if (File.Exists(resourcesFallback)) {
+            return resourcesFallback;
+          }
         }
 
         return candidate;
@@ -592,17 +643,84 @@ namespace MilkwaveRemote {
         g.PixelOffsetMode = PixelOffsetMode.HighQuality;
         g.SmoothingMode = SmoothingMode.HighQuality;
 
-        using ImageAttributes attributes = new ImageAttributes();
-        ColorMatrix grayscale = new ColorMatrix(new float[][] {
-          new float[] { 0.299f, 0.299f, 0.299f, 0, 0 },
-          new float[] { 0.587f, 0.587f, 0.587f, 0, 0 },
-          new float[] { 0.114f, 0.114f, 0.114f, 0, 0 },
-          new float[] { 0, 0, 0, 1, 0 },
-          new float[] { 0, 0, 0, 0, 1 }
-        });
-        attributes.SetColorMatrix(grayscale);
+        if (Settings.EnableColorButtonImages) {
+          g.DrawImage(source, destRect, 0, 0, source.Width, source.Height, GraphicsUnit.Pixel);
+        } else {
+          using ImageAttributes attributes = new ImageAttributes();
+          ColorMatrix grayscale = new ColorMatrix(new float[][] {
+            new float[] { 0.299f, 0.299f, 0.299f, 0, 0 },
+            new float[] { 0.587f, 0.587f, 0.587f, 0, 0 },
+            new float[] { 0.114f, 0.114f, 0.114f, 0, 0 },
+            new float[] { 0, 0, 0, 1, 0 },
+            new float[] { 0, 0, 0, 0, 1 }
+          });
+          attributes.SetColorMatrix(grayscale);
+          g.DrawImage(source, destRect, 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, attributes);
+        }
+      }
 
-        g.DrawImage(source, destRect, 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, attributes);
+      return preview;
+    }
+
+    private Image? CreatePresetThumbnail(string imagePath, Size targetSize) {
+      if (targetSize.Width <= 0 || targetSize.Height <= 0) {
+        return null;
+      }
+
+      using FileStream stream = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+      using Image temp = Image.FromStream(stream, useEmbeddedColorManagement: false, validateImageData: false);
+      using Bitmap source = new Bitmap(temp);
+
+      const int margin = 10;
+      int contentWidth = Math.Max(1, targetSize.Width - margin * 2);
+      int contentHeight = Math.Max(1, targetSize.Height - margin * 2);
+
+      float scaleX = (float)contentWidth / source.Width;
+      float scaleY = (float)contentHeight / source.Height;
+      float scale = Math.Max(scaleX, scaleY);
+
+      int scaledWidth = (int)Math.Round(source.Width * scale);
+      int scaledHeight = (int)Math.Round(source.Height * scale);
+
+      int sourceX = 0;
+      int sourceY = 0;
+      int sourceWidth = source.Width;
+      int sourceHeight = source.Height;
+
+      if (scaledWidth > contentWidth) {
+        sourceWidth = (int)Math.Round(contentWidth / scale);
+        sourceX = (source.Width - sourceWidth) / 2;
+      }
+
+      if (scaledHeight > contentHeight) {
+        sourceHeight = (int)Math.Round(contentHeight / scale);
+        sourceY = (source.Height - sourceHeight) / 2;
+      }
+
+      Bitmap preview = new Bitmap(targetSize.Width, targetSize.Height, PixelFormat.Format32bppArgb);
+      using (Graphics g = Graphics.FromImage(preview)) {
+        g.Clear(Color.Transparent);
+        g.CompositingQuality = CompositingQuality.HighQuality;
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        g.SmoothingMode = SmoothingMode.HighQuality;
+
+        Rectangle destRect = new Rectangle(margin, margin, contentWidth, contentHeight);
+
+        if (Settings.EnableColorButtonImages) {
+          g.DrawImage(source, destRect, sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel);
+        } else {
+          using ImageAttributes attributes = new ImageAttributes();
+          ColorMatrix grayscale = new ColorMatrix(new float[][] {
+            new float[] { 0.299f, 0.299f, 0.299f, 0, 0 },
+            new float[] { 0.587f, 0.587f, 0.587f, 0, 0 },
+            new float[] { 0.114f, 0.114f, 0.114f, 0, 0 },
+            new float[] { 0, 0, 0, 1, 0 },
+            new float[] { 0, 0, 0, 0, 1 }
+          });
+          attributes.SetColorMatrix(grayscale);
+          g.DrawImage(source, destRect, sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, attributes);
+        }
       }
 
       return preview;
@@ -613,20 +731,22 @@ namespace MilkwaveRemote {
         return Rectangle.Empty;
       }
 
-      int margin = Math.Max(2, Math.Min(target.Width, target.Height) / 8);
+      const int margin = 10;
       int availableWidth = Math.Max(1, target.Width - margin * 2);
       int availableHeight = Math.Max(1, target.Height - margin * 2);
+
       float scaleX = (float)availableWidth / original.Width;
       float scaleY = (float)availableHeight / original.Height;
       float scale = Math.Min(scaleX, scaleY);
+
       if (scale <= 0) {
         scale = Math.Min((float)target.Width / original.Width, (float)target.Height / original.Height);
       }
 
       int width = Math.Max(1, (int)Math.Round(original.Width * scale));
       int height = Math.Max(1, (int)Math.Round(original.Height * scale));
-      int x = (target.Width - width) / 2;
-      int y = (target.Height - height) / 2;
+      int x = margin + (availableWidth - width) / 2;
+      int y = margin + (availableHeight - height) / 2;
       return new Rectangle(x, y, width, height);
     }
 
@@ -699,6 +819,7 @@ namespace MilkwaveRemote {
         string spritesRoot = Path.GetFullPath(Path.Combine(BaseDir, "sprites"));
         string resourcesSpritesRoot = Path.GetFullPath(Path.Combine(BaseDir, Path.Combine("resources", "sprites")));
 
+        // Try to make relative if inside sprites folders
         string? spriteRelative = TryBuildSpriteRelative(fullPath, spritesRoot);
         if (spriteRelative != null) {
           return spriteRelative;
@@ -709,18 +830,9 @@ namespace MilkwaveRemote {
           return spriteRelative;
         }
 
-        string relative = Path.GetRelativePath(BaseDir, fullPath);
-        if (!string.IsNullOrEmpty(relative) && !relative.StartsWith("..", StringComparison.Ordinal)) {
-          relative = relative.Replace('/', '\\');
-          const string resourcesSpritesPrefix = "resources\\sprites\\";
-          if (relative.StartsWith(resourcesSpritesPrefix, StringComparison.OrdinalIgnoreCase)) {
-            return "sprites\\" + relative.Substring(resourcesSpritesPrefix.Length);
-          }
-          if (relative.Equals("resources\\sprites", StringComparison.OrdinalIgnoreCase) || relative.Equals("resources\\sprites\\", StringComparison.OrdinalIgnoreCase)) {
-            return "sprites";
-          }
-          return relative;
-        }
+        // For files outside sprites folders (e.g., capture\), save absolute path
+        // This handles Debug/Release BaseDir differences and makes it clear where the file is
+        return fullPath.Replace('/', '\\');
       } catch (Exception) {
         // ignore
       }
@@ -839,7 +951,7 @@ namespace MilkwaveRemote {
     }
 
     private void DisposeSpriteButtonImages() {
-      foreach (KeyValuePair<Button, Image?> kvp in spriteButtonImageCache.ToList()) {
+      foreach (KeyValuePair<Button, Image?> kvp in buttonImageCache.ToList()) {
         if (kvp.Value != null) {
           kvp.Value.Dispose();
         }
@@ -847,7 +959,7 @@ namespace MilkwaveRemote {
           kvp.Key.Image = null;
         }
       }
-      spriteButtonImageCache.Clear();
+      buttonImageCache.Clear();
     }
 
     public MilkwaveRemoteForm() {
@@ -931,11 +1043,15 @@ namespace MilkwaveRemote {
       cboSettingsOpenFile.SelectedIndex = 3;
 
       InitializeSpriteButtonSupport();
+      InitializePresetDeckButtons();
+      LoadPresetDeck();
+      ApplyPanelMode();
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
       LoadAndSetSettings();
       RefreshSpriteButtonImages();
+      ApplyPanelMode(); // This will call UpdateModeToggleButton
       SetPanelsVisibility();
 
 #if DEBUG
@@ -1397,6 +1513,8 @@ namespace MilkwaveRemote {
               message = "VAR_QUALITY=" + numQuality.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.QualityAuto) {
               message = "VAR_AUTO=" + (chkQualityAuto.Checked ? "1" : "0");
+            } else if (type == MessageType.CaptureScreenshot) {
+              message = messageToSend;
             } else if (type == MessageType.Message) {
               if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
                 // try auto-wrap
@@ -1763,6 +1881,15 @@ namespace MilkwaveRemote {
               Process.Start(new ProcessStartInfo(value) { UseShellExecute = true });
             } catch (Exception ex) {
               SetStatusText($"Unable to execute '{value}': {ex.Message}");
+            }
+          }
+        } else if (tokenUpper.StartsWith("BTN=")) {
+          string value = token.Substring(tokenUpper.IndexOf("=") + 1);
+          if (!string.IsNullOrEmpty(value) && int.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out int buttonIndex)) {
+            if (buttonIndex >= 1 && buttonIndex <= 45) {
+              TriggerPresetFromDeck(buttonIndex);
+            } else {
+              SetStatusText($"Button index {buttonIndex} out of range (1-45)");
             }
           }
         } else if (tokenUpper.StartsWith("QUALITY=")) {
@@ -2194,22 +2321,27 @@ namespace MilkwaveRemote {
     }
 
     private void btnF3_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_F3, "F3");
     }
 
     private void btnF4_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_F4, "F4");
     }
 
     private void btnF7_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_F7, "F7");
     }
 
     private void btnSpace_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_SPACE, "Space");
     }
 
     private void btnBackspace_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_BACKSPACE, "Backspace");
     }
 
@@ -2248,30 +2380,37 @@ namespace MilkwaveRemote {
     }
 
     private void btnTilde_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendUnicodeChars("~");
     }
 
     private void btnDelete_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_DELETE, "Delete");
     }
 
     private void btnAltEnter_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendInput(VK_ENTER, "Alt+Enter", false, true, false);
     }
 
     private void btnN_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_N, "N");
     }
 
     private void btnF2_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_F2, "F2");
     }
 
     private void btnK_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_K, "K");
     }
 
     private void btnF10_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_F10, "F10");
     }
 
@@ -2316,13 +2455,16 @@ namespace MilkwaveRemote {
     }
 
     private void btn88_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendInputTwoKeys(VK_8, VK_8, "88");
       // SendUnicodeChars("88");
     }
 
-    private void btn99_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_9, VK_9, "99");
-      // SendUnicodeChars("99");
+    private void btnSwitchMode_Click(object sender, EventArgs e) {
+      Settings.IsPresetMode = !Settings.IsPresetMode;
+      ApplyPanelMode();
+      SaveSettingsToFile();
+      SetStatusText(Settings.IsPresetMode ? "Switched to Preset mode" : "Switched to Command mode");
     }
 
     private void lblFromFile_DoubleClick(object sender, EventArgs e) {
@@ -2889,7 +3031,7 @@ namespace MilkwaveRemote {
         builder.AppendLink(label, url).AppendLine();
       }
 
-      builder.AppendParagraphBreak()
+      builder.AppendLine()
         .AppendText("Any amount is valued! You'll be listed on this page unless you do not want to.");
 
       string dialogtext = builder.Build();
@@ -2947,6 +3089,15 @@ namespace MilkwaveRemote {
       toolStripMenuItemSpriteButtonImages.Checked = !toolStripMenuItemSpriteButtonImages.Checked;
       Settings.EnableSpriteButtonImage = toolStripMenuItemSpriteButtonImages.Checked;
       RefreshSpriteButtonImages(false);
+    }
+
+    private void toolStripMenuItemColorButtonImages_Click(object? sender, EventArgs? e) {
+      toolStripMenuItemColorButtonImages.Checked = !toolStripMenuItemColorButtonImages.Checked;
+      Settings.EnableColorButtonImages = toolStripMenuItemColorButtonImages.Checked;
+      RefreshSpriteButtonImages(false);
+      if (Settings.IsPresetMode) {
+        ApplyPresetMode();
+      }
     }
 
     private void SetPanelsVisibility() {
@@ -3339,18 +3490,22 @@ namespace MilkwaveRemote {
     }
 
     private void btnB_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_B, "B");
     }
 
     private void btnTransparency_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendPostMessage(VK_F12, "F12");
     }
 
     private void btnWatermark_Click(object sender, EventArgs e) {
+      if (Settings.IsPresetMode) return;
       SendInput(VK_F9, "F9", true, false, true);
     }
 
     private void btnWatermark_MouseDown(object sender, MouseEventArgs e) {
+      if (Settings.IsPresetMode) return;
       if (e.Button == MouseButtons.Right) {
         SendInput(VK_F9, "F9", false, false, true);
       }
@@ -3709,6 +3864,7 @@ namespace MilkwaveRemote {
       toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
       toolStripMenuItemSpriteButtonImages.Checked = Settings.EnableSpriteButtonImage;
+      toolStripMenuItemColorButtonImages.Checked = Settings.EnableColorButtonImages;
       toolStripMenuItemMonitorCPU.Checked = Settings.EnableMonitorCPU;
       toolStripMenuItemMonitorGPU.Checked = Settings.EnableMonitorGPU;
       ToggleMonitors();
@@ -5432,6 +5588,542 @@ namespace MilkwaveRemote {
     private void chkPresetLocked_CheckedChanged(object sender, EventArgs e) {
       if (updatingSettingsParams) return;
       SendUnicodeChars("~");
+    }
+
+    private void LoadPresetDeck() {
+      try {
+        string path = Path.Combine(BaseDir, milkwavePresetDeckFile);
+        if (File.Exists(path)) {
+          string json = File.ReadAllText(path);
+          var loaded = JsonSerializer.Deserialize<PresetDeck>(json);
+          if (loaded != null) {
+            presetDeck = loaded;
+          }
+        }
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Load preset deck");
+      }
+    }
+
+    private void SavePresetDeck() {
+      try {
+        string path = Path.Combine(BaseDir, milkwavePresetDeckFile);
+        string json = JsonSerializer.Serialize(presetDeck, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(path, json);
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Save preset deck");
+      }
+    }
+
+    private void ApplyPanelMode() {
+      if (Settings.IsPresetMode) {
+        ApplyPresetMode();
+      } else {
+        ApplyCommandMode();
+      }
+    }
+
+    private void ApplyPresetMode() {
+      UpdateModeToggleButton();
+      UpdateBankSwitchButton();
+      for (int i = 0; i < presetDeckButtons.Length; i++) {
+        UpdatePresetDeckButtonAppearance(i + 1);
+      }
+    }
+
+    private void ApplyCommandMode() {
+      UpdateModeToggleButton();
+      RestoreBankSwitchButton();
+      for (int i = 0; i < presetDeckButtons.Length; i++) {
+        RestoreCommandButtonAppearance(i);
+      }
+    }
+
+    private void UpdateBankSwitchButton() {
+      if (!Settings.IsPresetMode) {
+        return;
+      }
+
+      string bankIconPath = Path.Combine(BaseDir, $"resources\\buttons\\btn-bank-{Settings.CurrentPresetBank}.png");
+
+      if (File.Exists(bankIconPath) && btn88.ClientSize.Width > 0 && btn88.ClientSize.Height > 0) {
+        try {
+          using (Image original = Image.FromFile(bankIconPath)) {
+            Rectangle destRect = CalculatePreviewBounds(original.Size, btn88.ClientSize);
+            if (destRect.Width > 0 && destRect.Height > 0) {
+              Bitmap preview = new Bitmap(btn88.ClientSize.Width, btn88.ClientSize.Height);
+              using (Graphics g = Graphics.FromImage(preview)) {
+                g.Clear(Color.Transparent);
+                g.CompositingQuality = CompositingQuality.HighQuality;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.SmoothingMode = SmoothingMode.HighQuality;
+                g.DrawImage(original, destRect);
+              }
+              ApplyButtonImage(btn88, preview);
+            }
+          }
+        } catch (Exception ex) {
+          Program.SaveErrorToFile(ex, "Load bank icon");
+          btn88.Text = $"Bank {Settings.CurrentPresetBank}";
+        }
+      } else {
+        btn88.Text = $"Bank {Settings.CurrentPresetBank}";
+      }
+
+      toolTip1.SetToolTip(btn88, $"Bank {Settings.CurrentPresetBank} (Click to cycle)");
+    }
+
+    private void RestoreBankSwitchButton() {
+      // In command mode, restore sprite button appearance
+      UpdateSpriteButtonAppearance(btn88);
+    }
+
+    private void Btn88_MouseDown(object? sender, MouseEventArgs e) {
+      if (!Settings.IsPresetMode) {
+        // In command mode, execute normal 88 action
+        SendInputTwoKeys(VK_8, VK_8, "88");
+        return;
+      }
+
+      // In preset mode, cycle banks
+      if (e.Button == MouseButtons.Left) {
+        Settings.CurrentPresetBank = (Settings.CurrentPresetBank % 3) + 1;
+        UpdateBankSwitchButton();
+
+        // Refresh all preset button appearances for new bank
+        for (int i = 0; i < presetDeckButtons.Length; i++) {
+          UpdatePresetDeckButtonAppearance(i + 1);
+        }
+
+        SaveSettingsToFile();
+        SetStatusText($"Switched to Bank {Settings.CurrentPresetBank}");
+      }
+    }
+
+    private void Btn88_Resize(object? sender, EventArgs e) {
+      if (Settings.IsPresetMode) {
+        UpdateBankSwitchButton();
+      }
+    }
+
+    private int GetBankOffsetButtonIndex(int buttonIndex) {
+      // buttonIndex is 1-15 (local button number)
+      // Returns the global button index accounting for bank offset
+      // Bank 1: 1-15, Bank 2: 16-30, Bank 3: 31-45
+      return buttonIndex + ((Settings.CurrentPresetBank - 1) * 15);
+    }
+
+    private void UpdateModeToggleButton() {
+      string switchIconPath = Path.Combine(BaseDir, "resources\\buttons\\btn-switch.png");
+
+      if (File.Exists(switchIconPath) && btnSwitchMode.ClientSize.Width > 0 && btnSwitchMode.ClientSize.Height > 0) {
+        try {
+          using (Image original = Image.FromFile(switchIconPath)) {
+            Rectangle destRect = CalculatePreviewBounds(original.Size, btnSwitchMode.ClientSize);
+            if (destRect.Width > 0 && destRect.Height > 0) {
+              Bitmap preview = new Bitmap(btnSwitchMode.ClientSize.Width, btnSwitchMode.ClientSize.Height);
+              using (Graphics g = Graphics.FromImage(preview)) {
+                g.Clear(Color.Transparent);
+                g.CompositingQuality = CompositingQuality.HighQuality;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.SmoothingMode = SmoothingMode.HighQuality;
+                g.DrawImage(original, destRect);
+              }
+              ApplyButtonImage(btnSwitchMode, preview);
+            }
+          }
+        } catch (Exception ex) {
+          Program.SaveErrorToFile(ex, "Load switch icon");
+        }
+      }
+
+      if (Settings.IsPresetMode) {
+        toolTip1.SetToolTip(btnSwitchMode, "Switch to Command mode");
+      } else {
+        toolTip1.SetToolTip(btnSwitchMode, "Switch to Preset mode");
+      }
+    }
+
+    private void RestoreCommandButtonAppearance(int buttonArrayIndex) {
+      if (buttonArrayIndex < 0 || buttonArrayIndex >= presetDeckButtons.Length) {
+        return;
+      }
+
+      Button btn = presetDeckButtons[buttonArrayIndex];
+
+      // Clear any preset deck assignment
+      if (btn.Tag is int) {
+        btn.Tag = null;
+      }
+
+      // Dispose any image
+      if (buttonImageCache.TryGetValue(btn, out Image? cached) && cached != null) {
+        if (btn.Image == cached) {
+          btn.Image = null;
+        }
+        cached.Dispose();
+        buttonImageCache.Remove(btn);
+      } else {
+        btn.Image = null;
+      }
+
+      // Restore original button text based on which button it is
+      if (btn == btnSpace) btn.Text = "Next Preset\r\n(Space)";
+      else if (btn == btnBackspace) btn.Text = "Previous Preset\r\n(Backspace)";
+      else if (btn == btnN) btn.Text = "Sound Info\r\n(N)";
+      else if (btn == btnB) btn.Text = "Song Info\r\n(B)";
+      else if (btn == btnTilde) btn.Text = "Preset Lock \r\n(~)";
+      else if (btn == btnF2) btn.Text = "Borderless \r\n(F2)";
+      else if (btn == btnF3) btn.Text = "Change FPS\r\n(F3)";
+      else if (btn == btnF4) btn.Text = "Preset Info\r\n(F4)";
+      else if (btn == btnF7) btn.Text = "Always On Top\r\n(F7)";
+      else if (btn == btnF10) btn.Text = "Toggle Spout\r\n(F10)";
+      else if (btn == btnAltEnter) btn.Text = "Fullscreen\r\n(Alt+Enter)";
+      else if (btn == btnK) btn.Text = "Sprite/Msg Mode\r\n(K)";
+      else if (btn == btnDelete) btn.Text = "Clear Sprite/Msg\r\n(Delete)";
+      else if (btn == btnWatermark) btn.Text = "Watermark Mode \r\n(Ctrl+Shift+F9)";
+      else if (btn == btnTransparency) btn.Text = "Transparency\r\n(F12)";
+
+      // Reset button styling
+      btn.Padding = new Padding(0);
+      btn.TextAlign = ContentAlignment.MiddleCenter;
+      btn.ImageAlign = ContentAlignment.MiddleCenter;
+      btn.TextImageRelation = TextImageRelation.Overlay;
+      toolTip1.SetToolTip(btn, string.Empty);
+    }
+
+    private void UpdatePresetDeckButtonAppearance(int buttonIndex) {
+      if (buttonIndex < 1 || buttonIndex > presetDeckButtons.Length) {
+        return;
+      }
+
+      Button btn = presetDeckButtons[buttonIndex - 1];
+      btn.Tag = buttonIndex;
+
+      int globalIndex = GetBankOffsetButtonIndex(buttonIndex);
+
+      if (presetDeck.Assignments.TryGetValue(globalIndex, out var assignment)) {
+        string thumbnailPath = Path.Combine(BaseDir, assignment.ThumbnailPath);
+        if (File.Exists(thumbnailPath)) {
+          try {
+            if (buttonImageCache.TryGetValue(btn, out Image? cached)) {
+              cached?.Dispose();
+              buttonImageCache.Remove(btn);
+            }
+
+            Image? thumbnail = CreatePresetThumbnail(thumbnailPath, btn.ClientSize);
+            if (thumbnail != null) {
+              ApplyButtonImage(btn, thumbnail);
+            } else {
+              ShowPresetDeckButtonNumber(btn, globalIndex);
+            }
+          } catch {
+            ShowPresetDeckButtonNumber(btn, globalIndex);
+          }
+        } else {
+          ShowPresetDeckButtonNumber(btn, globalIndex);
+        }
+
+        toolTip1.SetToolTip(btn, assignment.PresetDisplayName);
+      } else {
+        ShowPresetDeckButtonNumber(btn, globalIndex);
+        toolTip1.SetToolTip(btn, "Right-click to assign preset");
+      }
+    }
+
+    private void ShowPresetDeckButtonNumber(Button btn, int number) {
+      if (buttonImageCache.TryGetValue(btn, out Image? cached)) {
+        cached?.Dispose();
+        buttonImageCache.Remove(btn);
+      }
+      btn.Image = null;
+      btn.Text = number.ToString();
+      btn.TextAlign = ContentAlignment.MiddleCenter;
+    }
+
+    private void PresetDeckButton_Resize(object? sender, EventArgs e) {
+      if (!Settings.IsPresetMode || sender is not Button btn || btn.Tag is not int buttonIndex) {
+        return;
+      }
+
+      int globalIndex = GetBankOffsetButtonIndex(buttonIndex);
+      if (presetDeck.Assignments.ContainsKey(globalIndex)) {
+        UpdatePresetDeckButtonAppearance(buttonIndex);
+      }
+    }
+
+    private void PresetDeckButton_MouseDown(object sender, MouseEventArgs e) {
+      if (!Settings.IsPresetMode || sender is not Button btn || btn.Tag is not int buttonIndex) {
+        return;
+      }
+
+      int globalIndex = GetBankOffsetButtonIndex(buttonIndex);
+
+      if (e.Button == MouseButtons.Left) {
+        if (presetDeck.Assignments.ContainsKey(globalIndex)) {
+          TriggerPresetFromDeck(globalIndex);
+        } else {
+          SetStatusText("Right-click to assign current preset");
+        }
+      } else if (e.Button == MouseButtons.Right) {
+        AssignCurrentPresetToDeckButton(globalIndex);
+      } else if (e.Button == MouseButtons.Middle) {
+        UnassignPresetFromDeckButton(globalIndex);
+      }
+    }
+
+    private void TriggerPresetFromDeck(int buttonIndex) {
+      if (!presetDeck.Assignments.TryGetValue(buttonIndex, out var assignment)) {
+        return;
+      }
+
+      string fullPath = assignment.PresetPath;
+      if (!Path.IsPathRooted(fullPath)) {
+        fullPath = Path.Combine(VisualizerPresetsFolder, assignment.PresetPath);
+      }
+
+      if (File.Exists(fullPath)) {
+        SendToMilkwaveVisualizer(fullPath, MessageType.PresetFilePath);
+        SetStatusText($"Triggered preset: {assignment.PresetDisplayName}");
+      } else {
+        SetStatusText($"Preset file not found: {fullPath}");
+      }
+    }
+
+    private void AssignCurrentPresetToDeckButton(int buttonIndex) {
+      string? fullPresetPath = toolTip1.GetToolTip(txtVisRunning);
+      if (string.IsNullOrEmpty(fullPresetPath)) {
+        SetStatusText("No preset currently running");
+        return;
+      }
+
+      string presetName = Path.GetFileNameWithoutExtension(fullPresetPath);
+      if (fullPresetPath.Contains("\\") || fullPresetPath.Contains("/")) {
+        int lastSlash = Math.Max(fullPresetPath.LastIndexOf('\\'), fullPresetPath.LastIndexOf('/'));
+        string fileNameWithExt = fullPresetPath.Substring(lastSlash + 1);
+        if (fileNameWithExt.EndsWith(".milk", StringComparison.OrdinalIgnoreCase) ||
+            fileNameWithExt.EndsWith(".milk2", StringComparison.OrdinalIgnoreCase)) {
+          presetName = Path.GetFileNameWithoutExtension(fileNameWithExt);
+        } else {
+          presetName = fileNameWithExt;
+        }
+      }
+
+      string maybeRelativePath = fullPresetPath;
+      int relIndex = fullPresetPath.IndexOf(VisualizerPresetsFolder, StringComparison.OrdinalIgnoreCase);
+      if (relIndex >= 0) {
+        maybeRelativePath = fullPresetPath.Substring(relIndex + VisualizerPresetsFolder.Length);
+      } else {
+        // Check if it's already a relative path starting with "resources\presets\" or "resources/presets/"
+        const string relativePrefix1 = "resources\\presets\\";
+        const string relativePrefix2 = "resources/presets/";
+        if (maybeRelativePath.StartsWith(relativePrefix1, StringComparison.OrdinalIgnoreCase)) {
+          maybeRelativePath = maybeRelativePath.Substring(relativePrefix1.Length);
+        } else if (maybeRelativePath.StartsWith(relativePrefix2, StringComparison.OrdinalIgnoreCase)) {
+          maybeRelativePath = maybeRelativePath.Substring(relativePrefix2.Length);
+        }
+      }
+
+      var pendingThumbnail = new PendingThumbnail {
+        Preset = new Preset {
+          MaybeRelativePath = maybeRelativePath,
+          DisplayName = presetName
+        },
+        RequestTime = DateTime.Now
+      };
+
+      pendingThumbnailAssignments[buttonIndex] = pendingThumbnail;
+
+      string captureDir = Path.Combine(BaseDir, "capture");
+      System.Diagnostics.Debug.WriteLine($"[AssignPreset] BaseDir: {BaseDir}");
+      System.Diagnostics.Debug.WriteLine($"[AssignPreset] Capture dir: {captureDir}");
+      System.Diagnostics.Debug.WriteLine($"[AssignPreset] Full preset path: {fullPresetPath}");
+      System.Diagnostics.Debug.WriteLine($"[AssignPreset] Relative path: {maybeRelativePath}");
+      System.Diagnostics.Debug.WriteLine($"[AssignPreset] Sending CAPTURE message to visualizer");
+
+      SetStatusText($"BaseDir={BaseDir}, Requesting screenshot for '{presetName}'...");
+
+      SendToMilkwaveVisualizer("CAPTURE", MessageType.CaptureScreenshot);
+
+
+      Task.Run(() => PollForCaptureFile(buttonIndex));
+    }
+
+    private async Task PollForCaptureFile(int buttonIndex) {
+      if (!pendingThumbnailAssignments.TryGetValue(buttonIndex, out var pending)) {
+        return;
+      }
+
+      string captureDir = Path.Combine(BaseDir, "capture");
+      System.Diagnostics.Debug.WriteLine($"[PollCapture] Polling directory: {captureDir}");
+
+      if (!Directory.Exists(captureDir)) {
+        Directory.CreateDirectory(captureDir);
+        System.Diagnostics.Debug.WriteLine($"[PollCapture] Created directory: {captureDir}");
+      }
+
+      DateTime startTime = pending.RequestTime;
+      TimeSpan timeout = TimeSpan.FromSeconds(2);
+      int pollCount = 0;
+
+      while (DateTime.Now - startTime < timeout) {
+        pollCount++;
+        try {
+          var allFiles = Directory.GetFiles(captureDir, "*.png");
+
+          if (pollCount == 1) {
+            System.Diagnostics.Debug.WriteLine($"[PollCapture] Poll #{pollCount}: {allFiles.Length} PNG files found");
+            this.Invoke(() => SetStatusText($"Polling {captureDir}: {allFiles.Length} PNG files"));
+          }
+
+          if (pollCount % 5 == 0) {
+            System.Diagnostics.Debug.WriteLine($"[PollCapture] Poll #{pollCount}: Still waiting...");
+            this.Invoke(() => SetStatusText($"Poll #{pollCount}: {allFiles.Length} files in capture dir"));
+          }
+
+          var captureFile = allFiles
+            .Select(f => new FileInfo(f))
+            .Where(fi => fi.CreationTime >= startTime || fi.LastWriteTime >= startTime)
+            .OrderByDescending(fi => fi.CreationTime)
+            .ThenByDescending(fi => fi.LastWriteTime)
+            .FirstOrDefault();
+
+          if (captureFile != null) {
+            System.Diagnostics.Debug.WriteLine($"[PollCapture] Found new file: {captureFile.Name}");
+            this.Invoke(() => SetStatusText($"Found new capture: {captureFile.Name}"));
+            await ProcessCapturedThumbnail(buttonIndex, captureFile.FullName);
+            return;
+          }
+        } catch (Exception ex) {
+          System.Diagnostics.Debug.WriteLine($"[PollCapture] Exception: {ex.Message}");
+          Program.SaveErrorToFile(ex, "Poll capture file");
+          this.Invoke(() => SetStatusText($"Poll error: {ex.Message}"));
+        }
+
+        await Task.Delay(100);
+      }
+
+      System.Diagnostics.Debug.WriteLine($"[PollCapture] TIMEOUT after {pollCount} polls in {captureDir}");
+      this.Invoke(() => {
+        pendingThumbnailAssignments.Remove(buttonIndex);
+        SetStatusText($"Timeout after {pollCount} polls. Dir: {captureDir}");
+      });
+    }
+
+    private async Task ProcessCapturedThumbnail(int buttonIndex, string captureFilePath) {
+      if (!pendingThumbnailAssignments.TryGetValue(buttonIndex, out var pending)) {
+        return;
+      }
+
+      try {
+        using (var img = Image.FromFile(captureFilePath)) {
+          Image croppedImage = CropTo16x9(img);
+
+          string thumbnailPath = Path.Combine(BaseDir, $"resources\\buttons\\btn-{buttonIndex:D2}.png");
+          string thumbnailDir = Path.GetDirectoryName(thumbnailPath);
+          if (!string.IsNullOrEmpty(thumbnailDir) && !Directory.Exists(thumbnailDir)) {
+            Directory.CreateDirectory(thumbnailDir);
+          }
+
+          croppedImage.Save(thumbnailPath, ImageFormat.Png);
+          croppedImage.Dispose();
+        }
+
+        this.Invoke(() => {
+          presetDeck.Assignments[buttonIndex] = new PresetDeckButton {
+            PresetPath = pending.Preset.MaybeRelativePath,
+            PresetDisplayName = pending.Preset.DisplayName,
+            ThumbnailPath = $"resources\\buttons\\btn-{buttonIndex:D2}.png"
+          };
+
+          pendingThumbnailAssignments.Remove(buttonIndex);
+
+          // Calculate local button index (1-15) from global index for UI update
+          int localButtonIndex = ((buttonIndex - 1) % 15) + 1;
+          int buttonBank = ((buttonIndex - 1) / 15) + 1;
+
+          // Only update appearance if we're on the correct bank
+          if (buttonBank == Settings.CurrentPresetBank) {
+            UpdatePresetDeckButtonAppearance(localButtonIndex);
+          }
+
+          SavePresetDeck();
+
+          SetStatusText($"Preset '{pending.Preset.DisplayName}' assigned to button {buttonIndex}");
+        });
+
+        // Delete the capture file after successful processing
+        try {
+          if (File.Exists(captureFilePath)) {
+            File.Delete(captureFilePath);
+          }
+        } catch (Exception deleteEx) {
+          Program.SaveErrorToFile(deleteEx, "Delete capture file");
+        }
+
+      } catch (Exception ex) {
+        this.Invoke(() => {
+          pendingThumbnailAssignments.Remove(buttonIndex);
+          SetStatusText($"Failed to process thumbnail: {ex.Message}");
+        });
+      }
+    }
+
+    private Image CropTo16x9(Image source) {
+      int targetWidth = source.Width;
+      int targetHeight = (int)(source.Width / 16.0 * 9.0);
+
+      if (Math.Abs(source.Height - targetHeight) < 5) {
+        return new Bitmap(source);
+      }
+
+      if (source.Height > targetHeight) {
+        int yOffset = (source.Height - targetHeight) / 2;
+        Rectangle cropRect = new Rectangle(0, yOffset, targetWidth, targetHeight);
+        Bitmap cropped = new Bitmap(targetWidth, targetHeight);
+        using (Graphics g = Graphics.FromImage(cropped)) {
+          g.DrawImage(source,
+            new Rectangle(0, 0, targetWidth, targetHeight),
+            cropRect,
+            GraphicsUnit.Pixel);
+        }
+        return cropped;
+      }
+
+      return new Bitmap(source);
+    }
+
+    private void UnassignPresetFromDeckButton(int buttonIndex) {
+      if (!presetDeck.Assignments.ContainsKey(buttonIndex)) {
+        return;
+      }
+
+      var assignment = presetDeck.Assignments[buttonIndex];
+      string thumbnailPath = Path.Combine(BaseDir, assignment.ThumbnailPath);
+      if (File.Exists(thumbnailPath)) {
+        try {
+          File.Delete(thumbnailPath);
+        } catch (Exception ex) {
+          Program.SaveErrorToFile(ex, "Delete thumbnail");
+        }
+      }
+
+      presetDeck.Assignments.Remove(buttonIndex);
+
+      // Calculate local button index (1-15) from global index for UI update
+      int localButtonIndex = ((buttonIndex - 1) % 15) + 1;
+      int buttonBank = ((buttonIndex - 1) / 15) + 1;
+
+      // Only update appearance if we're on the correct bank
+      if (buttonBank == Settings.CurrentPresetBank) {
+        UpdatePresetDeckButtonAppearance(localButtonIndex);
+      }
+
+      SavePresetDeck();
+
+      SetStatusText($"Preset unassigned from button {buttonIndex}");
     }
   } // end class
 } // end namespace

@@ -1,8 +1,15 @@
 ## v3.5 (unreleased)
 
-* Visualizer: Key bindings to alter Quality (Ctrl+Q) and Hue (Ctrl+H)
-* Remote: Automatically change Hue over time
+* Remote: "Preset mode" for button panel
+  - Right-click button to assign current preset (with screenshot capture)
+  - Left-click to send preset to Visualizer
+  - Middle-click to clear button
+  - Press switch button (lower right) to switch modes
+* Remote: Toggle color/monochrome display for button images
+* Remote: Automatically change Hue over time (color cycyle)
 * Remote: Set preset auto change time
+* Visualizer: Save screenshot (Ctrl+X)
+* Visualizer: Key bindings to alter Quality (Ctrl+Q) and Hue (Ctrl+H)
 
 ## v3.4 (2025-11-22)
 
