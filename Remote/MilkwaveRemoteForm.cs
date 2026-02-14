@@ -3013,7 +3013,7 @@ namespace MilkwaveRemote {
         builder.AppendLink(label, url).AppendLine();
       }
 
-      builder.AppendParagraphBreak()
+      builder.AppendLine()
         .AppendText("Any amount is valued! You'll be listed on this page unless you do not want to.");
 
       string dialogtext = builder.Build();

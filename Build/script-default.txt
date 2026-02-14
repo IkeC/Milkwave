@@ -1,7 +1,7 @@
 # Example script file for Milkwave Remote
 #
 # Lines starting with # are ignored when parsing this file.
-# You can load other files by right-clicking "From File" in the Milkwave Remote window.
+# You can load other files by right-clicking the "From File" label on the "Message" tab in the Milkwave Remote window.
 #
 # You can add 0..n commands per line separated by | 
 # If it's not a known command, the text is treated as message
