@@ -1692,6 +1692,8 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   // Initialize video capture
   m_pVideoCapture = new VideoCapture();
   m_pVideoCaptureTexture = nullptr;
+  m_nVideoCaptureWidth = 640;      // Default video capture dimensions
+  m_nVideoCaptureHeight = 480;
   m_fPresetOpacity = 0.5f;
   m_bVideoInputEnabled = false;
   m_nVideoDeviceIndex = -1;
@@ -2282,7 +2284,20 @@ int CPlugin::AllocateMyDX9Stuff() {
     m_pVideoCaptureTexture->Release();
     m_pVideoCaptureTexture = nullptr;
   }
-  GetDevice()->CreateTexture(m_nTexSizeX, m_nTexSizeY, 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_MANAGED, &m_pVideoCaptureTexture, NULL);
+  // Use the stored video capture dimensions, not the canvas size
+  GetDevice()->CreateTexture(m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
+  
+  // Restart video capture if it was enabled
+  if (m_bVideoInputEnabled && m_pVideoCapture && m_nVideoDeviceIndex >= 0) {
+    m_pVideoCapture->Stop();
+    if (!m_pVideoCapture->Start()) {
+      m_bVideoInputEnabled = false;
+      milkwave->LogInfo(L"Failed to restart video capture after device reset");
+    }
+    else {
+      milkwave->LogInfo(L"Successfully restarted video capture after device reset");
+    }
+  }
 
 
   // BUILD VERTEX LIST for final composite blit
@@ -7181,12 +7196,20 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
     if (!enable && m_pVideoCapture) {
       m_pVideoCapture->Stop();
+      AddNotification(L"Video Mix Off", 2.0f);
     }
     else if (enable && m_pVideoCapture && m_nVideoDeviceIndex >= 0) {
       if (!m_pVideoCapture->Start()) {
         m_bVideoInputEnabled = false;
         milkwave->LogInfo(L"Failed to start video capture");
+        AddError(L"Video Mix failed to start", 3.0f, ERR_NOTIFY, false);
+      } else {
+        AddNotification(L"Video Mix On", 2.0f);
       }
+    }
+    else if (enable) {
+      // Mix enabled but no device selected or initialized
+      AddError(L"Video Mix On (no device)", 3.0f, ERR_NOTIFY, false);
     }
     return 0;
   }
@@ -7194,16 +7217,49 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   case WM_USER_SETVIDEODEVICE:
   {
     int deviceIndex = (int)wParam;
-    if (m_pVideoCapture && m_pVideoCaptureTexture) {
+    wchar_t buf[256];
+    swprintf_s(buf, L"Setting video device index: %d", deviceIndex);
+    milkwave->LogInfo(buf);
+
+    // Create video capture object if needed
+    if (!m_pVideoCapture) {
+      m_pVideoCapture = new VideoCapture();
+    }
+
+    if (m_pVideoCapture) {
       m_pVideoCapture->Stop();
       m_pVideoCapture->Release();
 
-      if (m_pVideoCapture->Initialize(deviceIndex, m_nTexSizeX, m_nTexSizeY)) {
+      // Initialize with 640x480 for now (can make configurable later)
+      if (m_pVideoCapture->Initialize(deviceIndex, 640, 480)) {
         m_nVideoDeviceIndex = deviceIndex;
+        m_nVideoCaptureWidth = 640;   // Store dimensions
+        m_nVideoCaptureHeight = 480;  // Store dimensions
+        milkwave->LogInfo(L"Video device initialized successfully");
+
+        // Create D3D texture if needed - THIS WAS THE MISSING PIECE!
+        if (!m_pVideoCaptureTexture) {
+          LPDIRECT3DDEVICE9 lpDevice = GetDevice();
+          if (lpDevice) {
+            HRESULT hr = lpDevice->CreateTexture(
+              m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8,
+              D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
+            
+            if (SUCCEEDED(hr)) {
+              milkwave->LogInfo(L"Video capture texture created successfully");
+            } else {
+              milkwave->LogInfo(L"Failed to create video capture texture");
+            }
+          }
+        }
+
+        // Start capture if mixing is already enabled
         if (m_bVideoInputEnabled) {
           if (!m_pVideoCapture->Start()) {
             m_bVideoInputEnabled = false;
             milkwave->LogInfo(L"Failed to start video capture for new device");
+          } else {
+            milkwave->LogInfo(L"Video capture started for new device");
           }
         }
       }

@@ -53,6 +53,9 @@ public:
 
     // Release all resources
     void Release();
+    
+    // Generate test pattern for debugging
+    static void GenerateTestPattern(BYTE* pBuffer, int width, int height);
 
     // Check if a new frame is available
     bool HasNewFrame() const { return m_bNewFrame; }

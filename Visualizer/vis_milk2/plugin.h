@@ -672,6 +672,8 @@ public:
   // Video input mixing
   class VideoCapture* m_pVideoCapture;
   IDirect3DTexture9* m_pVideoCaptureTexture;
+  int m_nVideoCaptureWidth;        // Video capture texture width
+  int m_nVideoCaptureHeight;       // Video capture texture height
   float m_fPresetOpacity;          // 0.5f default - opacity of preset when video mixing is enabled
   bool m_bVideoInputEnabled;
   int m_nVideoDeviceIndex;

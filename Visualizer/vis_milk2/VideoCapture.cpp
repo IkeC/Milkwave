@@ -166,11 +166,50 @@ void VideoCapture::Stop() {
 }
 
 bool VideoCapture::CopyFrameToTexture(IDirect3DTexture9* pTexture, IDirect3DDevice9* pDevice) {
-    if (!m_bInitialized || !m_pSampleGrabber || !pTexture) return false;
+if (!m_bInitialized || !m_pSampleGrabber || !pTexture) {
+    static int logCount = 0;
+    if (logCount++ % 120 == 0) { // Log every 2 seconds at 60fps
+        wchar_t buf[256];
+        swprintf_s(buf, L"VideoCapture: Failed preconditions - init=%d, grabber=%p, texture=%p",
+            m_bInitialized, m_pSampleGrabber, pTexture);
+        OutputDebugStringW(buf);
+    }
+    return false;
+}
     
-    long bufferSize = 0;
-    HRESULT hr = m_pSampleGrabber->GetCurrentBuffer(&bufferSize, nullptr);
-    if (FAILED(hr) || bufferSize == 0) return false;
+// Check if media is running
+if (m_pMediaControl) {
+    OAFilterState state;
+    HRESULT hrState = m_pMediaControl->GetState(0, &state);
+    if (SUCCEEDED(hrState) && state != State_Running) {
+        static int stateLogCount = 0;
+        if (stateLogCount++ % 120 == 0) {
+            wchar_t buf[256];
+            swprintf_s(buf, L"VideoCapture: Media not running, state=%d", state);
+            OutputDebugStringW(buf);
+        }
+        return false;
+    }
+}
+    
+long bufferSize = 0;
+HRESULT hr = m_pSampleGrabber->GetCurrentBuffer(&bufferSize, nullptr);
+if (FAILED(hr)) {
+    static int hrLogCount = 0;
+    if (hrLogCount++ % 120 == 0) {
+        wchar_t buf[256];
+        swprintf_s(buf, L"VideoCapture: GetCurrentBuffer failed with HRESULT=0x%08x", hr);
+        OutputDebugStringW(buf);
+    }
+    return false;
+}
+if (bufferSize == 0) {
+    static int sizeLogCount = 0;
+    if (sizeLogCount++ % 120 == 0) {
+        OutputDebugStringW(L"VideoCapture: Buffer size is 0 - no frames captured yet");
+    }
+    return false;
+}
     
     BYTE* pBuffer = new BYTE[bufferSize];
     hr = m_pSampleGrabber->GetCurrentBuffer(&bufferSize, (long*)pBuffer);
@@ -195,10 +234,12 @@ bool VideoCapture::CopyFrameToTexture(IDirect3DTexture9* pTexture, IDirect3DDevi
         int frameWidth = pVih->bmiHeader.biWidth;
         int frameHeight = abs(pVih->bmiHeader.biHeight);
         
-        // Copy and flip vertically (DIB is bottom-up)
+        // Copy frame data to texture
+        // DirectShow gives us bottom-up DIB data, so we need to flip it for D3D
         BYTE* pDest = (BYTE*)lockedRect.pBits;
         int srcStride = frameWidth * 4;
         
+        // Copy rows in reverse order to flip the image
         for (int y = 0; y < frameHeight && y < m_nHeight; y++) {
             int srcY = frameHeight - 1 - y; // Flip vertically
             memcpy(pDest + y * lockedRect.Pitch, pBuffer + srcY * srcStride, 
@@ -254,3 +295,21 @@ void VideoCapture::Release() {
     
     m_bInitialized = false;
 }
+
+void VideoCapture::GenerateTestPattern(BYTE* pBuffer, int width, int height) {
+    if (!pBuffer) return;
+    
+    // Generate a simple color gradient test pattern (XRGB32 format)
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int offset = (y * width + x) * 4;
+            
+            // Create a gradient pattern
+            pBuffer[offset + 0] = (BYTE)((x * 255) / width);       // Blue
+            pBuffer[offset + 1] = (BYTE)((y * 255) / height);      // Green  
+            pBuffer[offset + 2] = (BYTE)(((x + y) * 255) / (width + height)); // Red
+            pBuffer[offset + 3] = 0;                                // X (unused)
+        }
+    }
+}
+

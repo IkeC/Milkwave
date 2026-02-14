@@ -6142,7 +6142,7 @@ namespace MilkwaveRemote {
         if (cboVideoInput.Items.Count > 0 && cboVideoInput.SelectedIndex < 0) {
           cboVideoInput.SelectedIndex = 0;
         }
-        cboVideoInput.Enabled = chkVideoMix.Checked;
+        // Dropdown is always enabled, not dependent on Mix checkbox
       } catch (Exception ex) {
         SetStatusText($"Error enumerating video devices: {ex.Message}");
       }
@@ -6154,12 +6154,20 @@ namespace MilkwaveRemote {
 
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
-          PostMessage(foundWindow, WM_ENABLEVIDEOMIX, (IntPtr)(enabled ? 1 : 0), IntPtr.Zero);
-
+          // Always send device index first (even if already sent) to ensure it's initialized
           if (enabled && cboVideoInput.SelectedIndex >= 0) {
             int deviceIndex = cboVideoInput.SelectedIndex;
             PostMessage(foundWindow, WM_SETVIDEODEVICE, (IntPtr)deviceIndex, IntPtr.Zero);
+            System.Threading.Thread.Sleep(100); // Give device time to initialize
+          }
+
+          // Then enable/disable mixing
+          PostMessage(foundWindow, WM_ENABLEVIDEOMIX, (IntPtr)(enabled ? 1 : 0), IntPtr.Zero);
+
+          if (enabled && cboVideoInput.SelectedIndex >= 0) {
             SetStatusText($"Video mixing enabled: {cboVideoInput.Text}");
+          } else if (enabled) {
+            SetStatusText("Video mixing enabled but no device selected");
           } else {
             SetStatusText("Video mixing disabled");
           }
@@ -6167,7 +6175,7 @@ namespace MilkwaveRemote {
           SetStatusText(windowNotFound);
         }
 
-        cboVideoInput.Enabled = enabled;
+        // Keep dropdown enabled so user can change device even when Mix is off
       } catch (Exception ex) {
         SetStatusText($"Error toggling video mix: {ex.Message}");
       }
@@ -6189,8 +6197,11 @@ namespace MilkwaveRemote {
         SetStatusText($"Error changing video device: {ex.Message}");
       }
     }
-
     #endregion
 
+    private void btnVideoInputScan_Click(object sender, EventArgs e) {
+      PopulateVideoDevices();
+      SetStatusText($"Video devices rescanned: {cboVideoInput.Items.Count} found");
+    }
   } // end class
 } // end namespace

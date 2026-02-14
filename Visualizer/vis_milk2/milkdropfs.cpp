@@ -1206,6 +1206,14 @@ void CPlugin::RenderFrame(int bRedraw) {
     }
   }
 
+  // Update video capture texture if enabled
+  // This texture will be available to shaders via sampler_video_mix
+  if (m_bVideoInputEnabled && m_pVideoCaptureTexture && m_pVideoCapture) {
+    // Update texture with latest frame - no need to render it here,
+    // shaders will access it via sampler binding
+    m_pVideoCapture->CopyFrameToTexture(m_pVideoCaptureTexture, lpDevice);
+  }
+
   DrawUserSprites();
 
   // flip buffers
