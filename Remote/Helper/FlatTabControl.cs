@@ -55,7 +55,7 @@ namespace MilkwaveRemote.Helper {
       }
 
       int baseHeight = 20;
-      int baseWidth = 80;
+      int baseWidth = 73;
       int scaledHeight = Math.Max(baseHeight, (int)(baseHeight * dpi / 96f));
       int scaledWidth = Math.Max(baseWidth, (int)(baseWidth * dpi / 96f));
 

@@ -280,11 +280,6 @@ namespace MilkwaveRemote
       btnTag3 = new Button();
       btnTag1 = new Button();
       tabMessage = new TabPage();
-      tabShader = new TabPage();
-      pnlTabShader = new Panel();
-      panShadertoyLocal = new Panel();
-      picShaderError = new PictureBox();
-      splitContainerShader = new SplitContainer();
       tabWave = new TabPage();
       numWaveEcho = new NumericUpDown();
       numWaveScale = new NumericUpDown();
@@ -294,18 +289,7 @@ namespace MilkwaveRemote
       numWaveZoom = new NumericUpDown();
       numWavePushY = new NumericUpDown();
       numWavePushX = new NumericUpDown();
-      tabFonts = new TabPage();
-      btnTestFonts = new Button();
-      chkFontItalic5 = new CheckBox();
-      chkFontBold5 = new CheckBox();
-      chkFontItalic4 = new CheckBox();
-      chkFontBold4 = new CheckBox();
-      chkFontItalic3 = new CheckBox();
-      chkFontBold3 = new CheckBox();
-      chkFontItalic2 = new CheckBox();
-      chkFontBold2 = new CheckBox();
-      chkFontItalic1 = new CheckBox();
-      chkFontBold1 = new CheckBox();
+      tabInput = new TabPage();
       tabMidi = new TabPage();
       label6 = new Label();
       label8 = new Label();
@@ -357,6 +341,23 @@ namespace MilkwaveRemote
       numFactorFPS = new NumericUpDown();
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
+      tabFonts = new TabPage();
+      btnTestFonts = new Button();
+      chkFontItalic5 = new CheckBox();
+      chkFontBold5 = new CheckBox();
+      chkFontItalic4 = new CheckBox();
+      chkFontBold4 = new CheckBox();
+      chkFontItalic3 = new CheckBox();
+      chkFontBold3 = new CheckBox();
+      chkFontItalic2 = new CheckBox();
+      chkFontBold2 = new CheckBox();
+      chkFontItalic1 = new CheckBox();
+      chkFontBold1 = new CheckBox();
+      tabShader = new TabPage();
+      pnlTabShader = new Panel();
+      panShadertoyLocal = new Panel();
+      picShaderError = new PictureBox();
+      splitContainerShader = new SplitContainer();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -391,14 +392,6 @@ namespace MilkwaveRemote
       tabControl.SuspendLayout();
       tabPreset.SuspendLayout();
       tabMessage.SuspendLayout();
-      tabShader.SuspendLayout();
-      pnlTabShader.SuspendLayout();
-      panShadertoyLocal.SuspendLayout();
-      ((System.ComponentModel.ISupportInitialize)picShaderError).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)splitContainerShader).BeginInit();
-      splitContainerShader.Panel1.SuspendLayout();
-      splitContainerShader.Panel2.SuspendLayout();
-      splitContainerShader.SuspendLayout();
       tabWave.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numWaveEcho).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveScale).BeginInit();
@@ -408,7 +401,6 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveZoom).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushY).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).BeginInit();
-      tabFonts.SuspendLayout();
       tabMidi.SuspendLayout();
       tabSettings.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numPresetChange).BeginInit();
@@ -419,6 +411,15 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorFPS).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
+      tabFonts.SuspendLayout();
+      tabShader.SuspendLayout();
+      pnlTabShader.SuspendLayout();
+      panShadertoyLocal.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)picShaderError).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)splitContainerShader).BeginInit();
+      splitContainerShader.Panel1.SuspendLayout();
+      splitContainerShader.Panel2.SuspendLayout();
+      splitContainerShader.SuspendLayout();
       SuspendLayout();
       // 
       // statusStrip1
@@ -3328,14 +3329,15 @@ namespace MilkwaveRemote
       tabControl.BorderColor = SystemColors.ControlLightLight;
       tabControl.Controls.Add(tabPreset);
       tabControl.Controls.Add(tabMessage);
-      tabControl.Controls.Add(tabShader);
       tabControl.Controls.Add(tabWave);
-      tabControl.Controls.Add(tabFonts);
+      tabControl.Controls.Add(tabInput);
       tabControl.Controls.Add(tabMidi);
       tabControl.Controls.Add(tabSettings);
+      tabControl.Controls.Add(tabFonts);
+      tabControl.Controls.Add(tabShader);
       tabControl.Dock = DockStyle.Fill;
       tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
-      tabControl.ItemSize = new Size(80, 20);
+      tabControl.ItemSize = new Size(73, 20);
       tabControl.LineColor = SystemColors.ControlDark;
       tabControl.Location = new Point(0, 0);
       tabControl.Margin = new Padding(0);
@@ -3542,83 +3544,6 @@ namespace MilkwaveRemote
       tabMessage.TabIndex = 0;
       tabMessage.Text = "Message";
       // 
-      // tabShader
-      // 
-      tabShader.BackColor = SystemColors.ControlLight;
-      tabShader.BorderStyle = BorderStyle.FixedSingle;
-      tabShader.Controls.Add(pnlTabShader);
-      tabShader.Location = new Point(4, 24);
-      tabShader.Margin = new Padding(0);
-      tabShader.Name = "tabShader";
-      tabShader.Size = new Size(611, 183);
-      tabShader.TabIndex = 5;
-      tabShader.Text = "Shader";
-      // 
-      // pnlTabShader
-      // 
-      pnlTabShader.Controls.Add(panShadertoyLocal);
-      pnlTabShader.Controls.Add(btnHLSLLoad);
-      pnlTabShader.Controls.Add(chkShaderLeft);
-      pnlTabShader.Controls.Add(btnHLSLSave);
-      pnlTabShader.Controls.Add(picShaderError);
-      pnlTabShader.Controls.Add(txtShaderFind);
-      pnlTabShader.Controls.Add(numOffset);
-      pnlTabShader.Controls.Add(txtLineNumberError);
-      pnlTabShader.Controls.Add(btnShaderHelp);
-      pnlTabShader.Controls.Add(chkShaderFile);
-      pnlTabShader.Controls.Add(numPSVersion);
-      pnlTabShader.Controls.Add(txtShaderinfo);
-      pnlTabShader.Controls.Add(splitContainerShader);
-      pnlTabShader.Controls.Add(btnSendShader);
-      pnlTabShader.Controls.Add(btnShaderConvert);
-      pnlTabShader.Dock = DockStyle.Fill;
-      pnlTabShader.Location = new Point(0, 0);
-      pnlTabShader.Name = "pnlTabShader";
-      pnlTabShader.Size = new Size(609, 181);
-      pnlTabShader.TabIndex = 140;
-      // 
-      // panShadertoyLocal
-      // 
-      panShadertoyLocal.Controls.Add(btnShadertoyFileLoadNext);
-      panShadertoyLocal.Controls.Add(btnShadertoyFileLoadThis);
-      panShadertoyLocal.Controls.Add(txtShadertoyFile);
-      panShadertoyLocal.Controls.Add(numShadertoyFileIndex);
-      panShadertoyLocal.Controls.Add(btnShadertoyFilesLoadDir);
-      panShadertoyLocal.Controls.Add(btnLoadShaderInputFromFile);
-      panShadertoyLocal.Location = new Point(0, 1);
-      panShadertoyLocal.Name = "panShadertoyLocal";
-      panShadertoyLocal.Size = new Size(370, 32);
-      panShadertoyLocal.TabIndex = 150;
-      // 
-      // picShaderError
-      // 
-      picShaderError.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      picShaderError.Location = new Point(365, 7);
-      picShaderError.Margin = new Padding(0);
-      picShaderError.Name = "picShaderError";
-      picShaderError.Size = new Size(20, 20);
-      picShaderError.SizeMode = PictureBoxSizeMode.Zoom;
-      picShaderError.TabIndex = 146;
-      picShaderError.TabStop = false;
-      // 
-      // splitContainerShader
-      // 
-      splitContainerShader.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      splitContainerShader.Location = new Point(6, 35);
-      splitContainerShader.Margin = new Padding(0);
-      splitContainerShader.Name = "splitContainerShader";
-      // 
-      // splitContainerShader.Panel1
-      // 
-      splitContainerShader.Panel1.Controls.Add(txtShaderGLSL);
-      // 
-      // splitContainerShader.Panel2
-      // 
-      splitContainerShader.Panel2.Controls.Add(txtShaderHLSL);
-      splitContainerShader.Size = new Size(596, 114);
-      splitContainerShader.SplitterDistance = 286;
-      splitContainerShader.TabIndex = 31;
-      // 
       // tabWave
       // 
       tabWave.BackColor = SystemColors.ControlLight;
@@ -3781,218 +3706,16 @@ namespace MilkwaveRemote
       numWavePushX.ValueChanged += ctrlWave_ValueChanged;
       numWavePushX.KeyDown += numWave_KeyDown;
       // 
-      // tabFonts
+      // tabInput
       // 
-      tabFonts.BackColor = SystemColors.ControlLight;
-      tabFonts.BorderStyle = BorderStyle.FixedSingle;
-      tabFonts.Controls.Add(btnFontGlobalPlus);
-      tabFonts.Controls.Add(btnFontGlobalMinus);
-      tabFonts.Controls.Add(btnTestFonts);
-      tabFonts.Controls.Add(chkFontAA5);
-      tabFonts.Controls.Add(chkFontItalic5);
-      tabFonts.Controls.Add(chkFontBold5);
-      tabFonts.Controls.Add(lblFont5);
-      tabFonts.Controls.Add(numFont5);
-      tabFonts.Controls.Add(cboFont5);
-      tabFonts.Controls.Add(pnlColorFont5);
-      tabFonts.Controls.Add(chkFontAA4);
-      tabFonts.Controls.Add(chkFontItalic4);
-      tabFonts.Controls.Add(chkFontBold4);
-      tabFonts.Controls.Add(lblFont4);
-      tabFonts.Controls.Add(numFont4);
-      tabFonts.Controls.Add(cboFont4);
-      tabFonts.Controls.Add(pnlColorFont4);
-      tabFonts.Controls.Add(chkFontAA3);
-      tabFonts.Controls.Add(chkFontItalic3);
-      tabFonts.Controls.Add(chkFontBold3);
-      tabFonts.Controls.Add(lblFont3);
-      tabFonts.Controls.Add(numFont3);
-      tabFonts.Controls.Add(cboFont3);
-      tabFonts.Controls.Add(pnlColorFont3);
-      tabFonts.Controls.Add(chkFontAA2);
-      tabFonts.Controls.Add(chkFontItalic2);
-      tabFonts.Controls.Add(chkFontBold2);
-      tabFonts.Controls.Add(lblFont2);
-      tabFonts.Controls.Add(numFont2);
-      tabFonts.Controls.Add(cboFont2);
-      tabFonts.Controls.Add(pnlColorFont2);
-      tabFonts.Controls.Add(btnSettingsSave);
-      tabFonts.Controls.Add(chkFontAA1);
-      tabFonts.Controls.Add(chkFontItalic1);
-      tabFonts.Controls.Add(chkFontBold1);
-      tabFonts.Controls.Add(lblFont1);
-      tabFonts.Controls.Add(numFont1);
-      tabFonts.Controls.Add(cboFont1);
-      tabFonts.Controls.Add(pnlColorFont1);
-      tabFonts.Controls.Add(btnSettingsLoad);
-      tabFonts.Location = new Point(4, 24);
-      tabFonts.Margin = new Padding(0);
-      tabFonts.Name = "tabFonts";
-      tabFonts.Size = new Size(611, 183);
-      tabFonts.TabIndex = 3;
-      tabFonts.Text = "Fonts";
-      // 
-      // btnTestFonts
-      // 
-      btnTestFonts.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnTestFonts.FlatStyle = FlatStyle.System;
-      btnTestFonts.Location = new Point(516, 95);
-      btnTestFonts.Name = "btnTestFonts";
-      btnTestFonts.Size = new Size(85, 22);
-      btnTestFonts.TabIndex = 159;
-      btnTestFonts.Text = "Test";
-      btnTestFonts.UseVisualStyleBackColor = true;
-      btnTestFonts.Click += btnTestFonts_Click;
-      // 
-      // chkFontItalic5
-      // 
-      chkFontItalic5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic5.Appearance = Appearance.Button;
-      chkFontItalic5.FlatStyle = FlatStyle.System;
-      chkFontItalic5.Location = new Point(406, 123);
-      chkFontItalic5.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic5.Name = "chkFontItalic5";
-      chkFontItalic5.Size = new Size(49, 23);
-      chkFontItalic5.TabIndex = 157;
-      chkFontItalic5.Text = "Italic";
-      chkFontItalic5.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic5.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic5.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold5
-      // 
-      chkFontBold5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold5.Appearance = Appearance.Button;
-      chkFontBold5.FlatStyle = FlatStyle.System;
-      chkFontBold5.Location = new Point(351, 123);
-      chkFontBold5.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold5.Name = "chkFontBold5";
-      chkFontBold5.Size = new Size(49, 23);
-      chkFontBold5.TabIndex = 156;
-      chkFontBold5.Text = "Bold";
-      chkFontBold5.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold5.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold5.UseVisualStyleBackColor = true;
-      // 
-      // chkFontItalic4
-      // 
-      chkFontItalic4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic4.Appearance = Appearance.Button;
-      chkFontItalic4.FlatStyle = FlatStyle.System;
-      chkFontItalic4.Location = new Point(406, 94);
-      chkFontItalic4.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic4.Name = "chkFontItalic4";
-      chkFontItalic4.Size = new Size(49, 23);
-      chkFontItalic4.TabIndex = 150;
-      chkFontItalic4.Text = "Italic";
-      chkFontItalic4.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic4.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic4.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold4
-      // 
-      chkFontBold4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold4.Appearance = Appearance.Button;
-      chkFontBold4.FlatStyle = FlatStyle.System;
-      chkFontBold4.Location = new Point(351, 94);
-      chkFontBold4.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold4.Name = "chkFontBold4";
-      chkFontBold4.Size = new Size(49, 23);
-      chkFontBold4.TabIndex = 149;
-      chkFontBold4.Text = "Bold";
-      chkFontBold4.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold4.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold4.UseVisualStyleBackColor = true;
-      // 
-      // chkFontItalic3
-      // 
-      chkFontItalic3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic3.Appearance = Appearance.Button;
-      chkFontItalic3.FlatStyle = FlatStyle.System;
-      chkFontItalic3.Location = new Point(406, 65);
-      chkFontItalic3.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic3.Name = "chkFontItalic3";
-      chkFontItalic3.Size = new Size(49, 23);
-      chkFontItalic3.TabIndex = 143;
-      chkFontItalic3.Text = "Italic";
-      chkFontItalic3.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic3.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic3.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold3
-      // 
-      chkFontBold3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold3.Appearance = Appearance.Button;
-      chkFontBold3.FlatStyle = FlatStyle.System;
-      chkFontBold3.Location = new Point(351, 65);
-      chkFontBold3.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold3.Name = "chkFontBold3";
-      chkFontBold3.Size = new Size(49, 23);
-      chkFontBold3.TabIndex = 142;
-      chkFontBold3.Text = "Bold";
-      chkFontBold3.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold3.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold3.UseVisualStyleBackColor = true;
-      // 
-      // chkFontItalic2
-      // 
-      chkFontItalic2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic2.Appearance = Appearance.Button;
-      chkFontItalic2.FlatStyle = FlatStyle.System;
-      chkFontItalic2.Location = new Point(406, 36);
-      chkFontItalic2.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic2.Name = "chkFontItalic2";
-      chkFontItalic2.Size = new Size(49, 23);
-      chkFontItalic2.TabIndex = 136;
-      chkFontItalic2.Text = "Italic";
-      chkFontItalic2.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic2.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic2.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold2
-      // 
-      chkFontBold2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold2.Appearance = Appearance.Button;
-      chkFontBold2.FlatStyle = FlatStyle.System;
-      chkFontBold2.Location = new Point(351, 36);
-      chkFontBold2.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold2.Name = "chkFontBold2";
-      chkFontBold2.Size = new Size(49, 23);
-      chkFontBold2.TabIndex = 135;
-      chkFontBold2.Text = "Bold";
-      chkFontBold2.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold2.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold2.UseVisualStyleBackColor = true;
-      // 
-      // chkFontItalic1
-      // 
-      chkFontItalic1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic1.Appearance = Appearance.Button;
-      chkFontItalic1.FlatStyle = FlatStyle.System;
-      chkFontItalic1.Location = new Point(406, 7);
-      chkFontItalic1.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic1.Name = "chkFontItalic1";
-      chkFontItalic1.Size = new Size(49, 23);
-      chkFontItalic1.TabIndex = 126;
-      chkFontItalic1.Text = "Italic";
-      chkFontItalic1.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic1.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic1.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold1
-      // 
-      chkFontBold1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold1.Appearance = Appearance.Button;
-      chkFontBold1.FlatStyle = FlatStyle.System;
-      chkFontBold1.Location = new Point(351, 7);
-      chkFontBold1.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold1.Name = "chkFontBold1";
-      chkFontBold1.Size = new Size(49, 23);
-      chkFontBold1.TabIndex = 125;
-      chkFontBold1.Text = "Bold";
-      chkFontBold1.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold1.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold1.UseVisualStyleBackColor = true;
+      tabInput.BackColor = SystemColors.ControlLight;
+      tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Location = new Point(4, 24);
+      tabInput.Margin = new Padding(0);
+      tabInput.Name = "tabInput";
+      tabInput.Size = new Size(611, 183);
+      tabInput.TabIndex = 7;
+      tabInput.Text = "Input";
       // 
       // tabMidi
       // 
@@ -4661,6 +4384,296 @@ namespace MilkwaveRemote
       numFactorTime.Value = new decimal(new int[] { 1, 0, 0, 0 });
       numFactorTime.ValueChanged += numFactorTime_ValueChanged;
       // 
+      // tabFonts
+      // 
+      tabFonts.BackColor = SystemColors.ControlLight;
+      tabFonts.BorderStyle = BorderStyle.FixedSingle;
+      tabFonts.Controls.Add(btnFontGlobalPlus);
+      tabFonts.Controls.Add(btnFontGlobalMinus);
+      tabFonts.Controls.Add(btnTestFonts);
+      tabFonts.Controls.Add(chkFontAA5);
+      tabFonts.Controls.Add(chkFontItalic5);
+      tabFonts.Controls.Add(chkFontBold5);
+      tabFonts.Controls.Add(lblFont5);
+      tabFonts.Controls.Add(numFont5);
+      tabFonts.Controls.Add(cboFont5);
+      tabFonts.Controls.Add(pnlColorFont5);
+      tabFonts.Controls.Add(chkFontAA4);
+      tabFonts.Controls.Add(chkFontItalic4);
+      tabFonts.Controls.Add(chkFontBold4);
+      tabFonts.Controls.Add(lblFont4);
+      tabFonts.Controls.Add(numFont4);
+      tabFonts.Controls.Add(cboFont4);
+      tabFonts.Controls.Add(pnlColorFont4);
+      tabFonts.Controls.Add(chkFontAA3);
+      tabFonts.Controls.Add(chkFontItalic3);
+      tabFonts.Controls.Add(chkFontBold3);
+      tabFonts.Controls.Add(lblFont3);
+      tabFonts.Controls.Add(numFont3);
+      tabFonts.Controls.Add(cboFont3);
+      tabFonts.Controls.Add(pnlColorFont3);
+      tabFonts.Controls.Add(chkFontAA2);
+      tabFonts.Controls.Add(chkFontItalic2);
+      tabFonts.Controls.Add(chkFontBold2);
+      tabFonts.Controls.Add(lblFont2);
+      tabFonts.Controls.Add(numFont2);
+      tabFonts.Controls.Add(cboFont2);
+      tabFonts.Controls.Add(pnlColorFont2);
+      tabFonts.Controls.Add(btnSettingsSave);
+      tabFonts.Controls.Add(chkFontAA1);
+      tabFonts.Controls.Add(chkFontItalic1);
+      tabFonts.Controls.Add(chkFontBold1);
+      tabFonts.Controls.Add(lblFont1);
+      tabFonts.Controls.Add(numFont1);
+      tabFonts.Controls.Add(cboFont1);
+      tabFonts.Controls.Add(pnlColorFont1);
+      tabFonts.Controls.Add(btnSettingsLoad);
+      tabFonts.Location = new Point(4, 24);
+      tabFonts.Margin = new Padding(0);
+      tabFonts.Name = "tabFonts";
+      tabFonts.Size = new Size(611, 183);
+      tabFonts.TabIndex = 3;
+      tabFonts.Text = "Fonts";
+      // 
+      // btnTestFonts
+      // 
+      btnTestFonts.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnTestFonts.FlatStyle = FlatStyle.System;
+      btnTestFonts.Location = new Point(516, 95);
+      btnTestFonts.Name = "btnTestFonts";
+      btnTestFonts.Size = new Size(85, 22);
+      btnTestFonts.TabIndex = 159;
+      btnTestFonts.Text = "Test";
+      btnTestFonts.UseVisualStyleBackColor = true;
+      btnTestFonts.Click += btnTestFonts_Click;
+      // 
+      // chkFontItalic5
+      // 
+      chkFontItalic5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic5.Appearance = Appearance.Button;
+      chkFontItalic5.FlatStyle = FlatStyle.System;
+      chkFontItalic5.Location = new Point(406, 123);
+      chkFontItalic5.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic5.Name = "chkFontItalic5";
+      chkFontItalic5.Size = new Size(49, 23);
+      chkFontItalic5.TabIndex = 157;
+      chkFontItalic5.Text = "Italic";
+      chkFontItalic5.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic5.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic5.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold5
+      // 
+      chkFontBold5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold5.Appearance = Appearance.Button;
+      chkFontBold5.FlatStyle = FlatStyle.System;
+      chkFontBold5.Location = new Point(351, 123);
+      chkFontBold5.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold5.Name = "chkFontBold5";
+      chkFontBold5.Size = new Size(49, 23);
+      chkFontBold5.TabIndex = 156;
+      chkFontBold5.Text = "Bold";
+      chkFontBold5.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold5.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold5.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic4
+      // 
+      chkFontItalic4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic4.Appearance = Appearance.Button;
+      chkFontItalic4.FlatStyle = FlatStyle.System;
+      chkFontItalic4.Location = new Point(406, 94);
+      chkFontItalic4.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic4.Name = "chkFontItalic4";
+      chkFontItalic4.Size = new Size(49, 23);
+      chkFontItalic4.TabIndex = 150;
+      chkFontItalic4.Text = "Italic";
+      chkFontItalic4.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic4.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic4.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold4
+      // 
+      chkFontBold4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold4.Appearance = Appearance.Button;
+      chkFontBold4.FlatStyle = FlatStyle.System;
+      chkFontBold4.Location = new Point(351, 94);
+      chkFontBold4.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold4.Name = "chkFontBold4";
+      chkFontBold4.Size = new Size(49, 23);
+      chkFontBold4.TabIndex = 149;
+      chkFontBold4.Text = "Bold";
+      chkFontBold4.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold4.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold4.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic3
+      // 
+      chkFontItalic3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic3.Appearance = Appearance.Button;
+      chkFontItalic3.FlatStyle = FlatStyle.System;
+      chkFontItalic3.Location = new Point(406, 65);
+      chkFontItalic3.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic3.Name = "chkFontItalic3";
+      chkFontItalic3.Size = new Size(49, 23);
+      chkFontItalic3.TabIndex = 143;
+      chkFontItalic3.Text = "Italic";
+      chkFontItalic3.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic3.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic3.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold3
+      // 
+      chkFontBold3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold3.Appearance = Appearance.Button;
+      chkFontBold3.FlatStyle = FlatStyle.System;
+      chkFontBold3.Location = new Point(351, 65);
+      chkFontBold3.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold3.Name = "chkFontBold3";
+      chkFontBold3.Size = new Size(49, 23);
+      chkFontBold3.TabIndex = 142;
+      chkFontBold3.Text = "Bold";
+      chkFontBold3.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold3.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold3.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic2
+      // 
+      chkFontItalic2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic2.Appearance = Appearance.Button;
+      chkFontItalic2.FlatStyle = FlatStyle.System;
+      chkFontItalic2.Location = new Point(406, 36);
+      chkFontItalic2.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic2.Name = "chkFontItalic2";
+      chkFontItalic2.Size = new Size(49, 23);
+      chkFontItalic2.TabIndex = 136;
+      chkFontItalic2.Text = "Italic";
+      chkFontItalic2.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic2.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic2.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold2
+      // 
+      chkFontBold2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold2.Appearance = Appearance.Button;
+      chkFontBold2.FlatStyle = FlatStyle.System;
+      chkFontBold2.Location = new Point(351, 36);
+      chkFontBold2.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold2.Name = "chkFontBold2";
+      chkFontBold2.Size = new Size(49, 23);
+      chkFontBold2.TabIndex = 135;
+      chkFontBold2.Text = "Bold";
+      chkFontBold2.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold2.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold2.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic1
+      // 
+      chkFontItalic1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic1.Appearance = Appearance.Button;
+      chkFontItalic1.FlatStyle = FlatStyle.System;
+      chkFontItalic1.Location = new Point(406, 7);
+      chkFontItalic1.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic1.Name = "chkFontItalic1";
+      chkFontItalic1.Size = new Size(49, 23);
+      chkFontItalic1.TabIndex = 126;
+      chkFontItalic1.Text = "Italic";
+      chkFontItalic1.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic1.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic1.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold1
+      // 
+      chkFontBold1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold1.Appearance = Appearance.Button;
+      chkFontBold1.FlatStyle = FlatStyle.System;
+      chkFontBold1.Location = new Point(351, 7);
+      chkFontBold1.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold1.Name = "chkFontBold1";
+      chkFontBold1.Size = new Size(49, 23);
+      chkFontBold1.TabIndex = 125;
+      chkFontBold1.Text = "Bold";
+      chkFontBold1.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold1.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold1.UseVisualStyleBackColor = true;
+      // 
+      // tabShader
+      // 
+      tabShader.BackColor = SystemColors.ControlLight;
+      tabShader.BorderStyle = BorderStyle.FixedSingle;
+      tabShader.Controls.Add(pnlTabShader);
+      tabShader.Location = new Point(4, 24);
+      tabShader.Margin = new Padding(0);
+      tabShader.Name = "tabShader";
+      tabShader.Size = new Size(611, 183);
+      tabShader.TabIndex = 5;
+      tabShader.Text = "Shader";
+      // 
+      // pnlTabShader
+      // 
+      pnlTabShader.Controls.Add(panShadertoyLocal);
+      pnlTabShader.Controls.Add(btnHLSLLoad);
+      pnlTabShader.Controls.Add(chkShaderLeft);
+      pnlTabShader.Controls.Add(btnHLSLSave);
+      pnlTabShader.Controls.Add(picShaderError);
+      pnlTabShader.Controls.Add(txtShaderFind);
+      pnlTabShader.Controls.Add(numOffset);
+      pnlTabShader.Controls.Add(txtLineNumberError);
+      pnlTabShader.Controls.Add(btnShaderHelp);
+      pnlTabShader.Controls.Add(chkShaderFile);
+      pnlTabShader.Controls.Add(numPSVersion);
+      pnlTabShader.Controls.Add(txtShaderinfo);
+      pnlTabShader.Controls.Add(splitContainerShader);
+      pnlTabShader.Controls.Add(btnSendShader);
+      pnlTabShader.Controls.Add(btnShaderConvert);
+      pnlTabShader.Dock = DockStyle.Fill;
+      pnlTabShader.Location = new Point(0, 0);
+      pnlTabShader.Name = "pnlTabShader";
+      pnlTabShader.Size = new Size(609, 181);
+      pnlTabShader.TabIndex = 140;
+      // 
+      // panShadertoyLocal
+      // 
+      panShadertoyLocal.Controls.Add(btnShadertoyFileLoadNext);
+      panShadertoyLocal.Controls.Add(btnShadertoyFileLoadThis);
+      panShadertoyLocal.Controls.Add(txtShadertoyFile);
+      panShadertoyLocal.Controls.Add(numShadertoyFileIndex);
+      panShadertoyLocal.Controls.Add(btnShadertoyFilesLoadDir);
+      panShadertoyLocal.Controls.Add(btnLoadShaderInputFromFile);
+      panShadertoyLocal.Location = new Point(0, 1);
+      panShadertoyLocal.Name = "panShadertoyLocal";
+      panShadertoyLocal.Size = new Size(370, 32);
+      panShadertoyLocal.TabIndex = 150;
+      // 
+      // picShaderError
+      // 
+      picShaderError.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      picShaderError.Location = new Point(365, 7);
+      picShaderError.Margin = new Padding(0);
+      picShaderError.Name = "picShaderError";
+      picShaderError.Size = new Size(20, 20);
+      picShaderError.SizeMode = PictureBoxSizeMode.Zoom;
+      picShaderError.TabIndex = 146;
+      picShaderError.TabStop = false;
+      // 
+      // splitContainerShader
+      // 
+      splitContainerShader.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+      splitContainerShader.Location = new Point(6, 35);
+      splitContainerShader.Margin = new Padding(0);
+      splitContainerShader.Name = "splitContainerShader";
+      // 
+      // splitContainerShader.Panel1
+      // 
+      splitContainerShader.Panel1.Controls.Add(txtShaderGLSL);
+      // 
+      // splitContainerShader.Panel2
+      // 
+      splitContainerShader.Panel2.Controls.Add(txtShaderHLSL);
+      splitContainerShader.Size = new Size(596, 114);
+      splitContainerShader.SplitterDistance = 286;
+      splitContainerShader.TabIndex = 31;
+      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -4715,6 +4728,27 @@ namespace MilkwaveRemote
       tabPreset.PerformLayout();
       tabMessage.ResumeLayout(false);
       tabMessage.PerformLayout();
+      tabWave.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)numWaveEcho).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveScale).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveDecay).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveWarp).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveRotation).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWaveZoom).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWavePushY).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numWavePushX).EndInit();
+      tabMidi.ResumeLayout(false);
+      tabMidi.PerformLayout();
+      tabSettings.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)numPresetChange).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsBrightness).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsSaturation).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsHue).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numQuality).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorFPS).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
+      tabFonts.ResumeLayout(false);
       tabShader.ResumeLayout(false);
       pnlTabShader.ResumeLayout(false);
       pnlTabShader.PerformLayout();
@@ -4727,27 +4761,6 @@ namespace MilkwaveRemote
       splitContainerShader.Panel2.PerformLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainerShader).EndInit();
       splitContainerShader.ResumeLayout(false);
-      tabWave.ResumeLayout(false);
-      ((System.ComponentModel.ISupportInitialize)numWaveEcho).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numWaveScale).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numWaveDecay).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numWaveWarp).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numWaveRotation).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numWaveZoom).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numWavePushY).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numWavePushX).EndInit();
-      tabFonts.ResumeLayout(false);
-      tabMidi.ResumeLayout(false);
-      tabMidi.PerformLayout();
-      tabSettings.ResumeLayout(false);
-      ((System.ComponentModel.ISupportInitialize)numPresetChange).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsBrightness).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsSaturation).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsHue).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numQuality).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorFPS).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
       ResumeLayout(false);
       PerformLayout();
     }
@@ -5087,5 +5100,6 @@ namespace MilkwaveRemote
     private NumericUpDown numPresetChange;
     private Label lblChangePreset;
     private CheckBox chkPresetLocked;
+    private TabPage tabInput;
   }
 }
