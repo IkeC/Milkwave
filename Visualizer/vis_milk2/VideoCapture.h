@@ -63,20 +63,33 @@ public:
     // Get current resolution
     int GetWidth() const { return m_nWidth; }
     int GetHeight() const { return m_nHeight; }
+    
+    // Diagnostic: get the last error encountered
+    const wchar_t* GetLastError() const { return m_szLastError; }
+    
+    // Diagnostic: get statistics
+    int GetFrameAttempts() const { return m_frameAttempts; }
+    int GetSuccessfulFrames() const { return m_successfulFrames; }
 
 private:
-    // DirectShow interfaces
-    IGraphBuilder* m_pGraphBuilder;
-    ICaptureGraphBuilder2* m_pCaptureBuilder;
-    IBaseFilter* m_pVideoCapture;
-    ISampleGrabber* m_pSampleGrabber;
-    IMediaControl* m_pMediaControl;
+// DirectShow interfaces
+IGraphBuilder* m_pGraphBuilder;
+ICaptureGraphBuilder2* m_pCaptureBuilder;
+IBaseFilter* m_pVideoCapture;
+ISampleGrabber* m_pSampleGrabber;
+IMediaControl* m_pMediaControl;
+IBaseFilter* m_pNullRenderer;
 
     // Frame buffer
     BYTE* m_pFrameBuffer;
     int m_nWidth;
     int m_nHeight;
     int m_nBufferSize;
+    
+    // Diagnostics
+    wchar_t m_szLastError[256];
+    int m_frameAttempts;
+    int m_successfulFrames;
     bool m_bNewFrame;
     std::mutex m_frameMutex;
     bool m_bInitialized;

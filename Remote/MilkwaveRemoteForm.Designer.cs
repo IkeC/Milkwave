@@ -214,6 +214,7 @@ namespace MilkwaveRemote
       lblChangePreset = new Label();
       chkPresetLocked = new CheckBox();
       chkVideoMix = new CheckBox();
+      chkSpoutMix = new CheckBox();
       cboSettingsOpenFile = new ComboBox();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
@@ -292,6 +293,9 @@ namespace MilkwaveRemote
       numWavePushY = new NumericUpDown();
       numWavePushX = new NumericUpDown();
       tabInput = new TabPage();
+      btnSpoutInputScan = new Button();
+      cboSputInput = new ComboBox();
+      label11 = new Label();
       btnVideoInputScan = new Button();
       cboVideoInput = new ComboBox();
       label10 = new Label();
@@ -2639,6 +2643,21 @@ namespace MilkwaveRemote
       chkVideoMix.UseVisualStyleBackColor = true;
       chkVideoMix.CheckedChanged += chkVideoMix_CheckedChanged;
       // 
+      // chkSpoutMix
+      // 
+      chkSpoutMix.Appearance = Appearance.Button;
+      chkSpoutMix.FlatStyle = FlatStyle.System;
+      chkSpoutMix.Location = new Point(355, 37);
+      chkSpoutMix.Margin = new Padding(3, 2, 3, 2);
+      chkSpoutMix.Name = "chkSpoutMix";
+      chkSpoutMix.Size = new Size(55, 23);
+      chkSpoutMix.TabIndex = 132;
+      chkSpoutMix.Text = "Mix";
+      chkSpoutMix.TextAlign = ContentAlignment.MiddleCenter;
+      chkSpoutMix.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkSpoutMix, "Enable video mixing with preset output");
+      chkSpoutMix.UseVisualStyleBackColor = true;
+      // 
       // cboSettingsOpenFile
       // 
       cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
@@ -3740,6 +3759,10 @@ namespace MilkwaveRemote
       // 
       tabInput.BackColor = SystemColors.ControlLight;
       tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Controls.Add(chkSpoutMix);
+      tabInput.Controls.Add(btnSpoutInputScan);
+      tabInput.Controls.Add(cboSputInput);
+      tabInput.Controls.Add(label11);
       tabInput.Controls.Add(btnVideoInputScan);
       tabInput.Controls.Add(chkVideoMix);
       tabInput.Controls.Add(cboVideoInput);
@@ -3750,6 +3773,34 @@ namespace MilkwaveRemote
       tabInput.Size = new Size(611, 183);
       tabInput.TabIndex = 7;
       tabInput.Text = "Input";
+      // 
+      // btnSpoutInputScan
+      // 
+      btnSpoutInputScan.FlatStyle = FlatStyle.System;
+      btnSpoutInputScan.Location = new Point(294, 37);
+      btnSpoutInputScan.Name = "btnSpoutInputScan";
+      btnSpoutInputScan.Size = new Size(55, 23);
+      btnSpoutInputScan.TabIndex = 131;
+      btnSpoutInputScan.Text = "Scan";
+      btnSpoutInputScan.UseVisualStyleBackColor = true;
+      // 
+      // cboSputInput
+      // 
+      cboSputInput.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboSputInput.FormattingEnabled = true;
+      cboSputInput.Location = new Point(56, 38);
+      cboSputInput.Name = "cboSputInput";
+      cboSputInput.Size = new Size(232, 23);
+      cboSputInput.TabIndex = 129;
+      // 
+      // label11
+      // 
+      label11.Location = new Point(5, 37);
+      label11.Name = "label11";
+      label11.Size = new Size(48, 24);
+      label11.TabIndex = 128;
+      label11.Text = "Spout";
+      label11.TextAlign = ContentAlignment.MiddleRight;
       // 
       // btnVideoInputScan
       // 
@@ -5172,5 +5223,9 @@ namespace MilkwaveRemote
     private Label label10;
     private CheckBox chkVideoMix;
     private Button btnVideoInputScan;
+    private Button btnSpoutInputScan;
+    private ComboBox cboSputInput;
+    private Label label11;
+    private CheckBox chkSpoutMix;
   }
 }
