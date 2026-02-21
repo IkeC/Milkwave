@@ -127,9 +127,6 @@ namespace MilkwaveRemote.Helper {
 
         comboBox.Enabled = true;
 
-        // Add "None" option first
-        comboBox.Items.Add(new DeviceEnumerator.DeviceItem("(None)"));
-
         // Add senders sorted by name
         foreach (var sender in senders.OrderBy(s => s.Name)) {
           comboBox.Items.Add(sender);

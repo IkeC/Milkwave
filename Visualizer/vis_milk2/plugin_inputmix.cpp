@@ -187,3 +187,17 @@ void CPlugin::EnableSpoutMixing(bool enable) {
         AddNotification(L"Spout mixing disabled");
     }
 }
+
+void CPlugin::SetInputMixOnTop(bool onTop) {
+    if (milkwave) {
+        wchar_t buf[256];
+        swprintf_s(buf, L"SetInputMixOnTop: %s", onTop ? L"TRUE" : L"FALSE");
+        milkwave->LogInfo(buf);
+    }
+    m_bInputMixOnTop = onTop;
+    if (onTop) {
+        AddNotification(L"Input Layer: Top (Overlay)", 2.0f);
+    } else {
+        AddNotification(L"Input Layer: Background", 2.0f);
+    }
+}

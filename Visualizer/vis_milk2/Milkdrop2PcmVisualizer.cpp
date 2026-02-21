@@ -1193,7 +1193,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   case WM_USER_SET_INPUTMIX_ONTOP:
   {
-      g_plugin.m_bInputMixOnTop = (wParam != 0);
+      g_plugin.SetInputMixOnTop(wParam != 0);
       return 0;
   }
 

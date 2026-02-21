@@ -774,6 +774,7 @@ public:
   void        EnableVideoMixing(bool enable);
   void        SetSpoutSender(const wchar_t* senderName);
   void        EnableSpoutMixing(bool enable);
+  void        SetInputMixOnTop(bool onTop);
   
   //void        WarpedBlit();
                // note: 'bFlipAlpha' just flips the alpha blending in fixed-fn pipeline - not the values for culling tiles.

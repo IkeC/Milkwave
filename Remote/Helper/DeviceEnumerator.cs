@@ -142,6 +142,24 @@ namespace MilkwaveRemote.Helper {
 
     #endregion
 
+    #region Win32 API - Shared Memory (Spout)
+
+    private const uint FILE_MAP_READ = 4;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenFileMapping(uint dwDesiredAccess, bool bInheritHandle, string lpName);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr MapViewOfFile(IntPtr hFileMappingObject, uint dwDesiredAccess, uint dwFileOffsetHigh, uint dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    #endregion
+
     #region Public Methods - DirectShow Video Devices
 
     /// <summary>
@@ -269,26 +287,26 @@ namespace MilkwaveRemote.Helper {
     /// </summary>
     /// <returns>List of available Spout sender names</returns>
     public static List<DeviceItem> EnumerateSpoutSenders() {
-      var senders = new List<DeviceItem>();
+      var senderSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
       try {
-        // Access Spout registry for max senders
-        int maxSenders = GetSpoutMaxSenderCount();
-        if (maxSenders <= 0) {
-          return senders; // No Spout configuration found
-        }
+        // Method 1: Shared Memory Discovery (Active senders)
+        ReadSpoutSenderNamesFromSharedMemory(senderSet);
 
-        // Read sender names from registry
-        var senderSet = ReadSpoutSenderNamesFromRegistry();
-        foreach (var senderName in senderSet) {
-          var sender = new DeviceItem(senderName);
-          senders.Add(sender);
+        // Method 2: Registry Discovery (Registered senders)
+        var registrySenders = ReadSpoutSenderNamesFromRegistry();
+        foreach (var name in registrySenders) {
+          senderSet.Add(name);
         }
       } catch (Exception ex) {
         System.Diagnostics.Debug.WriteLine($"Error enumerating Spout senders: {ex.Message}");
       }
 
-      return senders;
+      var items = new List<DeviceItem>();
+      foreach (var name in senderSet) {
+        items.Add(new DeviceItem(name));
+      }
+      return items;
     }
 
     /// <summary>
@@ -403,8 +421,8 @@ namespace MilkwaveRemote.Helper {
           // Get all sender subkeys
           var subKeyNames = key.GetSubKeyNames();
           foreach (var subKeyName in subKeyNames) {
-            // Filter out system entries
-            if (!subKeyName.StartsWith("_") && !string.IsNullOrWhiteSpace(subKeyName)) {
+            // Filter out system entries and Milkwave senders
+            if (!subKeyName.StartsWith("_") && !string.IsNullOrWhiteSpace(subKeyName) && !subKeyName.StartsWith("Milkwave", StringComparison.OrdinalIgnoreCase)) {
               senderNames.Add(subKeyName);
             }
           }
@@ -414,6 +432,56 @@ namespace MilkwaveRemote.Helper {
       }
 
       return senderNames;
+    }
+
+    /// <summary>
+    /// Read Spout sender names from shared memory (active list)
+    /// </summary>
+    private static void ReadSpoutSenderNamesFromSharedMemory(HashSet<string> senderNames) {
+      try {
+        IntPtr hMapFile = OpenFileMapping(FILE_MAP_READ, false, "SpoutSenderNames");
+        if (hMapFile == IntPtr.Zero) return;
+
+        try {
+          // Standard Spout 2 shared memory layout for "SpoutSenderNames":
+          // No header! Just slots of 256 bytes each.
+          int maxSlots = GetSpoutMaxSenderCount();
+          int bufferSize = maxSlots * 256;
+          IntPtr pBuf = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, new IntPtr(bufferSize));
+
+          if (pBuf != IntPtr.Zero) {
+            try {
+              byte[] buffer = new byte[bufferSize];
+              Marshal.Copy(pBuf, buffer, 0, bufferSize);
+
+              for (int i = 0; i < maxSlots; i++) {
+                int slotStart = (i * 256);
+                if (slotStart >= bufferSize - 1) break;
+
+                // Spout SDK specifies that an empty first byte terminates the active list
+                if (buffer[slotStart] == 0) break;
+
+                // Find null terminator within this 256-byte slot
+                int nullPos = System.Array.IndexOf(buffer, (byte)0, slotStart, 256);
+                int strLen = (nullPos >= 0) ? (nullPos - slotStart) : 256;
+
+                if (strLen > 0) {
+                  string senderName = System.Text.Encoding.ASCII.GetString(buffer, slotStart, strLen).Trim();
+                  if (!string.IsNullOrWhiteSpace(senderName) && char.IsLetterOrDigit(senderName[0]) && !senderName.StartsWith("Milkwave", StringComparison.OrdinalIgnoreCase)) {
+                    senderNames.Add(senderName);
+                  }
+                }
+              }
+            } finally {
+              UnmapViewOfFile(pBuf);
+            }
+          }
+        } finally {
+          CloseHandle(hMapFile);
+        }
+      } catch (Exception ex) {
+        System.Diagnostics.Debug.WriteLine($"Error reading Spout shared memory: {ex.Message}");
+      }
     }
 
     #endregion

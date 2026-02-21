@@ -615,15 +615,6 @@ SPOUT :
 #pragma comment(lib, "dwmapi.lib")
 
 // Define custom message IDs
-#define WM_USER_ENABLESPOUTMIX    (WM_USER + 100)
-#define WM_USER_SETSPOUTSENDER    (WM_USER + 101)
-#define WM_USER_ENABLEVIDEOMIX    (WM_USER + 102)
-#define WM_USER_SETVIDEODEVICE    (WM_USER + 103)
-#define WM_USER_MESSAGE_MODE      (WM_USER + 104)
-#define WM_USER_SPRITE_MODE       (WM_USER + 105)
-#define WM_USER_PREV_PRESET       (WM_USER + 106)
-#define WM_USER_NEXT_PRESET       (WM_USER + 107)
-
 #define FRAND ((rand() % 7381)/7380.0f)
 #define clamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 
@@ -5913,27 +5904,34 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     break;
   }
 
-  // Handle WM_ENABLESPOUTMIX via PostMessage (not WM_COPYDATA)
-  case (0x0400 + 109): // WM_ENABLESPOUTMIX
+  // Handle WM_ENABLE_SPOUT_MIX via PostMessage (not WM_COPYDATA)
+  case WM_USER_ENABLE_SPOUT_MIX:
   {
     BOOL bEnable = (BOOL)wParam;
     g_plugin.EnableSpoutMixing(bEnable ? true : false);
     return 0;
   }
 
-  // Handle WM_SETVIDEODEVICE via PostMessage
-  case (0x0400 + 106): // WM_SETVIDEODEVICE
+  // Handle WM_SET_VIDEO_DEVICE via PostMessage
+  case WM_USER_SET_VIDEO_DEVICE:
   {
     int deviceIndex = (int)wParam;
     g_plugin.SetVideoDevice(deviceIndex);
     return 0;
   }
 
-  // Handle WM_ENABLEVIDEOMIX via PostMessage
-  case (0x0400 + 107): // WM_ENABLEVIDEOMIX
+  // Handle WM_ENABLE_VIDEO_MIX via PostMessage
+  case WM_USER_ENABLE_VIDEO_MIX:
   {
     BOOL bEnable = (BOOL)wParam;
     g_plugin.EnableVideoMixing(bEnable ? true : false);
+    return 0;
+  }
+
+  // Handle layer position (Top/Background) via PostMessage
+  case WM_USER_SET_INPUTMIX_ONTOP:
+  {
+    this->SetInputMixOnTop(wParam != 0);
     return 0;
   }
 
@@ -7272,157 +7270,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   case WM_KEYUP:
     return 1;
     break;
-
-  case WM_USER_ENABLESPOUTMIX:
-  {
-    bool enable = (bool)wParam;
-    wchar_t logBuf[512];
-    swprintf_s(logBuf, L"[SPOUT MIX] WM_USER_ENABLESPOUTMIX received: enable=%d", enable);
-    milkwave->LogInfo(logBuf);
-    
-    m_bSpoutInputEnabled = enable;
-
-    if (!enable && m_pSpoutReceiver) {
-      milkwave->LogInfo(L"[SPOUT MIX] Disabling Spout input - releasing receiver");
-      if (m_pSpoutInputTexture) {
-        m_pSpoutInputTexture->Release();
-        m_pSpoutInputTexture = nullptr;
-        milkwave->LogInfo(L"[SPOUT MIX] Released Spout input texture");
-      }
-      AddNotification(L"Spout Mix Off", 2.0f);
-    }
-    else if (enable) {
-      milkwave->LogInfo(L"[SPOUT MIX] Enabling Spout input");
-      
-      if (!m_pSpoutReceiver) {
-        milkwave->LogInfo(L"[SPOUT MIX] Creating new SpoutDX receiver");
-        m_pSpoutReceiver = new spoutDX9();
-        m_pSpoutReceiver->SetDX9device(GetDevice());
-      }
-      
-      if (m_szSpoutSenderName[0] != L'\0') {
-        swprintf_s(logBuf, L"[SPOUT MIX] Spout sender name is set to: %s", m_szSpoutSenderName);
-        milkwave->LogInfo(logBuf);
-        AddNotification(L"Spout Mix On", 2.0f);
-      } else {
-        milkwave->LogInfo(L"[SPOUT MIX] WARNING: No Spout sender name set!");
-        AddError(L"Spout Mix On (no sender)", 3.0f, ERR_NOTIFY, false);
-      }
-    }
-    return 0;
-  }
-
-  case WM_USER_SETSPOUTSENDER:
-  {
-    const wchar_t* senderName = (const wchar_t*)wParam;
-    wchar_t logBuf[512];
-    
-    if (senderName && senderName[0] != L'\0') {
-      swprintf_s(logBuf, L"[SPOUT MIX] WM_USER_SETSPOUTSENDER received: %s", senderName);
-      milkwave->LogInfo(logBuf);
-      
-      wcscpy_s(m_szSpoutSenderName, _countof(m_szSpoutSenderName), senderName);
-      
-      // Create SpoutDX receiver if it doesn't exist
-      if (!m_pSpoutReceiver) {
-        milkwave->LogInfo(L"[SPOUT MIX] Creating SpoutDX receiver for new sender");
-        m_pSpoutReceiver = new spoutDX9();
-        m_pSpoutReceiver->SetDX9device(GetDevice());
-      }
-      
-      // If Spout mixing is enabled, try to connect to the sender
-      if (m_bSpoutInputEnabled) {
-        swprintf_s(logBuf, L"[SPOUT MIX] Spout mix is enabled, will try to receive from: %s", m_szSpoutSenderName);
-        milkwave->LogInfo(logBuf);
-      } else {
-        milkwave->LogInfo(L"[SPOUT MIX] Spout mix is disabled, sender name stored for later use");
-      }
-    } else {
-      milkwave->LogInfo(L"[SPOUT MIX] WM_USER_SETSPOUTSENDER received empty/null sender name");
-    }
-    return 0;
-  }
-
-  case WM_USER_ENABLEVIDEOMIX:
-  {
-    bool enable = (bool)wParam;
-    m_bVideoInputEnabled = enable;
-
-    if (!enable && m_pVideoCapture) {
-      m_pVideoCapture->Stop();
-      AddNotification(L"Video Mix Off", 2.0f);
-    }
-    else if (enable && m_pVideoCapture && m_nVideoDeviceIndex >= 0) {
-      if (!m_pVideoCapture->Start()) {
-        m_bVideoInputEnabled = false;
-        milkwave->LogInfo(L"Failed to start video capture");
-        AddError(L"Video Mix failed to start", 3.0f, ERR_NOTIFY, false);
-      } else {
-        AddNotification(L"Video Mix On", 2.0f);
-      }
-    }
-    else if (enable) {
-      // Mix enabled but no device selected or initialized
-      AddError(L"Video Mix On (no device)", 3.0f, ERR_NOTIFY, false);
-    }
-    return 0;
-  }
-
-  case WM_USER_SETVIDEODEVICE:
-  {
-    int deviceIndex = (int)wParam;
-    wchar_t buf[256];
-    swprintf_s(buf, L"Setting video device index: %d", deviceIndex);
-    milkwave->LogInfo(buf);
-
-    // Create video capture object if needed
-    if (!m_pVideoCapture) {
-      m_pVideoCapture = new VideoCapture();
-    }
-
-    if (m_pVideoCapture) {
-      m_pVideoCapture->Stop();
-      m_pVideoCapture->Release();
-
-      // Initialize with 640x480 for now (can make configurable later)
-      if (m_pVideoCapture->Initialize(deviceIndex, 640, 480)) {
-        m_nVideoDeviceIndex = deviceIndex;
-        m_nVideoCaptureWidth = 640;   // Store dimensions
-        m_nVideoCaptureHeight = 480;  // Store dimensions
-        milkwave->LogInfo(L"Video device initialized successfully");
-
-        // Create D3D texture if needed - THIS WAS THE MISSING PIECE!
-        if (!m_pVideoCaptureTexture) {
-          LPDIRECT3DDEVICE9 lpDevice = GetDevice();
-          if (lpDevice) {
-            HRESULT hr = lpDevice->CreateTexture(
-              m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8,
-              D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
-            
-            if (SUCCEEDED(hr)) {
-              milkwave->LogInfo(L"Video capture texture created successfully");
-            } else {
-              milkwave->LogInfo(L"Failed to create video capture texture");
-            }
-          }
-        }
-
-        // Start capture if mixing is already enabled
-        if (m_bVideoInputEnabled) {
-          if (!m_pVideoCapture->Start()) {
-            m_bVideoInputEnabled = false;
-            milkwave->LogInfo(L"Failed to start video capture for new device");
-          } else {
-            milkwave->LogInfo(L"Video capture started for new device");
-          }
-        }
-      }
-      else {
-        milkwave->LogInfo(L"Failed to initialize video capture device");
-      }
-    }
-    return 0;
-  }
 
   default:
     return DefWindowProcW(hWnd, uMsg, wParam, lParam);
@@ -11492,7 +11339,8 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|QUALITY=" + std::to_wstring(m_fRenderQuality)
     + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0")
     + L"|HUE=" + std::to_wstring(m_ColShiftHue)
-    + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0");
+    + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0")
+    + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0");
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 

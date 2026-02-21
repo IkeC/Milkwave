@@ -293,6 +293,7 @@ namespace MilkwaveRemote
       numWavePushY = new NumericUpDown();
       numWavePushX = new NumericUpDown();
       tabInput = new TabPage();
+      chkInputTop = new CheckBox();
       btnSpoutInputScan = new Button();
       cboSputInput = new ComboBox();
       label11 = new Label();
@@ -3760,6 +3761,7 @@ namespace MilkwaveRemote
       // 
       tabInput.BackColor = SystemColors.ControlLight;
       tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Controls.Add(chkInputTop);
       tabInput.Controls.Add(chkSpoutMix);
       tabInput.Controls.Add(btnSpoutInputScan);
       tabInput.Controls.Add(cboSputInput);
@@ -3774,6 +3776,21 @@ namespace MilkwaveRemote
       tabInput.Size = new Size(611, 183);
       tabInput.TabIndex = 7;
       tabInput.Text = "Input";
+      // 
+      // chkInputTop
+      // 
+      chkInputTop.Appearance = Appearance.Button;
+      chkInputTop.FlatStyle = FlatStyle.System;
+      chkInputTop.Location = new Point(418, 8);
+      chkInputTop.Margin = new Padding(3, 2, 3, 2);
+      chkInputTop.Name = "chkInputTop";
+      chkInputTop.Size = new Size(55, 52);
+      chkInputTop.TabIndex = 133;
+      chkInputTop.Text = "Top";
+      chkInputTop.TextAlign = ContentAlignment.MiddleCenter;
+      chkInputTop.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkInputTop.UseVisualStyleBackColor = true;
+      chkInputTop.CheckedChanged += chkInputTop_CheckedChanged;
       // 
       // btnSpoutInputScan
       // 
@@ -5230,5 +5247,6 @@ namespace MilkwaveRemote
     private ComboBox cboSputInput;
     private Label label11;
     private CheckBox chkSpoutMix;
+    private CheckBox chkInputTop;
   }
 }

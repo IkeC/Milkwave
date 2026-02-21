@@ -70,6 +70,7 @@ namespace MilkwaveRemote {
     private const int WM_ENABLEVIDEOMIX = 0x0400 + 107;
     private const int WM_SETSPOUTSENDER = 0x0400 + 108;
     private const int WM_ENABLESPOUTMIX = 0x0400 + 109;
+    private const int WM_SET_INPUTMIX_ONTOP = 0x0400 + 113;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -1078,9 +1079,6 @@ namespace MilkwaveRemote {
 
       RemoteHelper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
 
-      // Initialize devices using OBS-style enumeration pattern
-      InitializeDeviceLists();
-
       string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
       if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
         timeBetweenPresets = 60m;
@@ -1111,7 +1109,6 @@ namespace MilkwaveRemote {
 
     /// <summary>
     /// Initialize all device lists using OBS-style enumeration pattern
-    /// TODO: Add cboVideoDevice, cboSpoutSender ComboBoxes to form Designer
     /// </summary>
     private void InitializeDeviceLists() {
       try {
@@ -1119,19 +1116,21 @@ namespace MilkwaveRemote {
         RemoteHelper.FillAudioDevices(cboAudioDevice);
 
         // Video devices (OBS-style DirectShow enumeration)
-        // Uncomment below once cboVideoDevice is added to the form Designer
-        // if (cboVideoDevice != null) {
-        //   string savedVideoDevice = RemoteHelper.GetIniValue("Milkwave", "VideoDevice", "");
-        //   DeviceManager.PopulateVideoDevices(cboVideoDevice, savedVideoDevice);
-        // }
+        if (cboVideoInput != null) {
+          string savedVideoDevice = RemoteHelper.GetIniValue("Milkwave", "VideoDevice", "");
+          DeviceManager.PopulateVideoDevices(cboVideoInput, savedVideoDevice);
+          chkVideoMix.Enabled = cboVideoInput.Enabled;
+          if (!chkVideoMix.Enabled) chkVideoMix.Checked = false;
+        }
 
         // Spout senders (OBS-style pattern with registry access)
-        // Uncomment below once cboSpoutSender is added to the form Designer
-        // if (cboSpoutSender != null) {
-        //   string savedSpoutSender = RemoteHelper.GetIniValue("Milkwave", "SpoutSender", "");
-        //   DeviceManager.PopulateSpoutSenders(cboSpoutSender, savedSpoutSender);
-        //   StartSpoutRefreshTimer();
-        // }
+        if (cboSputInput != null) {
+          string savedSpoutSender = RemoteHelper.GetIniValue("Milkwave", "SpoutSender", "");
+          DeviceManager.PopulateSpoutSenders(cboSputInput, savedSpoutSender);
+          chkSpoutMix.Enabled = cboSputInput.Enabled;
+          if (!chkSpoutMix.Enabled) chkSpoutMix.Checked = false;
+          StartSpoutRefreshTimer();
+        }
       } catch (Exception ex) {
         Debug.WriteLine($"Error initializing device lists: {ex.Message}");
       }
@@ -1143,17 +1142,20 @@ namespace MilkwaveRemote {
     /// </summary>
     private void StartSpoutRefreshTimer() {
       try {
-        // TODO: Uncomment when cboSpoutSender is added to form Designer
-        // spoutRefreshTimer = new System.Windows.Forms.Timer();
-        // spoutRefreshTimer.Interval = 2000; // Refresh every 2 seconds
-        // spoutRefreshTimer.Tick += (s, e) => {
-        //   try {
-        //     DeviceManager.RefreshSpoutSenders(cboSpoutSender);
-        //   } catch (Exception ex) {
-        //     Debug.WriteLine($"Error refreshing Spout senders: {ex.Message}");
-        //   }
-        // };
-        // spoutRefreshTimer.Start();
+        if (spoutRefreshTimer == null) {
+          spoutRefreshTimer = new System.Windows.Forms.Timer();
+          spoutRefreshTimer.Interval = 2000; // Refresh every 2 seconds
+          spoutRefreshTimer.Tick += (s, e) => {
+            try {
+              DeviceManager.RefreshSpoutSenders(cboSputInput);
+              chkSpoutMix.Enabled = cboSputInput.Enabled;
+              if (!chkSpoutMix.Enabled) chkSpoutMix.Checked = false;
+            } catch (Exception ex) {
+              Debug.WriteLine($"Error refreshing Spout senders: {ex.Message}");
+            }
+          };
+          spoutRefreshTimer.Start();
+        }
       } catch (Exception ex) {
         Debug.WriteLine($"Error starting Spout refresh timer: {ex.Message}");
       }
@@ -1246,6 +1248,9 @@ namespace MilkwaveRemote {
         numShadertoyFileIndex.Value = Math.Clamp(Settings.ShadertoyFileIndex, 1, shadertoyFilesList.Count);
         setShadertoyFileText();
       }
+
+      // Initialize devices using OBS-style enumeration pattern
+      InitializeDeviceLists();
     }
 
     private void PopulateMidiDevicesList() {
@@ -1422,6 +1427,8 @@ namespace MilkwaveRemote {
                     }
                   } else if (key.Equals("LOCKED", StringComparison.OrdinalIgnoreCase)) {
                     chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
+                    chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                   }
                 } catch (Exception ex) {
                   // ignore
@@ -6230,15 +6237,9 @@ namespace MilkwaveRemote {
 
     private void PopulateVideoDevices() {
       try {
-        cboVideoInput.Items.Clear();
-        var devices = RemoteHelper.GetVideoInputDevices();
-        foreach (var device in devices) {
-          cboVideoInput.Items.Add(device);
-        }
-        if (cboVideoInput.Items.Count > 0 && cboVideoInput.SelectedIndex < 0) {
-          cboVideoInput.SelectedIndex = 0;
-        }
-        // Dropdown is always enabled, not dependent on Mix checkbox
+        DeviceManager.PopulateVideoDevices(cboVideoInput);
+        chkVideoMix.Enabled = cboVideoInput.Enabled;
+        if (!chkVideoMix.Enabled) chkVideoMix.Checked = false;
       } catch (Exception ex) {
         SetStatusText($"Error enumerating video devices: {ex.Message}");
       }
@@ -6301,19 +6302,15 @@ namespace MilkwaveRemote {
 
     private void btnVideoInputScan_Click(object sender, EventArgs e) {
       PopulateVideoDevices();
-      SetStatusText($"Video devices rescanned: {cboVideoInput.Items.Count} found");
+      int realCount = cboVideoInput.Enabled ? cboVideoInput.Items.Count : 0;
+      SetStatusText($"Video devices rescanned: {realCount} found");
     }
 
     private void PopulateSpoutSenders() {
       try {
-        cboSputInput.Items.Clear();
-        var senders = RemoteHelper.GetSpoutSenders();
-        foreach (var sender in senders) {
-          cboSputInput.Items.Add(sender);
-        }
-        if (cboSputInput.Items.Count > 0 && cboSputInput.SelectedIndex < 0) {
-          cboSputInput.SelectedIndex = 0;
-        }
+        DeviceManager.PopulateSpoutSenders(cboSputInput);
+        chkSpoutMix.Enabled = cboSputInput.Enabled;
+        if (!chkSpoutMix.Enabled) chkSpoutMix.Checked = false;
       } catch (Exception ex) {
         SetStatusText($"Error enumerating Spout senders: {ex.Message}");
       }
@@ -6373,7 +6370,25 @@ namespace MilkwaveRemote {
 
     private void btnSpoutInputScan_Click(object sender, EventArgs e) {
       PopulateSpoutSenders();
-      SetStatusText($"Spout senders rescanned: {cboSputInput.Items.Count} found");
+      int realCount = cboSputInput.Enabled ? cboSputInput.Items.Count : 0;
+      SetStatusText($"Spout senders rescanned: {realCount} found");
+    }
+
+    private void chkInputTop_CheckedChanged(object sender, EventArgs e) {
+      try {
+        if (updatingSettingsParams) return;
+
+        bool onTop = chkInputTop.Checked;
+        IntPtr foundWindow = FindVisualizerWindow();
+        if (foundWindow != IntPtr.Zero) {
+          bool sent = PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero) != IntPtr.Zero;
+          SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")} (sent={sent})");
+        } else {
+          SetStatusText(windowNotFound);
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error setting input layer position: {ex.Message}");
+      }
     }
     #endregion
 
