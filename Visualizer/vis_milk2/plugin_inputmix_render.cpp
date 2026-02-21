@@ -3,17 +3,42 @@
 
 // Update video capture texture with latest frame
 void CPlugin::UpdateVideoInputTexture() {
+    static bool firstCall = true;
+    static int frameCount = 0;
+
+    if (firstCall) {
+        wchar_t buf[512];
+        swprintf_s(buf, L"========================= UpdateVideoInputTexture START (First Call) =========================");
+        if (milkwave) milkwave->LogInfo(buf);
+        swprintf_s(buf, L"  m_bVideoInputEnabled=%d, index=%d", m_bVideoInputEnabled, m_nVideoDeviceIndex);
+        if (milkwave) milkwave->LogInfo(buf);
+        swprintf_s(buf, L"  m_pVideoCapture=0x%p, m_pVideoCaptureTexture=0x%p", m_pVideoCapture, m_pVideoCaptureTexture);
+        if (milkwave) milkwave->LogInfo(buf);
+        firstCall = false;
+    }
+
     if (!m_bVideoInputEnabled || !m_pVideoCaptureTexture || !m_pVideoCapture) {
         return;
     }
-    
+
     LPDIRECT3DDEVICE9 lpDevice = GetDevice();
     if (!lpDevice) {
         return;
     }
-    
+
     // Copy latest frame from video capture to D3D texture
-    m_pVideoCapture->CopyFrameToTexture(m_pVideoCaptureTexture, lpDevice);
+    bool success = m_pVideoCapture->CopyFrameToTexture(m_pVideoCaptureTexture, lpDevice);
+
+    if (frameCount % 60 == 0) {
+        wchar_t buf[512];
+        swprintf_s(buf, L"UpdateVideoInputTexture: Frame %d - success=%d, attempts=%d, success_frames=%d, callback_frames=%d",
+            frameCount, success, 
+            m_pVideoCapture->GetFrameAttempts(),
+            m_pVideoCapture->GetSuccessfulFrames(),
+            m_pVideoCapture->GetCallbackFramesReceived());
+        if (milkwave) milkwave->LogInfo(buf);
+    }
+    frameCount++;
 }
 
 // Update Spout input texture with latest frame
@@ -232,18 +257,22 @@ void CPlugin::CompositeInputMixing() {
     float left = 0, top = 0, right = targetWidth, bottom = targetHeight;
 
     if (inputAspect > backbufferAspect) {
-        // Input is wider - fit to width
-        float scaledHeight = targetWidth / inputAspect;
-        float yOffset = (targetHeight - scaledHeight) / 2.0f;
-        top = yOffset;
-        bottom = yOffset + scaledHeight;
-    }
-    else {
-        // Input is taller - fit to height
+        // Input is wider - cover the window by fitting height and letting width overflow (to be cropped)
         float scaledWidth = targetHeight * inputAspect;
         float xOffset = (targetWidth - scaledWidth) / 2.0f;
         left = xOffset;
         right = xOffset + scaledWidth;
+        top = 0;
+        bottom = targetHeight;
+    }
+    else {
+        // Input is taller - cover the window by fitting width and letting height overflow (to be cropped)
+        float scaledHeight = targetWidth / inputAspect;
+        float yOffset = (targetHeight - scaledHeight) / 2.0f;
+        left = 0;
+        right = targetWidth;
+        top = yOffset;
+        bottom = yOffset + scaledHeight;
     }
 
     // Draw a fullscreen quad with the input texture

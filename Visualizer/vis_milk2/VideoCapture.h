@@ -56,7 +56,13 @@ public:
     
     // IFrameCallback
     void OnFrameReceived(BYTE* pBuffer, long bufferLen) override;
-    
+
+    void UpdateBuffer(BYTE* pFrameBuffer, int width, int height) {
+        m_pFrameBuffer = pFrameBuffer;
+        m_width = width;
+        m_height = height;
+    }
+
     bool HasReceivedFrames() const { return m_framesReceived > 0; }
     int GetFramesReceived() const { return m_framesReceived; }
     

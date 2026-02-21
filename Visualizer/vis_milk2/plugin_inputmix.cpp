@@ -18,11 +18,16 @@ void CPlugin::SetVideoDevice(int deviceIndex) {
         
         // Reinitialize with new device
         m_pVideoCapture = new VideoCapture();
-        if (m_pVideoCapture->Initialize(deviceIndex, 640, 480)) {
+        int requestW = GetWidth();
+        int requestH = GetHeight();
+        if (requestW <= 0) requestW = 640;
+        if (requestH <= 0) requestH = 480;
+
+        if (m_pVideoCapture->Initialize(deviceIndex, requestW, requestH)) {
             if (m_pVideoCapture->Start()) {
-                m_nVideoCaptureWidth = 640;
-                m_nVideoCaptureHeight = 480;
-                
+                m_nVideoCaptureWidth = m_pVideoCapture->GetWidth();
+                m_nVideoCaptureHeight = m_pVideoCapture->GetHeight();
+
                 // Create D3D texture for video frames
                 if (m_lpDX && m_lpDX->m_lpDevice) {
                     HRESULT hr = m_lpDX->m_lpDevice->CreateTexture(
@@ -57,11 +62,16 @@ void CPlugin::EnableVideoMixing(bool enable) {
         // Initialize video capture if not already done
         if (!m_pVideoCapture) {
             m_pVideoCapture = new VideoCapture();
-            if (m_pVideoCapture->Initialize(m_nVideoDeviceIndex, 640, 480)) {
+            int requestW = GetWidth();
+            int requestH = GetHeight();
+            if (requestW <= 0) requestW = 640;
+            if (requestH <= 0) requestH = 480;
+
+            if (m_pVideoCapture->Initialize(m_nVideoDeviceIndex, requestW, requestH)) {
                 if (m_pVideoCapture->Start()) {
-                    m_nVideoCaptureWidth = 640;
-                    m_nVideoCaptureHeight = 480;
-                    
+                    m_nVideoCaptureWidth = m_pVideoCapture->GetWidth();
+                    m_nVideoCaptureHeight = m_pVideoCapture->GetHeight();
+
                     // Create D3D texture
                     if (m_lpDX && m_lpDX->m_lpDevice) {
                         HRESULT hr = m_lpDX->m_lpDevice->CreateTexture(
