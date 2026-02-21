@@ -1238,6 +1238,14 @@ void CPlugin::RenderFrame(int bRedraw) {
   fOldTime = fNewTime;
   */
 
+  // =========================================================
+  //
+  // INPUT MIXING - Composite video or Spout input onto backbuffer
+  //
+  if (m_bVideoInputEnabled || m_bSpoutInputEnabled) {
+    CompositeInputMixing();
+  }
+  // =========================================================
 
   // =========================================================
   //

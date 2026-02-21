@@ -12,6 +12,7 @@ using System.Text.Json;
 using static MilkwaveRemote.Data.MidiRow;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
+using static MilkwaveRemote.Helper.DeviceManager;
 
 namespace MilkwaveRemote {
   public partial class MilkwaveRemoteForm : Form {
@@ -67,6 +68,8 @@ namespace MilkwaveRemote {
     private const int WM_CAPTURE_SCREENSHOT = 0x0400 + 105;
     private const int WM_SETVIDEODEVICE = 0x0400 + 106;
     private const int WM_ENABLEVIDEOMIX = 0x0400 + 107;
+    private const int WM_SETSPOUTSENDER = 0x0400 + 108;
+    private const int WM_ENABLESPOUTMIX = 0x0400 + 109;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -74,6 +77,7 @@ namespace MilkwaveRemote {
 
     private System.Windows.Forms.Timer autoplayTimer;
     private System.Windows.Forms.Timer monitorTimer;
+    private System.Windows.Forms.Timer spoutRefreshTimer;
 
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
@@ -270,7 +274,9 @@ namespace MilkwaveRemote {
       ColBrightness,
       HueAuto,
       HueAutoSeconds,
-      CaptureScreenshot
+      CaptureScreenshot,
+      VideoInput,
+      SpoutInput
     }
 
     private class PendingThumbnail {
@@ -1071,9 +1077,9 @@ namespace MilkwaveRemote {
       txtShaderGLSL.Font = txtShaderHLSL.Font;
 
       RemoteHelper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
-      RemoteHelper.FillAudioDevices(cboAudioDevice);
 
-      PopulateVideoDevices();
+      // Initialize devices using OBS-style enumeration pattern
+      InitializeDeviceLists();
 
       string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
       if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
@@ -1101,6 +1107,71 @@ namespace MilkwaveRemote {
         }
       }
       return result;
+    }
+
+    /// <summary>
+    /// Initialize all device lists using OBS-style enumeration pattern
+    /// TODO: Add cboVideoDevice, cboSpoutSender ComboBoxes to form Designer
+    /// </summary>
+    private void InitializeDeviceLists() {
+      try {
+        // Audio devices (existing NAudio-based enumeration)
+        RemoteHelper.FillAudioDevices(cboAudioDevice);
+
+        // Video devices (OBS-style DirectShow enumeration)
+        // Uncomment below once cboVideoDevice is added to the form Designer
+        // if (cboVideoDevice != null) {
+        //   string savedVideoDevice = RemoteHelper.GetIniValue("Milkwave", "VideoDevice", "");
+        //   DeviceManager.PopulateVideoDevices(cboVideoDevice, savedVideoDevice);
+        // }
+
+        // Spout senders (OBS-style pattern with registry access)
+        // Uncomment below once cboSpoutSender is added to the form Designer
+        // if (cboSpoutSender != null) {
+        //   string savedSpoutSender = RemoteHelper.GetIniValue("Milkwave", "SpoutSender", "");
+        //   DeviceManager.PopulateSpoutSenders(cboSpoutSender, savedSpoutSender);
+        //   StartSpoutRefreshTimer();
+        // }
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error initializing device lists: {ex.Message}");
+      }
+    }
+
+    /// <summary>
+    /// Start periodic Spout sender refresh timer
+    /// Allows detection of new Spout senders appearing at runtime
+    /// </summary>
+    private void StartSpoutRefreshTimer() {
+      try {
+        // TODO: Uncomment when cboSpoutSender is added to form Designer
+        // spoutRefreshTimer = new System.Windows.Forms.Timer();
+        // spoutRefreshTimer.Interval = 2000; // Refresh every 2 seconds
+        // spoutRefreshTimer.Tick += (s, e) => {
+        //   try {
+        //     DeviceManager.RefreshSpoutSenders(cboSpoutSender);
+        //   } catch (Exception ex) {
+        //     Debug.WriteLine($"Error refreshing Spout senders: {ex.Message}");
+        //   }
+        // };
+        // spoutRefreshTimer.Start();
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error starting Spout refresh timer: {ex.Message}");
+      }
+    }
+
+    private void SendStringMessage(IntPtr windowHandle, int messageId, string message) {
+      byte[] messageBytes = Encoding.Unicode.GetBytes(message);
+      IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
+      Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
+
+      COPYDATASTRUCT cds = new COPYDATASTRUCT {
+        dwData = (IntPtr)messageId,
+        cbData = messageBytes.Length,
+        lpData = messagePtr
+      };
+
+      SendMessageW(windowHandle, WM_COPYDATA, IntPtr.Zero, ref cds);
+      Marshal.FreeHGlobal(messagePtr);
     }
 
     private void MainForm_Shown(object sender, EventArgs e) {
@@ -1519,6 +1590,31 @@ namespace MilkwaveRemote {
               message = "VAR_AUTO=" + (chkQualityAuto.Checked ? "1" : "0");
             } else if (type == MessageType.CaptureScreenshot) {
               message = messageToSend;
+            } else if (type == MessageType.VideoInput) {
+              string deviceName = cboVideoInput.Text;
+              bool mixEnabled = chkVideoMix.Checked;
+              message = "VIDEOINPUT=" + (mixEnabled ? "1" : "0") + "|" + deviceName;
+              statusMessage = $"Video input mixing {(mixEnabled ? "enabled" : "disabled")}: {deviceName}";
+            } else if (type == MessageType.SpoutInput) {
+              string senderName = cboSputInput.Text;
+              bool mixEnabled = chkSpoutMix.Checked;
+              statusMessage = $"Spout mixing {(mixEnabled ? "enabled" : "disabled")}: {senderName}";
+
+              // Use direct window messages - send sender name FIRST, then enable
+              if (foundWindow != IntPtr.Zero) {
+                if (mixEnabled && senderName.Length > 0) {
+                  SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
+                  System.Threading.Thread.Sleep(50);
+                }
+                PostMessage(foundWindow, WM_ENABLESPOUTMIX, (IntPtr)(mixEnabled ? 1 : 0), IntPtr.Zero);
+                if (statusMessage.Length > 0) {
+                  SetStatusText($"{statusMessage} {foundWindowTitle}");
+                }
+              } else {
+                SetStatusText(windowNotFound);
+              }
+              SendingMessage = false;
+              return;
             } else if (type == MessageType.Message) {
               if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
                 // try auto-wrap
@@ -6152,6 +6248,11 @@ namespace MilkwaveRemote {
       try {
         bool enabled = chkVideoMix.Checked;
 
+        // Make Mix buttons mutually exclusive
+        if (enabled && chkSpoutMix.Checked) {
+          chkSpoutMix.Checked = false;
+        }
+
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
           // Always send device index first (even if already sent) to ensure it's initialized
@@ -6197,11 +6298,120 @@ namespace MilkwaveRemote {
         SetStatusText($"Error changing video device: {ex.Message}");
       }
     }
-    #endregion
 
     private void btnVideoInputScan_Click(object sender, EventArgs e) {
       PopulateVideoDevices();
       SetStatusText($"Video devices rescanned: {cboVideoInput.Items.Count} found");
     }
+
+    private void PopulateSpoutSenders() {
+      try {
+        cboSputInput.Items.Clear();
+        var senders = RemoteHelper.GetSpoutSenders();
+        foreach (var sender in senders) {
+          cboSputInput.Items.Add(sender);
+        }
+        if (cboSputInput.Items.Count > 0 && cboSputInput.SelectedIndex < 0) {
+          cboSputInput.SelectedIndex = 0;
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error enumerating Spout senders: {ex.Message}");
+      }
+    }
+
+    private void chkSpoutMix_CheckedChanged(object sender, EventArgs e) {
+      try {
+        bool enabled = chkSpoutMix.Checked;
+
+        // Make Mix buttons mutually exclusive
+        if (enabled && chkVideoMix.Checked) {
+          chkVideoMix.Checked = false;
+        }
+
+        IntPtr foundWindow = FindVisualizerWindow();
+        if (foundWindow != IntPtr.Zero) {
+          // Send sender name and then enable/disable mixing
+          if (enabled && cboSputInput.SelectedIndex >= 0) {
+            string senderName = cboSputInput.Text;
+            SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
+            System.Threading.Thread.Sleep(50);
+          }
+
+          PostMessage(foundWindow, WM_ENABLESPOUTMIX, (IntPtr)(enabled ? 1 : 0), IntPtr.Zero);
+
+          if (enabled && cboSputInput.SelectedIndex >= 0) {
+            SetStatusText($"Spout mixing enabled: {cboSputInput.Text}");
+          } else if (enabled) {
+            SetStatusText("Spout mixing enabled but no sender selected");
+          } else {
+            SetStatusText("Spout mixing disabled");
+          }
+        } else {
+          SetStatusText(windowNotFound);
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error toggling Spout mix: {ex.Message}");
+      }
+    }
+
+    private void cboSpoutInput_SelectedIndexChanged(object sender, EventArgs e) {
+      try {
+        if (chkSpoutMix.Checked && cboSputInput.SelectedIndex >= 0) {
+          IntPtr foundWindow = FindVisualizerWindow();
+          if (foundWindow != IntPtr.Zero) {
+            string senderName = cboSputInput.Text;
+            SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
+            SetStatusText($"Spout sender changed: {senderName}");
+          } else {
+            SetStatusText(windowNotFound);
+          }
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error changing Spout sender: {ex.Message}");
+      }
+    }
+
+    private void btnSpoutInputScan_Click(object sender, EventArgs e) {
+      PopulateSpoutSenders();
+      SetStatusText($"Spout senders rescanned: {cboSputInput.Items.Count} found");
+    }
+    #endregion
+
+    #region Device Enumeration (OBS-Style Pattern)
+
+    /// <summary>
+    /// Send selected Spout sender to visualizer via window message
+    /// </summary>
+    private void SendSpoutSenderToVisualizer(string senderName) {
+      try {
+        IntPtr hWnd = FindVisualizerWindow();
+        if (hWnd == IntPtr.Zero) {
+          Debug.WriteLine("Visualizer window not found");
+          return;
+        }
+
+        // Convert sender name to wide char for Windows message
+        byte[] senderBytes = Encoding.Unicode.GetBytes(senderName);
+        IntPtr senderPtr = Marshal.AllocHGlobal(senderBytes.Length + 2);
+        Marshal.Copy(senderBytes, 0, senderPtr, senderBytes.Length);
+        Marshal.WriteInt16(senderPtr, senderBytes.Length, 0); // Null terminator
+
+        COPYDATASTRUCT cds = new COPYDATASTRUCT {
+          dwData = (IntPtr)WM_SETSPOUTSENDER,
+          cbData = senderBytes.Length + 2,
+          lpData = senderPtr
+        };
+
+        SendMessageW(hWnd, WM_COPYDATA, IntPtr.Zero, ref cds);
+        Marshal.FreeHGlobal(senderPtr);
+
+        Debug.WriteLine($"Sent Spout sender '{senderName}' to visualizer");
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error sending Spout sender to visualizer: {ex.Message}");
+      }
+    }
+
+    #endregion
+
   } // end class
 } // end namespace

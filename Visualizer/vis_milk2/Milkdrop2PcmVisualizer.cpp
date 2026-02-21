@@ -1149,6 +1149,32 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     break;
   }
 
+  case WM_USER + 106: // WM_SETVIDEODEVICE
+  {
+    int deviceIndex = (int)wParam;
+    g_plugin.SetVideoDevice(deviceIndex);
+    return 0;
+  }
+
+  case WM_USER + 107: // WM_ENABLEVIDEOMIX
+  {
+    bool enable = (wParam != 0);
+    g_plugin.EnableVideoMixing(enable);
+    return 0;
+  }
+
+  case WM_USER + 109: // WM_ENABLESPOUTMIX
+  {
+    bool enable = (wParam != 0);
+    g_plugin.EnableSpoutMixing(enable);
+    return 0;
+  }
+
+  case (0x004A): // WM_COPYDATA
+  {
+    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+  }
+
   default:
     return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
   }

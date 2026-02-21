@@ -106,6 +106,12 @@
     <ClCompile Include="VideoCapture.cpp">
       <Filter>library\sources</Filter>
     </ClCompile>
+    <ClCompile Include="plugin_inputmix.cpp">
+      <Filter>musikcube</Filter>
+    </ClCompile>
+    <ClCompile Include="plugin_inputmix_render.cpp">
+      <Filter>musikcube</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="wasabi.h">

@@ -344,6 +344,126 @@ namespace MilkwaveRemote.Helper {
 
       return devices;
     }
+
+    // P/Invoke for Spout sender enumeration
+    // Spout uses shared memory to track active senders
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr CreateFileMapping(
+        IntPtr hFile,
+        IntPtr lpFileMappingAttributes,
+        uint flProtect,
+        uint dwMaximumSizeHigh,
+        uint dwMaximumSizeLow,
+        string lpName);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr MapViewOfFile(
+        IntPtr hFileMappingObject,
+        uint dwDesiredAccess,
+        uint dwFileOffsetHigh,
+        uint dwFileOffsetLow,
+        IntPtr dwNumberOfBytesToMap);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    private const uint FILE_MAP_READ = 4;
+    private const uint PAGE_READONLY = 2;
+
+    public static List<string> GetSpoutSenders() {
+      var senders = new List<string>();
+      System.Diagnostics.Debug.WriteLine("=== GetSpoutSenders: Starting Spout sender enumeration ===");
+
+      try {
+        IntPtr hMapFile = OpenFileMapping(FILE_MAP_READ, false, "SpoutSenderNames");
+
+        if (hMapFile != IntPtr.Zero) {
+          System.Diagnostics.Debug.WriteLine("GetSpoutSenders: Found SpoutSenderNames shared memory");
+
+          // Standard Spout 2 shared memory layout for "SpoutSenderNames":
+          // No header! Just slots of 256 bytes each.
+          // SpoutSDK iterates up to m_MaxSenders (usually 64 or 256).
+          const int maxSlots = 64; 
+          const int bufferSize = maxSlots * 256;
+          IntPtr pBuf = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, new IntPtr(bufferSize));
+
+          if (pBuf != IntPtr.Zero) {
+            try {
+              byte[] buffer = new byte[bufferSize];
+              System.Runtime.InteropServices.Marshal.Copy(pBuf, buffer, 0, bufferSize);
+
+              int offset = 0; // Spout starts names at offset 0
+              for (int i = 0; i < maxSlots; i++) {
+                int slotStart = offset + (i * 256);
+                if (slotStart >= bufferSize - 1) break;
+
+                // Spout SDK specifies that an empty first byte terminates the active list
+                if (buffer[slotStart] == 0) {
+                  System.Diagnostics.Debug.WriteLine($"GetSpoutSenders: Slot {i} is empty, stopping.");
+                  break; 
+                }
+
+                // Find null terminator within this 256-byte slot
+                int nullPos = System.Array.IndexOf(buffer, (byte)0, slotStart, 256);
+                int strLen = (nullPos >= 0) ? (nullPos - slotStart) : 256;
+
+                if (strLen > 0) {
+                  try {
+                    string senderName = System.Text.Encoding.ASCII.GetString(buffer, slotStart, strLen).Trim();
+                    // Validation: must not be empty and must look like a valid name
+                    if (!string.IsNullOrWhiteSpace(senderName) && char.IsLetterOrDigit(senderName[0])) {
+                      if (!senders.Contains(senderName)) {
+                        System.Diagnostics.Debug.WriteLine($"GetSpoutSenders: Found sender '{senderName}' in slot {i}");
+                        senders.Add(senderName);
+                      }
+                    }
+                  } catch (Exception ex) {
+                    System.Diagnostics.Debug.WriteLine($"GetSpoutSenders: Error decoding slot {i}: {ex.Message}");
+                  }
+                }
+              }
+            } finally {
+              UnmapViewOfFile(pBuf);
+            }
+          }
+          CloseHandle(hMapFile);
+        }
+      } catch (Exception ex) {
+        System.Diagnostics.Debug.WriteLine($"GetSpoutSenders Exception: {ex.Message}");
+      }
+
+      System.Diagnostics.Debug.WriteLine($"=== GetSpoutSenders: Found {senders.Count} senders ===");
+      return senders;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenFileMapping(
+        uint dwDesiredAccess,
+        bool bInheritHandle,
+        string lpName);
+
+    /// <summary>
+    /// DIAGNOSTIC ONLY: Write a test sender to the registry for debugging Spout sender discovery.
+    /// This simulates what a Spout sender application should do when it activates.
+    /// </summary>
+    public static void WriteTestSpoutSender(string senderName = "MilkwaveVisualizer") {
+      try {
+        using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Leading Edge\Spout")) {
+          if (key != null) {
+            // Write the sender name with a dummy value (Spout just checks for presence)
+            key.SetValue(senderName, 1);
+            System.Diagnostics.Debug.WriteLine($"WriteTestSpoutSender: Registered '{senderName}' in registry");
+          }
+        }
+      } catch (Exception ex) {
+        System.Diagnostics.Debug.WriteLine($"WriteTestSpoutSender: Failed to write registry: {ex.Message}");
+      }
+    }
   }
 }
+
+
 

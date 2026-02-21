@@ -17,6 +17,7 @@ This is a Windows API constant defined in `winuser.h`. Always use the correct sp
 ### .NET Code  
 - **Framework**: .NET 8
 - **Language**: C#
+- **Device Enumeration**: Uses OBS Studio patterns via `DeviceEnumerator` and `DeviceManager` classes
 
 ## Project Structure
 
@@ -41,12 +42,21 @@ This is a Windows API constant defined in `winuser.h`. Always use the correct sp
 - C++: Use try/catch for std::exception
 - SEH (Structured Exception Handling) is used for low-level exceptions
 - All logging goes through the Milkwave logging system
+- C#/.NET: Use try/catch with Debug.WriteLine for internal errors
 
 ### Threading
 - Render thread: Main window and DirectX rendering
 - Setup thread: Shader precompilation
 - Audio thread: WASAPI loopback capture
 - Use `std::atomic` for thread-safe flags
+
+### Device Enumeration (C#/.NET 8)
+- **Pattern**: OBS Studio two-layer architecture
+- **Core Layer**: `DeviceEnumerator` - COM interfaces, registry access (static)
+- **UI Layer**: `DeviceManager` - ComboBox helpers, user-friendly methods (static)
+- **Supported**: DirectShow video/audio, Spout senders
+- **Error Handling**: Graceful degradation with Debug output
+- **Usage**: `DeviceManager.PopulateSpoutSenders(comboBox, selectedName)`
 
 ## Naming Conventions
 
@@ -71,3 +81,30 @@ This is a Windows API constant defined in `winuser.h`. Always use the correct sp
 - Debug: Uses `../../Release` as working directory
 - Release: Uses executable directory as base path
 - Always append backslash to base directory paths
+
+## External Dependencies
+
+### Spout Sender Enumeration (Current Implementation)
+- **Location**: `Visualizer\spoutDX9\SpoutSenderNames.*`
+- **Key Classes**: 
+  - `spoutSenderNames` - Manages Spout sender registration and discovery
+- **Main Functions for Remote**:
+  - `GetSenderNames(std::set<std::string> *sendernames)` - Retrieve all registered sender names
+  - `GetSenderCount()` - Get number of active senders
+  - `GetSender(int index, char* sendername, int MaxSize)` - Get sender by index
+  - `GetSenderNameInfo(int index, ...)` - Get sender details (width, height, share handle)
+  - `FindActiveSender(...)` - Get currently active sender
+- **Shared Memory Access**: Uses Windows named shared memory maps to enumerate senders
+- **Max Senders**: Configurable via registry (default: 64)
+
+### obs-studio Integration Reference
+- **Location**: `C:\Source\obs-studio`
+- **Relevant Plugin**: `plugins\win-capture\` - DirectX capture plugins
+- **Other Win Plugins**:
+  - `plugins\win-dshow\` - DirectShow (video device enumeration)
+  - `plugins\win-wasapi\` - Windows Audio Session API
+- **Purpose**: Review OBS implementation for Spout sender enumeration improvements
+- **Note**: OBS Studio may handle Spout discovery differently than Milkwave's direct shared memory approach
+- **Potential Integration Points**:
+  - Study OBS sender enumeration patterns for .NET interop improvements
+  - Check if OBS uses registry or alternative methods for sender discovery

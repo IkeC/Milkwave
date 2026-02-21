@@ -194,6 +194,8 @@
     <ClCompile Include="..\spoutDX9\SpoutSharedMemory.cpp" />
     <ClCompile Include="..\spoutDX9\SpoutUtils.cpp" />
     <ClCompile Include="AMDDetection.cpp" />
+    <ClCompile Include="plugin_inputmix.cpp" />
+    <ClCompile Include="plugin_inputmix_render.cpp" />
     <ClCompile Include="VideoCapture.cpp" />
     <ClCompile Include="dxcontext.cpp" />
     <ClCompile Include="fft.cpp" />

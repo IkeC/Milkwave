@@ -2647,7 +2647,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutMix.Appearance = Appearance.Button;
       chkSpoutMix.FlatStyle = FlatStyle.System;
-      chkSpoutMix.Location = new Point(355, 37);
+      chkSpoutMix.Location = new Point(356, 37);
       chkSpoutMix.Margin = new Padding(3, 2, 3, 2);
       chkSpoutMix.Name = "chkSpoutMix";
       chkSpoutMix.Size = new Size(55, 23);
@@ -2655,8 +2655,9 @@ namespace MilkwaveRemote
       chkSpoutMix.Text = "Mix";
       chkSpoutMix.TextAlign = ContentAlignment.MiddleCenter;
       chkSpoutMix.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkSpoutMix, "Enable video mixing with preset output");
+      toolTip1.SetToolTip(chkSpoutMix, "Enable Spout mixing with preset output");
       chkSpoutMix.UseVisualStyleBackColor = true;
+      chkSpoutMix.CheckedChanged += chkSpoutMix_CheckedChanged;
       // 
       // cboSettingsOpenFile
       // 
@@ -3783,6 +3784,7 @@ namespace MilkwaveRemote
       btnSpoutInputScan.TabIndex = 131;
       btnSpoutInputScan.Text = "Scan";
       btnSpoutInputScan.UseVisualStyleBackColor = true;
+      btnSpoutInputScan.Click += btnSpoutInputScan_Click;
       // 
       // cboSputInput
       // 
@@ -3792,6 +3794,7 @@ namespace MilkwaveRemote
       cboSputInput.Name = "cboSputInput";
       cboSputInput.Size = new Size(232, 23);
       cboSputInput.TabIndex = 129;
+      cboSputInput.SelectedIndexChanged += cboSpoutInput_SelectedIndexChanged;
       // 
       // label11
       // 

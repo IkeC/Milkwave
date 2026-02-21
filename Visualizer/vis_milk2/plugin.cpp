@@ -613,6 +613,17 @@ SPOUT :
 
 #include <dwmapi.h>  // Link with Dwmapi.lib
 #pragma comment(lib, "dwmapi.lib")
+
+// Define custom message IDs
+#define WM_USER_ENABLESPOUTMIX    (WM_USER + 100)
+#define WM_USER_SETSPOUTSENDER    (WM_USER + 101)
+#define WM_USER_ENABLEVIDEOMIX    (WM_USER + 102)
+#define WM_USER_SETVIDEODEVICE    (WM_USER + 103)
+#define WM_USER_MESSAGE_MODE      (WM_USER + 104)
+#define WM_USER_SPRITE_MODE       (WM_USER + 105)
+#define WM_USER_PREV_PRESET       (WM_USER + 106)
+#define WM_USER_NEXT_PRESET       (WM_USER + 107)
+
 #define FRAND ((rand() % 7381)/7380.0f)
 #define clamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 
@@ -1698,6 +1709,15 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   m_bVideoInputEnabled = false;
   m_nVideoDeviceIndex = -1;
 
+  // Initialize Spout input receiver
+  m_pSpoutReceiver = nullptr;
+  m_pSpoutInputTexture = nullptr;
+  m_szSpoutSenderName[0] = '\0';
+  m_nSpoutInputWidth = 0;
+  m_nSpoutInputHeight = 0;
+  m_bSpoutInputEnabled = false;
+
+
   //LoadRandomPreset(0.0f);   -avoid this here; causes some DX9 stuff to happen.
 
   return true;
@@ -1734,6 +1754,17 @@ void CPlugin::CleanUpMyNonDx9Stuff() {
     m_pVideoCapture->Release();
     delete m_pVideoCapture;
     m_pVideoCapture = nullptr;
+  }
+
+  // Clean up Spout input receiver
+  if (m_pSpoutReceiver) {
+    if (m_pSpoutInputTexture) {
+      m_pSpoutInputTexture->Release();
+      m_pSpoutInputTexture = nullptr;
+    }
+    m_pSpoutReceiver->ReleaseReceiver();
+    delete m_pSpoutReceiver;
+    m_pSpoutReceiver = nullptr;
   }
 
 // =========================================================
@@ -5833,24 +5864,63 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   case WM_COPYDATA:
   {
     PCOPYDATASTRUCT pCopyData = (PCOPYDATASTRUCT)lParam;
+    if (!pCopyData) return 0;
+
+    // Handle Spout sender name message (WM_SETSPOUTSENDER)
+    if (pCopyData->dwData == (0x0400 + 108)) { // WM_SETSPOUTSENDER
+      wchar_t* senderNameRaw = (wchar_t*)pCopyData->lpData;
+      size_t nameLength = pCopyData->cbData / sizeof(wchar_t);
+
+      if (nameLength > 0 && senderNameRaw) {
+        wchar_t senderNameLocal[256];
+        size_t copyLen = (nameLength < 255) ? nameLength : 255;
+        memcpy(senderNameLocal, senderNameRaw, copyLen * sizeof(wchar_t));
+        senderNameLocal[copyLen] = L'\0';
+
+        this->SetSpoutSender(senderNameLocal);
+      }
+      return 0; // Message handled
+    }
+
+    // Standard message handling (dwData == 1)
     if (pCopyData->dwData == 1) { // Custom identifier for the message
       wchar_t* receivedMessage = (wchar_t*)pCopyData->lpData;
+      if (!receivedMessage) return 0;
 
       // Calculate the length in wchar_t units
       size_t messageLength = pCopyData->cbData / sizeof(wchar_t);
 
       // Ensure the received message is null-terminated
       if (messageLength > 0) {
-        if (receivedMessage[messageLength - 1] != L'\0') {
-          // Add null-terminator only if it's not already present
-          receivedMessage[messageLength] = L'\0';
-        }
+        LaunchMessage(receivedMessage);
       }
-      LaunchMessage(receivedMessage);
       return 0; // Message handled
-      //MessageBoxW(hWnd, receivedMessage, L"Received Message", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
     }
     break;
+  }
+
+  // Handle WM_ENABLESPOUTMIX via PostMessage (not WM_COPYDATA)
+  case (0x0400 + 109): // WM_ENABLESPOUTMIX
+  {
+    BOOL bEnable = (BOOL)wParam;
+    g_plugin.EnableSpoutMixing(bEnable ? true : false);
+    return 0;
+  }
+
+  // Handle WM_SETVIDEODEVICE via PostMessage
+  case (0x0400 + 106): // WM_SETVIDEODEVICE
+  {
+    int deviceIndex = (int)wParam;
+    g_plugin.SetVideoDevice(deviceIndex);
+    return 0;
+  }
+
+  // Handle WM_ENABLEVIDEOMIX via PostMessage
+  case (0x0400 + 107): // WM_ENABLEVIDEOMIX
+  {
+    BOOL bEnable = (BOOL)wParam;
+    g_plugin.EnableVideoMixing(bEnable ? true : false);
+    return 0;
   }
 
   case WM_COMMAND:
@@ -7188,6 +7258,76 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   case WM_KEYUP:
     return 1;
     break;
+
+  case WM_USER_ENABLESPOUTMIX:
+  {
+    bool enable = (bool)wParam;
+    wchar_t logBuf[512];
+    swprintf_s(logBuf, L"[SPOUT MIX] WM_USER_ENABLESPOUTMIX received: enable=%d", enable);
+    milkwave->LogInfo(logBuf);
+    
+    m_bSpoutInputEnabled = enable;
+
+    if (!enable && m_pSpoutReceiver) {
+      milkwave->LogInfo(L"[SPOUT MIX] Disabling Spout input - releasing receiver");
+      if (m_pSpoutInputTexture) {
+        m_pSpoutInputTexture->Release();
+        m_pSpoutInputTexture = nullptr;
+        milkwave->LogInfo(L"[SPOUT MIX] Released Spout input texture");
+      }
+      AddNotification(L"Spout Mix Off", 2.0f);
+    }
+    else if (enable) {
+      milkwave->LogInfo(L"[SPOUT MIX] Enabling Spout input");
+      
+      if (!m_pSpoutReceiver) {
+        milkwave->LogInfo(L"[SPOUT MIX] Creating new SpoutDX receiver");
+        m_pSpoutReceiver = new spoutDX9();
+        m_pSpoutReceiver->SetDX9device(GetDevice());
+      }
+      
+      if (m_szSpoutSenderName[0] != L'\0') {
+        swprintf_s(logBuf, L"[SPOUT MIX] Spout sender name is set to: %s", m_szSpoutSenderName);
+        milkwave->LogInfo(logBuf);
+        AddNotification(L"Spout Mix On", 2.0f);
+      } else {
+        milkwave->LogInfo(L"[SPOUT MIX] WARNING: No Spout sender name set!");
+        AddError(L"Spout Mix On (no sender)", 3.0f, ERR_NOTIFY, false);
+      }
+    }
+    return 0;
+  }
+
+  case WM_USER_SETSPOUTSENDER:
+  {
+    const wchar_t* senderName = (const wchar_t*)wParam;
+    wchar_t logBuf[512];
+    
+    if (senderName && senderName[0] != L'\0') {
+      swprintf_s(logBuf, L"[SPOUT MIX] WM_USER_SETSPOUTSENDER received: %s", senderName);
+      milkwave->LogInfo(logBuf);
+      
+      wcscpy_s(m_szSpoutSenderName, _countof(m_szSpoutSenderName), senderName);
+      
+      // Create SpoutDX receiver if it doesn't exist
+      if (!m_pSpoutReceiver) {
+        milkwave->LogInfo(L"[SPOUT MIX] Creating SpoutDX receiver for new sender");
+        m_pSpoutReceiver = new spoutDX9();
+        m_pSpoutReceiver->SetDX9device(GetDevice());
+      }
+      
+      // If Spout mixing is enabled, try to connect to the sender
+      if (m_bSpoutInputEnabled) {
+        swprintf_s(logBuf, L"[SPOUT MIX] Spout mix is enabled, will try to receive from: %s", m_szSpoutSenderName);
+        milkwave->LogInfo(logBuf);
+      } else {
+        milkwave->LogInfo(L"[SPOUT MIX] Spout mix is disabled, sender name stored for later use");
+      }
+    } else {
+      milkwave->LogInfo(L"[SPOUT MIX] WM_USER_SETSPOUTSENDER received empty/null sender name");
+    }
+    return 0;
+  }
 
   case WM_USER_ENABLEVIDEOMIX:
   {
@@ -11130,6 +11270,35 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     g_plugin.SetAudioDeviceDisplayName(message.c_str(), isRenderDevice);
     // Restart audio
     m_nAudioLoopState = 1;
+  }
+  else if (wcsncmp(sMessage, L"VIDEOINPUT=", 11) == 0) {
+    std::wstring message(sMessage + 11);
+    size_t pos = message.find(L'|');
+    if (pos != std::wstring::npos) {
+      std::wstring enabledStr = message.substr(0, pos);
+      std::wstring deviceName = message.substr(pos + 1);
+      bool enabled = (enabledStr == L"1");
+      
+      // For now, just enable/disable - device selection could be added later
+      EnableVideoMixing(enabled);
+    }
+  }
+  else if (wcsncmp(sMessage, L"SPOUTINPUT=", 11) == 0) {
+    std::wstring message(sMessage + 11);
+    size_t pos = message.find(L'|');
+    if (pos != std::wstring::npos) {
+      std::wstring enabledStr = message.substr(0, pos);
+      std::wstring senderName = message.substr(pos + 1);
+      bool enabled = (enabledStr == L"1");
+      
+      // Set the sender name first
+      if (!senderName.empty()) {
+        SetSpoutSender(senderName.c_str());
+      }
+      
+      // Then enable/disable mixing
+      EnableSpoutMixing(enabled);
+    }
   }
   else if (wcsncmp(sMessage, L"OPACITY=", 8) == 0) {
     std::wstring message(sMessage + 8);

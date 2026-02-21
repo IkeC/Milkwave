@@ -678,6 +678,14 @@ public:
   bool m_bVideoInputEnabled;
   int m_nVideoDeviceIndex;
 
+  // Spout input mixing
+  spoutDX9* m_pSpoutReceiver;
+  IDirect3DTexture9* m_pSpoutInputTexture;
+  wchar_t m_szSpoutSenderName[256];
+  int m_nSpoutInputWidth;
+  int m_nSpoutInputHeight;
+  bool m_bSpoutInputEnabled;
+
   int         m_nFramesSinceResize;
 
   char        m_szShaderIncludeText[32768];     // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
@@ -744,6 +752,16 @@ public:
   void        DrawCustomShapes();
   void		DrawSprites();
   void        ComputeGridAlphaValues();
+  
+  // Input mixing methods
+  void        UpdateVideoInputTexture();
+  void        UpdateSpoutInputTexture();
+  void        CompositeInputMixing();
+  void        SetVideoDevice(int deviceIndex);
+  void        EnableVideoMixing(bool enable);
+  void        SetSpoutSender(const wchar_t* senderName);
+  void        EnableSpoutMixing(bool enable);
+  
   //void        WarpedBlit();
                // note: 'bFlipAlpha' just flips the alpha blending in fixed-fn pipeline - not the values for culling tiles.
   void		 WarpedBlit_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, bool bCullTiles, bool bFlipCulling);
