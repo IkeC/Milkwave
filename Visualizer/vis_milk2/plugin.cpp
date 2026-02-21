@@ -1382,6 +1382,13 @@ void CPlugin::MyReadConfig() {
   m_fTimeBetweenRandomCustomMsgs = GetPrivateProfileFloatW(L"Settings", L"fTimeBetweenRandomCustomMsgs", m_fTimeBetweenRandomCustomMsgs, pIni);
   m_adapterId = GetPrivateProfileIntW(L"Settings", L"nVideoAdapterIndex", 0, pIni);
 
+  // Input Mix Settings (Unified)
+  m_fInputMixOpacity = GetPrivateProfileFloatW(L"Milkwave", L"InputMixOpacity", 0.5f, pIni);
+  m_fInputMixLumakeyThreshold = GetPrivateProfileFloatW(L"Milkwave", L"InputMixLumakeyThreshold", 0.0f, pIni);
+  m_fInputMixLumakeySoftness = GetPrivateProfileFloatW(L"Milkwave", L"InputMixLumakeySoftness", 0.1f, pIni);
+  m_bInputMixOnTop = GetPrivateProfileBoolW(L"Milkwave", L"InputMixOnTop", true, pIni);
+  m_cInputMixTint = (D3DCOLOR)GetPrivateProfileIntW(L"Milkwave", L"InputMixTint", 0xFFFFFFFF, pIni);
+
   // --------
 
   GetPrivateProfileStringW(L"Settings", L"szPresetDir", m_szPresetDir, m_szPresetDir, sizeof(m_szPresetDir), pIni);
@@ -1574,6 +1581,12 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowHeight, L"WindowHeight", pIni, L"Milkwave");
+
+  WritePrivateProfileFloatW(m_fInputMixOpacity, L"InputMixOpacity", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_fInputMixLumakeyThreshold, L"InputMixLumakeyThreshold", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_fInputMixLumakeySoftness, L"InputMixLumakeySoftness", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_bInputMixOnTop, L"InputMixOnTop", pIni, L"Milkwave");
+  WritePrivateProfileIntW((int)m_cInputMixTint, L"InputMixTint", pIni, L"Milkwave");
 }
 
 void CPlugin::SaveWindowSizeAndPosition(HWND hwnd) {
@@ -1705,7 +1718,8 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   m_pVideoCaptureTexture = nullptr;
   m_nVideoCaptureWidth = 640;      // Default video capture dimensions
   m_nVideoCaptureHeight = 480;
-  m_fPresetOpacity = 0.5f;
+  m_fInputMixOpacity = 0.5f;
+  m_bInputMixOnTop = true;
   m_bVideoInputEnabled = false;
   m_nVideoDeviceIndex = -1;
 

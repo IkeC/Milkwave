@@ -144,27 +144,30 @@ void CPlugin::UpdateSpoutInputTexture() {
 }
 
 // Composite input texture onto backbuffer
-void CPlugin::CompositeInputMixing() {
+void CPlugin::CompositeInputMixing(bool isBackground) {
     static bool firstCall = true;
     static int frameCount = 0;
-    
-    // Update input textures with latest frames BEFORE compositing
+
+    // Update input textures only when NOT rendering background (or only on first call)
+    // Actually, Update*InputTexture should probably only be called ONCE per frame.
+    // In RenderFrame, it was already called inside CompositeInputMixing previously.
+    // We'll keep it simple for now and update every time it's called, relying on internal checks.
     if (m_bVideoInputEnabled) {
         UpdateVideoInputTexture();
     }
     else if (m_bSpoutInputEnabled) {
         UpdateSpoutInputTexture();
     }
-    
+
     // Only one input source can be active at a time
     IDirect3DTexture9* pInputTexture = nullptr;
-    
+
     if (m_bVideoInputEnabled && m_pVideoCaptureTexture) {
         pInputTexture = m_pVideoCaptureTexture;
     }
     else if (m_bSpoutInputEnabled && m_pSpoutInputTexture) {
         pInputTexture = m_pSpoutInputTexture;
-        
+
         // Debug: Show when we actually have a Spout texture to composite
         if (firstCall) {
             wchar_t buf[256];
@@ -174,38 +177,36 @@ void CPlugin::CompositeInputMixing() {
             firstCall = false;
         }
     }
-    
+
     if (!pInputTexture) {
-        // Log why we don't have a texture
-        static int noTextureLogCounter = 0;
-        if (noTextureLogCounter++ % 60 == 0) {
-            wchar_t buf[512];
-            swprintf_s(buf, L"CompositeInputMixing: No input texture - videoEnabled=%d, spoutEnabled=%d, videoTex=0x%p, spoutTex=0x%p", 
-                m_bVideoInputEnabled, m_bSpoutInputEnabled, m_pVideoCaptureTexture, m_pSpoutInputTexture);
-            milkwave->LogInfo(buf);
-        }
         return; // No input to composite
     }
-    
+
     // Log every 60 frames
     if (frameCount % 60 == 0) {
         wchar_t buf[256];
-        swprintf_s(buf, L"CompositeInputMixing: Frame %d - texture=0x%p, opacity=%.2f", 
-            frameCount, pInputTexture, m_fPresetOpacity);
+        swprintf_s(buf, L"CompositeInputMixing: Frame %d - bg=%d, texture=0x%p, opacity=%.2f", 
+            frameCount, isBackground, pInputTexture, m_fInputMixOpacity);
         milkwave->LogInfo(buf);
     }
     frameCount++;
-    
-    
+
+
     LPDIRECT3DDEVICE9 lpDevice = GetDevice();
     if (!lpDevice) {
         return;
     }
 
-    // Set up for alpha blending - use vertex alpha, ignore texture alpha
-    lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-    lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-    lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    // Set up for alpha blending
+    if (isBackground) {
+        // Background should be opaque
+        lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+    } else {
+        // Overlay needs alpha blending
+        lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+        lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+        lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    }
 
     // Explicitly disable alpha test to ensure the quad is not accidentally rejected
     lpDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
@@ -220,11 +221,12 @@ void CPlugin::CompositeInputMixing() {
     lpDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
     lpDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 
-    // Set texture stage states
-    lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+    // Set texture stage states for TINTING: Color = Texture * TintColor
+    lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
     lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    lpDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 
-    // IGNORE texture alpha channel - use ONLY our global diffuse alpha (m_fPresetOpacity)
+    // If background, use full alpha. If overlay, use m_fInputMixOpacity
     lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
     lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
 
@@ -233,18 +235,8 @@ void CPlugin::CompositeInputMixing() {
     float targetHeight = (float)GetHeight();
 
     if (targetWidth <= 0 || targetHeight <= 0) {
-        // Fallback to backbuffer query if shell metrics are missing
-        D3DSURFACE_DESC desc;
-        LPDIRECT3DSURFACE9 pBackBuffer = nullptr;
-        if (SUCCEEDED(lpDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer))) {
-            pBackBuffer->GetDesc(&desc);
-            targetWidth = (float)desc.Width;
-            targetHeight = (float)desc.Height;
-            pBackBuffer->Release();
-        } else {
-            lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-            return;
-        }
+        lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+        return;
     }
 
     // Calculate destination rect to maintain aspect ratio
@@ -275,13 +267,17 @@ void CPlugin::CompositeInputMixing() {
         bottom = yOffset + scaledHeight;
     }
 
-    // Draw a fullscreen quad with the input texture
-    // Use preset opacity for blending strength
-    float effectiveOpacity = m_fPresetOpacity;
-    if (effectiveOpacity < 0.1f) effectiveOpacity = 0.5f; // Debug: ensure visibility if preset opacity is near zero
+    // Calculate combined color (Tint + Opacity)
+    DWORD r = (m_cInputMixTint >> 16) & 0xFF;
+    DWORD g = (m_cInputMixTint >> 8) & 0xFF;
+    DWORD b = m_cInputMixTint & 0xFF;
+
+    // Background is 100% alpha (preset on top will handle its own transparency)
+    // Overlay uses effectiveOpacity
+    float effectiveOpacity = isBackground ? 1.0f : m_fInputMixOpacity;
 
     DWORD alphaValue = (DWORD)(effectiveOpacity * 255.0f);
-    DWORD color = D3DCOLOR_ARGB(alphaValue, 255, 255, 255);
+    DWORD vertexColor = D3DCOLOR_ARGB(alphaValue, r, g, b);
 
     struct CUSTOMVERTEX {
         float x, y, z, rhw;
@@ -292,10 +288,10 @@ void CPlugin::CompositeInputMixing() {
     #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1)
 
     CUSTOMVERTEX vertices[] = {
-        { left - 0.5f,  top - 0.5f,    0.5f, 1.0f, color, 0.0f, 0.0f },
-        { right - 0.5f, top - 0.5f,    0.5f, 1.0f, color, 1.0f, 0.0f },
-        { left - 0.5f,  bottom - 0.5f, 0.5f, 1.0f, color, 0.0f, 1.0f },
-        { right - 0.5f, bottom - 0.5f, 0.5f, 1.0f, color, 1.0f, 1.0f },
+        { left - 0.5f,  top - 0.5f,    0.5f, 1.0f, vertexColor, 0.0f, 0.0f },
+        { right - 0.5f, top - 0.5f,    0.5f, 1.0f, vertexColor, 1.0f, 0.0f },
+        { left - 0.5f,  bottom - 0.5f, 0.5f, 1.0f, vertexColor, 0.0f, 1.0f },
+        { right - 0.5f, bottom - 0.5f, 0.5f, 1.0f, vertexColor, 1.0f, 1.0f },
     };
 
     lpDevice->SetFVF(D3DFVF_CUSTOMVERTEX);

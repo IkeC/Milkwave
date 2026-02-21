@@ -1147,7 +1147,15 @@ void CPlugin::RenderFrame(int bRedraw) {
     lpDevice->SetRenderTarget(0, pBackBuffer);
     //lpDevice->SetDepthStencilSurface( pZBuffer );
     SafeRelease(pBackBuffer);
-    //SafeRelease(pZBuffer);
+    //SafeRelease(pBuffer);
+
+    // =========================================================
+    // INPUT MIXING - BACKGROUND LAYER
+    // If external input is enabled and set to BACKGROUND, render it now before the preset.
+    if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && !m_bInputMixOnTop) {
+        CompositeInputMixing(true); // Render as background (opaque)
+    }
+    // =========================================================
 
 
       // show it to the user [composite shader]
@@ -1242,8 +1250,8 @@ void CPlugin::RenderFrame(int bRedraw) {
   //
   // INPUT MIXING - Composite video or Spout input onto backbuffer
   //
-  if (m_bVideoInputEnabled || m_bSpoutInputEnabled) {
-    CompositeInputMixing();
+  if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && m_bInputMixOnTop) {
+    CompositeInputMixing(false); // Render as overlay (transparent)
   }
   // =========================================================
 
@@ -5314,45 +5322,21 @@ void CPlugin::ShowToUser_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, b
   else
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 
-  // Video input mixing: draw video capture texture first (bottom layer)
-  if (m_bVideoInputEnabled && m_pVideoCapture && m_pVideoCaptureTexture) {
-    // Copy latest frame from video capture to texture
-    if (m_pVideoCapture->CopyFrameToTexture(m_pVideoCaptureTexture, lpDevice)) {
-      // Draw video input at full screen with 100% opacity
-      lpDevice->SetTexture(0, m_pVideoCaptureTexture);
-      lpDevice->SetVertexShader(NULL);
-      lpDevice->SetPixelShader(NULL);
-      lpDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
-      lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-      
-      // Create fullscreen quad
-      struct VIDEOVERTEX {
-        float x, y, z, rhw;
-        float u, v;
-      };
-      VIDEOVERTEX verts[4] = {
-        { -0.5f,          -0.5f,           0.5f, 1.0f, 0.0f, 0.0f },
-        { GetWidth()-0.5f, -0.5f,           0.5f, 1.0f, 1.0f, 0.0f },
-        { -0.5f,          GetHeight()-0.5f, 0.5f, 1.0f, 0.0f, 1.0f },
-        { GetWidth()-0.5f, GetHeight()-0.5f, 0.5f, 1.0f, 1.0f, 1.0f }
-      };
-      lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, verts, sizeof(VIDEOVERTEX));
-    }
-  }
-
-  // Enable alpha blending for preset output if video mixing is active
-  if (m_bVideoInputEnabled && m_pVideoCapture) {
+  // If external input mixing is active and set to BACKGROUND, 
+  // we need alpha blending enabled for the preset layer on top.
+  if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && !m_bInputMixOnTop) {
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
     lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
     lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-    // Modify vertex alpha for preset opacity
+
+    // Scale preset grid alpha by m_fInputMixOpacity
     for (int vi = 0; vi < (FCGSX + 1) * (FCGSY + 1); vi++) {
       DWORD color = m_comp_verts[vi].Diffuse;
       int a = (color >> 24) & 0xFF;
       int r = (color >> 16) & 0xFF;
       int g = (color >> 8) & 0xFF;
       int b = color & 0xFF;
-      a = (int)(a * m_fPresetOpacity);
+      a = (int)(a * m_fInputMixOpacity);
       m_comp_verts[vi].Diffuse = D3DCOLOR_ARGB(a, r, g, b);
     }
   }

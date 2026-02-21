@@ -549,6 +549,13 @@ public:
 #define WM_USER_COVER_CHANGED WM_USER + 102
 #define WM_USER_SPRITE_MODE WM_USER + 103
 #define WM_USER_MESSAGE_MODE WM_USER + 104
+#define WM_USER_SET_VIDEO_DEVICE WM_USER + 106
+#define WM_USER_ENABLE_VIDEO_MIX WM_USER + 107
+#define WM_USER_ENABLE_SPOUT_MIX WM_USER + 109
+#define WM_USER_SET_INPUTMIX_OPACITY WM_USER + 110
+#define WM_USER_SET_INPUTMIX_TINT WM_USER + 111
+#define WM_USER_SET_INPUTMIX_LUMAKEY WM_USER + 112
+#define WM_USER_SET_INPUTMIX_ONTOP WM_USER + 113
 
   FFT            myfft;
   td_mysounddata mysound;
@@ -669,22 +676,28 @@ public:
 
   IDirect3DTexture9* m_tracer_tex;
 
-  // Video input mixing
+  // Unified Input mixing settings (SSOT)
+  bool  m_bVideoInputEnabled;
+  int   m_nVideoDeviceIndex;
+  bool  m_bSpoutInputEnabled;
+  wchar_t m_szSpoutSenderName[256];
+  float m_fInputMixOpacity;          // 0.0 to 1.0 (replaces m_fPresetOpacity)
+  D3DCOLOR m_cInputMixTint;          // Tint color (default White)
+  float m_fInputMixLumakeyThreshold; // 0.0 to 1.0
+  float m_fInputMixLumakeySoftness;  // 0.0 to 1.0
+  bool  m_bInputMixOnTop;            // true: overlay, false: background (underlay)
+
+  // Video capture resources
   class VideoCapture* m_pVideoCapture;
   IDirect3DTexture9* m_pVideoCaptureTexture;
   int m_nVideoCaptureWidth;        // Video capture texture width
   int m_nVideoCaptureHeight;       // Video capture texture height
-  float m_fPresetOpacity;          // 0.5f default - opacity of preset when video mixing is enabled
-  bool m_bVideoInputEnabled;
-  int m_nVideoDeviceIndex;
 
-  // Spout input mixing
+  // Spout receiver resources
   spoutDX9* m_pSpoutReceiver;
   IDirect3DTexture9* m_pSpoutInputTexture;
-  wchar_t m_szSpoutSenderName[256];
   int m_nSpoutInputWidth;
   int m_nSpoutInputHeight;
-  bool m_bSpoutInputEnabled;
 
   int         m_nFramesSinceResize;
 
@@ -756,7 +769,7 @@ public:
   // Input mixing methods
   void        UpdateVideoInputTexture();
   void        UpdateSpoutInputTexture();
-  void        CompositeInputMixing();
+  void        CompositeInputMixing(bool isBackground = false);
   void        SetVideoDevice(int deviceIndex);
   void        EnableVideoMixing(bool enable);
   void        SetSpoutSender(const wchar_t* senderName);

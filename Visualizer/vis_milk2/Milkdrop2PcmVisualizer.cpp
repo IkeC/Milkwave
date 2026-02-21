@@ -1170,6 +1170,33 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     return 0;
   }
 
+  case WM_USER_SET_INPUTMIX_OPACITY:
+  {
+      float opacity = (float)wParam / 100.0f; // Expecting 0-100
+      g_plugin.m_fInputMixOpacity = opacity;
+      return 0;
+  }
+
+  case WM_USER_SET_INPUTMIX_TINT:
+  {
+      g_plugin.m_cInputMixTint = (D3DCOLOR)wParam; // Expecting XRGB color
+      return 0;
+  }
+
+  case WM_USER_SET_INPUTMIX_LUMAKEY:
+  {
+      // wParam LowWord: threshold (0-100), wParam HighWord: softness (0-100)
+      g_plugin.m_fInputMixLumakeyThreshold = (float)LOWORD(wParam) / 100.0f;
+      g_plugin.m_fInputMixLumakeySoftness = (float)HIWORD(wParam) / 100.0f;
+      return 0;
+  }
+
+  case WM_USER_SET_INPUTMIX_ONTOP:
+  {
+      g_plugin.m_bInputMixOnTop = (wParam != 0);
+      return 0;
+  }
+
   case (0x004A): // WM_COPYDATA
   {
     return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
