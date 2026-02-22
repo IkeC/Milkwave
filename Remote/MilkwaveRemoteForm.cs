@@ -27,6 +27,9 @@ namespace MilkwaveRemote {
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     private static extern IntPtr SendMessageW(IntPtr hWnd, uint Msg, IntPtr wParam, ref COPYDATASTRUCT lParam);
 
+    [DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern IntPtr SendMessageGeneral(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
@@ -69,8 +72,9 @@ namespace MilkwaveRemote {
     private const int WM_ENABLEVIDEOMIX = 0x0400 + 107;
     private const int WM_SETSPOUTSENDER = 0x0400 + 108;
     private const int WM_ENABLESPOUTMIX = 0x0400 + 109;
-    private const int WM_SET_INPUTMIX_OPACITY = 0x0400 + 110;
-    private const int WM_SET_INPUTMIX_ONTOP = 0x0400 + 113;
+    private const int WM_SET_INPUTMIX_OPACITY = 0x0400 + 150;
+    private const int WM_SET_INPUTMIX_LUMAKEY = 0x0400 + 151;
+    private const int WM_SET_INPUTMIX_ONTOP = 0x0400 + 152;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -104,6 +108,7 @@ namespace MilkwaveRemote {
     private string windowNotFound = "Milkwave Visualizer Window not found";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
+    private string lastSpoutSenderName = "";
 
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
@@ -279,7 +284,8 @@ namespace MilkwaveRemote {
       VideoInput,
       SpoutInput,
       InputMixOnTop,
-      InputMixOpacity
+      InputMixOpacity,
+      InputMixLuma
     }
 
     private class PendingThumbnail {
@@ -1431,6 +1437,16 @@ namespace MilkwaveRemote {
                     chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                   } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
                     chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                    chkMixLumaActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("LUMATHR", StringComparison.OrdinalIgnoreCase)) {
+                    if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal thr)) {
+                      numLumaThreshold.Value = Math.Clamp(thr, numLumaThreshold.Minimum, numLumaThreshold.Maximum);
+                    }
+                  } else if (key.Equals("LUMASOFT", StringComparison.OrdinalIgnoreCase)) {
+                    if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal soft)) {
+                      numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
+                    }
                   }
                 } catch (Exception ex) {
                   // ignore
@@ -1630,7 +1646,7 @@ namespace MilkwaveRemote {
 
                 bool onTop = chkInputTop.Checked;
                 if (foundWindow != IntPtr.Zero) {
-                  bool sent = PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero) != IntPtr.Zero;
+                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
                   SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")} on {foundWindowTitle}");
                 } else {
                   SetStatusText(windowNotFound);
@@ -1646,13 +1662,34 @@ namespace MilkwaveRemote {
 
                 int opacityInt = (int)numInputMixOpacity.Value;
                 if (foundWindow != IntPtr.Zero) {
-                  bool sent = PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero) != IntPtr.Zero;
+                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
                   SetStatusText($"Input mix opacity set to {opacityInt}% on {foundWindowTitle}");
                 } else {
                   SetStatusText(windowNotFound);
                 }
               } catch (Exception ex) {
                 SetStatusText($"Error setting input mix opacity: {ex.Message}");
+              }
+              SendingMessage = false;
+              return;
+            } else if (type == MessageType.InputMixLuma) {
+              try {
+                if (updatingSettingsParams) return;
+
+                bool active = chkMixLumaActive.Checked;
+                int threshold = active ? (int)numLumaThreshold.Value : -1;
+                int softness = (int)numLumaSoftness.Value;
+                if (foundWindow != IntPtr.Zero) {
+                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)threshold, (IntPtr)softness);
+                  if (active)
+                    SetStatusText($"Luma Key set to {threshold}% (softness {softness}%) on {foundWindowTitle}");
+                  else
+                    SetStatusText($"Luma Key disabled on {foundWindowTitle}");
+                } else {
+                  SetStatusText(windowNotFound);
+                }
+              } catch (Exception ex) {
+                SetStatusText($"Error setting input luma key: {ex.Message}");
               }
               SendingMessage = false;
               return;
@@ -3540,6 +3577,24 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void chkMixLumaActive_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixLuma);
+      }
+    }
+
+    private void numLumaThreshold_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixLuma);
+      }
+    }
+
+    private void numLumaSoftness_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixLuma);
+      }
+    }
+
     private void SetExpIncrements(NumericUpDown nud) {
       // Ensure the Tag property is cast to decimal before comparison
       decimal previousValue = nud.Tag is decimal tagValue ? tagValue : 0;
@@ -4005,6 +4060,7 @@ namespace MilkwaveRemote {
     }
 
     private void LoadAndSetSettings() {
+      updatingSettingsParams = true;
       Location = Settings.RemoteWindowLocation;
       Size optimalSize = GetCalculatedOptionalTopPanelSize();
       if (Settings.RemoteWindowSize.Width > 0 && Settings.RemoteWindowSize.Height > 0) {
@@ -4034,11 +4090,18 @@ namespace MilkwaveRemote {
       chkShaderFile.Checked = Settings.ShaderFileChecked;
       chkWrap.Checked = Settings.WrapChecked;
 
+      numInputMixOpacity.Value = Math.Clamp(Settings.InputMixOpacity, numInputMixOpacity.Minimum, numInputMixOpacity.Maximum);
+      chkInputTop.Checked = Settings.InputMixOnTop;
+      chkMixLumaActive.Checked = Settings.InputMixLumaActive;
+      numLumaThreshold.Value = Math.Clamp(Settings.InputMixLumaThreshold, numLumaThreshold.Minimum, numLumaThreshold.Maximum);
+      numLumaSoftness.Value = Math.Clamp(Settings.InputMixLumaSoftness, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
+
       numVisIntensity.Value = (decimal)Settings.VisIntensity;
       numVisShift.Value = (decimal)Settings.VisShift;
       numVisVersion.Value = Settings.VisVersion;
 
       RefreshSpriteButtonImages(false);
+      updatingSettingsParams = false;
     }
 
     private void SetAndSaveSettings() {
@@ -4054,6 +4117,12 @@ namespace MilkwaveRemote {
       Settings.ShaderFileChecked = chkShaderFile.Checked;
       Settings.WrapChecked = chkWrap.Checked;
       Settings.EnableSpriteButtonImage = toolStripMenuItemSpriteButtonImages.Checked;
+
+      Settings.InputMixOpacity = numInputMixOpacity.Value;
+      Settings.InputMixOnTop = chkInputTop.Checked;
+      Settings.InputMixLumaActive = chkMixLumaActive.Checked;
+      Settings.InputMixLumaThreshold = numLumaThreshold.Value;
+      Settings.InputMixLumaSoftness = numLumaSoftness.Value;
 
       Settings.VisIntensity = numVisIntensity.Value;
       Settings.VisShift = numVisShift.Value;
@@ -6308,6 +6377,13 @@ namespace MilkwaveRemote {
             bool onTop = chkInputTop.Checked;
             PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
             PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+
+            // Send Luma Key settings
+            bool lumaActive = chkMixLumaActive.Checked;
+            int lumaThreshold = lumaActive ? (int)numLumaThreshold.Value : -1;
+            int lumaSoftness = (int)numLumaSoftness.Value;
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)lumaThreshold, (IntPtr)lumaSoftness);
+
             System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
           }
 
@@ -6388,6 +6464,13 @@ namespace MilkwaveRemote {
             bool onTop = chkInputTop.Checked;
             PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
             PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+
+            // Send Luma Key settings
+            bool lumaActive = chkMixLumaActive.Checked;
+            int lumaThreshold = lumaActive ? (int)numLumaThreshold.Value : -1;
+            int lumaSoftness = (int)numLumaSoftness.Value;
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)lumaThreshold, (IntPtr)lumaSoftness);
+
             System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
           }
 
@@ -6417,12 +6500,16 @@ namespace MilkwaveRemote {
 
     private void cboSpoutInput_SelectedIndexChanged(object sender, EventArgs e) {
       try {
+        if (updatingSettingsParams) return;
         if (chkSpoutMix.Checked && cboSputInput.SelectedIndex >= 0) {
+          string senderName = cboSputInput.Text;
+          if (senderName == lastSpoutSenderName) return; // Ignore if name hasn't changed (avoids noise from refresh timer)
+
           IntPtr foundWindow = FindVisualizerWindow();
           if (foundWindow != IntPtr.Zero) {
-            string senderName = cboSputInput.Text;
             SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
             SetStatusText($"Spout sender changed: {senderName}");
+            lastSpoutSenderName = senderName;
           } else {
             SetStatusText(windowNotFound);
           }

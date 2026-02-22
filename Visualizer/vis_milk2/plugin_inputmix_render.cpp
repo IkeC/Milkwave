@@ -226,9 +226,44 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
     lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
     lpDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 
-    // If background, use full alpha. If overlay, use m_fInputMixOpacity
-    lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+    // Modulate texture alpha with tint/opacity alpha
+    lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+    lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
     lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+
+    // Use input mixing shader if available
+    if (!m_lpPS_InputMix) {
+        CompileInputMixShader();
+    }
+
+    if (m_lpPS_InputMix && m_bInputMixLumaActive) {
+        lpDevice->SetPixelShader(m_lpPS_InputMix);
+        float lumaParams[4] = { 
+            m_fInputMixLumakeyThreshold, 
+            m_fInputMixLumakeySoftness, 
+            1.0f, // Active
+            0.0f 
+        };
+        lpDevice->SetPixelShaderConstantF(0, lumaParams, 1);
+
+        if (frameCount % 60 == 0 && milkwave) {
+             wchar_t buf[256];
+             swprintf_s(buf, L"Luma RENDERING: active=1, thr=%.2f, soft=%.2f", 
+                 m_fInputMixLumakeyThreshold, m_fInputMixLumakeySoftness);
+             milkwave->LogInfo(buf);
+        }
+    } else {
+        lpDevice->SetPixelShader(nullptr);
+        if (frameCount % 60 == 0 && milkwave) {
+             wchar_t buf[256];
+             if (m_bInputMixLumaActive && !m_lpPS_InputMix) {
+                 swprintf_s(buf, L"Luma RENDERING: active=1 but SHADER NULL");
+             } else {
+                 swprintf_s(buf, L"Luma RENDERING: active=0");
+             }
+             milkwave->LogInfo(buf);
+        }
+    }
 
     // Get dimensions
     float targetWidth = (float)GetWidth();
@@ -298,6 +333,9 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
     lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices, sizeof(CUSTOMVERTEX));
 
     // Clean up
+    if (m_lpPS_InputMix) {
+        lpDevice->SetPixelShader(NULL);
+    }
     lpDevice->SetTexture(0, NULL);
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
     lpDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);

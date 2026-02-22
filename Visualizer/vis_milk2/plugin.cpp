@@ -1098,6 +1098,25 @@ void CPlugin::MyPreInitialize() {
   m_nCustMsgsSpawned = 0;
   m_nFramesSinceResize = 0;
 
+  // Input mixing initial settings
+  m_bVideoInputEnabled = false;
+  m_nVideoDeviceIndex = 0;
+  m_bSpoutInputEnabled = false;
+  m_szSpoutSenderName[0] = L'\0';
+  m_fInputMixOpacity = 1.0f;
+  m_cInputMixTint = D3DCOLOR_XRGB(255, 255, 255);
+  m_bInputMixLumaActive = false;
+  m_fInputMixLumakeyThreshold = 0.5f;
+  m_fInputMixLumakeySoftness = 0.1f;
+  m_bInputMixOnTop = true;
+  m_pVideoCapture = nullptr;
+  m_pVideoCaptureTexture = nullptr;
+  m_pSpoutReceiver = nullptr;
+  m_pSpoutInputTexture = nullptr;
+  m_lpPS_InputMix = nullptr;
+  m_nVideoCaptureWidth = 0;
+  m_nVideoCaptureHeight = 0;
+
   //m_bAlways3D		  	    = false;
   //m_fStereoSep            = 1.0f;
   //m_bAlwaysOnTop		= false;
@@ -2135,6 +2154,9 @@ int CPlugin::AllocateMyDX9Stuff() {
       return false;
     }
   }
+
+  // Compile custom input mix shader
+  CompileInputMixShader();
 
   // create m_lpVS[2]
   {
@@ -3976,7 +3998,8 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // Clean up video capture texture
   SafeRelease(m_pVideoCaptureTexture);
 
-
+  // Clean up input mixing shader
+  SafeRelease(m_lpPS_InputMix);
 
   for (size_t i = 0; i < m_textures.size(); i++)
     if (m_textures[i].texptr) {
@@ -5842,21 +5865,14 @@ void LoadPresetFilesViaDragAndDrop(WPARAM wParam) {
 //----------------------------------------------------------------------
 
 LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam) {
-  // You can handle Windows messages here while the plugin is running,
-  //   such as mouse events (WM_MOUSEMOVE/WM_LBUTTONDOWN), keypresses
-  //   (WK_KEYDOWN/WM_CHAR), and so on.
-  // This function is threadsafe (thanks to Winamp's architecture),
-  //   so you don't have to worry about using semaphores or critical
-  //   sections to read/write your class member variables.
-  // If you don't handle a message, let it continue on the usual path
-  //   (to Winamp) by returning DefWindowProc(hWnd,uMsg,wParam,lParam).
-  // If you do handle a message, prevent it from being handled again
-  //   (by Winamp) by returning 0.
-
-  // IMPORTANT: For the WM_KEYDOWN, WM_KEYUP, and WM_CHAR messages,
-  //   you must return 0 if you process the message (key),
-  //   and 1 if you do not.  DO NOT call DefWindowProc()
-  //   for these particular messages!
+  // Debug: Log all WM_USER messages for input mixing
+  if (uMsg >= WM_USER && uMsg < WM_USER + 200) {
+      if (milkwave) {
+          wchar_t buf[256];
+          swprintf_s(buf, L"[MSG] uMsg=0x%04X, wP=%Id, lP=%Id", uMsg, (size_t)wParam, (size_t)lParam);
+          milkwave->LogInfo(buf);
+      }
+  }
 
   USHORT mask = 1 << (sizeof(SHORT) * 8 - 1);
   bool bShiftHeldDown = (GetKeyState(VK_SHIFT) & mask) != 0;
@@ -5939,6 +5955,45 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   case WM_USER_SET_INPUTMIX_OPACITY:
   {
     this->SetInputMixOpacity((float)wParam / 100.0f);
+    wchar_t buf[64];
+    swprintf_s(buf, L"Opacity: %d%%", (int)wParam);
+    AddNotification(buf, 1.0f);
+    return 0;
+  }
+
+  // Handle Input Mix Tint Color via PostMessage
+  case WM_USER_SET_INPUTMIX_TINT:
+  {
+      this->m_cInputMixTint = (D3DCOLOR)wParam;
+      return 0;
+  }
+
+  // Handle Input Mix Luma Key
+  case WM_USER_SET_INPUTMIX_LUMAKEY:
+  {
+    int thresholdInt = (int)wParam;
+    int softnessInt = (int)lParam;
+
+    OutputDebugStringW(L"[Milkwave] WM_USER_SET_INPUTMIX_LUMAKEY received");
+
+    if (milkwave) {
+        wchar_t buf[256];
+        swprintf_s(buf, L"LumaMsg REC: thr=%d, soft=%d", thresholdInt, softnessInt);
+        milkwave->LogInfo(buf);
+    }
+
+    if (thresholdInt >= 0) {
+      m_bInputMixLumaActive = true;
+      m_fInputMixLumakeyThreshold = (float)thresholdInt / 100.0f;
+    } else {
+      m_bInputMixLumaActive = false;
+    }
+    m_fInputMixLumakeySoftness = (float)lParam / 100.0f;
+
+    if (m_bInputMixLumaActive)
+        AddNotification(L"Luma Key On", 2.0f);
+    else
+        AddNotification(L"Luma Key Off", 2.0f);
     return 0;
   }
 
@@ -11347,7 +11402,10 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0")
     + L"|HUE=" + std::to_wstring(m_ColShiftHue)
     + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0")
-    + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0");
+    + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0")
+    + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0")
+    + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f))
+    + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f));
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 
@@ -12183,5 +12241,49 @@ void CPlugin::ShowDirectXMissingMessage() {
     "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
     // open website in browser
     ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
+  }
+}
+
+void CPlugin::CompileInputMixShader() {
+  const char* szShader =
+    "sampler2D inputTex : register(s0);\n"
+    "float4 lumaParams1 : register(c0);\n" // x: threshold, y: softness, z: active (1.0 or 0.0)
+    "struct PS_INPUT {\n"
+    "    float2 uv    : TEXCOORD0;\n"
+    "    float4 color : COLOR0;\n"
+    "};\n"
+    "float4 main(PS_INPUT input) : COLOR {\n"
+    "    float4 col = tex2D(inputTex, input.uv);\n"
+    "    col *= input.color;\n"
+    "    if (lumaParams1.z > 0.5) {\n"
+    "        float luma = dot(col.rgb, float3(0.299, 0.587, 0.114));\n"
+    "        float factor = saturate((luma - lumaParams1.x) / max(0.0001, lumaParams1.y));\n"
+    "        col.a *= factor;\n"
+    "    }\n"
+    "    return col;\n"
+    "}\n";
+
+  ID3DXBuffer* pShaderByteCode = NULL;
+  ID3DXBuffer* pErrors = NULL;
+
+  if (SUCCEEDED(D3DXCompileShader(szShader, (UINT)strlen(szShader), NULL, NULL, "main", "ps_2_0", 0, &pShaderByteCode, &pErrors, NULL))) {
+    if (m_lpPS_InputMix) m_lpPS_InputMix->Release();
+    GetDevice()->CreatePixelShader((DWORD*)pShaderByteCode->GetBufferPointer(), &m_lpPS_InputMix);
+    if (pShaderByteCode) pShaderByteCode->Release();
+    if (milkwave) milkwave->LogInfo(L"Input Mix Shader compiled successfully");
+    AddNotification(L"Input Mix Shader: READY", 1.0f);
+  }
+  else {
+    AddNotification(L"Input Mix Shader FAILED", 3.0f);
+    if (pErrors) {
+      char* err = (char*)pErrors->GetBufferPointer();
+      if (err && milkwave) {
+          milkwave->LogInfo(L"Shader Error:");
+          wchar_t werr[1024];
+          MultiByteToWideChar(CP_ACP, 0, err, -1, werr, 1024);
+          milkwave->LogInfo(werr);
+      }
+      pErrors->Release();
+    }
   }
 }

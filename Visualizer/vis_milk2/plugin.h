@@ -554,10 +554,10 @@ public:
 #define WM_USER_SET_VIDEO_DEVICE WM_USER + 106
 #define WM_USER_ENABLE_VIDEO_MIX WM_USER + 107
 #define WM_USER_ENABLE_SPOUT_MIX WM_USER + 109
-#define WM_USER_SET_INPUTMIX_OPACITY WM_USER + 110
-#define WM_USER_SET_INPUTMIX_TINT WM_USER + 111
-#define WM_USER_SET_INPUTMIX_LUMAKEY WM_USER + 112
-#define WM_USER_SET_INPUTMIX_ONTOP WM_USER + 113
+#define WM_USER_SET_INPUTMIX_OPACITY WM_USER + 150
+#define WM_USER_SET_INPUTMIX_LUMAKEY WM_USER + 151
+#define WM_USER_SET_INPUTMIX_ONTOP WM_USER + 152
+#define WM_USER_SET_INPUTMIX_TINT WM_USER + 153
 
   FFT            myfft;
   td_mysounddata mysound;
@@ -685,6 +685,7 @@ public:
   wchar_t m_szSpoutSenderName[256];
   float m_fInputMixOpacity;          // 0.0 to 1.0 (replaces m_fPresetOpacity)
   D3DCOLOR m_cInputMixTint;          // Tint color (default White)
+  bool  m_bInputMixLumaActive;       // bool instead of threshold < 0 check
   float m_fInputMixLumakeyThreshold; // 0.0 to 1.0
   float m_fInputMixLumakeySoftness;  // 0.0 to 1.0
   bool  m_bInputMixOnTop;            // true: overlay, false: background (underlay)
@@ -698,6 +699,10 @@ public:
   // Spout receiver resources
   spoutDX9* m_pSpoutReceiver;
   IDirect3DTexture9* m_pSpoutInputTexture;
+
+  // Input mixing shader
+  IDirect3DPixelShader9* m_lpPS_InputMix;
+  void CompileInputMixShader();
   int m_nSpoutInputWidth;
   int m_nSpoutInputHeight;
 
