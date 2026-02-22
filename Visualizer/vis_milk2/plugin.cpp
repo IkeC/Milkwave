@@ -6978,17 +6978,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     //		note: regular hotkeys should be handled in HandleRegularKey.
     switch (wParam) {
     case VK_LEFT:
-      if (m_UI_mode == UI_REGULAR) {
-        if (bCtrlHeldDown) {
-          AddError(L"Rewind", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-          SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_REWIND));
-        }
-        else {
-          AddError(L"Previous", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-          keybd_event(VK_MEDIA_PREV_TRACK, 0, 0, 0);
-          keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_KEYUP, 0);
-        }
-      }
       break;
     case VK_RIGHT:
       if (m_UI_mode == UI_LOAD) {
@@ -7006,17 +6995,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         else
           m_nMashSlot = min(MASH_SLOTS - 1, m_nMashSlot + 1);
         return 0; // we processed (or absorbed) the key
-      }
-      else if (m_UI_mode == UI_REGULAR) {
-        if (bCtrlHeldDown) {
-          AddError(L"Fast Forward", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-          SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_FAST_FORWARD));
-        }
-        else {
-          AddError(L"Next", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-          keybd_event(VK_MEDIA_NEXT_TRACK, 0, 0, 0);
-          keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_KEYUP, 0);
-        }
       }
 
       break;
@@ -7081,11 +7059,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       else if (bShiftHeldDown) {
         ToggleWindowOpacity(hWnd, false);
       }
-      else {
-        AddError(L"Stop", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-        keybd_event(VK_MEDIA_STOP, 0, 0, 0);
-        keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
-      }
       break;
 
     case VK_DOWN:
@@ -7107,11 +7080,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
       else if (bShiftHeldDown) {
         ToggleWindowOpacity(hWnd, true);
       }
-      else {
-        AddError(L"Play/Pause", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-        keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 0, 0);
-        keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, 0);
-      }
       break;
 
     case 'X':
@@ -7127,13 +7095,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           }
           return 0;
         }
-        AddError(L"Play/Pause", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-        keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 0, 0);
-        keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, 0);
-        /*
-        SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_PLAY_PAUSE));
-        Sleep(200);
-        */ //YouTube inaccurately plays/pauses the video when you do this.
       }
       break;
     case 'A':
@@ -7148,37 +7109,8 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           }
           return 0; // we processed (or absorbed) the key
         }
-        /*
-        SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_STOP));
-        Sleep(200);
-        */ //Any media players force stops the track without fading (Ex: AIMP) - so I think I don't need this.
       }
       break;
-    case 'C':
-      if (m_UI_mode == UI_REGULAR) {
-        if ((GetKeyState(VK_SHIFT) & mask) == 0 && (GetKeyState(VK_CONTROL) & mask) == 0) {
-          AddError(L"Stop", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-          keybd_event(VK_MEDIA_STOP, 0, 0, 0);
-          keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
-        }
-        /*
-        SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_STOP));
-        Sleep(200);
-        */ //Any media players force stops the track without fading (Ex: AIMP) - so I think I don't need this.
-      }
-      break;
-    case 'V':
-      if (m_UI_mode == UI_REGULAR) {
-        AddError(L"Next", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-        keybd_event(VK_MEDIA_NEXT_TRACK, 0, 0, 0);
-        keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_KEYUP, 0);
-        /*
-        SendNotifyMessage(HWND_BROADCAST, WM_APPCOMMAND, 0, MAKELPARAM(0, APPCOMMAND_MEDIA_NEXTTRACK));
-        Sleep(200);
-        */ //AIMP freezes when you do this.
-      }
-      break;
-
     case VK_SPACE:
       if (m_UI_mode == UI_LOAD)
         goto HitEnterFromLoadMenu;
@@ -7387,11 +7319,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         else {
           ToggleSpout();
         }
-      }
-      else {
-        AddError(L"Previous", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
-        keybd_event(VK_MEDIA_PREV_TRACK, 0, 0, 0);
-        keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_KEYUP, 0);
       }
       break;
 

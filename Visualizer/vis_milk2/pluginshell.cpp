@@ -2254,30 +2254,17 @@ LRESULT CPluginShell::PluginShellWindowProc(HWND hWnd, unsigned uMsg, WPARAM wPa
       return 0;
 
     switch (wParam) {
-      // WINAMP PLAYBACK CONTROL KEYS:
-    case 'x':
-    case 'X':
-      /* play */
-      return 0;
-    case 'c':
-    case 'C':
-      /* pause */
-      return 0;
-    case 'v':
-    case 'V':
-      /* stop */
-      return 0;
     case 'b':
     case 'B':
-      /* next */
+      /* track info */
       return 0;
     case 's':
     case 'S':
-      /* shuffle */
+      /* save preset */
       return 0;
     case 'r':
     case 'R':
-      /* repeat */
+      /* random/sequential order */
       return 0;
     }
 

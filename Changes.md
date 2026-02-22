@@ -10,6 +10,9 @@
 * Remote: Set preset auto change time
 * Visualizer: Save screenshot (Ctrl+X)
 * Visualizer: Key bindings to alter Quality (Ctrl+Q) and Hue (Ctrl+H)
+* Visualizer: Removed direct media transport controls (play/pause/stop/next/prev/rewind/ff)
+  - Arrow keys, X, C, V, Z no longer send media commands
+  - Track info display (B, middle mouse) is unchanged
 
 ## v3.4 (2025-11-22)
 
