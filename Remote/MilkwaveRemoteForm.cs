@@ -12,7 +12,6 @@ using System.Text.Json;
 using static MilkwaveRemote.Data.MidiRow;
 using static MilkwaveRemote.Helper.DarkModeCS;
 using static MilkwaveRemote.Helper.RemoteHelper;
-using static MilkwaveRemote.Helper.DeviceManager;
 
 namespace MilkwaveRemote {
   public partial class MilkwaveRemoteForm : Form {
@@ -70,6 +69,7 @@ namespace MilkwaveRemote {
     private const int WM_ENABLEVIDEOMIX = 0x0400 + 107;
     private const int WM_SETSPOUTSENDER = 0x0400 + 108;
     private const int WM_ENABLESPOUTMIX = 0x0400 + 109;
+    private const int WM_SET_INPUTMIX_OPACITY = 0x0400 + 110;
     private const int WM_SET_INPUTMIX_ONTOP = 0x0400 + 113;
 
     private const uint WM_KEYDOWN = 0x0100;
@@ -277,7 +277,9 @@ namespace MilkwaveRemote {
       HueAutoSeconds,
       CaptureScreenshot,
       VideoInput,
-      SpoutInput
+      SpoutInput,
+      InputMixOnTop,
+      InputMixOpacity
     }
 
     private class PendingThumbnail {
@@ -1619,6 +1621,38 @@ namespace MilkwaveRemote {
                 }
               } else {
                 SetStatusText(windowNotFound);
+              }
+              SendingMessage = false;
+              return;
+            } else if (type == MessageType.InputMixOnTop) {
+              try {
+                if (updatingSettingsParams) return;
+
+                bool onTop = chkInputTop.Checked;
+                if (foundWindow != IntPtr.Zero) {
+                  bool sent = PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero) != IntPtr.Zero;
+                  SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")} on {foundWindowTitle}");
+                } else {
+                  SetStatusText(windowNotFound);
+                }
+              } catch (Exception ex) {
+                SetStatusText($"Error setting input layer position: {ex.Message}");
+              }
+              SendingMessage = false;
+              return;
+            } else if (type == MessageType.InputMixOpacity) {
+              try {
+                if (updatingSettingsParams) return;
+
+                int opacityInt = (int)numInputMixOpacity.Value;
+                if (foundWindow != IntPtr.Zero) {
+                  bool sent = PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero) != IntPtr.Zero;
+                  SetStatusText($"Input mix opacity set to {opacityInt}% on {foundWindowTitle}");
+                } else {
+                  SetStatusText(windowNotFound);
+                }
+              } catch (Exception ex) {
+                SetStatusText($"Error setting input mix opacity: {ex.Message}");
               }
               SendingMessage = false;
               return;
@@ -3492,6 +3526,18 @@ namespace MilkwaveRemote {
       }
       SetExpIncrements(numAmpRight);
       SendToMilkwaveVisualizer("", MessageType.Amplify);
+    }
+
+    public void chkInputTop_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixOnTop);
+      }
+    }
+
+    public void numInputMixOpacity_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixOpacity);
+      }
     }
 
     private void SetExpIncrements(NumericUpDown nud) {
@@ -6372,23 +6418,6 @@ namespace MilkwaveRemote {
       PopulateSpoutSenders();
       int realCount = cboSputInput.Enabled ? cboSputInput.Items.Count : 0;
       SetStatusText($"Spout senders rescanned: {realCount} found");
-    }
-
-    private void chkInputTop_CheckedChanged(object sender, EventArgs e) {
-      try {
-        if (updatingSettingsParams) return;
-
-        bool onTop = chkInputTop.Checked;
-        IntPtr foundWindow = FindVisualizerWindow();
-        if (foundWindow != IntPtr.Zero) {
-          bool sent = PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero) != IntPtr.Zero;
-          SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")} (sent={sent})");
-        } else {
-          SetStatusText(windowNotFound);
-        }
-      } catch (Exception ex) {
-        SetStatusText($"Error setting input layer position: {ex.Message}");
-      }
     }
     #endregion
 

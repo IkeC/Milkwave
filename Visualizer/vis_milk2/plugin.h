@@ -286,6 +286,8 @@ typedef std::vector<PresetInfo> PresetList;
 class CPlugin : public CPluginShell {
 public:
   Milkwave* milkwave;
+  void SetInputMixOpacity(float opacity);
+  void SetInputMixOnTop(bool onTop);
   //====[ 1. members added to create this specific example plugin: ]================================================
 
 // =========================================================
@@ -298,7 +300,7 @@ public:
   void OpenMilkwaveRemote();
   void SetAudioDeviceDisplayName(const wchar_t* displayName, bool isRenderDevice);
   void SetAMDFlag();
-  
+
   void SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t checksum, char* prefix);
   ID3DXBuffer* LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix);
 
@@ -774,8 +776,7 @@ public:
   void        EnableVideoMixing(bool enable);
   void        SetSpoutSender(const wchar_t* senderName);
   void        EnableSpoutMixing(bool enable);
-  void        SetInputMixOnTop(bool onTop);
-  
+
   //void        WarpedBlit();
                // note: 'bFlipAlpha' just flips the alpha blending in fixed-fn pipeline - not the values for culling tiles.
   void		 WarpedBlit_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, bool bCullTiles, bool bFlipCulling);

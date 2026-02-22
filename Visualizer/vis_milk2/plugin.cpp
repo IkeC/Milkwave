@@ -5935,6 +5935,13 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
     return 0;
   }
 
+  // Handle Input Mix Opacity (0..100 -> 0.0..1.0)
+  case WM_USER_SET_INPUTMIX_OPACITY:
+  {
+    this->SetInputMixOpacity((float)wParam / 100.0f);
+    return 0;
+  }
+
   case WM_COMMAND:
 
   case WM_CHAR:   // plain & simple alphanumeric keys

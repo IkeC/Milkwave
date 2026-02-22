@@ -215,6 +215,7 @@ namespace MilkwaveRemote
       chkPresetLocked = new CheckBox();
       chkVideoMix = new CheckBox();
       chkSpoutMix = new CheckBox();
+      numInputMixOpacity = new NumericUpDown();
       cboSettingsOpenFile = new ComboBox();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
@@ -368,6 +369,7 @@ namespace MilkwaveRemote
       panShadertoyLocal = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
+      label12 = new Label();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -389,6 +391,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numOffset).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsHueAuto).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numInputMixOpacity).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numMidiBank).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).BeginInit();
@@ -2660,6 +2663,19 @@ namespace MilkwaveRemote
       chkSpoutMix.UseVisualStyleBackColor = true;
       chkSpoutMix.CheckedChanged += chkSpoutMix_CheckedChanged;
       // 
+      // numInputMixOpacity
+      // 
+      numInputMixOpacity.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numInputMixOpacity.Increment = new decimal(new int[] { 2, 0, 0, 0 });
+      numInputMixOpacity.Location = new Point(56, 67);
+      numInputMixOpacity.Name = "numInputMixOpacity";
+      numInputMixOpacity.Size = new Size(46, 23);
+      numInputMixOpacity.TabIndex = 134;
+      numInputMixOpacity.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numInputMixOpacity, "Opacity");
+      numInputMixOpacity.Value = new decimal(new int[] { 100, 0, 0, 0 });
+      numInputMixOpacity.ValueChanged += numInputMixOpacity_ValueChanged;
+      // 
       // cboSettingsOpenFile
       // 
       cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
@@ -3761,6 +3777,8 @@ namespace MilkwaveRemote
       // 
       tabInput.BackColor = SystemColors.ControlLight;
       tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Controls.Add(label12);
+      tabInput.Controls.Add(numInputMixOpacity);
       tabInput.Controls.Add(chkInputTop);
       tabInput.Controls.Add(chkSpoutMix);
       tabInput.Controls.Add(btnSpoutInputScan);
@@ -4809,6 +4827,15 @@ namespace MilkwaveRemote
       splitContainerShader.SplitterDistance = 286;
       splitContainerShader.TabIndex = 31;
       // 
+      // label12
+      // 
+      label12.Location = new Point(5, 64);
+      label12.Name = "label12";
+      label12.Size = new Size(48, 24);
+      label12.TabIndex = 135;
+      label12.Text = "Opacity";
+      label12.TextAlign = ContentAlignment.MiddleRight;
+      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -4848,6 +4875,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numOffset).EndInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).EndInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsHueAuto).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numInputMixOpacity).EndInit();
       ((System.ComponentModel.ISupportInitialize)numMidiBank).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).EndInit();
@@ -5248,5 +5276,8 @@ namespace MilkwaveRemote
     private Label label11;
     private CheckBox chkSpoutMix;
     private CheckBox chkInputTop;
+    private NumericUpDown numericUpDown1;
+    private NumericUpDown numInputMixOpacity;
+    private Label label12;
   }
 }

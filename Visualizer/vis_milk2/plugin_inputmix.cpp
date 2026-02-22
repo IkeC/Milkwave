@@ -1,6 +1,7 @@
 // Input mixing implementation for video and Spout inputs
 #include "plugin.h"
 #include <string.h>
+#include <algorithm>
 
 void CPlugin::SetVideoDevice(int deviceIndex) {
     m_nVideoDeviceIndex = deviceIndex;
@@ -167,7 +168,7 @@ void CPlugin::EnableSpoutMixing(bool enable) {
 
             // If a specific sender was set, configure it
             if (m_szSpoutSenderName[0] != L'\0') {
-                char narrowSenderName[256] = {0};
+                char narrowSenderName[256] = { 0 };
                 size_t convertedChars = 0;
                 wcstombs_s(&convertedChars, narrowSenderName, sizeof(narrowSenderName), m_szSpoutSenderName, _TRUNCATE);
                 m_pSpoutReceiver->SetReceiverName(narrowSenderName);
@@ -200,4 +201,13 @@ void CPlugin::SetInputMixOnTop(bool onTop) {
     } else {
         AddNotification(L"Input Layer: Background", 2.0f);
     }
+}
+
+void CPlugin::SetInputMixOpacity(float opacity) {
+    if (milkwave) {
+        wchar_t buf[256];
+        swprintf_s(buf, L"SetInputMixOpacity: %.2f", opacity);
+        milkwave->LogInfo(buf);
+    }
+    m_fInputMixOpacity = std::clamp(opacity, 0.0f, 1.0f);
 }
