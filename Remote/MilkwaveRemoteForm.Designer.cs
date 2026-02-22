@@ -218,6 +218,13 @@ namespace MilkwaveRemote
       numInputMixOpacity = new NumericUpDown();
       numLumaThreshold = new NumericUpDown();
       numLumaSoftness = new NumericUpDown();
+      chkMixLumaActive = new CheckBox();
+      label13 = new Label();
+      label12 = new Label();
+      chkInputTop = new CheckBox();
+      label11 = new Label();
+      label10 = new Label();
+      label14 = new Label();
       cboSettingsOpenFile = new ComboBox();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
@@ -296,16 +303,10 @@ namespace MilkwaveRemote
       numWavePushY = new NumericUpDown();
       numWavePushX = new NumericUpDown();
       tabInput = new TabPage();
-      chkMixLumaActive = new CheckBox();
-      label13 = new Label();
-      label12 = new Label();
-      chkInputTop = new CheckBox();
       btnSpoutInputScan = new Button();
       cboSputInput = new ComboBox();
-      label11 = new Label();
       btnVideoInputScan = new Button();
       cboVideoInput = new ComboBox();
-      label10 = new Label();
       tabMidi = new TabPage();
       label6 = new Label();
       label8 = new Label();
@@ -2641,7 +2642,7 @@ namespace MilkwaveRemote
       // 
       chkVideoMix.Appearance = Appearance.Button;
       chkVideoMix.FlatStyle = FlatStyle.System;
-      chkVideoMix.Location = new Point(356, 8);
+      chkVideoMix.Location = new Point(370, 8);
       chkVideoMix.Margin = new Padding(3, 2, 3, 2);
       chkVideoMix.Name = "chkVideoMix";
       chkVideoMix.Size = new Size(55, 23);
@@ -2657,7 +2658,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutMix.Appearance = Appearance.Button;
       chkSpoutMix.FlatStyle = FlatStyle.System;
-      chkSpoutMix.Location = new Point(356, 37);
+      chkSpoutMix.Location = new Point(370, 37);
       chkSpoutMix.Margin = new Padding(3, 2, 3, 2);
       chkSpoutMix.Name = "chkSpoutMix";
       chkSpoutMix.Size = new Size(55, 23);
@@ -2672,7 +2673,7 @@ namespace MilkwaveRemote
       // numInputMixOpacity
       // 
       numInputMixOpacity.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numInputMixOpacity.Location = new Point(56, 67);
+      numInputMixOpacity.Location = new Point(72, 96);
       numInputMixOpacity.Name = "numInputMixOpacity";
       numInputMixOpacity.Size = new Size(46, 23);
       numInputMixOpacity.TabIndex = 134;
@@ -2684,7 +2685,7 @@ namespace MilkwaveRemote
       // numLumaThreshold
       // 
       numLumaThreshold.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numLumaThreshold.Location = new Point(56, 96);
+      numLumaThreshold.Location = new Point(72, 67);
       numLumaThreshold.Name = "numLumaThreshold";
       numLumaThreshold.Size = new Size(46, 23);
       numLumaThreshold.TabIndex = 136;
@@ -2696,7 +2697,7 @@ namespace MilkwaveRemote
       // numLumaSoftness
       // 
       numLumaSoftness.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numLumaSoftness.Location = new Point(109, 96);
+      numLumaSoftness.Location = new Point(190, 67);
       numLumaSoftness.Name = "numLumaSoftness";
       numLumaSoftness.Size = new Size(46, 23);
       numLumaSoftness.TabIndex = 137;
@@ -2704,6 +2705,88 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(numLumaSoftness, "Luma key softness (Smoothing range for removal)");
       numLumaSoftness.Value = new decimal(new int[] { 25, 0, 0, 0 });
       numLumaSoftness.ValueChanged += numLumaSoftness_ValueChanged;
+      // 
+      // chkMixLumaActive
+      // 
+      chkMixLumaActive.Appearance = Appearance.Button;
+      chkMixLumaActive.FlatStyle = FlatStyle.System;
+      chkMixLumaActive.Location = new Point(245, 66);
+      chkMixLumaActive.Margin = new Padding(3, 2, 3, 2);
+      chkMixLumaActive.Name = "chkMixLumaActive";
+      chkMixLumaActive.Size = new Size(55, 23);
+      chkMixLumaActive.TabIndex = 140;
+      chkMixLumaActive.Text = "Active";
+      chkMixLumaActive.TextAlign = ContentAlignment.MiddleCenter;
+      chkMixLumaActive.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkMixLumaActive, "Activate Luma Key blending of input and preset layer");
+      chkMixLumaActive.UseVisualStyleBackColor = true;
+      chkMixLumaActive.CheckedChanged += chkMixLumaActive_CheckedChanged;
+      // 
+      // label13
+      // 
+      label13.Location = new Point(3, 64);
+      label13.Name = "label13";
+      label13.Size = new Size(66, 24);
+      label13.TabIndex = 139;
+      label13.Text = "Luma Key";
+      label13.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label13, "Lumakey threshold\r\nControls the brightness cutoff point (0–100%)");
+      // 
+      // label12
+      // 
+      label12.Location = new Point(21, 93);
+      label12.Name = "label12";
+      label12.Size = new Size(48, 24);
+      label12.TabIndex = 135;
+      label12.Text = "Opacity";
+      label12.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label12, "Set Opacity of top layer");
+      // 
+      // chkInputTop
+      // 
+      chkInputTop.Appearance = Appearance.Button;
+      chkInputTop.FlatStyle = FlatStyle.System;
+      chkInputTop.Location = new Point(432, 8);
+      chkInputTop.Margin = new Padding(3, 2, 3, 2);
+      chkInputTop.Name = "chkInputTop";
+      chkInputTop.Size = new Size(55, 52);
+      chkInputTop.TabIndex = 133;
+      chkInputTop.Text = "Top";
+      chkInputTop.TextAlign = ContentAlignment.MiddleCenter;
+      chkInputTop.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkInputTop, "If toggled, input layer will be above preset layer");
+      chkInputTop.UseVisualStyleBackColor = true;
+      chkInputTop.CheckedChanged += chkInputTop_CheckedChanged;
+      // 
+      // label11
+      // 
+      label11.Location = new Point(18, 37);
+      label11.Name = "label11";
+      label11.Size = new Size(48, 24);
+      label11.TabIndex = 128;
+      label11.Text = "Spout";
+      label11.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label11, "Spout Senders");
+      // 
+      // label10
+      // 
+      label10.Location = new Point(18, 8);
+      label10.Name = "label10";
+      label10.Size = new Size(48, 24);
+      label10.TabIndex = 100;
+      label10.Text = "Device";
+      label10.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label10, "Cam Input Device\r\nNote: To mix OBS input, using the OBS Spout sender is recommended\r\n");
+      // 
+      // label14
+      // 
+      label14.Location = new Point(118, 64);
+      label14.Name = "label14";
+      label14.Size = new Size(66, 24);
+      label14.TabIndex = 141;
+      label14.Text = "Softness";
+      label14.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label14, "Lumakey softness\r\nControls the feathering/transparency gradient at the edges of the cutoff\r\n");
       // 
       // cboSettingsOpenFile
       // 
@@ -3806,6 +3889,7 @@ namespace MilkwaveRemote
       // 
       tabInput.BackColor = SystemColors.ControlLight;
       tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Controls.Add(label14);
       tabInput.Controls.Add(chkMixLumaActive);
       tabInput.Controls.Add(label13);
       tabInput.Controls.Add(numLumaSoftness);
@@ -3828,58 +3912,10 @@ namespace MilkwaveRemote
       tabInput.TabIndex = 7;
       tabInput.Text = "Input";
       // 
-      // chkMixLumaActive
-      // 
-      chkMixLumaActive.Appearance = Appearance.Button;
-      chkMixLumaActive.FlatStyle = FlatStyle.System;
-      chkMixLumaActive.Location = new Point(162, 95);
-      chkMixLumaActive.Margin = new Padding(3, 2, 3, 2);
-      chkMixLumaActive.Name = "chkMixLumaActive";
-      chkMixLumaActive.Size = new Size(55, 23);
-      chkMixLumaActive.TabIndex = 140;
-      chkMixLumaActive.Text = "Active";
-      chkMixLumaActive.TextAlign = ContentAlignment.MiddleCenter;
-      chkMixLumaActive.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkMixLumaActive.UseVisualStyleBackColor = true;
-      chkMixLumaActive.CheckedChanged += chkMixLumaActive_CheckedChanged;
-      // 
-      // label13
-      // 
-      label13.Location = new Point(5, 93);
-      label13.Name = "label13";
-      label13.Size = new Size(48, 24);
-      label13.TabIndex = 139;
-      label13.Text = "Luma";
-      label13.TextAlign = ContentAlignment.MiddleRight;
-      // 
-      // label12
-      // 
-      label12.Location = new Point(5, 64);
-      label12.Name = "label12";
-      label12.Size = new Size(48, 24);
-      label12.TabIndex = 135;
-      label12.Text = "Opacity";
-      label12.TextAlign = ContentAlignment.MiddleRight;
-      // 
-      // chkInputTop
-      // 
-      chkInputTop.Appearance = Appearance.Button;
-      chkInputTop.FlatStyle = FlatStyle.System;
-      chkInputTop.Location = new Point(418, 8);
-      chkInputTop.Margin = new Padding(3, 2, 3, 2);
-      chkInputTop.Name = "chkInputTop";
-      chkInputTop.Size = new Size(55, 52);
-      chkInputTop.TabIndex = 133;
-      chkInputTop.Text = "Top";
-      chkInputTop.TextAlign = ContentAlignment.MiddleCenter;
-      chkInputTop.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkInputTop.UseVisualStyleBackColor = true;
-      chkInputTop.CheckedChanged += chkInputTop_CheckedChanged;
-      // 
       // btnSpoutInputScan
       // 
       btnSpoutInputScan.FlatStyle = FlatStyle.System;
-      btnSpoutInputScan.Location = new Point(294, 37);
+      btnSpoutInputScan.Location = new Point(308, 37);
       btnSpoutInputScan.Name = "btnSpoutInputScan";
       btnSpoutInputScan.Size = new Size(55, 23);
       btnSpoutInputScan.TabIndex = 131;
@@ -3891,25 +3927,16 @@ namespace MilkwaveRemote
       // 
       cboSputInput.DropDownStyle = ComboBoxStyle.DropDownList;
       cboSputInput.FormattingEnabled = true;
-      cboSputInput.Location = new Point(56, 38);
+      cboSputInput.Location = new Point(69, 38);
       cboSputInput.Name = "cboSputInput";
       cboSputInput.Size = new Size(232, 23);
       cboSputInput.TabIndex = 129;
       cboSputInput.SelectedIndexChanged += cboSpoutInput_SelectedIndexChanged;
       // 
-      // label11
-      // 
-      label11.Location = new Point(5, 37);
-      label11.Name = "label11";
-      label11.Size = new Size(48, 24);
-      label11.TabIndex = 128;
-      label11.Text = "Spout";
-      label11.TextAlign = ContentAlignment.MiddleRight;
-      // 
       // btnVideoInputScan
       // 
       btnVideoInputScan.FlatStyle = FlatStyle.System;
-      btnVideoInputScan.Location = new Point(294, 8);
+      btnVideoInputScan.Location = new Point(308, 8);
       btnVideoInputScan.Name = "btnVideoInputScan";
       btnVideoInputScan.Size = new Size(55, 23);
       btnVideoInputScan.TabIndex = 127;
@@ -3921,20 +3948,11 @@ namespace MilkwaveRemote
       // 
       cboVideoInput.DropDownStyle = ComboBoxStyle.DropDownList;
       cboVideoInput.FormattingEnabled = true;
-      cboVideoInput.Location = new Point(56, 9);
+      cboVideoInput.Location = new Point(69, 9);
       cboVideoInput.Name = "cboVideoInput";
       cboVideoInput.Size = new Size(232, 23);
       cboVideoInput.TabIndex = 101;
       cboVideoInput.SelectedIndexChanged += cboVideoInput_SelectedIndexChanged;
-      // 
-      // label10
-      // 
-      label10.Location = new Point(5, 8);
-      label10.Name = "label10";
-      label10.Size = new Size(48, 24);
-      label10.TabIndex = 100;
-      label10.Text = "Device";
-      label10.TextAlign = ContentAlignment.MiddleRight;
       // 
       // tabMidi
       // 
@@ -5342,5 +5360,6 @@ namespace MilkwaveRemote
     private NumericUpDown numLumaSoftness;
     private NumericUpDown numLumaThreshold;
     private CheckBox chkMixLumaActive;
+    private Label label14;
   }
 }
