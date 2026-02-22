@@ -3849,10 +3849,11 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
               char szLastLine[] = 
                   "    float luma_v = dot(ret.xyz, float3(0.299, 0.587, 0.114));\n"
                   "    float luma_a = (luma_params.w > 0.5) ? saturate((luma_v - luma_params.x) / max(0.0001, luma_params.y)) : 1.0;\n"
-                  "    _return_value = float4(ret.xyz, luma_a * _vDiffuse.w);";
+                  "    float opacity_a = (luma_params.w > 0.5) ? luma_params.z : 1.0;\n"
+                  "    _return_value = float4(shiftHSV(ret.xyz), luma_a * opacity_a * _vDiffuse.w);";
               sprintf(p, " %s\n}\n", szLastLine);
             } else {
-              char szLastLine[] = "    _return_value = float4(ret.xyz, _vDiffuse.w);";
+              char szLastLine[] = "    _return_value = float4(shiftHSV(ret.xyz), _vDiffuse.w);";
               sprintf(p, " %s\n}\n", szLastLine);
             }
         }
@@ -12027,13 +12028,6 @@ void CPlugin::GenCompPShaderText(char* szShaderText, float brightness, float ve_
   if (bInvert)
     p += sprintf(p, "    ret = 1 - ret; //invert%c", LF);
 
-  if (m_bInputMixLumaActive) {
-      p += sprintf(p, "    float luma_comp = dot(ret.xyz, float3(0.299, 0.587, 0.114));%c", LF);
-      p += sprintf(p, "    float factor_comp = saturate((luma_comp - %.3f) / max(0.0001, %.3f));%c", m_fInputMixLumakeyThreshold, m_fInputMixLumakeySoftness, LF);
-      p += sprintf(p, "    return float4(ret.xyz, factor_comp * %.3f);%c", m_fInputMixOpacity, LF);
-  } else {
-      p += sprintf(p, "    return float4(ret.xyz, %.3f);%c", m_fInputMixOpacity, LF);
-  }
   p += sprintf(p, "}%c", LF);
 }
 
