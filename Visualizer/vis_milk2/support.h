@@ -30,7 +30,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __NULLSOFT_DX9_EXAMPLE_PLUGIN_SUPPORT_H__
 #define __NULLSOFT_DX9_EXAMPLE_PLUGIN_SUPPORT_H__ 1
 
-#include <d3dx9.h>
+#include "d3dx9compat.h"  // replaces <d3dx9.h>; provides D3DX types for DX9→DX12 migration
 
 void MakeWorldMatrix(D3DXMATRIX* pOut,
   float xpos, float ypos, float zpos,

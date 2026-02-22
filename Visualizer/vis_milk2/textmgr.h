@@ -30,11 +30,10 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef GEISS_TEXT_DRAWING_MANAGER
 #define GEISS_TEXT_DRAWING_MANAGER 1
 
-#ifdef _DEBUG
-#define D3D_DEBUG_INFO  // declare this before including d3d9.h
-#endif
-#include <d3d9.h>
-#include <d3dx9.h>
+// Phase 5 TODO: Replace void* font handles with DirectXTK12 SpriteFont*.
+// For now all font operations are no-ops until text rendering is ported.
+#include <d3d12.h>
+#include <wrl/client.h>
 #include "md_defines.h"
 #include "AutoWide.h"
 
@@ -42,7 +41,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef struct {
   wchar_t* msg;       // points to some character in g_szMsgPool[2][].
-  LPD3DXFONT pfont;   // note: iff this string is really a dark box, pfont will be NULL!
+  void*    pfont;     // Phase 5: will be DirectXTK12 SpriteFont*; NULL for dark boxes
   RECT rect;
   DWORD flags;
   DWORD color;
@@ -57,17 +56,19 @@ public:
   CTextManager();
   ~CTextManager();
 
-  // note: if you can't create lpTextSurface full-size, don't create it at all!
-  void Init(LPDIRECT3DDEVICE9 lpDevice, IDirect3DTexture9* lpTextSurface, int bAdditive); // note: ok if lpTextSurface==NULL; in that case, text will be drawn directly to screen (but not til end anyway).
+  // Phase 5 TODO: fully implement with DirectXTK12 SpriteFont.
+  // lpDevice stored for future use; lpTextSurface unused until Phase 5.
+  void Init(ID3D12Device* lpDevice, void* lpTextSurface, int bAdditive);
   void Finish();
 
-  // note: pFont must persist until DrawNow() is called!
-  int  DrawText(LPD3DXFONT pFont, char* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor = 0xFF000000); // actually queues the text!
-  int  DrawText(LPD3DXFONT pFont, char* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor = 0xFF000000) {
+  // Phase 5 TODO: font rendering — currently queues entries but DrawNow is a no-op.
+  // pFont is a void* placeholder (will be SpriteFont* in Phase 5).
+  int  DrawText(void* pFont, char* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor = 0xFF000000);
+  int  DrawText(void* pFont, char* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor = 0xFF000000) {
     return DrawTextW(pFont, AutoWide(szText), pRect, flags, color, bBox, boxColor);
   };
-  int  DrawTextW(LPD3DXFONT pFont, wchar_t* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor = 0xFF000000); // actually queues the text!
-  int  DrawTextW(LPD3DXFONT pFont, wchar_t* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor = 0xFF000000) {
+  int  DrawTextW(void* pFont, wchar_t* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor = 0xFF000000);
+  int  DrawTextW(void* pFont, wchar_t* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor = 0xFF000000) {
     return DrawTextW(pFont, szText, pRect, flags, color, bBox, boxColor);
   };
   void DrawBox(LPRECT pRect, DWORD boxColor);
@@ -76,9 +77,9 @@ public:
   void ClearAll(); // automatically called @ end of DrawNow()
 
 protected:
-  LPDIRECT3DDEVICE9    m_lpDevice;
-  IDirect3DTexture9* m_lpTextSurface;
-  int                  m_blit_additively;
+  ID3D12Device*  m_lpDevice;       // Phase 5: used for DirectXTK12 rendering
+  void*          m_lpTextSurface;  // Phase 5: render target for text
+  int            m_blit_additively;
 
   int       m_nMsg[2];
   td_string m_msg[2][MAX_MSGS];

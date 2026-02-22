@@ -52,15 +52,11 @@
     <IntDir>.\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)\Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>.\Debug\</OutDir>
     <IntDir>.\Debug\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)\Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -101,9 +97,9 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>windowsapp.lib;DbgHelp.lib;Winmm.lib;d3d9.lib;d3dx9.lib;Shlwapi.lib;projectM_eval.lib;projectM_ns-eel2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>windowsapp.lib;DbgHelp.lib;Winmm.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;Shlwapi.lib;projectM_eval.lib;projectM_ns-eel2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\lib;..\spoutlibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -162,10 +158,10 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>windowsapp.lib;DbgHelp.lib;Winmm.lib;d3d9.lib;d3dx9.lib;Shlwapi.lib;projectM_eval.lib;projectM_ns-eel2.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>windowsapp.lib;DbgHelp.lib;Winmm.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;Shlwapi.lib;projectM_eval.lib;projectM_ns-eel2.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\lib;..\spoutlibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -187,6 +183,7 @@
     <ClCompile Include="..\audio\log.cpp" />
     <ClCompile Include="..\audio\loopback-capture.cpp" />
     <ClCompile Include="..\audio\prefs.cpp" />
+    <!-- SpoutDX9: kept for Phase 1 link compatibility; Phase 5 TODO: replace with Spout2 DX12 sender -->
     <ClCompile Include="..\spoutDX9\SpoutCopy.cpp" />
     <ClCompile Include="..\spoutDX9\SpoutDX9.cpp" />
     <ClCompile Include="..\spoutDX9\SpoutFrameCount.cpp" />
@@ -194,6 +191,7 @@
     <ClCompile Include="..\spoutDX9\SpoutSharedMemory.cpp" />
     <ClCompile Include="..\spoutDX9\SpoutUtils.cpp" />
     <ClCompile Include="AMDDetection.cpp" />
+    <ClCompile Include="dx12pipeline.cpp" />
     <ClCompile Include="dxcontext.cpp" />
     <ClCompile Include="fft.cpp" />
     <ClCompile Include="menu.cpp" />
@@ -217,6 +215,7 @@
     <ClInclude Include="..\audio\loopback-capture.h" />
     <ClInclude Include="..\audio\prefs.h" />
     <ClInclude Include="..\ns-eel2-shim\ns-eel.h" />
+    <!-- SpoutDX9 headers: kept for Phase 1; Phase 5 TODO: replace with Spout2 DX12 headers -->
     <ClInclude Include="..\spoutDX9\SpoutCommon.h" />
     <ClInclude Include="..\spoutDX9\SpoutCopy.h" />
     <ClInclude Include="..\spoutDX9\SpoutDX9.h" />
@@ -228,6 +227,8 @@
     <ClInclude Include="AutoCharFn.h" />
     <ClInclude Include="AutoWide.h" />
     <ClInclude Include="defines.h" />
+    <ClInclude Include="dx12helpers.h" />
+    <ClInclude Include="dx12pipeline.h" />
     <ClInclude Include="dxcontext.h" />
     <ClInclude Include="fft.h" />
     <ClInclude Include="md_defines.h" />

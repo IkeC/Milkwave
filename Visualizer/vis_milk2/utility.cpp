@@ -30,6 +30,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "utility.h"
 #include <math.h>
 #include <locale.h>
+#include <stdio.h>
 #include <windows.h>
 #ifdef _DEBUG
 #define D3D_DEBUG_INFO  // declare this before including d3d9.h
@@ -805,4 +806,63 @@ void* GetTextResource(UINT id, int no_fallback) {
     data = LockResource(resourceHandle);
   }
   return data;
+}
+
+// ---------------------------------------------------------------------------
+// Debug log — writes timestamped messages to debug.log in the base directory.
+// DebugLogInit rotates debug.log → debug.prev.log (keeps only current + last run).
+// ---------------------------------------------------------------------------
+static FILE* g_debugLogFile = nullptr;
+static CRITICAL_SECTION g_debugLogCS;
+static bool g_debugLogReady = false;
+
+void DebugLogInit(const wchar_t* baseDir) {
+  InitializeCriticalSection(&g_debugLogCS);
+
+  wchar_t logPath[MAX_PATH];
+  wchar_t prevPath[MAX_PATH];
+  swprintf_s(logPath, MAX_PATH, L"%sdebug.log", baseDir);
+  swprintf_s(prevPath, MAX_PATH, L"%sdebug.prev.log", baseDir);
+
+  // Rotate: delete old prev, rename current → prev
+  DeleteFileW(prevPath);
+  MoveFileW(logPath, prevPath);
+
+  // Open new log file
+  g_debugLogFile = _wfopen(logPath, L"w, ccs=UTF-8");
+  if (g_debugLogFile) {
+    g_debugLogReady = true;
+    // Write header
+    SYSTEMTIME st;
+    GetLocalTime(&st);
+    fwprintf(g_debugLogFile, L"=== Milkwave debug log started %04d-%02d-%02d %02d:%02d:%02d ===\n",
+             st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+    fflush(g_debugLogFile);
+  }
+}
+
+void DebugLogW(const wchar_t* msg) {
+  if (!g_debugLogReady || !g_debugLogFile || !msg || !msg[0])
+    return;
+
+  SYSTEMTIME st;
+  GetLocalTime(&st);
+
+  EnterCriticalSection(&g_debugLogCS);
+  fwprintf(g_debugLogFile, L"[%02d:%02d:%02d.%03d] %s",
+           st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, msg);
+  // Ensure line ends with newline
+  int len = lstrlenW(msg);
+  if (len > 0 && msg[len - 1] != L'\n')
+    fwprintf(g_debugLogFile, L"\n");
+  fflush(g_debugLogFile);
+  LeaveCriticalSection(&g_debugLogCS);
+}
+
+void DebugLogA(const char* msg) {
+  if (!g_debugLogReady || !msg || !msg[0])
+    return;
+  wchar_t buf[2048];
+  MultiByteToWideChar(CP_ACP, 0, msg, -1, buf, 2048);
+  DebugLogW(buf);
 }

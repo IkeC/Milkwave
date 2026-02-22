@@ -43,6 +43,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "utility.h"
 #include <assert.h>
 #include <math.h>
+#include <algorithm>  // std::swap
 
 #define D3DCOLOR_RGBA_01(r,g,b,a) D3DCOLOR_RGBA(((int)(r*255)),((int)(g*255)),((int)(b*255)),((int)(a*255)))
 #define FRAND ((rand() % 7381)/7380.0f)
@@ -820,18 +821,19 @@ void CPlugin::RunPerFrameEquations(int code) {
 
 void CPlugin::RenderFrame(int bRedraw) {
 
-  // Get the Direct3D device
+  // Get the Direct3D device (may be null in DX12 mode — CPU code still runs)
   LPDIRECT3DDEVICE9 lpDevice = GetDevice();
 
   // Check if black mode is enabled
   if (m_blackmode) {
     if (lpDevice) {
-      // Clear the screen to black
+      // Clear the screen to black (DX9 path)
       lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-      lpDevice->Present(NULL, NULL, NULL, NULL); // Present the black screen
+      lpDevice->Present(NULL, NULL, NULL, NULL);
     }
+    return;
   }
-  else {
+  {
 
     int i;
 
@@ -942,10 +944,18 @@ void CPlugin::RenderFrame(int bRedraw) {
 
     RunPerFrameEquations(code);
 
-    // restore any lost surfaces
-    //m_lpDD->RestoreAllSurfaces();
+    // Per-vertex warp computation (CPU-only, no device dependency).
+    // Moved here from inside the DX9 rendering block so DX12 path can use the results.
+    ComputeGridAlphaValues();
 
-    LPDIRECT3DDEVICE9 lpDevice = GetDevice();
+    // ──── DX12 rendering path ────
+    if (!lpDevice && m_lpDX && m_lpDX->m_device) {
+      DX12_RenderWarpAndComposite();
+      std::swap(m_dx12VS[0], m_dx12VS[1]);
+      return;
+    }
+
+    // ──── DX9 rendering path (original code) ────
     if (!lpDevice)
       return;
 
@@ -1071,7 +1081,7 @@ void CPlugin::RenderFrame(int bRedraw) {
         m_n16BitGamma = 0;
     }
 
-    ComputeGridAlphaValues();
+    // ComputeGridAlphaValues() already called before DX12/DX9 branch above
 
     // do the warping for this frame [warp shader]
     if (!m_pState->m_bBlending) {
@@ -1830,6 +1840,1412 @@ void CPlugin::BlurPasses() {
 #endif
 
   m_nHighestBlurTexUsedThisFrame = 0;
+}
+
+// ---------------------------------------------------------------------------
+// DX12 rendering: warp pass (VS0 → VS1) + composite pass (VS1 → backbuffer)
+// Called from RenderFrame after CPU-side computation (per-frame equations,
+// per-vertex warp) has filled m_verts[] with final UVs.
+// ---------------------------------------------------------------------------
+void CPlugin::DX12_RenderWarpAndComposite()
+{
+  if (!m_lpDX || !m_lpDX->m_device || !m_lpDX->m_commandList)
+    return;
+
+  auto* cmdList = m_lpDX->m_commandList.Get();
+
+  // Deferred PSO creation: safe here because previous frame's command list
+  // has already been submitted via ExecuteCommandLists in EndFrame.
+  if (m_bDX12PSOsDirty) {
+    CreateDX12PresetPSOs();
+    m_bDX12PSOsDirty = false;
+  }
+
+  // ── First-frame: clear VS0 to black ──
+  if (m_nFramesSinceResize == 0) {
+    m_lpDX->TransitionResource(m_dx12VS[0], D3D12_RESOURCE_STATE_RENDER_TARGET);
+    float black[] = { 0.f, 0.f, 0.f, 1.f };
+    cmdList->ClearRenderTargetView(m_lpDX->GetRtvCpuHandle(m_dx12VS[0]), black, 0, nullptr);
+    m_lpDX->TransitionResource(m_dx12VS[0], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+  }
+
+  // ── Warp pass: draw mesh from VS0 into VS1 ──
+  {
+    m_lpDX->TransitionResource(m_dx12VS[0], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    m_lpDX->TransitionResource(m_dx12VS[1], D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_lpDX->GetRtvCpuHandle(m_dx12VS[1]);
+    cmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+    D3D12_VIEWPORT vp = { 0, 0, (float)m_nTexSizeX, (float)m_nTexSizeY, 0.f, 1.f };
+    D3D12_RECT scissor = { 0, 0, (LONG)m_nTexSizeX, (LONG)m_nTexSizeY };
+    cmdList->RSSetViewports(1, &vp);
+    cmdList->RSSetScissorRects(1, &scissor);
+
+    // Set descriptor heaps, root sig, PSO
+    ID3D12DescriptorHeap* heaps[] = { m_lpDX->m_srvHeap.Get() };
+    cmdList->SetDescriptorHeaps(1, heaps);
+    cmdList->SetGraphicsRootSignature(m_lpDX->m_rootSignature.Get());
+
+    // Update per-frame binding blocks: put VS textures at the correct t-register
+    // for each shader's sampler_main. Safe because each frame writes to its own range.
+    m_lpDX->UpdatePerFrameBindings(m_dx12VS[0], m_warpMainTexSlot,
+                                    m_dx12VS[1], m_compMainTexSlot);
+
+    // Use preset warp PSO if available, else Phase 4 passthrough.
+    // MD1 presets (nWarpPSVersion=0) have no custom shader — the simple
+    // passthrough (sample tex * vertex color) is the correct behavior.
+    if (m_dx12WarpPSO) {
+      cmdList->SetPipelineState(m_dx12WarpPSO.Get());
+    } else {
+      cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_TEXTURED_MYVERTEX].Get());
+    }
+
+    // Bind warp shader constant buffer
+    PShaderInfo* warpSI = &m_shaders.warp;
+    if (warpSI->CT) {
+      ApplyShaderParams(&warpSI->params, warpSI->CT, m_pState);
+      DX12ConstantTable* ct = static_cast<DX12ConstantTable*>(warpSI->CT);
+      if (ct->GetShadowSize() > 0) {
+        D3D12_GPU_VIRTUAL_ADDRESS cbAddr =
+            m_lpDX->UploadConstantBuffer(ct->GetShadowData(), ct->GetShadowSize());
+        if (cbAddr)
+          cmdList->SetGraphicsRootConstantBufferView(0, cbAddr);
+      }
+    } else {
+      // MD1 preset (no shader CT) — bind a zeroed CBV so the fallback PSO
+      // doesn't read from an uninitialized root descriptor (GPU hang).
+      BYTE zeros[256] = {};
+      D3D12_GPU_VIRTUAL_ADDRESS cbAddr = m_lpDX->UploadConstantBuffer(zeros, 256);
+      if (cbAddr)
+        cmdList->SetGraphicsRootConstantBufferView(0, cbAddr);
+    }
+
+    // Bind VS0 via per-frame binding block (main tex at correct t-register, null elsewhere)
+    cmdList->SetGraphicsRootDescriptorTable(1, m_lpDX->GetWarpBindingGpuHandle());
+
+    // Compute decay color (modulates previous frame to create trail fade)
+    float fDecay = (float)(*m_pState->var_pf_decay);
+    D3DCOLOR cDecay = D3DCOLOR_RGBA_01(fDecay, fDecay, fDecay, 1);
+
+    // Expand warp mesh to triangle list (same logic as WarpedBlit_NoShaders)
+    int primCount = m_nGridX * m_nGridY * 2;
+    int totalVerts = primCount * 3;
+    MYVERTEX tempv[1024 * 3];
+    int max_per_batch = (sizeof(tempv) / sizeof(tempv[0])) / 3 - 4;
+
+    int src_idx = 0;
+    while (src_idx < totalVerts) {
+      int prims_queued = 0;
+      int i = 0;
+      while (prims_queued < max_per_batch && src_idx < totalVerts) {
+        for (int j = 0; j < 3; j++) {
+          tempv[i++] = m_verts[m_indices_list[src_idx++]];
+          tempv[i - 1].y *= -1;  // flip Y
+          tempv[i - 1].Diffuse = (cDecay & 0x00FFFFFF) | (tempv[i - 1].Diffuse & 0xFF000000);
+        }
+        prims_queued++;
+      }
+      if (prims_queued > 0)
+        m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, tempv, prims_queued * 3, sizeof(MYVERTEX));
+    }
+
+  }
+
+  // ── Inject content into VS1 (drawn after warp, before composite) ──
+  // VS1 is still the render target from the warp pass above.
+  // Draw order matches original MilkDrop: shapes → custom waves → wave → sprites/borders
+  {
+    DX12_DrawCustomShapes();
+    DX12_DrawCustomWaves();
+    DX12_DrawWave(mysound.fWave[0], mysound.fWave[1]);
+    DX12_DrawSprites();
+  }
+
+  // ── Composite pass: draw VS1 to backbuffer ──
+  {
+    m_lpDX->TransitionResource(m_dx12VS[1], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+    // Restore backbuffer as render target
+    D3D12_CPU_DESCRIPTOR_HANDLE bbRtv = m_lpDX->m_rtvHeap->GetCPUDescriptorHandleForHeapStart();
+    bbRtv.ptr += (SIZE_T)m_lpDX->m_frameIndex * m_lpDX->m_rtvDescriptorSize;
+    cmdList->OMSetRenderTargets(1, &bbRtv, FALSE, nullptr);
+
+    D3D12_VIEWPORT vp = { 0, 0,
+        (float)m_lpDX->m_client_width, (float)m_lpDX->m_client_height, 0.f, 1.f };
+    D3D12_RECT scissor = { 0, 0, m_lpDX->m_client_width, m_lpDX->m_client_height };
+    cmdList->RSSetViewports(1, &vp);
+    cmdList->RSSetScissorRects(1, &scissor);
+
+    // Use preset comp PSO if available, else Phase 4 passthrough.
+    // The comp quad uses MYVERTEX data, so PSO_TEXTURED_MYVERTEX is correct.
+    if (m_dx12CompPSO) {
+      cmdList->SetPipelineState(m_dx12CompPSO.Get());
+    } else {
+      cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_TEXTURED_MYVERTEX].Get());
+    }
+
+    // Bind composite shader constant buffer
+    PShaderInfo* compSI = &m_shaders.comp;
+    if (compSI->CT) {
+      ApplyShaderParams(&compSI->params, compSI->CT, m_pState);
+      DX12ConstantTable* ct = static_cast<DX12ConstantTable*>(compSI->CT);
+      if (ct->GetShadowSize() > 0) {
+        D3D12_GPU_VIRTUAL_ADDRESS cbAddr =
+            m_lpDX->UploadConstantBuffer(ct->GetShadowData(), ct->GetShadowSize());
+        if (cbAddr)
+          cmdList->SetGraphicsRootConstantBufferView(0, cbAddr);
+      }
+    } else {
+      // MD1 preset (no shader CT) — bind a zeroed CBV so the fallback PSO
+      // doesn't read from an uninitialized root descriptor (GPU hang).
+      BYTE zeros[256] = {};
+      D3D12_GPU_VIRTUAL_ADDRESS cbAddr = m_lpDX->UploadConstantBuffer(zeros, 256);
+      if (cbAddr)
+        cmdList->SetGraphicsRootConstantBufferView(0, cbAddr);
+    }
+
+    // Bind VS1 via per-frame binding block (main tex at correct t-register, null elsewhere)
+    cmdList->SetGraphicsRootDescriptorTable(1, m_lpDX->GetCompBindingGpuHandle());
+
+    // Fullscreen quad using MYVERTEX for proper UV/rad/ang passthrough
+    MYVERTEX quad[4];
+    ZeroMemory(quad, sizeof(quad));
+    quad[0].x = -1.f; quad[0].y =  1.f; quad[0].z = 0.f; quad[0].Diffuse = 0xFFFFFFFF;
+    quad[0].tu = 0.f; quad[0].tv = 0.f; quad[0].tu_orig = 0.f; quad[0].tv_orig = 0.f; quad[0].rad = 1.f; quad[0].ang = 3.14159f;
+    quad[1].x =  1.f; quad[1].y =  1.f; quad[1].z = 0.f; quad[1].Diffuse = 0xFFFFFFFF;
+    quad[1].tu = 1.f; quad[1].tv = 0.f; quad[1].tu_orig = 1.f; quad[1].tv_orig = 0.f; quad[1].rad = 1.f; quad[1].ang = 0.f;
+    quad[2].x = -1.f; quad[2].y = -1.f; quad[2].z = 0.f; quad[2].Diffuse = 0xFFFFFFFF;
+    quad[2].tu = 0.f; quad[2].tv = 1.f; quad[2].tu_orig = 0.f; quad[2].tv_orig = 1.f; quad[2].rad = 1.f; quad[2].ang = 3.14159f;
+    quad[3].x =  1.f; quad[3].y = -1.f; quad[3].z = 0.f; quad[3].Diffuse = 0xFFFFFFFF;
+    quad[3].tu = 1.f; quad[3].tv = 1.f; quad[3].tu_orig = 1.f; quad[3].tv_orig = 1.f; quad[3].rad = 1.f; quad[3].ang = 0.f;
+    m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, quad, 4, sizeof(MYVERTEX));
+  }
+}
+
+// Forward declaration — defined later in this file
+int SmoothWave(WFVERTEX* vi, int nVertsIn, WFVERTEX* vo);
+
+void CPlugin::DX12_DrawWave(float* fL, float* fR) {
+  if (!m_lpDX || !m_lpDX->m_commandList)
+    return;
+
+  int i;
+  WFVERTEX v1[576 + 1], v2[576 + 1];
+
+  float cr = (float)(*m_pState->var_pf_wave_r);
+  float cg = (float)(*m_pState->var_pf_wave_g);
+  float cb = (float)(*m_pState->var_pf_wave_b);
+  float cx = (float)(*m_pState->var_pf_wave_x);
+  float cy = (float)(*m_pState->var_pf_wave_y);
+  float fWaveParam = (float)(*m_pState->var_pf_wave_mystery);
+
+  if (cr < 0) cr = 0;
+  if (cg < 0) cg = 0;
+  if (cb < 0) cb = 0;
+  if (cr > 1) cr = 1;
+  if (cg > 1) cg = 1;
+  if (cb > 1) cb = 1;
+
+  if (*m_pState->var_pf_wave_brighten) {
+    float fMaximizeWaveColorAmount = 1.0f;
+    float max = cr;
+    if (max < cg) max = cg;
+    if (max < cb) max = cb;
+    if (max > 0.01f) {
+      cr = cr / max * fMaximizeWaveColorAmount + cr * (1.0f - fMaximizeWaveColorAmount);
+      cg = cg / max * fMaximizeWaveColorAmount + cg * (1.0f - fMaximizeWaveColorAmount);
+      cb = cb / max * fMaximizeWaveColorAmount + cb * (1.0f - fMaximizeWaveColorAmount);
+    }
+  }
+
+  float fWavePosX = cx * 2.0f - 1.0f;
+  float fWavePosY = cy * 2.0f - 1.0f;
+
+  float bass_rel = mysound.imm[0];
+  float mid_rel = mysound.imm[1];
+  float treble_rel = mysound.imm[2];
+
+  int sample_offset = 0;
+  int new_wavemode = (int)(*m_pState->var_pf_wave_mode) % NUM_WAVES;
+
+  int its = (m_pState->m_bBlending && (new_wavemode != m_pState->m_nOldWaveMode)) ? 2 : 1;
+  int nVerts1 = 0;
+  int nVerts2 = 0;
+  int nBreak1 = -1;
+  int nBreak2 = -1;
+  float alpha1, alpha2;
+
+  for (int it = 0; it < its; it++) {
+    int   wave = (it == 0) ? new_wavemode : m_pState->m_nOldWaveMode;
+    int   nVerts = NUM_WAVEFORM_SAMPLES;
+    int   nBreak = -1;
+
+    float fWaveParam2 = fWaveParam;
+    if ((wave == 0 || wave == 1 || wave == 4) && (fWaveParam2 < -1 || fWaveParam2 > 1)) {
+      fWaveParam2 = fWaveParam2 * 0.5f + 0.5f;
+      fWaveParam2 -= floorf(fWaveParam2);
+      fWaveParam2 = fabsf(fWaveParam2);
+      fWaveParam2 = fWaveParam2 * 2 - 1;
+    }
+
+    WFVERTEX* v = (it == 0) ? v1 : v2;
+    ZeroMemory(v, sizeof(WFVERTEX) * nVerts);
+
+    float alpha = (float)(*m_pState->var_pf_wave_a);
+
+    switch (wave) {
+    case 0:
+      // circular wave
+      nVerts /= 2;
+      sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float inv_nverts_minus_one = 1.0f / (float)(nVerts - 1);
+        for (i = 0; i < nVerts; i++) {
+          float rad = 0.5f + 0.4f * fR[i + sample_offset] + fWaveParam2;
+          float ang = (i)*inv_nverts_minus_one * 6.28f + GetTime() * 0.2f;
+          if (i < nVerts / 10) {
+            float mix = i / (nVerts * 0.1f);
+            mix = 0.5f - 0.5f * cosf(mix * 3.1416f);
+            float rad_2 = 0.5f + 0.4f * fR[i + nVerts + sample_offset] + fWaveParam2;
+            rad = rad_2 * (1.0f - mix) + rad * (mix);
+          }
+          if (m_bScreenDependentRenderMode) {
+            v[i].x = rad * cosf(ang) + fWavePosX;
+            v[i].y = rad * sinf(ang) + fWavePosY;
+          } else {
+            v[i].x = rad * cosf(ang) * m_fAspectY + fWavePosX;
+            v[i].y = rad * sinf(ang) * m_fAspectX + fWavePosY;
+          }
+        }
+      }
+      if (!m_pState->m_bBlending) {
+        nVerts++;
+        memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
+      }
+      break;
+
+    case 1:
+      // x-y osc. spiral
+      alpha *= 1.25f;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      nVerts /= 2;
+      for (i = 0; i < nVerts; i++) {
+        float rad = 0.53f + 0.43f * fR[i] + fWaveParam2;
+        float ang = fL[i + 32] * 1.57f + GetTime() * 2.3f;
+        if (m_bScreenDependentRenderMode) {
+          v[i].x = rad * cosf(ang) + fWavePosX;
+          v[i].y = rad * sinf(ang) + fWavePosY;
+        } else {
+          v[i].x = rad * cosf(ang) * m_fAspectY + fWavePosX;
+          v[i].y = rad * sinf(ang) * m_fAspectX + fWavePosY;
+        }
+      }
+      break;
+
+    case 2:
+      // centered spiro (alpha constant)
+      switch (m_nTexSizeX) {
+      case 256:  alpha *= 0.07f; break;
+      case 512:  alpha *= 0.09f; break;
+      case 1024: alpha *= 0.11f; break;
+      case 2048: alpha *= 0.13f; break;
+      }
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      for (i = 0; i < nVerts; i++) {
+        if (m_bScreenDependentRenderMode) {
+          v[i].x = fR[i] + fWavePosX;
+          v[i].y = fL[i + 32] + fWavePosY;
+        } else {
+          v[i].x = fR[i] * m_fAspectY + fWavePosX;
+          v[i].y = fL[i + 32] * m_fAspectX + fWavePosY;
+        }
+      }
+      break;
+
+    case 3:
+      // centered spiro (alpha tied to volume)
+      switch (m_nTexSizeX) {
+      case 256:  alpha = 0.075f; break;
+      case 512:  alpha = 0.150f; break;
+      case 1024: alpha = 0.220f; break;
+      case 2048: alpha = 0.330f; break;
+      }
+      alpha *= 1.3f;
+      alpha *= powf(treble_rel, 2.0f);
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      for (i = 0; i < nVerts; i++) {
+        if (m_bScreenDependentRenderMode) {
+          v[i].x = fR[i] + fWavePosX;
+          v[i].y = fL[i + 32] + fWavePosY;
+        } else {
+          v[i].x = fR[i] * m_fAspectY + fWavePosX;
+          v[i].y = fL[i + 32] * m_fAspectX + fWavePosY;
+        }
+      }
+      break;
+
+    case 4:
+      // horizontal script
+      if (nVerts > m_nTexSizeX / 3)
+        nVerts = m_nTexSizeX / 3;
+      sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float w1 = 0.45f + 0.5f * (fWaveParam2 * 0.5f + 0.5f);
+        float w2 = 1.0f - w1;
+        float inv_nverts = 1.0f / (float)(nVerts);
+        for (i = 0; i < nVerts; i++) {
+          v[i].x = -1.0f + 2.0f * (i * inv_nverts) + fWavePosX;
+          v[i].y = fL[i + sample_offset] * 0.47f + fWavePosY;
+          v[i].x += fR[i + 25 + sample_offset] * 0.44f;
+          if (i > 1) {
+            v[i].x = v[i].x * w2 + w1 * (v[i - 1].x * 2.0f - v[i - 2].x);
+            v[i].y = v[i].y * w2 + w1 * (v[i - 1].y * 2.0f - v[i - 2].y);
+          }
+        }
+      }
+      break;
+
+    case 5:
+      // explosive complex
+      switch (m_nTexSizeX) {
+      case 256:  alpha *= 0.07f; break;
+      case 512:  alpha *= 0.09f; break;
+      case 1024: alpha *= 0.11f; break;
+      case 2048: alpha *= 0.13f; break;
+      }
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float cos_rot = cosf(GetTime() * 0.3f);
+        float sin_rot = sinf(GetTime() * 0.3f);
+        for (i = 0; i < nVerts; i++) {
+          float x0 = (fR[i] * fL[i + 32] + fL[i] * fR[i + 32]);
+          float y0 = (fR[i] * fR[i] - fL[i + 32] * fL[i + 32]);
+          if (m_bScreenDependentRenderMode) {
+            v[i].x = (x0 * cos_rot - y0 * sin_rot) + fWavePosX;
+            v[i].y = (x0 * sin_rot + y0 * cos_rot) + fWavePosY;
+          } else {
+            v[i].x = (x0 * cos_rot - y0 * sin_rot) * m_fAspectY + fWavePosX;
+            v[i].y = (x0 * sin_rot + y0 * cos_rot) * m_fAspectX + fWavePosY;
+          }
+        }
+      }
+      break;
+
+    case 6:
+    case 7:
+    case 8:
+      nVerts /= 2;
+      if (nVerts > m_nTexSizeX / 3)
+        nVerts = m_nTexSizeX / 3;
+      if (wave == 8)
+        nVerts = 256;
+      else
+        sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float ang = 1.57f * fWaveParam2;
+        float dx = cosf(ang);
+        float dy = sinf(ang);
+        float edge_x[2], edge_y[2];
+        edge_x[0] = fWavePosX * cosf(ang + 1.57f) - dx * 3.0f;
+        edge_y[0] = fWavePosX * sinf(ang + 1.57f) - dy * 3.0f;
+        edge_x[1] = fWavePosX * cosf(ang + 1.57f) + dx * 3.0f;
+        edge_y[1] = fWavePosX * sinf(ang + 1.57f) + dy * 3.0f;
+        for (i = 0; i < 2; i++) {
+          for (int j = 0; j < 4; j++) {
+            float t;
+            bool bClip = false;
+            switch (j) {
+            case 0: if (edge_x[i] > 1.1f)  { t = (1.1f - edge_x[1-i]) / (edge_x[i] - edge_x[1-i]); bClip = true; } break;
+            case 1: if (edge_x[i] < -1.1f) { t = (-1.1f - edge_x[1-i]) / (edge_x[i] - edge_x[1-i]); bClip = true; } break;
+            case 2: if (edge_y[i] > 1.1f)  { t = (1.1f - edge_y[1-i]) / (edge_y[i] - edge_y[1-i]); bClip = true; } break;
+            case 3: if (edge_y[i] < -1.1f) { t = (-1.1f - edge_y[1-i]) / (edge_y[i] - edge_y[1-i]); bClip = true; } break;
+            }
+            if (bClip) {
+              float dx2 = edge_x[i] - edge_x[1-i];
+              float dy2 = edge_y[i] - edge_y[1-i];
+              edge_x[i] = edge_x[1-i] + dx2 * t;
+              edge_y[i] = edge_y[1-i] + dy2 * t;
+            }
+          }
+        }
+        dx = (edge_x[1] - edge_x[0]) / (float)nVerts;
+        dy = (edge_y[1] - edge_y[0]) / (float)nVerts;
+        float ang2 = atan2f(dy, dx);
+        float perp_dx = cosf(ang2 + 1.57f);
+        float perp_dy = sinf(ang2 + 1.57f);
+        if (wave == 6)
+          for (i = 0; i < nVerts; i++) {
+            v[i].x = edge_x[0] + dx * i + perp_dx * 0.25f * fL[i + sample_offset];
+            v[i].y = edge_y[0] + dy * i + perp_dy * 0.25f * fL[i + sample_offset];
+          }
+        else if (wave == 8)
+          for (i = 0; i < nVerts; i++) {
+            float f = 0.1f * logf(mysound.fSpecLeft[i * 2] + mysound.fSpecLeft[i * 2 + 1]);
+            v[i].x = edge_x[0] + dx * i + perp_dx * f;
+            v[i].y = edge_y[0] + dy * i + perp_dy * f;
+          }
+        else {
+          float sep = powf(fWavePosY * 0.5f + 0.5f, 2.0f);
+          for (i = 0; i < nVerts; i++) {
+            v[i].x = edge_x[0] + dx * i + perp_dx * (0.25f * fL[i + sample_offset] + sep);
+            v[i].y = edge_y[0] + dy * i + perp_dy * (0.25f * fL[i + sample_offset] + sep);
+          }
+          for (i = 0; i < nVerts; i++) {
+            v[i + nVerts].x = edge_x[0] + dx * i + perp_dx * (0.25f * fR[i + sample_offset] - sep);
+            v[i + nVerts].y = edge_y[0] + dy * i + perp_dy * (0.25f * fR[i + sample_offset] - sep);
+          }
+          nBreak = nVerts;
+          nVerts *= 2;
+        }
+      }
+      break;
+
+    case 9:
+      // large wave
+      nVerts /= 2;
+      if (nVerts > m_nTexSizeX / 3)
+        nVerts = m_nTexSizeX / 3;
+      if (wave == 8)
+        nVerts = 256;
+      else
+        sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float ang = 1.57f * fWaveParam2;
+        float dx = cosf(ang);
+        float dy = sinf(ang);
+        float edge_x[2], edge_y[2];
+        edge_x[0] = fWavePosX * cosf(ang + 1.57f) - dx * 3.0f;
+        edge_y[0] = fWavePosX * sinf(ang + 1.57f) - dy * 3.0f;
+        edge_x[1] = fWavePosX * cosf(ang + 1.57f) + dx * 3.0f;
+        edge_y[1] = fWavePosX * sinf(ang + 1.57f) + dy * 3.0f;
+        for (i = 0; i < 2; i++) {
+          for (int j = 0; j < 4; j++) {
+            float t;
+            bool bClip = false;
+            switch (j) {
+            case 0: if (edge_x[i] > 1.1f)  { t = (1.1f - edge_x[1-i]) / (edge_x[i] - edge_x[1-i]); bClip = true; } break;
+            case 1: if (edge_x[i] < -1.1f) { t = (-1.1f - edge_x[1-i]) / (edge_x[i] - edge_x[1-i]); bClip = true; } break;
+            case 2: if (edge_y[i] > 1.1f)  { t = (1.1f - edge_y[1-i]) / (edge_y[i] - edge_y[1-i]); bClip = true; } break;
+            case 3: if (edge_y[i] < -1.1f) { t = (-1.1f - edge_y[1-i]) / (edge_y[i] - edge_y[1-i]); bClip = true; } break;
+            }
+            if (bClip) {
+              float dx2 = edge_x[i] - edge_x[1-i];
+              float dy2 = edge_y[i] - edge_y[1-i];
+              edge_x[i] = edge_x[1-i] + dx2 * t;
+              edge_y[i] = edge_y[1-i] + dy2 * t;
+            }
+          }
+        }
+        dx = (edge_x[1] - edge_x[0]) / (float)nVerts;
+        dy = (edge_y[1] - edge_y[0]) / (float)nVerts;
+        float ang2 = atan2f(dy, dx);
+        float perp_dx = cosf(ang2 + 1.57f);
+        float perp_dy = sinf(ang2 + 1.57f);
+        for (i = 0; i < nVerts; i++) {
+          v[i].x = edge_x[0] + dx * i + perp_dx * 1.00f * fL[i + sample_offset];
+          v[i].y = edge_y[0] + dy * i + perp_dy * 1.00f * fL[i + sample_offset];
+        }
+        nBreak = nVerts;
+        nVerts *= 2;
+      }
+      break;
+
+    case 10:
+      // X marks the spot
+      nVerts /= 2;
+      if (nVerts > m_nTexSizeX / 3)
+        nVerts = m_nTexSizeX / 3;
+      sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float ang = -0.75f + fWaveParam2 * 3.15f;
+        float dx = cosf(ang);
+        float dy = sinf(ang);
+        float edge_x[2], edge_y[2];
+        edge_x[0] = fWavePosX * cosf(ang + 1.57f) - dx * 3.0f;
+        edge_y[0] = fWavePosX * sinf(ang + 1.57f) - dy * 3.0f;
+        edge_x[1] = fWavePosX * cosf(ang + 1.57f) + dx * 3.0f;
+        edge_y[1] = fWavePosX * sinf(ang + 1.57f) + dy * 3.0f;
+        for (i = 0; i < 2; i++) {
+          for (int j = 0; j < 4; j++) {
+            float t;
+            bool bClip = false;
+            switch (j) {
+            case 0: if (edge_x[i] > 1.1f)  { t = (1.1f - edge_x[1-i]) / (edge_x[i] - edge_x[1-i]); bClip = true; } break;
+            case 1: if (edge_x[i] < -1.1f) { t = (-1.1f - edge_x[1-i]) / (edge_x[i] - edge_x[1-i]); bClip = true; } break;
+            case 2: if (edge_y[i] > 1.1f)  { t = (1.1f - edge_y[1-i]) / (edge_y[i] - edge_y[1-i]); bClip = true; } break;
+            case 3: if (edge_y[i] < -1.1f) { t = (-1.1f - edge_y[1-i]) / (edge_y[i] - edge_y[1-i]); bClip = true; } break;
+            }
+            if (bClip) {
+              float dx2 = edge_x[i] - edge_x[1-i];
+              float dy2 = edge_y[i] - edge_y[1-i];
+              edge_x[i] = edge_x[1-i] + dx2 * t;
+              edge_y[i] = edge_y[1-i] + dy2 * t;
+            }
+          }
+        }
+        dx = (edge_x[1] - edge_x[0]) / (float)nVerts;
+        dy = (edge_y[1] - edge_y[0]) / (float)nVerts;
+        float ang2 = atan2f(dy, dx);
+        float perp_dx = cosf(ang2 + 1.57f);
+        float perp_dy = sinf(ang2 + 1.57f);
+        for (i = 0; i < nVerts; i++) {
+          v[i].x = edge_x[0] + dx * i + perp_dx * 0.35f * fL[i + sample_offset];
+          v[i].y = edge_y[0] + dy * i + perp_dy * 0.35f * fL[i + sample_offset];
+        }
+        // second arm of the X
+        float ang3 = 0.75f + fWaveParam2 * 3.15f;
+        float dx3 = cosf(ang3);
+        float dy3 = sinf(ang3);
+        float edge_x3[2], edge_y3[2];
+        edge_x3[0] = fWavePosX * cosf(ang3 + 1.57f) - dx3 * 3.0f;
+        edge_y3[0] = fWavePosX * sinf(ang3 + 1.57f) - dy3 * 3.0f;
+        edge_x3[1] = fWavePosX * cosf(ang3 + 1.57f) + dx3 * 3.0f;
+        edge_y3[1] = fWavePosX * sinf(ang3 + 1.57f) + dy3 * 3.0f;
+        for (i = 0; i < 2; i++) {
+          for (int j = 0; j < 4; j++) {
+            float t;
+            bool bClip = false;
+            switch (j) {
+            case 0: if (edge_x3[i] > 1.1f)  { t = (1.1f - edge_x3[1-i]) / (edge_x3[i] - edge_x3[1-i]); bClip = true; } break;
+            case 1: if (edge_x3[i] < -1.1f) { t = (-1.1f - edge_x3[1-i]) / (edge_x3[i] - edge_x3[1-i]); bClip = true; } break;
+            case 2: if (edge_y3[i] > 1.1f)  { t = (1.1f - edge_y3[1-i]) / (edge_y3[i] - edge_y3[1-i]); bClip = true; } break;
+            case 3: if (edge_y3[i] < -1.1f) { t = (-1.1f - edge_y3[1-i]) / (edge_y3[i] - edge_y3[1-i]); bClip = true; } break;
+            }
+            if (bClip) {
+              float dx4 = edge_x3[i] - edge_x3[1-i];
+              float dy4 = edge_y3[i] - edge_y3[1-i];
+              edge_x3[i] = edge_x3[1-i] + dx4 * t;
+              edge_y3[i] = edge_y3[1-i] + dy4 * t;
+            }
+          }
+        }
+        dx3 = (edge_x3[1] - edge_x3[0]) / (float)nVerts;
+        dy3 = (edge_y3[1] - edge_y3[0]) / (float)nVerts;
+        float ang4 = atan2f(dy3, dx3);
+        float perp_dx3 = cosf(ang4 + 1.57f);
+        float perp_dy3 = sinf(ang4 + 1.57f);
+        for (i = 0; i < nVerts; i++) {
+          v[i + nVerts].x = edge_x3[0] + dx3 * i + perp_dx3 * (0.35f * fR[i + sample_offset]);
+          v[i + nVerts].y = edge_y3[0] + dy3 * i + perp_dy3 * (0.35f * fR[i + sample_offset]);
+        }
+        nBreak = nVerts;
+        nVerts *= 2;
+      }
+      break;
+
+    case 11:
+      // vertical dual wave
+      nVerts /= 2;
+      if (nVerts > m_nTexSizeX / 3)
+        nVerts = m_nTexSizeX / 3;
+      sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float ang = 1.57f;
+        float dx = cosf(ang);
+        float dy = sinf(ang);
+        float edge_x[2], edge_y[2];
+        edge_x[0] = fWavePosX * cosf(ang + 1.57f) - dx * 3.0f;
+        edge_y[0] = fWavePosX * sinf(ang + 1.57f) - dy * 3.0f;
+        edge_x[1] = fWavePosX * cosf(ang + 1.57f) + dx * 3.0f;
+        edge_y[1] = fWavePosX * sinf(ang + 1.57f) + dy * 3.0f;
+        for (i = 0; i < 2; i++) {
+          for (int j = 0; j < 4; j++) {
+            float t;
+            bool bClip = false;
+            switch (j) {
+            case 0: if (edge_x[i] > 1.1f)  { t = (1.1f - edge_x[1-i]) / (edge_x[i] - edge_x[1-i]); bClip = true; } break;
+            case 1: if (edge_x[i] < -1.1f) { t = (-1.1f - edge_x[1-i]) / (edge_x[i] - edge_x[1-i]); bClip = true; } break;
+            case 2: if (edge_y[i] > 1.1f)  { t = (1.1f - edge_y[1-i]) / (edge_y[i] - edge_y[1-i]); bClip = true; } break;
+            case 3: if (edge_y[i] < -1.1f) { t = (-1.1f - edge_y[1-i]) / (edge_y[i] - edge_y[1-i]); bClip = true; } break;
+            }
+            if (bClip) {
+              float dx2 = edge_x[i] - edge_x[1-i];
+              float dy2 = edge_y[i] - edge_y[1-i];
+              edge_x[i] = edge_x[1-i] + dx2 * t;
+              edge_y[i] = edge_y[1-i] + dy2 * t;
+            }
+          }
+        }
+        dx = (edge_x[1] - edge_x[0]) / (float)nVerts;
+        dy = (edge_y[1] - edge_y[0]) / (float)nVerts;
+        float ang2 = atan2f(dy, dx);
+        float perp_dx = cosf(ang2 + 1.57f);
+        float perp_dy = sinf(ang2 + 1.57f);
+        for (i = 0; i < nVerts; i++) {
+          v[i].x = edge_x[0] - 0.45f + dx * i + perp_dx * 0.35f * fL[i + sample_offset];
+          v[i].y = edge_y[0] + dy * i + perp_dy * 0.35f * fL[i + sample_offset];
+        }
+        // second vertical wave
+        float ang3 = 1.57f;
+        float dx3 = cosf(ang3);
+        float dy3 = sinf(ang3);
+        float edge_x3[2], edge_y3[2];
+        edge_x3[0] = fWavePosX * cosf(ang3 + 1.57f) - dx3 * 3.0f;
+        edge_y3[0] = fWavePosX * sinf(ang3 + 1.57f) - dy3 * 3.0f;
+        edge_x3[1] = fWavePosX * cosf(ang3 + 1.57f) + dx3 * 3.0f;
+        edge_y3[1] = fWavePosX * sinf(ang3 + 1.57f) + dy3 * 3.0f;
+        for (i = 0; i < 2; i++) {
+          for (int j = 0; j < 4; j++) {
+            float t;
+            bool bClip = false;
+            switch (j) {
+            case 0: if (edge_x3[i] > 1.1f)  { t = (1.1f - edge_x3[1-i]) / (edge_x3[i] - edge_x3[1-i]); bClip = true; } break;
+            case 1: if (edge_x3[i] < -1.1f) { t = (-1.1f - edge_x3[1-i]) / (edge_x3[i] - edge_x3[1-i]); bClip = true; } break;
+            case 2: if (edge_y3[i] > 1.1f)  { t = (1.1f - edge_y3[1-i]) / (edge_y3[i] - edge_y3[1-i]); bClip = true; } break;
+            case 3: if (edge_y3[i] < -1.1f) { t = (-1.1f - edge_y3[1-i]) / (edge_y3[i] - edge_y3[1-i]); bClip = true; } break;
+            }
+            if (bClip) {
+              float dx4 = edge_x3[i] - edge_x3[1-i];
+              float dy4 = edge_y3[i] - edge_y3[1-i];
+              edge_x3[i] = edge_x3[1-i] + dx4 * t;
+              edge_y3[i] = edge_y3[1-i] + dy4 * t;
+            }
+          }
+        }
+        dx3 = (edge_x3[1] - edge_x3[0]) / (float)nVerts;
+        dy3 = (edge_y3[1] - edge_y3[0]) / (float)nVerts;
+        float ang4 = atan2f(dy3, dx3);
+        float perp_dx3 = cosf(ang4 + 1.57f);
+        float perp_dy3 = sinf(ang4 + 1.57f);
+        for (i = 0; i < nVerts; i++) {
+          v[i + nVerts].x = edge_x3[0] + 0.45f + dx3 * i + perp_dx3 * (0.35f * fR[i + sample_offset]);
+          v[i + nVerts].y = edge_y3[0] + dy3 * i + perp_dy3 * (0.35f * fR[i + sample_offset]);
+        }
+        nBreak = nVerts;
+        nVerts *= 2;
+      }
+      break;
+
+    case 12:
+      // x-y osc. spiral, skewed
+      alpha *= 1.25f;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      nVerts /= 2;
+      for (i = 0; i < nVerts; i++) {
+        float rad = 0.63f + 0.23f * fR[i] + fWaveParam2;
+        float ang = fL[i + 32] * 0.9f + GetTime() * 3.3f;
+        if (m_bScreenDependentRenderMode) {
+          v[i].x = rad * cosf(ang + alpha) + fWavePosX;
+          v[i].y = rad * sinf(ang) + fWavePosY;
+        } else {
+          v[i].x = rad * cosf(ang + alpha) * m_fAspectY + fWavePosX;
+          v[i].y = rad * sinf(ang) * m_fAspectX + fWavePosY;
+        }
+      }
+      break;
+
+    case 13:
+      // Star Wave
+      nVerts /= 2;
+      sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float inv_nverts_minus_one = 1.0f / (float)(nVerts - 1);
+        for (i = 0; i < nVerts; i++) {
+          float rad = 0.7f + 0.4f * fR[i + sample_offset] + fWaveParam2;
+          float ang = (i)*inv_nverts_minus_one * 6.28f + GetTime() * 0.2f;
+          if (i < nVerts / rad) {
+            float mix = i / (nVerts * 0.1f);
+            mix = 0.5f - 0.5f * cosf(mix * 3.1416f);
+            float rad_2 = 0.5f + 0.4f * fR[i + nVerts + sample_offset] + fWaveParam2;
+            rad = rad_2 * (1.0f - mix) + rad * (mix);
+          }
+          if (m_bScreenDependentRenderMode) {
+            v[i].x = rad * cosf(ang) + fWavePosX;
+            v[i].y = rad * sinf(ang) + fWavePosY;
+          } else {
+            v[i].x = rad * cosf(ang) * m_fAspectY + fWavePosX;
+            v[i].y = rad * sinf(ang) * m_fAspectX + fWavePosY;
+          }
+        }
+      }
+      if (!m_pState->m_bBlending) {
+        nVerts++;
+        memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
+      }
+      break;
+
+    case 14:
+      // Flower Wave
+      nVerts /= 2;
+      sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float inv_nverts_minus_one = 1.0f / (float)(nVerts - 1);
+        for (i = 0; i < nVerts; i++) {
+          float rad = 0.7f + 0.7f * fR[i + sample_offset] + fWaveParam2;
+          float ang = (i)*inv_nverts_minus_one * 6.28f + GetTime() * 0.2f;
+          ang == ang / 2;
+          rad == rad / 2;
+          if (i < nVerts / rad) {
+            float mix = i / (nVerts * 0.1f);
+            mix = 0.7f - 0.7f * cosf(mix * 3.1416f);
+            float rad_2 = 0.7f + 0.7f * fR[i + nVerts + sample_offset] + fWaveParam2;
+            rad = rad_2 * (1.0f - mix) + rad * (mix * 2) / 8;
+          }
+          if (m_bScreenDependentRenderMode) {
+            v[i].x = rad * cosf(ang * 3.1416f) / 1.5f + fWavePosX * cosf(3.1416f);
+            v[i].y = rad * sinf(ang - GetTime() / 3) / 1.5f + fWavePosY * cosf(3.1416f);
+          } else {
+            v[i].x = rad * cosf(ang * 3.1416f) * m_fAspectY / 1.5f + fWavePosX * cosf(3.1416f);
+            v[i].y = rad * sinf(ang - GetTime() / 3) * m_fAspectX / 1.5f + fWavePosY * cosf(3.1416f);
+          }
+        }
+      }
+      if (!m_pState->m_bBlending) {
+        nVerts++;
+        memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
+      }
+      break;
+
+    case 15:
+      // Lasso Wave
+      alpha *= 1.25f;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      nVerts /= 2;
+      for (i = 0; i < nVerts; i++) {
+        float rad = 0.53f + 0.43f * fR[i] + fWaveParam2;
+        float ang = fL[i + 32] * 1.57f + GetTime() * 2.0f;
+        float t = GetTime() / ang;
+        v[i].x = (float)(cos(GetTime()) / 2 + cosf(ang * 2 + tanf(t)));
+        v[i].y = (float)(sin(GetTime()) * 2 * sinf(ang * 3.14f) * m_fAspectX / 2.8f + fWavePosY);
+      }
+      break;
+
+    case 16:
+      // Triangle Wave
+      nVerts = 256;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float size = 0.575f;
+        float rotation = (fWaveParam2) * 3.141593f;
+        float cos_rot = cosf(rotation);
+        float sin_rot = sinf(rotation);
+        float inv_nverts = 1.0f / (float)(nVerts - 1);
+        for (i = 0; i < nVerts; i++) {
+          float phase = i * inv_nverts;
+          float x, y;
+          if (phase < 0.3333f) {
+            float t = phase * 3.0f;
+            x = -size + t * size;
+            y = -size + t * 2.0f * size;
+          } else if (phase < 0.6666f) {
+            float t = (phase - 0.3333f) * 3.0f;
+            x = 0.0f + t * size;
+            y = size - t * 2.0f * size;
+          } else {
+            float t = (phase - 0.6666f) * 3.0f;
+            x = size - t * 2.0f * size;
+            y = -size;
+          }
+          float audio_mod = 1.0f + 0.3f * fL[(i * 2) % NUM_WAVEFORM_SAMPLES];
+          x *= audio_mod;
+          y *= audio_mod;
+          float x_rot = x * cos_rot - y * sin_rot;
+          float y_rot = x * sin_rot + y * cos_rot;
+          if (m_bScreenDependentRenderMode) {
+            v[i].x = x_rot + fWavePosX;
+            v[i].y = y_rot + fWavePosY;
+          } else {
+            v[i].x = x_rot * m_fAspectY + fWavePosX;
+            v[i].y = y_rot * m_fAspectX + fWavePosY;
+          }
+        }
+      }
+      if (!m_pState->m_bBlending) {
+        nVerts++;
+        memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
+      }
+      break;
+
+    case 17:
+      // Fireworks Waveform
+      nVerts = 256;
+      if (m_pState->m_bModWaveAlphaByVolume)
+        alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+      {
+        float time = GetTime();
+        float burst_frequency = 1.0f - fWaveParam2 + .001f;
+        float burst_phase = fmodf(time, burst_frequency) / burst_frequency;
+        int burst_num = (int)(time / burst_frequency);
+        float rand_seed = (burst_num * 10.0f);
+        float base_x = (rand_seed * 0.1345f - floorf(rand_seed * 0.1345f)) * 2.0f - 1.0f;
+        float base_y = (rand_seed * 0.2783f - floorf(rand_seed * 0.2783f)) * 2.0f - 1.0f;
+        if (fmodf(rand_seed, 1.0f) > 0.3f) {
+          base_x *= 0.3f;
+          base_y *= 0.3f;
+        }
+        float burst_size = min(1.0f, burst_phase * 4.0f);
+        float burst_fade = 1.0f - powf(burst_phase, 3.0f);
+        float audio_boost = 1.0f + 2.0f * (mysound.imm_rel[0] + mysound.imm_rel[1]) * 0.5f;
+        for (i = 0; i < nVerts; i++) {
+          float ang = (i / (float)nVerts) * 6.283185f;
+          float dist_var = 0.7f + 0.3f * (fmodf(rand_seed + i * 0.1f, 1.0f));
+          float dist = burst_size * dist_var * (0.5f + 0.5f * fR[(i * 3) % NUM_WAVEFORM_SAMPLES]) * audio_boost;
+          float x = base_x + cosf(ang) * dist;
+          float y = base_y + sinf(ang) * dist;
+          float swirl = time * 3.0f + ang;
+          x += cosf(swirl) * burst_size * 0.1f;
+          y += sinf(swirl) * burst_size * 0.1f;
+          if (m_bScreenDependentRenderMode) {
+            v[i].x = x + fWavePosX;
+            v[i].y = y + fWavePosY;
+          } else {
+            v[i].x = x * m_fAspectY + fWavePosX;
+            v[i].y = y * m_fAspectX + fWavePosY;
+          }
+          alpha *= burst_fade;
+        }
+      }
+      if (!m_pState->m_bBlending) {
+        nVerts++;
+        memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
+      }
+      break;
+    }
+
+    if (it == 0) {
+      nVerts1 = nVerts;
+      nBreak1 = nBreak;
+      alpha1 = alpha;
+    } else {
+      nVerts2 = nVerts;
+      nBreak2 = nBreak;
+      alpha2 = alpha;
+    }
+  }
+
+  // Blend two waveforms during preset transition
+  float mix = CosineInterp(m_pState->m_fBlendProgress);
+  float mix2 = 1.0f - mix;
+  if (nVerts2 > 0) {
+    float m = (nVerts2 - 1) / (float)nVerts1;
+    float x, y;
+    for (int i = 0; i < nVerts1; i++) {
+      float fIdx = i * m;
+      int   nIdx = (int)fIdx;
+      float t = fIdx - nIdx;
+      if (nIdx == nBreak2 - 1) {
+        x = v2[nIdx].x;
+        y = v2[nIdx].y;
+        nBreak1 = i + 1;
+      } else {
+        x = v2[nIdx].x * (1 - t) + v2[nIdx + 1].x * (t);
+        y = v2[nIdx].y * (1 - t) + v2[nIdx + 1].y * (t);
+      }
+      v1[i].x = v1[i].x * (mix)+x * (mix2);
+      v1[i].y = v1[i].y * (mix)+y * (mix2);
+    }
+  }
+  if (nVerts2 > 0) {
+    alpha1 = alpha1 * (mix)+alpha2 * (1.0f - mix);
+  }
+
+  // Apply color & alpha, reverse Y
+  v1[0].Diffuse = D3DCOLOR_RGBA_01(cr, cg, cb, alpha1);
+  for (i = 0; i < nVerts1; i++) {
+    v1[i].Diffuse = v1[0].Diffuse;
+    v1[i].y = -v1[i].y;
+  }
+
+  if (alpha1 < 0.004f)
+    return;
+
+  // Tessellate (smooth the wave)
+  WFVERTEX* pVerts = v1;
+  WFVERTEX vTess[(576 + 3) * 2];
+  if (nBreak1 == -1) {
+    nVerts1 = SmoothWave(v1, nVerts1, vTess);
+  } else {
+    int oldBreak = nBreak1;
+    nBreak1 = SmoothWave(v1, nBreak1, vTess);
+    nVerts1 = SmoothWave(&v1[oldBreak], nVerts1 - oldBreak, &vTess[nBreak1]) + nBreak1;
+  }
+  pVerts = vTess;
+
+  // Select PSO based on additive blend and dots mode
+  bool additive = (*m_pState->var_pf_wave_additive) != 0;
+  bool useDots = (*m_pState->var_pf_wave_usedots) != 0;
+  DX12PsoId psoId;
+  D3D12_PRIMITIVE_TOPOLOGY topology;
+  if (useDots) {
+    psoId = additive ? PSO_POINT_ADDITIVE_WFVERTEX : PSO_POINT_ALPHABLEND_WFVERTEX;
+    topology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+  } else {
+    psoId = additive ? PSO_LINE_ADDITIVE_WFVERTEX : PSO_LINE_ALPHABLEND_WFVERTEX;
+    topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+  }
+
+  auto* cmdList = m_lpDX->m_commandList.Get();
+  cmdList->SetPipelineState(m_lpDX->m_PSOs[psoId].Get());
+
+  // Draw with thickness support (4 offset passes for thick/dot mode)
+  float x_inc = 2.0f / (float)m_nTexSizeX;
+  float y_inc = 2.0f / (float)m_nTexSizeY;
+  int drawing_its = ((*m_pState->var_pf_wave_thick || useDots) && (m_nTexSizeX >= 512)) ? 4 : 1;
+
+  for (int it = 0; it < drawing_its; it++) {
+    int j;
+    switch (it) {
+    case 0: break;
+    case 1: for (j = 0; j < nVerts1; j++) pVerts[j].x += x_inc; break;
+    case 2: for (j = 0; j < nVerts1; j++) pVerts[j].y += y_inc; break;
+    case 3: for (j = 0; j < nVerts1; j++) pVerts[j].x -= x_inc; break;
+    }
+
+    if (nBreak1 == -1) {
+      m_lpDX->DrawVertices(topology, pVerts, nVerts1, sizeof(WFVERTEX));
+    } else {
+      m_lpDX->DrawVertices(topology, pVerts, nBreak1, sizeof(WFVERTEX));
+      m_lpDX->DrawVertices(topology, &pVerts[nBreak1], nVerts1 - nBreak1, sizeof(WFVERTEX));
+    }
+  }
+}
+
+// Expand TRIANGLEFAN to TRIANGLELIST (DX12 has no fan primitive)
+template<typename V>
+static int ExpandFanToTriList(const V* src, int nFanVerts, V* dest) {
+  int out = 0;
+  for (int i = 1; i <= nFanVerts - 2; i++) {
+    dest[out++] = src[0];
+    dest[out++] = src[i];
+    dest[out++] = src[i + 1];
+  }
+  return out;
+}
+
+void CPlugin::DX12_DrawSprites() {
+  if (!m_lpDX || !m_lpDX->m_commandList)
+    return;
+
+  auto* cmdList = m_lpDX->m_commandList.Get();
+
+  // Darken center
+  if (*m_pState->var_pf_darken_center) {
+    cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_ALPHABLEND_WFVERTEX].Get());
+
+    WFVERTEX v3[6];
+    ZeroMemory(v3, sizeof(WFVERTEX) * 6);
+
+    v3[0].Diffuse = D3DCOLOR_RGBA_01(0, 0, 0, 3.0f / 32.0f);
+    v3[1].Diffuse = D3DCOLOR_RGBA_01(0, 0, 0, 0.0f / 32.0f);
+    v3[2].Diffuse = v3[1].Diffuse;
+    v3[3].Diffuse = v3[1].Diffuse;
+    v3[4].Diffuse = v3[1].Diffuse;
+    v3[5].Diffuse = v3[1].Diffuse;
+
+    float fHalfSize = 0.05f;
+    v3[0].x = 0.0f;
+    if (m_bScreenDependentRenderMode)
+      v3[1].x = 0.0f - fHalfSize;
+    else
+      v3[1].x = 0.0f - fHalfSize * m_fAspectY;
+    v3[2].x = 0.0f;
+    if (m_bScreenDependentRenderMode)
+      v3[3].x = 0.0f + fHalfSize;
+    else
+      v3[3].x = 0.0f + fHalfSize * m_fAspectY;
+    v3[4].x = 0.0f;
+    v3[5].x = v3[1].x;
+    v3[0].y = 0.0f;
+    v3[1].y = 0.0f;
+    v3[2].y = 0.0f - fHalfSize;
+    v3[3].y = 0.0f;
+    v3[4].y = 0.0f + fHalfSize;
+    v3[5].y = v3[1].y;
+
+    // 6-vert fan → 4 triangles → 12 verts
+    WFVERTEX triVerts[12];
+    int nTriVerts = ExpandFanToTriList(v3, 6, triVerts);
+    m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, triVerts, nTriVerts, sizeof(WFVERTEX));
+  }
+
+  // Borders (outer + inner)
+  {
+    float fOuterBorderSize = (float)*m_pState->var_pf_ob_size;
+    float fInnerBorderSize = (float)*m_pState->var_pf_ib_size;
+
+    cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_ALPHABLEND_WFVERTEX].Get());
+
+    for (int it = 0; it < 2; it++) {
+      WFVERTEX v3[4];
+      ZeroMemory(v3, sizeof(WFVERTEX) * 4);
+
+      float r = (it == 0) ? (float)*m_pState->var_pf_ob_r : (float)*m_pState->var_pf_ib_r;
+      float g = (it == 0) ? (float)*m_pState->var_pf_ob_g : (float)*m_pState->var_pf_ib_g;
+      float b = (it == 0) ? (float)*m_pState->var_pf_ob_b : (float)*m_pState->var_pf_ib_b;
+      float a = (it == 0) ? (float)*m_pState->var_pf_ob_a : (float)*m_pState->var_pf_ib_a;
+      if (a > 0.001f) {
+        v3[0].Diffuse = D3DCOLOR_RGBA_01(r, g, b, a);
+        v3[1].Diffuse = v3[0].Diffuse;
+        v3[2].Diffuse = v3[0].Diffuse;
+        v3[3].Diffuse = v3[0].Diffuse;
+
+        float fInnerRad = (it == 0) ? 1.0f - fOuterBorderSize : 1.0f - fOuterBorderSize - fInnerBorderSize;
+        float fOuterRad = (it == 0) ? 1.0f : 1.0f - fOuterBorderSize;
+        v3[0].x = fInnerRad;
+        v3[1].x = fOuterRad;
+        v3[2].x = fOuterRad;
+        v3[3].x = fInnerRad;
+        v3[0].y = fInnerRad;
+        v3[1].y = fOuterRad;
+        v3[2].y = -fOuterRad;
+        v3[3].y = -fInnerRad;
+
+        for (int rot = 0; rot < 4; rot++) {
+          // 4-vert fan → 2 triangles → 6 verts
+          WFVERTEX triVerts[6];
+          int nTriVerts = ExpandFanToTriList(v3, 4, triVerts);
+          m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, triVerts, nTriVerts, sizeof(WFVERTEX));
+
+          // rotate by 90 degrees
+          for (int vi = 0; vi < 4; vi++) {
+            float t = 1.570796327f;
+            float x = v3[vi].x;
+            float y = v3[vi].y;
+            v3[vi].x = x * cosf(t) - y * sinf(t);
+            v3[vi].y = x * sinf(t) + y * cosf(t);
+          }
+        }
+      }
+    }
+  }
+}
+
+void CPlugin::DX12_DrawCustomShapes() {
+  if (!m_lpDX || !m_lpDX->m_commandList)
+    return;
+
+  auto* cmdList = m_lpDX->m_commandList.Get();
+
+  int num_reps = (m_pState->m_bBlending) ? 2 : 1;
+  for (int rep = 0; rep < num_reps; rep++) {
+    CState* pState = (rep == 0) ? m_pState : m_pOldState;
+    float alpha_mult = 1;
+    if (num_reps == 2)
+      alpha_mult = (rep == 0) ? m_pState->m_fBlendProgress : (1 - m_pState->m_fBlendProgress);
+
+    for (int i = 0; i < MAX_CUSTOM_SHAPES; i++) {
+      if (pState->m_shape[i].enabled) {
+        for (int instance = 0; instance < pState->m_shape[i].instances; instance++) {
+          LoadCustomShapePerFrameEvallibVars(pState, i, instance);
+
+#ifndef _NO_EXPR_
+          if (pState->m_shape[i].m_pf_codehandle) {
+            NSEEL_code_execute(pState->m_shape[i].m_pf_codehandle);
+          }
+#endif
+
+          int sides = (int)(*pState->m_shape[i].var_pf_sides);
+          if (sides < 3) sides = 3;
+          if (sides > 100) sides = 100;
+
+          bool additive = ((int)(*pState->m_shape[i].var_pf_additive) != 0);
+          bool textured = ((int)(*pState->m_shape[i].var_pf_textured) != 0);
+
+          // Compute vertices (SPRITEVERTEX for texcoords, even if untextured)
+          SPRITEVERTEX v[512];
+          v[0].x = (float)(*pState->m_shape[i].var_pf_x * 2 - 1);
+          v[0].y = (float)(*pState->m_shape[i].var_pf_y * -2 + 1);
+          v[0].z = 0;
+          v[0].tu = 0.5f;
+          v[0].tv = 0.5f;
+          v[0].Diffuse =
+            ((((int)(*pState->m_shape[i].var_pf_a * 255 * alpha_mult)) & 0xFF) << 24) |
+            ((((int)(*pState->m_shape[i].var_pf_r * 255)) & 0xFF) << 16) |
+            ((((int)(*pState->m_shape[i].var_pf_g * 255)) & 0xFF) << 8) |
+            ((((int)(*pState->m_shape[i].var_pf_b * 255)) & 0xFF));
+          v[1].Diffuse =
+            ((((int)(*pState->m_shape[i].var_pf_a2 * 255 * alpha_mult)) & 0xFF) << 24) |
+            ((((int)(*pState->m_shape[i].var_pf_r2 * 255)) & 0xFF) << 16) |
+            ((((int)(*pState->m_shape[i].var_pf_g2 * 255)) & 0xFF) << 8) |
+            ((((int)(*pState->m_shape[i].var_pf_b2 * 255)) & 0xFF));
+
+          for (int j = 1; j < sides + 1; j++) {
+            float t = (j - 1) / (float)sides;
+            if (m_bScreenDependentRenderMode)
+              v[j].x = v[0].x + (float)*pState->m_shape[i].var_pf_rad * cosf(t * 3.1415927f * 2 + (float)*pState->m_shape[i].var_pf_ang + 3.1415927f * 0.25f);
+            else
+              v[j].x = v[0].x + (float)*pState->m_shape[i].var_pf_rad * cosf(t * 3.1415927f * 2 + (float)*pState->m_shape[i].var_pf_ang + 3.1415927f * 0.25f) * m_fAspectY;
+            v[j].y = v[0].y + (float)*pState->m_shape[i].var_pf_rad * sinf(t * 3.1415927f * 2 + (float)*pState->m_shape[i].var_pf_ang + 3.1415927f * 0.25f);
+            v[j].z = 0;
+            if (m_bScreenDependentRenderMode)
+              v[j].tu = 0.5f + 0.5f * cosf(t * 3.1415927f * 2 + (float)*pState->m_shape[i].var_pf_tex_ang + 3.1415927f * 0.25f) / ((float)*pState->m_shape[i].var_pf_tex_zoom);
+            else
+              v[j].tu = 0.5f + 0.5f * cosf(t * 3.1415927f * 2 + (float)*pState->m_shape[i].var_pf_tex_ang + 3.1415927f * 0.25f) / ((float)*pState->m_shape[i].var_pf_tex_zoom) * m_fAspectY;
+            v[j].tv = 0.5f + 0.5f * sinf(t * 3.1415927f * 2 + (float)*pState->m_shape[i].var_pf_tex_ang + 3.1415927f * 0.25f) / ((float)*pState->m_shape[i].var_pf_tex_zoom);
+            v[j].Diffuse = v[1].Diffuse;
+          }
+          v[sides + 1] = v[1];
+
+          // Draw fill: fan of sides+2 verts → expand to trilist
+          if (textured) {
+            // Bind VS0 texture at t0 for textured shapes
+            cmdList->SetGraphicsRootDescriptorTable(1, m_lpDX->GetSrvGpuHandle(m_dx12VS[0]));
+            DX12PsoId fillPso = additive ? PSO_ADDITIVE_SPRITEVERTEX : PSO_TEXTURED_SPRITEVERTEX;
+            cmdList->SetPipelineState(m_lpDX->m_PSOs[fillPso].Get());
+            SPRITEVERTEX triVerts[300]; // max 100 sides → 100 tris → 300 verts
+            int nTriVerts = ExpandFanToTriList(v, sides + 2, triVerts);
+            m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, triVerts, nTriVerts, sizeof(SPRITEVERTEX));
+          } else {
+            // Untextured: copy to WFVERTEX
+            WFVERTEX v2[512];
+            for (int j = 0; j < sides + 2; j++) {
+              v2[j].x = v[j].x;
+              v2[j].y = v[j].y;
+              v2[j].z = v[j].z;
+              v2[j].Diffuse = v[j].Diffuse;
+            }
+            DX12PsoId fillPso = additive ? PSO_ADDITIVE_WFVERTEX : PSO_ALPHABLEND_WFVERTEX;
+            cmdList->SetPipelineState(m_lpDX->m_PSOs[fillPso].Get());
+            WFVERTEX triVerts[300];
+            int nTriVerts = ExpandFanToTriList(v2, sides + 2, triVerts);
+            m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, triVerts, nTriVerts, sizeof(WFVERTEX));
+          }
+
+          // Draw border
+          if (*pState->m_shape[i].var_pf_border_a > 0) {
+            WFVERTEX v2[512];
+            v2[0].Diffuse =
+              ((((int)(*pState->m_shape[i].var_pf_border_a * 255 * alpha_mult)) & 0xFF) << 24) |
+              ((((int)(*pState->m_shape[i].var_pf_border_r * 255)) & 0xFF) << 16) |
+              ((((int)(*pState->m_shape[i].var_pf_border_g * 255)) & 0xFF) << 8) |
+              ((((int)(*pState->m_shape[i].var_pf_border_b * 255)) & 0xFF));
+            for (int j = 0; j < sides + 2; j++) {
+              v2[j].x = v[j].x;
+              v2[j].y = v[j].y;
+              v2[j].z = v[j].z;
+              v2[j].Diffuse = v2[0].Diffuse;
+            }
+
+            // Border uses line alpha blend PSO
+            cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_LINE_ALPHABLEND_WFVERTEX].Get());
+
+            int its = ((int)(*pState->m_shape[i].var_pf_thick) != 0) ? 4 : 1;
+            float x_inc = 2.0f / (float)m_nTexSizeX;
+            float y_inc = 2.0f / (float)m_nTexSizeY;
+            for (int it = 0; it < its; it++) {
+              int j;
+              switch (it) {
+              case 0: break;
+              case 1: for (j = 0; j < sides + 2; j++) v2[j].x += x_inc; break;
+              case 2: for (j = 0; j < sides + 2; j++) v2[j].y += y_inc; break;
+              case 3: for (j = 0; j < sides + 2; j++) v2[j].x -= x_inc; break;
+              }
+              // Border starts at v2[1] (skip center), sides+1 verts for closed loop
+              m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP, &v2[1], sides + 1, sizeof(WFVERTEX));
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void CPlugin::DX12_DrawCustomWaves() {
+  if (!m_lpDX || !m_lpDX->m_commandList)
+    return;
+
+  auto* cmdList = m_lpDX->m_commandList.Get();
+
+  int num_reps = (m_pState->m_bBlending) ? 2 : 1;
+  for (int rep = 0; rep < num_reps; rep++) {
+    CState* pState = (rep == 0) ? m_pState : m_pOldState;
+    float alpha_mult = 1;
+    if (num_reps == 2)
+      alpha_mult = (rep == 0) ? m_pState->m_fBlendProgress : (1 - m_pState->m_fBlendProgress);
+
+    for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+      if (pState->m_wave[i].enabled) {
+        int nSamples = pState->m_wave[i].samples;
+        int max_samples = pState->m_wave[i].bSpectrum ? 512 : NUM_WAVEFORM_SAMPLES;
+        if (nSamples > max_samples)
+          nSamples = max_samples;
+        nSamples -= pState->m_wave[i].sep;
+
+        // 1. execute per-frame code
+        LoadCustomWavePerFrameEvallibVars(pState, i);
+
+        *pState->m_wave[i].var_pp_time = *pState->m_wave[i].var_pf_time;
+        *pState->m_wave[i].var_pp_fps = *pState->m_wave[i].var_pf_fps;
+        *pState->m_wave[i].var_pp_frame = *pState->m_wave[i].var_pf_frame;
+        *pState->m_wave[i].var_pp_progress = *pState->m_wave[i].var_pf_progress;
+        *pState->m_wave[i].var_pp_bass = *pState->m_wave[i].var_pf_bass;
+        *pState->m_wave[i].var_pp_mid = *pState->m_wave[i].var_pf_mid;
+        *pState->m_wave[i].var_pp_treb = *pState->m_wave[i].var_pf_treb;
+        *pState->m_wave[i].var_pp_bass_att = *pState->m_wave[i].var_pf_bass_att;
+        *pState->m_wave[i].var_pp_mid_att = *pState->m_wave[i].var_pf_mid_att;
+        *pState->m_wave[i].var_pp_treb_att = *pState->m_wave[i].var_pf_treb_att;
+
+        if (pState->m_wave[i].m_pf_codehandle)
+          NSEEL_code_execute(pState->m_wave[i].m_pf_codehandle);
+
+        for (int vi = 0; vi < NUM_Q_VAR; vi++)
+          *pState->m_wave[i].var_pp_q[vi] = *pState->m_wave[i].var_pf_q[vi];
+        for (vi = 0; vi < NUM_T_VAR; vi++)
+          *pState->m_wave[i].var_pp_t[vi] = *pState->m_wave[i].var_pf_t[vi];
+
+        nSamples = (int)*pState->m_wave[i].var_pf_samples;
+        nSamples = min(512, nSamples);
+
+        if ((nSamples >= 2) || (pState->m_wave[i].bUseDots && nSamples >= 1)) {
+          int j;
+          float tempdata[2][512];
+          float mult = ((pState->m_wave[i].bSpectrum) ? 0.15f : 0.004f) * pState->m_wave[i].scaling * pState->m_fWaveScale.eval(-1);
+          float* pdata1 = (pState->m_wave[i].bSpectrum) ? m_sound.fSpectrum[0] : m_sound.fWaveform[0];
+          float* pdata2 = (pState->m_wave[i].bSpectrum) ? m_sound.fSpectrum[1] : m_sound.fWaveform[1];
+
+          int j0 = (pState->m_wave[i].bSpectrum) ? 0 : (max_samples - nSamples) / 2 - pState->m_wave[i].sep / 2;
+          int j1 = (pState->m_wave[i].bSpectrum) ? 0 : (max_samples - nSamples) / 2 + pState->m_wave[i].sep / 2;
+          float t = (pState->m_wave[i].bSpectrum) ? (max_samples - pState->m_wave[i].sep) / (float)nSamples : 1;
+          float mix1 = powf(pState->m_wave[i].smoothing * 0.98f, 0.5f);
+          float mix2 = 1 - mix1;
+
+          tempdata[0][0] = pdata1[j0];
+          tempdata[1][0] = pdata2[j1];
+          for (j = 1; j < nSamples; j++) {
+            tempdata[0][j] = pdata1[(int)(j * t) + j0] * mix2 + tempdata[0][j - 1] * mix1;
+            tempdata[1][j] = pdata2[(int)(j * t) + j1] * mix2 + tempdata[1][j - 1] * mix1;
+          }
+          for (j = nSamples - 2; j >= 0; j--) {
+            tempdata[0][j] = tempdata[0][j] * mix2 + tempdata[0][j + 1] * mix1;
+            tempdata[1][j] = tempdata[1][j] * mix2 + tempdata[1][j + 1] * mix1;
+          }
+          for (j = 0; j < nSamples; j++) {
+            tempdata[0][j] *= mult;
+            tempdata[1][j] *= mult;
+          }
+
+          // 2. per-point code execution
+          WFVERTEX v[1024];
+          float j_mult = 1.0f / (float)(nSamples - 1);
+          for (j = 0; j < nSamples; j++) {
+            float t = j * j_mult;
+            float value1 = tempdata[0][j];
+            float value2 = tempdata[1][j];
+            *pState->m_wave[i].var_pp_sample = t;
+            *pState->m_wave[i].var_pp_value1 = value1;
+            *pState->m_wave[i].var_pp_value2 = value2;
+            *pState->m_wave[i].var_pp_x = 0.5f + value1;
+            *pState->m_wave[i].var_pp_y = 0.5f + value2;
+            *pState->m_wave[i].var_pp_r = *pState->m_wave[i].var_pf_r;
+            *pState->m_wave[i].var_pp_g = *pState->m_wave[i].var_pf_g;
+            *pState->m_wave[i].var_pp_b = *pState->m_wave[i].var_pf_b;
+            *pState->m_wave[i].var_pp_a = *pState->m_wave[i].var_pf_a;
+
+#ifndef _NO_EXPR_
+            if (pState->m_wave[i].m_pp_codehandle)
+              NSEEL_code_execute(pState->m_wave[i].m_pp_codehandle);
+#endif
+
+            if (m_bScreenDependentRenderMode) {
+              v[j].x = (float)(*pState->m_wave[i].var_pp_x * 2 - 1);
+              v[j].y = (float)(*pState->m_wave[i].var_pp_y * -2 + 1);
+            } else {
+              v[j].x = (float)(*pState->m_wave[i].var_pp_x * 2 - 1) * m_fInvAspectX;
+              v[j].y = (float)(*pState->m_wave[i].var_pp_y * -2 + 1) * m_fInvAspectY;
+            }
+
+            v[j].z = 0;
+            v[j].Diffuse =
+              ((((int)(*pState->m_wave[i].var_pp_a * 255 * alpha_mult)) & 0xFF) << 24) |
+              ((((int)(*pState->m_wave[i].var_pp_r * 255)) & 0xFF) << 16) |
+              ((((int)(*pState->m_wave[i].var_pp_g * 255)) & 0xFF) << 8) |
+              ((((int)(*pState->m_wave[i].var_pp_b * 255)) & 0xFF));
+          }
+
+          // 3. smooth it
+          WFVERTEX v2[2048];
+          WFVERTEX* pVerts = v;
+          if (!pState->m_wave[i].bUseDots) {
+            nSamples = SmoothWave(v, nSamples, v2);
+            pVerts = v2;
+          }
+
+          // 4. draw it — select PSO based on additive + dots
+          bool useDots = pState->m_wave[i].bUseDots;
+          bool additive = pState->m_wave[i].bAdditive;
+          DX12PsoId psoId;
+          D3D12_PRIMITIVE_TOPOLOGY topology;
+          if (useDots) {
+            psoId = additive ? PSO_POINT_ADDITIVE_WFVERTEX : PSO_POINT_ALPHABLEND_WFVERTEX;
+            topology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+          } else {
+            psoId = additive ? PSO_LINE_ADDITIVE_WFVERTEX : PSO_LINE_ALPHABLEND_WFVERTEX;
+            topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+          }
+          cmdList->SetPipelineState(m_lpDX->m_PSOs[psoId].Get());
+
+          int its = (pState->m_wave[i].bDrawThick && !useDots) ? 4 : 1;
+          float x_inc = 2.0f / (float)m_nTexSizeX;
+          float y_inc = 2.0f / (float)m_nTexSizeY;
+          for (int it = 0; it < its; it++) {
+            switch (it) {
+            case 0: break;
+            case 1: for (j = 0; j < nSamples; j++) pVerts[j].x += x_inc; break;
+            case 2: for (j = 0; j < nSamples; j++) pVerts[j].y += y_inc; break;
+            case 3: for (j = 0; j < nSamples; j++) pVerts[j].x -= x_inc; break;
+            }
+            m_lpDX->DrawVertices(topology, pVerts, nSamples, sizeof(WFVERTEX));
+          }
+        }
+      }
+    }
+  }
 }
 
 void CPlugin::ComputeGridAlphaValues() {
@@ -4733,32 +6149,29 @@ void CPlugin::RestoreShaderParams() {
 void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CState* pState) {
   LPDIRECT3DDEVICE9 lpDevice = GetDevice();
 
-  //if (p->texbind_vs      >= 0) lpDevice->SetTexture( p->texbind_vs   , m_lpVS[0]   );
-  //if (p->texbind_noise   >= 0) lpDevice->SetTexture( p->texbind_noise, m_pTexNoise );
-
-  // bind textures
+  // bind textures + sampler states (DX9 only — skip if no DX9 device)
   for (int i = 0; i < sizeof(p->m_texture_bindings) / sizeof(p->m_texture_bindings[0]); i++) {
-    if (p->m_texcode[i] == TEX_VS)
-      lpDevice->SetTexture(i, m_lpVS[0]);
-    else
-      lpDevice->SetTexture(i, p->m_texture_bindings[i].texptr);
+    if (lpDevice) {
+      if (p->m_texcode[i] == TEX_VS)
+        lpDevice->SetTexture(i, m_lpVS[0]);
+      else
+        lpDevice->SetTexture(i, p->m_texture_bindings[i].texptr);
 
-    // also set up sampler stage, if anything is bound here...
-    if (p->m_texcode[i] == TEX_VS || p->m_texture_bindings[i].texptr) {
-      bool bAniso = false;
-      DWORD HQFilter = bAniso ? D3DTEXF_ANISOTROPIC : D3DTEXF_LINEAR;
-      DWORD wrap = p->m_texture_bindings[i].bWrap ? D3DTADDRESS_WRAP : D3DTADDRESS_CLAMP;
-      DWORD filter = p->m_texture_bindings[i].bBilinear ? HQFilter : D3DTEXF_POINT;
-      lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSU, wrap);
-      lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSV, wrap);
-      lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSW, wrap);
-      lpDevice->SetSamplerState(i, D3DSAMP_MAGFILTER, filter);
-      lpDevice->SetSamplerState(i, D3DSAMP_MINFILTER, filter);
-      lpDevice->SetSamplerState(i, D3DSAMP_MIPFILTER, filter);
-      //lpDevice->SetSamplerState(i, D3DSAMP_MAXANISOTROPY, bAniso ? 4 : 1);  //FIXME:ANISO
+      if (p->m_texcode[i] == TEX_VS || p->m_texture_bindings[i].texptr) {
+        bool bAniso = false;
+        DWORD HQFilter = bAniso ? D3DTEXF_ANISOTROPIC : D3DTEXF_LINEAR;
+        DWORD wrap = p->m_texture_bindings[i].bWrap ? D3DTADDRESS_WRAP : D3DTADDRESS_CLAMP;
+        DWORD filter = p->m_texture_bindings[i].bBilinear ? HQFilter : D3DTEXF_POINT;
+        lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSU, wrap);
+        lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSV, wrap);
+        lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSW, wrap);
+        lpDevice->SetSamplerState(i, D3DSAMP_MAGFILTER, filter);
+        lpDevice->SetSamplerState(i, D3DSAMP_MINFILTER, filter);
+        lpDevice->SetSamplerState(i, D3DSAMP_MIPFILTER, filter);
+      }
     }
 
-    // finally, if it was a blur texture, note that
+    // still track blur texture usage regardless of DX9 device
     if (p->m_texcode[i] >= TEX_BLUR1 && p->m_texcode[i] <= TEX_BLUR_LAST)
       m_nHighestBlurTexUsedThisFrame = max(m_nHighestBlurTexUsedThisFrame, ((int)p->m_texcode[i] - (int)TEX_BLUR1) + 1);
   }

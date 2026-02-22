@@ -20,11 +20,12 @@
 #include <filesystem>
 
 using namespace winrt;
-using namespace Windows::Media::Control;
+using namespace winrt::Windows::Media::Control;
 using namespace std::chrono_literals;
 
 extern float milkwave_amp_left;
 extern float milkwave_amp_right;
+extern float milkwave_audio_sensitivity;
 
 class Milkwave {
 

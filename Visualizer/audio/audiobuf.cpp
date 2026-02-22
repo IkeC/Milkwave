@@ -13,11 +13,12 @@ signed int pcmPos = 0; // Position to write new data
 
 float milkwave_amp_left = 1.0f;
 float milkwave_amp_right = 1.0f;
+float milkwave_audio_sensitivity = 1.0f;  // Pre-quantization gain applied to WASAPI float data
 
 void ResetAudioBuf() {
   std::unique_lock<std::mutex> lock(pcmLpbMutex);
-  memset(pcmLeftLpb, 0, SAMPLE_SIZE_LPB);
-  memset(pcmRightLpb, 0, SAMPLE_SIZE_LPB);
+  memset(pcmLeftLpb, 128, SAMPLE_SIZE_LPB);  // 128 = silence in unsigned 8-bit PCM
+  memset(pcmRightLpb, 128, SAMPLE_SIZE_LPB);
   pcmBufDrained = false;
   pcmLen = 0;
 }
@@ -37,15 +38,15 @@ void GetAudioBuf(unsigned char* pWaveL, unsigned char* pWaveR, int SamplesCount)
 
   if ((pcmLen < SamplesCount) || (consecutiveReads > 3)) {
     // Buffer underrun. Insufficient new samples in circular buffer (pcmLeftLpb, pcmRightLpb)
-    memset(pWaveL, 0, SamplesCount);
-    memset(pWaveR, 0, SamplesCount);
+    memset(pWaveL, 128, SamplesCount);   // 128 = silence in unsigned 8-bit PCM
+    memset(pWaveR, 128, SamplesCount);
     if (consecutiveReads > 3)
       pcmBufDrained = true; // Drain buffer to force underrun next time
   }
   else {
     // Circular buffer (pcmLeftLpb, pcmRightLpb) hold enough samples in it
     for (int i = 0; i < SamplesCount; i++) {
-      // int8_t [-128 .. +127] stored into uint8_t [0..255]
+      // unsigned 8-bit PCM: 128 = silence, 0 = max negative, 255 = max positive
       pWaveL[i % SamplesCount] = pcmLeftLpb[(pcmPos + i) % SAMPLE_SIZE_LPB];
       pWaveR[i % SamplesCount] = pcmRightLpb[(pcmPos + i) % SAMPLE_SIZE_LPB];
     }
@@ -53,6 +54,7 @@ void GetAudioBuf(unsigned char* pWaveL, unsigned char* pWaveR, int SamplesCount)
 }
 
 int8_t FltToInt(float flt) {
+  flt *= milkwave_audio_sensitivity;  // Apply gain before quantization
   if (flt >= 1.0f) {
     return +127; // 0x7f
   }
@@ -171,9 +173,12 @@ void SetAudioBuf(const BYTE* pData, const UINT32 nNumFramesToRead, const WAVEFOR
     // 8-bit signed integer in Two's Complement Representation stored in unsigned char array
     // int8_t[-128 .. + 127] stored into uint8_t[0 .. 255]
     
-    // Store averaged/downsampled values
-    pcmLeftLpb[(pcmPos + n) % SAMPLE_SIZE_LPB] = sumLeft / downsampleRatio * milkwave_amp_left;
-    pcmRightLpb[(pcmPos + n) % SAMPLE_SIZE_LPB] = sumRight / downsampleRatio * milkwave_amp_right;
+    // Store as unsigned 8-bit PCM centered at 128 (AnalyzeNewSound expects this format)
+    // int8_t range [-128,+127] + 128 → unsigned char range [0,255] with silence at 128
+    int leftVal = (int)(sumLeft / downsampleRatio * milkwave_amp_left) + 128;
+    int rightVal = (int)(sumRight / downsampleRatio * milkwave_amp_right) + 128;
+    pcmLeftLpb[(pcmPos + n) % SAMPLE_SIZE_LPB] = (unsigned char)(leftVal < 0 ? 0 : (leftVal > 255 ? 255 : leftVal));
+    pcmRightLpb[(pcmPos + n) % SAMPLE_SIZE_LPB] = (unsigned char)(rightVal < 0 ? 0 : (rightVal > 255 ? 255 : rightVal));
   }
 
   pcmBufDrained = false;

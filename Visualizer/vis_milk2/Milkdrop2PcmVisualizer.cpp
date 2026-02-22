@@ -127,15 +127,23 @@
 #define VK_M 0x4D // ASCII code for 'M'
 #endif
 
+#ifndef VK_A
+#define VK_A 0x41 // ASCII code for 'A'
+#endif
+
 #include <stdlib.h>
 #include <malloc.h>
 #include <crtdbg.h>
 
 #include <windows.h>
 #include <process.h>
-#include <d3d9.h>
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <wrl/client.h>
 #include <math.h>
 #include <dwmapi.h>
+
+using Microsoft::WRL::ComPtr;
 
 #include <ShellScalingApi.h> // for dpi awareness
 #pragma comment(lib, "shcore.lib") // for dpi awareness
@@ -144,6 +152,7 @@
 #include "plugin.h"
 #include "resource.h"
 #include "pluginshell.h"
+#include "utility.h"
 
 #include <mutex>
 #include <atomic>
@@ -178,9 +187,10 @@ static int nBeatDrops = 0; // Number of BeatDrop instances already running
 BOOL CALLBACK GetWindowNames(HWND h, LPARAM l); // Window enumerator callback
 // ===============================================
 
-// SPOUT - DX9EX
-static IDirect3D9Ex* pD3D9 = nullptr;
-static IDirect3DDevice9Ex* pD3DDevice = nullptr;
+// DX12 device objects (created in InitD3d, released in DeinitD3d)
+static ComPtr<ID3D12Device>       pD3DDevice;
+static ComPtr<ID3D12CommandQueue> pCommandQueue;
+static ComPtr<IDXGIFactory4>      pDXGIFactory;
 
 static LONG lastWindowStyle = 0;
 static LONG lastWindowStyleEx = 0;
@@ -232,96 +242,71 @@ BOOL CALLBACK GetWindowNames(HWND h, LPARAM l) {
 }
 // ===============================================
 
-// SPOUT - DX9EX
 void InitD3d(HWND hwnd, int width, int height) {
+  HRESULT hr;
 
-  HRESULT Hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3D9);
-  if (Hr != S_OK) {
-    printf("Milkdrop2PcmVisualizer::InitD3d - Direct3DCreate9Ex error\n");
+  // DX12 debug layer disabled — enable manually when diagnosing GPU issues.
+  // Uncomment the block below to re-enable (expect 5-10x perf hit):
+  // {
+  //   ComPtr<ID3D12Debug> debugController;
+  //   if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
+  //     debugController->EnableDebugLayer();
+  //   }
+  // }
+  UINT dxgiFactoryFlags = 0;
+
+  hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&pDXGIFactory));
+  if (FAILED(hr)) {
+    milkwave.LogInfo(L"InitD3d: CreateDXGIFactory2 failed");
     return;
   }
 
-  D3DCAPS9 d3dCaps;
-
-  D3DDISPLAYMODEEX mode;
-  D3DDISPLAYROTATION rot;
-  pD3D9->GetAdapterDisplayModeEx(D3DADAPTER_DEFAULT, &mode, &rot);
-
-  UINT adapterId = g_plugin.m_adapterId;
-
-  if (adapterId > pD3D9->GetAdapterCount()) {
-    adapterId = D3DADAPTER_DEFAULT;
+  // Choose adapter: prefer the one at g_plugin.m_adapterId, fall back to first hardware adapter.
+  ComPtr<IDXGIAdapter1> hardwareAdapter;
+  UINT wantedIdx = g_plugin.m_adapterId;
+  for (UINT i = 0; ; i++) {
+    ComPtr<IDXGIAdapter1> adapter;
+    if (pDXGIFactory->EnumAdapters1(i, &adapter) == DXGI_ERROR_NOT_FOUND)
+      break;
+    DXGI_ADAPTER_DESC1 desc;
+    adapter->GetDesc1(&desc);
+    if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+      continue;
+    if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr))) {
+      if (hardwareAdapter == nullptr || i == wantedIdx) {
+        hardwareAdapter = adapter;
+        if (i == wantedIdx) break;
+      }
+    }
   }
 
-  memset(&g_plugin.d3dPp, 0, sizeof(g_plugin.d3dPp));
-
-  g_plugin.d3dPp.BackBufferCount = 1;
-  g_plugin.d3dPp.BackBufferFormat = D3DFMT_UNKNOWN;// mode.Format;
-
-  if (g_plugin.IsSpoutActiveAndFixed()) {
-    g_plugin.d3dPp.BackBufferWidth = width;
-    g_plugin.d3dPp.BackBufferHeight = height;
+  hr = D3D12CreateDevice(hardwareAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pD3DDevice));
+  if (FAILED(hr)) {
+    milkwave.LogInfo(L"InitD3d: D3D12CreateDevice failed");
+    return;
   }
-  else {
+
+  D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+  queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+  queueDesc.Type  = D3D12_COMMAND_LIST_TYPE_DIRECT;
+  hr = pD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pCommandQueue));
+  if (FAILED(hr)) {
+    milkwave.LogInfo(L"InitD3d: CreateCommandQueue failed");
+    return;
+  }
+
+  // Set back-buffer dimensions before PluginInitialize creates the swap chain.
+  if (!g_plugin.IsSpoutActiveAndFixed()) {
     g_plugin.SetVariableBackBuffer(width, height);
   }
-
-  g_plugin.d3dPp.SwapEffect = D3DSWAPEFFECT_COPY;
-  g_plugin.d3dPp.Flags = 0;
-  g_plugin.d3dPp.EnableAutoDepthStencil = FALSE;// TRUE;
-  g_plugin.d3dPp.AutoDepthStencilFormat = D3DFMT_D24S8;// D3DFMT_D24X8;
-  g_plugin.d3dPp.Windowed = TRUE;
-  g_plugin.d3dPp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-  g_plugin.d3dPp.MultiSampleType = D3DMULTISAMPLE_NONE;
-  g_plugin.d3dPp.hDeviceWindow = (HWND)hwnd;
-
-  // Test for hardware vertex processing capability and set up as needed
-  // D3DCREATE_MULTITHREADED required by interop spec
-  if (pD3D9->GetDeviceCaps(adapterId, D3DDEVTYPE_HAL, &d3dCaps) != S_OK) {
-    printf("Milkdrop2PcmVisualizer::CreateDX9device - GetDeviceCaps error\n");
-    return;
-  }
-
-  DWORD dwBehaviorFlags = D3DCREATE_PUREDEVICE | D3DCREATE_MULTITHREADED;
-  if (d3dCaps.VertexProcessingCaps != 0)
-    dwBehaviorFlags |= D3DCREATE_HARDWARE_VERTEXPROCESSING;
-  else
-    dwBehaviorFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-
-  Hr = pD3D9->CreateDeviceEx(
-    adapterId,
-    D3DDEVTYPE_HAL,
-    (HWND)hwnd,
-    dwBehaviorFlags,
-    &g_plugin.d3dPp,
-    NULL,
-    &pD3DDevice);
 }
 
 void DeinitD3d() {
-  if (pD3DDevice) {
-    __try {
-      pD3DDevice->Release();
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-      wchar_t msg[256];
-      swprintf_s(msg, L"DeinitD3d - Exception during device Release (0x%X)", GetExceptionCode());
-      milkwave.LogInfo(msg);
-    }
-    pD3DDevice = nullptr;
-  }
-
-  if (pD3D9) {
-    __try {
-      pD3D9->Release();
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-      wchar_t msg[256];
-      swprintf_s(msg, L"DeinitD3d - Exception during D3D9 Release (0x%X)", GetExceptionCode());
-      milkwave.LogInfo(msg);
-    }
-    pD3D9 = nullptr;
-  }
+  // ComPtrs release automatically; flush any in-flight GPU work first via the
+  // plugin's DXContext, which calls WaitForGpu() in its destructor / PluginQuit().
+  pCommandQueue.Reset();
+  pD3DDevice.Reset();
+  pDXGIFactory.Reset();
 }
 
 //Multiple monitor stretch - Credit to @milkdropper for the code!
@@ -341,8 +326,7 @@ void ToggleStretch(HWND hwnd) {
     }
 
     g_plugin.SetVariableBackBuffer(width, height);
-    pD3DDevice->Reset(&g_plugin.d3dPp);
-
+    // DX12: swap chain resize is triggered by the WM_SIZE handler after SetWindowPos.
     SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
     SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
     SetWindowPos(hwnd, HWND_NOTOPMOST, left, top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
@@ -360,8 +344,7 @@ void ToggleStretch(HWND hwnd) {
     int height = lastRect.bottom - lastRect.top;
 
     g_plugin.SetVariableBackBuffer(width, height);
-    pD3DDevice->Reset(&g_plugin.d3dPp);
-
+    // DX12: swap chain resize is triggered by the WM_SIZE handler after SetWindowPos.
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     stretch = false;
 
@@ -560,46 +543,7 @@ static void ToggleFullScreen(HWND hwnd) {
     SetWindowPos(hwnd, HWND_TOPMOST, info.rcMonitor.left, info.rcMonitor.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
 
     g_plugin.SetVariableBackBuffer(width, height);
-    HRESULT hr = pD3DDevice->Reset(&g_plugin.d3dPp);
-    if (FAILED(hr)) {
-      switch (hr) {
-      case D3DERR_DEVICELOST:
-        // Device is lost, cannot reset now. Retry later.
-        g_plugin.AddError(L"Direct3D device is lost, retry later", 5.0f, ERR_NOTIFY, false);
-        break;
-
-      case D3DERR_DEVICENOTRESET:
-        // Device is ready to be reset but failed. Consider releasing resources.
-        g_plugin.AddError(L"Direct3D device could not be reset, releasing resources", 5.0f, ERR_NOTIFY, false);
-        // Add code to release and recreate resources if necessary.
-        break;
-
-      case D3DERR_OUTOFVIDEOMEMORY:
-        // Out of video memory.
-        g_plugin.AddError(L"Out of video memory - Reduce resource usage", 5.0f, ERR_NOTIFY, false);
-        break;
-
-      case E_OUTOFMEMORY:
-        // General memory allocation failure.
-        g_plugin.AddError(L"Out of memory - Unable to reset device", 5.0f, ERR_NOTIFY, false);
-        break;
-
-      default:
-        // Unknown error.
-        wchar_t buf[256];
-        swprintf(buf, 256, L"Unknown error during Reset: 0x%08X", hr);
-        g_plugin.AddError(buf, 5.0f, ERR_NOTIFY, false);
-        break;
-      }
-
-      // Optional: Fallback to windowed mode or attempt recovery.
-      fullscreen = false;
-      SetWindowLongW(hwnd, GWL_STYLE, lastWindowStyle);
-      SetWindowLongW(hwnd, GWL_EXSTYLE, lastWindowStyleEx);
-      SetWindowPos(hwnd, HWND_NOTOPMOST, lastRect.left, lastRect.top,
-        lastRect.right - lastRect.left, lastRect.bottom - lastRect.top,
-        SWP_DRAWFRAME | SWP_FRAMECHANGED);
-    }
+    // DX12: swap chain resize is triggered by the WM_SIZE handler after SetWindowPos.
 
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     DragAcceptFiles(hwnd, TRUE);
@@ -614,8 +558,7 @@ static void ToggleFullScreen(HWND hwnd) {
     int height = lastRect.bottom - lastRect.top;
 
     g_plugin.SetVariableBackBuffer(width, height);
-    pD3DDevice->Reset(&g_plugin.d3dPp);
-
+    // DX12: swap chain resize is triggered by the WM_SIZE handler after SetWindowPos.
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     fullscreen = false;
 
@@ -740,6 +683,318 @@ static void ToggleBorderlessWindow(HWND hwnd) {
   g_plugin.m_WindowBorderless = borderless;
 }
 
+
+// -----------------------------------------------------------------------
+// Audio Device Selection Dialog
+// -----------------------------------------------------------------------
+
+struct AudioDeviceInfo {
+  std::wstring friendlyName;
+  std::wstring deviceId;
+  bool isRender; // true = speaker/headphone (loopback), false = microphone
+};
+
+static std::vector<AudioDeviceInfo> g_dialogDevices;
+static int g_dialogSelectedIndex = -1;
+
+static HRESULT EnumerateAudioDevices(std::vector<AudioDeviceInfo>& devices) {
+  devices.clear();
+  HRESULT hr = S_OK;
+
+  IMMDeviceEnumerator* pEnum = nullptr;
+  hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
+                        __uuidof(IMMDeviceEnumerator), (void**)&pEnum);
+  if (FAILED(hr)) return hr;
+  ReleaseOnExit releaseEnum(pEnum);
+
+  // Enumerate render devices (speakers/headphones — for loopback capture)
+  for (int pass = 0; pass < 2; pass++) {
+    bool isRender = (pass == 0);
+    IMMDeviceCollection* pCollection = nullptr;
+    hr = pEnum->EnumAudioEndpoints(isRender ? eRender : eCapture,
+                                    DEVICE_STATE_ACTIVE, &pCollection);
+    if (FAILED(hr)) continue;
+    ReleaseOnExit releaseCollection(pCollection);
+
+    UINT count = 0;
+    pCollection->GetCount(&count);
+
+    for (UINT i = 0; i < count; i++) {
+      IMMDevice* pDevice = nullptr;
+      hr = pCollection->Item(i, &pDevice);
+      if (FAILED(hr)) continue;
+      ReleaseOnExit releaseDevice(pDevice);
+
+      // Get device ID
+      LPWSTR pwszId = nullptr;
+      pDevice->GetId(&pwszId);
+      std::wstring deviceId = pwszId ? pwszId : L"";
+      if (pwszId) CoTaskMemFree(pwszId);
+
+      // Get friendly name
+      IPropertyStore* pProps = nullptr;
+      hr = pDevice->OpenPropertyStore(STGM_READ, &pProps);
+      if (FAILED(hr)) continue;
+      ReleaseOnExit releaseProps(pProps);
+
+      PROPVARIANT pv;
+      PropVariantInit(&pv);
+      hr = pProps->GetValue(PKEY_Device_FriendlyName, &pv);
+      if (FAILED(hr)) continue;
+      PropVariantClearOnExit clearPv(&pv);
+
+      if (pv.vt == VT_LPWSTR) {
+        AudioDeviceInfo info;
+        info.friendlyName = pv.pwszVal;
+        info.deviceId = deviceId;
+        info.isRender = isRender;
+        devices.push_back(info);
+      }
+    }
+  }
+
+  return S_OK;
+}
+
+// Dialog control IDs
+#define IDC_DEVICE_LIST   1001
+#define IDC_OK_BTN        IDOK
+#define IDC_CANCEL_BTN    IDCANCEL
+
+static INT_PTR CALLBACK AudioDeviceDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+  switch (msg) {
+    case WM_INITDIALOG: {
+      HWND hList = GetDlgItem(hDlg, IDC_DEVICE_LIST);
+
+      // Find current device name for highlighting
+      std::wstring currentDevice = g_plugin.m_szAudioDevice;
+      int currentType = g_plugin.m_nAudioDeviceRequestType;
+      int selectIndex = -1;
+
+      for (size_t i = 0; i < g_dialogDevices.size(); i++) {
+        const auto& dev = g_dialogDevices[i];
+        std::wstring label = dev.friendlyName;
+        if (dev.isRender)
+          label += L"  [Loopback]";
+        else
+          label += L"  [Microphone]";
+
+        int idx = (int)SendMessageW(hList, LB_ADDSTRING, 0, (LPARAM)label.c_str());
+        SendMessageW(hList, LB_SETITEMDATA, idx, (LPARAM)i);
+
+        // Match current device
+        if (_wcsicmp(dev.friendlyName.c_str(), currentDevice.c_str()) == 0) {
+          bool typeMatch = (currentType == 0) ||
+                           (currentType == 2 && dev.isRender) ||
+                           (currentType == 1 && !dev.isRender);
+          if (typeMatch) selectIndex = idx;
+        }
+      }
+
+      if (selectIndex >= 0)
+        SendMessageW(hList, LB_SETCURSEL, selectIndex, 0);
+      else if (g_dialogDevices.size() > 0)
+        SendMessageW(hList, LB_SETCURSEL, 0, 0);
+
+      // Center dialog on parent
+      RECT rcParent, rcDlg;
+      GetWindowRect(GetParent(hDlg), &rcParent);
+      GetWindowRect(hDlg, &rcDlg);
+      int x = rcParent.left + ((rcParent.right - rcParent.left) - (rcDlg.right - rcDlg.left)) / 2;
+      int y = rcParent.top + ((rcParent.bottom - rcParent.top) - (rcDlg.bottom - rcDlg.top)) / 2;
+      SetWindowPos(hDlg, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+
+      return TRUE;
+    }
+
+    case WM_COMMAND:
+      switch (LOWORD(wParam)) {
+        case IDOK: {
+          HWND hList = GetDlgItem(hDlg, IDC_DEVICE_LIST);
+          int sel = (int)SendMessageW(hList, LB_GETCURSEL, 0, 0);
+          if (sel != LB_ERR) {
+            g_dialogSelectedIndex = (int)SendMessageW(hList, LB_GETITEMDATA, sel, 0);
+          }
+          EndDialog(hDlg, IDOK);
+          return TRUE;
+        }
+        case IDCANCEL:
+          EndDialog(hDlg, IDCANCEL);
+          return TRUE;
+
+        case IDC_DEVICE_LIST:
+          if (HIWORD(wParam) == LBN_DBLCLK) {
+            // Double-click acts like OK
+            SendMessageW(hDlg, WM_COMMAND, IDOK, 0);
+            return TRUE;
+          }
+          break;
+      }
+      break;
+
+    case WM_CLOSE:
+      EndDialog(hDlg, IDCANCEL);
+      return TRUE;
+  }
+  return FALSE;
+}
+
+// Build an in-memory DLGTEMPLATE — no .rc file needed
+static void ShowAudioDeviceDialog(HWND hParent) {
+  // Enumerate devices first
+  EnumerateAudioDevices(g_dialogDevices);
+  g_dialogSelectedIndex = -1;
+
+  if (g_dialogDevices.empty()) {
+    MessageBoxW(hParent, L"No audio devices found.", L"Milkwave Audio", MB_OK | MB_ICONWARNING);
+    return;
+  }
+
+  // Build in-memory dialog template
+  // Layout: Title bar, listbox, OK and Cancel buttons
+  // Dialog: 340x260 DLUs
+  const int DLG_W = 340;
+  const int DLG_H = 260;
+  const int LIST_X = 10, LIST_Y = 10, LIST_W = 320, LIST_H = 210;
+  const int BTN_W = 60, BTN_H = 18;
+  const int OK_X = DLG_W - BTN_W * 2 - 20, OK_Y = DLG_H - BTN_H - 10;
+  const int CANCEL_X = DLG_W - BTN_W - 10, CANCEL_Y = OK_Y;
+
+  // Allocate buffer for dialog template + 3 controls
+  // Each item needs DLGITEMTEMPLATE + class + text + extra, all WORD-aligned
+  BYTE buf[2048];
+  memset(buf, 0, sizeof(buf));
+  BYTE* p = buf;
+
+  // --- DLGTEMPLATE ---
+  DLGTEMPLATE* pDlg = (DLGTEMPLATE*)p;
+  pDlg->style = DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU | DS_SETFONT;
+  pDlg->cdit = 3; // listbox + OK + Cancel
+  pDlg->cx = DLG_W;
+  pDlg->cy = DLG_H;
+  pDlg->x = 0;
+  pDlg->y = 0;
+  p += sizeof(DLGTEMPLATE);
+
+  // Menu (none)
+  *(WORD*)p = 0; p += sizeof(WORD);
+  // Class (default)
+  *(WORD*)p = 0; p += sizeof(WORD);
+  // Title
+  const wchar_t* title = L"Select Audio Device";
+  size_t titleLen = (wcslen(title) + 1) * sizeof(WCHAR);
+  memcpy(p, title, titleLen);
+  p += titleLen;
+  // Font size (DS_SETFONT)
+  *(WORD*)p = 10; p += sizeof(WORD);
+  // Font name
+  const wchar_t* fontName = L"Segoe UI";
+  size_t fontLen = (wcslen(fontName) + 1) * sizeof(WCHAR);
+  memcpy(p, fontName, fontLen);
+  p += fontLen;
+
+  // --- Helper lambda for DWORD alignment ---
+  auto align4 = [&]() {
+    while ((ULONG_PTR)p % sizeof(DWORD))
+      *p++ = 0;
+  };
+
+  // --- Listbox control ---
+  align4();
+  DLGITEMTEMPLATE* pItem = (DLGITEMTEMPLATE*)p;
+  pItem->style = WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_TABSTOP | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT;
+  pItem->dwExtendedStyle = 0;
+  pItem->x = LIST_X;
+  pItem->y = LIST_Y;
+  pItem->cx = LIST_W;
+  pItem->cy = LIST_H;
+  pItem->id = IDC_DEVICE_LIST;
+  p += sizeof(DLGITEMTEMPLATE);
+  // Class: Listbox = 0x0083
+  *(WORD*)p = 0xFFFF; p += sizeof(WORD);
+  *(WORD*)p = 0x0083; p += sizeof(WORD);
+  // Text (empty)
+  *(WORD*)p = 0; p += sizeof(WORD);
+  // Extra data
+  *(WORD*)p = 0; p += sizeof(WORD);
+
+  // --- OK button ---
+  align4();
+  pItem = (DLGITEMTEMPLATE*)p;
+  pItem->style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON;
+  pItem->dwExtendedStyle = 0;
+  pItem->x = OK_X;
+  pItem->y = OK_Y;
+  pItem->cx = BTN_W;
+  pItem->cy = BTN_H;
+  pItem->id = IDOK;
+  p += sizeof(DLGITEMTEMPLATE);
+  // Class: Button = 0x0080
+  *(WORD*)p = 0xFFFF; p += sizeof(WORD);
+  *(WORD*)p = 0x0080; p += sizeof(WORD);
+  // Text: "OK"
+  const wchar_t* okText = L"OK";
+  size_t okLen = (wcslen(okText) + 1) * sizeof(WCHAR);
+  memcpy(p, okText, okLen);
+  p += okLen;
+  // Extra data
+  *(WORD*)p = 0; p += sizeof(WORD);
+
+  // --- Cancel button ---
+  align4();
+  pItem = (DLGITEMTEMPLATE*)p;
+  pItem->style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON;
+  pItem->dwExtendedStyle = 0;
+  pItem->x = CANCEL_X;
+  pItem->y = CANCEL_Y;
+  pItem->cx = BTN_W;
+  pItem->cy = BTN_H;
+  pItem->id = IDCANCEL;
+  p += sizeof(DLGITEMTEMPLATE);
+  // Class: Button = 0x0080
+  *(WORD*)p = 0xFFFF; p += sizeof(WORD);
+  *(WORD*)p = 0x0080; p += sizeof(WORD);
+  // Text: "Cancel"
+  const wchar_t* cancelText = L"Cancel";
+  size_t cancelLen = (wcslen(cancelText) + 1) * sizeof(WCHAR);
+  memcpy(p, cancelText, cancelLen);
+  p += cancelLen;
+  // Extra data
+  *(WORD*)p = 0; p += sizeof(WORD);
+
+  INT_PTR result = DialogBoxIndirectParamW(
+    GetModuleHandle(NULL),
+    (DLGTEMPLATE*)buf,
+    hParent,
+    AudioDeviceDlgProc,
+    0
+  );
+
+  if (result == IDOK && g_dialogSelectedIndex >= 0 && g_dialogSelectedIndex < (int)g_dialogDevices.size()) {
+    const auto& selected = g_dialogDevices[g_dialogSelectedIndex];
+
+    // Save previous device
+    wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
+    g_plugin.m_nAudioDevicePreviousType = g_plugin.m_nAudioDeviceActiveType;
+
+    // Set new device
+    wcscpy_s(g_plugin.m_szAudioDevice, selected.friendlyName.c_str());
+    g_plugin.m_nAudioDeviceRequestType = selected.isRender ? 2 : 1;
+    g_plugin.SetAudioDeviceDisplayName(selected.friendlyName.c_str(), selected.isRender);
+
+    // Save to settings.ini
+    g_plugin.MyWriteConfig();
+
+    // Trigger audio thread restart
+    g_plugin.m_nAudioLoopState = 1;
+
+    wchar_t logBuf[512];
+    swprintf_s(logBuf, L"Audio device selected: %s [%s]",
+               selected.friendlyName.c_str(),
+               selected.isRender ? L"Loopback" : L"Microphone");
+    DebugLogW(logBuf);
+  }
+}
 
 HRESULT GetDefaultAudioDeviceName(IMMDevice** ppMMDevice, std::wstring* m_szAudioDeviceDisplayName) {
   HRESULT hr = S_OK;
@@ -944,6 +1199,12 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       }
     }
     return 0;
+  }
+  else if (wParam == VK_A) {
+    if (GetKeyState(VK_CONTROL) & 0x8000) { // Ctrl+A = audio device dialog
+      ShowAudioDeviceDialog(hWnd);
+      return 0;
+    }
   }
   else if (wParam == VK_M) {
     if (GetKeyState(VK_CONTROL) & 0x8000) { // Check if Ctrl is pressed
@@ -1163,8 +1424,8 @@ void RenderFrame() {
     std::unique_lock<std::mutex> lock(pcmMutex);
     memcpy(pcmLeftOut, pcmLeftIn, SAMPLE_SIZE);
     memcpy(pcmRightOut, pcmRightIn, SAMPLE_SIZE);
-    memset(pcmLeftIn, 0, SAMPLE_SIZE);
-    memset(pcmRightIn, 0, SAMPLE_SIZE);
+    memset(pcmLeftIn, 128, SAMPLE_SIZE);   // 128 = silence in unsigned 8-bit PCM
+    memset(pcmRightIn, 128, SAMPLE_SIZE);
   }
 
   milkwave.PollMediaInfo();
@@ -1427,8 +1688,16 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   // SPOUT
 
-  unsigned int BackbufferWidth = g_plugin.m_WindowWidth;
-  unsigned int BackbufferHeight = g_plugin.m_WindowHeight;
+  // Use actual client area dimensions (not window dimensions which include title bar + borders)
+  RECT clientRect;
+  GetClientRect(hwnd, &clientRect);
+  unsigned int BackbufferWidth = clientRect.right - clientRect.left;
+  unsigned int BackbufferHeight = clientRect.bottom - clientRect.top;
+  if (BackbufferWidth == 0 || BackbufferHeight == 0) {
+    // Fallback to window dimensions if client rect is not yet available
+    BackbufferWidth = g_plugin.m_WindowWidth;
+    BackbufferHeight = g_plugin.m_WindowHeight;
+  }
   if (g_plugin.IsSpoutActiveAndFixed()) {
     BackbufferWidth = g_plugin.nSpoutFixedWidth;
     BackbufferHeight = g_plugin.nSpoutFixedHeight;
@@ -1439,13 +1708,31 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   milkwave.LogInfo(L"CreateWindowAndRun: PluginInitialize");
   g_plugin.PluginInitialize(
-    pD3DDevice,
-    &g_plugin.d3dPp,
+    pD3DDevice.Get(),
+    pCommandQueue.Get(),
+    pDXGIFactory.Get(),
     hwnd,
-    // windowWidth,
-    // windowHeight);
     BackbufferWidth,
     BackbufferHeight);
+
+  // Force dimension correction: WM_SIZE from ShowWindow was missed because m_lpDX
+  // was null at that time. Verify dimensions match the actual client rect now.
+  if (g_plugin.m_lpDX && g_plugin.m_lpDX->m_ready) {
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+    int actualW = rc.right - rc.left;
+    int actualH = rc.bottom - rc.top;
+    if (actualW > 0 && actualH > 0 &&
+        (actualW != g_plugin.m_lpDX->m_client_width ||
+         actualH != g_plugin.m_lpDX->m_client_height)) {
+      wchar_t dbg[256];
+      swprintf(dbg, 256, L"DX12 init correction: swap chain %dx%d -> client %dx%d\n",
+               g_plugin.m_lpDX->m_client_width, g_plugin.m_lpDX->m_client_height,
+               actualW, actualH);
+      OutputDebugStringW(dbg);
+      g_plugin.OnUserResizeWindow();
+    }
+  }
 
   MSG msg;
   msg.message = WM_NULL;
@@ -1899,19 +2186,7 @@ int StartThreads(HINSTANCE instance) {
     milkwave.LogInfo(L"Milkwave initialized, LogLevel=" + std::to_wstring(milkwave.logLevel)
       + L" BaseDir=" + g_plugin.m_szBaseDir);
 
-    if (g_plugin.m_CheckDirectXOnStartup) {
-      if (!g_plugin.CheckForDirectX9c()) {
-        milkwave.LogInfo(L"DirectX 9 DLL not in registry, exiting");
-        return -1;
-      }
-      if (!g_plugin.CheckDX9DLL()) {
-        milkwave.LogInfo(L"DirectX 9 DLL not found, exiting");
-        return -1;
-      }
-
-      // if we made it here, skip this check in the future
-      g_plugin.m_CheckDirectXOnStartup = false;
-    }
+    // DX12: no legacy DirectX 9 DLL checks needed.
 
     milkwave.LogInfo(L"Starting render thread");
     StartRenderThread(instance);
@@ -1979,37 +2254,41 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
   // Install SEH -> C++ translator so SEH (e.g., access violations) become catchable std::exception
   _set_se_translator(SeTranslatorFunction);
 
-#ifdef _DEBUG
-  // Set the current directory to the Release folder for debugging,
-  // which is expected to be at the project root level.
-  SetCurrentDirectoryW(L"../../Release");
-  wchar_t fullPath[MAX_PATH];
-  GetCurrentDirectoryW(MAX_PATH, g_plugin.m_szBaseDir);
-  // swprintf(cwd, sizeof(cwd) / sizeof(cwd[0]), L"WinMain: WorkingDir=%s\n", cwd);
-  // Append backslash if not present
-  size_t len = wcslen(g_plugin.m_szBaseDir);
-  if (len > 0 && g_plugin.m_szBaseDir[len - 1] != L'\\') {
-    if (len < MAX_PATH - 1) { // Ensure space for backslash and null terminator
-      g_plugin.m_szBaseDir[len] = L'\\';
-      g_plugin.m_szBaseDir[len + 1] = L'\0';
+  // Determine m_szBaseDir: the directory that contains the "resources" folder.
+  // Walk upward from the exe location (handles Debug/, Release/, and install layouts).
+  {
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    fs::path dir = fs::path(exePath).parent_path();
+
+    // Walk up at most 4 levels looking for resources\data\include.fx
+    bool found = false;
+    for (int i = 0; i < 5; i++) {
+      if (fs::exists(dir / L"resources" / L"data" / L"include.fx")) {
+        found = true;
+        break;
+      }
+      fs::path parent = dir.parent_path();
+      if (parent == dir) break;  // filesystem root
+      dir = parent;
     }
+
+    std::wstring baseDir = dir.wstring();
+    if (!baseDir.empty() && baseDir.back() != L'\\') {
+      baseDir += L'\\';
+    }
+    wcscpy_s(g_plugin.m_szBaseDir, MAX_PATH, baseDir.c_str());
+
+    // Initialize debug log (rotates debug.log → debug.prev.log)
+    DebugLogInit(g_plugin.m_szBaseDir);
+
+    OutputDebugStringW(L"BaseDir: ");
+    OutputDebugStringW(g_plugin.m_szBaseDir);
+    OutputDebugStringW(found ? L" (resources found)\n" : L" (resources NOT found)\n");
+    DebugLogW(found ? L"BaseDir resolved (resources found)" : L"BaseDir resolved (resources NOT found)");
+    DebugLogW(g_plugin.m_szBaseDir);
   }
-  OutputDebugStringW(g_plugin.m_szBaseDir);
-  OutputDebugStringW(L"\n");
-#else
-  wchar_t exePath[MAX_PATH];
-  GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-  fs::path fullPath(exePath);
-  fs::path exeDir = fullPath.parent_path();
-
-  std::wstring baseDir = exeDir.wstring();
-  if (!baseDir.empty() && baseDir.back() != L'\\') {
-    baseDir += L'\\';
-  }
-
-  wcscpy_s(g_plugin.m_szBaseDir, MAX_PATH, baseDir.c_str());
-#endif
   int res = 0;
   try {
     res = StartThreads(hInstance);

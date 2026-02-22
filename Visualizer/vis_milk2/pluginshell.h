@@ -32,6 +32,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "shell_defines.h"
 #include "dxcontext.h"
+#include "dx12helpers.h"   // DX12Texture
+#include "d3dx9compat.h"  // for LPDIRECT3DDEVICE9, D3DFORMAT etc. used by legacy DX9 code in Phase 2-4 TODO files
 #include "fft.h"
 #include "defines.h"
 #include "textmgr.h"
@@ -83,7 +85,10 @@ public:
   void ResetBufferAndFonts();
   void UpdateBackBufferTracking(int width, int height);
 
-  D3DPRESENT_PARAMETERS d3dPp;
+  // Back-buffer dimensions used by the plugin (may differ from window size for fixed Spout sizes)
+  int m_backBufWidth;
+  int m_backBufHeight;
+
   DXContext* m_lpDX;            // pointer to DXContext object
 
 protected:
@@ -94,22 +99,55 @@ protected:
   //  If you call these from OverrideDefaults, MyPreInitialize, or MyReadConfig,
   //    they will return NULL (zero).
   // ------------------------------------------------------------
-  HWND         GetPluginWindow();      // returns handle to the plugin window.  NOT persistent; can change!
-  int          GetWidth();             // returns width of plugin window interior, in pixels.  Note: in windowed mode, this is a fudged, larger, aligned value, and on final display, it gets cropped.
-  int          GetHeight();            // returns height of plugin window interior, in pixels. Note: in windowed mode, this is a fudged, larger, aligned value, and on final display, it gets cropped.
-  int          GetBitDepth();          // returns 8, 16, 24 (rare), or 32
-  LPDIRECT3DDEVICE9EX  GetDevice();    // returns a pointer to the DirectX 8 Device.  NOT persistent; can change!
-  D3DCAPS9* GetCaps();              // returns a pointer to the D3DCAPS9 structer for the device.  NOT persistent; can change.
-  D3DFORMAT    GetBackBufFormat();     // returns the pixelformat of the back buffer (probably D3DFMT_R8G8B8, D3DFMT_A8R8G8B8, D3DFMT_X8R8G8B8, D3DFMT_R5G6B5, D3DFMT_X1R5G5B5, D3DFMT_A1R5G5B5, D3DFMT_A4R4G4B4, D3DFMT_R3G3B2, D3DFMT_A8R3G3B2, D3DFMT_X4R4G4B4, or D3DFMT_UNKNOWN)
-  D3DFORMAT    GetBackBufZFormat();    // returns the pixelformat of the back buffer's Z buffer (probably D3DFMT_D16_LOCKABLE, D3DFMT_D32, D3DFMT_D15S1, D3DFMT_D24S8, D3DFMT_D16, D3DFMT_D24X8, D3DFMT_D24X4S4, or D3DFMT_UNKNOWN)
-  char* GetDriverFilename();    // returns a text string with the filename of the current display adapter driver, such as "nv4_disp.dll"
-  char* GetDriverDescription(); // returns a text string describing the current display adapter, such as "NVIDIA GeForce4 Ti 4200"
+  HWND         GetPluginWindow();          // returns handle to the plugin window
+  int          GetWidth();                 // returns back-buffer width in pixels
+  int          GetHeight();                // returns back-buffer height in pixels
+  int          GetBitDepth();              // always 32 (RGBA8 back buffer)
 
-  // FONTS & TEXT
+  // Phase 1 compatibility stub — milkdropfs.cpp and plugin.cpp still use DX9-typed device.
+  // Returns nullptr in DX12; real DX9 device is gone. Code that calls DX9 methods on this
+  // will crash at runtime but compile cleanly. Phase 2-4 will replace these call sites.
+  LPDIRECT3DDEVICE9          GetDevice()        { return nullptr; }
+
+  // DX12 accessors — use these for new Phase 2+ code.
+  ID3D12Device*              GetDX12Device();
+  ID3D12GraphicsCommandList* GetCommandList();  // returns current frame's command list
+
+  // DX9 adapter/format stubs removed in DX12 migration. Phase 2 TODO: DXGI equivalents.
+  const char*  GetDriverDescription() const { return ""; }
+  D3DFORMAT    GetBackBufFormat()     const { return D3DFMT_X8R8G8B8; }
+
+  // GetCaps() stub — returns a static D3DCAPS9 with values set to allow all capabilities.
+  // Phase 1: DX9 caps are meaningless in DX12; callers that gate on caps will get
+  //          generous limits so the rendering code continues to run.
+  // Phase 2-4 TODO: replace each caps check with the appropriate DX12 query.
+  D3DCAPS9* GetCaps() {
+      static D3DCAPS9 s_caps = {};
+      static bool s_init = false;
+      if (!s_init) {
+          s_init = true;
+          // Pixel shader version — report PS 3.0 (0x0300) so shader paths are fully enabled
+          s_caps.PixelShaderVersion  = D3DPS_VERSION(3, 0);
+          s_caps.VertexShaderVersion = D3DVS_VERSION(3, 0);
+          // Texture size — 0 means "no restriction" in the original caps check code
+          s_caps.MaxTextureWidth     = 0;
+          s_caps.MaxTextureHeight    = 0;
+          // Primitive count — large enough to never be a bottleneck
+          s_caps.MaxPrimitiveCount   = 0x7FFFFFFF;
+          // Blend caps — report all blend modes as supported
+          s_caps.SrcBlendCaps        = 0xFFFFFFFF;
+          s_caps.DestBlendCaps       = 0xFFFFFFFF;
+          s_caps.AlphaCmpCaps        = 0xFFFFFFFF;
+      }
+      return &s_caps;
+  }
+
+  // FONTS & TEXT (Phase 5: D3DX fonts replaced by DirectXTK12 SpriteFont)
   // ------------------------------------------------------------
 public:
-  LPD3DXFONT   GetFont(eFontIndex idx);       // returns a D3DX font handle for drawing text; see shell_defines.h for the definition of the 'eFontIndex' enum.
-  int          GetFontHeight(eFontIndex idx); // returns the height of the font, in pixels; see shell_defines.h for the definition of the 'eFontIndex' enum.
+  // GetFont() stub — returns nullptr until Phase 5 SpriteFont migration is complete.
+  LPD3DXFONT   GetFont(eFontIndex idx) { return nullptr; }
+  int          GetFontHeight(eFontIndex idx);
   CTextManager m_text;
   
   wchar_t      m_szBaseDir[MAX_PATH]; 
@@ -146,8 +184,9 @@ protected:
   int          m_fix_slow_text;           // 0 or 1
   td_fontinfo  m_fontinfo[NUM_BASIC_FONTS + NUM_EXTRA_FONTS];
 
-  // SPOUT - DX9EX
-  D3DDISPLAYMODEEX m_disp_mode_fs;          // a D3DDISPLAYMODE struct that specifies the width, height, refresh rate, and color format to use when the plugin goes fullscreen.
+  // Fullscreen target width/height (replaces D3DDISPLAYMODEEX)
+  int m_disp_mode_fs_width;
+  int m_disp_mode_fs_height;
 
   // PURE VIRTUAL FUNCTIONS (...must be implemented by derived classes)
   // ------------------------------------------------------------
@@ -157,7 +196,7 @@ protected:
   virtual void MyWriteConfig() = 0;
   virtual int  AllocateMyNonDx9Stuff() = 0;
   virtual void  CleanUpMyNonDx9Stuff() = 0;
-  virtual int  AllocateMyDX9Stuff() = 0;
+  virtual int  AllocateMyDX9Stuff() = 0;   // renamed to DX12 in Phase 2; kept for now
   virtual void  CleanUpMyDX9Stuff(int final_cleanup) = 0;
   virtual void MyRenderFn(int redraw) = 0;
   virtual void MyRenderUI(int* upper_left_corner_y, int* upper_right_corner_y, int* lower_left_corner_y, int* lower_right_corner_y, int xL, int xR) = 0;
@@ -196,23 +235,19 @@ private:
   wchar_t      m_szConfigIniFile[MAX_PATH];   // usually 'c:\\program files\\winamp\\plugins\\something.ini' - filename is determined from identifiers in 'defines.h'
   char         m_szConfigIniFileA[MAX_PATH];   // usually 'c:\\program files\\winamp\\plugins\\something.ini' - filename is determined from identifiers in 'defines.h'
 
-  // FONTS
-  IDirect3DTexture9* m_lpDDSText;
-  LPD3DXFONT   m_d3dx_font[NUM_BASIC_FONTS + NUM_EXTRA_FONTS];
-  LPD3DXFONT   m_d3dx_desktop_font;
+  // FONTS (Phase 5: will be DirectXTK12 SpriteFont objects)
+  // Placeholder font heights used for layout calculations
+  int m_fontHeight[NUM_BASIC_FONTS + NUM_EXTRA_FONTS];
   HFONT        m_font[NUM_BASIC_FONTS + NUM_EXTRA_FONTS];
   HFONT        m_font_desktop;
 
   // PRIVATE CONFIG PANEL SETTINGS
-  D3DMULTISAMPLE_TYPE m_multisample_fullscreen;
-  D3DMULTISAMPLE_TYPE m_multisample_desktop;
-  D3DMULTISAMPLE_TYPE m_multisample_windowed;
   GUID m_adapter_guid_fullscreen;
   GUID m_adapter_guid_desktop;
   GUID m_adapter_guid_windowed;
-  char m_adapter_devicename_fullscreen[256];  // these are also necessary sometimes,
-  char m_adapter_devicename_desktop[256];     //  for example, when a laptop (single adapter)
-  char m_adapter_devicename_windowed[256];    //  drives two displays!  DeviceName will be \\.\Display1 and \\.\Display2 or something.
+  char m_adapter_devicename_fullscreen[256];
+  char m_adapter_devicename_desktop[256];
+  char m_adapter_devicename_windowed[256];
 
   // PRIVATE RUNTIME SETTINGS
   int m_lost_focus;     // ~mostly for fullscreen mode
@@ -260,8 +295,14 @@ public:
   // called by vis.cpp, on behalf of Winamp:
   int  PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance);
 
-  // SPOUT - DX9EX
-  int PluginInitialize(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd, int iWidth, int iHeight);
+  // Initialize the plugin with a DX12 device, command queue, and DXGI factory.
+  int PluginInitialize(
+    ID3D12Device*       device,
+    ID3D12CommandQueue* commandQueue,
+    IDXGIFactory4*      factory,
+    HWND                hwnd,
+    int                 iWidth,
+    int                 iHeight);
 
   int  PluginRender(unsigned char* pWaveL, unsigned char* pWaveR);
   void PluginQuit();
@@ -274,13 +315,13 @@ public:
   void ReadConfig();
   void WriteConfig();
 
-  int  AllocateDX9Stuff();
+  int  AllocateDX9Stuff();    // renamed to DX12 in Phase 2; kept for now
   DWORD GetFontColor(int fontIndex);
 
   bool IsSpoutActiveAndFixed();
   void OnUserResizeWindow();
   void CleanUpFonts();
-  int  AllocateFonts(IDirect3DDevice9* pDevice);
+  int  AllocateFonts(); // Phase 5: will use DirectXTK12 SpriteFont
 
   // config panel / windows messaging processes:
   static LRESULT CALLBACK WindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
@@ -298,8 +339,7 @@ private:
   void AnalyzeNewSound(unsigned char* pWaveL, unsigned char* pWaveR);
   void AlignWaves();
 
-  // SPOUT - DX9EX
-  int  InitDirectX(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd);
+  int  InitDirectX(ID3D12Device* device, ID3D12CommandQueue* commandQueue, IDXGIFactory4* factory, HWND hwnd, int width, int height);
 
   void CleanUpDirectX();
   int  InitGDIStuff();
@@ -311,8 +351,15 @@ private:
   void CleanUpVJStuff();
   void AllocateTextSurface();
   void OnUserResizeTextWindow();
-  void PrepareFor2DDrawing_B(IDirect3DDevice9* pDevice, int w, int h);
+  void PrepareFor2DDrawing_B(int w, int h); // Phase 4: rewritten for DX12 command list
   void RenderBuiltInTextMsgs();
+  bool CreateHelpTexture();
+  void UpdateHelpTexture(int page);
+
+  // Help overlay texture (GDI-rendered text uploaded to DX12, sized to window)
+  DX12Texture m_helpTexture;
+  ComPtr<ID3D12Resource> m_helpUploadBuffer;
+  int m_helpTexturePage = 0;  // 0 = not rendered yet
   int  GetCanvasMarginX();     // returns the # of pixels that exist on the canvas, on each side, that the user will never see.  Mainly here for windowed mode, where sometimes, up to 15 pixels get cropped at edges of the screen.
   int  GetCanvasMarginY();     // returns the # of pixels that exist on the canvas, on each side, that the user will never see.  Mainly here for windowed mode, where sometimes, up to 15 pixels get cropped at edges of the screen.
 public:
@@ -337,8 +384,6 @@ private:
   int		m_nTextWndWidth;
   int		m_nTextWndHeight;
   bool		m_bTextWindowClassRegistered;
-  LPDIRECT3D9 m_vjd3d9;
-  LPDIRECT3DDEVICE9 m_vjd3d9_device;
   //HDC		m_memDC;		// memory device context
   //HBITMAP m_memBM, m_oldBM;
   //HBRUSH  m_hBlackBrush;
@@ -368,7 +413,7 @@ protected:
   void    SaveAdapter(int screenmode);
   void    SaveMaxFps(int screenmode);
   void    OnTabChanged(int nNewTab);
-  LPDIRECT3DDEVICE9 GetTextDevice() { return (m_vjd3d9_device) ? m_vjd3d9_device : m_lpDX->m_lpDevice; }
+  ID3D12Device* GetTextDevice() { return m_lpDX ? m_lpDX->m_device.Get() : nullptr; }
 
   // CHANGES:
   friend class CShaderParams;

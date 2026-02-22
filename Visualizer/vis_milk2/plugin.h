@@ -44,6 +44,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "state.h"
 #include <vector>
 #include <array>
+#include <thread>
+#include <atomic>
 #include "../ns-eel2-shim/ns-eel.h"
 #include "milkwave.h"
 
@@ -254,7 +256,8 @@ public:
   IDirect3DPixelShader9* ptr;
   LPD3DXCONSTANTTABLE     CT;
   CShaderParams           params;
-  PShaderInfo() { ptr = NULL; CT = NULL; params.Clear(); }
+  LPD3DXBUFFER            bytecodeBlob;  // DX12: compiled SM5.0 bytecode for PSO creation
+  PShaderInfo() { ptr = NULL; CT = NULL; bytecodeBlob = NULL; params.Clear(); }
   ~PShaderInfo() { Clear(); }
   void Clear();
 };
@@ -293,6 +296,11 @@ public:
 
   char WinampSenderName[256]; // The sender name
   bool bInitialized; // did it work ?
+
+  // Phase 1 DX9 compatibility stub. In Phase 1 the DX9 device is gone; d3dPp is kept
+  // as a struct so that code that reads BackBufferWidth/Height for sizing still compiles.
+  // Phase 2 TODO: replace with DXGI swap chain desc / resize logic.
+  D3DPRESENT_PARAMETERS d3dPp = {};
   bool OpenSender(unsigned int width, unsigned int height);
   void OpenMilkwaveRemote();
   void SetAudioDeviceDisplayName(const wchar_t* displayName, bool isRenderDevice);
@@ -364,6 +372,7 @@ public:
   int			m_nCustMsgsSpawned;
   bool    m_bEnablePresetStartup;
   bool    m_bEnableAudioCapture = true;
+  float   m_fAudioSensitivity = 32.0f;  // Pre-quantization gain for WASAPI float → 8-bit conversion
   bool    m_bEnablePresetStartupSavingOnClose = true;
   bool    m_bAutoLockPresetWhenNoMusic;
   bool    m_bScreenDependentRenderMode;
@@ -452,7 +461,8 @@ public:
 #define SHADER_BLUR  2
 #define SHADER_OTHER 3
   bool LoadShaderFromMemory(const char* szShaderText, char* szFn, char* szProfile,
-    LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly);
+    LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly,
+    LPD3DXBUFFER* ppBytecodeOut = nullptr);
   bool RecompileVShader(const char* szShadersText, VShaderInfo* si, int shaderType, bool bHardErrors, bool bCompileOnly);
   bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion, bool bCompileOnly);
   bool EvictSomeTexture();
@@ -488,6 +498,8 @@ public:
   int     m_nLoadingPreset;
   wchar_t m_szLoadingPreset[MAX_PATH];
   float   m_fLoadingPresetBlendTime;
+  std::thread        m_presetLoadThread;      // background thread for async shader compilation
+  std::atomic<bool>  m_bPresetLoadReady{false}; // set by bg thread when Import + shaders are done
   int     m_nPresetsLoadedTotal; //important for texture eviction age-tracking...
   CState	m_state_DO_NOT_USE[3];	// do not use; use pState and pOldState instead.
   ui_mode	m_UI_mode;				// can be UI_REGULAR, UI_LOAD, UI_SAVEHOW, or UI_SAVEAS
@@ -618,7 +630,7 @@ public:
   int m_nAudioDevicePreviousType = 2;
   float		m_fRandStart[4];
 
-  // DIRECTX 9:
+  // DIRECTX 9 (legacy — kept for compilation; always nullptr at runtime):
   IDirect3DTexture9* m_lpVS[2];
 #define NUM_BLUR_TEX 6
 #if (NUM_BLUR_TEX>0)
@@ -631,6 +643,21 @@ public:
 #define NUM_SUPERTEXTS 10
   IDirect3DTexture9* m_lpDDSTitle[NUM_SUPERTEXTS];
   td_supertext m_supertexts[NUM_SUPERTEXTS];
+
+  // DX12 render targets (Phase 2)
+  DX12Texture m_dx12VS[2];                    // double-buffered visualizer canvas
+  DX12Texture m_dx12Blur[NUM_BLUR_TEX];       // blur pyramid (6 levels)
+  DX12Texture m_dx12Title[NUM_SUPERTEXTS];    // title overlays
+
+  // DX12 preset PSOs (Phase 5)
+  ComPtr<ID3D12PipelineState> m_dx12WarpPSO;         // current preset warp
+  ComPtr<ID3D12PipelineState> m_dx12CompPSO;         // current preset comp
+  ComPtr<ID3D12PipelineState> m_dx12FallbackWarpPSO; // default warp_ps.fx
+  ComPtr<ID3D12PipelineState> m_dx12FallbackCompPSO; // default comp_ps.fx
+  UINT m_warpMainTexSlot = 0;                         // t-register for sampler_main in warp PS
+  UINT m_compMainTexSlot = 0;                         // t-register for sampler_main in comp PS
+  bool m_bDX12PSOsDirty = false;                      // deferred PSO creation flag
+  void CreateDX12PresetPSOs();                        // creates PSOs from m_shaders bytecodes
 
   int               m_nTitleTexSizeX, m_nTitleTexSizeY;
   UINT              m_adapterId;
@@ -685,6 +712,11 @@ public:
   //====[ 2. methods added: ]=====================================================================================
 
   void RenderFrame(int bRedraw);
+  void DX12_RenderWarpAndComposite();
+  void DX12_DrawWave(float* fL, float* fR);
+  void DX12_DrawSprites();
+  void DX12_DrawCustomShapes();
+  void DX12_DrawCustomWaves();
   void AlignWave(int nSamples);
 
   void        DrawTooltip(wchar_t* str, int xR, int yB);

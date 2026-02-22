@@ -32,8 +32,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <windows.h>
 #include <crtdefs.h>
-#include <d3d9.h>
-#include <d3dx9.h>
+#include "d3dx9compat.h"  // replaces <d3dx9.h>; provides D3DX types for DX9→DX12 migration
 
 #define SafeRelease(x) { if (x) {x->Release(); x=NULL;} }
 #define SafeDelete(x) { if (x) {delete x; x=NULL;} }
@@ -89,5 +88,11 @@ bool ReadCBValue(HWND hwnd, DWORD ctrl_id, int* pRetValue);
 void* GetTextResource(UINT id, int no_fallback);
 
 intptr_t myOpenURL(HWND hwnd, wchar_t* loc);
+
+// Debug log — writes timestamped messages to debug.log in the base directory.
+// DebugLogInit rotates debug.log → debug.prev.log (keeps only current + last run).
+void DebugLogInit(const wchar_t* baseDir);
+void DebugLogW(const wchar_t* msg);
+void DebugLogA(const char* msg);
 
 #endif

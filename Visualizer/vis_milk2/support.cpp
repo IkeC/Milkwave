@@ -45,6 +45,8 @@ void PrepareFor3DDrawing(
   D3DXVECTOR3* pvLookat,
   D3DXVECTOR3* pvUp
 ) {
+  if (!pDevice) return;  // Phase 1: DX9 device is null during DX12 migration
+
   // This function sets up DirectX up for 3D rendering.
   // Only call it once per frame, as it is VERY slow.
   // INPUTS:
@@ -128,6 +130,8 @@ void PrepareFor3DDrawing(
 }
 
 void PrepareFor2DDrawing(IDirect3DDevice9* pDevice) {
+  if (!pDevice) return;  // Phase 1: DX9 device is null during DX12 migration
+
   // New 2D drawing area will have x,y coords in the range <-1,-1> .. <1,1>
   //         +--------+ Y=-1
   //         |        |

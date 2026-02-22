@@ -139,6 +139,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "shell_defines.h"
 #include "resource.h"
 #include "wasabi.h"
+#include "support.h"       // WFVERTEX, SPRITEVERTEX
+#include "dx12pipeline.h"  // PSO enum
 #include <multimon.h>
 #include "AutoCharFn.h"
 #include <mmsystem.h>
@@ -279,32 +281,15 @@ int CPluginShell::GetBitDepth() {
   return m_lpDX->GetBitDepth();
 };
 
-// SPOUT - DX9EX
-LPDIRECT3DDEVICE9EX CPluginShell::GetDevice() {
-  if (m_lpDX) return m_lpDX->m_lpDevice; else return NULL;
-};
+// GetDevice() is declared inline in pluginshell.h returning LPDIRECT3DDEVICE9 = nullptr.
+// GetDX12Device() returns the real ID3D12Device* for Phase 2+ DX12 code.
+ID3D12Device* CPluginShell::GetDX12Device() {
+  return m_lpDX ? m_lpDX->m_device.Get() : nullptr;
+}
 
-D3DCAPS9* CPluginShell::GetCaps() {
-  if (m_lpDX) return &(m_lpDX->m_caps);  else return NULL;
-};
-D3DFORMAT CPluginShell::GetBackBufFormat() {
-  if (m_lpDX) return m_lpDX->m_current_mode.display_mode.Format; else return D3DFMT_UNKNOWN;
-};
-D3DFORMAT CPluginShell::GetBackBufZFormat() {
-  if (m_lpDX) return m_lpDX->GetZFormat(); else return D3DFMT_UNKNOWN;
-};
-LPD3DXFONT CPluginShell::GetFont(eFontIndex idx) {
-  if (idx >= 0 && idx < NUM_BASIC_FONTS + NUM_EXTRA_FONTS) {
-    return m_d3dx_font[idx];
-  }
-  else return NULL;
-};
-char* CPluginShell::GetDriverFilename() {
-  if (m_lpDX) return m_lpDX->GetDriver(); else return NULL;
-};
-char* CPluginShell::GetDriverDescription() {
-  if (m_lpDX) return m_lpDX->GetDesc(); else return NULL;
-};
+ID3D12GraphicsCommandList* CPluginShell::GetCommandList() {
+  return m_lpDX ? m_lpDX->m_commandList.Get() : nullptr;
+}
 
 int CPluginShell::InitNondx9Stuff() {
   timeBeginPeriod(1);
@@ -345,6 +330,13 @@ void CPluginShell::CleanUpGDIStuff() {
 }
 
 int CPluginShell::InitVJStuff(RECT* pClientRect) {
+  // VJ mode (secondary DX9 window) not yet implemented in DX12 migration.
+  // Phase 5 TODO: DX12 swap chain + DirectXTK12 SpriteFont for VJ text window.
+  return true;
+}
+
+#if 0 // InitVJStuff DX9 body — preserved for Phase 5 reference, does not compile
+int CPluginShell::InitVJStuff_DX9_REMOVED(RECT* pClientRect) {
   wchar_t title[64];
 
   // Init VJ mode (second window for text):
@@ -537,44 +529,33 @@ NULL
       return false;
     }
 
-    if (!AllocateFonts(m_vjd3d9_device))
+    if (!AllocateFonts())
       return false;
 
-    if (m_fix_slow_text)    // note that when not doing vj mode, m_lpDDSText is allocated in AllocateDX9Stuff
+    if (m_fix_slow_text)
       AllocateTextSurface();
 
     m_text.Finish();
-    m_text.Init(m_vjd3d9_device, m_lpDDSText, 0);
+    m_text.Init(nullptr, nullptr, 0); // VJ mode: secondary DX9 device removed in DX12 migration
 
     m_bClearVJWindow = true;
   }
 
   return true;
 }
+#endif // InitVJStuff DX9 body
 
 void CPluginShell::CleanUpVJStuff() {
-  // ALWAYS set the textures to NULL before releasing textures,
-  // otherwise they might still have a hanging reference!
-  if (m_lpDX && m_lpDX->m_lpDevice) {
-    for (int i = 0; i < 16; i++)
-      m_lpDX->m_lpDevice->SetTexture(i, NULL);
-  }
-
-  if (m_vjd3d9_device) {
-    for (int i = 0; i < 16; i++)
-      m_vjd3d9_device->SetTexture(i, NULL);
-  }
+  // VJ secondary DX9 device removed in DX12 migration.
+  // GPU work is flushed in CleanUpDX9Stuff via WaitForGpu() before resource cleanup.
+  // VJ DX9 device removed in DX12 migration — texture cleanup no longer needed here.
 
   if (!m_vj_mode)
     return;
 
-  // clean up VJ mode
+  // clean up VJ mode (VJ secondary DX9 device removed in DX12 migration)
   {
     CleanUpFonts();
-    SafeRelease(m_lpDDSText);
-
-    SafeRelease(m_vjd3d9_device);
-    SafeRelease(m_vjd3d9);
 
     if (m_hTextWnd) {
       //dumpmsg("Finish: destroying text window");
@@ -592,76 +573,33 @@ void CPluginShell::CleanUpVJStuff() {
   }
 }
 
-int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
-  // Create D3DX system font:
+int CPluginShell::AllocateFonts() {
+  // Phase 5 TODO: replace with DirectXTK12 SpriteFont.
+  // For now, record expected font heights from GDI font metrics for layout.
   for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     int fSize = m_fontinfo[i].nSize;
-    if (!IsSpoutActiveAndFixed()) {
-      fSize *= m_fRenderQuality;
-    }
-    if (D3DXCreateFontW(pDevice,  //m_font[i],
-      fSize,
-      fSize * 4 / 10,
-      m_fontinfo[i].bBold ? 900 : 400,
-      1,  // mip levels
-      m_fontinfo[i].bItalic,
-      DEFAULT_CHARSET,
-      OUT_DEFAULT_PRECIS,
-      m_fontinfo[i].bAntiAliased ? ANTIALIASED_QUALITY : DEFAULT_QUALITY,
-      DEFAULT_PITCH,
-      m_fontinfo[i].szFace,
-      &m_d3dx_font[i]
-    ) != D3D_OK) {
-      wchar_t title[64];
-      MessageBoxW(m_lpDX ? m_lpDX->GetHwnd() : NULL, wasabiApiLangString(IDS_ERROR_CREATING_D3DX_FONTS),
-        wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64),
-        MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-      return false;
-    }
+    if (!IsSpoutActiveAndFixed())
+      fSize = (int)(fSize * m_fRenderQuality);
+    m_fontHeight[i] = fSize; // approximate height — GDI metric
   }
-  // get actual font heights
-  for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
-    RECT r;
-    SetRect(&r, 0, 0, 1024, 1024);
-    int h = m_d3dx_font[i]->DrawText(NULL, "M", -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-    //if (h > 0) m_fontinfo[i].nSize = h;
-  }
-
   return true;
 }
 
 void CPluginShell::CleanUpFonts() {
+  // Phase 5 TODO: release SpriteFont objects here.
   for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
-    SafeRelease(m_d3dx_font[i]);
+    m_fontHeight[i] = 0;
 }
 
 void CPluginShell::AllocateTextSurface() {
-  IDirect3DDevice9* pDevice = m_vjd3d9_device ? m_vjd3d9_device : GetDevice();
-  int w = m_vjd3d9_device ? m_nTextWndWidth : GetWidth();
-  int h = m_vjd3d9_device ? m_nTextWndHeight : GetHeight();
-
-  if (D3D_OK != D3DXCreateTexture(pDevice, w, h, 1, D3DUSAGE_RENDERTARGET, GetBackBufFormat(), D3DPOOL_DEFAULT, &m_lpDDSText))
-    m_lpDDSText = NULL; // OK if there's not enough mem for it!
-  else {
-    // if m_lpDDSText doesn't cover enough of screen, cancel it.
-    D3DSURFACE_DESC desc;
-    if (D3D_OK == m_lpDDSText->GetLevelDesc(0, &desc)) {
-      if ((desc.Width < 256 && w >= 256) ||
-        (desc.Height < 256 && h >= 256) ||
-        (desc.Width / (float)w < 0.74f) ||
-        (desc.Height / (float)h < 0.74f)
-        ) {
-        m_lpDDSText->Release();
-        m_lpDDSText = NULL;
-      }
-    }
-  }
+  // Phase 5 TODO: create the DX12 text render target resource here.
+  // For now this is a no-op.
 }
 
 int CPluginShell::AllocateDX9Stuff() {
   if (!m_vj_mode) {
-    AllocateFonts(m_lpDX->m_lpDevice);
-    if (m_fix_slow_text)    // note that when not doing vj mode, m_lpDDSText is allocated in AllocateDX9Stuff
+    AllocateFonts();
+    if (m_fix_slow_text)
       AllocateTextSurface();
   }
 
@@ -673,24 +611,26 @@ int CPluginShell::AllocateDX9Stuff() {
 
   if (!m_vj_mode) {
     m_text.Finish();
-    m_text.Init(GetDevice(), m_lpDDSText, 1);
+    m_text.Init(GetDX12Device(), nullptr, 1); // Phase 5: text surface replaced by DX12 resource
   }
 
   return ret;
 }
 
 void CPluginShell::CleanUpDX9Stuff(int final_cleanup) {
-  // ALWAYS unbind the textures before releasing textures,
-  // otherwise they might still have a hanging reference!
-  if (m_lpDX && m_lpDX->m_lpDevice) {
-    for (int i = 0; i < 16; i++)
-      m_lpDX->m_lpDevice->SetTexture(i, NULL);
+  // In DX12, wait for GPU idle before releasing resources
+  if (m_lpDX) {
+    m_lpDX->WaitForGpu();
   }
 
+  // ALWAYS unbind the textures before releasing textures,
+  // otherwise they might still have a hanging reference!
   if (!m_vj_mode) {
-    for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
-      SafeRelease(m_d3dx_font[i]);
-    SafeRelease(m_lpDDSText);
+    CleanUpFonts();
+    // Release help overlay texture (will be re-created lazily on next F1)
+    m_helpTexture.Reset();
+    m_helpUploadBuffer.Reset();
+    m_helpTexturePage = 0;
   }
 
   CleanUpMyDX9Stuff(final_cleanup);
@@ -781,13 +721,16 @@ void CPluginShell::OnUserResizeWindow() {
           SuggestHowToFreeSomeMem();
           return;
         }
-        SetVariableBackBuffer(c.right - c.left, c.bottom - c.top);
+        int newW = c.right - c.left;
+        int newH = c.bottom - c.top;
         if (IsSpoutActiveAndFixed()) {
-          d3dPp.BackBufferWidth = nSpoutFixedWidth;
-          d3dPp.BackBufferHeight = nSpoutFixedHeight;
+          newW = nSpoutFixedWidth;
+          newH = nSpoutFixedHeight;
         }
-        UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
-        GetDevice()->Reset(&d3dPp);
+        SetVariableBackBuffer(newW, newH);
+        UpdateBackBufferTracking(newW, newH);
+        // DX12: resize the swap chain instead of resetting the device
+        m_lpDX->ResizeSwapChain(newW, newH);
       }
       //if (m_lpDX->m_REAL_client_width != new_REAL_client_w || m_lpDX->m_REAL_client_height != new_REAL_client_h) {
       if (!AllocateDX9Stuff()) {
@@ -809,23 +752,35 @@ void CPluginShell::OnUserResizeWindow() {
 }
 
 void CPluginShell::StuffParams(DXCONTEXT_PARAMS* pParams) {
-  pParams->display_mode = m_disp_mode_fs;
+  // display_mode (D3DDISPLAYMODEEX) removed in DX12 migration
   pParams->nbackbuf = 1;
   pParams->m_dualhead_horz = m_dualhead_horz;
   pParams->m_dualhead_vert = m_dualhead_vert;
   pParams->m_skin = m_skin;
   pParams->allow_page_tearing = m_allow_page_tearing_w;
   pParams->adapter_guid = m_adapter_guid_windowed;
-  pParams->multisamp = m_multisample_windowed;
+  // multisamp removed in DX12 migration (MSAA configured via PSO desc instead)
   strcpy(pParams->adapter_devicename, m_adapter_devicename_windowed);
   pParams->parent_window = NULL;
 }
 
-// SPOUT - DX9EX
-int CPluginShell::InitDirectX(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd) {
-  if (device) {
-    m_lpDX = new DXContext(device, d3dpp, hwnd, m_szConfigIniFile);
+int CPluginShell::InitDirectX(
+    ID3D12Device*       device,
+    ID3D12CommandQueue* commandQueue,
+    IDXGIFactory4*      factory,
+    HWND                hwnd,
+    int                 width,
+    int                 height)
+{
+  if (!device || !commandQueue || !factory) {
+    wchar_t title[64];
+    MessageBoxW(NULL, wasabiApiLangString(IDS_UNABLE_TO_INIT_DXCONTEXT),
+      wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64),
+      MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+    return FALSE;
   }
+
+  m_lpDX = new DXContext(device, commandQueue, factory, hwnd, width, height, m_szConfigIniFile);
 
   if (!m_lpDX) {
     wchar_t title[64];
@@ -836,27 +791,14 @@ int CPluginShell::InitDirectX(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS*
   }
 
   if (m_lpDX->m_lastErr != S_OK) {
-    // warning messagebox will have already been given
     delete m_lpDX;
+    m_lpDX = nullptr;
     return FALSE;
   }
 
-  // initialize graphics
   DXCONTEXT_PARAMS params;
   StuffParams(&params);
-
-  if (!m_lpDX->StartOrRestartDevice(&params)) {
-    // note: a basic warning messagebox will have already been given.
-
-    if (m_lpDX->m_lastErr == DXC_ERR_CREATEDEV_PROBABLY_OUTOFVIDEOMEMORY) {
-      // suggest specific advice on how to regain more video memory:
-      SuggestHowToFreeSomeMem();
-    }
-
-    delete m_lpDX;
-    m_lpDX = NULL;
-    return FALSE;
-  }
+  m_lpDX->StartOrRestartDevice(&params);
 
   return TRUE;
 }
@@ -950,26 +892,20 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   m_fontinfo[NUM_BASIC_FONTS + 4].bAntiAliased = EXTRA_FONT_5_DEFAULT_AA;
 #endif
 
-  m_disp_mode_fs.Width = DEFAULT_FULLSCREEN_WIDTH;
-  m_disp_mode_fs.Height = DEFAULT_FULLSCREEN_HEIGHT;
-  m_disp_mode_fs.Format = D3DFMT_UNKNOWN;
-  m_disp_mode_fs.RefreshRate = 60;
-  // better yet - in case there is no config INI file saved yet, use the current display mode (if detectable) as the default fullscreen res:
+  m_disp_mode_fs_width  = DEFAULT_FULLSCREEN_WIDTH;
+  m_disp_mode_fs_height = DEFAULT_FULLSCREEN_HEIGHT;
+  // Use current display settings as default if available (RefreshRate/Format not used in DX12):
   DEVMODE dm;
   dm.dmSize = sizeof(dm);
   dm.dmDriverExtra = 0;
   if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm)) {
-    m_disp_mode_fs.Width = dm.dmPelsWidth;
-    m_disp_mode_fs.Height = dm.dmPelsHeight;
-    m_disp_mode_fs.RefreshRate = dm.dmDisplayFrequency;
-    m_disp_mode_fs.Format = (dm.dmBitsPerPel == 16) ? D3DFMT_R5G6B5 : D3DFMT_X8R8G8B8;
+    m_disp_mode_fs_width  = dm.dmPelsWidth;
+    m_disp_mode_fs_height = dm.dmPelsHeight;
   }
 
   // PROTECTED STRUCTURES/POINTERS
   for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
-    m_d3dx_font[i] = NULL;
-  m_d3dx_desktop_font = NULL;
-  m_lpDDSText = NULL;
+    m_fontHeight[i] = 0;
   ZeroMemory(&m_sound, sizeof(td_soundinfo));
   for (int ch = 0; ch < 2; ch++)
     for (int i = 0; i < 3; i++) {
@@ -996,9 +932,7 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   lstrcpyn(m_szConfigIniFileA, AutoCharFn(m_szConfigIniFile), MAX_PATH);
 
   // PRIVATE CONFIG PANEL SETTINGS
-  m_multisample_fullscreen = D3DMULTISAMPLE_NONE;
-  m_multisample_desktop = D3DMULTISAMPLE_NONE;
-  m_multisample_windowed = D3DMULTISAMPLE_NONE;
+  // m_multisample_* removed in DX12 migration (MSAA configured via PSO instead)
   ZeroMemory(&m_adapter_guid_fullscreen, sizeof(GUID));
   ZeroMemory(&m_adapter_guid_desktop, sizeof(GUID));
   ZeroMemory(&m_adapter_guid_windowed, sizeof(GUID));
@@ -1058,8 +992,6 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   m_nTextWndWidth = 0;
   m_nTextWndHeight = 0;
   m_bTextWindowClassRegistered = false;
-  m_vjd3d9 = NULL;
-  m_vjd3d9_device = NULL;
 
   //-----
 
@@ -1074,24 +1006,25 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   return TRUE;
 }
 
-// SPOUT - DX9EX
-int CPluginShell::PluginInitialize(LPDIRECT3DDEVICE9EX device, D3DPRESENT_PARAMETERS* d3dpp, HWND hwnd, int iWidth, int iHeight) {
-  // note: initialize GDI before DirectX.  Also separate them because
-  // when we change windowed<->fullscreen, or lose the device and restore it,
-  // we don't want to mess with any (persistent) GDI stuff.
+int CPluginShell::PluginInitialize(
+    ID3D12Device*       device,
+    ID3D12CommandQueue* commandQueue,
+    IDXGIFactory4*      factory,
+    HWND                hwnd,
+    int                 iWidth,
+    int                 iHeight)
+{
+  if (!InitDirectX(device, commandQueue, factory, hwnd, iWidth, iHeight)) return FALSE;
 
-  if (!InitDirectX(device, d3dpp, hwnd)) return FALSE;  // gives its own error messages
-
-  m_lpDX->m_client_width = iWidth;
-  m_lpDX->m_client_height = iHeight;
+  m_lpDX->m_client_width       = iWidth;
+  m_lpDX->m_client_height      = iHeight;
+  m_lpDX->m_REAL_client_width  = iWidth;
   m_lpDX->m_REAL_client_height = iHeight;
-  m_lpDX->m_REAL_client_width = iWidth;
   UpdateBackBufferTracking(iWidth, iHeight);
 
-  if (!InitNondx9Stuff()) return FALSE;  // gives its own error messages
-  if (!AllocateDX9Stuff()) return FALSE;  // gives its own error messages
-  // SPOUT
-  // Save the handle to the render window to use in InitVJStuff
+  if (!InitNondx9Stuff()) return FALSE;
+  if (!AllocateDX9Stuff()) return FALSE;
+
   m_hRenderWnd = hwnd;
   if (!InitVJStuff()) return FALSE;
 
@@ -1161,12 +1094,7 @@ void CPluginShell::ReadConfig() {
   else if (old_subver < INT_SUBVERSION)
     return;
 
-  //D3DMULTISAMPLE_TYPE m_multisample_fullscreen;
-  //D3DMULTISAMPLE_TYPE m_multisample_desktop;
-  //D3DMULTISAMPLE_TYPE m_multisample_windowed;
-  m_multisample_fullscreen = (D3DMULTISAMPLE_TYPE)GetPrivateProfileIntW(L"Settings", L"multisample_fullscreen", m_multisample_fullscreen, m_szConfigIniFile);
-  m_multisample_desktop = (D3DMULTISAMPLE_TYPE)GetPrivateProfileIntW(L"Settings", L"multisample_desktop", m_multisample_desktop, m_szConfigIniFile);
-  m_multisample_windowed = (D3DMULTISAMPLE_TYPE)GetPrivateProfileIntW(L"Settings", L"multisample_windowed", m_multisample_windowed, m_szConfigIniFile);
+  // m_multisample_* removed in DX12 migration (MSAA configured via PSO instead)
 
   //GUID m_adapter_guid_fullscreen
   //GUID m_adapter_guid_desktop
@@ -1227,10 +1155,9 @@ void CPluginShell::ReadConfig() {
 
 
   //D3DDISPLAYMODE m_fs_disp_mode
-  m_disp_mode_fs.Width = GetPrivateProfileIntW(L"Settings", L"disp_mode_fs_w", m_disp_mode_fs.Width, m_szConfigIniFile);
-  m_disp_mode_fs.Height = GetPrivateProfileIntW(L"Settings", L"disp_mode_fs_h", m_disp_mode_fs.Height, m_szConfigIniFile);
-  m_disp_mode_fs.RefreshRate = GetPrivateProfileIntW(L"Settings", L"disp_mode_fs_r", m_disp_mode_fs.RefreshRate, m_szConfigIniFile);
-  m_disp_mode_fs.Format = (D3DFORMAT)GetPrivateProfileIntW(L"Settings", L"disp_mode_fs_f", m_disp_mode_fs.Format, m_szConfigIniFile);
+  m_disp_mode_fs_width  = GetPrivateProfileIntW(L"Settings", L"disp_mode_fs_w", m_disp_mode_fs_width,  m_szConfigIniFile);
+  m_disp_mode_fs_height = GetPrivateProfileIntW(L"Settings", L"disp_mode_fs_h", m_disp_mode_fs_height, m_szConfigIniFile);
+  // RefreshRate and Format not persisted in DX12 migration
 
   // note: we don't call MyReadConfig() yet, because we
   // want to completely finish CPluginShell's preinit (and ReadConfig)
@@ -1246,12 +1173,7 @@ void CPluginShell::WRITE_FONT(int n) {
 }
 
 void CPluginShell::WriteConfig() {
-  //D3DMULTISAMPLE_TYPE m_multisample_fullscreen;
-  //D3DMULTISAMPLE_TYPE m_multisample_desktop;
-  //D3DMULTISAMPLE_TYPE m_multisample_windowed;
-  WritePrivateProfileIntW((int)m_multisample_fullscreen, L"multisample_fullscreen", m_szConfigIniFile, L"Settings");
-  WritePrivateProfileIntW((int)m_multisample_desktop, L"multisample_desktop", m_szConfigIniFile, L"Settings");
-  WritePrivateProfileIntW((int)m_multisample_windowed, L"multisample_windowed", m_szConfigIniFile, L"Settings");
+  // m_multisample_* removed in DX12 migration (MSAA configured via PSO instead)
 
   //GUID m_adapter_guid_fullscreen
   //GUID m_adapter_guid_desktop
@@ -1311,10 +1233,9 @@ void CPluginShell::WriteConfig() {
   WritePrivateProfileIntW(m_vj_mode, L"vj_mode", m_szConfigIniFile, L"Settings");
 
   //D3DDISPLAYMODE m_fs_disp_mode
-  WritePrivateProfileIntW(m_disp_mode_fs.Width, L"disp_mode_fs_w", m_szConfigIniFile, L"Settings");
-  WritePrivateProfileIntW(m_disp_mode_fs.Height, L"disp_mode_fs_h", m_szConfigIniFile, L"Settings");
-  WritePrivateProfileIntW(m_disp_mode_fs.RefreshRate, L"disp_mode_fs_r", m_szConfigIniFile, L"Settings");
-  WritePrivateProfileIntW(m_disp_mode_fs.Format, L"disp_mode_fs_f", m_szConfigIniFile, L"Settings");
+  WritePrivateProfileIntW(m_disp_mode_fs_width,  L"disp_mode_fs_w", m_szConfigIniFile, L"Settings");
+  WritePrivateProfileIntW(m_disp_mode_fs_height, L"disp_mode_fs_h", m_szConfigIniFile, L"Settings");
+  // RefreshRate and Format not persisted in DX12 migration
 
   WritePrivateProfileIntW(INT_VERSION, L"version", m_szConfigIniFile, L"Settings");
   WritePrivateProfileIntW(INT_SUBVERSION, L"subversion", m_szConfigIniFile, L"Settings");
@@ -1351,49 +1272,12 @@ int CPluginShell::PluginRender(unsigned char* pWaveL, unsigned char* pWaveR)//, 
     return true;
   }
 
-  // test for lost device
-  // (this happens when device is fullscreen & user alt-tabs away,
-  //  or when monitor power-saving kicks in)
-  HRESULT hr = m_lpDX->m_lpDevice->TestCooperativeLevel();
-  if (hr == D3DERR_DEVICENOTRESET) {
-    // device WAS lost, and is now ready to be reset (and come back online):
-    CleanUpDX9Stuff(0);
-    if (m_lpDX->m_lpDevice->Reset(m_lpDX->m_d3dpp) != D3D_OK) {
-      // note: a basic warning messagebox will have already been given.
-      // now suggest specific advice on how to regain more video memory:
-      if (m_lpDX->m_lastErr == DXC_ERR_CREATEDEV_PROBABLY_OUTOFVIDEOMEMORY)
-        SuggestHowToFreeSomeMem();
-      return false;  // EXIT THE PLUGIN
-    }
-    if (!AllocateDX9Stuff())
-      return false;  // EXIT THE PLUGIN
-  }
-  else if (hr != D3D_OK) {
-    // device is lost, and not yet ready to come back; sleep.
-    Sleep(30);
-    return true;
-  }
-
-  if (m_vjd3d9_device) {
-    HRESULT hr = m_vjd3d9_device->TestCooperativeLevel();
-    if (hr == D3DERR_DEVICENOTRESET) {
-      RECT c;
-      GetClientRect(m_hTextWnd, &c);
-
-      POINT p;
-      p.x = c.left;
-      p.y = c.top;
-      if (ClientToScreen(m_hTextWnd, &p)) {
-        c.left += p.x;
-        c.right += p.x;
-        c.top += p.y;
-        c.bottom += p.y;
-      }
-
-      CleanUpVJStuff();
-      if (!InitVJStuff(&c))
-        return false;  // EXIT THE PLUGIN
-    }
+  // DX12 does not have TestCooperativeLevel() or device-lost in the DX9 sense.
+  // DXGI Present returns DXGI_ERROR_DEVICE_REMOVED/RESET in catastrophic cases,
+  // which are handled inside DXContext::EndFrame() and surfaced via m_lastErr.
+  if (m_lpDX->m_lastErr != S_OK) {
+    // Unrecoverable device error — exit plugin
+    return false;
   }
 
   DoTime();
@@ -1411,16 +1295,8 @@ int CPluginShell::PluginRender(unsigned char* pWaveL, unsigned char* pWaveR)//, 
 }
 
 void CPluginShell::DrawAndDisplay(int redraw) {
-  int cx = m_vjd3d9_device ? m_nTextWndWidth : m_lpDX->m_client_width;
-  int cy = m_vjd3d9_device ? m_nTextWndHeight : m_lpDX->m_client_height;
-
-  if (m_lpDDSText) {
-    D3DSURFACE_DESC desc;
-    if (D3D_OK == m_lpDDSText->GetLevelDesc(0, &desc)) {
-      cx = min(cx, (int)desc.Width);
-      cy = min(cy, (int)desc.Height);
-    }
-  }
+  int cx = m_lpDX->m_client_width;
+  int cy = m_lpDX->m_client_height;
 
   int textMargin = TEXT_MARGIN;
   if (IsSpoutActiveAndFixed()) {
@@ -1452,59 +1328,41 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     m_left_edge = m_right_edge = -99999;
   }
 
-  if (D3D_OK == m_lpDX->m_lpDevice->BeginScene()) {
+  // DX12 frame: open command list, record all draw calls, then execute + present.
+  if (m_lpDX->BeginFrame()) {
+    // Set viewport on the command list
+    D3D12_VIEWPORT vp = { 0.f, 0.f,
+        (float)m_lpDX->m_client_width, (float)m_lpDX->m_client_height,
+        0.f, 1.f };
+    D3D12_RECT scissor = { 0, 0, m_lpDX->m_client_width, m_lpDX->m_client_height };
+    m_lpDX->m_commandList->RSSetViewports(1, &vp);
+    m_lpDX->m_commandList->RSSetScissorRects(1, &scissor);
+
+    // Clear the back buffer
+    {
+      float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+      D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_lpDX->m_rtvHeap->GetCPUDescriptorHandleForHeapStart();
+      rtvHandle.ptr += (SIZE_T)m_lpDX->m_frameIndex * m_lpDX->m_rtvDescriptorSize;
+      m_lpDX->m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+    }
+
+    // The main visualizer render function records its commands into m_lpDX->m_commandList
     MyRenderFn(redraw);
 
-    PrepareFor2DDrawing_B(GetDevice(), GetWidth(), GetHeight());
+    PrepareFor2DDrawing_B(GetWidth(), GetHeight());
 
-    if (!m_vjd3d9_device)   // in VJ mode, this renders to different context, so do it after BeginScene() on 2nd device.
-      RenderBuiltInTextMsgs();    // to m_lpDDSText?
+    RenderBuiltInTextMsgs();
 
     MyRenderUI(&m_upper_left_corner_y, &m_upper_right_corner_y,
       &m_lower_left_corner_y, &m_lower_right_corner_y,
       m_left_edge, m_right_edge);
     RenderPlaylist();
 
-    if (!m_vjd3d9_device)
-      m_text.DrawNow();
-
-    m_lpDX->m_lpDevice->EndScene();
-  }
-
-  // VJ Mode:
-  if (m_vj_mode && m_vjd3d9_device && !m_hidden_textwnd && D3D_OK == m_vjd3d9_device->BeginScene()) {
-    if (!m_lpDDSText || m_bClearVJWindow)
-      m_vjd3d9_device->Clear(0, 0, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
-
-    m_bClearVJWindow = false;
-    // note: when using debug DX runtime, textwnd will flash red/green after frame 4, if no text is drawn on a frame!
-
-    RenderBuiltInTextMsgs();
-
-    PrepareFor2DDrawing_B(m_vjd3d9_device, m_nTextWndWidth, m_nTextWndHeight);
-
     m_text.DrawNow();
 
-    m_vjd3d9_device->EndScene();
+    // EndFrame: transitions back buffer to PRESENT, executes command list, calls Present()
+    m_lpDX->EndFrame();
   }
-
-  if (m_lpDX->m_client_width != m_lpDX->m_REAL_client_width || m_lpDX->m_client_height != m_lpDX->m_REAL_client_height) {
-    int real_w = m_lpDX->m_REAL_client_width;   // real client size, in pixels
-    int real_h = m_lpDX->m_REAL_client_height;
-    int fat_w = m_lpDX->m_client_width;         // oversized VS canvas size, in pixels
-    int fat_h = m_lpDX->m_client_height;
-    int extra_w = fat_w - real_w;
-    int extra_h = fat_h - real_h;
-    RECT src, dst;
-    SetRect(&src, extra_w / 2, extra_h / 2, extra_w / 2 + real_w, extra_h / 2 + real_h);
-    SetRect(&dst, 0, 0, real_w, real_h);
-    m_lpDX->m_lpDevice->Present(&src, &dst, NULL, NULL);
-  }
-  else
-    m_lpDX->m_lpDevice->Present(NULL, NULL, NULL, NULL);
-
-  if (m_vjd3d9_device && !m_hidden_textwnd)
-    m_vjd3d9_device->Present(NULL, NULL, NULL, NULL);
 
 }
 
@@ -1796,238 +1654,306 @@ void CPluginShell::AnalyzeNewSound(unsigned char* pWaveL, unsigned char* pWaveR)
   }
 }
 
-void CPluginShell::PrepareFor2DDrawing_B(IDirect3DDevice9* pDevice, int w, int h) {
-  // New 2D drawing area will have x,y coords in the range <-1,-1> .. <1,1>
-  //         +--------+ Y=-1
-  //         |        |
-  //         | screen |             Z=0: front of scene
-  //         |        |             Z=1: back of scene
-  //         +--------+ Y=1
-  //       X=-1      X=1
-  // NOTE: After calling this, be sure to then call (at least):
-  //  1. SetVertexShader()
-  //  2. SetTexture(), if you need it
-  // before rendering primitives!
-  // Also, be sure your sprites have a z coordinate of 0.
-
-  pDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-  pDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
-  pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
-  pDevice->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
-  pDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
-  pDevice->SetRenderState(D3DRS_FOGENABLE, FALSE);
-  pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-  pDevice->SetRenderState(D3DRS_CLIPPING, TRUE);
-  pDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-  pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-  pDevice->SetRenderState(D3DRS_LOCALVIEWER, FALSE);
-  pDevice->SetRenderState(D3DRS_COLORVERTEX, TRUE);
-
-  pDevice->SetTexture(0, NULL);
-  pDevice->SetTexture(1, NULL);
-  pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);//D3DTEXF_LINEAR);
-  pDevice->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT);//D3DTEXF_LINEAR);
-  pDevice->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
-  pDevice->SetTextureStageState(1, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
-  pDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-  pDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-  pDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_CURRENT);
-  pDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
-
-  pDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
-  pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
-  pDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
-
-  pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-
-  // set up for 2D drawing:
-  {
-    D3DXMATRIX Ortho2D;
-    D3DXMATRIX Identity;
-
-    D3DXMatrixOrthoLH(&Ortho2D, (float)w, (float)h, 0.0f, 1.0f);
-    D3DXMatrixIdentity(&Identity);
-
-    pDevice->SetTransform(D3DTS_PROJECTION, &Ortho2D);
-    pDevice->SetTransform(D3DTS_WORLD, &Identity);
-    pDevice->SetTransform(D3DTS_VIEW, &Identity);
-  }
+void CPluginShell::PrepareFor2DDrawing_B(int w, int h) {
+  // Phase 4 TODO: set up a 2D orthographic PSO on the command list for UI overlay rendering.
+  // In DX12 all render state is baked into Pipeline State Objects, so there are no
+  // individual SetRenderState() / SetTransform() calls here.
+  // The viewport/scissor are already set in DrawAndDisplay before calling MyRenderFn.
+  (void)w; (void)h;
 }
 
 void CPluginShell::DrawDarkTranslucentBox(RECT* pr) {
-  // 'pr' is the rectangle that some text will occupy;
-  // a black box will be drawn around it, plus a bit of extra margin space.
-
-  if (m_vjd3d9_device)
-    return;
-
-  m_lpDX->m_lpDevice->SetVertexShader(NULL);
-  m_lpDX->m_lpDevice->SetPixelShader(NULL);
-  m_lpDX->m_lpDevice->SetFVF(SIMPLE_VERTEX_FORMAT);
-  m_lpDX->m_lpDevice->SetTexture(0, NULL);
-
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-
-  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
-  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-  m_lpDX->m_lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
-  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
-  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
-
-  // set up a quad
-  SIMPLEVERTEX verts[4];
-  for (int i = 0; i < 4; i++) {
-    verts[i].x = (i % 2 == 0) ? (float)(-m_lpDX->m_client_width / 2 + pr->left) :
-      (float)(-m_lpDX->m_client_width / 2 + pr->right);
-    verts[i].y = (i / 2 == 0) ? (float)-(-m_lpDX->m_client_height / 2 + pr->bottom) :
-      (float)-(-m_lpDX->m_client_height / 2 + pr->top);
-    verts[i].z = 0;
-    verts[i].Diffuse = 0xD0000000;
-  }
-
-  m_lpDX->m_lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, verts, sizeof(SIMPLEVERTEX));
-
-  // undo unusual state changes:
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+  // Phase 4 TODO: render a translucent dark quad over the given rect using DX12 command list.
+  // Requires a dedicated alpha-blended PSO and a simple vertex buffer.
+  (void)pr;
 }
 
 void CPluginShell::DrawDarkTranslucentBoxFullWindow() {
-  if (!m_lpDX || !m_lpDX->m_lpDevice) return;
+  // Phase 4 TODO: render a full-window translucent dark overlay using DX12 command list.
+  if (!m_lpDX) return;
+}
 
-  m_lpDX->m_lpDevice->SetVertexShader(NULL);
-  m_lpDX->m_lpDevice->SetPixelShader(NULL);
-  m_lpDX->m_lpDevice->SetFVF(SIMPLE_VERTEX_FORMAT);
-  m_lpDX->m_lpDevice->SetTexture(0, NULL);
+bool CPluginShell::CreateHelpTexture() {
+  if (!m_lpDX || !m_lpDX->m_device) return false;
 
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+  auto* device = m_lpDX->m_device.Get();
+  UINT w = (UINT)m_lpDX->m_client_width;
+  UINT h = (UINT)m_lpDX->m_client_height;
+  if (w == 0 || h == 0) return false;
 
-  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
-  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-  m_lpDX->m_lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
-  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
-  m_lpDX->m_lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+  // Create DEFAULT-heap texture (SRV-only, no render target needed)
+  D3D12_RESOURCE_DESC desc = {};
+  desc.Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+  desc.Width              = w;
+  desc.Height             = h;
+  desc.DepthOrArraySize   = 1;
+  desc.MipLevels          = 1;
+  desc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM;
+  desc.SampleDesc.Count   = 1;
+  desc.Flags              = D3D12_RESOURCE_FLAG_NONE;
 
-  // Set up a quad for the entire window
-  SIMPLEVERTEX verts[4];
-  verts[0].x = -m_lpDX->m_client_width / 2.0f; // Left
-  verts[0].y = -m_lpDX->m_client_height / 2.0f; // Bottom
-  verts[0].z = 0.0f;
-  verts[0].Diffuse = 0xD0000000; // Black with some translucency
+  D3D12_HEAP_PROPERTIES heapProps = {};
+  heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 
-  verts[1].x = m_lpDX->m_client_width / 2.0f; // Right
-  verts[1].y = -m_lpDX->m_client_height / 2.0f; // Bottom
-  verts[1].z = 0.0f;
-  verts[1].Diffuse = 0xD0000000;
+  HRESULT hr = device->CreateCommittedResource(
+      &heapProps, D3D12_HEAP_FLAG_NONE, &desc,
+      D3D12_RESOURCE_STATE_COPY_DEST,
+      nullptr, IID_PPV_ARGS(&m_helpTexture.resource));
+  if (FAILED(hr)) return false;
 
-  verts[2].x = -m_lpDX->m_client_width / 2.0f; // Left
-  verts[2].y = m_lpDX->m_client_height / 2.0f; // Top
-  verts[2].z = 0.0f;
-  verts[2].Diffuse = 0xD0000000;
+  m_helpTexture.width  = w;
+  m_helpTexture.height = h;
+  m_helpTexture.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+  m_helpTexture.currentState = D3D12_RESOURCE_STATE_COPY_DEST;
 
-  verts[3].x = m_lpDX->m_client_width / 2.0f; // Right
-  verts[3].y = m_lpDX->m_client_height / 2.0f; // Top
-  verts[3].z = 0.0f;
-  verts[3].Diffuse = 0xD0000000;
+  // Allocate SRV descriptor
+  D3D12_CPU_DESCRIPTOR_HANDLE srvCpu = m_lpDX->AllocateSrvCpu();
+  m_helpTexture.srvIndex = m_lpDX->m_nextFreeSrvSlot;
 
-  m_lpDX->m_lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, verts, sizeof(SIMPLEVERTEX));
+  D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+  srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+  srvDesc.Format                  = DXGI_FORMAT_B8G8R8A8_UNORM;
+  srvDesc.ViewDimension           = D3D12_SRV_DIMENSION_TEXTURE2D;
+  srvDesc.Texture2D.MipLevels     = 1;
+  device->CreateShaderResourceView(m_helpTexture.resource.Get(), &srvDesc, srvCpu);
+  m_lpDX->AllocateSrvGpu();
 
-  // Undo unusual state changes
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-  m_lpDX->m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+  // Create 16-entry binding block for texture binding
+  m_lpDX->CreateBindingBlockForTexture(m_helpTexture);
+
+  // Create upload buffer (row-pitch aligned for CopyTextureRegion)
+  UINT rowPitch = (w * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1)
+                  & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
+  UINT64 uploadSize = (UINT64)rowPitch * h;
+
+  D3D12_HEAP_PROPERTIES uploadHeapProps = {};
+  uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+  D3D12_RESOURCE_DESC bufDesc = {};
+  bufDesc.Dimension        = D3D12_RESOURCE_DIMENSION_BUFFER;
+  bufDesc.Width            = uploadSize;
+  bufDesc.Height           = 1;
+  bufDesc.DepthOrArraySize = 1;
+  bufDesc.MipLevels        = 1;
+  bufDesc.Format           = DXGI_FORMAT_UNKNOWN;
+  bufDesc.SampleDesc.Count = 1;
+  bufDesc.Layout           = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+  hr = device->CreateCommittedResource(
+      &uploadHeapProps, D3D12_HEAP_FLAG_NONE, &bufDesc,
+      D3D12_RESOURCE_STATE_GENERIC_READ,
+      nullptr, IID_PPV_ARGS(&m_helpUploadBuffer));
+  if (FAILED(hr)) {
+    m_helpTexture.Reset();
+    return false;
+  }
+
+  m_helpTexturePage = 0;
+  return true;
+}
+
+void CPluginShell::UpdateHelpTexture(int page) {
+  if (!m_helpTexture.IsValid() || !m_helpUploadBuffer || !m_lpDX) return;
+
+  UINT w = m_helpTexture.width;
+  UINT h = m_helpTexture.height;
+  UINT rowPitch = (w * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1)
+                  & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
+
+  // Select help text for the requested page.
+  // g_szHelp_W == 1 means Unicode; 0 means ANSI bytes cast to wchar_t*.
+  void* helpText = (page == 1) ? (void*)g_szHelp : (void*)g_szHelp_Page2;
+  if (!helpText) return;
+  bool isUnicode = (g_szHelp_W != 0);
+
+  // Create GDI DIB section for text rendering
+  BITMAPINFO bmi = {};
+  bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+  bmi.bmiHeader.biWidth       = w;
+  bmi.bmiHeader.biHeight      = -(int)h;  // top-down
+  bmi.bmiHeader.biPlanes      = 1;
+  bmi.bmiHeader.biBitCount    = 32;
+  bmi.bmiHeader.biCompression = BI_RGB;
+
+  void* dibBits = nullptr;
+  HDC memDC = CreateCompatibleDC(nullptr);
+  HBITMAP hBmp = CreateDIBSection(memDC, &bmi, DIB_RGB_COLORS, &dibBits, nullptr, 0);
+  if (!hBmp || !dibBits) {
+    DeleteDC(memDC);
+    return;
+  }
+
+  HGDIOBJ oldBmp = SelectObject(memDC, hBmp);
+
+  // Clear to fully transparent black
+  memset(dibBits, 0, (size_t)w * h * 4);
+
+  // Scale font to window height — large enough for accessibility.
+  // Compensate for DPI: the memory DC inherits the display's DPI, so GDI
+  // inflates font sizes by dpi/96. Divide out so we get true pixel sizes.
+  int dpiY = GetDeviceCaps(memDC, LOGPIXELSY);
+  if (dpiY <= 0) dpiY = 96;
+  int fontSize = max(22, (int)h / 32);
+  int fontRequest = MulDiv(fontSize, 96, dpiY);  // actual pixels, DPI-neutral
+  LONG pad = max(20L, (LONG)h / 40);
+
+  HFONT hFont = CreateFontW(
+      -fontRequest, 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE,
+      DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+      ANTIALIASED_QUALITY, FIXED_PITCH | FF_MODERN, L"Consolas");
+  HGDIOBJ oldFont = SelectObject(memDC, hFont);
+
+  // White text on transparent background
+  SetBkMode(memDC, TRANSPARENT);
+  SetTextColor(memDC, RGB(255, 255, 255));
+
+  RECT textRect = { pad, pad, (LONG)w - pad, (LONG)h - pad };
+  if (isUnicode)
+    ::DrawTextW(memDC, (const wchar_t*)helpText, -1, &textRect,
+                DT_LEFT | DT_TOP | DT_EXPANDTABS);
+  else
+    ::DrawTextA(memDC, (const char*)helpText, -1, &textRect,
+                DT_LEFT | DT_TOP | DT_EXPANDTABS);
+
+  SelectObject(memDC, oldFont);
+  DeleteObject(hFont);
+  SelectObject(memDC, oldBmp);
+  DeleteDC(memDC);
+
+  // Post-process: convert GDI grayscale antialiasing to proper alpha
+  // GDI renders white text (R=G=B=intensity) but leaves A=0.
+  // Convert: text pixels → BGRA(255,255,255, intensity), bg → BGRA(0,0,0,0)
+  BYTE* pixels = (BYTE*)dibBits;
+  for (UINT y = 0; y < h; y++) {
+    for (UINT x = 0; x < w; x++) {
+      UINT idx = (y * w + x) * 4;
+      BYTE b = pixels[idx + 0];
+      BYTE g = pixels[idx + 1];
+      BYTE r = pixels[idx + 2];
+      BYTE intensity = (r > g) ? ((r > b) ? r : b) : ((g > b) ? g : b);
+      if (intensity > 0) {
+        pixels[idx + 0] = 255;       // B
+        pixels[idx + 1] = 255;       // G
+        pixels[idx + 2] = 255;       // R
+        pixels[idx + 3] = intensity; // A = text coverage
+      }
+    }
+  }
+
+  // Copy DIB to upload buffer with row-pitch alignment
+  BYTE* uploadPtr = nullptr;
+  m_helpUploadBuffer->Map(0, nullptr, (void**)&uploadPtr);
+  if (uploadPtr) {
+    for (UINT y = 0; y < h; y++) {
+      memcpy(uploadPtr + y * rowPitch, pixels + y * w * 4, w * 4);
+    }
+    m_helpUploadBuffer->Unmap(0, nullptr);
+  }
+
+  DeleteObject(hBmp);
+
+  // Record copy + transition on the current command list
+  auto* cmdList = m_lpDX->m_commandList.Get();
+
+  m_lpDX->TransitionResource(m_helpTexture, D3D12_RESOURCE_STATE_COPY_DEST);
+
+  D3D12_TEXTURE_COPY_LOCATION src = {};
+  src.pResource = m_helpUploadBuffer.Get();
+  src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+  src.PlacedFootprint.Offset = 0;
+  src.PlacedFootprint.Footprint.Format   = DXGI_FORMAT_B8G8R8A8_UNORM;
+  src.PlacedFootprint.Footprint.Width    = w;
+  src.PlacedFootprint.Footprint.Height   = h;
+  src.PlacedFootprint.Footprint.Depth    = 1;
+  src.PlacedFootprint.Footprint.RowPitch = rowPitch;
+
+  D3D12_TEXTURE_COPY_LOCATION dst = {};
+  dst.pResource = m_helpTexture.resource.Get();
+  dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+  dst.SubresourceIndex = 0;
+
+  cmdList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+  m_lpDX->TransitionResource(m_helpTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+  m_helpTexturePage = page;
 }
 
 void CPluginShell::RenderBuiltInTextMsgs() {
-  int _show_press_f1_NOW = (m_show_press_f1_msg & m_time < PRESS_F1_DUR);
-  {
-    RECT r;
+  if (!m_lpDX || m_show_help == 0) return;
 
-    if (m_show_help > 0) {
-      int y = m_upper_left_corner_y;
+  UINT curW = (UINT)m_lpDX->m_client_width;
+  UINT curH = (UINT)m_lpDX->m_client_height;
 
-      SetRect(&r, 0, 0, GetWidth(), GetHeight());
-      if (m_show_help == 1) {
-        if (!g_szHelp_W)
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-        else
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-      }
-      else if (m_show_help == 2) {
-        if (!g_szHelp_W)
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-        else
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-      }
-      DrawDarkTranslucentBoxFullWindow();
-
-      r.top += m_upper_left_corner_y;
-      r.left += m_left_edge;
-      r.right += m_left_edge + PLAYLIST_INNER_MARGIN * 2;
-      r.bottom += m_upper_left_corner_y + PLAYLIST_INNER_MARGIN * 2;
-
-      if (m_show_help == 1) {
-        if (!g_szHelp_W)
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp, -1, &r, 0, 0xFFFFFFFF);
-        else
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp, -1, &r, 0, 0xFFFFFFFF);
-      }
-      else if (m_show_help == 2) {
-        if (!g_szHelp_W)
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
-        else
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
-      }
-      // ??
-      // m_upper_left_corner_y += r.bottom - r.top + PLAYLIST_INNER_MARGIN * 3;
-    }
-
-    // render 'Press F1 for Help' message in lower-right corner:
-    if (_show_press_f1_NOW) {
-      //DeepSeek & Incubo_ - New Press F1 for Help Animation
-      int dx;
-      if (m_time < 0.75f) {
-        // Phase 1: Exponential ease-in (0s to 0.75s)
-        float t = m_time / 0.75f;
-        dx = (int)(PRESS_F1_MAX_DX * (1 - log10f(1.0f + t * (PRESS_F1_LOG_BASE - 1.0f))) * 1.5); //Tweak
-      }
-      else if (m_time <= 4.25f) {
-        // Phase 2: Stationary (0.75s to 4.25s)
-        dx = 0; // Tweak
-      }
-      else {
-        // Phase 3: Exponential ease-out (4.25s to 5s)
-        float t = (m_time - 4.25f) / 0.75f;
-        dx = (int)(PRESS_F1_MAX_DX * powf(t, PRESS_F1_EXP / 1.5)); //Tweak
-      }
-
-      SetRect(&r, m_left_edge, m_lower_right_corner_y - GetFontHeight(DECORATIVE_FONT), m_right_edge + dx, m_lower_right_corner_y);
-
-      DWORD alpha = 255;
-      DWORD cr = m_fontinfo[DECORATIVE_FONT].R;
-      DWORD cg = m_fontinfo[DECORATIVE_FONT].G;
-      DWORD cb = m_fontinfo[DECORATIVE_FONT].B;
-      DWORD color = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
-
-      m_lower_right_corner_y -= m_d3dx_font[DECORATIVE_FONT]->DrawTextW(NULL, wasabiApiLangString(IDS_PRESS_F1_MSG), -1, &r, DT_RIGHT, color);
-    }
+  // Recreate if window size changed (fullscreen toggle, resize)
+  if (m_helpTexture.IsValid() &&
+      (m_helpTexture.width != curW || m_helpTexture.height != curH)) {
+    m_helpTexture.Reset();
+    m_helpUploadBuffer.Reset();
+    m_helpTexturePage = 0;
   }
+
+  // Lazy-create help texture on first use
+  if (!m_helpTexture.IsValid()) {
+    if (!CreateHelpTexture()) return;
+  }
+
+  // Re-render if page changed
+  if (m_helpTexturePage != m_show_help) {
+    UpdateHelpTexture(m_show_help);
+  }
+
+  auto* cmdList = m_lpDX->m_commandList.Get();
+
+  // Help overlay covers most of the screen with margins
+  float marginX = 0.06f;
+  float marginY = 0.06f;
+  float x0 = -1.0f + marginX * 2.0f;
+  float y0 =  1.0f - marginY * 2.0f;
+  float x1 =  1.0f - marginX * 2.0f;
+  float y1 = -1.0f + marginY * 2.0f;
+
+  // Pass 1: Dark semi-transparent background quad
+  WFVERTEX bgVerts[6];
+  DWORD bgColor = 0xC0000000; // 75% opaque black
+  bgVerts[0] = { x0, y0, 0, bgColor };
+  bgVerts[1] = { x1, y0, 0, bgColor };
+  bgVerts[2] = { x0, y1, 0, bgColor };
+  bgVerts[3] = { x0, y1, 0, bgColor };
+  bgVerts[4] = { x1, y0, 0, bgColor };
+  bgVerts[5] = { x1, y1, 0, bgColor };
+
+  cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_ALPHABLEND_WFVERTEX].Get());
+  m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, bgVerts, 6, sizeof(WFVERTEX));
+
+  // Pass 2: Text texture overlay (white text on transparent background)
+  m_lpDX->TransitionResource(m_helpTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+  D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = m_lpDX->GetBindingBlockGpuHandle(m_helpTexture);
+  cmdList->SetGraphicsRootDescriptorTable(1, srvHandle);
+
+  SPRITEVERTEX textVerts[6];
+  DWORD white = 0xFFFFFFFF;
+  textVerts[0] = { x0, y0, 0, white, 0, 0 };
+  textVerts[1] = { x1, y0, 0, white, 1, 0 };
+  textVerts[2] = { x0, y1, 0, white, 0, 1 };
+  textVerts[3] = { x0, y1, 0, white, 0, 1 };
+  textVerts[4] = { x1, y0, 0, white, 1, 0 };
+  textVerts[5] = { x1, y1, 0, white, 1, 1 };
+
+  cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_TEXTURED_SPRITEVERTEX].Get());
+  m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, textVerts, 6, sizeof(SPRITEVERTEX));
 }
 
 void CPluginShell::RenderPlaylist() {
-  // draw playlist:
+  // Phase 5 TODO: replace D3DX font playlist rendering with DirectXTK12 SpriteFont.
+  // For now playlist display is disabled until SpriteFont migration is complete.
   if (m_show_playlist) {
-    RECT r;
-    int nSongs = 0;  //SendMessage(m_hWndWinamp, WM_USER, 0, 124);
-    int now_playing = 0; // SendMessage(m_hWndWinamp, WM_USER, 0, 125);
-
+    int nSongs = 0;
     if (nSongs <= 0) {
       m_show_playlist = 0;
     }
-    else {
+    else if (false) {
       int playlist_vert_pixels = m_lower_left_corner_y - m_upper_left_corner_y;
       int disp_lines = min(MAX_SONGS_PER_PAGE, (playlist_vert_pixels - PLAYLIST_INNER_MARGIN * 2) / GetFontHeight(PLAYLIST_FONT));
       int total_pages = (nSongs) / disp_lines;
@@ -2085,9 +2011,9 @@ void CPluginShell::RenderPlaylist() {
             //buf[240] = 0;
             //sprintf(m_playlist[i], "%d. %s ", j+1, buf);  // leave an extra space @ end, so italicized fonts don't get clipped
 
-            SetRect(&r, 0, 0, max_w, 1024);
-            m_d3dx_font[PLAYLIST_FONT]->DrawTextW(NULL, m_playlist[i], -1, &r, dwFlags | DT_CALCRECT, 0xFFFFFFFF);
-            int w = r.right - r.left;
+            // Phase 5 TODO: measure text width with SpriteFont
+            // m_d3dx_font[PLAYLIST_FONT]->DrawTextW(...) -> SpriteFont equivalent
+            int w = 0; // placeholder
             if (w > 0)
               m_playlist_width_pixels = max(m_playlist_width_pixels, w);
           }
@@ -2116,6 +2042,7 @@ void CPluginShell::RenderPlaylist() {
       //m_d3dx_font[PLAYLIST_FONT]->Begin();
 
       // draw playlist text
+      const int now_playing = -1; // Winamp now_playing removed; Phase 5 TODO: wire up actual playback position
       int y = m_upper_left_corner_y + PLAYLIST_INNER_MARGIN;
       for (int i = start; i < end; i++) {
         SetRect(&r, m_left_edge + PLAYLIST_INNER_MARGIN, y, m_left_edge + PLAYLIST_INNER_MARGIN + m_playlist_width_pixels, y + GetFontHeight(PLAYLIST_FONT));
@@ -2129,7 +2056,8 @@ void CPluginShell::RenderPlaylist() {
           (i == now_playing ? PLAYLIST_COLOR_BOTH : PLAYLIST_COLOR_HILITE_TRACK) :
           (i == now_playing ? PLAYLIST_COLOR_PLAYING_TRACK : PLAYLIST_COLOR_NORMAL);
 
-        y += m_d3dx_font[PLAYLIST_FONT]->DrawTextW(NULL, m_playlist[i - start], -1, &r, dwFlags, color);
+        // Phase 5 TODO: draw playlist entry with SpriteFont
+        y += GetFontHeight(PLAYLIST_FONT); // placeholder advance
       }
 
       //m_d3dx_font[PLAYLIST_FONT]->End();
@@ -2145,12 +2073,8 @@ void CPluginShell::SuggestHowToFreeSomeMem() {
 
   wchar_t str[1024];
 
-  if (m_lpDX->m_current_mode.multisamp != D3DMULTISAMPLE_NONE) {
-    wasabiApiLangString(IDS_TO_FREE_UP_SOME_MEMORY_RESTART_WINAMP_THEN_GO_TO_CONFIG, str, 2048);
-  }
-  else {
-    wasabiApiLangString(IDS_TO_FREE_UP_VIDEO_MEMORY, str, 2048);
-  }
+  // DX12 has no multisampling setting equivalent here
+  wasabiApiLangString(IDS_TO_FREE_UP_VIDEO_MEMORY, str, 2048);
 
   MessageBoxW(m_lpDX->GetHwnd(), str, wasabiApiLangString(IDS_MILKDROP_SUGGESTION), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 }
@@ -2181,8 +2105,9 @@ LRESULT CPluginShell::PluginShellWindowProc(HWND hWnd, unsigned uMsg, WPARAM wPa
   switch (uMsg) {
   case WM_ERASEBKGND:
     // Repaint window when song is paused and image needs to be repainted:
-    if (m_lpDX && m_lpDX->m_lpDevice && GetFrame() > 0) {
-      m_lpDX->m_lpDevice->Present(NULL, NULL, NULL, NULL);
+    if (m_lpDX && m_lpDX->m_ready && GetFrame() > 0) {
+      // DX12: re-present the last frame when window is erased (no explicit Present needed;
+      // the swap chain already holds the last rendered buffer).
       return 0;
     }
     break;
@@ -2620,12 +2545,7 @@ LRESULT CPluginShell::PluginShellVJModeWndProc(HWND hwnd, UINT message, WPARAM w
     return PluginShellWindowProc(GetPluginWindow(), message, wParam, lParam);
 
   case WM_ERASEBKGND:
-    // Repaint window when song is paused and image needs to be repainted:
-    if (m_vjd3d9_device && GetFrame() > 0)    // WM_USER/104 return codes: 1=playing, 3=paused, other=stopped
-    {
-      m_vjd3d9_device->Present(NULL, NULL, NULL, NULL);
-      return 0;
-    }
+    // VJ DX9 Present removed in DX12 migration; Phase 5 TODO: DX12 VJ window present.
     break;
 
   case WM_CLOSE:
@@ -2647,13 +2567,7 @@ LRESULT CPluginShell::PluginShellVJModeWndProc(HWND hwnd, UINT message, WPARAM w
   return 0;
 
   case WM_SIZE:
-    // clear or set activity flag to reflect focus
-    if (m_vjd3d9_device && !m_resizing_textwnd) {
-      m_hidden_textwnd = (SIZE_MAXHIDE == wParam || SIZE_MINIMIZED == wParam) ? TRUE : FALSE;
-
-      if (SIZE_MAXIMIZED == wParam || SIZE_RESTORED == wParam) // the window has been maximized or restored
-        OnUserResizeTextWindow();
-    }
+    // VJ DX9 device removed in DX12 migration; Phase 5 TODO: DX12 VJ window resize.
     break;
 
   case WM_ENTERSIZEMOVE:
@@ -2661,8 +2575,7 @@ LRESULT CPluginShell::PluginShellVJModeWndProc(HWND hwnd, UINT message, WPARAM w
     break;
 
   case WM_EXITSIZEMOVE:
-    if (m_vjd3d9_device)
-      OnUserResizeTextWindow();
+    // VJ DX9 device removed; Phase 5 TODO: DX12 VJ window resize.
     m_resizing_textwnd = 0;
     break;
   }
@@ -2687,8 +2600,8 @@ bool CPluginShell::IsSpoutActiveAndFixed() {
 void CPluginShell::SetVariableBackBuffer(int width, int height) {
   if (IsSpoutActiveAndFixed() || width == 0 || height == 0) return;
   float q = GetEffectiveRenderQuality(width, height);
-  d3dPp.BackBufferWidth = (int)width * q;
-  d3dPp.BackBufferHeight = (int)height * q;
+  m_backBufWidth  = (int)(width  * q);
+  m_backBufHeight = (int)(height * q);
 }
 
 void CPluginShell::UpdateBackBufferTracking(int width, int height) {
@@ -2732,12 +2645,15 @@ void CPluginShell::ResetBufferAndFonts() {
   GetClientRect(m_lpDX->GetHwnd(), &c);
   m_lpDX->OnUserResizeWindow(&w, &c, false);
 
-  SetVariableBackBuffer(m_lpDX->m_client_width, m_lpDX->m_client_height);
-  UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
-  GetDevice()->Reset(&d3dPp);
+  int newW = m_lpDX->m_client_width;
+  int newH = m_lpDX->m_client_height;
+  SetVariableBackBuffer(newW, newH);
+  UpdateBackBufferTracking(newW, newH);
+  // DX12: resize swap chain instead of device reset
+  m_lpDX->ResizeSwapChain(newW, newH);
 
-  if (m_lpDX->m_client_width != 0 && m_lpDX->m_client_height != 0) {
+  if (newW != 0 && newH != 0) {
     CleanUpFonts();
-    AllocateFonts(GetDevice());
+    AllocateFonts();
   }
 }

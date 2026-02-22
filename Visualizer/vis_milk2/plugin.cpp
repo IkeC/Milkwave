@@ -930,10 +930,12 @@ void OnUserEditedWarpShaders(LPARAM param1, LPARAM param2) {
     return;
   if (!g_plugin.RecompilePShader(g_plugin.m_pState->m_szWarpShadersText, &g_plugin.m_shaders.warp, SHADER_WARP, false, g_plugin.m_pState->m_nWarpPSVersion, false)) {
     // switch to fallback
-    g_plugin.m_fallbackShaders_ps.warp.ptr->AddRef();
-    g_plugin.m_fallbackShaders_ps.warp.CT->AddRef();
+    if (g_plugin.m_fallbackShaders_ps.warp.ptr) g_plugin.m_fallbackShaders_ps.warp.ptr->AddRef();
+    if (g_plugin.m_fallbackShaders_ps.warp.CT) g_plugin.m_fallbackShaders_ps.warp.CT->AddRef();
+    if (g_plugin.m_fallbackShaders_ps.warp.bytecodeBlob) g_plugin.m_fallbackShaders_ps.warp.bytecodeBlob->AddRef();
     g_plugin.m_shaders.warp = g_plugin.m_fallbackShaders_ps.warp;
   }
+  g_plugin.CreateDX12PresetPSOs();
 }
 
 void OnUserEditedCompShaders(LPARAM param1, LPARAM param2) {
@@ -943,10 +945,12 @@ void OnUserEditedCompShaders(LPARAM param1, LPARAM param2) {
     return;
   if (!g_plugin.RecompilePShader(g_plugin.m_pState->m_szCompShadersText, &g_plugin.m_shaders.comp, SHADER_COMP, false, g_plugin.m_pState->m_nCompPSVersion, false)) {
     // switch to fallback
-    g_plugin.m_fallbackShaders_ps.comp.ptr->AddRef();
-    g_plugin.m_fallbackShaders_ps.comp.CT->AddRef();
+    if (g_plugin.m_fallbackShaders_ps.comp.ptr) g_plugin.m_fallbackShaders_ps.comp.ptr->AddRef();
+    if (g_plugin.m_fallbackShaders_ps.comp.CT) g_plugin.m_fallbackShaders_ps.comp.CT->AddRef();
+    if (g_plugin.m_fallbackShaders_ps.comp.bytecodeBlob) g_plugin.m_fallbackShaders_ps.comp.bytecodeBlob->AddRef();
     g_plugin.m_shaders.comp = g_plugin.m_fallbackShaders_ps.comp;
   }
+  g_plugin.CreateDX12PresetPSOs();
 }
 
 // Modify the help screen text here.
@@ -1015,6 +1019,48 @@ void CPlugin::OverrideDefaults() {
 // m_disp_mode_fs.RefreshRate = 60;
 }
 
+//----------------------------------------------------------------------
+// Preset directory auto-descend helpers — must be defined before MyPreInitialize
+static bool DirHasMilkFilesHelper(const wchar_t* szDir) {
+  wchar_t szMask[MAX_PATH];
+  swprintf(szMask, L"%s*.milk", szDir);
+  WIN32_FIND_DATAW fd;
+  HANDLE h = FindFirstFileW(szMask, &fd);
+  if (h != INVALID_HANDLE_VALUE) { FindClose(h); return true; }
+  return false;
+}
+
+static bool TryDescendIntoPresetSubdirHelper(wchar_t* szDir) {
+  if (GetFileAttributesW(szDir) == INVALID_FILE_ATTRIBUTES)
+    return false;
+
+  if (DirHasMilkFilesHelper(szDir))
+    return true;  // already has .milk files
+
+  wchar_t szMask[MAX_PATH];
+  swprintf(szMask, L"%s*.*", szDir);
+  WIN32_FIND_DATAW fd;
+  HANDLE h = FindFirstFileW(szMask, &fd);
+  if (h == INVALID_HANDLE_VALUE) return false;
+
+  int nChecked = 0;
+  do {
+    if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+        wcscmp(fd.cFileName, L".") != 0 && wcscmp(fd.cFileName, L"..") != 0) {
+      wchar_t szSubDir[MAX_PATH];
+      swprintf(szSubDir, L"%s%s\\", szDir, fd.cFileName);
+      if (DirHasMilkFilesHelper(szSubDir)) {
+        lstrcpyW(szDir, szSubDir);
+        FindClose(h);
+        return true;
+      }
+      if (++nChecked >= 20) break;  // safety limit
+    }
+  } while (FindNextFileW(h, &fd));
+
+  FindClose(h);
+  return false;
+}
 //----------------------------------------------------------------------
 
 void CPlugin::MyPreInitialize() {
@@ -1111,9 +1157,9 @@ void CPlugin::MyPreInitialize() {
   m_nMaxBytes = 2000000000;
 
 #ifdef _DEBUG
-  m_dwShaderFlags = D3DXSHADER_DEBUG | (1 << 16);
+  m_dwShaderFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
 #else
-  m_dwShaderFlags = (1 << 16);//D3DXSHADER_SKIPOPTIMIZATION|D3DXSHADER_NO_PRESHADER;
+  m_dwShaderFlags = D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
   //m_pFragmentLinker = NULL;
   //m_pCompiledFragments = NULL;
@@ -1247,10 +1293,8 @@ void CPlugin::MyPreInitialize() {
   g_bDebugOutput = false;
   g_bDumpFileCleared = false;
 
-  std::wstring::size_type pos = std::wstring(m_szBaseDir).find_last_of(L"\\/");
-  std::wstring dir = std::wstring(m_szBaseDir).substr(0, pos);
-
-  swprintf(m_szMilkdrop2Path, L"%s\\%s", dir.c_str(), SUBDIR);
+  // m_szBaseDir already points to the directory containing "resources\"
+  swprintf(m_szMilkdrop2Path, L"%s%s", m_szBaseDir, SUBDIR);
   swprintf(m_szPresetDir, L"%spresets\\", m_szMilkdrop2Path);
 
   // note that the config dir can be under Program Files or Application Data!!
@@ -1306,6 +1350,10 @@ void CPlugin::MyReadConfig() {
   m_bSongTitleAnims = GetPrivateProfileBoolW(L"Settings", L"bSongTitleAnims", m_bSongTitleAnims, pIni);
   m_bEnablePresetStartup = GetPrivateProfileBoolW(L"Settings", L"bEnablePresetStartup", m_bEnablePresetStartup, pIni);
   m_bEnableAudioCapture = GetPrivateProfileBoolW(L"Settings", L"bEnableAudioCapture", m_bEnableAudioCapture, pIni);
+  m_fAudioSensitivity = (float)GetPrivateProfileIntW(L"Milkwave", L"AudioSensitivity", (int)m_fAudioSensitivity, pIni);
+  if (m_fAudioSensitivity < 1.0f) m_fAudioSensitivity = 1.0f;
+  if (m_fAudioSensitivity > 256.0f) m_fAudioSensitivity = 256.0f;
+  milkwave_audio_sensitivity = m_fAudioSensitivity;
   m_bEnablePresetStartupSavingOnClose = GetPrivateProfileBoolW(L"Settings", L"bEnablePresetStartupSavingOnClose", m_bEnablePresetStartupSavingOnClose, pIni);
 
   m_bAutoLockPresetWhenNoMusic = GetPrivateProfileBoolW(L"Settings", L"bAutoLockPresetWhenNoMusic", m_bAutoLockPresetWhenNoMusic, pIni);
@@ -1373,6 +1421,19 @@ void CPlugin::MyReadConfig() {
   // --------
 
   GetPrivateProfileStringW(L"Settings", L"szPresetDir", m_szPresetDir, m_szPresetDir, sizeof(m_szPresetDir), pIni);
+
+  // If the saved preset dir doesn't have .milk files, reset to default and auto-descend
+  if (!DirHasMilkFilesHelper(m_szPresetDir)) {
+    wchar_t szDefault[MAX_PATH];
+    swprintf(szDefault, L"%spresets\\", m_szMilkdrop2Path);
+    if (TryDescendIntoPresetSubdirHelper(szDefault)) {
+      lstrcpyW(m_szPresetDir, szDefault);
+      wchar_t logbuf[512];
+      swprintf(logbuf, L"Preset dir resolved to: %s", m_szPresetDir);
+      DebugLogW(logbuf);
+    }
+  }
+
   GetPrivateProfileStringW(L"Settings", L"szPresetStartup", m_szPresetStartup, m_szPresetStartup, sizeof(m_szPresetStartup), pIni);
 
   // Milkwave
@@ -1545,6 +1606,7 @@ void CPlugin::MyWriteConfig() {
   // Milkwave
   WritePrivateProfileStringW(L"Milkwave", L"AudioDevice", m_szAudioDevice, pIni);
   WritePrivateProfileIntW(m_nAudioDeviceRequestType, L"AudioDeviceRequestType", pIni, L"Milkwave");
+  WritePrivateProfileIntW((int)m_fAudioSensitivity, L"AudioSensitivity", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_SongInfoPollingEnabled, L"SongInfoPollingEnabled", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_SongInfoDisplayCorner, L"SongInfoDisplayCorner", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
@@ -1716,6 +1778,10 @@ void CPlugin::CleanUpMyNonDx9Stuff() {
   // This gets called only once, when your plugin exits.
   // Be sure to clean up any objects here that were
   //   created/initialized in AllocateMyNonDx9Stuff.
+
+  // Join any in-flight preset load thread
+  if (m_presetLoadThread.joinable())
+    m_presetLoadThread.join();
 
 // =========================================================
 // SPOUT cleanup on exit
@@ -1989,24 +2055,26 @@ int CPlugin::AllocateMyDX9Stuff() {
   // SHADERS
   //-------------------------------------
   if (m_nMaxPSVersion > MD2_PS_NONE) {
-    // Create vertex declarations (since we're not using FVF anymore)
-    if (D3D_OK != GetDevice()->CreateVertexDeclaration(g_MyVertDecl, &m_pMyVertDecl)) {
-      wasabiApiLangString(IDS_COULD_NOT_CREATE_MY_VERTEX_DECLARATION, buf, sizeof(buf));
-      dumpmsg(buf);
-      MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-      return false;
-    }
-    if (D3D_OK != GetDevice()->CreateVertexDeclaration(g_WfVertDecl, &m_pWfVertDecl)) {
-      wasabiApiLangString(IDS_COULD_NOT_CREATE_WF_VERTEX_DECLARATION, buf, sizeof(buf));
-      dumpmsg(buf);
-      MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-      return false;
-    }
-    if (D3D_OK != GetDevice()->CreateVertexDeclaration(g_SpriteVertDecl, &m_pSpriteVertDecl)) {
-      wasabiApiLangString(IDS_COULD_NOT_CREATE_SPRITE_VERTEX_DECLARATION, buf, sizeof(buf));
-      dumpmsg(buf);
-      MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-      return false;
+    // Create vertex declarations (DX9 only — skipped when no DX9 device)
+    if (GetDevice()) {
+      if (D3D_OK != GetDevice()->CreateVertexDeclaration(g_MyVertDecl, &m_pMyVertDecl)) {
+        wasabiApiLangString(IDS_COULD_NOT_CREATE_MY_VERTEX_DECLARATION, buf, sizeof(buf));
+        dumpmsg(buf);
+        MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+        return false;
+      }
+      if (D3D_OK != GetDevice()->CreateVertexDeclaration(g_WfVertDecl, &m_pWfVertDecl)) {
+        wasabiApiLangString(IDS_COULD_NOT_CREATE_WF_VERTEX_DECLARATION, buf, sizeof(buf));
+        dumpmsg(buf);
+        MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+        return false;
+      }
+      if (D3D_OK != GetDevice()->CreateVertexDeclaration(g_SpriteVertDecl, &m_pSpriteVertDecl)) {
+        wasabiApiLangString(IDS_COULD_NOT_CREATE_SPRITE_VERTEX_DECLARATION, buf, sizeof(buf));
+        dumpmsg(buf);
+        MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+        return false;
+      }
     }
 
     // Load the FALLBACK shaders...
@@ -2049,6 +2117,31 @@ int CPlugin::AllocateMyDX9Stuff() {
       dumpmsg(buf);
       MessageBoxW(GetPluginWindow(), buf, wasabiApiLangString(IDS_MILKDROP_ERROR, title, 64), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
       return false;
+    }
+
+    // DX12: Create fallback PSOs from compiled fallback shader bytecodes
+    if (m_lpDX && m_lpDX->m_device.Get() && m_lpDX->m_rootSignature.Get()) {
+      ID3D12Device* dev = m_lpDX->m_device.Get();
+      ID3D12RootSignature* rs = m_lpDX->m_rootSignature.Get();
+      DXGI_FORMAT fmt = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+      if (m_fallbackShaders_ps.warp.bytecodeBlob && g_pWarpVSBlob) {
+        m_dx12FallbackWarpPSO = DX12CreatePresetPSO(
+          dev, rs, fmt, g_pWarpVSBlob,
+          m_fallbackShaders_ps.warp.bytecodeBlob->GetBufferPointer(),
+          (UINT)m_fallbackShaders_ps.warp.bytecodeBlob->GetBufferSize(),
+          g_MyVertexLayout, _countof(g_MyVertexLayout), false);
+        DebugLogA(m_dx12FallbackWarpPSO ? "DX12: Fallback warp PSO created" : "DX12: Fallback warp PSO FAILED");
+      }
+
+      if (m_fallbackShaders_ps.comp.bytecodeBlob && g_pCompVSBlob) {
+        m_dx12FallbackCompPSO = DX12CreatePresetPSO(
+          dev, rs, fmt, g_pCompVSBlob,
+          m_fallbackShaders_ps.comp.bytecodeBlob->GetBufferPointer(),
+          (UINT)m_fallbackShaders_ps.comp.bytecodeBlob->GetBufferSize(),
+          g_MyVertexLayout, _countof(g_MyVertexLayout), false);
+        DebugLogA(m_dx12FallbackCompPSO ? "DX12: Fallback comp PSO created" : "DX12: Fallback comp PSO FAILED");
+      }
     }
 
     // Load the BLUR shaders...
@@ -2139,7 +2232,12 @@ int CPlugin::AllocateMyDX9Stuff() {
     bool bSuccess = false;
     DWORD vs_flags = D3DUSAGE_RENDERTARGET;// | D3DUSAGE_AUTOGENMIPMAP;//FIXME! (make automipgen optional)
     bool bRevertedBitDepth = false;
-    do {
+    if (!GetDevice()) {
+      // DX9 device not available (DX12 migration) — skip DX9 texture creation.
+      // DX12 render targets are created below.
+      bSuccess = true;
+    }
+    else do {
       SafeRelease(m_lpVS[0]);
       SafeRelease(m_lpVS[1]);
 
@@ -2209,50 +2307,63 @@ int CPlugin::AllocateMyDX9Stuff() {
 
     // create blur textures w/same format.  A complete mip chain costs 33% more video mem then 1 full-sized VS.
 #if (NUM_BLUR_TEX>0)
-    int w = m_nTexSizeX;
-    int h = m_nTexSizeY;
-    DWORD blurtex_flags = D3DUSAGE_RENDERTARGET;// | D3DUSAGE_AUTOGENMIPMAP;//FIXME! (make automipgen optional)
-    for (int i = 0; i < NUM_BLUR_TEX; i++) {
-      // main VS = 1024
-      // blur0 = 512
-      // blur1 = 256  <-  user sees this as "blur1"
-      // blur2 = 128
-      // blur3 = 128  <-  user sees this as "blur2"
-      // blur4 =  64
-      // blur5 =  64  <-  user sees this as "blur3"
-      if (!(i & 1) || (i < 2)) {
-        w = max(16, w / 2);
-        h = max(16, h / 2);
+    {
+      int w = m_nTexSizeX;
+      int h = m_nTexSizeY;
+      for (int i = 0; i < NUM_BLUR_TEX; i++) {
+        if (!(i & 1) || (i < 2)) {
+          w = max(16, w / 2);
+          h = max(16, h / 2);
+        }
+        m_nBlurTexW[i] = ((w + 3) / 16) * 16;
+        m_nBlurTexH[i] = ((h + 3) / 4) * 4;
       }
-      int w2 = ((w + 3) / 16) * 16;
-      int h2 = ((h + 3) / 4) * 4;
-      bSuccess = (GetDevice()->CreateTexture(w2, h2, 1, blurtex_flags, fmt, D3DPOOL_DEFAULT, &m_lpBlur[i], NULL) == D3D_OK);
-      m_nBlurTexW[i] = w2;
-      m_nBlurTexH[i] = h2;
-      if (!bSuccess) {
-        m_nBlurTexW[i] = 1;
-        m_nBlurTexH[i] = 1;
-        MessageBoxW(GetPluginWindow(), wasabiApiLangString(IDS_ERROR_CREATING_BLUR_TEXTURES, buf, sizeof(buf)),
-          wasabiApiLangString(IDS_MILKDROP_WARNING, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-        break;
-      }
+    }
 
-      // add it to m_textures[].
-      TexInfo x;
-      swprintf(x.texname, L"blur%d%s", i / 2 + 1, (i % 2) ? L"" : L"doNOTuseME");
-      x.texptr = m_lpBlur[i];
-      //x.texsize_param = NULL;
-      x.w = w2;
-      x.h = h2;
-      x.d = 1;
-      x.bEvictable = false;
-      x.nAge = m_nPresetsLoadedTotal;
-      x.nSizeInBytes = 0;
-      m_textures.push_back(x);
+    if (GetDevice()) {
+      DWORD blurtex_flags = D3DUSAGE_RENDERTARGET;
+      for (int i = 0; i < NUM_BLUR_TEX; i++) {
+        int w2 = m_nBlurTexW[i];
+        int h2 = m_nBlurTexH[i];
+        bSuccess = (GetDevice()->CreateTexture(w2, h2, 1, blurtex_flags, fmt, D3DPOOL_DEFAULT, &m_lpBlur[i], NULL) == D3D_OK);
+        if (!bSuccess) {
+          m_nBlurTexW[i] = 1;
+          m_nBlurTexH[i] = 1;
+          MessageBoxW(GetPluginWindow(), wasabiApiLangString(IDS_ERROR_CREATING_BLUR_TEXTURES, buf, sizeof(buf)),
+            wasabiApiLangString(IDS_MILKDROP_WARNING, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+          break;
+        }
+
+        // add it to m_textures[].
+        TexInfo x;
+        swprintf(x.texname, L"blur%d%s", i / 2 + 1, (i % 2) ? L"" : L"doNOTuseME");
+        x.texptr = m_lpBlur[i];
+        x.w = w2;
+        x.h = h2;
+        x.d = 1;
+        x.bEvictable = false;
+        x.nAge = m_nPresetsLoadedTotal;
+        x.nSizeInBytes = 0;
+        m_textures.push_back(x);
+      }
     }
 #endif
   }
 
+  // DX12 render targets — create alongside the (now-inert) DX9 textures above
+  if (m_lpDX && m_lpDX->m_device) {
+    m_dx12VS[0] = m_lpDX->CreateRenderTargetTexture(m_nTexSizeX, m_nTexSizeY, DXGI_FORMAT_R8G8B8A8_UNORM);
+    m_dx12VS[1] = m_lpDX->CreateRenderTargetTexture(m_nTexSizeX, m_nTexSizeY, DXGI_FORMAT_R8G8B8A8_UNORM);
+    // No binding blocks needed — per-frame bindings (UpdatePerFrameBindings) handle VS textures
+
+#if (NUM_BLUR_TEX > 0)
+    for (int i = 0; i < NUM_BLUR_TEX; i++) {
+      int bw = m_nBlurTexW[i] > 0 ? m_nBlurTexW[i] : 16;
+      int bh = m_nBlurTexH[i] > 0 ? m_nBlurTexH[i] : 16;
+      m_dx12Blur[i] = m_lpDX->CreateRenderTargetTexture(bw, bh, DXGI_FORMAT_R8G8B8A8_UNORM);
+    }
+#endif
+  }
 
   m_fAspectX = (m_nTexSizeY > m_nTexSizeX) ? m_nTexSizeX / (float)m_nTexSizeY : 1.0f;
   m_fAspectY = (m_nTexSizeX > m_nTexSizeY) ? m_nTexSizeY / (float)m_nTexSizeX : 1.0f;
@@ -2459,27 +2570,29 @@ int CPlugin::AllocateMyDX9Stuff() {
     return false;
   }
 
-  if (D3DXCreateFontW(GetDevice(),
-    songtitle_font_size,
-    0,
-    m_fontinfo[SONGTITLE_FONT].bBold ? 900 : 400,
-    1,
-    m_fontinfo[SONGTITLE_FONT].bItalic,
-    DEFAULT_CHARSET,
-    OUT_DEFAULT_PRECIS,
-    ANTIALIASED_QUALITY,//DEFAULT_QUALITY,
-    DEFAULT_PITCH,
-    m_fontinfo[SONGTITLE_FONT].szFace,
-    &m_d3dx_title_font_doublesize
-  ) != D3D_OK) {
-    MessageBoxW(GetPluginWindow(), wasabiApiLangString(IDS_ERROR_CREATING_DOUBLE_SIZED_D3DX_TITLE_FONT),
-      wasabiApiLangString(IDS_MILKDROP_ERROR, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-    return false;
+  if (GetDevice()) {
+    if (D3DXCreateFontW(GetDevice(),
+      songtitle_font_size,
+      0,
+      m_fontinfo[SONGTITLE_FONT].bBold ? 900 : 400,
+      1,
+      m_fontinfo[SONGTITLE_FONT].bItalic,
+      DEFAULT_CHARSET,
+      OUT_DEFAULT_PRECIS,
+      ANTIALIASED_QUALITY,//DEFAULT_QUALITY,
+      DEFAULT_PITCH,
+      m_fontinfo[SONGTITLE_FONT].szFace,
+      &m_d3dx_title_font_doublesize
+    ) != D3D_OK) {
+      MessageBoxW(GetPluginWindow(), wasabiApiLangString(IDS_ERROR_CREATING_DOUBLE_SIZED_D3DX_TITLE_FONT),
+        wasabiApiLangString(IDS_MILKDROP_ERROR, title, sizeof(title)), MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+      return false;
+    }
+
+    // -----------------
+
+    m_texmgr.Init(GetDevice());
   }
-
-  // -----------------
-
-  m_texmgr.Init(GetDevice());
 
   //dumpmsg("Init: mesh allocation");
   m_verts = new MYVERTEX[(m_nGridX + 1) * (m_nGridY + 1)];
@@ -2630,8 +2743,10 @@ int CPlugin::AllocateMyDX9Stuff() {
       m_bPresetLockedByUser = false;
     m_bInitialPresetSelected = true;
   }
-  else
+  else {
     LoadShaders(&m_shaders, m_pState, false, false);  // Also force-load the shaders - otherwise they'd only get compiled on a preset switch.
+    CreateDX12PresetPSOs();
+  }
 
   return true;
 }
@@ -2671,6 +2786,7 @@ DWORD dwCubicInterpolate(DWORD y0, DWORD y1, DWORD y2, DWORD y3, float t) {
 }
 
 bool CPlugin::AddNoiseTex(const wchar_t* szTexName, int size, int zoom_factor) {
+  if (!GetDevice()) return true;  // DX12 migration: skip DX9 noise texture creation
   // size = width & height of the texture;
   // zoom_factor = how zoomed-in the texture features should be.
   //           1 = random noise
@@ -2795,6 +2911,7 @@ bool CPlugin::AddNoiseTex(const wchar_t* szTexName, int size, int zoom_factor) {
 }
 
 bool CPlugin::AddNoiseVol(const wchar_t* szTexName, int size, int zoom_factor) {
+  if (!GetDevice()) return true;  // DX12 migration: skip DX9 volume noise texture creation
   // size = width & height & depth of the texture;
   // zoom_factor = how zoomed-in the texture features should be.
   //           1 = random noise
@@ -2949,6 +3066,7 @@ void VShaderInfo::Clear() {
 void PShaderInfo::Clear() {
   SafeRelease(ptr);
   SafeRelease(CT);
+  SafeRelease(bytecodeBlob);
   params.Clear();
 }
 
@@ -3402,7 +3520,10 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
             else {
               g_plugin.AddError(buf, 6.0f, ERR_PRESET, true);
             }
-            return;
+            // Don't return early — continue so pass 2 can still bind
+            // float4 constants (time, fps, Q-vars, etc.). The missing
+            // texture slot will just sample black at runtime.
+            continue;
           }
 
           g_plugin.m_textures.push_back(x);
@@ -3528,7 +3649,7 @@ bool CPlugin::RecompileVShader(const char* szShadersText, VShaderInfo* si, int s
     lstrcpy(ver, "vs_1_1");
 
   // LOAD SHADER
-  if (!LoadShaderFromMemory(szShadersText, "VS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly))
+  if (!LoadShaderFromMemory(szShadersText, "VS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly, nullptr))
     return false;
 
   if (!bCompileOnly) {
@@ -3566,7 +3687,7 @@ bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int s
   default: assert(0); break;
   }
 
-  if (!LoadShaderFromMemory(szShadersText, "PS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly))
+  if (!LoadShaderFromMemory(szShadersText, "PS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly, &si->bytecodeBlob))
     return false;
 
   if (!bCompileOnly) {
@@ -3578,42 +3699,104 @@ bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int s
 }
 
 bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly) {
-  if (m_nMaxPSVersion <= 0)
+  if (m_nMaxPSVersion <= 0) {
+    DebugLogA("DX12: LoadShaders: m_nMaxPSVersion <= 0, skipping");
     return true;
+  }
 
   // load one of the pixel shaders
-  if (!sh->warp.ptr && pState->m_nWarpPSVersion > 0) {
+  {
+    char dbg[256];
+    sprintf(dbg, "DX12: LoadShaders: warp.ptr=%p warp.CT=%p nWarpPSVersion=%d nMaxPS=%d",
+            (void*)sh->warp.ptr, (void*)sh->warp.CT, pState->m_nWarpPSVersion, m_nMaxPSVersion);
+    DebugLogA(dbg);
+  }
+  if (!sh->warp.ptr && !sh->warp.CT && pState->m_nWarpPSVersion > 0) {
     bool bOK = RecompilePShader(pState->m_szWarpShadersText, &sh->warp, SHADER_WARP, false, pState->m_nWarpPSVersion, bCompileOnly);
+    {
+      char dbg[256];
+      sprintf(dbg, "DX12: LoadShaders warp: bOK=%d bytecodeBlob=%p CT=%p ptr=%p",
+              bOK, (void*)sh->warp.bytecodeBlob, (void*)sh->warp.CT, (void*)sh->warp.ptr);
+      DebugLogA(dbg);
+    }
     if (!bOK) {
       // switch to fallback shader
-      m_fallbackShaders_ps.warp.ptr->AddRef();
-      m_fallbackShaders_ps.warp.CT->AddRef();
+      if (m_fallbackShaders_ps.warp.ptr) m_fallbackShaders_ps.warp.ptr->AddRef();
+      if (m_fallbackShaders_ps.warp.CT) m_fallbackShaders_ps.warp.CT->AddRef();
+      if (m_fallbackShaders_ps.warp.bytecodeBlob) m_fallbackShaders_ps.warp.bytecodeBlob->AddRef();
       memcpy(&sh->warp, &m_fallbackShaders_ps.warp, sizeof(PShaderInfo));
-      // cancel any slow-preset-load
-      //m_nLoadingPreset = 1000;
     }
 
     if (bTick)
       return true;
   }
 
-  if (!sh->comp.ptr && pState->m_nCompPSVersion > 0) {
+  {
+    char dbg[256];
+    sprintf(dbg, "DX12: LoadShaders: comp.ptr=%p comp.CT=%p nCompPSVersion=%d",
+            (void*)sh->comp.ptr, (void*)sh->comp.CT, pState->m_nCompPSVersion);
+    DebugLogA(dbg);
+  }
+  if (!sh->comp.ptr && !sh->comp.CT && pState->m_nCompPSVersion > 0) {
     bool bOK = RecompilePShader(pState->m_szCompShadersText, &sh->comp, SHADER_COMP, false, pState->m_nCompPSVersion, bCompileOnly);
+    {
+      char dbg[256];
+      sprintf(dbg, "DX12: LoadShaders comp: bOK=%d bytecodeBlob=%p CT=%p ptr=%p",
+              bOK, (void*)sh->comp.bytecodeBlob, (void*)sh->comp.CT, (void*)sh->comp.ptr);
+      DebugLogA(dbg);
+    }
     if (!bOK) {
       // switch to fallback shader
-      m_fallbackShaders_ps.comp.ptr->AddRef();
-      m_fallbackShaders_ps.comp.CT->AddRef();
+      if (m_fallbackShaders_ps.comp.ptr) m_fallbackShaders_ps.comp.ptr->AddRef();
+      if (m_fallbackShaders_ps.comp.CT) m_fallbackShaders_ps.comp.CT->AddRef();
+      if (m_fallbackShaders_ps.comp.bytecodeBlob) m_fallbackShaders_ps.comp.bytecodeBlob->AddRef();
       memcpy(&sh->comp, &m_fallbackShaders_ps.comp, sizeof(PShaderInfo));
-      // cancel any slow-preset-load
-      //m_nLoadingPreset = 1000;
     }
   }
 
   return true;
 }
 
+void CPlugin::CreateDX12PresetPSOs() {
+  if (!m_lpDX || !m_lpDX->m_device.Get() || !m_lpDX->m_rootSignature.Get())
+    return;
+
+  ID3D12Device* device = m_lpDX->m_device.Get();
+  ID3D12RootSignature* rootSig = m_lpDX->m_rootSignature.Get();
+  DXGI_FORMAT rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+  // Create warp PSO from current shader bytecode
+  m_dx12WarpPSO.Reset();
+  m_warpMainTexSlot = 0;
+  if (m_shaders.warp.bytecodeBlob && g_pWarpVSBlob) {
+    m_dx12WarpPSO = DX12CreatePresetPSO(
+      device, rootSig, rtvFormat,
+      g_pWarpVSBlob,
+      m_shaders.warp.bytecodeBlob->GetBufferPointer(),
+      (UINT)m_shaders.warp.bytecodeBlob->GetBufferSize(),
+      g_MyVertexLayout, _countof(g_MyVertexLayout),
+      false, &m_warpMainTexSlot);
+    if (m_warpMainTexSlot == UINT_MAX) m_warpMainTexSlot = 0;
+  }
+
+  // Create comp PSO from current shader bytecode
+  m_dx12CompPSO.Reset();
+  m_compMainTexSlot = 0;
+  if (m_shaders.comp.bytecodeBlob && g_pCompVSBlob) {
+    m_dx12CompPSO = DX12CreatePresetPSO(
+      device, rootSig, rtvFormat,
+      g_pCompVSBlob,
+      m_shaders.comp.bytecodeBlob->GetBufferPointer(),
+      (UINT)m_shaders.comp.bytecodeBlob->GetBufferSize(),
+      g_MyVertexLayout, _countof(g_MyVertexLayout),
+      false, &m_compMainTexSlot);
+    if (m_compMainTexSlot == UINT_MAX) m_compMainTexSlot = 0;
+  }
+}
+
 bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, char* szProfile,
-  LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly) {
+  LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly,
+  LPD3DXBUFFER* ppBytecodeOut) {
 
   const char szWarpDefines[] = "#define rad _rad_ang.x\n"
     "#define ang _rad_ang.y\n"
@@ -3769,12 +3952,10 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   }
 
   if (pShaderByteCode != NULL && !compileOnly) {
-    // restore ConstTable from bytecode
-    HRESULT hr = D3DXGetShaderConstantTable(
-      (DWORD*)pShaderByteCode->GetBufferPointer(),
-      ppConstTable // pass the pointer to pointer
-    );
-
+    // restore ConstTable from cached bytecode via D3DReflect
+    *ppConstTable = DX12ConstantTable::CreateFromBytecode(
+      pShaderByteCode->GetBufferPointer(),
+      pShaderByteCode->GetBufferSize());
   }
   else {
     HRESULT hresult = D3DXCompileShader(
@@ -3828,7 +4009,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   }
 
   // load ok, create the shader
-  if (!compileOnly) {
+  if (!compileOnly && GetDevice()) {
     HRESULT hr = 1;
     if (szProfile[0] == 'v') {
       hr = GetDevice()->CreateVertexShader((const unsigned long*)(pShaderByteCode->GetBufferPointer()), (IDirect3DVertexShader9**)ppShader);
@@ -3850,7 +4031,12 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
     }
   }
 
-  pShaderByteCode->Release();
+  // Store bytecode for DX12 PSO creation if requested
+  if (ppBytecodeOut) {
+    *ppBytecodeOut = pShaderByteCode; // transfer ownership
+  } else {
+    pShaderByteCode->Release();
+  }
   pShaderByteCode = nullptr;
 
   return true;
@@ -3890,8 +4076,10 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // Otherwise the old preset wouldn't get all reloaded, and it app would crash
   //  when trying to use its stuff.
   if (m_nLoadingPreset != 0) {
-    // finish up the pre-load & start the official blend
-    m_nLoadingPreset = 8;
+    // finish up the pre-load — must wait for bg thread to complete
+    if (m_presetLoadThread.joinable())
+      m_presetLoadThread.join();
+    m_bPresetLoadReady = true;
     LoadPresetTick();
   }
   // just force this:
@@ -3957,7 +4145,19 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   //SafeRelease( m_pCompiledFragments );
   //SafeRelease( m_pFragmentLinker );
 
-  // 2. release stuff
+  // 2. release DX12 dynamic textures and reclaim descriptor heap slots
+  // (caller CleanUpDX9Stuff already called WaitForGpu before us)
+  if (m_lpDX) {
+    m_dx12VS[0].Reset();
+    m_dx12VS[1].Reset();
+#if (NUM_BLUR_TEX > 0)
+    for (int bi = 0; bi < NUM_BLUR_TEX; bi++)
+      m_dx12Blur[bi].Reset();
+#endif
+    m_lpDX->ResetDynamicDescriptors();
+  }
+
+  // 2b. release stuff
   SafeRelease(m_lpVS[0]);
   SafeRelease(m_lpVS[1]);
 
@@ -4507,6 +4707,7 @@ void CPlugin::AddNotificationAudioDevice() {
 }
 
 void CPlugin::AddError(wchar_t* szMsg, float fDuration, int category, bool bBold) {
+  DebugLogW(szMsg);
   OutputDebugStringW(szMsg);
   if (category == ERR_NOTIFY)
     ClearErrors(category);
@@ -5169,6 +5370,7 @@ void CPlugin::MyRenderUI(
             if (ApplyFlags & STATE_COMP)
               SafeRelease(m_shaders.comp.ptr);
             LoadShaders(&m_shaders, m_pState, false, false);
+            CreateDX12PresetPSOs();
 
             SetMenusForPresetVersion(m_pState->m_nWarpPSVersion, m_pState->m_nCompPSVersion);
           }
@@ -5981,6 +6183,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         m_pState->m_nMaxPSVersion = max(m_pState->m_nWarpPSVersion, m_pState->m_nCompPSVersion);
 
         LoadShaders(&m_shaders, m_pState, false, false);
+        CreateDX12PresetPSOs();
         SetMenusForPresetVersion(m_pState->m_nWarpPSVersion, m_pState->m_nCompPSVersion);
       }
       if (wParam != 13)
@@ -7252,14 +7455,14 @@ int CPlugin::SetSpoutFixedSize(bool toggleSwitch, bool showNotifications) {
     d3dPp.BackBufferWidth = nSpoutFixedWidth;
     d3dPp.BackBufferHeight = nSpoutFixedHeight;
     UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
-    GetDevice()->Reset(&d3dPp);
+    if (GetDevice()) GetDevice()->Reset(&d3dPp);
   }
   else {
     // bSpoutFixedSize OR bSpoutOut is false
     // Update window properties
     SetVariableBackBuffer(m_WindowWidth, m_WindowFixedHeight);
     UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
-    GetDevice()->Reset(&d3dPp);
+    if (GetDevice()) GetDevice()->Reset(&d3dPp);
     if (toggleSwitch && showNotifications && bSpoutOut) {
       AddNotification(L"Fixed Spout output size disabled");
     }
@@ -8004,6 +8207,7 @@ void CPlugin::WriteRealtimeConfig() {
 }
 
 void CPlugin::dumpmsg(wchar_t* s) {
+  DebugLogW(s);
 #if _DEBUG
   OutputDebugStringW(s);
   if (s[0]) {
@@ -8055,20 +8259,17 @@ void CPlugin::LoadRandomPreset(float fBlendTime) {
 
   // make sure file list is ok
   if (m_nPresets - m_nDirs == 0) {
-    if (m_nPresets - m_nDirs == 0) {
-      // note: this error message is repeated in milkdropfs.cpp in DrawText()
-      wchar_t buf[1024];
-      swprintf(buf, wasabiApiLangString(IDS_ERROR_NO_PRESET_FILE_FOUND_IN_X_MILK), m_szPresetDir);
-      AddError(buf, 6.0f, ERR_MISC, true);
+    wchar_t buf[1024];
+    swprintf(buf, wasabiApiLangString(IDS_ERROR_NO_PRESET_FILE_FOUND_IN_X_MILK), m_szPresetDir);
+    AddError(buf, 6.0f, ERR_MISC, true);
+    DebugLogA("ERROR: No preset files found in preset directory");
 
-      // also bring up the dir. navigation menu...
-      if (m_UI_mode == UI_REGULAR || m_UI_mode == UI_MENU) {
-        m_UI_mode = UI_LOAD;
-        m_bUserPagedUp = false;
-        m_bUserPagedDown = false;
-      }
-      return;
+    if (m_UI_mode == UI_REGULAR || m_UI_mode == UI_MENU) {
+      m_UI_mode = UI_LOAD;
+      m_bUserPagedUp = false;
+      m_bUserPagedDown = false;
     }
+    return;
   }
 
   bool bHistoryEmpty = (m_presetHistoryFwdFence == m_presetHistoryBackFence);
@@ -9279,10 +9480,13 @@ void CPlugin::ClearPreset() {
   SafeRelease(m_OldShaders.warp.ptr);
   SafeRelease(m_OldShaders.comp.CT);
   SafeRelease(m_OldShaders.warp.CT);
+  SafeRelease(m_OldShaders.comp.bytecodeBlob);
+  SafeRelease(m_OldShaders.warp.bytecodeBlob);
   m_OldShaders = m_shaders;
   ZeroMemory(&m_shaders, sizeof(PShaderSet));
 
   LoadShaders(&m_shaders, m_pState, false, false);
+  CreateDX12PresetPSOs();
   NumTotalPresetsLoaded++;
   OnFinishedLoadingPreset();
 }
@@ -9372,30 +9576,54 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
     SafeRelease(m_OldShaders.warp.ptr);
     SafeRelease(m_OldShaders.comp.CT);
     SafeRelease(m_OldShaders.warp.CT);
+    SafeRelease(m_OldShaders.comp.bytecodeBlob);
+    SafeRelease(m_OldShaders.warp.bytecodeBlob);
     m_OldShaders = m_shaders;
     ZeroMemory(&m_shaders, sizeof(PShaderSet));
 
     LoadShaders(&m_shaders, m_pState, false, false);
+    CreateDX12PresetPSOs();
     NumTotalPresetsLoaded++;
     OnFinishedLoadingPreset();
   }
   else {
-    // set ourselves up to load the preset (and esp. compile shaders) a little bit at a time
+    // DX12: async preset loading on a background thread.
+    // Import + shader compilation run off the main thread so the current
+    // preset keeps rendering without stutter. When the thread finishes,
+    // LoadPresetTick() detects it and does an instant hard-cut swap.
+
+    // If a previous load is still running, wait for it first
+    if (m_presetLoadThread.joinable()) {
+      m_presetLoadThread.join();
+      m_bPresetLoadReady = false;
+    }
+
     SafeRelease(m_NewShaders.comp.ptr);
     SafeRelease(m_NewShaders.warp.ptr);
+    SafeRelease(m_NewShaders.comp.bytecodeBlob);
+    SafeRelease(m_NewShaders.warp.bytecodeBlob);
     ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
 
+    m_nLoadingPreset = 1;  // signals "load in progress" to the rest of the code
+    m_bPresetLoadReady = false;
+    m_fLoadingPresetBlendTime = fBlendTime;
+    lstrcpyW(m_szLoadingPreset, szPresetFilename);
+    NumTotalPresetsLoaded++;
+
+    // Capture values the thread needs (avoid reading member vars from bg thread)
+    float loadTime = GetTime();
     DWORD ApplyFlags = STATE_ALL;
     ApplyFlags ^= (m_bWarpShaderLock ? STATE_WARP : 0);
     ApplyFlags ^= (m_bCompShaderLock ? STATE_COMP : 0);
 
-    m_pNewState->Import(szPresetFilename, GetTime(), m_pOldState, ApplyFlags);
-
-    m_nLoadingPreset = 1;   // this will cause LoadPresetTick() to get called over the next few frames...
-
-    m_fLoadingPresetBlendTime = fBlendTime;
-    lstrcpyW(m_szLoadingPreset, szPresetFilename);
-    NumTotalPresetsLoaded++;
+    m_presetLoadThread = std::thread([this, loadTime, ApplyFlags]() {
+      // Import preset (parses .milk file, compiles NSEEL expressions)
+      m_pNewState->Import(m_szLoadingPreset, loadTime, m_pOldState, ApplyFlags);
+      // Compile both warp + comp pixel shaders (D3DCompile — the expensive part)
+      LoadShaders(&m_NewShaders, m_pNewState, false, false);
+      // Signal main thread that we're ready for the swap
+      m_bPresetLoadReady.store(true);
+    });
   }
 }
 
@@ -9475,12 +9703,13 @@ void CPlugin::PostMessageToMilkwaveRemote(UINT msg) {
 }
 
 void CPlugin::LoadPresetTick() {
-  if (m_nLoadingPreset == 2 || m_nLoadingPreset == 5) {
-    // just loads one shader (warp or comp) then returns.
-    LoadShaders(&m_NewShaders, m_pNewState, true, false);
-  }
-  else if (m_nLoadingPreset == 8) {
-    // finished loading the shaders - apply the preset!
+  if (m_nLoadingPreset > 0 && m_bPresetLoadReady.load()) {
+    // Background thread finished — join it and apply the preset
+    if (m_presetLoadThread.joinable())
+      m_presetLoadThread.join();
+    m_bPresetLoadReady = false;
+
+    // Apply the preset: swap state pointers
     lstrcpyW(m_szCurrentPresetFile, m_szLoadingPreset);
     m_szLoadingPreset[0] = 0;
 
@@ -9492,10 +9721,10 @@ void CPlugin::LoadPresetTick() {
     m_pState = m_pNewState;
     m_pNewState = temp;
 
-    RandomizeBlendPattern();
-
-    //if (fBlendTime >= 0.001f)
-    m_pState->StartBlendFrom(m_pOldState, GetTime(), m_fLoadingPresetBlendTime);
+    // DX12: hard cut — no smooth blend. StartBlendFrom copies needed
+    // state values (old wave mode, etc.) then we immediately disable blending.
+    m_pState->StartBlendFrom(m_pOldState, GetTime(), 0);
+    m_pState->m_bBlending = false;
 
     m_fPresetStartTime = GetTime();
     m_fNextPresetTime = -1.0f;		// flags UpdateTime() to recompute this
@@ -9503,18 +9732,20 @@ void CPlugin::LoadPresetTick() {
     // release stuff from m_OldShaders, then move m_shaders to m_OldShaders, then load the new shaders.
     SafeRelease(m_OldShaders.comp.ptr);
     SafeRelease(m_OldShaders.warp.ptr);
+    SafeRelease(m_OldShaders.comp.bytecodeBlob);
+    SafeRelease(m_OldShaders.warp.bytecodeBlob);
     m_OldShaders = m_shaders;
     m_shaders = m_NewShaders;
     ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
 
-    // end slow-preset-load mode
+    // end loading mode
     m_nLoadingPreset = 0;
 
+    // Defer PSO creation to next frame's render pass — releasing old PSOs here
+    // would destroy them while the current frame's command list still references them.
+    m_bDX12PSOsDirty = true;
     OnFinishedLoadingPreset();
   }
-
-  if (m_nLoadingPreset > 0)
-    m_nLoadingPreset++;
 }
 
 void CPlugin::SeekToPreset(wchar_t cStartChar) {
@@ -9534,8 +9765,10 @@ void CPlugin::SeekToPreset(wchar_t cStartChar) {
 
 void CPlugin::FindValidPresetDir() {
   swprintf(m_szPresetDir, L"%spresets\\", m_szMilkdrop2Path);
-  if (GetFileAttributesW(m_szPresetDir) != -1)
+  if (GetFileAttributesW(m_szPresetDir) != -1) {
+    TryDescendIntoPresetSubdirHelper(m_szPresetDir);
     return;
+  }
   lstrcpyW(m_szPresetDir, m_szMilkdrop2Path);
   if (GetFileAttributesW(m_szPresetDir) != -1)
     return;
@@ -11176,7 +11409,7 @@ void CPlugin::CaptureScreenshot() {
 }
 
 bool CPlugin::CaptureScreenshotWithFilename(wchar_t* outFilename, size_t outFilenameSize) {
-LPDIRECT3DDEVICE9EX pDevice = GetDevice();
+LPDIRECT3DDEVICE9 pDevice = GetDevice();  // Phase 1: DX12 migration; GetDevice() returns nullptr
 if (!pDevice) {
   OutputDebugStringW(L"[CaptureScreenshot] ERROR: Device not available\n");
   milkwave->LogInfo(L"CaptureScreenshot: Device not available");
@@ -11793,7 +12026,7 @@ bool CPlugin::OpenSender(unsigned int width, unsigned int height) {
   // Set up for using the application DX9ex device.
   // The sender shared texture is then created using this device.
   // Only possible for DX9 mode.
-  spoutsender.SetDX9device(GetDevice());
+  spoutsender.SetDX9device((IDirect3DDevice9Ex*)GetDevice());  // Phase 1: GetDevice() returns nullptr; Spout disabled until Phase 5
 
   // Give the sender a name
   spoutsender.SetSenderName(WinampSenderName);

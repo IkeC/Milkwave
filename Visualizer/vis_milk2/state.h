@@ -35,7 +35,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include "texmgr.h"
 
-#include <d3dx9math.h> // for D3DXVECTOR3
+#include "d3dx9compat.h" // replaces <d3dx9math.h>; provides D3DXVECTOR3 etc. for DX9→DX12 migration
 
 //#include "evallib/eval.h"
 #include "../ns-eel2-shim/ns-eel.h"
