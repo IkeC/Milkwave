@@ -215,9 +215,6 @@ namespace MilkwaveRemote
       chkPresetLocked = new CheckBox();
       chkVideoMix = new CheckBox();
       chkSpoutMix = new CheckBox();
-      numInputMixOpacity = new NumericUpDown();
-      numLumaThreshold = new NumericUpDown();
-      numLumaSoftness = new NumericUpDown();
       chkMixLumaActive = new CheckBox();
       label13 = new Label();
       label12 = new Label();
@@ -225,6 +222,9 @@ namespace MilkwaveRemote
       label11 = new Label();
       label10 = new Label();
       label14 = new Label();
+      numInputMixOpacity = new NumericUpDown();
+      numLumaThreshold = new NumericUpDown();
+      numLumaSoftness = new NumericUpDown();
       cboSettingsOpenFile = new ComboBox();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
@@ -2670,42 +2670,6 @@ namespace MilkwaveRemote
       chkSpoutMix.UseVisualStyleBackColor = true;
       chkSpoutMix.CheckedChanged += chkSpoutMix_CheckedChanged;
       // 
-      // numInputMixOpacity
-      // 
-      numInputMixOpacity.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numInputMixOpacity.Location = new Point(72, 96);
-      numInputMixOpacity.Name = "numInputMixOpacity";
-      numInputMixOpacity.Size = new Size(46, 23);
-      numInputMixOpacity.TabIndex = 134;
-      numInputMixOpacity.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numInputMixOpacity, "Opacity");
-      numInputMixOpacity.Value = new decimal(new int[] { 50, 0, 0, 0 });
-      numInputMixOpacity.ValueChanged += numInputMixOpacity_ValueChanged;
-      // 
-      // numLumaThreshold
-      // 
-      numLumaThreshold.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numLumaThreshold.Location = new Point(72, 67);
-      numLumaThreshold.Name = "numLumaThreshold";
-      numLumaThreshold.Size = new Size(46, 23);
-      numLumaThreshold.TabIndex = 136;
-      numLumaThreshold.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numLumaThreshold, "Luma key threshold (Cutoff brightness for black removal)");
-      numLumaThreshold.Value = new decimal(new int[] { 20, 0, 0, 0 });
-      numLumaThreshold.ValueChanged += numLumaThreshold_ValueChanged;
-      // 
-      // numLumaSoftness
-      // 
-      numLumaSoftness.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numLumaSoftness.Location = new Point(190, 67);
-      numLumaSoftness.Name = "numLumaSoftness";
-      numLumaSoftness.Size = new Size(46, 23);
-      numLumaSoftness.TabIndex = 137;
-      numLumaSoftness.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numLumaSoftness, "Luma key softness (Smoothing range for removal)");
-      numLumaSoftness.Value = new decimal(new int[] { 20, 0, 0, 0 });
-      numLumaSoftness.ValueChanged += numLumaSoftness_ValueChanged;
-      // 
       // chkMixLumaActive
       // 
       chkMixLumaActive.Appearance = Appearance.Button;
@@ -2787,6 +2751,39 @@ namespace MilkwaveRemote
       label14.Text = "Softness";
       label14.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label14, "Luma Key softness\r\nControls the feathering/transparency gradient at the edges of the cutoff\r\n");
+      // 
+      // numInputMixOpacity
+      // 
+      numInputMixOpacity.Increment = new decimal(new int[] { 2, 0, 0, 0 });
+      numInputMixOpacity.Location = new Point(72, 96);
+      numInputMixOpacity.Name = "numInputMixOpacity";
+      numInputMixOpacity.Size = new Size(46, 23);
+      numInputMixOpacity.TabIndex = 134;
+      numInputMixOpacity.TextAlign = HorizontalAlignment.Center;
+      numInputMixOpacity.Value = new decimal(new int[] { 50, 0, 0, 0 });
+      numInputMixOpacity.ValueChanged += numInputMixOpacity_ValueChanged;
+      // 
+      // numLumaThreshold
+      // 
+      numLumaThreshold.Increment = new decimal(new int[] { 2, 0, 0, 0 });
+      numLumaThreshold.Location = new Point(72, 67);
+      numLumaThreshold.Name = "numLumaThreshold";
+      numLumaThreshold.Size = new Size(46, 23);
+      numLumaThreshold.TabIndex = 136;
+      numLumaThreshold.TextAlign = HorizontalAlignment.Center;
+      numLumaThreshold.Value = new decimal(new int[] { 20, 0, 0, 0 });
+      numLumaThreshold.ValueChanged += numLumaThreshold_ValueChanged;
+      // 
+      // numLumaSoftness
+      // 
+      numLumaSoftness.Increment = new decimal(new int[] { 2, 0, 0, 0 });
+      numLumaSoftness.Location = new Point(190, 67);
+      numLumaSoftness.Name = "numLumaSoftness";
+      numLumaSoftness.Size = new Size(46, 23);
+      numLumaSoftness.TabIndex = 137;
+      numLumaSoftness.TextAlign = HorizontalAlignment.Center;
+      numLumaSoftness.Value = new decimal(new int[] { 20, 0, 0, 0 });
+      numLumaSoftness.ValueChanged += numLumaSoftness_ValueChanged;
       // 
       // cboSettingsOpenFile
       // 

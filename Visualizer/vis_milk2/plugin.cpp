@@ -5924,15 +5924,19 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
 
     // Standard message handling (dwData == 1)
     if (pCopyData->dwData == 1) { // Custom identifier for the message
-      wchar_t* receivedMessage = (wchar_t*)pCopyData->lpData;
-      if (!receivedMessage) return 0;
+      wchar_t* receivedMessageRaw = (wchar_t*)pCopyData->lpData;
+      if (!receivedMessageRaw) return 0;
 
       // Calculate the length in wchar_t units
       size_t messageLength = pCopyData->cbData / sizeof(wchar_t);
 
-      // Ensure the received message is null-terminated
       if (messageLength > 0) {
-        LaunchMessage(receivedMessage);
+        // Create a local safe copy that is guaranteed to be null-terminated
+        std::wstring safeMessage(receivedMessageRaw, messageLength);
+        // Note: safeMessage.c_str() is guaranteed to be null-terminated.
+        // We cast to non-const because LaunchMessage doesn't modify the string, 
+        // but its signature doesn't say const.
+        LaunchMessage((wchar_t*)safeMessage.c_str());
       }
       return 0; // Message handled
     }

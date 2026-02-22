@@ -1170,7 +1170,7 @@ namespace MilkwaveRemote {
     }
 
     private void SendStringMessage(IntPtr windowHandle, int messageId, string message) {
-      byte[] messageBytes = Encoding.Unicode.GetBytes(message);
+      byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
       IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
       Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
 
@@ -1749,20 +1749,20 @@ namespace MilkwaveRemote {
                 string size = GetParam("size", message);
                 if (size.Length > 0) {
                   int newSize = (int)(int.Parse(size) * 1.8);
-                  message = message.Replace("size=" + size, "size=" + newSize);
-                }
-              }
-            }
+                        message = message.Replace("size=" + size, "size=" + newSize);
+                      }
+                    }
+                  }
 
-            byte[] messageBytes = Encoding.Unicode.GetBytes(message);
-            IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
-            Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
+                  byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
+                  IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
+                  Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
 
-            COPYDATASTRUCT cds = new COPYDATASTRUCT {
-              dwData = 1,
-              cbData = messageBytes.Length,
-              lpData = messagePtr
-            };
+                  COPYDATASTRUCT cds = new COPYDATASTRUCT {
+                    dwData = 1,
+                    cbData = messageBytes.Length,
+                    lpData = messagePtr
+                  };
 
             SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
             if (statusMessage.Length > 0) {
