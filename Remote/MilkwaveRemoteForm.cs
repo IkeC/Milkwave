@@ -6302,6 +6302,15 @@ namespace MilkwaveRemote {
 
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
+          // Always send current mix settings (opacity and layer position) beforehand
+          if (enabled) {
+            int opacityInt = (int)numInputMixOpacity.Value;
+            bool onTop = chkInputTop.Checked;
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+            System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
+          }
+
           // Always send device index first (even if already sent) to ensure it's initialized
           if (enabled && cboVideoInput.SelectedIndex >= 0) {
             int deviceIndex = cboVideoInput.SelectedIndex;
@@ -6373,6 +6382,15 @@ namespace MilkwaveRemote {
 
         IntPtr foundWindow = FindVisualizerWindow();
         if (foundWindow != IntPtr.Zero) {
+          // Always send current mix settings (opacity and layer position) beforehand
+          if (enabled) {
+            int opacityInt = (int)numInputMixOpacity.Value;
+            bool onTop = chkInputTop.Checked;
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+            System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
+          }
+
           // Send sender name and then enable/disable mixing
           if (enabled && cboSputInput.SelectedIndex >= 0) {
             string senderName = cboSputInput.Text;

@@ -216,6 +216,8 @@ namespace MilkwaveRemote
       chkVideoMix = new CheckBox();
       chkSpoutMix = new CheckBox();
       numInputMixOpacity = new NumericUpDown();
+      numLumaThreshold = new NumericUpDown();
+      numLumaSoftness = new NumericUpDown();
       cboSettingsOpenFile = new ComboBox();
       btn00 = new Button();
       txtShaderGLSL = new TextBox();
@@ -294,6 +296,9 @@ namespace MilkwaveRemote
       numWavePushY = new NumericUpDown();
       numWavePushX = new NumericUpDown();
       tabInput = new TabPage();
+      chkMixLumaActive = new CheckBox();
+      label13 = new Label();
+      label12 = new Label();
       chkInputTop = new CheckBox();
       btnSpoutInputScan = new Button();
       cboSputInput = new ComboBox();
@@ -369,7 +374,6 @@ namespace MilkwaveRemote
       panShadertoyLocal = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
-      label12 = new Label();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -392,6 +396,8 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsHueAuto).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numInputMixOpacity).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numLumaThreshold).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numLumaSoftness).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numMidiBank).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).BeginInit();
@@ -2676,6 +2682,30 @@ namespace MilkwaveRemote
       numInputMixOpacity.Value = new decimal(new int[] { 100, 0, 0, 0 });
       numInputMixOpacity.ValueChanged += numInputMixOpacity_ValueChanged;
       // 
+      // numLumaThreshold
+      // 
+      numLumaThreshold.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numLumaThreshold.Increment = new decimal(new int[] { 2, 0, 0, 0 });
+      numLumaThreshold.Location = new Point(56, 96);
+      numLumaThreshold.Name = "numLumaThreshold";
+      numLumaThreshold.Size = new Size(46, 23);
+      numLumaThreshold.TabIndex = 136;
+      numLumaThreshold.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numLumaThreshold, "Opacity");
+      numLumaThreshold.Value = new decimal(new int[] { 50, 0, 0, 0 });
+      // 
+      // numLumaSoftness
+      // 
+      numLumaSoftness.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numLumaSoftness.Increment = new decimal(new int[] { 2, 0, 0, 0 });
+      numLumaSoftness.Location = new Point(108, 96);
+      numLumaSoftness.Name = "numLumaSoftness";
+      numLumaSoftness.Size = new Size(46, 23);
+      numLumaSoftness.TabIndex = 137;
+      numLumaSoftness.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numLumaSoftness, "Opacity");
+      numLumaSoftness.Value = new decimal(new int[] { 100, 0, 0, 0 });
+      // 
       // cboSettingsOpenFile
       // 
       cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
@@ -3777,6 +3807,10 @@ namespace MilkwaveRemote
       // 
       tabInput.BackColor = SystemColors.ControlLight;
       tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Controls.Add(chkMixLumaActive);
+      tabInput.Controls.Add(label13);
+      tabInput.Controls.Add(numLumaSoftness);
+      tabInput.Controls.Add(numLumaThreshold);
       tabInput.Controls.Add(label12);
       tabInput.Controls.Add(numInputMixOpacity);
       tabInput.Controls.Add(chkInputTop);
@@ -3794,6 +3828,38 @@ namespace MilkwaveRemote
       tabInput.Size = new Size(611, 183);
       tabInput.TabIndex = 7;
       tabInput.Text = "Input";
+      // 
+      // chkMixLumaActive
+      // 
+      chkMixLumaActive.Appearance = Appearance.Button;
+      chkMixLumaActive.FlatStyle = FlatStyle.System;
+      chkMixLumaActive.Location = new Point(160, 96);
+      chkMixLumaActive.Margin = new Padding(3, 2, 3, 2);
+      chkMixLumaActive.Name = "chkMixLumaActive";
+      chkMixLumaActive.Size = new Size(55, 23);
+      chkMixLumaActive.TabIndex = 140;
+      chkMixLumaActive.Text = "Active";
+      chkMixLumaActive.TextAlign = ContentAlignment.MiddleCenter;
+      chkMixLumaActive.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkMixLumaActive.UseVisualStyleBackColor = true;
+      // 
+      // label13
+      // 
+      label13.Location = new Point(5, 93);
+      label13.Name = "label13";
+      label13.Size = new Size(48, 24);
+      label13.TabIndex = 139;
+      label13.Text = "Luma";
+      label13.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // label12
+      // 
+      label12.Location = new Point(5, 64);
+      label12.Name = "label12";
+      label12.Size = new Size(48, 24);
+      label12.TabIndex = 135;
+      label12.Text = "Opacity";
+      label12.TextAlign = ContentAlignment.MiddleRight;
       // 
       // chkInputTop
       // 
@@ -4827,15 +4893,6 @@ namespace MilkwaveRemote
       splitContainerShader.SplitterDistance = 286;
       splitContainerShader.TabIndex = 31;
       // 
-      // label12
-      // 
-      label12.Location = new Point(5, 64);
-      label12.Name = "label12";
-      label12.Size = new Size(48, 24);
-      label12.TabIndex = 135;
-      label12.Text = "Opacity";
-      label12.TextAlign = ContentAlignment.MiddleRight;
-      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -4876,6 +4933,8 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).EndInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsHueAuto).EndInit();
       ((System.ComponentModel.ISupportInitialize)numInputMixOpacity).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numLumaThreshold).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numLumaSoftness).EndInit();
       ((System.ComponentModel.ISupportInitialize)numMidiBank).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisShift).EndInit();
       ((System.ComponentModel.ISupportInitialize)numVisIntensity).EndInit();
@@ -5279,5 +5338,9 @@ namespace MilkwaveRemote
     private NumericUpDown numericUpDown1;
     private NumericUpDown numInputMixOpacity;
     private Label label12;
+    private Label label13;
+    private NumericUpDown numLumaSoftness;
+    private NumericUpDown numLumaThreshold;
+    private CheckBox chkMixLumaActive;
   }
 }

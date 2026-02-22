@@ -176,7 +176,6 @@ void spoutDX9::CloseDirectX9()
 	}
 	m_pDevice = nullptr;
 	m_pD3D = nullptr;
-
 }
 
 // Function: CreateDX9object
