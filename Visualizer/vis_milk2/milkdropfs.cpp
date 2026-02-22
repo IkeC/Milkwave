@@ -1852,6 +1852,15 @@ void CPlugin::DX12_RenderWarpAndComposite()
   if (!m_lpDX || !m_lpDX->m_device || !m_lpDX->m_commandList)
     return;
 
+  {
+    static int s_frameNum = 0;
+    char dbg[256];
+    sprintf(dbg, "DX12: RenderWarpAndComposite frame=%d warpPSO=%p compPSO=%p warpCT=%p compCT=%p",
+            s_frameNum++, (void*)m_dx12WarpPSO.Get(), (void*)m_dx12CompPSO.Get(),
+            (void*)m_shaders.warp.CT, (void*)m_shaders.comp.CT);
+    DebugLogA(dbg);
+  }
+
   auto* cmdList = m_lpDX->m_commandList.Get();
 
   // Deferred PSO creation: safe here because previous frame's command list
@@ -2021,6 +2030,8 @@ void CPlugin::DX12_RenderWarpAndComposite()
     quad[3].tu = 1.f; quad[3].tv = 1.f; quad[3].tu_orig = 1.f; quad[3].tv_orig = 1.f; quad[3].rad = 1.f; quad[3].ang = 0.f;
     m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, quad, 4, sizeof(MYVERTEX));
   }
+
+  DebugLogA("DX12: RenderWarpAndComposite done");
 }
 
 // Forward declaration — defined later in this file

@@ -17,6 +17,7 @@ enum DX12PsoId {
     PSO_POINT_ADDITIVE_WFVERTEX,    // Point topology + SrcAlpha/One (additive dot waveforms)
     PSO_ADDITIVE_WFVERTEX,          // Triangle + SrcAlpha/One (additive shapes, untextured)
     PSO_ADDITIVE_SPRITEVERTEX,      // Triangle + SrcAlpha/One (additive shapes, textured)
+    PSO_PREMULALPHA_SPRITEVERTEX,   // Triangle + One/InvSrcAlpha (premultiplied alpha, textured)
     PSO_COUNT
 };
 

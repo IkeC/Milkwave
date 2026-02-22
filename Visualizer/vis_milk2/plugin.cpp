@@ -1168,12 +1168,8 @@ void CPlugin::MyPreInitialize() {
   //m_ps_warp = NULL;
   //m_vs_comp = NULL;
   //m_ps_comp = NULL;
-  ZeroMemory(&m_shaders, sizeof(PShaderSet));
-  ZeroMemory(&m_OldShaders, sizeof(PShaderSet));
-  ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
-  ZeroMemory(&m_fallbackShaders_vs, sizeof(VShaderSet));
-  ZeroMemory(&m_fallbackShaders_ps, sizeof(PShaderSet));
-  ZeroMemory(m_BlurShaders, sizeof(m_BlurShaders));
+  // Note: PShaderInfo/VShaderInfo constructors already initialize all members.
+  // Do NOT use ZeroMemory on these — it corrupts std::vector internals in Debug mode.
   m_bWarpShaderLock = false;
   m_bCompShaderLock = false;
   m_bNeedRescanTexturesDir = true;
@@ -2786,7 +2782,21 @@ DWORD dwCubicInterpolate(DWORD y0, DWORD y1, DWORD y2, DWORD y3, float t) {
 }
 
 bool CPlugin::AddNoiseTex(const wchar_t* szTexName, int size, int zoom_factor) {
-  if (!GetDevice()) return true;  // DX12 migration: skip DX9 noise texture creation
+  if (!GetDevice()) {
+    // DX12 migration: skip DX9 noise texture creation but still register
+    // size metadata so shaders can resolve texsize_noise_* constants.
+    TexInfo x;
+    lstrcpyW(x.texname, szTexName);
+    x.texptr = NULL;
+    x.w = size;
+    x.h = size;
+    x.d = 1;
+    x.bEvictable = false;
+    x.nAge = m_nPresetsLoadedTotal;
+    x.nSizeInBytes = 0;
+    m_textures.push_back(x);
+    return true;
+  }
   // size = width & height of the texture;
   // zoom_factor = how zoomed-in the texture features should be.
   //           1 = random noise
@@ -2911,7 +2921,21 @@ bool CPlugin::AddNoiseTex(const wchar_t* szTexName, int size, int zoom_factor) {
 }
 
 bool CPlugin::AddNoiseVol(const wchar_t* szTexName, int size, int zoom_factor) {
-  if (!GetDevice()) return true;  // DX12 migration: skip DX9 volume noise texture creation
+  if (!GetDevice()) {
+    // DX12 migration: skip DX9 volume texture creation but still register
+    // size metadata so shaders can resolve texsize_noisevol_* constants.
+    TexInfo x;
+    lstrcpyW(x.texname, szTexName);
+    x.texptr = NULL;
+    x.w = size;
+    x.h = size;
+    x.d = size;
+    x.bEvictable = false;
+    x.nAge = m_nPresetsLoadedTotal;
+    x.nSizeInBytes = 0;
+    m_textures.push_back(x);
+    return true;
+  }
   // size = width & height & depth of the texture;
   // zoom_factor = how zoomed-in the texture features should be.
   //           1 = random noise
@@ -3265,11 +3289,23 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
 #define MAX_RAND_TEX 16
   std::wstring RandTexName[MAX_RAND_TEX];
 
+  {
+    char dbg[256];
+    sprintf(dbg, "DX12: CacheParams: %u constants", d.Constants);
+    DebugLogA(dbg);
+  }
+
   // pass 1: find all the samplers (and texture bindings).
   for (UINT i = 0; i < d.Constants; i++) {
     D3DXHANDLE h = pCT->GetConstant(NULL, i);
     unsigned int count = 1;
     pCT->GetConstantDesc(h, &cd, &count);
+
+    {
+      char dbg[256];
+      sprintf(dbg, "DX12: CacheParams pass1: [%u] Name=%s RegSet=%d RegIdx=%d", i, cd.Name ? cd.Name : "(null)", cd.RegisterSet, cd.RegisterIndex);
+      DebugLogA(dbg);
+    }
 
     // cd.Name          = VS_Sampler
     // cd.RegisterSet   = D3DXRS_SAMPLER
@@ -3438,6 +3474,13 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
         }
         // if still not found, load it up / make a new texture
         if (!m_texture_bindings[cd.RegisterIndex].texptr) {
+          // DX12 migration: skip DX9 texture loading when device is NULL.
+          // We can't create DX9 textures in DX12 mode — the sampler slot
+          // will just sample black at runtime.
+          if (!g_plugin.GetDevice()) {
+            continue;
+          }
+
           TexInfo x;
           wcsncpy(x.texname, szRootName, 254);
           x.texptr = NULL;
@@ -3533,11 +3576,19 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
     }
   }
 
+  DebugLogA("DX12: CacheParams: pass 1 done, entering pass 2");
+
   // pass 2: bind all the float4's.  "texsize_XYZ" params will be filled out via knowledge of loaded texture sizes.
   for (i = 0; i < d.Constants; i++) {
     D3DXHANDLE h = pCT->GetConstant(NULL, i);
     unsigned int count = 1;
     pCT->GetConstantDesc(h, &cd, &count);
+
+    {
+      char dbg[256];
+      sprintf(dbg, "DX12: CacheParams pass2: [%u] Name=%s RegSet=%d Class=%d", i, cd.Name ? cd.Name : "(null)", cd.RegisterSet, cd.Class);
+      DebugLogA(dbg);
+    }
 
     if (cd.RegisterSet == D3DXRS_FLOAT4) {
       if (cd.Class == D3DXPC_MATRIX_COLUMNS) {
@@ -3614,7 +3665,9 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
             }
           }
 
-          if (!bTexFound) {
+          if (!bTexFound && g_plugin.GetDevice()) {
+            // Only warn when DX9 device is available — in DX12 mode, noise textures
+            // are not created so texsize_noise_* can't be resolved, which is expected.
             wchar_t buf[1024];
             swprintf(buf, wasabiApiLangString(IDS_UNABLE_TO_RESOLVE_TEXSIZE_FOR_A_TEXTURE_NOT_IN_USE), cd.Name);
             g_plugin.AddError(buf, 6.0f, ERR_PRESET, true);
@@ -3634,13 +3687,14 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
       }
     }
   }
+
+  DebugLogA("DX12: CacheParams: pass 2 done, returning");
 }
 
 //----------------------------------------------------------------------
 
 bool CPlugin::RecompileVShader(const char* szShadersText, VShaderInfo* si, int shaderType, bool bHardErrors, bool bCompileOnly) {
-  SafeRelease(si->ptr);
-  ZeroMemory(si, sizeof(VShaderInfo));
+  si->Clear();
 
   char ver[16];
   if (m_IsAMD)
@@ -3664,8 +3718,7 @@ bool CPlugin::RecompileVShader(const char* szShadersText, VShaderInfo* si, int s
 bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion, bool bCompileOnly) {
   assert(m_nMaxPSVersion > 0);
 
-  SafeRelease(si->ptr);
-  ZeroMemory(si, sizeof(PShaderInfo));
+  si->Clear();
 
   // LOAD SHADER
   // note: ps_1_4 required for dependent texture lookups.
@@ -3687,14 +3740,20 @@ bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int s
   default: assert(0); break;
   }
 
-  if (!LoadShaderFromMemory(szShadersText, "PS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly, &si->bytecodeBlob))
+  if (!LoadShaderFromMemory(szShadersText, "PS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly, &si->bytecodeBlob)) {
+    DebugLogA("DX12: RecompilePShader: LoadShaderFromMemory FAILED");
     return false;
+  }
+
+  DebugLogA("DX12: RecompilePShader: LoadShaderFromMemory OK, entering CacheParams...");
 
   if (!bCompileOnly) {
     // Track down texture & float4 param bindings for this shader.
     // Also loads any textures that need loaded.
     si->params.CacheParams(si->CT, bHardErrors);
   }
+
+  DebugLogA("DX12: RecompilePShader: CacheParams done, returning true");
   return true;
 }
 
@@ -3940,24 +3999,55 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   bool failed = false;
   int len = lstrlen(szShaderText);
 
+  {
+    char dbg[256];
+    sprintf(dbg, "DX12: LoadShaderFromMemory: len=%d profile=%s fn=%s shaderType=%d", len, szProfile, szFn, shaderType);
+    DebugLogA(dbg);
+  }
+
   std::wstring wideShaderText = std::wstring(szShaderText, szShaderText + strlen(szShaderText));
   wchar_t tempBuffer[32768]; // Ensure the buffer size is sufficient for the content.
   wcsncpy(tempBuffer, wideShaderText.c_str(), 32767); // Copy the content safely.
   tempBuffer[32767] = L'\0'; // Null-terminate to avoid overflow.
   dumpmsg(tempBuffer); // Pass the non-const buffer to dumpmsg.
 
+  DebugLogA("DX12: LoadShaderFromMemory: after dumpmsg, computing checksum...");
+
   uint32_t checksum = crc32(szShaderText, len);
+
+  {
+    char dbg[256];
+    sprintf(dbg, "DX12: LoadShaderFromMemory: checksum=0x%08X caching=%d", checksum, m_ShaderCaching);
+    DebugLogA(dbg);
+  }
+
   if (m_ShaderCaching) {
     pShaderByteCode = LoadShaderBytecodeFromFile(checksum, &szProfile[0]);
+    {
+      char dbg[256];
+      sprintf(dbg, "DX12: LoadShaderFromMemory: cache %s (bytecode=%p)", pShaderByteCode ? "HIT" : "MISS", (void*)pShaderByteCode);
+      DebugLogA(dbg);
+    }
   }
 
   if (pShaderByteCode != NULL && !compileOnly) {
+    DebugLogA("DX12: LoadShaderFromMemory: using cached bytecode, creating CT via D3DReflect...");
     // restore ConstTable from cached bytecode via D3DReflect
     *ppConstTable = DX12ConstantTable::CreateFromBytecode(
       pShaderByteCode->GetBufferPointer(),
       pShaderByteCode->GetBufferSize());
+    if (!*ppConstTable) {
+      // Stale cache: old SM3.0 bytecode that D3DReflect can't parse.
+      // Discard and fall through to recompile as SM5.0.
+      DebugLogA("DX12: LoadShaderFromMemory: stale cache (D3DReflect failed), recompiling...");
+      pShaderByteCode->Release();
+      pShaderByteCode = NULL;
+    } else {
+      DebugLogA("DX12: LoadShaderFromMemory: CT from cache done");
+    }
   }
-  else {
+  if (pShaderByteCode == NULL) {
+    DebugLogA("DX12: LoadShaderFromMemory: compiling shader with D3DCompile...");
     HRESULT hresult = D3DXCompileShader(
       szShaderText,
       len,
@@ -3969,6 +4059,12 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
       &pShaderByteCode,
       &m_pShaderCompileErrors,
       ppConstTable);
+
+    {
+      char dbg[256];
+      sprintf(dbg, "DX12: LoadShaderFromMemory: D3DCompile returned hr=0x%08X bytecode=%p CT=%p", (unsigned)hresult, (void*)pShaderByteCode, (void*)*ppConstTable);
+      DebugLogA(dbg);
+    }
 
     if (D3D_OK != hresult) {
       failed = true;
@@ -4770,12 +4866,6 @@ void CPlugin::MyRenderUI(
   wchar_t buf[512] = { 0 };
   LPD3DXFONT pFont = GetFont(DECORATIVE_FONT);
   int h = GetFontHeight(DECORATIVE_FONT);
-
-  if (!pFont)
-    return;
-
-  if (!GetFont(DECORATIVE_FONT))
-    return;
 
   // 1. render text in upper-right corner - EXCEPT USER MESSAGE - it goes last b/c it draws a box under itself
   //                                        and it should be visible over everything else (usually an error msg)
@@ -9476,14 +9566,18 @@ void CPlugin::ClearPreset() {
   }
 
   // release stuff from m_OldShaders, then move m_shaders to m_OldShaders, then load the new shaders.
-  SafeRelease(m_OldShaders.comp.ptr);
-  SafeRelease(m_OldShaders.warp.ptr);
-  SafeRelease(m_OldShaders.comp.CT);
-  SafeRelease(m_OldShaders.warp.CT);
-  SafeRelease(m_OldShaders.comp.bytecodeBlob);
-  SafeRelease(m_OldShaders.warp.bytecodeBlob);
+  m_OldShaders.warp.Clear();
+  m_OldShaders.comp.Clear();
   m_OldShaders = m_shaders;
-  ZeroMemory(&m_shaders, sizeof(PShaderSet));
+  // Null out m_shaders' COM pointers WITHOUT releasing — ownership transferred to m_OldShaders.
+  m_shaders.warp.ptr = NULL;
+  m_shaders.warp.CT = NULL;
+  m_shaders.warp.bytecodeBlob = NULL;
+  m_shaders.warp.params.Clear();
+  m_shaders.comp.ptr = NULL;
+  m_shaders.comp.CT = NULL;
+  m_shaders.comp.bytecodeBlob = NULL;
+  m_shaders.comp.params.Clear();
 
   LoadShaders(&m_shaders, m_pState, false, false);
   CreateDX12PresetPSOs();
@@ -9572,14 +9666,18 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
     m_fNextPresetTime = -1.0f;		// flags UpdateTime() to recompute this
 
     // release stuff from m_OldShaders, then move m_shaders to m_OldShaders, then load the new shaders.
-    SafeRelease(m_OldShaders.comp.ptr);
-    SafeRelease(m_OldShaders.warp.ptr);
-    SafeRelease(m_OldShaders.comp.CT);
-    SafeRelease(m_OldShaders.warp.CT);
-    SafeRelease(m_OldShaders.comp.bytecodeBlob);
-    SafeRelease(m_OldShaders.warp.bytecodeBlob);
+    m_OldShaders.warp.Clear();
+    m_OldShaders.comp.Clear();
     m_OldShaders = m_shaders;
-    ZeroMemory(&m_shaders, sizeof(PShaderSet));
+    // Null out m_shaders' COM pointers WITHOUT releasing — ownership transferred to m_OldShaders.
+    m_shaders.warp.ptr = NULL;
+    m_shaders.warp.CT = NULL;
+    m_shaders.warp.bytecodeBlob = NULL;
+    m_shaders.warp.params.Clear();
+    m_shaders.comp.ptr = NULL;
+    m_shaders.comp.CT = NULL;
+    m_shaders.comp.bytecodeBlob = NULL;
+    m_shaders.comp.params.Clear();
 
     LoadShaders(&m_shaders, m_pState, false, false);
     CreateDX12PresetPSOs();
@@ -9598,11 +9696,8 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
       m_bPresetLoadReady = false;
     }
 
-    SafeRelease(m_NewShaders.comp.ptr);
-    SafeRelease(m_NewShaders.warp.ptr);
-    SafeRelease(m_NewShaders.comp.bytecodeBlob);
-    SafeRelease(m_NewShaders.warp.bytecodeBlob);
-    ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
+    m_NewShaders.warp.Clear();
+    m_NewShaders.comp.Clear();
 
     m_nLoadingPreset = 1;  // signals "load in progress" to the rest of the code
     m_bPresetLoadReady = false;
@@ -9730,13 +9825,20 @@ void CPlugin::LoadPresetTick() {
     m_fNextPresetTime = -1.0f;		// flags UpdateTime() to recompute this
 
     // release stuff from m_OldShaders, then move m_shaders to m_OldShaders, then load the new shaders.
-    SafeRelease(m_OldShaders.comp.ptr);
-    SafeRelease(m_OldShaders.warp.ptr);
-    SafeRelease(m_OldShaders.comp.bytecodeBlob);
-    SafeRelease(m_OldShaders.warp.bytecodeBlob);
+    m_OldShaders.warp.Clear();
+    m_OldShaders.comp.Clear();
     m_OldShaders = m_shaders;
     m_shaders = m_NewShaders;
-    ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
+    // Null out m_NewShaders' COM pointers WITHOUT releasing — ownership transferred to m_shaders.
+    // But DO properly clear the params (vectors were deep-copied by the assignment above).
+    m_NewShaders.warp.ptr = NULL;
+    m_NewShaders.warp.CT = NULL;
+    m_NewShaders.warp.bytecodeBlob = NULL;
+    m_NewShaders.warp.params.Clear();
+    m_NewShaders.comp.ptr = NULL;
+    m_NewShaders.comp.CT = NULL;
+    m_NewShaders.comp.bytecodeBlob = NULL;
+    m_NewShaders.comp.params.Clear();
 
     // end loading mode
     m_nLoadingPreset = 0;

@@ -145,8 +145,9 @@ protected:
   // FONTS & TEXT (Phase 5: D3DX fonts replaced by DirectXTK12 SpriteFont)
   // ------------------------------------------------------------
 public:
-  // GetFont() stub — returns nullptr until Phase 5 SpriteFont migration is complete.
-  LPD3DXFONT   GetFont(eFontIndex idx) { return nullptr; }
+  // GetFont() returns a non-null sentinel encoding the font index.
+  // CTextManager::DecodeFontIndex() extracts the index back.
+  LPD3DXFONT   GetFont(eFontIndex idx) { return (LPD3DXFONT)(intptr_t)(idx + 1); }
   int          GetFontHeight(eFontIndex idx);
   CTextManager m_text;
   

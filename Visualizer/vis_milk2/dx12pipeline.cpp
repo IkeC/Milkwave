@@ -165,6 +165,14 @@ bool DX12CreatePipelines(ID3D12Device* device, ID3D12RootSignature* rootSig,
     psoDesc.BlendState.RenderTarget[0].BlendOpAlpha          = D3D12_BLEND_OP_ADD;
     psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
     hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&psoArray[PSO_ADDITIVE_SPRITEVERTEX]));
+    if (FAILED(hr)) { texVsBlob->Release(); texPsBlob->Release(); return false; }
+
+    // PSO: Textured SPRITEVERTEX + premultiplied alpha blend (GDI text overlay)
+    psoDesc.BlendState.RenderTarget[0].SrcBlend      = D3D12_BLEND_ONE;
+    psoDesc.BlendState.RenderTarget[0].DestBlend      = D3D12_BLEND_INV_SRC_ALPHA;
+    psoDesc.BlendState.RenderTarget[0].SrcBlendAlpha  = D3D12_BLEND_ONE;
+    psoDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+    hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&psoArray[PSO_PREMULALPHA_SPRITEVERTEX]));
 
     texVsBlob->Release();
     texPsBlob->Release();

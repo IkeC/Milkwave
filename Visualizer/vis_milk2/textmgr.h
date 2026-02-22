@@ -30,18 +30,23 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef GEISS_TEXT_DRAWING_MANAGER
 #define GEISS_TEXT_DRAWING_MANAGER 1
 
-// Phase 5 TODO: Replace void* font handles with DirectXTK12 SpriteFont*.
-// For now all font operations are no-ops until text rendering is ported.
+// Phase 6: CTextManager renders text via GDI to a DIB section, then uploads
+// to a DX12 texture and composites with premultiplied alpha blending.
+// The pFont parameter encodes a font index: (void*)(intptr_t)(fontIndex + 1).
+
 #include <d3d12.h>
 #include <wrl/client.h>
 #include "md_defines.h"
 #include "AutoWide.h"
+#include "dx12helpers.h"
+
+using Microsoft::WRL::ComPtr;
 
 #define MAX_MSGS 4096
 
 typedef struct {
   wchar_t* msg;       // points to some character in g_szMsgPool[2][].
-  void*    pfont;     // Phase 5: will be DirectXTK12 SpriteFont*; NULL for dark boxes
+  void*    pfont;     // encoded font index: (void*)(intptr_t)(fontIndex + 1)
   RECT rect;
   DWORD flags;
   DWORD color;
@@ -51,18 +56,26 @@ typedef struct {
 }
 td_string;
 
+class DXContext;  // forward declaration
+
 class CTextManager {
 public:
   CTextManager();
   ~CTextManager();
 
-  // Phase 5 TODO: fully implement with DirectXTK12 SpriteFont.
-  // lpDevice stored for future use; lpTextSurface unused until Phase 5.
+  // Legacy init — stores device pointer and initializes message queue.
   void Init(ID3D12Device* lpDevice, void* lpTextSurface, int bAdditive);
   void Finish();
 
-  // Phase 5 TODO: font rendering — currently queues entries but DrawNow is a no-op.
-  // pFont is a void* placeholder (will be SpriteFont* in Phase 5).
+  // DX12 GDI text rendering — call after GDI fonts are created.
+  // pFonts: array of HFONT handles (from CPluginShell::m_font[])
+  // nFonts: number of fonts in the array
+  void InitDX12(DXContext* lpDX, HFONT* pFonts, int nFonts);
+  void CleanupDX12();
+  void OnResize(int newW, int newH);
+
+  // Text drawing — queues entries; actual rendering happens in DrawNow().
+  // DT_CALCRECT calls are handled immediately via GDI measurement.
   int  DrawText(void* pFont, char* szText, RECT* pRect, DWORD flags, DWORD color, bool bBlackBox, DWORD boxColor = 0xFF000000);
   int  DrawText(void* pFont, char* szText, int len, RECT* pRect, DWORD flags, DWORD color, bool bBox, DWORD boxColor = 0xFF000000) {
     return DrawTextW(pFont, AutoWide(szText), pRect, flags, color, bBox, boxColor);
@@ -76,15 +89,42 @@ public:
   void DrawNow();
   void ClearAll(); // automatically called @ end of DrawNow()
 
+  // Decode font index from the pFont sentinel value.
+  // Returns -1 if pFont is null or invalid.
+  static int DecodeFontIndex(void* pFont);
+
 protected:
-  ID3D12Device*  m_lpDevice;       // Phase 5: used for DirectXTK12 rendering
-  void*          m_lpTextSurface;  // Phase 5: render target for text
+  ID3D12Device*  m_lpDevice;
+  void*          m_lpTextSurface;
   int            m_blit_additively;
 
   int       m_nMsg[2];
   td_string m_msg[2][MAX_MSGS];
   wchar_t* m_next_msg_start_ptr;
   int       m_b;
+
+  // DX12 GDI text rendering resources
+  DXContext*  m_lpDX;
+  HFONT*      m_pFonts;       // borrowed pointer to CPluginShell::m_font[]
+  int         m_nFonts;
+
+  // GDI DIB for CPU-side text rendering
+  HDC         m_memDC;
+  HBITMAP     m_hDIB;
+  BYTE*       m_dibBits;
+  UINT        m_texW;
+  UINT        m_texH;
+
+  // DX12 texture + upload buffer
+  DX12Texture m_dx12Tex;
+  ComPtr<ID3D12Resource> m_uploadBuf;
+  bool        m_dirty;
+  bool        m_dx12Ready;
+
+  bool CreateDX12Resources(UINT w, UINT h);
+  void DestroyDX12Resources();
+  void RenderQueuedMessages();
+  void UploadAndDraw();
 };
 
 #endif

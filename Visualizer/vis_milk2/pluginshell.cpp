@@ -586,7 +586,7 @@ int CPluginShell::AllocateFonts() {
 }
 
 void CPluginShell::CleanUpFonts() {
-  // Phase 5 TODO: release SpriteFont objects here.
+  m_text.CleanupDX12();
   for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
     m_fontHeight[i] = 0;
 }
@@ -611,7 +611,10 @@ int CPluginShell::AllocateDX9Stuff() {
 
   if (!m_vj_mode) {
     m_text.Finish();
-    m_text.Init(GetDX12Device(), nullptr, 1); // Phase 5: text surface replaced by DX12 resource
+    m_text.Init(GetDX12Device(), nullptr, 1);
+    // Phase 6: wire GDI→DX12 text rendering with the GDI fonts from InitGDIStuff()
+    if (m_lpDX)
+      m_text.InitDX12(m_lpDX, m_font, NUM_BASIC_FONTS + NUM_EXTRA_FONTS);
   }
 
   return ret;
@@ -1663,14 +1666,49 @@ void CPluginShell::PrepareFor2DDrawing_B(int w, int h) {
 }
 
 void CPluginShell::DrawDarkTranslucentBox(RECT* pr) {
-  // Phase 4 TODO: render a translucent dark quad over the given rect using DX12 command list.
-  // Requires a dedicated alpha-blended PSO and a simple vertex buffer.
-  (void)pr;
+  if (!pr || !m_lpDX || !m_lpDX->m_commandList) return;
+
+  int cw = m_lpDX->m_client_width;
+  int ch = m_lpDX->m_client_height;
+  if (cw <= 0 || ch <= 0) return;
+
+  // Convert pixel rect to NDC (-1..1)
+  float x0 = (float)pr->left   / (float)cw *  2.0f - 1.0f;
+  float x1 = (float)pr->right  / (float)cw *  2.0f - 1.0f;
+  float y0 = 1.0f - (float)pr->top    / (float)ch * 2.0f;
+  float y1 = 1.0f - (float)pr->bottom / (float)ch * 2.0f;
+
+  DWORD boxColor = 0xD0000000; // ~81% opaque black
+  WFVERTEX verts[6] = {
+    { x0, y0, 0, boxColor },
+    { x1, y0, 0, boxColor },
+    { x0, y1, 0, boxColor },
+    { x0, y1, 0, boxColor },
+    { x1, y0, 0, boxColor },
+    { x1, y1, 0, boxColor },
+  };
+
+  auto* cmdList = m_lpDX->m_commandList.Get();
+  cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_ALPHABLEND_WFVERTEX].Get());
+  m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, verts, 6, sizeof(WFVERTEX));
 }
 
 void CPluginShell::DrawDarkTranslucentBoxFullWindow() {
-  // Phase 4 TODO: render a full-window translucent dark overlay using DX12 command list.
-  if (!m_lpDX) return;
+  if (!m_lpDX || !m_lpDX->m_commandList) return;
+
+  DWORD boxColor = 0xD0000000;
+  WFVERTEX verts[6] = {
+    { -1.f,  1.f, 0, boxColor },
+    {  1.f,  1.f, 0, boxColor },
+    { -1.f, -1.f, 0, boxColor },
+    { -1.f, -1.f, 0, boxColor },
+    {  1.f,  1.f, 0, boxColor },
+    {  1.f, -1.f, 0, boxColor },
+  };
+
+  auto* cmdList = m_lpDX->m_commandList.Get();
+  cmdList->SetPipelineState(m_lpDX->m_PSOs[PSO_ALPHABLEND_WFVERTEX].Get());
+  m_lpDX->DrawVertices(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, verts, 6, sizeof(WFVERTEX));
 }
 
 bool CPluginShell::CreateHelpTexture() {
