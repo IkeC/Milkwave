@@ -216,6 +216,7 @@ public:
   // float4 handles:
   D3DXHANDLE rand_frame;
   D3DXHANDLE rand_preset;
+  D3DXHANDLE luma_params;
   D3DXHANDLE const_handles[24];
   D3DXHANDLE q_const_handles[(NUM_Q_VAR + 3) / 4];
   D3DXHANDLE rot_mat[24];

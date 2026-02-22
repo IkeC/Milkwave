@@ -4816,6 +4816,15 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   // bind float4's (C-Variables!)
   if (p->rand_frame) pCT->SetVector(lpDevice, p->rand_frame, &m_rand_frame);
   if (p->rand_preset) pCT->SetVector(lpDevice, p->rand_preset, &pState->m_rand_preset);
+  if (p->luma_params) {
+      float lumaValues[4] = { 
+          m_fInputMixLumakeyThreshold, 
+          m_fInputMixLumakeySoftness, 
+          m_fInputMixOpacity, 
+          m_bInputMixLumaActive ? 1.0f : 0.0f 
+      };
+      pCT->SetVector(lpDevice, p->luma_params, (D3DXVECTOR4*)lumaValues);
+  }
   D3DXHANDLE* h = p->const_handles;
   if (h[0]) pCT->SetVector(lpDevice, h[0], &D3DXVECTOR4(aspect_x, aspect_y, 1.0f / aspect_x, 1.0f / aspect_y));
   if (h[1]) pCT->SetVector(lpDevice, h[1], &D3DXVECTOR4(0, 0, 0, 0));
@@ -5095,15 +5104,51 @@ void CPlugin::ShowToUser_NoShaders()//int bRedraw, int nPassOverride)
 
         for (int k = 0; k < 4; k++)
           v3[k].Diffuse = D3DCOLOR_RGBA_01(gamma * shade[k][0], gamma * shade[k][1], gamma * shade[k][2], 1);
+
+        // If rendering on top of background video/spout, apply lumakey and opacity
+        if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && !m_bInputMixOnTop) {
+            lpDevice->SetPixelShader(m_lpPS_InputMix);
+            float lumaValues[4] = { 
+                m_fInputMixLumakeyThreshold, 
+                m_fInputMixLumakeySoftness, 
+                m_fInputMixOpacity, 
+                m_bInputMixLumaActive ? 1.0f : 0.0f 
+            };
+            lpDevice->SetPixelShaderConstantF(0, lumaValues, 1);
+
+            // First pass needs correct alpha blending for transparency against the background
+            if (nPass == 0) {
+                lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+                lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+                lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+            }
+
+            // Adjust vertex alpha to include user-specified opacity
+            for (int k = 0; k < 4; k++) {
+                DWORD c = v3[k].Diffuse;
+                int a = (int)(((c >> 24) & 0xFF) * m_fInputMixOpacity);
+                v3[k].Diffuse = (c & 0x00FFFFFF) | (a << 24);
+            }
+        }
+
         lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, (void*)v3, sizeof(SPRITEVERTEX));
 
         if (nPass == 0) {
           lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-          lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
-          lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+          if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && !m_bInputMixOnTop) {
+              // Stay in blend mode, but subsequent passes are additive
+              lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+              lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+          } else {
+              lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+              lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+          }
         }
       }
     }
+
+    // Clean up
+    lpDevice->SetPixelShader(NULL);
 
     SPRITEVERTEX v3[4];
     ZeroMemory(v3, sizeof(SPRITEVERTEX) * 4);
@@ -5328,6 +5373,14 @@ void CPlugin::ShowToUser_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, b
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
     lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
     lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+    static int frameCount = 0;
+    if (frameCount % 60 == 0 && milkwave) {
+        wchar_t buf[256];
+        swprintf_s(buf, L"Visualizer RENDERING ON TOP (bg video): opac=%.2f, luma=%d", m_fInputMixOpacity, m_bInputMixLumaActive);
+        milkwave->LogInfo(buf);
+    }
+    frameCount++;
 
     // Scale preset grid alpha by m_fInputMixOpacity
     for (int vi = 0; vi < (FCGSX + 1) * (FCGSY + 1); vi++) {

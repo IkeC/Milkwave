@@ -197,7 +197,7 @@ void CPlugin::SetInputMixOnTop(bool onTop) {
     }
     m_bInputMixOnTop = onTop;
     if (onTop) {
-        AddNotification(L"Input Layer: Top (Overlay)", 2.0f);
+        AddNotification(L"Input Layer: Top", 2.0f);
     } else {
         AddNotification(L"Input Layer: Background", 2.0f);
     }

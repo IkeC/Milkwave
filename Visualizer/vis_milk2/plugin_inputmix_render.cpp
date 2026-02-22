@@ -198,14 +198,16 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
     }
 
     // Set up for alpha blending
-    if (isBackground) {
-        // Background should be opaque
-        lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-    } else {
-        // Overlay needs alpha blending
+    bool useAlpha = !isBackground || m_bInputMixLumaActive || m_fInputMixOpacity < 0.999f;
+
+    if (useAlpha) {
+        // Needs alpha blending (Overlay OR Background-with-transparency/luma)
         lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
         lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
         lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    } else {
+        // Pure background should be opaque
+        lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
     }
 
     // Explicitly disable alpha test to ensure the quad is not accidentally rejected
@@ -236,33 +238,24 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
         CompileInputMixShader();
     }
 
-    if (m_lpPS_InputMix && m_bInputMixLumaActive) {
+    if (m_lpPS_InputMix) {
         lpDevice->SetPixelShader(m_lpPS_InputMix);
         float lumaParams[4] = { 
             m_fInputMixLumakeyThreshold, 
             m_fInputMixLumakeySoftness, 
-            1.0f, // Active
-            0.0f 
+            m_fInputMixOpacity,
+            m_bInputMixLumaActive ? 1.0f : 0.0f 
         };
         lpDevice->SetPixelShaderConstantF(0, lumaParams, 1);
 
         if (frameCount % 60 == 0 && milkwave) {
              wchar_t buf[256];
-             swprintf_s(buf, L"Luma RENDERING: active=1, thr=%.2f, soft=%.2f", 
-                 m_fInputMixLumakeyThreshold, m_fInputMixLumakeySoftness);
+             swprintf_s(buf, L"Luma/Opacity RENDERING: luma=%d, opac=%.2f, thr=%.2f, soft=%.2f", 
+                 m_bInputMixLumaActive, m_fInputMixOpacity, m_fInputMixLumakeyThreshold, m_fInputMixLumakeySoftness);
              milkwave->LogInfo(buf);
         }
     } else {
         lpDevice->SetPixelShader(nullptr);
-        if (frameCount % 60 == 0 && milkwave) {
-             wchar_t buf[256];
-             if (m_bInputMixLumaActive && !m_lpPS_InputMix) {
-                 swprintf_s(buf, L"Luma RENDERING: active=1 but SHADER NULL");
-             } else {
-                 swprintf_s(buf, L"Luma RENDERING: active=0");
-             }
-             milkwave->LogInfo(buf);
-        }
     }
 
     // Get dimensions
@@ -307,12 +300,18 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
     DWORD g = (m_cInputMixTint >> 8) & 0xFF;
     DWORD b = m_cInputMixTint & 0xFF;
 
-    // Background is 100% alpha (preset on top will handle its own transparency)
-    // Overlay uses effectiveOpacity
-    float effectiveOpacity = isBackground ? 1.0f : m_fInputMixOpacity;
+    // Use actual opacity even for background if we enabled blend (useAlpha)
+    float effectiveOpacity = useAlpha ? m_fInputMixOpacity : 1.0f;
 
     DWORD alphaValue = (DWORD)(effectiveOpacity * 255.0f);
     DWORD vertexColor = D3DCOLOR_ARGB(alphaValue, r, g, b);
+
+    if (frameCount % 60 == 0 && milkwave) {
+        wchar_t buf[256];
+        swprintf_s(buf, L"Input RENDERING: bg=%d, opac=%.2f, luma=%d", 
+            isBackground, effectiveOpacity, m_bInputMixLumaActive);
+        milkwave->LogInfo(buf);
+    }
 
     struct CUSTOMVERTEX {
         float x, y, z, rhw;

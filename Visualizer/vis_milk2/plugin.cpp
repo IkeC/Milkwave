@@ -3078,6 +3078,7 @@ void CShaderParams::Clear() {
   // float4 handles:
   rand_frame = NULL;
   rand_preset = NULL;
+  luma_params = NULL;
 
   ZeroMemory(rot_mat, sizeof(rot_mat));
   ZeroMemory(const_handles, sizeof(const_handles));
@@ -3544,9 +3545,10 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
         else if (!strcmp(cd.Name, "rot_rand4")) rot_mat[23] = h;
       }
       else if (cd.Class == D3DXPC_VECTOR) {
-        if (!strcmp(cd.Name, "rand_frame"))  rand_frame = h;
-        else if (!strcmp(cd.Name, "rand_preset")) rand_preset = h;
-        else if (!strncmp(cd.Name, "texsize_", 8)) {
+          if (!strcmp(cd.Name, "rand_frame"))  rand_frame = h;
+          else if (!strcmp(cd.Name, "rand_preset")) rand_preset = h;
+          else if (!strcmp(cd.Name, "luma_params")) luma_params = h;
+          else if (!strncmp(cd.Name, "texsize_", 8)) {
           // remove "texsize_" prefix to find root file name.
           wchar_t szRootName[MAX_PATH];
           if (!strncmp(cd.Name, "texsize_", 8))
@@ -3749,6 +3751,13 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   lstrcpy(&szShaderText[writePos], m_szShaderIncludeText);  // first, paste in the contents of 'inputs.fx' before the actual shader text.  Has 13's and 10's.
   writePos += m_nShaderIncludeTextLen;
 
+  // paste in luma_params global for composite shaders (must be outside function signature for compatibility)
+  if (shaderType == SHADER_COMP && szProfile[0] == 'p') {
+      const char szLumaUniform[] = "uniform float4 luma_params;\r\n";
+      lstrcpy(&szShaderText[writePos], szLumaUniform);
+      writePos += lstrlen(szLumaUniform);
+  }
+
   // paste in any custom #defines for this shader type
   if (shaderType == SHADER_WARP && szProfile[0] == 'p') {
     lstrcpy(&szShaderText[writePos], szWarpDefines);
@@ -3816,6 +3825,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
       // insert "void PS(...params...)\n"
       lstrcpy(temp, p);
       const char* params = (shaderType == SHADER_WARP) ? szWarpParams : szCompParams;
+
       sprintf(p, "void %s( %s )\n", szFn, params);
       p += lstrlen(p);
       lstrcpy(p, temp);
@@ -3833,10 +3843,18 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
 
         // find the ending curly brace
         p = strrchr(p, '}');
-        // add the last line - "    _return_value = float4(ret.xyz, _vDiffuse.w);"
+        // add the last line with optional lumakey support (COMP only)
         if (p) {
-          char szLastLine[] = "    _return_value = float4(shiftHSV(ret.xyz), _vDiffuse.w);";
-          sprintf(p, " %s\n}\n", szLastLine);
+            if (shaderType == SHADER_COMP) {
+              char szLastLine[] = 
+                  "    float luma_v = dot(ret.xyz, float3(0.299, 0.587, 0.114));\n"
+                  "    float luma_a = (luma_params.w > 0.5) ? saturate((luma_v - luma_params.x) / max(0.0001, luma_params.y)) : 1.0;\n"
+                  "    _return_value = float4(ret.xyz, luma_a * _vDiffuse.w);";
+              sprintf(p, " %s\n}\n", szLastLine);
+            } else {
+              char szLastLine[] = "    _return_value = float4(ret.xyz, _vDiffuse.w);";
+              sprintf(p, " %s\n}\n", szLastLine);
+            }
         }
       }
     }
@@ -5973,8 +5991,6 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   {
     int thresholdInt = (int)wParam;
     int softnessInt = (int)lParam;
-
-    OutputDebugStringW(L"[Milkwave] WM_USER_SET_INPUTMIX_LUMAKEY received");
 
     if (milkwave) {
         wchar_t buf[256];
@@ -12002,7 +12018,14 @@ void CPlugin::GenCompPShaderText(char* szShaderText, float brightness, float ve_
     p += sprintf(p, "    ret = ret*(1-ret)*4; //solarize%c", LF);
   if (bInvert)
     p += sprintf(p, "    ret = 1 - ret; //invert%c", LF);
-  //p += sprintf(p, "    ret.w = vDiffuse.w; // pass alpha along - req'd for preset blending%c", LF);
+
+  if (m_bInputMixLumaActive) {
+      p += sprintf(p, "    float luma_comp = dot(ret.xyz, float3(0.299, 0.587, 0.114));%c", LF);
+      p += sprintf(p, "    float factor_comp = saturate((luma_comp - %.3f) / max(0.0001, %.3f));%c", m_fInputMixLumakeyThreshold, m_fInputMixLumakeySoftness, LF);
+      p += sprintf(p, "    return float4(ret.xyz, factor_comp * %.3f);%c", m_fInputMixOpacity, LF);
+  } else {
+      p += sprintf(p, "    return float4(ret.xyz, %.3f);%c", m_fInputMixOpacity, LF);
+  }
   p += sprintf(p, "}%c", LF);
 }
 
@@ -12247,7 +12270,7 @@ void CPlugin::ShowDirectXMissingMessage() {
 void CPlugin::CompileInputMixShader() {
   const char* szShader =
     "sampler2D inputTex : register(s0);\n"
-    "float4 lumaParams1 : register(c0);\n" // x: threshold, y: softness, z: active (1.0 or 0.0)
+    "float4 lumaParams1 : register(c0);\n" // x: threshold, y: softness, z: opacity (extra), w: active (1.0/0.0)
     "struct PS_INPUT {\n"
     "    float2 uv    : TEXCOORD0;\n"
     "    float4 color : COLOR0;\n"
@@ -12255,7 +12278,7 @@ void CPlugin::CompileInputMixShader() {
     "float4 main(PS_INPUT input) : COLOR {\n"
     "    float4 col = tex2D(inputTex, input.uv);\n"
     "    col *= input.color;\n"
-    "    if (lumaParams1.z > 0.5) {\n"
+    "    if (lumaParams1.w > 0.5) {\n"
     "        float luma = dot(col.rgb, float3(0.299, 0.587, 0.114));\n"
     "        float factor = saturate((luma - lumaParams1.x) / max(0.0001, lumaParams1.y));\n"
     "        col.a *= factor;\n"
@@ -12271,10 +12294,10 @@ void CPlugin::CompileInputMixShader() {
     GetDevice()->CreatePixelShader((DWORD*)pShaderByteCode->GetBufferPointer(), &m_lpPS_InputMix);
     if (pShaderByteCode) pShaderByteCode->Release();
     if (milkwave) milkwave->LogInfo(L"Input Mix Shader compiled successfully");
-    AddNotification(L"Input Mix Shader: READY", 1.0f);
+    // AddNotification(L"Input Mix Shader: READY", 1.0f);
   }
   else {
-    AddNotification(L"Input Mix Shader FAILED", 3.0f);
+    // AddNotification(L"Input Mix Shader FAILED", 3.0f);
     if (pErrors) {
       char* err = (char*)pErrors->GetBufferPointer();
       if (err && milkwave) {
