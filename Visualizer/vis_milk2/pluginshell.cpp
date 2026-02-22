@@ -787,7 +787,16 @@ void CPluginShell::OnUserResizeWindow() {
           d3dPp.BackBufferHeight = nSpoutFixedHeight;
         }
         UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
-        GetDevice()->Reset(&d3dPp);
+
+        LPDIRECT3DDEVICE9EX pDevice = GetDevice();
+        if (pDevice) {
+            __try {
+                pDevice->Reset(&d3dPp);
+            }
+            __except (EXCEPTION_EXECUTE_HANDLER) {
+                // Ignore
+            }
+        }
       }
       //if (m_lpDX->m_REAL_client_width != new_REAL_client_w || m_lpDX->m_REAL_client_height != new_REAL_client_h) {
       if (!AllocateDX9Stuff()) {
@@ -1354,11 +1363,30 @@ int CPluginShell::PluginRender(unsigned char* pWaveL, unsigned char* pWaveR)//, 
   // test for lost device
   // (this happens when device is fullscreen & user alt-tabs away,
   //  or when monitor power-saving kicks in)
-  HRESULT hr = m_lpDX->m_lpDevice->TestCooperativeLevel();
+  LPDIRECT3DDEVICE9EX pDevice = GetDevice();
+  if (!pDevice) return true;
+
+  HRESULT hr = D3D_OK;
+  __try {
+      hr = pDevice->TestCooperativeLevel();
+  }
+  __except (EXCEPTION_EXECUTE_HANDLER) {
+      return true; // Wait for device to be online
+  }
+
   if (hr == D3DERR_DEVICENOTRESET) {
     // device WAS lost, and is now ready to be reset (and come back online):
     CleanUpDX9Stuff(0);
-    if (m_lpDX->m_lpDevice->Reset(m_lpDX->m_d3dpp) != D3D_OK) {
+
+    HRESULT resetHr = E_FAIL;
+    __try {
+        resetHr = pDevice->Reset(m_lpDX->m_d3dpp);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        resetHr = E_FAIL;
+    }
+
+    if (resetHr != D3D_OK) {
       // note: a basic warning messagebox will have already been given.
       // now suggest specific advice on how to regain more video memory:
       if (m_lpDX->m_lastErr == DXC_ERR_CREATEDEV_PROBABLY_OUTOFVIDEOMEMORY)
@@ -2734,7 +2762,16 @@ void CPluginShell::ResetBufferAndFonts() {
 
   SetVariableBackBuffer(m_lpDX->m_client_width, m_lpDX->m_client_height);
   UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
-  GetDevice()->Reset(&d3dPp);
+
+  LPDIRECT3DDEVICE9EX pDevice = GetDevice();
+  if (pDevice) {
+      __try {
+          pDevice->Reset(&d3dPp);
+      }
+      __except (EXCEPTION_EXECUTE_HANDLER) {
+          // Ignore
+      }
+  }
 
   if (m_lpDX->m_client_width != 0 && m_lpDX->m_client_height != 0) {
     CleanUpFonts();
