@@ -2679,7 +2679,7 @@ namespace MilkwaveRemote
       numInputMixOpacity.TabIndex = 134;
       numInputMixOpacity.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numInputMixOpacity, "Opacity");
-      numInputMixOpacity.Value = new decimal(new int[] { 100, 0, 0, 0 });
+      numInputMixOpacity.Value = new decimal(new int[] { 50, 0, 0, 0 });
       numInputMixOpacity.ValueChanged += numInputMixOpacity_ValueChanged;
       // 
       // numLumaThreshold
@@ -2691,7 +2691,7 @@ namespace MilkwaveRemote
       numLumaThreshold.TabIndex = 136;
       numLumaThreshold.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numLumaThreshold, "Luma key threshold (Cutoff brightness for black removal)");
-      numLumaThreshold.Value = new decimal(new int[] { 15, 0, 0, 0 });
+      numLumaThreshold.Value = new decimal(new int[] { 20, 0, 0, 0 });
       numLumaThreshold.ValueChanged += numLumaThreshold_ValueChanged;
       // 
       // numLumaSoftness
@@ -2703,7 +2703,7 @@ namespace MilkwaveRemote
       numLumaSoftness.TabIndex = 137;
       numLumaSoftness.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numLumaSoftness, "Luma key softness (Smoothing range for removal)");
-      numLumaSoftness.Value = new decimal(new int[] { 25, 0, 0, 0 });
+      numLumaSoftness.Value = new decimal(new int[] { 20, 0, 0, 0 });
       numLumaSoftness.ValueChanged += numLumaSoftness_ValueChanged;
       // 
       // chkMixLumaActive
@@ -2730,7 +2730,7 @@ namespace MilkwaveRemote
       label13.TabIndex = 139;
       label13.Text = "Luma Key";
       label13.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label13, "Lumakey threshold\r\nControls the brightness cutoff point (0–100%)");
+      toolTip1.SetToolTip(label13, "Luma Key threshold\r\nControls the brightness cutoff point (0–100%)");
       // 
       // label12
       // 
@@ -2786,7 +2786,7 @@ namespace MilkwaveRemote
       label14.TabIndex = 141;
       label14.Text = "Softness";
       label14.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label14, "Lumakey softness\r\nControls the feathering/transparency gradient at the edges of the cutoff\r\n");
+      toolTip1.SetToolTip(label14, "Luma Key softness\r\nControls the feathering/transparency gradient at the edges of the cutoff\r\n");
       // 
       // cboSettingsOpenFile
       // 
