@@ -20,6 +20,7 @@ SET CMD=del /s /q
 %CMD% "*Gillman*" "*Violetta*" "*Watery*" "*Grizelda*" "*Octobella*" "*Nerissa*" "*Spooky*" "*Abbie*" "*Chelsea*" "*Lucious*" "*Orticia*"
 %CMD% "*Dancing Saber*" "*BPM Code Test*" "*Bing AI*Try*"
 %CMD% "Aderrasi - Bitterfeld (Crystal Border Mix) - [Jian Simanjuntak with forest tree edit].milk"
+%CMD% "Anandamide - Capitalist_Cathedral_Esper (Se7enSlasher's Composition Fix).milk"
 %CMD% "*Altars Of Madness 2 (Cold Snap Edit)*"
 %CMD% "*Jian Simanjuntak - Particle Nights in Jakarta*"
 %CMD% "*Jetplane Military*"
