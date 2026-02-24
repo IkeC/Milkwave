@@ -222,6 +222,10 @@ namespace MilkwaveRemote
       label11 = new Label();
       label10 = new Label();
       label14 = new Label();
+      label15 = new Label();
+      chkControllerActive = new CheckBox();
+      btnControllerInputConfig = new Button();
+      label16 = new Label();
       numInputMixOpacity = new NumericUpDown();
       numLumaThreshold = new NumericUpDown();
       numLumaSoftness = new NumericUpDown();
@@ -303,6 +307,8 @@ namespace MilkwaveRemote
       numWavePushY = new NumericUpDown();
       numWavePushX = new NumericUpDown();
       tabInput = new TabPage();
+      btnControllerInputScan = new Button();
+      cboInputController = new ComboBox();
       btnSpoutInputScan = new Button();
       cboSputInput = new ComboBox();
       btnVideoInputScan = new Button();
@@ -375,10 +381,6 @@ namespace MilkwaveRemote
       panShadertoyLocal = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
-      btnControllerInputScan = new Button();
-      cboInputController = new ComboBox();
-      label15 = new Label();
-      chkControllerActive = new CheckBox();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -2692,7 +2694,7 @@ namespace MilkwaveRemote
       // 
       // label13
       // 
-      label13.Location = new Point(3, 64);
+      label13.Location = new Point(0, 64);
       label13.Name = "label13";
       label13.Size = new Size(66, 24);
       label13.TabIndex = 139;
@@ -2702,9 +2704,9 @@ namespace MilkwaveRemote
       // 
       // label12
       // 
-      label12.Location = new Point(21, 93);
+      label12.Location = new Point(119, 92);
       label12.Name = "label12";
-      label12.Size = new Size(48, 24);
+      label12.Size = new Size(68, 24);
       label12.TabIndex = 135;
       label12.Text = "Opacity";
       label12.TextAlign = ContentAlignment.MiddleRight;
@@ -2714,12 +2716,12 @@ namespace MilkwaveRemote
       // 
       chkInputTop.Appearance = Appearance.Button;
       chkInputTop.FlatStyle = FlatStyle.System;
-      chkInputTop.Location = new Point(432, 8);
+      chkInputTop.Location = new Point(68, 94);
       chkInputTop.Margin = new Padding(3, 2, 3, 2);
       chkInputTop.Name = "chkInputTop";
-      chkInputTop.Size = new Size(55, 52);
+      chkInputTop.Size = new Size(49, 24);
       chkInputTop.TabIndex = 133;
-      chkInputTop.Text = "Top";
+      chkInputTop.Text = "Input";
       chkInputTop.TextAlign = ContentAlignment.MiddleCenter;
       chkInputTop.TextImageRelation = TextImageRelation.ImageAboveText;
       toolTip1.SetToolTip(chkInputTop, "If toggled, input layer will be above preset layer");
@@ -2748,7 +2750,7 @@ namespace MilkwaveRemote
       // 
       // label14
       // 
-      label14.Location = new Point(118, 64);
+      label14.Location = new Point(121, 64);
       label14.Name = "label14";
       label14.Size = new Size(66, 24);
       label14.TabIndex = 141;
@@ -2756,10 +2758,56 @@ namespace MilkwaveRemote
       label14.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label14, "Luma Key softness\r\nControls the feathering/transparency gradient at the edges of the cutoff\r\n");
       // 
+      // label15
+      // 
+      label15.Location = new Point(3, 124);
+      label15.Name = "label15";
+      label15.Size = new Size(63, 24);
+      label15.TabIndex = 142;
+      label15.Text = "Controller";
+      label15.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label15, "Cam Input Device\r\nNote: To mix OBS input, using the OBS Spout sender is recommended\r\n");
+      // 
+      // chkControllerActive
+      // 
+      chkControllerActive.Appearance = Appearance.Button;
+      chkControllerActive.FlatStyle = FlatStyle.System;
+      chkControllerActive.Location = new Point(432, 124);
+      chkControllerActive.Margin = new Padding(3, 2, 3, 2);
+      chkControllerActive.Name = "chkControllerActive";
+      chkControllerActive.Size = new Size(55, 23);
+      chkControllerActive.TabIndex = 145;
+      chkControllerActive.Text = "Active";
+      chkControllerActive.TextAlign = ContentAlignment.MiddleCenter;
+      chkControllerActive.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkControllerActive, "Read config and activate controller input");
+      chkControllerActive.UseVisualStyleBackColor = true;
+      // 
+      // btnControllerInputConfig
+      // 
+      btnControllerInputConfig.Location = new Point(370, 124);
+      btnControllerInputConfig.Name = "btnControllerInputConfig";
+      btnControllerInputConfig.Size = new Size(55, 23);
+      btnControllerInputConfig.TabIndex = 146;
+      btnControllerInputConfig.Text = "Config";
+      toolTip1.SetToolTip(btnControllerInputConfig, "Open controller config file");
+      btnControllerInputConfig.UseVisualStyleBackColor = true;
+      btnControllerInputConfig.Click += btnControllerInputConfig_Click;
+      // 
+      // label16
+      // 
+      label16.Location = new Point(0, 93);
+      label16.Name = "label16";
+      label16.Size = new Size(66, 24);
+      label16.TabIndex = 147;
+      label16.Text = "Top Layer";
+      label16.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label16, "Luma Key threshold\r\nControls the brightness cutoff point (0–100%)");
+      // 
       // numInputMixOpacity
       // 
       numInputMixOpacity.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numInputMixOpacity.Location = new Point(72, 96);
+      numInputMixOpacity.Location = new Point(190, 96);
       numInputMixOpacity.Name = "numInputMixOpacity";
       numInputMixOpacity.Size = new Size(46, 23);
       numInputMixOpacity.TabIndex = 134;
@@ -2770,7 +2818,7 @@ namespace MilkwaveRemote
       // numLumaThreshold
       // 
       numLumaThreshold.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numLumaThreshold.Location = new Point(72, 67);
+      numLumaThreshold.Location = new Point(69, 67);
       numLumaThreshold.Name = "numLumaThreshold";
       numLumaThreshold.Size = new Size(46, 23);
       numLumaThreshold.TabIndex = 136;
@@ -2795,7 +2843,7 @@ namespace MilkwaveRemote
       cboSettingsOpenFile.AutoCompleteSource = AutoCompleteSource.ListItems;
       cboSettingsOpenFile.DropDownStyle = ComboBoxStyle.DropDownList;
       cboSettingsOpenFile.FormattingEnabled = true;
-      cboSettingsOpenFile.Items.AddRange(new object[] { "settings.ini", "sprites.ini", "messages.ini", "script-default.txt", "settings-remote.json", "tags-remote.json" });
+      cboSettingsOpenFile.Items.AddRange(new object[] { "settings.ini", "sprites.ini", "messages.ini", "script-default.txt", "controller-config.json", "midi-remote.json", "settings-remote.json", "tags-remote.json" });
       cboSettingsOpenFile.Location = new Point(75, 152);
       cboSettingsOpenFile.Name = "cboSettingsOpenFile";
       cboSettingsOpenFile.Size = new Size(125, 23);
@@ -3890,6 +3938,8 @@ namespace MilkwaveRemote
       // 
       tabInput.BackColor = SystemColors.ControlLight;
       tabInput.BorderStyle = BorderStyle.FixedSingle;
+      tabInput.Controls.Add(label16);
+      tabInput.Controls.Add(btnControllerInputConfig);
       tabInput.Controls.Add(chkControllerActive);
       tabInput.Controls.Add(btnControllerInputScan);
       tabInput.Controls.Add(cboInputController);
@@ -3916,6 +3966,25 @@ namespace MilkwaveRemote
       tabInput.Size = new Size(611, 183);
       tabInput.TabIndex = 7;
       tabInput.Text = "Input";
+      // 
+      // btnControllerInputScan
+      // 
+      btnControllerInputScan.FlatStyle = FlatStyle.System;
+      btnControllerInputScan.Location = new Point(308, 124);
+      btnControllerInputScan.Name = "btnControllerInputScan";
+      btnControllerInputScan.Size = new Size(55, 23);
+      btnControllerInputScan.TabIndex = 144;
+      btnControllerInputScan.Text = "Scan";
+      btnControllerInputScan.UseVisualStyleBackColor = true;
+      // 
+      // cboInputController
+      // 
+      cboInputController.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboInputController.FormattingEnabled = true;
+      cboInputController.Location = new Point(69, 125);
+      cboInputController.Name = "cboInputController";
+      cboInputController.Size = new Size(232, 23);
+      cboInputController.TabIndex = 143;
       // 
       // btnSpoutInputScan
       // 
@@ -4916,50 +4985,6 @@ namespace MilkwaveRemote
       splitContainerShader.SplitterDistance = 286;
       splitContainerShader.TabIndex = 31;
       // 
-      // btnControllerInputScan
-      // 
-      btnControllerInputScan.FlatStyle = FlatStyle.System;
-      btnControllerInputScan.Location = new Point(308, 124);
-      btnControllerInputScan.Name = "btnControllerInputScan";
-      btnControllerInputScan.Size = new Size(55, 23);
-      btnControllerInputScan.TabIndex = 144;
-      btnControllerInputScan.Text = "Scan";
-      btnControllerInputScan.UseVisualStyleBackColor = true;
-      // 
-      // cboInputController
-      // 
-      cboInputController.DropDownStyle = ComboBoxStyle.DropDownList;
-      cboInputController.FormattingEnabled = true;
-      cboInputController.Location = new Point(69, 125);
-      cboInputController.Name = "cboInputController";
-      cboInputController.Size = new Size(232, 23);
-      cboInputController.TabIndex = 143;
-      // 
-      // label15
-      // 
-      label15.Location = new Point(3, 124);
-      label15.Name = "label15";
-      label15.Size = new Size(63, 24);
-      label15.TabIndex = 142;
-      label15.Text = "Controller";
-      label15.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label15, "Cam Input Device\r\nNote: To mix OBS input, using the OBS Spout sender is recommended\r\n");
-      // 
-      // chkControllerActive
-      // 
-      chkControllerActive.Appearance = Appearance.Button;
-      chkControllerActive.FlatStyle = FlatStyle.System;
-      chkControllerActive.Location = new Point(369, 124);
-      chkControllerActive.Margin = new Padding(3, 2, 3, 2);
-      chkControllerActive.Name = "chkControllerActive";
-      chkControllerActive.Size = new Size(55, 23);
-      chkControllerActive.TabIndex = 145;
-      chkControllerActive.Text = "Active";
-      chkControllerActive.TextAlign = ContentAlignment.MiddleCenter;
-      chkControllerActive.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkControllerActive, "Activate Luma Key blending of input and preset layer");
-      chkControllerActive.UseVisualStyleBackColor = true;
-      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -5414,5 +5439,7 @@ namespace MilkwaveRemote
     private ComboBox cboInputController;
     private Label label15;
     private CheckBox chkControllerActive;
+    private Button btnControllerInputConfig;
+    private Label label16;
   }
 }

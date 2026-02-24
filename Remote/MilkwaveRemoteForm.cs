@@ -93,6 +93,7 @@ namespace MilkwaveRemote {
     private bool updatingWaveParams = false;
     private bool updatingSettingsParams = false;
     private uint lastControllerButtons = 0;
+    private Dictionary<int, string> controllerConfig = new();
 
 #if DEBUG
     private string BaseDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\Release"));
@@ -116,6 +117,7 @@ namespace MilkwaveRemote {
     private string milkwaveTagsFile = "tags-remote.json";
     private string milkwaveMidiFile = "midi-remote.json";
     private string milkwavePresetDeckFile = "presetdeck-remote.json";
+    private string milkwaveControllerFile = "controller-remote.json";
 
     private string milkwaveSpritesFile = "sprites.ini";
     private string milkwaveMessagesFile = "messages.ini";
@@ -184,6 +186,7 @@ namespace MilkwaveRemote {
     private const int VK_B = 0x42;
     private const int VK_K = 0x4B;
     private const int VK_N = 0x4E;
+    private const int VK_R = 0x52;
 
     private const int VK_SHIFT = 0x10;
     private const int VK_CTRL = 0x11;
@@ -1769,20 +1772,20 @@ namespace MilkwaveRemote {
                 string size = GetParam("size", message);
                 if (size.Length > 0) {
                   int newSize = (int)(int.Parse(size) * 1.8);
-                        message = message.Replace("size=" + size, "size=" + newSize);
-                      }
-                    }
-                  }
+                  message = message.Replace("size=" + size, "size=" + newSize);
+                }
+              }
+            }
 
-                  byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
-                  IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
-                  Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
+            byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
+            IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
+            Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
 
-                  COPYDATASTRUCT cds = new COPYDATASTRUCT {
-                    dwData = 1,
-                    cbData = messageBytes.Length,
-                    lpData = messagePtr
-                  };
+            COPYDATASTRUCT cds = new COPYDATASTRUCT {
+              dwData = 1,
+              cbData = messageBytes.Length,
+              lpData = messagePtr
+            };
 
             SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
             if (statusMessage.Length > 0) {
@@ -2110,11 +2113,21 @@ namespace MilkwaveRemote {
           if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
             numSettingsBrightness.Value = Math.Clamp((decimal)parsedValue, numSettingsBrightness.Minimum, numSettingsBrightness.Maximum);
           }
+        } else if (tokenUpper.Equals("RAND")) {
+          SendPostMessage(VK_R, "R");
+        } else if (tokenUpper.Equals("LOCK")) {
+          SendUnicodeChars("~");
+        } else if (tokenUpper.Equals("PRESETINFO")) {
+          SendPostMessage(VK_F4, "F4");
+        } else if (tokenUpper.Equals("SONGINFO")) {
+          SendPostMessage(VK_B, "B");
+        } else if (tokenUpper.Equals("SOUNDINFO")) {
+          SendPostMessage(VK_N, "N");
+        } else if (tokenUpper.Equals("FULLSCREEN")) {
+          SendInput(VK_ENTER, "Alt+Enter", false, true, false);
         } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
           SendToMilkwaveVisualizer(token, MessageType.Message);
         }
-
-
       }
     }
 
@@ -6569,9 +6582,27 @@ namespace MilkwaveRemote {
 
     private void chkControllerActive_CheckedChanged(object sender, EventArgs e) {
       if (chkControllerActive.Checked) {
+        LoadControllerConfig();
         controllerTimer.Start();
       } else {
         controllerTimer.Stop();
+      }
+    }
+
+    private void LoadControllerConfig() {
+      try {
+        string filePath = Path.Combine(BaseDir, milkwaveControllerFile);
+        if (File.Exists(filePath)) {
+          var lines = File.ReadAllLines(filePath).Where(l => !l.TrimStart().StartsWith("//"));
+          string jsonString = string.Join(Environment.NewLine, lines);
+          var config = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonString);
+          if (config != null) {
+            controllerConfig = config.Where(kvp => !string.IsNullOrEmpty(kvp.Value))
+                                     .ToDictionary(kvp => int.Parse(kvp.Key), kvp => kvp.Value);
+          }
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error loading controller config: {ex.Message}");
       }
     }
 
@@ -6584,14 +6615,14 @@ namespace MilkwaveRemote {
           var status = DeviceEnumerator.GetJoystickStatus(joyID);
           uint buttons = status.dwButtons;
 
-          // Check if button 1 or 2 was just pressed (transition from 0 to 1)
-          // Button 1 is bit 0, Button 2 is bit 1 in winmm
-          bool button1Pressed = (buttons & 0x01) != 0 && (lastControllerButtons & 0x01) == 0;
-          bool button2Pressed = (buttons & 0x02) != 0 && (lastControllerButtons & 0x02) == 0;
-
-          if (button1Pressed || button2Pressed) {
-            SelectNextPreset();
-            btnPresetSend_Click(null, null);
+          for (int i = 1; i <= 32; i++) {
+            uint mask = 1u << (i - 1);
+            if ((buttons & mask) != 0 && (lastControllerButtons & mask) == 0) {
+              // Button i just pressed
+              if (controllerConfig.TryGetValue(i, out string? command)) {
+                HandleScriptLine(true, command);
+              }
+            }
           }
 
           lastControllerButtons = buttons;
@@ -6639,5 +6670,8 @@ namespace MilkwaveRemote {
 
     #endregion
 
+    private void btnControllerInputConfig_Click(object sender, EventArgs e) {
+      OpenFile(milkwaveControllerFile);
+    }
   } // end class
 } // end namespace
