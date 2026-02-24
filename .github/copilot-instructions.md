@@ -17,6 +17,7 @@ This is a Windows API constant defined in `winuser.h`. Always use the correct sp
 ### .NET Code  
 - **Framework**: .NET 8
 - **Language**: C#
+- **Device Enumeration**: Uses OBS Studio patterns via `DeviceEnumerator` and `DeviceManager` classes
 
 ## Project Structure
 
@@ -41,12 +42,21 @@ This is a Windows API constant defined in `winuser.h`. Always use the correct sp
 - C++: Use try/catch for std::exception
 - SEH (Structured Exception Handling) is used for low-level exceptions
 - All logging goes through the Milkwave logging system
+- C#/.NET: Use try/catch with Debug.WriteLine for internal errors
 
 ### Threading
 - Render thread: Main window and DirectX rendering
 - Setup thread: Shader precompilation
 - Audio thread: WASAPI loopback capture
 - Use `std::atomic` for thread-safe flags
+
+### Device Enumeration (C#/.NET 8)
+- **Pattern**: OBS Studio two-layer architecture
+- **Core Layer**: `DeviceEnumerator` - COM interfaces, registry access (static)
+- **UI Layer**: `DeviceManager` - ComboBox helpers, user-friendly methods (static)
+- **Supported**: DirectShow video/audio, Spout senders
+- **Error Handling**: Graceful degradation with Debug output
+- **Usage**: `DeviceManager.PopulateSpoutSenders(comboBox, selectedName)`
 
 ## Naming Conventions
 

@@ -341,7 +341,9 @@ void ToggleStretch(HWND hwnd) {
     }
 
     g_plugin.SetVariableBackBuffer(width, height);
-    pD3DDevice->Reset(&g_plugin.d3dPp);
+    if (pD3DDevice) {
+        pD3DDevice->Reset(&g_plugin.d3dPp);
+    }
 
     SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
     SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
@@ -360,7 +362,9 @@ void ToggleStretch(HWND hwnd) {
     int height = lastRect.bottom - lastRect.top;
 
     g_plugin.SetVariableBackBuffer(width, height);
-    pD3DDevice->Reset(&g_plugin.d3dPp);
+    if (pD3DDevice) {
+        pD3DDevice->Reset(&g_plugin.d3dPp);
+    }
 
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     stretch = false;
@@ -560,7 +564,10 @@ static void ToggleFullScreen(HWND hwnd) {
     SetWindowPos(hwnd, HWND_TOPMOST, info.rcMonitor.left, info.rcMonitor.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
 
     g_plugin.SetVariableBackBuffer(width, height);
-    HRESULT hr = pD3DDevice->Reset(&g_plugin.d3dPp);
+    HRESULT hr = E_FAIL;
+    if (pD3DDevice) {
+        hr = pD3DDevice->Reset(&g_plugin.d3dPp);
+    }
     if (FAILED(hr)) {
       switch (hr) {
       case D3DERR_DEVICELOST:
@@ -614,7 +621,9 @@ static void ToggleFullScreen(HWND hwnd) {
     int height = lastRect.bottom - lastRect.top;
 
     g_plugin.SetVariableBackBuffer(width, height);
-    pD3DDevice->Reset(&g_plugin.d3dPp);
+    if (pD3DDevice) {
+        pD3DDevice->Reset(&g_plugin.d3dPp);
+    }
 
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     fullscreen = false;
@@ -1147,6 +1156,11 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
     ToggleBorderlessWindow(hWnd);
     break;
+  }
+
+  case (0x004A): // WM_COPYDATA
+  {
+    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
   }
 
   default:

@@ -100,11 +100,6 @@ WindowWidth=0
 WindowHeight=0
 WindowFixedWidth=960
 WindowFixedHeight=540
-InputMixOpacity=0.500000
-InputMixLumakeyThreshold=0.200000
-InputMixLumakeySoftness=0.200000
-InputMixOnTop=1
-InputMixTint=-1
 
 [Fonts]
 ; Simple Font: Most messages and notifications

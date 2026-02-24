@@ -67,7 +67,14 @@ BOOL DXContext::Internal_Init(DXCONTEXT_PARAMS* pParams, BOOL bFirstInit) {
   memcpy(&m_current_mode, pParams, sizeof(DXCONTEXT_PARAMS));
 
   memset(&m_caps, 0, sizeof(m_caps));
-  m_lpDevice->GetDeviceCaps(&m_caps);
+  if (m_lpDevice) {
+    __try {
+      m_lpDevice->GetDeviceCaps(&m_caps);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+      // Ignore
+    }
+  }
   m_bpp = 32;
 
   m_ready = TRUE;
@@ -145,7 +152,18 @@ bool DXContext::OnUserResizeWindow(RECT* new_window_rect, RECT* new_client_rect,
 
     m_d3dpp->BackBufferHeight = m_client_height;
     m_backbuffer_height = m_client_height;
-    if (m_lpDevice->Reset(m_d3dpp) != D3D_OK) {
+
+    HRESULT hr = E_FAIL;
+    if (m_lpDevice) {
+      __try {
+        hr = m_lpDevice->Reset(m_d3dpp);
+      }
+      __except (EXCEPTION_EXECUTE_HANDLER) {
+        hr = E_FAIL;
+      }
+    }
+
+    if (hr != D3D_OK) {
       WriteSafeWindowPos();
       m_lastErr = DXC_ERR_RESIZEFAILED;
       return FALSE;
@@ -158,6 +176,8 @@ bool DXContext::OnUserResizeWindow(RECT* new_window_rect, RECT* new_client_rect,
 }
 
 void DXContext::SetViewport() {
+  if (!m_lpDevice) return;
+
   D3DVIEWPORT9 v;
   v.X = 0;
   v.Y = 0;
@@ -165,5 +185,11 @@ void DXContext::SetViewport() {
   v.Height = m_client_height;
   v.MinZ = 0.0f;
   v.MaxZ = 1.0f;
-  m_lpDevice->SetViewport(&v);
+
+  __try {
+    m_lpDevice->SetViewport(&v);
+  }
+  __except (EXCEPTION_EXECUTE_HANDLER) {
+    // Silently ignore if device is invalid or lost
+  }
 }

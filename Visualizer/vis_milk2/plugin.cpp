@@ -613,6 +613,8 @@ SPOUT :
 
 #include <dwmapi.h>  // Link with Dwmapi.lib
 #pragma comment(lib, "dwmapi.lib")
+
+// Define custom message IDs
 #define FRAND ((rand() % 7381)/7380.0f)
 #define clamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 
@@ -686,6 +688,7 @@ volatile HANDLE g_hThread;  // only r/w from our MAIN thread
 volatile bool g_bThreadAlive; // set true by MAIN thread, and set false upon exit from 2nd thread.
 volatile int  g_bThreadShouldQuit;  // set by MAIN thread to flag 2nd thread that it wants it to exit.
 static CRITICAL_SECTION g_cs;
+static CRITICAL_SECTION g_csRemoteMessage;  // for thread-safe remote messaging
 
 #define IsAlphabetChar(x) ((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z'))
 #define IsAlphanumericChar(x) ((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || (x >= '0' && x <= '9') || x == '.')
@@ -1095,6 +1098,25 @@ void CPlugin::MyPreInitialize() {
   m_nCustMsgsSpawned = 0;
   m_nFramesSinceResize = 0;
 
+  // Input mixing initial settings
+  m_bVideoInputEnabled = false;
+  m_nVideoDeviceIndex = 0;
+  m_bSpoutInputEnabled = false;
+  m_szSpoutSenderName[0] = L'\0';
+  m_fInputMixOpacity = 1.0f;
+  m_cInputMixTint = D3DCOLOR_XRGB(255, 255, 255);
+  m_bInputMixLumaActive = false;
+  m_fInputMixLumakeyThreshold = 0.5f;
+  m_fInputMixLumakeySoftness = 0.1f;
+  m_bInputMixOnTop = true;
+  m_pVideoCapture = nullptr;
+  m_pVideoCaptureTexture = nullptr;
+  m_pSpoutReceiver = nullptr;
+  m_pSpoutInputTexture = nullptr;
+  m_lpPS_InputMix = nullptr;
+  m_nVideoCaptureWidth = 0;
+  m_nVideoCaptureHeight = 0;
+
   //m_bAlways3D		  	    = false;
   //m_fStereoSep            = 1.0f;
   //m_bAlwaysOnTop		= false;
@@ -1370,6 +1392,13 @@ void CPlugin::MyReadConfig() {
   m_fTimeBetweenRandomCustomMsgs = GetPrivateProfileFloatW(L"Settings", L"fTimeBetweenRandomCustomMsgs", m_fTimeBetweenRandomCustomMsgs, pIni);
   m_adapterId = GetPrivateProfileIntW(L"Settings", L"nVideoAdapterIndex", 0, pIni);
 
+  // Input Mix Settings (Unified)
+  m_fInputMixOpacity = GetPrivateProfileFloatW(L"Milkwave", L"InputMixOpacity", 0.5f, pIni);
+  m_fInputMixLumakeyThreshold = GetPrivateProfileFloatW(L"Milkwave", L"InputMixLumakeyThreshold", 0.0f, pIni);
+  m_fInputMixLumakeySoftness = GetPrivateProfileFloatW(L"Milkwave", L"InputMixLumakeySoftness", 0.1f, pIni);
+  m_bInputMixOnTop = GetPrivateProfileBoolW(L"Milkwave", L"InputMixOnTop", true, pIni);
+  m_cInputMixTint = (D3DCOLOR)GetPrivateProfileIntW(L"Milkwave", L"InputMixTint", 0xFFFFFFFF, pIni);
+
   // --------
 
   GetPrivateProfileStringW(L"Settings", L"szPresetDir", m_szPresetDir, m_szPresetDir, sizeof(m_szPresetDir), pIni);
@@ -1562,6 +1591,12 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowWidth, L"WindowWidth", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowHeight, L"WindowHeight", pIni, L"Milkwave");
+
+  WritePrivateProfileFloatW(m_fInputMixOpacity, L"InputMixOpacity", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_fInputMixLumakeyThreshold, L"InputMixLumakeyThreshold", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_fInputMixLumakeySoftness, L"InputMixLumakeySoftness", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_bInputMixOnTop, L"InputMixOnTop", pIni, L"Milkwave");
+  WritePrivateProfileIntW((int)m_cInputMixTint, L"InputMixTint", pIni, L"Milkwave");
 }
 
 void CPlugin::SaveWindowSizeAndPosition(HWND hwnd) {
@@ -1656,6 +1691,7 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   g_bThreadAlive = false;
   g_bThreadShouldQuit = false;
   InitializeCriticalSection(&g_cs);
+  InitializeCriticalSection(&g_csRemoteMessage);
 
   // read in 'm_szShaderIncludeText'
   bool bSuccess = true;
@@ -1687,6 +1723,25 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   m_pOldState->Default();
   m_pNewState->Default();
 
+  // Initialize video capture
+  m_pVideoCapture = new VideoCapture();
+  m_pVideoCaptureTexture = nullptr;
+  m_nVideoCaptureWidth = 640;      // Default video capture dimensions
+  m_nVideoCaptureHeight = 480;
+  m_fInputMixOpacity = 0.5f;
+  m_bInputMixOnTop = true;
+  m_bVideoInputEnabled = false;
+  m_nVideoDeviceIndex = -1;
+
+  // Initialize Spout input receiver
+  m_pSpoutReceiver = nullptr;
+  m_pSpoutInputTexture = nullptr;
+  m_szSpoutSenderName[0] = '\0';
+  m_nSpoutInputWidth = 0;
+  m_nSpoutInputHeight = 0;
+  m_bSpoutInputEnabled = false;
+
+
   //LoadRandomPreset(0.0f);   -avoid this here; causes some DX9 stuff to happen.
 
   return true;
@@ -1717,6 +1772,25 @@ void CPlugin::CleanUpMyNonDx9Stuff() {
   // Be sure to clean up any objects here that were
   //   created/initialized in AllocateMyNonDx9Stuff.
 
+  // Clean up video capture
+  if (m_pVideoCapture) {
+    m_pVideoCapture->Stop();
+    m_pVideoCapture->Release();
+    delete m_pVideoCapture;
+    m_pVideoCapture = nullptr;
+  }
+
+  // Clean up Spout input receiver
+  if (m_pSpoutReceiver) {
+    if (m_pSpoutInputTexture) {
+      m_pSpoutInputTexture->Release();
+      m_pSpoutInputTexture = nullptr;
+    }
+    m_pSpoutReceiver->ReleaseReceiver();
+    delete m_pSpoutReceiver;
+    m_pSpoutReceiver = nullptr;
+  }
+
 // =========================================================
 // SPOUT cleanup on exit
 //
@@ -1730,9 +1804,10 @@ void CPlugin::CleanUpMyNonDx9Stuff() {
 
   //sound.Finish();
 
-    // NOTE: DO NOT DELETE m_gdi_titlefont_doublesize HERE!!!
+  // NOTE: DO NOT DELETE m_gdi_titlefont_doublesize HERE!!!
 
   DeleteCriticalSection(&g_cs);
+  DeleteCriticalSection(&g_csRemoteMessage);
 
   CancelThread(1000);
 
@@ -2080,6 +2155,9 @@ int CPlugin::AllocateMyDX9Stuff() {
     }
   }
 
+  // Compile custom input mix shader
+  CompileInputMixShader();
+
   // create m_lpVS[2]
   {
     int log2texsize = GetNearestPow2Size(GetWidth(), GetHeight());
@@ -2258,6 +2336,26 @@ int CPlugin::AllocateMyDX9Stuff() {
   m_fAspectY = (m_nTexSizeX > m_nTexSizeY) ? m_nTexSizeY / (float)m_nTexSizeX : 1.0f;
   m_fInvAspectX = 1.0f / m_fAspectX;
   m_fInvAspectY = 1.0f / m_fAspectY;
+
+  // Create video capture texture
+  if (m_pVideoCaptureTexture) {
+    m_pVideoCaptureTexture->Release();
+    m_pVideoCaptureTexture = nullptr;
+  }
+  // Use the stored video capture dimensions, not the canvas size
+  GetDevice()->CreateTexture(m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
+  
+  // Restart video capture if it was enabled
+  if (m_bVideoInputEnabled && m_pVideoCapture && m_nVideoDeviceIndex >= 0) {
+    m_pVideoCapture->Stop();
+    if (!m_pVideoCapture->Start()) {
+      m_bVideoInputEnabled = false;
+      milkwave->LogInfo(L"Failed to restart video capture after device reset");
+    }
+    else {
+      milkwave->LogInfo(L"Successfully restarted video capture after device reset");
+    }
+  }
 
 
   // BUILD VERTEX LIST for final composite blit
@@ -2980,6 +3078,7 @@ void CShaderParams::Clear() {
   // float4 handles:
   rand_frame = NULL;
   rand_preset = NULL;
+  luma_params = NULL;
 
   ZeroMemory(rot_mat, sizeof(rot_mat));
   ZeroMemory(const_handles, sizeof(const_handles));
@@ -3446,9 +3545,10 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
         else if (!strcmp(cd.Name, "rot_rand4")) rot_mat[23] = h;
       }
       else if (cd.Class == D3DXPC_VECTOR) {
-        if (!strcmp(cd.Name, "rand_frame"))  rand_frame = h;
-        else if (!strcmp(cd.Name, "rand_preset")) rand_preset = h;
-        else if (!strncmp(cd.Name, "texsize_", 8)) {
+          if (!strcmp(cd.Name, "rand_frame"))  rand_frame = h;
+          else if (!strcmp(cd.Name, "rand_preset")) rand_preset = h;
+          else if (!strcmp(cd.Name, "luma_params")) luma_params = h;
+          else if (!strncmp(cd.Name, "texsize_", 8)) {
           // remove "texsize_" prefix to find root file name.
           wchar_t szRootName[MAX_PATH];
           if (!strncmp(cd.Name, "texsize_", 8))
@@ -3651,6 +3751,13 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   lstrcpy(&szShaderText[writePos], m_szShaderIncludeText);  // first, paste in the contents of 'inputs.fx' before the actual shader text.  Has 13's and 10's.
   writePos += m_nShaderIncludeTextLen;
 
+  // paste in luma_params global for composite shaders (must be outside function signature for compatibility)
+  if (shaderType == SHADER_COMP && szProfile[0] == 'p') {
+      const char szLumaUniform[] = "uniform float4 luma_params;\r\n";
+      lstrcpy(&szShaderText[writePos], szLumaUniform);
+      writePos += lstrlen(szLumaUniform);
+  }
+
   // paste in any custom #defines for this shader type
   if (shaderType == SHADER_WARP && szProfile[0] == 'p') {
     lstrcpy(&szShaderText[writePos], szWarpDefines);
@@ -3718,6 +3825,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
       // insert "void PS(...params...)\n"
       lstrcpy(temp, p);
       const char* params = (shaderType == SHADER_WARP) ? szWarpParams : szCompParams;
+
       sprintf(p, "void %s( %s )\n", szFn, params);
       p += lstrlen(p);
       lstrcpy(p, temp);
@@ -3735,10 +3843,19 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
 
         // find the ending curly brace
         p = strrchr(p, '}');
-        // add the last line - "    _return_value = float4(ret.xyz, _vDiffuse.w);"
+        // add the last line with optional lumakey support (COMP only)
         if (p) {
-          char szLastLine[] = "    _return_value = float4(shiftHSV(ret.xyz), _vDiffuse.w);";
-          sprintf(p, " %s\n}\n", szLastLine);
+            if (shaderType == SHADER_COMP) {
+              char szLastLine[] = 
+                  "    float luma_v = dot(ret.xyz, float3(0.299, 0.587, 0.114));\n"
+                  "    float luma_a = (luma_params.w > 0.5) ? saturate((luma_v - luma_params.x) / max(0.0001, luma_params.y)) : 1.0;\n"
+                  "    float opacity_a = (luma_params.w > 0.5) ? luma_params.z : 1.0;\n"
+                  "    _return_value = float4(shiftHSV(ret.xyz), luma_a * opacity_a * _vDiffuse.w);";
+              sprintf(p, " %s\n}\n", szLastLine);
+            } else {
+              char szLastLine[] = "    _return_value = float4(shiftHSV(ret.xyz), _vDiffuse.w);";
+              sprintf(p, " %s\n}\n", szLastLine);
+            }
         }
       }
     }
@@ -3897,7 +4014,11 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // just force this:
   m_pState->m_bBlending = false;
 
+  // Clean up video capture texture
+  SafeRelease(m_pVideoCaptureTexture);
 
+  // Clean up input mixing shader
+  SafeRelease(m_lpPS_InputMix);
 
   for (size_t i = 0; i < m_textures.size(); i++)
     if (m_textures[i].texptr) {
@@ -5763,21 +5884,14 @@ void LoadPresetFilesViaDragAndDrop(WPARAM wParam) {
 //----------------------------------------------------------------------
 
 LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam) {
-  // You can handle Windows messages here while the plugin is running,
-  //   such as mouse events (WM_MOUSEMOVE/WM_LBUTTONDOWN), keypresses
-  //   (WK_KEYDOWN/WM_CHAR), and so on.
-  // This function is threadsafe (thanks to Winamp's architecture),
-  //   so you don't have to worry about using semaphores or critical
-  //   sections to read/write your class member variables.
-  // If you don't handle a message, let it continue on the usual path
-  //   (to Winamp) by returning DefWindowProc(hWnd,uMsg,wParam,lParam).
-  // If you do handle a message, prevent it from being handled again
-  //   (by Winamp) by returning 0.
-
-  // IMPORTANT: For the WM_KEYDOWN, WM_KEYUP, and WM_CHAR messages,
-  //   you must return 0 if you process the message (key),
-  //   and 1 if you do not.  DO NOT call DefWindowProc()
-  //   for these particular messages!
+  // Debug: Log all WM_USER messages for input mixing
+  if (uMsg >= WM_USER && uMsg < WM_USER + 200) {
+      if (milkwave) {
+          wchar_t buf[256];
+          swprintf_s(buf, L"[MSG] uMsg=0x%04X, wP=%Id, lP=%Id", uMsg, (size_t)wParam, (size_t)lParam);
+          milkwave->LogInfo(buf);
+      }
+  }
 
   USHORT mask = 1 << (sizeof(SHORT) * 8 - 1);
   bool bShiftHeldDown = (GetKeyState(VK_SHIFT) & mask) != 0;
@@ -5790,24 +5904,118 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   case WM_COPYDATA:
   {
     PCOPYDATASTRUCT pCopyData = (PCOPYDATASTRUCT)lParam;
+    if (!pCopyData) return 0;
+
+    // Handle Spout sender name message (WM_SETSPOUTSENDER)
+    if (pCopyData->dwData == (0x0400 + 108)) { // WM_SETSPOUTSENDER
+      wchar_t* senderNameRaw = (wchar_t*)pCopyData->lpData;
+      size_t nameLength = pCopyData->cbData / sizeof(wchar_t);
+
+      if (nameLength > 0 && senderNameRaw) {
+        wchar_t senderNameLocal[256];
+        size_t copyLen = (nameLength < 255) ? nameLength : 255;
+        memcpy(senderNameLocal, senderNameRaw, copyLen * sizeof(wchar_t));
+        senderNameLocal[copyLen] = L'\0';
+
+        this->SetSpoutSender(senderNameLocal);
+      }
+      return 0; // Message handled
+    }
+
+    // Standard message handling (dwData == 1)
     if (pCopyData->dwData == 1) { // Custom identifier for the message
-      wchar_t* receivedMessage = (wchar_t*)pCopyData->lpData;
+      wchar_t* receivedMessageRaw = (wchar_t*)pCopyData->lpData;
+      if (!receivedMessageRaw) return 0;
 
       // Calculate the length in wchar_t units
       size_t messageLength = pCopyData->cbData / sizeof(wchar_t);
 
-      // Ensure the received message is null-terminated
       if (messageLength > 0) {
-        if (receivedMessage[messageLength - 1] != L'\0') {
-          // Add null-terminator only if it's not already present
-          receivedMessage[messageLength] = L'\0';
-        }
+        // Create a local safe copy that is guaranteed to be null-terminated
+        std::wstring safeMessage(receivedMessageRaw, messageLength);
+        // Note: safeMessage.c_str() is guaranteed to be null-terminated.
+        // We cast to non-const because LaunchMessage doesn't modify the string, 
+        // but its signature doesn't say const.
+        LaunchMessage((wchar_t*)safeMessage.c_str());
       }
-      LaunchMessage(receivedMessage);
       return 0; // Message handled
-      //MessageBoxW(hWnd, receivedMessage, L"Received Message", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
     }
     break;
+  }
+
+  // Handle WM_ENABLE_SPOUT_MIX via PostMessage (not WM_COPYDATA)
+  case WM_USER_ENABLE_SPOUT_MIX:
+  {
+    BOOL bEnable = (BOOL)wParam;
+    g_plugin.EnableSpoutMixing(bEnable ? true : false);
+    return 0;
+  }
+
+  // Handle WM_SET_VIDEO_DEVICE via PostMessage
+  case WM_USER_SET_VIDEO_DEVICE:
+  {
+    int deviceIndex = (int)wParam;
+    g_plugin.SetVideoDevice(deviceIndex);
+    return 0;
+  }
+
+  // Handle WM_ENABLE_VIDEO_MIX via PostMessage
+  case WM_USER_ENABLE_VIDEO_MIX:
+  {
+    BOOL bEnable = (BOOL)wParam;
+    g_plugin.EnableVideoMixing(bEnable ? true : false);
+    return 0;
+  }
+
+  // Handle layer position (Top/Background) via PostMessage
+  case WM_USER_SET_INPUTMIX_ONTOP:
+  {
+    this->SetInputMixOnTop(wParam != 0);
+    return 0;
+  }
+
+  // Handle Input Mix Opacity (0..100 -> 0.0..1.0)
+  case WM_USER_SET_INPUTMIX_OPACITY:
+  {
+    this->SetInputMixOpacity((float)wParam / 100.0f);
+    wchar_t buf[64];
+    swprintf_s(buf, L"Opacity: %d%%", (int)wParam);
+    AddNotification(buf, 1.0f);
+    return 0;
+  }
+
+  // Handle Input Mix Tint Color via PostMessage
+  case WM_USER_SET_INPUTMIX_TINT:
+  {
+      this->m_cInputMixTint = (D3DCOLOR)wParam;
+      return 0;
+  }
+
+  // Handle Input Mix Luma Key
+  case WM_USER_SET_INPUTMIX_LUMAKEY:
+  {
+    int thresholdInt = (int)wParam;
+    int softnessInt = (int)lParam;
+
+    if (milkwave) {
+        wchar_t buf[256];
+        swprintf_s(buf, L"LumaMsg REC: thr=%d, soft=%d", thresholdInt, softnessInt);
+        milkwave->LogInfo(buf);
+    }
+
+    if (thresholdInt >= 0) {
+      m_bInputMixLumaActive = true;
+      m_fInputMixLumakeyThreshold = (float)thresholdInt / 100.0f;
+    } else {
+      m_bInputMixLumaActive = false;
+    }
+    m_fInputMixLumakeySoftness = (float)lParam / 100.0f;
+
+    if (m_bInputMixLumaActive)
+        AddNotification(L"Luma Key On", 2.0f);
+    else
+        AddNotification(L"Luma Key Off", 2.0f);
+    return 0;
   }
 
   case WM_COMMAND:
@@ -7252,14 +7460,22 @@ int CPlugin::SetSpoutFixedSize(bool toggleSwitch, bool showNotifications) {
     d3dPp.BackBufferWidth = nSpoutFixedWidth;
     d3dPp.BackBufferHeight = nSpoutFixedHeight;
     UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
-    GetDevice()->Reset(&d3dPp);
+
+    LPDIRECT3DDEVICE9EX pDevice = GetDevice();
+    if (pDevice) {
+        pDevice->Reset(&d3dPp);
+    }
   }
   else {
     // bSpoutFixedSize OR bSpoutOut is false
     // Update window properties
     SetVariableBackBuffer(m_WindowWidth, m_WindowFixedHeight);
     UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
-    GetDevice()->Reset(&d3dPp);
+
+    LPDIRECT3DDEVICE9EX pDevice = GetDevice();
+    if (pDevice) {
+        pDevice->Reset(&d3dPp);
+    }
     if (toggleSwitch && showNotifications && bSpoutOut) {
       AddNotification(L"Fixed Spout output size disabled");
     }
@@ -9422,18 +9638,27 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend, bool doFo
       return 0;
     }
 
-    // Get current time since epoch in milliseconds
+    // Thread-safe timing check
+    EnterCriticalSection(&g_csRemoteMessage);
     uint64_t Now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     if (!doForce && Now - LastSentMilkwaveMessage < 100) {
       // Skipping message send to Milkwave Remote to avoid flooding
+      LeaveCriticalSection(&g_csRemoteMessage);
       return 0;
     }
     LastSentMilkwaveMessage = Now;
+    LeaveCriticalSection(&g_csRemoteMessage);
 
     // Find the Milkwave Remote window
     HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
     if (!hRemoteWnd) {
       wprintf(L"Milkwave Remote window not found.\n");
+      return 0;
+    }
+
+    // Double-check window is still valid before sending
+    if (!IsWindow(hRemoteWnd)) {
+      wprintf(L"Milkwave Remote window is not valid.\n");
       return 0;
     }
 
@@ -9443,18 +9668,28 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend, bool doFo
     cds.cbData = (wcslen(messageToSend) + 1) * sizeof(wchar_t); // Size of the data in bytes
     cds.lpData = (void*)messageToSend; // Pointer to the data
 
-    if (IsWindow(hRemoteWnd)) {
-      // Send the WM_COPYDATA message
-      if (SendMessage(hRemoteWnd, WM_COPYDATA, (WPARAM)GetPluginWindow(), (LPARAM)&cds) != 0) {
-        wprintf(L"Failed to send WM_COPYDATA message to Milkwave Remote.\n");
-        return 0;
-      }
-      else {
-        wprintf(L"WM_COPYDATA message sent successfully to Milkwave Remote.\n");
-      }
+    // Use SendMessageTimeout to avoid hanging if receiver is busy
+    DWORD_PTR result = 0;
+    LRESULT lr = SendMessageTimeout(
+      hRemoteWnd,
+      WM_COPYDATA,
+      (WPARAM)GetPluginWindow(),
+      (LPARAM)&cds,
+      SMTO_ABORTIFHUNG | SMTO_BLOCK,
+      100,  // 100ms timeout
+      &result
+    );
+
+    if (lr == 0) {
+      wprintf(L"SendMessageTimeout failed or timed out.\n");
+      return 0;
     }
+    
+    wprintf(L"WM_COPYDATA message sent successfully to Milkwave Remote.\n");
   } catch (...) {
-    // ignore
+    // Ensure we leave critical section even if exception occurs
+    wprintf(L"Exception in SendMessageToMilkwaveRemote\n");
+    return 0;
   }
   return 1;
 }
@@ -10988,6 +11223,35 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     // Restart audio
     m_nAudioLoopState = 1;
   }
+  else if (wcsncmp(sMessage, L"VIDEOINPUT=", 11) == 0) {
+    std::wstring message(sMessage + 11);
+    size_t pos = message.find(L'|');
+    if (pos != std::wstring::npos) {
+      std::wstring enabledStr = message.substr(0, pos);
+      std::wstring deviceName = message.substr(pos + 1);
+      bool enabled = (enabledStr == L"1");
+      
+      // For now, just enable/disable - device selection could be added later
+      EnableVideoMixing(enabled);
+    }
+  }
+  else if (wcsncmp(sMessage, L"SPOUTINPUT=", 11) == 0) {
+    std::wstring message(sMessage + 11);
+    size_t pos = message.find(L'|');
+    if (pos != std::wstring::npos) {
+      std::wstring enabledStr = message.substr(0, pos);
+      std::wstring senderName = message.substr(pos + 1);
+      bool enabled = (enabledStr == L"1");
+      
+      // Set the sender name first
+      if (!senderName.empty()) {
+        SetSpoutSender(senderName.c_str());
+      }
+      
+      // Then enable/disable mixing
+      EnableSpoutMixing(enabled);
+    }
+  }
   else if (wcsncmp(sMessage, L"OPACITY=", 8) == 0) {
     std::wstring message(sMessage + 8);
     fOpacity = std::stof(message);
@@ -11166,7 +11430,11 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|QUALITY=" + std::to_wstring(m_fRenderQuality)
     + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0")
     + L"|HUE=" + std::to_wstring(m_ColShiftHue)
-    + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0");
+    + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0")
+    + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0")
+    + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0")
+    + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f))
+    + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f));
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 
@@ -11763,7 +12031,7 @@ void CPlugin::GenCompPShaderText(char* szShaderText, float brightness, float ve_
     p += sprintf(p, "    ret = ret*(1-ret)*4; //solarize%c", LF);
   if (bInvert)
     p += sprintf(p, "    ret = 1 - ret; //invert%c", LF);
-  //p += sprintf(p, "    ret.w = vDiffuse.w; // pass alpha along - req'd for preset blending%c", LF);
+
   p += sprintf(p, "}%c", LF);
 }
 
@@ -12002,5 +12270,49 @@ void CPlugin::ShowDirectXMissingMessage() {
     "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
     // open website in browser
     ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
+  }
+}
+
+void CPlugin::CompileInputMixShader() {
+  const char* szShader =
+    "sampler2D inputTex : register(s0);\n"
+    "float4 lumaParams1 : register(c0);\n" // x: threshold, y: softness, z: opacity (extra), w: active (1.0/0.0)
+    "struct PS_INPUT {\n"
+    "    float2 uv    : TEXCOORD0;\n"
+    "    float4 color : COLOR0;\n"
+    "};\n"
+    "float4 main(PS_INPUT input) : COLOR {\n"
+    "    float4 col = tex2D(inputTex, input.uv);\n"
+    "    col *= input.color;\n"
+    "    if (lumaParams1.w > 0.5) {\n"
+    "        float luma = dot(col.rgb, float3(0.299, 0.587, 0.114));\n"
+    "        float factor = saturate((luma - lumaParams1.x) / max(0.0001, lumaParams1.y));\n"
+    "        col.a *= factor;\n"
+    "    }\n"
+    "    return col;\n"
+    "}\n";
+
+  ID3DXBuffer* pShaderByteCode = NULL;
+  ID3DXBuffer* pErrors = NULL;
+
+  if (SUCCEEDED(D3DXCompileShader(szShader, (UINT)strlen(szShader), NULL, NULL, "main", "ps_2_0", 0, &pShaderByteCode, &pErrors, NULL))) {
+    if (m_lpPS_InputMix) m_lpPS_InputMix->Release();
+    GetDevice()->CreatePixelShader((DWORD*)pShaderByteCode->GetBufferPointer(), &m_lpPS_InputMix);
+    if (pShaderByteCode) pShaderByteCode->Release();
+    if (milkwave) milkwave->LogInfo(L"Input Mix Shader compiled successfully");
+    // AddNotification(L"Input Mix Shader: READY", 1.0f);
+  }
+  else {
+    // AddNotification(L"Input Mix Shader FAILED", 3.0f);
+    if (pErrors) {
+      char* err = (char*)pErrors->GetBufferPointer();
+      if (err && milkwave) {
+          milkwave->LogInfo(L"Shader Error:");
+          wchar_t werr[1024];
+          MultiByteToWideChar(CP_ACP, 0, err, -1, werr, 1024);
+          milkwave->LogInfo(werr);
+      }
+      pErrors->Release();
+    }
   }
 }

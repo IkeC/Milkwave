@@ -27,6 +27,9 @@ namespace MilkwaveRemote {
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     private static extern IntPtr SendMessageW(IntPtr hWnd, uint Msg, IntPtr wParam, ref COPYDATASTRUCT lParam);
 
+    [DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern IntPtr SendMessageGeneral(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
@@ -65,6 +68,13 @@ namespace MilkwaveRemote {
     private const int WM_SPRITE_MODE = 0x0400 + 103;
     private const int WM_MESSAGE_MODE = 0x0400 + 104;
     private const int WM_CAPTURE_SCREENSHOT = 0x0400 + 105;
+    private const int WM_SETVIDEODEVICE = 0x0400 + 106;
+    private const int WM_ENABLEVIDEOMIX = 0x0400 + 107;
+    private const int WM_SETSPOUTSENDER = 0x0400 + 108;
+    private const int WM_ENABLESPOUTMIX = 0x0400 + 109;
+    private const int WM_SET_INPUTMIX_OPACITY = 0x0400 + 150;
+    private const int WM_SET_INPUTMIX_LUMAKEY = 0x0400 + 151;
+    private const int WM_SET_INPUTMIX_ONTOP = 0x0400 + 152;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -72,6 +82,7 @@ namespace MilkwaveRemote {
 
     private System.Windows.Forms.Timer autoplayTimer;
     private System.Windows.Forms.Timer monitorTimer;
+    private System.Windows.Forms.Timer spoutRefreshTimer;
 
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
@@ -97,6 +108,7 @@ namespace MilkwaveRemote {
     private string windowNotFound = "Milkwave Visualizer Window not found";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
+    private string lastSpoutSenderName = "";
 
     private string milkwaveSettingsFile = "settings-remote.json";
     private string milkwaveTagsFile = "tags-remote.json";
@@ -268,7 +280,12 @@ namespace MilkwaveRemote {
       ColBrightness,
       HueAuto,
       HueAutoSeconds,
-      CaptureScreenshot
+      CaptureScreenshot,
+      VideoInput,
+      SpoutInput,
+      InputMixOnTop,
+      InputMixOpacity,
+      InputMixLuma
     }
 
     private class PendingThumbnail {
@@ -1069,7 +1086,6 @@ namespace MilkwaveRemote {
       txtShaderGLSL.Font = txtShaderHLSL.Font;
 
       RemoteHelper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
-      RemoteHelper.FillAudioDevices(cboAudioDevice);
 
       string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
       if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
@@ -1097,6 +1113,75 @@ namespace MilkwaveRemote {
         }
       }
       return result;
+    }
+
+    /// <summary>
+    /// Initialize all device lists using OBS-style enumeration pattern
+    /// </summary>
+    private void InitializeDeviceLists() {
+      try {
+        // Audio devices (existing NAudio-based enumeration)
+        RemoteHelper.FillAudioDevices(cboAudioDevice);
+
+        // Video devices (OBS-style DirectShow enumeration)
+        if (cboVideoInput != null) {
+          string savedVideoDevice = RemoteHelper.GetIniValue("Milkwave", "VideoDevice", "");
+          DeviceManager.PopulateVideoDevices(cboVideoInput, savedVideoDevice);
+          chkVideoMix.Enabled = cboVideoInput.Enabled;
+          if (!chkVideoMix.Enabled) chkVideoMix.Checked = false;
+        }
+
+        // Spout senders (OBS-style pattern with registry access)
+        if (cboSputInput != null) {
+          string savedSpoutSender = RemoteHelper.GetIniValue("Milkwave", "SpoutSender", "");
+          DeviceManager.PopulateSpoutSenders(cboSputInput, savedSpoutSender);
+          chkSpoutMix.Enabled = cboSputInput.Enabled;
+          if (!chkSpoutMix.Enabled) chkSpoutMix.Checked = false;
+          StartSpoutRefreshTimer();
+        }
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error initializing device lists: {ex.Message}");
+      }
+    }
+
+    /// <summary>
+    /// Start periodic Spout sender refresh timer
+    /// Allows detection of new Spout senders appearing at runtime
+    /// </summary>
+    private void StartSpoutRefreshTimer() {
+      try {
+        if (spoutRefreshTimer == null) {
+          spoutRefreshTimer = new System.Windows.Forms.Timer();
+          spoutRefreshTimer.Interval = 2000; // Refresh every 2 seconds
+          spoutRefreshTimer.Tick += (s, e) => {
+            try {
+              DeviceManager.RefreshSpoutSenders(cboSputInput);
+              chkSpoutMix.Enabled = cboSputInput.Enabled;
+              if (!chkSpoutMix.Enabled) chkSpoutMix.Checked = false;
+            } catch (Exception ex) {
+              Debug.WriteLine($"Error refreshing Spout senders: {ex.Message}");
+            }
+          };
+          spoutRefreshTimer.Start();
+        }
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error starting Spout refresh timer: {ex.Message}");
+      }
+    }
+
+    private void SendStringMessage(IntPtr windowHandle, int messageId, string message) {
+      byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
+      IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
+      Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
+
+      COPYDATASTRUCT cds = new COPYDATASTRUCT {
+        dwData = (IntPtr)messageId,
+        cbData = messageBytes.Length,
+        lpData = messagePtr
+      };
+
+      SendMessageW(windowHandle, WM_COPYDATA, IntPtr.Zero, ref cds);
+      Marshal.FreeHGlobal(messagePtr);
     }
 
     private void MainForm_Shown(object sender, EventArgs e) {
@@ -1171,6 +1256,9 @@ namespace MilkwaveRemote {
         numShadertoyFileIndex.Value = Math.Clamp(Settings.ShadertoyFileIndex, 1, shadertoyFilesList.Count);
         setShadertoyFileText();
       }
+
+      // Initialize devices using OBS-style enumeration pattern
+      InitializeDeviceLists();
     }
 
     private void PopulateMidiDevicesList() {
@@ -1347,6 +1435,18 @@ namespace MilkwaveRemote {
                     }
                   } else if (key.Equals("LOCKED", StringComparison.OrdinalIgnoreCase)) {
                     chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
+                    chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                    chkMixLumaActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("LUMATHR", StringComparison.OrdinalIgnoreCase)) {
+                    if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal thr)) {
+                      numLumaThreshold.Value = Math.Clamp(thr, numLumaThreshold.Minimum, numLumaThreshold.Maximum);
+                    }
+                  } else if (key.Equals("LUMASOFT", StringComparison.OrdinalIgnoreCase)) {
+                    if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal soft)) {
+                      numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
+                    }
                   }
                 } catch (Exception ex) {
                   // ignore
@@ -1515,6 +1615,84 @@ namespace MilkwaveRemote {
               message = "VAR_AUTO=" + (chkQualityAuto.Checked ? "1" : "0");
             } else if (type == MessageType.CaptureScreenshot) {
               message = messageToSend;
+            } else if (type == MessageType.VideoInput) {
+              string deviceName = cboVideoInput.Text;
+              bool mixEnabled = chkVideoMix.Checked;
+              message = "VIDEOINPUT=" + (mixEnabled ? "1" : "0") + "|" + deviceName;
+              statusMessage = $"Video input mixing {(mixEnabled ? "enabled" : "disabled")}: {deviceName}";
+            } else if (type == MessageType.SpoutInput) {
+              string senderName = cboSputInput.Text;
+              bool mixEnabled = chkSpoutMix.Checked;
+              statusMessage = $"Spout mixing {(mixEnabled ? "enabled" : "disabled")}: {senderName}";
+
+              // Use direct window messages - send sender name FIRST, then enable
+              if (foundWindow != IntPtr.Zero) {
+                if (mixEnabled && senderName.Length > 0) {
+                  SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
+                  System.Threading.Thread.Sleep(50);
+                }
+                PostMessage(foundWindow, WM_ENABLESPOUTMIX, (IntPtr)(mixEnabled ? 1 : 0), IntPtr.Zero);
+                if (statusMessage.Length > 0) {
+                  SetStatusText($"{statusMessage} {foundWindowTitle}");
+                }
+              } else {
+                SetStatusText(windowNotFound);
+              }
+              SendingMessage = false;
+              return;
+            } else if (type == MessageType.InputMixOnTop) {
+              try {
+                if (updatingSettingsParams) return;
+
+                bool onTop = chkInputTop.Checked;
+                if (foundWindow != IntPtr.Zero) {
+                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+                  SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")} on {foundWindowTitle}");
+                } else {
+                  SetStatusText(windowNotFound);
+                }
+              } catch (Exception ex) {
+                SetStatusText($"Error setting input layer position: {ex.Message}");
+              }
+              SendingMessage = false;
+              return;
+            } else if (type == MessageType.InputMixOpacity) {
+              try {
+                if (updatingSettingsParams) return;
+
+                int opacityInt = (int)numInputMixOpacity.Value;
+                if (foundWindow != IntPtr.Zero) {
+                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
+                  SetStatusText($"Input mix opacity set to {opacityInt}% on {foundWindowTitle}");
+                } else {
+                  SetStatusText(windowNotFound);
+                }
+              } catch (Exception ex) {
+                SetStatusText($"Error setting input mix opacity: {ex.Message}");
+              }
+              SendingMessage = false;
+              return;
+            } else if (type == MessageType.InputMixLuma) {
+              try {
+                if (updatingSettingsParams) return;
+
+                bool active = chkMixLumaActive.Checked;
+                int threshold = active ? (int)numLumaThreshold.Value : -1;
+                int softness = (int)numLumaSoftness.Value;
+                if (foundWindow != IntPtr.Zero) {
+                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)threshold, (IntPtr)softness);
+                  if (active)
+                    SetStatusText($"Luma Key set to {threshold}% (softness {softness}%) on {foundWindowTitle}");
+                  else
+                    SetStatusText($"Luma Key disabled on {foundWindowTitle}");
+                } else {
+                  SetStatusText(windowNotFound);
+                }
+              } catch (Exception ex) {
+                SetStatusText($"Error setting input luma key: {ex.Message}");
+              }
+              SendingMessage = false;
+              return;
             } else if (type == MessageType.Message) {
               if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
                 // try auto-wrap
@@ -1571,20 +1749,20 @@ namespace MilkwaveRemote {
                 string size = GetParam("size", message);
                 if (size.Length > 0) {
                   int newSize = (int)(int.Parse(size) * 1.8);
-                  message = message.Replace("size=" + size, "size=" + newSize);
-                }
-              }
-            }
+                        message = message.Replace("size=" + size, "size=" + newSize);
+                      }
+                    }
+                  }
 
-            byte[] messageBytes = Encoding.Unicode.GetBytes(message);
-            IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
-            Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
+                  byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
+                  IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
+                  Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
 
-            COPYDATASTRUCT cds = new COPYDATASTRUCT {
-              dwData = 1,
-              cbData = messageBytes.Length,
-              lpData = messagePtr
-            };
+                  COPYDATASTRUCT cds = new COPYDATASTRUCT {
+                    dwData = 1,
+                    cbData = messageBytes.Length,
+                    lpData = messagePtr
+                  };
 
             SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
             if (statusMessage.Length > 0) {
@@ -3387,6 +3565,36 @@ namespace MilkwaveRemote {
       SendToMilkwaveVisualizer("", MessageType.Amplify);
     }
 
+    public void chkInputTop_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixOnTop);
+      }
+    }
+
+    public void numInputMixOpacity_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixOpacity);
+      }
+    }
+
+    private void chkMixLumaActive_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixLuma);
+      }
+    }
+
+    private void numLumaThreshold_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixLuma);
+      }
+    }
+
+    private void numLumaSoftness_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.InputMixLuma);
+      }
+    }
+
     private void SetExpIncrements(NumericUpDown nud) {
       // Ensure the Tag property is cast to decimal before comparison
       decimal previousValue = nud.Tag is decimal tagValue ? tagValue : 0;
@@ -3852,6 +4060,7 @@ namespace MilkwaveRemote {
     }
 
     private void LoadAndSetSettings() {
+      updatingSettingsParams = true;
       Location = Settings.RemoteWindowLocation;
       Size optimalSize = GetCalculatedOptionalTopPanelSize();
       if (Settings.RemoteWindowSize.Width > 0 && Settings.RemoteWindowSize.Height > 0) {
@@ -3881,11 +4090,18 @@ namespace MilkwaveRemote {
       chkShaderFile.Checked = Settings.ShaderFileChecked;
       chkWrap.Checked = Settings.WrapChecked;
 
+      numInputMixOpacity.Value = Math.Clamp(Settings.InputMixOpacity, numInputMixOpacity.Minimum, numInputMixOpacity.Maximum);
+      chkInputTop.Checked = Settings.InputMixOnTop;
+      chkMixLumaActive.Checked = Settings.InputMixLumaActive;
+      numLumaThreshold.Value = Math.Clamp(Settings.InputMixLumaThreshold, numLumaThreshold.Minimum, numLumaThreshold.Maximum);
+      numLumaSoftness.Value = Math.Clamp(Settings.InputMixLumaSoftness, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
+
       numVisIntensity.Value = (decimal)Settings.VisIntensity;
       numVisShift.Value = (decimal)Settings.VisShift;
       numVisVersion.Value = Settings.VisVersion;
 
       RefreshSpriteButtonImages(false);
+      updatingSettingsParams = false;
     }
 
     private void SetAndSaveSettings() {
@@ -3901,6 +4117,12 @@ namespace MilkwaveRemote {
       Settings.ShaderFileChecked = chkShaderFile.Checked;
       Settings.WrapChecked = chkWrap.Checked;
       Settings.EnableSpriteButtonImage = toolStripMenuItemSpriteButtonImages.Checked;
+
+      Settings.InputMixOpacity = numInputMixOpacity.Value;
+      Settings.InputMixOnTop = chkInputTop.Checked;
+      Settings.InputMixLumaActive = chkMixLumaActive.Checked;
+      Settings.InputMixLumaThreshold = numLumaThreshold.Value;
+      Settings.InputMixLumaSoftness = numLumaSoftness.Value;
 
       Settings.VisIntensity = numVisIntensity.Value;
       Settings.VisShift = numVisShift.Value;
@@ -6125,5 +6347,220 @@ namespace MilkwaveRemote {
 
       SetStatusText($"Preset unassigned from button {buttonIndex}");
     }
+
+    #region Video Input Mixing
+
+    private void PopulateVideoDevices() {
+      try {
+        DeviceManager.PopulateVideoDevices(cboVideoInput);
+        chkVideoMix.Enabled = cboVideoInput.Enabled;
+        if (!chkVideoMix.Enabled) chkVideoMix.Checked = false;
+      } catch (Exception ex) {
+        SetStatusText($"Error enumerating video devices: {ex.Message}");
+      }
+    }
+
+    private void chkVideoMix_CheckedChanged(object sender, EventArgs e) {
+      try {
+        bool enabled = chkVideoMix.Checked;
+
+        // Make Mix buttons mutually exclusive
+        if (enabled && chkSpoutMix.Checked) {
+          chkSpoutMix.Checked = false;
+        }
+
+        IntPtr foundWindow = FindVisualizerWindow();
+        if (foundWindow != IntPtr.Zero) {
+          // Always send current mix settings (opacity and layer position) beforehand
+          if (enabled) {
+            int opacityInt = (int)numInputMixOpacity.Value;
+            bool onTop = chkInputTop.Checked;
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+
+            // Send Luma Key settings
+            bool lumaActive = chkMixLumaActive.Checked;
+            int lumaThreshold = lumaActive ? (int)numLumaThreshold.Value : -1;
+            int lumaSoftness = (int)numLumaSoftness.Value;
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)lumaThreshold, (IntPtr)lumaSoftness);
+
+            System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
+          }
+
+          // Always send device index first (even if already sent) to ensure it's initialized
+          if (enabled && cboVideoInput.SelectedIndex >= 0) {
+            int deviceIndex = cboVideoInput.SelectedIndex;
+            PostMessage(foundWindow, WM_SETVIDEODEVICE, (IntPtr)deviceIndex, IntPtr.Zero);
+            System.Threading.Thread.Sleep(100); // Give device time to initialize
+          }
+
+          // Then enable/disable mixing
+          PostMessage(foundWindow, WM_ENABLEVIDEOMIX, (IntPtr)(enabled ? 1 : 0), IntPtr.Zero);
+
+          if (enabled && cboVideoInput.SelectedIndex >= 0) {
+            SetStatusText($"Video mixing enabled: {cboVideoInput.Text}");
+          } else if (enabled) {
+            SetStatusText("Video mixing enabled but no device selected");
+          } else {
+            SetStatusText("Video mixing disabled");
+          }
+        } else {
+          SetStatusText(windowNotFound);
+        }
+
+        // Keep dropdown enabled so user can change device even when Mix is off
+      } catch (Exception ex) {
+        SetStatusText($"Error toggling video mix: {ex.Message}");
+      }
+    }
+
+    private void cboVideoInput_SelectedIndexChanged(object sender, EventArgs e) {
+      try {
+        if (chkVideoMix.Checked && cboVideoInput.SelectedIndex >= 0) {
+          IntPtr foundWindow = FindVisualizerWindow();
+          if (foundWindow != IntPtr.Zero) {
+            int deviceIndex = cboVideoInput.SelectedIndex;
+            PostMessage(foundWindow, WM_SETVIDEODEVICE, (IntPtr)deviceIndex, IntPtr.Zero);
+            SetStatusText($"Video source changed: {cboVideoInput.Text}");
+          } else {
+            SetStatusText(windowNotFound);
+          }
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error changing video device: {ex.Message}");
+      }
+    }
+
+    private void btnVideoInputScan_Click(object sender, EventArgs e) {
+      PopulateVideoDevices();
+      int realCount = cboVideoInput.Enabled ? cboVideoInput.Items.Count : 0;
+      SetStatusText($"Video devices rescanned: {realCount} found");
+    }
+
+    private void PopulateSpoutSenders() {
+      try {
+        DeviceManager.PopulateSpoutSenders(cboSputInput);
+        chkSpoutMix.Enabled = cboSputInput.Enabled;
+        if (!chkSpoutMix.Enabled) chkSpoutMix.Checked = false;
+      } catch (Exception ex) {
+        SetStatusText($"Error enumerating Spout senders: {ex.Message}");
+      }
+    }
+
+    private void chkSpoutMix_CheckedChanged(object sender, EventArgs e) {
+      try {
+        bool enabled = chkSpoutMix.Checked;
+
+        // Make Mix buttons mutually exclusive
+        if (enabled && chkVideoMix.Checked) {
+          chkVideoMix.Checked = false;
+        }
+
+        IntPtr foundWindow = FindVisualizerWindow();
+        if (foundWindow != IntPtr.Zero) {
+          // Always send current mix settings (opacity and layer position) beforehand
+          if (enabled) {
+            int opacityInt = (int)numInputMixOpacity.Value;
+            bool onTop = chkInputTop.Checked;
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+
+            // Send Luma Key settings
+            bool lumaActive = chkMixLumaActive.Checked;
+            int lumaThreshold = lumaActive ? (int)numLumaThreshold.Value : -1;
+            int lumaSoftness = (int)numLumaSoftness.Value;
+            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)lumaThreshold, (IntPtr)lumaSoftness);
+
+            System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
+          }
+
+          // Send sender name and then enable/disable mixing
+          if (enabled && cboSputInput.SelectedIndex >= 0) {
+            string senderName = cboSputInput.Text;
+            SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
+            System.Threading.Thread.Sleep(50);
+          }
+
+          PostMessage(foundWindow, WM_ENABLESPOUTMIX, (IntPtr)(enabled ? 1 : 0), IntPtr.Zero);
+
+          if (enabled && cboSputInput.SelectedIndex >= 0) {
+            SetStatusText($"Spout mixing enabled: {cboSputInput.Text}");
+          } else if (enabled) {
+            SetStatusText("Spout mixing enabled but no sender selected");
+          } else {
+            SetStatusText("Spout mixing disabled");
+          }
+        } else {
+          SetStatusText(windowNotFound);
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error toggling Spout mix: {ex.Message}");
+      }
+    }
+
+    private void cboSpoutInput_SelectedIndexChanged(object sender, EventArgs e) {
+      try {
+        if (updatingSettingsParams) return;
+        if (chkSpoutMix.Checked && cboSputInput.SelectedIndex >= 0) {
+          string senderName = cboSputInput.Text;
+          if (senderName == lastSpoutSenderName) return; // Ignore if name hasn't changed (avoids noise from refresh timer)
+
+          IntPtr foundWindow = FindVisualizerWindow();
+          if (foundWindow != IntPtr.Zero) {
+            SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
+            SetStatusText($"Spout sender changed: {senderName}");
+            lastSpoutSenderName = senderName;
+          } else {
+            SetStatusText(windowNotFound);
+          }
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error changing Spout sender: {ex.Message}");
+      }
+    }
+
+    private void btnSpoutInputScan_Click(object sender, EventArgs e) {
+      PopulateSpoutSenders();
+      int realCount = cboSputInput.Enabled ? cboSputInput.Items.Count : 0;
+      SetStatusText($"Spout senders rescanned: {realCount} found");
+    }
+    #endregion
+
+    #region Device Enumeration (OBS-Style Pattern)
+
+    /// <summary>
+    /// Send selected Spout sender to visualizer via window message
+    /// </summary>
+    private void SendSpoutSenderToVisualizer(string senderName) {
+      try {
+        IntPtr hWnd = FindVisualizerWindow();
+        if (hWnd == IntPtr.Zero) {
+          Debug.WriteLine("Visualizer window not found");
+          return;
+        }
+
+        // Convert sender name to wide char for Windows message
+        byte[] senderBytes = Encoding.Unicode.GetBytes(senderName);
+        IntPtr senderPtr = Marshal.AllocHGlobal(senderBytes.Length + 2);
+        Marshal.Copy(senderBytes, 0, senderPtr, senderBytes.Length);
+        Marshal.WriteInt16(senderPtr, senderBytes.Length, 0); // Null terminator
+
+        COPYDATASTRUCT cds = new COPYDATASTRUCT {
+          dwData = (IntPtr)WM_SETSPOUTSENDER,
+          cbData = senderBytes.Length + 2,
+          lpData = senderPtr
+        };
+
+        SendMessageW(hWnd, WM_COPYDATA, IntPtr.Zero, ref cds);
+        Marshal.FreeHGlobal(senderPtr);
+
+        Debug.WriteLine($"Sent Spout sender '{senderName}' to visualizer");
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error sending Spout sender to visualizer: {ex.Message}");
+      }
+    }
+
+    #endregion
+
   } // end class
 } // end namespace

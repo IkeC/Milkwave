@@ -42,6 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "support.h"
 #include "texmgr.h"
 #include "state.h"
+#include "VideoCapture.h"
 #include <vector>
 #include <array>
 #include "../ns-eel2-shim/ns-eel.h"
@@ -215,6 +216,7 @@ public:
   // float4 handles:
   D3DXHANDLE rand_frame;
   D3DXHANDLE rand_preset;
+  D3DXHANDLE luma_params;
   D3DXHANDLE const_handles[24];
   D3DXHANDLE q_const_handles[(NUM_Q_VAR + 3) / 4];
   D3DXHANDLE rot_mat[24];
@@ -285,6 +287,8 @@ typedef std::vector<PresetInfo> PresetList;
 class CPlugin : public CPluginShell {
 public:
   Milkwave* milkwave;
+  void SetInputMixOpacity(float opacity);
+  void SetInputMixOnTop(bool onTop);
   //====[ 1. members added to create this specific example plugin: ]================================================
 
 // =========================================================
@@ -297,7 +301,7 @@ public:
   void OpenMilkwaveRemote();
   void SetAudioDeviceDisplayName(const wchar_t* displayName, bool isRenderDevice);
   void SetAMDFlag();
-  
+
   void SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t checksum, char* prefix);
   ID3DXBuffer* LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix);
 
@@ -548,6 +552,13 @@ public:
 #define WM_USER_COVER_CHANGED WM_USER + 102
 #define WM_USER_SPRITE_MODE WM_USER + 103
 #define WM_USER_MESSAGE_MODE WM_USER + 104
+#define WM_USER_SET_VIDEO_DEVICE WM_USER + 106
+#define WM_USER_ENABLE_VIDEO_MIX WM_USER + 107
+#define WM_USER_ENABLE_SPOUT_MIX WM_USER + 109
+#define WM_USER_SET_INPUTMIX_OPACITY WM_USER + 150
+#define WM_USER_SET_INPUTMIX_LUMAKEY WM_USER + 151
+#define WM_USER_SET_INPUTMIX_ONTOP WM_USER + 152
+#define WM_USER_SET_INPUTMIX_TINT WM_USER + 153
 
   FFT            myfft;
   td_mysounddata mysound;
@@ -668,6 +679,34 @@ public:
 
   IDirect3DTexture9* m_tracer_tex;
 
+  // Unified Input mixing settings (SSOT)
+  bool  m_bVideoInputEnabled;
+  int   m_nVideoDeviceIndex;
+  bool  m_bSpoutInputEnabled;
+  wchar_t m_szSpoutSenderName[256];
+  float m_fInputMixOpacity;          // 0.0 to 1.0 (replaces m_fPresetOpacity)
+  D3DCOLOR m_cInputMixTint;          // Tint color (default White)
+  bool  m_bInputMixLumaActive;       // bool instead of threshold < 0 check
+  float m_fInputMixLumakeyThreshold; // 0.0 to 1.0
+  float m_fInputMixLumakeySoftness;  // 0.0 to 1.0
+  bool  m_bInputMixOnTop;            // true: overlay, false: background (underlay)
+
+  // Video capture resources
+  class VideoCapture* m_pVideoCapture;
+  IDirect3DTexture9* m_pVideoCaptureTexture;
+  int m_nVideoCaptureWidth;        // Video capture texture width
+  int m_nVideoCaptureHeight;       // Video capture texture height
+
+  // Spout receiver resources
+  spoutDX9* m_pSpoutReceiver;
+  IDirect3DTexture9* m_pSpoutInputTexture;
+
+  // Input mixing shader
+  IDirect3DPixelShader9* m_lpPS_InputMix;
+  void CompileInputMixShader();
+  int m_nSpoutInputWidth;
+  int m_nSpoutInputHeight;
+
   int         m_nFramesSinceResize;
 
   char        m_szShaderIncludeText[32768];     // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
@@ -734,6 +773,16 @@ public:
   void        DrawCustomShapes();
   void		DrawSprites();
   void        ComputeGridAlphaValues();
+  
+  // Input mixing methods
+  void        UpdateVideoInputTexture();
+  void        UpdateSpoutInputTexture();
+  void        CompositeInputMixing(bool isBackground = false);
+  void        SetVideoDevice(int deviceIndex);
+  void        EnableVideoMixing(bool enable);
+  void        SetSpoutSender(const wchar_t* senderName);
+  void        EnableSpoutMixing(bool enable);
+
   //void        WarpedBlit();
                // note: 'bFlipAlpha' just flips the alpha blending in fixed-fn pipeline - not the values for culling tiles.
   void		 WarpedBlit_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, bool bCullTiles, bool bFlipCulling);
