@@ -57,6 +57,9 @@ Section "Milkwave" SecMilkwave
   
   SetOverwrite try
   
+  SetOutPath "$INSTDIR\resources\buttons\"
+  File /r "${RELDIR}resources\buttons\*" 
+
   SetOutPath "$INSTDIR\resources\data\"
   File /r "${RELDIR}resources\data\*" 
   
@@ -84,6 +87,9 @@ Section "Milkwave" SecMilkwave
   File "${RELDIR}NAudio.Midi.dll"
   File "${RELDIR}NAudio.Wasapi.dll"
   File "${RELDIR}README.txt"
+  File "${RELDIR}System.Management.dll"
+  File "${RELDIR}visualizer-keys.txt"
+
   SetOverwrite off
   File "${RELDIR}script-default.txt"
   File "${RELDIR}midi-default.txt"
@@ -95,9 +101,6 @@ Section "Milkwave" SecMilkwave
   File "${RELDIR}sprites.ini"
   File "${RELDIR}precompile.txt"
   SetOverwrite on
-
-  SetOutPath "$INSTDIR\runtimes\"
-  File /r "${RELDIR}runtimes\*"
 
   SetOutPath $INSTDIR
 

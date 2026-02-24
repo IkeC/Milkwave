@@ -24,12 +24,10 @@ copy controller-remote.json %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.exe %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.dll %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.runtimeconfig.json %releasePath%
-copy %remoteBuildPath%\MilkwaveRemote.deps.json %releasePath%
-copy %remoteBuildPath%\NAudio.dll %releasePath%
 copy %remoteBuildPath%\NAudio.Core.dll %releasePath%
 copy %remoteBuildPath%\NAudio.Wasapi.dll %releasePath%
 copy %remoteBuildPath%\NAudio.Midi.dll %releasePath%
-xcopy /s /y /i %remoteBuildPath%\runtimes %releasePath%\runtimes
+copy %remoteBuildPath%\runtimes\win\lib\net8.0\System.Management.dll %releasePath%
 copy %visualizerBuildPath%\MilkwaveVisualizer.exe %releasePath%
 
 copy %visualizerSourcePath%\resources\sprites\cover.png %releasePath%\resources\sprites\cover.png

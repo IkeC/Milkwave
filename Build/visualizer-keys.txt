@@ -22,7 +22,7 @@ F10 / CTRL + Z          Enable/disable Spout output / Holding SHIFT: set fixed S
 F11                     Hardcut mode: normal/based of music
 F12                     Transparency mode (removes the black background)
 CTRL + F12              Toggle black mode (no preset rendering)
-                        
+
 LEFT ARROW / Z          previous track
 RIGHT ARROW / V         next track
 DOWN ARROW / X          play/pause track
@@ -33,6 +33,7 @@ B / M MOUSEBUTTON       show track info
 CTRL + A                toggle next preset when track changes
 CTRL + B                toggle track info polling
 CTRL + C                toggle cover display when track changes
+CTRL + X                save screenshot to /capture folder
 
 Visualizer Help Menu (F1) - Page 2
 

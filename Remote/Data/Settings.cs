@@ -22,7 +22,6 @@
     public int SelectedTabIndex { get; set; } = 0;
     public bool ShaderFileChecked { get; set; } = true;
     public bool WrapChecked { get; set; } = true;
-
     public decimal InputMixOpacity { get; set; } = 50M;
     public bool InputMixOnTop { get; set; } = true;
     public bool InputMixLumaActive { get; set; } = false;

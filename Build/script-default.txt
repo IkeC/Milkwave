@@ -55,6 +55,8 @@
 # LOCK: Toggle preset locking
 # PRESETINFO: Toggle preset info
 # SONGINFO: Toggle song info
+# SOUNDINFO: Toggle sound info
+# FULLSCREEN: Toggle fullscreen
 #
 BPM=120|BEATS=8|STYLE=Style A|PRESET=resources\presets\Milkwave\01 - Martin - blue haze.milk|Welcome to Milkwave!
 STYLE=Style B|Switched to "Style B"
