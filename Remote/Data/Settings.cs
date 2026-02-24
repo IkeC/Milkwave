@@ -23,7 +23,7 @@
     public bool ShaderFileChecked { get; set; } = true;
     public bool WrapChecked { get; set; } = true;
 
-    public decimal InputMixOpacity { get; set; } = 100M;
+    public decimal InputMixOpacity { get; set; } = 50M;
     public bool InputMixOnTop { get; set; } = true;
     public bool InputMixLumaActive { get; set; } = false;
     public decimal InputMixLumaThreshold { get; set; } = 15M;
@@ -41,5 +41,6 @@
 
     public bool IsPresetMode { get; set; } = false;
     public int CurrentPresetBank { get; set; } = 1;
+    public bool ControllerActive { get; set; } = false;
   }
 }

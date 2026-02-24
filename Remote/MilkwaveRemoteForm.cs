@@ -83,6 +83,7 @@ namespace MilkwaveRemote {
     private System.Windows.Forms.Timer autoplayTimer;
     private System.Windows.Forms.Timer monitorTimer;
     private System.Windows.Forms.Timer spoutRefreshTimer;
+    private System.Windows.Forms.Timer controllerTimer;
 
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
@@ -91,6 +92,8 @@ namespace MilkwaveRemote {
 
     private bool updatingWaveParams = false;
     private bool updatingSettingsParams = false;
+    private uint lastControllerButtons = 0;
+    private Dictionary<int, string> controllerConfig = new();
 
 #if DEBUG
     private string BaseDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\Release"));
@@ -114,6 +117,7 @@ namespace MilkwaveRemote {
     private string milkwaveTagsFile = "tags-remote.json";
     private string milkwaveMidiFile = "midi-remote.json";
     private string milkwavePresetDeckFile = "presetdeck-remote.json";
+    private string milkwaveControllerFile = "controller-remote.json";
 
     private string milkwaveSpritesFile = "sprites.ini";
     private string milkwaveMessagesFile = "messages.ini";
@@ -182,6 +186,7 @@ namespace MilkwaveRemote {
     private const int VK_B = 0x42;
     private const int VK_K = 0x4B;
     private const int VK_N = 0x4E;
+    private const int VK_R = 0x52;
 
     private const int VK_SHIFT = 0x10;
     private const int VK_CTRL = 0x11;
@@ -980,6 +985,7 @@ namespace MilkwaveRemote {
     }
 
     public MilkwaveRemoteForm() {
+      Program.LogToFile("### Milkwave Remote Starting ###");
       InitializeComponent();
 
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
@@ -1052,6 +1058,11 @@ namespace MilkwaveRemote {
       monitorTimer = new System.Windows.Forms.Timer();
       monitorTimer.Tick += MonitorTimer_Tick;
       monitorTimer.Interval = Settings.MonitorPollingInterval;
+
+      controllerTimer = new System.Windows.Forms.Timer();
+      controllerTimer.Tick += ControllerTimer_Tick;
+      controllerTimer.Interval = 50; // 20Hz polling
+
       toolStripStatusLabelMonitorCPU.Text = "";
       toolStripStatusLabelMonitorGPU.Text = "";
 
@@ -1138,6 +1149,14 @@ namespace MilkwaveRemote {
           chkSpoutMix.Enabled = cboSputInput.Enabled;
           if (!chkSpoutMix.Enabled) chkSpoutMix.Checked = false;
           StartSpoutRefreshTimer();
+        }
+
+        // Game controllers (winmm.dll enumeration)
+        if (cboInputController != null) {
+          string savedController = RemoteHelper.GetIniValue("Milkwave", "Controller", "");
+          DeviceManager.PopulateGameControllers(cboInputController, savedController);
+          chkControllerActive.Enabled = cboInputController.Enabled;
+          if (!chkControllerActive.Enabled) chkControllerActive.Checked = false;
         }
       } catch (Exception ex) {
         Debug.WriteLine($"Error initializing device lists: {ex.Message}");
@@ -1259,6 +1278,15 @@ namespace MilkwaveRemote {
 
       // Initialize devices using OBS-style enumeration pattern
       InitializeDeviceLists();
+
+      if (Settings.ControllerActive && cboInputController.Enabled && cboInputController.Items.Count > 0) {
+        chkControllerActive.Checked = true;
+      }
+
+      // Wire up game controller events
+      if (btnControllerInputScan != null) btnControllerInputScan.Click += btnControllerInputScan_Click;
+      if (cboInputController != null) cboInputController.SelectedIndexChanged += cboInputController_SelectedIndexChanged;
+      if (chkControllerActive != null) chkControllerActive.CheckedChanged += chkControllerActive_CheckedChanged;
     }
 
     private void PopulateMidiDevicesList() {
@@ -1749,20 +1777,20 @@ namespace MilkwaveRemote {
                 string size = GetParam("size", message);
                 if (size.Length > 0) {
                   int newSize = (int)(int.Parse(size) * 1.8);
-                        message = message.Replace("size=" + size, "size=" + newSize);
-                      }
-                    }
-                  }
+                  message = message.Replace("size=" + size, "size=" + newSize);
+                }
+              }
+            }
 
-                  byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
-                  IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
-                  Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
+            byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
+            IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
+            Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
 
-                  COPYDATASTRUCT cds = new COPYDATASTRUCT {
-                    dwData = 1,
-                    cbData = messageBytes.Length,
-                    lpData = messagePtr
-                  };
+            COPYDATASTRUCT cds = new COPYDATASTRUCT {
+              dwData = 1,
+              cbData = messageBytes.Length,
+              lpData = messagePtr
+            };
 
             SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
             if (statusMessage.Length > 0) {
@@ -2090,11 +2118,21 @@ namespace MilkwaveRemote {
           if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
             numSettingsBrightness.Value = Math.Clamp((decimal)parsedValue, numSettingsBrightness.Minimum, numSettingsBrightness.Maximum);
           }
+        } else if (tokenUpper.Equals("RAND")) {
+          SendPostMessage(VK_R, "R");
+        } else if (tokenUpper.Equals("LOCK")) {
+          SendUnicodeChars("~");
+        } else if (tokenUpper.Equals("PRESETINFO")) {
+          SendPostMessage(VK_F4, "F4");
+        } else if (tokenUpper.Equals("SONGINFO")) {
+          SendPostMessage(VK_B, "B");
+        } else if (tokenUpper.Equals("SOUNDINFO")) {
+          SendPostMessage(VK_N, "N");
+        } else if (tokenUpper.Equals("FULLSCREEN")) {
+          SendInput(VK_ENTER, "Alt+Enter", false, true, false);
         } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
           SendToMilkwaveVisualizer(token, MessageType.Message);
         }
-
-
       }
     }
 
@@ -4116,6 +4154,7 @@ namespace MilkwaveRemote {
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
       Settings.ShaderFileChecked = chkShaderFile.Checked;
       Settings.WrapChecked = chkWrap.Checked;
+      Settings.ControllerActive = chkControllerActive.Checked;
       Settings.EnableSpriteButtonImage = toolStripMenuItemSpriteButtonImages.Checked;
 
       Settings.InputMixOpacity = numInputMixOpacity.Value;
@@ -6524,6 +6563,81 @@ namespace MilkwaveRemote {
       int realCount = cboSputInput.Enabled ? cboSputInput.Items.Count : 0;
       SetStatusText($"Spout senders rescanned: {realCount} found");
     }
+
+    private void PopulateGameControllers() {
+      try {
+        DeviceManager.PopulateGameControllers(cboInputController);
+        chkControllerActive.Enabled = cboInputController.Enabled;
+        if (!chkControllerActive.Enabled) chkControllerActive.Checked = false;
+      } catch (Exception ex) {
+        SetStatusText($"Error enumerating game controllers: {ex.Message}");
+      }
+    }
+
+    private void btnControllerInputScan_Click(object sender, EventArgs e) {
+      PopulateGameControllers();
+      int realCount = cboInputController.Enabled ? cboInputController.Items.Count : 0;
+      SetStatusText($"Game controllers rescanned: {realCount} found");
+    }
+
+    private void cboInputController_SelectedIndexChanged(object sender, EventArgs e) {
+      if (cboInputController.SelectedItem is DeviceEnumerator.DeviceItem item) {
+        RemoteHelper.SetIniValue("Milkwave", "Controller", item.Name);
+      }
+    }
+
+    private void chkControllerActive_CheckedChanged(object sender, EventArgs e) {
+      if (chkControllerActive.Checked) {
+        LoadControllerConfig();
+        controllerTimer.Start();
+      } else {
+        controllerTimer.Stop();
+      }
+    }
+
+    private void LoadControllerConfig() {
+      try {
+        string filePath = Path.Combine(BaseDir, milkwaveControllerFile);
+        if (File.Exists(filePath)) {
+          var lines = File.ReadAllLines(filePath).Where(l => !l.TrimStart().StartsWith("//"));
+          string jsonString = string.Join(Environment.NewLine, lines);
+          var config = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonString);
+          if (config != null) {
+            controllerConfig = config.Where(kvp => !string.IsNullOrEmpty(kvp.Value))
+                                     .ToDictionary(kvp => int.Parse(kvp.Key), kvp => kvp.Value);
+          }
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error loading controller config: {ex.Message}");
+      }
+    }
+
+    private void ControllerTimer_Tick(object? sender, EventArgs? e) {
+      try {
+        if (cboInputController.SelectedItem is DeviceEnumerator.DeviceItem item &&
+            !string.IsNullOrEmpty(item.DeviceID) &&
+            int.TryParse(item.DeviceID, out int joyID)) {
+
+          var status = DeviceEnumerator.GetJoystickStatus(joyID);
+          uint buttons = status.dwButtons;
+
+          for (int i = 1; i <= 32; i++) {
+            uint mask = 1u << (i - 1);
+            if ((buttons & mask) != 0 && (lastControllerButtons & mask) == 0) {
+              // Button i just pressed
+              if (controllerConfig.TryGetValue(i, out string? command)) {
+                HandleScriptLine(true, command);
+              }
+            }
+          }
+
+          lastControllerButtons = buttons;
+        }
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error polling controller: {ex.Message}");
+      }
+    }
+
     #endregion
 
     #region Device Enumeration (OBS-Style Pattern)
@@ -6562,5 +6676,8 @@ namespace MilkwaveRemote {
 
     #endregion
 
+    private void btnControllerInputConfig_Click(object sender, EventArgs e) {
+      OpenFile(milkwaveControllerFile);
+    }
   } // end class
 } // end namespace

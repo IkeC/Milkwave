@@ -1103,7 +1103,7 @@ void CPlugin::MyPreInitialize() {
   m_nVideoDeviceIndex = 0;
   m_bSpoutInputEnabled = false;
   m_szSpoutSenderName[0] = L'\0';
-  m_fInputMixOpacity = 1.0f;
+  m_fInputMixOpacity = 0.5f;
   m_cInputMixTint = D3DCOLOR_XRGB(255, 255, 255);
   m_bInputMixLumaActive = false;
   m_fInputMixLumakeyThreshold = 0.5f;
