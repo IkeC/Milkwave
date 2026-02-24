@@ -29,9 +29,6 @@ copy %remoteBuildPath%\NAudio.dll %releasePath%
 copy %remoteBuildPath%\NAudio.Core.dll %releasePath%
 copy %remoteBuildPath%\NAudio.Wasapi.dll %releasePath%
 copy %remoteBuildPath%\NAudio.Midi.dll %releasePath%
-copy %remoteBuildPath%\NAudio.WinMM.dll %releasePath%
-copy %remoteBuildPath%\System.Management.dll %releasePath%
-copy %remoteBuildPath%\WinRT.Runtime.dll %releasePath%
 xcopy /s /y /i %remoteBuildPath%\runtimes %releasePath%\runtimes
 copy %visualizerBuildPath%\MilkwaveVisualizer.exe %releasePath%
 

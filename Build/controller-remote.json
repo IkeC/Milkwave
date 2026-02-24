@@ -1,6 +1,6 @@
-// Here you may assign button commands as explained in script-default.txt
-// Open Windows Controller Settings to identify button numbers for your controller
-// These are example values for a DualSense controller connected via Bluetooth
+// Here you may assign button commands as described in script-default.txt
+// Open Windows controller settings to identify button numbers for your controller
+// These are example values for a DualSense controller:
 {
   "1": "MEDIA_PLAY",
   "2": "NEXT",

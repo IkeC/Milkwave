@@ -89,12 +89,16 @@ Section "Milkwave" SecMilkwave
   File "${RELDIR}midi-default.txt"
   File "${RELDIR}settings-remote.json"
   File "${RELDIR}tags-remote.json"
+  File "${RELDIR}controller-remote.json"
   File "${RELDIR}messages.ini"
   File "${RELDIR}settings.ini"
   File "${RELDIR}sprites.ini"
   File "${RELDIR}precompile.txt"
   SetOverwrite on
-   
+
+  SetOutPath "$INSTDIR\runtimes\"
+  File /r "${RELDIR}runtimes\*"
+
   SetOutPath $INSTDIR
 
   ;Store installation folder
@@ -164,7 +168,8 @@ Section Uninstall
   RMDir /r "$INSTDIR\resources"
   RMDir /r "$INSTDIR\backup"
   RMDir /r "$INSTDIR\log"
-  
+  RMDir /r "$INSTDIR\runtimes"
+
   Delete "$INSTDIR\MilkwaveRemote.dll"
   Delete "$INSTDIR\MilkwaveRemote.exe"
   Delete "$INSTDIR\MilkwaveRemote.runtimeconfig.json"
@@ -177,6 +182,7 @@ Section Uninstall
   Delete "$INSTDIR\midi-default.txt"
   Delete "$INSTDIR\settings-remote.json"
   Delete "$INSTDIR\tags-remote.json"
+  Delete "$INSTDIR\controller-remote.json"
   Delete "$INSTDIR\messages.ini"
   Delete "$INSTDIR\settings.ini"
   Delete "$INSTDIR\sprites.ini"
