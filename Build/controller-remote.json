@@ -1,0 +1,19 @@
+// Here you may assign button commands as explained in script-default.txt
+// Open Windows Controller Settings to identify button numbers for your controller
+// These are example values for a DualSense controller connected via Bluetooth
+{
+  "1": "MEDIA_PLAY",
+  "2": "NEXT",
+  "3": "PREV",
+  "4": "LOCK",
+  "5": "PREV",
+  "6": "NEXT",
+  "7": "",
+  "8": "",
+  "9": "SONGINFO",
+  "10": "PRESETINFO",
+  "11": "FULLSCREEN",
+  "12": "SOUNDINFO",
+  "13": "SEND=88",
+  "14": "MEDIA_PLAY"
+}

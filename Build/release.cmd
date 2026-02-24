@@ -20,10 +20,19 @@ del /q %releasePath%\resources\buttons\btn-4*.png
 copy *.ini %releasePath%
 copy *.txt %releasePath%
 copy settings-remote.json %releasePath%
+copy controller-remote.json %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.exe %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.dll %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.runtimeconfig.json %releasePath%
+copy %remoteBuildPath%\MilkwaveRemote.deps.json %releasePath%
+copy %remoteBuildPath%\NAudio.dll %releasePath%
+copy %remoteBuildPath%\NAudio.Core.dll %releasePath%
 copy %remoteBuildPath%\NAudio.Wasapi.dll %releasePath%
+copy %remoteBuildPath%\NAudio.Midi.dll %releasePath%
+copy %remoteBuildPath%\NAudio.WinMM.dll %releasePath%
+copy %remoteBuildPath%\System.Management.dll %releasePath%
+copy %remoteBuildPath%\WinRT.Runtime.dll %releasePath%
+xcopy /s /y /i %remoteBuildPath%\runtimes %releasePath%\runtimes
 copy %visualizerBuildPath%\MilkwaveVisualizer.exe %releasePath%
 
 copy %visualizerSourcePath%\resources\sprites\cover.png %releasePath%\resources\sprites\cover.png

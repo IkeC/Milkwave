@@ -985,6 +985,7 @@ namespace MilkwaveRemote {
     }
 
     public MilkwaveRemoteForm() {
+      Program.LogToFile("### Milkwave Remote Starting ###");
       InitializeComponent();
 
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
@@ -1277,6 +1278,10 @@ namespace MilkwaveRemote {
 
       // Initialize devices using OBS-style enumeration pattern
       InitializeDeviceLists();
+
+      if (Settings.ControllerActive && cboInputController.Enabled && cboInputController.Items.Count > 0) {
+        chkControllerActive.Checked = true;
+      }
 
       // Wire up game controller events
       if (btnControllerInputScan != null) btnControllerInputScan.Click += btnControllerInputScan_Click;
@@ -4149,6 +4154,7 @@ namespace MilkwaveRemote {
       Settings.SelectedTabIndex = tabControl.SelectedIndex;
       Settings.ShaderFileChecked = chkShaderFile.Checked;
       Settings.WrapChecked = chkWrap.Checked;
+      Settings.ControllerActive = chkControllerActive.Checked;
       Settings.EnableSpriteButtonImage = toolStripMenuItemSpriteButtonImages.Checked;
 
       Settings.InputMixOpacity = numInputMixOpacity.Value;

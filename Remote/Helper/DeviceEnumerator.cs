@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Collections.Generic;
-using System.Diagnostics;
+
 using System.Linq;
 
 namespace MilkwaveRemote.Helper {
@@ -362,7 +362,7 @@ namespace MilkwaveRemote.Helper {
                 }
               } catch (Exception ex) {
                 // Log error but continue enumeration (OBS pattern)
-                System.Diagnostics.Debug.WriteLine($"Error enumerating video device: {ex.Message}");
+                MilkwaveRemote.Program.LogToFile($"Error enumerating video device: {ex.Message}");
               }
             }
           } finally {
@@ -372,7 +372,7 @@ namespace MilkwaveRemote.Helper {
           Marshal.ReleaseComObject(deviceEnumerator);
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error in video device enumeration: {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error in video device enumeration: {ex.Message}");
       }
 
       return devices;
@@ -417,7 +417,7 @@ namespace MilkwaveRemote.Helper {
                   devices.Add(device);
                 }
               } catch (Exception ex) {
-                System.Diagnostics.Debug.WriteLine($"Error enumerating audio device: {ex.Message}");
+                MilkwaveRemote.Program.LogToFile($"Error enumerating audio device: {ex.Message}");
               }
             }
           } finally {
@@ -427,7 +427,7 @@ namespace MilkwaveRemote.Helper {
           Marshal.ReleaseComObject(deviceEnumerator);
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error in audio device enumeration: {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error in audio device enumeration: {ex.Message}");
       }
 
       return devices;
@@ -454,7 +454,7 @@ namespace MilkwaveRemote.Helper {
           senderSet.Add(name);
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error enumerating Spout senders: {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error enumerating Spout senders: {ex.Message}");
       }
 
       var items = new List<DeviceItem>();
@@ -479,7 +479,7 @@ namespace MilkwaveRemote.Helper {
           return activeSender?.ToString();
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error getting active Spout sender: {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error getting active Spout sender: {ex.Message}");
         return null;
       }
     }
@@ -502,7 +502,7 @@ namespace MilkwaveRemote.Helper {
           }
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error getting Spout sender info for '{senderName}': {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error getting Spout sender info for '{senderName}': {ex.Message}");
       }
 
       return (0, 0, false);
@@ -518,14 +518,14 @@ namespace MilkwaveRemote.Helper {
     /// <returns>List of available game controllers</returns>
     public static List<DeviceItem> EnumerateGameControllers() {
       var controllers = new List<DeviceItem>();
-      Debug.WriteLine("[Controller Discovery] Starting enumeration...");
+      Program.LogToFile("[Controller Discovery] Starting enumeration...");
 
       // 1. Get robust names from Raw Input and XInput
       var rawNames = GetRawInputControllerNames();
-      foreach(var n in rawNames) Debug.WriteLine($"[Controller Discovery] Raw Input found: {n}");
+      foreach(var n in rawNames) Program.LogToFile($"[Controller Discovery] Raw Input found: {n}");
 
       var xinputControllers = GetXInputControllerNames();
-      foreach(var n in xinputControllers) Debug.WriteLine($"[Controller Discovery] XInput found: {n}");
+      foreach(var n in xinputControllers) Program.LogToFile($"[Controller Discovery] XInput found: {n}");
 
       try {
         int numDevs = joyGetNumDevs();
@@ -575,13 +575,13 @@ namespace MilkwaveRemote.Helper {
                 }
               }
 
-              Debug.WriteLine($"[Controller Discovery] Final Assignment -> '{displayName}' via {strategy}");
+              Program.LogToFile($"[Controller Discovery] Final Assignment -> '{displayName}' via {strategy}");
               controllers.Add(new DeviceItem(displayName, deviceID: i.ToString()));
             }
           }
         }
       } catch (Exception ex) {
-        Debug.WriteLine($"[Controller Discovery] Error: {ex.Message}");
+        Program.LogToFile($"[Controller Discovery] Error: {ex.Message}");
       }
 
       return controllers;
@@ -618,11 +618,11 @@ namespace MilkwaveRemote.Helper {
       uint size = (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICELIST));
 
       if (GetRawInputDeviceList(IntPtr.Zero, ref numDevices, size) == unchecked((uint)-1)) {
-        Debug.WriteLine("[Controller Discovery] GetRawInputDeviceList count query failed");
+        Program.LogToFile("[Controller Discovery] GetRawInputDeviceList count query failed");
         return names;
       }
 
-      Debug.WriteLine($"[Controller Discovery] Raw Input total devices: {numDevices}");
+      Program.LogToFile($"[Controller Discovery] Raw Input total devices: {numDevices}");
       if (numDevices == 0) return names;
 
       IntPtr pRawInputDeviceList = Marshal.AllocHGlobal((int)(size * numDevices));
@@ -639,14 +639,14 @@ namespace MilkwaveRemote.Helper {
              if (GetRawInputDeviceInfo(device.hDevice, RIDI_DEVICEINFO, ref deviceInfo, ref infoSize) != unchecked((uint)-1)) {
                 if (deviceInfo.u.hid.usUsagePage == 1 && (deviceInfo.u.hid.usUsage == 4 || deviceInfo.u.hid.usUsage == 5 || deviceInfo.u.hid.usUsage == 8)) {
                     string? name = GetProductNameFromHandle(device.hDevice);
-                    Debug.WriteLine($"[Controller Discovery] Raw Input Gamepad match: {name}");
+                    Program.LogToFile($"[Controller Discovery] Raw Input Gamepad match: {name}");
                     if (IsValidName(name)) names.Add(name!);
                 }
              }
           }
         }
       } catch (Exception ex) {
-        Debug.WriteLine($"[Controller Discovery] Raw Input Error: {ex.Message}");
+        Program.LogToFile($"[Controller Discovery] Raw Input Error: {ex.Message}");
       } finally {
         Marshal.FreeHGlobal(pRawInputDeviceList);
       }
@@ -665,7 +665,7 @@ namespace MilkwaveRemote.Helper {
       try {
         if (GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, pData, ref pcbSize) != unchecked((uint)-1)) {
           string deviceName = Marshal.PtrToStringUni(pData)!;
-          Debug.WriteLine($"[Controller Discovery] Raw Input device path: {deviceName}");
+          Program.LogToFile($"[Controller Discovery] Raw Input device path: {deviceName}");
 
           if (deviceName.Contains("#") || deviceName.Contains("&")) {
              string regPath = deviceName;
@@ -682,7 +682,7 @@ namespace MilkwaveRemote.Helper {
                 if (lastSlash > 0) regPath = regPath.Substring(0, lastSlash);
              }
 
-             Debug.WriteLine($"[Controller Discovery] Registry lookup: HKLM\\System\\CurrentControlSet\\Enum\\{regPath}");
+             Program.LogToFile($"[Controller Discovery] Registry lookup: HKLM\\System\\CurrentControlSet\\Enum\\{regPath}");
 
              // Try to look up the name in the Enum registry
              using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey($@"System\CurrentControlSet\Enum\{regPath}")) {
@@ -690,7 +690,7 @@ namespace MilkwaveRemote.Helper {
                   string? name = key.GetValue("FriendlyName")?.ToString() ?? key.GetValue("DeviceDesc")?.ToString();
                   if (name != null && name.Contains(";")) name = name.Split(';').Last();
                   if (IsValidName(name)) {
-                    Debug.WriteLine($"[Controller Discovery] Found name in Registry: {name}");
+                    Program.LogToFile($"[Controller Discovery] Found name in Registry: {name}");
                     return name;
                   }
                 }
@@ -707,13 +707,13 @@ namespace MilkwaveRemote.Helper {
     /// Look up the OEM name for a joystick using multiple registry strategies
     /// </summary>
     private static string? GetJoystickOEMName(JOYCAPS caps, int joyID) {
-      Debug.WriteLine($"[Controller Discovery] GetJoystickOEMName for JoyID {joyID} (VID_{caps.wMid:X4} PID_{caps.wPid:X4})");
+      Program.LogToFile($"[Controller Discovery] GetJoystickOEMName for JoyID {joyID} (VID_{caps.wMid:X4} PID_{caps.wPid:X4})");
       try {
         // Strategy 0: WMI Lookup (High Priority)
         if (caps.wMid > 1 && caps.wPid > 1) {
           string? wmiName = GetFriendlyNameFromWmi(caps.wMid, caps.wPid);
           if (IsValidName(wmiName)) {
-            Debug.WriteLine($"[Controller Discovery] -> Found via Strategy 0 (WMI): {wmiName}");
+            Program.LogToFile($"[Controller Discovery] -> Found via Strategy 0 (WMI): {wmiName}");
             return wmiName;
           }
         }
@@ -722,7 +722,7 @@ namespace MilkwaveRemote.Helper {
         if (!string.IsNullOrEmpty(caps.szRegKey)) {
           string? name = ReadOEMNameFromPath(@$"System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\DirectInput\{caps.szRegKey}");
           if (IsValidName(name)) {
-            Debug.WriteLine($"[Controller Discovery] -> Found via Strategy 1 (RegKey): {name}");
+            Program.LogToFile($"[Controller Discovery] -> Found via Strategy 1 (RegKey): {name}");
             return name;
           }
         }
@@ -730,7 +730,7 @@ namespace MilkwaveRemote.Helper {
         // Strategy 2: Legacy
         string? legacyName = ReadOEMNameFromPath(@$"System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\DirectInput\Config\0\Joystick{joyID + 1}");
         if (IsValidName(legacyName)) {
-          Debug.WriteLine($"[Controller Discovery] -> Found via Strategy 2 (Legacy): {legacyName}");
+          Program.LogToFile($"[Controller Discovery] -> Found via Strategy 2 (Legacy): {legacyName}");
           return legacyName;
         }
 
@@ -750,14 +750,14 @@ namespace MilkwaveRemote.Helper {
                string path = @$"System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\DirectInput\{vidPidStr}";
                string? name = ReadOEMNameFromPath(path);
                if (IsValidName(name)) {
-                  Debug.WriteLine($"[Controller Discovery] -> Found via Strategy 3a (Joystick/{vidPidStr}): {name}");
+                  Program.LogToFile($"[Controller Discovery] -> Found via Strategy 3a (Joystick/{vidPidStr}): {name}");
                   return name;
                }
 
                path = @$"System\CurrentControlSet\Control\MediaProperties\PrivateProperties\DirectInput\{vidPidStr}";
                name = ReadOEMNameFromPath(path);
                if (IsValidName(name)) {
-                  Debug.WriteLine($"[Controller Discovery] -> Found via Strategy 3b (DirectInput/{vidPidStr}): {name}");
+                  Program.LogToFile($"[Controller Discovery] -> Found via Strategy 3b (DirectInput/{vidPidStr}): {name}");
                   return name;
                }
             }
@@ -788,7 +788,7 @@ namespace MilkwaveRemote.Helper {
                                    subKey.GetValue("DeviceDesc")?.ToString();
                     if (name != null && name.Contains(";")) name = name.Split(';').Last();
                     if (IsValidName(name)) {
-                      Debug.WriteLine($"[Controller Discovery] -> Found via Strategy 4 (Deep/{subKeyName}): {name}");
+                      Program.LogToFile($"[Controller Discovery] -> Found via Strategy 4 (Deep/{subKeyName}): {name}");
                       return name;
                     }
                   }
@@ -831,7 +831,7 @@ namespace MilkwaveRemote.Helper {
     /// Use WMI to find the PNP friendly name of a device based on its IDs
     /// </summary>
     private static string? GetFriendlyNameFromWmi(ushort mid, ushort pid) {
-      Debug.WriteLine($"[Controller Discovery] WMI scored search for VID_{mid:X4} PID_{pid:X4}");
+      Program.LogToFile($"[Controller Discovery] WMI scored search for VID_{mid:X4} PID_{pid:X4}");
       var potentialNames = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
       try {
@@ -878,12 +878,12 @@ namespace MilkwaveRemote.Helper {
            }
         }
       } catch (Exception ex) {
-        Debug.WriteLine($"[Controller Discovery] WMI Error: {ex.Message}");
+        Program.LogToFile($"[Controller Discovery] WMI Error: {ex.Message}");
       }
 
       if (potentialNames.Count > 0) {
          var best = potentialNames.OrderByDescending(kv => kv.Value).First();
-         Debug.WriteLine($"[Controller Discovery] WMI Best Pick: '{best.Key}' (Score: {best.Value})");
+         Program.LogToFile($"[Controller Discovery] WMI Best Pick: '{best.Key}' (Score: {best.Value})");
          return best.Key;
       }
       return null;
@@ -936,7 +936,7 @@ namespace MilkwaveRemote.Helper {
     }
 
     private static string? DeepSearchEnumForName(ushort mid, ushort pid) {
-      Debug.WriteLine($"[Controller Discovery] Starting DeepSearchEnum for VID_{mid:X4} PID_{pid:X4}");
+      Program.LogToFile($"[Controller Discovery] Starting DeepSearchEnum for VID_{mid:X4} PID_{pid:X4}");
       try {
         string vid = mid.ToString("X4");
         string pidS = pid.ToString("X4");
@@ -957,7 +957,7 @@ namespace MilkwaveRemote.Helper {
                         string? name = instanceKey.GetValue("FriendlyName")?.ToString() ?? instanceKey.GetValue("DeviceDesc")?.ToString();
                         if (name != null && name.Contains(";")) name = name.Split(';').Last();
                         if (IsValidName(name)) {
-                          Debug.WriteLine($"[Controller Discovery] Found name via deep search: {name}");
+                          Program.LogToFile($"[Controller Discovery] Found name via deep search: {name}");
                           return name;
                         }
                       }
@@ -969,7 +969,7 @@ namespace MilkwaveRemote.Helper {
           }
         }
       } catch (Exception ex) {
-        Debug.WriteLine($"[Controller Discovery] DeepSearch Error: {ex.Message}");
+        Program.LogToFile($"[Controller Discovery] DeepSearch Error: {ex.Message}");
       }
       return null;
     }
@@ -1040,7 +1040,7 @@ namespace MilkwaveRemote.Helper {
           }
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error extracting device property '{propertyName}': {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error extracting device property '{propertyName}': {ex.Message}");
       }
 
       return null;
@@ -1062,7 +1062,7 @@ namespace MilkwaveRemote.Helper {
           }
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error getting Spout max senders: {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error getting Spout max senders: {ex.Message}");
       }
 
       return 64; // Default to 64 if registry not found
@@ -1090,7 +1090,7 @@ namespace MilkwaveRemote.Helper {
           }
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error reading Spout senders from registry: {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error reading Spout senders from registry: {ex.Message}");
       }
 
       return senderNames;
@@ -1142,7 +1142,7 @@ namespace MilkwaveRemote.Helper {
           CloseHandle(hMapFile);
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error reading Spout shared memory: {ex.Message}");
+        MilkwaveRemote.Program.LogToFile($"Error reading Spout shared memory: {ex.Message}");
       }
     }
 

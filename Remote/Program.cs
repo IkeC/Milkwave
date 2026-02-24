@@ -45,24 +45,28 @@ namespace MilkwaveRemote {
     }
 
     public static void SaveErrorToFile(Exception e, string type) {
-      // Get the directory of the executable
-      string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
-
-      // Create a timestamp for the log file
-      string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-
-      // Construct the log file path
-      string logFilePath = Path.Combine(exeDirectory, "log");
-      if (!Directory.Exists(logFilePath)) {
-        Directory.CreateDirectory(logFilePath);
-      }
-      logFilePath = Path.Combine(logFilePath, $"error.{timestamp}.remote.log");
-
-      // Write the exception details to the log file
-      File.WriteAllText(logFilePath, e.ToString());
-
+      LogToFile($"{type}: {e}");
       // Notify the user
+      string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
+      string timestamp = DateTime.Now.ToString("yyyy-MM-dd");
+      string logFilePath = Path.Combine(exeDirectory, "log", $"{timestamp}.remote.log");
       MessageBox.Show($"An error occurred. Details have been saved to:\n{logFilePath}", type);
+    }
+
+    public static void LogToFile(string message) {
+      try {
+        string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        string timestamp = DateTime.Now.ToString("yyyy-MM-dd");
+        string logDir = Path.Combine(exeDirectory, "log");
+        if (!Directory.Exists(logDir)) {
+          Directory.CreateDirectory(logDir);
+        }
+        string logFilePath = Path.Combine(logDir, $"{timestamp}.remote.log");
+        string formattedMessage = $"{DateTime.Now:HH:mm:ss.fff} - {message}{Environment.NewLine}";
+        File.AppendAllText(logFilePath, formattedMessage);
+      } catch {
+        // Ignore logging errors to prevent crashes
+      }
     }
   }
 }

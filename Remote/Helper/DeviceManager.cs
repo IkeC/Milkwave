@@ -51,7 +51,7 @@ namespace MilkwaveRemote.Helper {
           comboBox.SelectedIndex = 0;
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error populating video devices: {ex.Message}");
+        Program.LogToFile($"Error populating video devices: {ex.Message}");
         comboBox.Items.Add("Error loading devices");
         comboBox.Enabled = false;
       }
@@ -97,7 +97,7 @@ namespace MilkwaveRemote.Helper {
           comboBox.SelectedIndex = 0;
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error populating audio devices: {ex.Message}");
+        Program.LogToFile($"Error populating audio devices: {ex.Message}");
         comboBox.Items.Add("Error loading devices");
         comboBox.Enabled = false;
       }
@@ -158,7 +158,7 @@ namespace MilkwaveRemote.Helper {
           comboBox.SelectedIndex = 0;
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error populating Spout senders: {ex.Message}");
+        Program.LogToFile($"Error populating Spout senders: {ex.Message}");
         comboBox.Items.Add("Error loading senders");
         comboBox.Enabled = false;
       }
@@ -186,10 +186,12 @@ namespace MilkwaveRemote.Helper {
     /// <param name="comboBox">Target ComboBox to populate</param>
     /// <param name="selectedControllerName">Previously selected controller to restore</param>
     public static void PopulateGameControllers(ComboBox comboBox, string? selectedControllerName = null) {
+      Program.LogToFile($"[DeviceManager] Populating game controllers. Previous selection: {selectedControllerName}");
       comboBox.Items.Clear();
 
       try {
         var controllers = DeviceEnumerator.EnumerateGameControllers();
+        Program.LogToFile($"[DeviceManager] DeviceEnumerator returned {controllers.Count} controllers");
 
         if (controllers.Count == 0) {
           comboBox.Items.Add("No game controllers found");
@@ -220,7 +222,8 @@ namespace MilkwaveRemote.Helper {
           comboBox.SelectedIndex = 0;
         }
       } catch (Exception ex) {
-        System.Diagnostics.Debug.WriteLine($"Error populating game controllers: {ex.Message}");
+        Program.LogToFile($"[DeviceManager] Error populating game controllers: {ex.Message}");
+        Program.LogToFile($"Error populating game controllers: {ex.Message}");
         comboBox.Items.Add("Error loading controllers");
         comboBox.Enabled = false;
       }
