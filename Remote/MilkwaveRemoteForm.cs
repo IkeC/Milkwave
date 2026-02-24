@@ -83,6 +83,7 @@ namespace MilkwaveRemote {
     private System.Windows.Forms.Timer autoplayTimer;
     private System.Windows.Forms.Timer monitorTimer;
     private System.Windows.Forms.Timer spoutRefreshTimer;
+    private System.Windows.Forms.Timer controllerTimer;
 
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
@@ -91,6 +92,7 @@ namespace MilkwaveRemote {
 
     private bool updatingWaveParams = false;
     private bool updatingSettingsParams = false;
+    private uint lastControllerButtons = 0;
 
 #if DEBUG
     private string BaseDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\Release"));
@@ -1052,6 +1054,11 @@ namespace MilkwaveRemote {
       monitorTimer = new System.Windows.Forms.Timer();
       monitorTimer.Tick += MonitorTimer_Tick;
       monitorTimer.Interval = Settings.MonitorPollingInterval;
+
+      controllerTimer = new System.Windows.Forms.Timer();
+      controllerTimer.Tick += ControllerTimer_Tick;
+      controllerTimer.Interval = 50; // 20Hz polling
+
       toolStripStatusLabelMonitorCPU.Text = "";
       toolStripStatusLabelMonitorGPU.Text = "";
 
@@ -1138,6 +1145,14 @@ namespace MilkwaveRemote {
           chkSpoutMix.Enabled = cboSputInput.Enabled;
           if (!chkSpoutMix.Enabled) chkSpoutMix.Checked = false;
           StartSpoutRefreshTimer();
+        }
+
+        // Game controllers (winmm.dll enumeration)
+        if (cboInputController != null) {
+          string savedController = RemoteHelper.GetIniValue("Milkwave", "Controller", "");
+          DeviceManager.PopulateGameControllers(cboInputController, savedController);
+          chkControllerActive.Enabled = cboInputController.Enabled;
+          if (!chkControllerActive.Enabled) chkControllerActive.Checked = false;
         }
       } catch (Exception ex) {
         Debug.WriteLine($"Error initializing device lists: {ex.Message}");
@@ -1259,6 +1274,11 @@ namespace MilkwaveRemote {
 
       // Initialize devices using OBS-style enumeration pattern
       InitializeDeviceLists();
+
+      // Wire up game controller events
+      if (btnControllerInputScan != null) btnControllerInputScan.Click += btnControllerInputScan_Click;
+      if (cboInputController != null) cboInputController.SelectedIndexChanged += cboInputController_SelectedIndexChanged;
+      if (chkControllerActive != null) chkControllerActive.CheckedChanged += chkControllerActive_CheckedChanged;
     }
 
     private void PopulateMidiDevicesList() {
@@ -6524,6 +6544,63 @@ namespace MilkwaveRemote {
       int realCount = cboSputInput.Enabled ? cboSputInput.Items.Count : 0;
       SetStatusText($"Spout senders rescanned: {realCount} found");
     }
+
+    private void PopulateGameControllers() {
+      try {
+        DeviceManager.PopulateGameControllers(cboInputController);
+        chkControllerActive.Enabled = cboInputController.Enabled;
+        if (!chkControllerActive.Enabled) chkControllerActive.Checked = false;
+      } catch (Exception ex) {
+        SetStatusText($"Error enumerating game controllers: {ex.Message}");
+      }
+    }
+
+    private void btnControllerInputScan_Click(object sender, EventArgs e) {
+      PopulateGameControllers();
+      int realCount = cboInputController.Enabled ? cboInputController.Items.Count : 0;
+      SetStatusText($"Game controllers rescanned: {realCount} found");
+    }
+
+    private void cboInputController_SelectedIndexChanged(object sender, EventArgs e) {
+      if (cboInputController.SelectedItem is DeviceEnumerator.DeviceItem item) {
+        RemoteHelper.SetIniValue("Milkwave", "Controller", item.Name);
+      }
+    }
+
+    private void chkControllerActive_CheckedChanged(object sender, EventArgs e) {
+      if (chkControllerActive.Checked) {
+        controllerTimer.Start();
+      } else {
+        controllerTimer.Stop();
+      }
+    }
+
+    private void ControllerTimer_Tick(object? sender, EventArgs? e) {
+      try {
+        if (cboInputController.SelectedItem is DeviceEnumerator.DeviceItem item &&
+            !string.IsNullOrEmpty(item.DeviceID) &&
+            int.TryParse(item.DeviceID, out int joyID)) {
+
+          var status = DeviceEnumerator.GetJoystickStatus(joyID);
+          uint buttons = status.dwButtons;
+
+          // Check if button 1 or 2 was just pressed (transition from 0 to 1)
+          // Button 1 is bit 0, Button 2 is bit 1 in winmm
+          bool button1Pressed = (buttons & 0x01) != 0 && (lastControllerButtons & 0x01) == 0;
+          bool button2Pressed = (buttons & 0x02) != 0 && (lastControllerButtons & 0x02) == 0;
+
+          if (button1Pressed || button2Pressed) {
+            SelectNextPreset();
+            btnPresetSend_Click(null, null);
+          }
+
+          lastControllerButtons = buttons;
+        }
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error polling controller: {ex.Message}");
+      }
+    }
+
     #endregion
 
     #region Device Enumeration (OBS-Style Pattern)

@@ -181,6 +181,64 @@ namespace MilkwaveRemote.Helper {
     }
 
     /// <summary>
+    /// Populate a ComboBox with available game controllers
+    /// </summary>
+    /// <param name="comboBox">Target ComboBox to populate</param>
+    /// <param name="selectedControllerName">Previously selected controller to restore</param>
+    public static void PopulateGameControllers(ComboBox comboBox, string? selectedControllerName = null) {
+      comboBox.Items.Clear();
+
+      try {
+        var controllers = DeviceEnumerator.EnumerateGameControllers();
+
+        if (controllers.Count == 0) {
+          comboBox.Items.Add("No game controllers found");
+          comboBox.SelectedIndex = 0;
+          comboBox.Enabled = false;
+          return;
+        }
+
+        comboBox.Enabled = true;
+
+        // Add controllers sorted by name
+        foreach (var controller in controllers.OrderBy(c => c.Name)) {
+          comboBox.Items.Add(controller);
+        }
+
+        // Restore previous selection
+        if (!string.IsNullOrEmpty(selectedControllerName)) {
+          foreach (DeviceEnumerator.DeviceItem item in comboBox.Items) {
+            if (item.Name == selectedControllerName) {
+              comboBox.SelectedItem = item;
+              return;
+            }
+          }
+        }
+
+        // Default to first controller
+        if (comboBox.Items.Count > 0) {
+          comboBox.SelectedIndex = 0;
+        }
+      } catch (Exception ex) {
+        System.Diagnostics.Debug.WriteLine($"Error populating game controllers: {ex.Message}");
+        comboBox.Items.Add("Error loading controllers");
+        comboBox.Enabled = false;
+      }
+    }
+
+    /// <summary>
+    /// Refresh game controller list, preserving selection
+    /// </summary>
+    /// <param name="comboBox">ComboBox to refresh</param>
+    public static void RefreshGameControllers(ComboBox comboBox) {
+      string? currentSelection = null;
+      if (comboBox.SelectedItem is DeviceEnumerator.DeviceItem item) {
+        currentSelection = item.Name;
+      }
+      PopulateGameControllers(comboBox, currentSelection);
+    }
+
+    /// <summary>
     /// Get the currently selected Spout sender name from a ComboBox
     /// </summary>
     /// <param name="comboBox">Source ComboBox</param>
