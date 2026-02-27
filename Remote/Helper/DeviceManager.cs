@@ -202,6 +202,28 @@ namespace MilkwaveRemote.Helper {
 
         comboBox.Enabled = true;
 
+        // Group by name to identify duplicates
+        var groups = controllers.GroupBy(c => c.Name).ToList();
+        foreach (var group in groups) {
+          if (group.Count() > 1) {
+            // Duplicate names found, make them distinguishable
+            foreach (var controller in group) {
+              string info = "";
+              if (!string.IsNullOrEmpty(controller.HardwareID)) {
+                info = controller.HardwareID;
+              } else if (!string.IsNullOrEmpty(controller.Metadata)) {
+                info = controller.Metadata;
+              } else if (!string.IsNullOrEmpty(controller.DeviceID)) {
+                info = $"#{controller.DeviceID}";
+              }
+
+              if (!string.IsNullOrEmpty(info)) {
+                controller.Name = $"{controller.Name} ({info})";
+              }
+            }
+          }
+        }
+
         // Add controllers sorted by name
         foreach (var controller in controllers.OrderBy(c => c.Name)) {
           comboBox.Items.Add(controller);

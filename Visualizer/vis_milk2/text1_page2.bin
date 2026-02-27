@@ -3,7 +3,7 @@ Milkwave Help - Page 2/2 - F1 to switch page/close
 SPACE / H               Soft / hard cut to next preset
 BACKSPACE               Go back to previous preset
 ` / ~                   [un]lock current preset
-R                       Toggle random/sequential preset order 
+R                       Toggle random/sequential preset order
 L                       Load specific preset
 M                       Show/hide preset-editing menu
 N                       Show per-frame monitor
@@ -30,9 +30,9 @@ CTRL + T                Kills custom messages/song titles
 Q / q    Wave echo zoom +/-         [ / ]    X +/-
 W / w    Wave mode +/-              { / }    Y +/-
 E / e    Wave alpha +/-             < / >    Rotation +/-
-U / u    Wave warp scale +/-        A        Do random mini-mash-up   
-I / i    Wave zoom +/-              D        Toggle shader locks   
+U / u    Wave warp scale +/-        A        Do random mini-mash-up
+I / i    Wave zoom +/-              D        Toggle shader locks
 O / o    Wave warp amount +/-       F        Tooggle echo orientation
 P / p    Video echo alpha +/-       !        Randomize warp shader
-G / g    Gamma adjustment +/-       @        Randomize comp shader   
+G / g    Gamma adjustment +/-       @        Randomize comp shader
 J / j    Wave scale +/-

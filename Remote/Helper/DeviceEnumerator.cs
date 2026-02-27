@@ -131,12 +131,16 @@ namespace MilkwaveRemote.Helper {
       public string? DevicePath { get; set; }
       public string? DeviceID { get; set; }
       public string? FriendlyName { get; set; }
+      public string? HardwareID { get; set; }
+      public string? Metadata { get; set; }
       public bool IsDefault { get; set; }
 
-      public DeviceItem(string name, string? devicePath = null, string? deviceID = null) {
+      public DeviceItem(string name, string? devicePath = null, string? deviceID = null, string? hardwareID = null, string? metadata = null) {
         Name = name;
         DevicePath = devicePath;
         DeviceID = deviceID;
+        HardwareID = hardwareID;
+        Metadata = metadata;
       }
 
       public override string ToString() => Name;
@@ -576,7 +580,8 @@ namespace MilkwaveRemote.Helper {
               }
 
               Program.LogToFile($"[Controller Discovery] Final Assignment -> '{displayName}' via {strategy}");
-              controllers.Add(new DeviceItem(displayName, deviceID: i.ToString()));
+              string? hwid = caps.wMid != 0 && caps.wPid != 0 ? $"VID_{caps.wMid:X4} PID_{caps.wPid:X4}" : null;
+              controllers.Add(new DeviceItem(displayName, deviceID: i.ToString(), hardwareID: hwid, metadata: strategy));
             }
           }
         }

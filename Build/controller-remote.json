@@ -2,7 +2,7 @@
 // Open Windows controller settings to identify button numbers for your controller
 // These are example values for a DualSense controller:
 {
-  "1": "MEDIA_PLAY",
+  "1": "RAND",
   "2": "NEXT",
   "3": "PREV",
   "4": "LOCK",
@@ -15,5 +15,6 @@
   "11": "FULLSCREEN",
   "12": "SOUNDINFO",
   "13": "SEND=88",
-  "14": "MEDIA_PLAY"
+  "14": "MEDIA_PLAY",
+  "15": "BTN=1"
 }

@@ -48,14 +48,6 @@ namespace MilkwaveRemote {
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
-    // Add the missing P/Invoke declaration for SetWindowPos
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
-    // Add the missing constants for SWP_NOZORDER and SWP_NOACTIVATE
-    private const uint SWP_NOZORDER = 0x0004;
-    private const uint SWP_NOACTIVATE = 0x0010;
-
     private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     private const uint WM_COPYDATA = 0x004A;
@@ -67,7 +59,7 @@ namespace MilkwaveRemote {
     private const int WM_COVER_CHANGED = 0x0400 + 102;
     private const int WM_SPRITE_MODE = 0x0400 + 103;
     private const int WM_MESSAGE_MODE = 0x0400 + 104;
-    private const int WM_CAPTURE_SCREENSHOT = 0x0400 + 105;
+    // private const int WM_CAPTURE_SCREENSHOT = 0x0400 + 105;
     private const int WM_SETVIDEODEVICE = 0x0400 + 106;
     private const int WM_ENABLEVIDEOMIX = 0x0400 + 107;
     private const int WM_SETSPOUTSENDER = 0x0400 + 108;
@@ -129,14 +121,10 @@ namespace MilkwaveRemote {
     private readonly Dictionary<string, string> spriteSectionImageMap = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> messageCodeTextMap = new(StringComparer.OrdinalIgnoreCase);
 
-    private string shadertoyAppKey = "ftrlhm";
-    private string shadertoyQueryType = "";
-    private int shadertoyQueryPageSize = 500;
     private string ShaderinfoLinePrefix = "// Shaderinfo: ";
     private bool AllowMidiRowDataUpdate = true;
 
     private List<Data.Preset> PresetsMasterList = new List<Data.Preset>();
-    private List<String> shadertoyQueryList = new List<String>();
     private List<String> shadertoyFilesList = new List<String>();
 
     private Random rnd = new Random();
@@ -198,6 +186,11 @@ namespace MilkwaveRemote {
 
     private const int VK_ENTER = 0x0D;
     private const int VK_BACKSPACE = 0x08;
+    
+    private const int VK_CURSOR_LEFT = 0x25;
+    private const int VK_CURSOR_UP = 0x26;
+    private const int VK_CURSOR_RIGHT = 0x27;
+    private const int VK_CURSOR_DOWN = 0x28;
 
     public const byte VK_MEDIA_PLAY_PAUSE = 0xB3;
     public const byte VK_MEDIA_STOP = 0xB2;
@@ -1280,14 +1273,14 @@ namespace MilkwaveRemote {
       // Initialize devices using OBS-style enumeration pattern
       InitializeDeviceLists();
 
-      if (Settings.ControllerActive && cboInputController.Enabled && cboInputController.Items.Count > 0) {
-        chkControllerActive.Checked = true;
-      }
-
       // Wire up game controller events
       if (btnControllerInputScan != null) btnControllerInputScan.Click += btnControllerInputScan_Click;
       if (cboInputController != null) cboInputController.SelectedIndexChanged += cboInputController_SelectedIndexChanged;
       if (chkControllerActive != null) chkControllerActive.CheckedChanged += chkControllerActive_CheckedChanged;
+
+      if (Settings.ControllerActive && cboInputController.Enabled && cboInputController.Items.Count > 0) {
+        chkControllerActive.Checked = true;
+      }
     }
 
     private void PopulateMidiDevicesList() {
@@ -1860,13 +1853,11 @@ namespace MilkwaveRemote {
     }
 
     private void PressMediaKeyPlayPause() {
-      keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
-      keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+      SendPostMessage(VK_CURSOR_DOWN, "Cursor down");
     }
 
     private void PressMediaKeyStop() {
-      keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
-      keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+      SendPostMessage(VK_CURSOR_UP, "Cursor up");
     }
 
     private void ResetAndStartTimer(bool startInstant) {
@@ -6639,7 +6630,9 @@ namespace MilkwaveRemote {
             uint mask = 1u << (i - 1);
             if ((buttons & mask) != 0 && (lastControllerButtons & mask) == 0) {
               // Button i just pressed
+              Program.LogToFile($"[Controller] Button {i} pressed on '{item.Name}'");
               if (controllerConfig.TryGetValue(i, out string? command)) {
+                Program.LogToFile($"[Controller] Executing command for button {i}: {command}");
                 HandleScriptLine(true, command);
               }
             }
