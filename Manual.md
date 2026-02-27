@@ -20,11 +20,11 @@ Press K in Visualizer or the button "Sprite/Msg Mode" to change modes. When Visu
 
 Note that you can choose to hide either the Tabs or the Button panel with the popup menu that opens by clicking "Milkwave" in the bottom right corner. You may also use the menu to access help resources, open the Visualizer window, switch between light and dark mode, and toggle color or monochrome button image display.
 
-At the bottom, you can left-click the status bar to copy its content to the clipboard, middle-click to set a "compact" mode, or right-click to quickly toggle the visibility of the button panel. You can set the "compact" mode size in _settings-remote.json_ using the key _RemoteWindowCompactSize_.
+At the bottom, you can left-click the status bar to copy its content to the clipboard, middle-click to set a "compact" mode, or right-click to quickly switch between tabs and button panel. You can set the "compact" mode size in _settings-remote.json_ using the key _RemoteWindowCompactSize_.
 
 CPU and GPU usage are displayed at the bottom right if enabled. Click the "Milkwave" button at the bottom right to expand a menu providing quick access to additional application settings and information resources.
 
-## Tab "Presets"
+## Tab "Preset"
 
 Send a preset from the drop-down list to display in the Visualizer using "Send". The list will show the presets from _presets/Milkwave_ by default. You can fill the list using the buttons "Tags", "File" and "Dir".
 
@@ -55,6 +55,72 @@ Instead of selecting and sending lines from the fine manually, you may check the
 You can define default values for fade-in ("fade", default 0.2), fade-out ("fadeout", default 0.0) and burntime ("burntime", default 0.1) in settings.ini, and override them per message as a parameter.
 
 If a burntime > 0 is defined, the message will be "baked" into the background and slowly fade away for the defined burntime duration. Note that this won't work with all presets, and if you define a fadeout > 0, the burntime will be irrelevant because the message will fade out before there's something to "burn in".
+
+## Tab "Wave"
+
+Manipulate factors of the default wave of the current preset and display the changes instantly in the Visualizer. If the "Link" button is checked, values are received from and sent to the currently running preset instantly, if not click "Send" to send your values. Use "Clear" to display a default wave. 
+
+Use the "Quicksave" button or press Ctrl+S in the Visualizer to save the current preset instantly to the _presets/Quicksave_ folder as a new file. Press Shift+Ctrl+S to save to _presets/Quicksave2_ instead.
+
+## Tab "Input"
+
+The elements here allow you to mix video sources such as webcams or Spout feeds into the Visualizer output. You can either mix a webcam input or a Spout feed, using the "Mix" buttons. If you want to use [OBS](https://obsproject.com/) as a source, activate Spout output in OBS rather than using the OBS virtual camera, as the latter is not supported by Milkwave.
+
+Set Luma Key to "Active" to make a certain color in the input source transparent. Adjust threshold to set the tolerance for the keying, and adjust "Softness" to make the edges of the keyed area softer.
+
+"Top Layer" allows you to set either the input source or the Visualizer's preset rendering as the top layer of the Visualizer output. "Opacity" sets the opacity of the top layer.
+
+"Controller" allows you to select a game controller. If "Active", it will send the commands defined in _controller-remote.json_ to the Visualizer when you press buttons. You can edit the command list in _controller-remote.json_ or use the "Config" button to open the file in a text editor.
+
+## Tab "MIDI"
+
+You can control many of the Remote and Visualizer features using MIDI controllers. First, select your MIDI input device from the drop-down list. If your device is not listed, make sure it is connected and recognized by Windows, then click "Scan".
+
+You can assign up to 50 actions for your controls. Switch to higher rows using the "Bank" control. Press "Learn" and push or turn your MIDI control for Milkwave to recognize it. You'll see the "Channel", "Value" and "Controller" boxes change their values if this works. When the control is learned, turn off "Learn" and select an "Action" for your control.
+
+When not in "learning" mode, all rows marked as "Active" will be taken into account when a MIDI event is received. Double-click a row number to clear the row.
+
+Milkwave differentiates between two types of MIDI controls: "Button/Note" and "Knob/Fader". A button or note is just a trigger for an action, while a knob or fader sends a MIDI value between 0 and 127.
+
+"Knob/Fader" actions are fixed, you can select the different options from the the drop-down list. The default value of a control is usually set to the middle setting of your knob or fader (MIDI value 64). In the "Inc" box, you can define how much the value of the target control is changed for every MIDI value change.
+
+Example: You assign a knob on your MIDI keyboard to "Settings: Intensity", with an "Inc" value of 0.05. The default value for "Intensity" is 1, which is assigned to the middle setting of your knob (MIDI value 64). Now if you turn your keyboard knob all the way up to 127, the "Intensity" value in the Remote will be set to 1+(63\*0.05)=3.15. If you turn it down, it will go down to 0 in the Remote. Values are capped between the possible values a control supports, so eg. "Intensity" will never go below 0.
+
+"Button/Note" events can trigger a lot of actions. You can select some default actions from the drop-down list, but these are just some common examples - you can type freely into the box. You may also edit the default action list by editing _midi-default.txt_ in the Milkwave folder.
+
+An action can be any command or string of commands that can also be triggered by script. You can also trigger lines (current, next, previous or specific) from the currently loaded script file ("From File" in the "Message" tab). Actions include selecting and changing presets, sending messages, triggering sprites, starting external programs and lots more. Please read the documentation in _script-default.txt_ for a detailed description on possible commands and command chains.
+
+Your MIDI assignments are kept in _midi-remote.json_ and automatically loaded and saved when you open/close the Remote. You may also load and save settings manually using the "L" and "S" buttons in the upper right corner.
+
+If you want to hide the MIDI tab and prevent initialisation completely (eg. because it interferes with your MIDI setup in other programs), set MidiEnabled=false in _settings-remote.json_.
+
+## Tab "Settings"
+
+Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
+
+The "Intensity", "Shift" and "Version" values can be read by presets that support the Milkwave specific vis_intensity, vis_shift and vis_version variables (see below). As above, you can change these values live while a preset is running.
+
+With "Hue", "Saturation" and "Brightness", you can change the overall color tone of the Visualizer output. This may be useful if you want to adapt the colors of a preset to your room lighting, or just want to experiment with different looks. You may also set "Auto" to automatically shift the colors over time.
+
+With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" Spout resolution is used.
+
+If you select "Auto", Milkwave tries to make the "perceived" Visualizer quality similar on different window sizes by adjusting the backbuffer size accordingly.
+
+Keep in mind that many settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
+
+For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.
+
+The "Preset" row allows you to set the lock mode for the current preset (same as pressing ~ in the Visualizer). If "Locked" is checked, the preset will not changed as time progresses. If unlocked, it will change after the time defined by "Next after" (plus blending times). "Random" toggles between random and sequential preset order (same as pressing "R" in the Visualizer).
+
+"Config" allows you to quickly the most important configuration files in a text editor. You can also open Shanes [Message Editor](https://github.com/shanevbg/MDx12Messages) from here to edit the _messages.ini_ file in a more user-friendly way.
+
+Set "Change preset after" to automatically change to the next preset after the defined time in seconds. Note that _fBlendTimeAuto_ and a value between 0 and _fTimeBetweenPresetsRand_ (defined in _settings.ini_) are added to determine the actual duration. If "Locked" is checked, automatic preset changing is disabled.
+
+## Tab "Fonts"
+
+Modify most of the fonts used to display information in the Visualizer window. Use "Save" and "Test" to see your changes. You can save and preview changes instantly if you hold the ALT key while changing fonts or sizes.
+
+Changes are saved to the _Fonts_ section in _settings.ini_. Of course you may edit them there manually as well.
 
 ## Tab "Shader"
 
@@ -111,60 +177,6 @@ Here are some common terms that cannot be converted automatically and need to be
 | `int ix = i & 1` (bitwise) | `int ix = i % 2` |
 | `int yx = y >> 1` (bitwise) | `int yx = y / 2` |
 | `if (i==0) return` (asymetric returns) | Put subsequent code in else branch: `if (i==0) {...} else {...} return` |
-
-## Tab "Wave"
-
-Manipulate factors of the default wave of the current preset and display the changes instantly in the Visualizer. If the "Link" button is checked, values are received from and sent to the currently running preset instantly, if not click "Send" to send your values. Use "Clear" to display a default wave. 
-
-Use the "Quicksave" button or press Ctrl+S in the Visualizer to save the current preset instantly to the _presets/Quicksave_ folder as a new file. Press Shift+Ctrl+S to save to _presets/Quicksave2_ instead.
-
-## Tab "Fonts"
-
-Modify most of the fonts used to display information in the Visualizer window. Use "Save" and "Test" to see your changes. You can save and preview changes instantly if you hold the ALT key while changing fonts or sizes.
-
-Changes are saved to the _Fonts_ section in _settings.ini_. Of course you may edit them there manually as well.
-
-## Tab "MIDI"
-
-You can control many of the Remote and Visualizer features using MIDI controllers. First, select your MIDI input device from the drop-down list. If your device is not listed, make sure it is connected and recognized by Windows, then click "Scan".
-
-You can assign up to 50 actions for your controls. Switch to higher rows using the "Bank" control. Press "Learn" and push or turn your MIDI control for Milkwave to recognize it. You'll see the "Channel", "Value" and "Controller" boxes change their values if this works. When the control is learned, turn off "Learn" and select an "Action" for your control.
-
-When not in "learning" mode, all rows marked as "Active" will be taken into account when a MIDI event is received. Double-click a row number to clear the row.
-
-Milkwave differentiates between two types of MIDI controls: "Button/Note" and "Knob/Fader". A button or note is just a trigger for an action, while a knob or fader sends a MIDI value between 0 and 127.
-
-"Knob/Fader" actions are fixed, you can select the different options from the the drop-down list. The default value of a control is usually set to the middle setting of your knob or fader (MIDI value 64). In the "Inc" box, you can define how much the value of the target control is changed for every MIDI value change.
-
-Example: You assign a knob on your MIDI keyboard to "Settings: Intensity", with an "Inc" value of 0.05. The default value for "Intensity" is 1, which is assigned to the middle setting of your knob (MIDI value 64). Now if you turn your keyboard knob all the way up to 127, the "Intensity" value in the Remote will be set to 1+(63\*0.05)=3.15. If you turn it down, it will go down to 0 in the Remote. Values are capped between the possible values a control supports, so eg. "Intensity" will never go below 0.
-
-"Button/Note" events can trigger a lot of actions. You can select some default actions from the drop-down list, but these are just some common examples - you can type freely into the box. You may also edit the default action list by editing _midi-default.txt_ in the Milkwave folder.
-
-An action can be any command or string of commands that can also be triggered by script. You can also trigger lines (current, next, previous or specific) from the currently loaded script file ("From File" in the "Message" tab). Actions include selecting and changing presets, sending messages, triggering sprites, starting external programs and lots more. Please read the documentation in _script-default.txt_ for a detailed description on possible commands and command chains.
-
-Your MIDI assignments are kept in _midi-remote.json_ and automatically loaded and saved when you open/close the Remote. You may also load and save settings manually using the "L" and "S" buttons in the upper right corner.
-
-If you want to hide the MIDI tab and prevent initialisation completely (eg. because it interferes with your MIDI setup in other programs), set MidiEnabled=false in _settings-remote.json_.
-
-## Tab "Settings"
-
-Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
-
-The "Intensity", "Shift" and "Version" values can be read by presets that support the Milkwave specific vis_intensity, vis_shift and vis_version variables (see below). As above, you can change these values live while a preset is running.
-
-With "Hue", "Saturation" and "Brightness", you can change the overall color tone of the Visualizer output. This may be useful if you want to adapt the colors of a preset to your room lighting, or just want to experiment with different looks.
-
-For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.
-
-With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" Spout resolution is used.
-
-If you select "Auto", Milkwave tries to make the "perceived" Visualizer quality similar on different window sizes by adjusting the backbuffer size accordingly.
-
-Use the buttons on the right side to open some commonly used files instantly in your associated text editor.
-
-Keep in mind that most settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
-
-Set "Change preset after" to automatically change to the next preset after the defined time in seconds. Note that _fBlendTimeAuto_ and a value between 0 and _fTimeBetweenPresetsRand_ (defined in _settings.ini_) are added to determine the actual duration. If "Locked" is checked, automatic preset changing is disabled.
 
 # Milkwave Visualizer specifics
 

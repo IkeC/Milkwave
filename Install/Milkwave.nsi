@@ -100,6 +100,7 @@ Section "Milkwave" SecMilkwave
   File "${RELDIR}settings.ini"
   File "${RELDIR}sprites.ini"
   File "${RELDIR}precompile.txt"
+  File "${RELDIR}messages-editor.html"
   SetOverwrite on
 
   SetOutPath $INSTDIR
@@ -190,6 +191,7 @@ Section Uninstall
   Delete "$INSTDIR\settings.ini"
   Delete "$INSTDIR\sprites.ini"
   Delete "$INSTDIR\precompile.txt"
+  Delete "$INSTDIR\messages-editor.html"
   
   Delete "$INSTDIR\Uninstall.exe"
   

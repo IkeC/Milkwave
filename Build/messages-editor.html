@@ -1,0 +1,1981 @@
+<!-- Messages editor by Shane: https://github.com/shanevbg/MDx12Messages -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Milkwave Message Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ─────────────────────── Reset ─────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ─────────────────────── Tokens ────────────────────── */
+    :root {
+      --bg:            #060810;
+      --bg-panel:      #0a0c18;
+      --bg-surface:    #0e1020;
+      --bg-input:      #070912;
+      --border:        #161d36;
+      --border-hi:     #202850;
+
+      --green:         #00e87c;
+      --green-dim:     #006e3c;
+      --green-muted:   #003d22;
+      --green-glow:    rgba(0,232,124,0.12);
+
+      --cyan:          #00c8ff;
+      --cyan-dim:      #005570;
+      --cyan-glow:     rgba(0,200,255,0.1);
+
+      --amber:         #ffaa00;
+      --amber-dim:     #664400;
+
+      --red:           #ff3860;
+      --red-dim:       #661829;
+
+      --text:          #68c28a;
+      --text-hi:       #c4eed8;
+      --text-dim:      #284838;
+      --text-cyan:     #5ab0c8;
+
+      --sel-bg:        rgba(0,232,124,0.055);
+      --sel-border:    rgba(0,232,124,0.28);
+      --hover-bg:      rgba(0,200,255,0.035);
+
+      --font-head:     'Orbitron', monospace;
+      --font-mono:     'Share Tech Mono', monospace;
+
+      --h-header:  50px;
+      --h-toolbar: 38px;
+      --h-batch:   44px;
+      --h-status:  27px;
+      --w-fonts:   256px;
+    }
+
+    /* ─────────────────────── Base ──────────────────────── */
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      cursor: default;
+      user-select: none;
+    }
+
+    /* CRT grain + scanlines */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 9000;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.05) 3px, rgba(0,0,0,.05) 4px),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+    }
+
+    /* ─────────────────────── Layout ────────────────────── */
+    #app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ─────────────────────── Header ────────────────────── */
+    #header {
+      height: var(--h-header); flex-shrink: 0;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-hi);
+      display: flex; align-items: center; gap: 14px; padding: 0 16px;
+      position: relative; overflow: hidden;
+    }
+
+    /* animated glowline at header bottom */
+    #header::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--green) 30%, var(--cyan) 60%, var(--green) 80%, transparent 100%);
+      opacity: .6; animation: glowSweep 6s ease-in-out infinite;
+    }
+    @keyframes glowSweep {
+      0%, 100% { opacity: .35; transform: scaleX(.8); }
+      50%       { opacity: .9;  transform: scaleX(1); }
+    }
+
+    /* grid background for header */
+    #header::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0,232,124,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,232,124,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    #spectrum {
+      display: flex; align-items: flex-end; gap: 2px;
+      height: 32px; flex-shrink: 0; position: relative; z-index: 1;
+    }
+    .spec-bar {
+      width: 3px; border-radius: 1px 1px 0 0;
+      background: linear-gradient(to top, var(--green), var(--cyan));
+      box-shadow: 0 0 6px var(--green);
+      animation: specPulse var(--dur,1s) ease-in-out var(--del,0s) infinite;
+      transform-origin: bottom;
+    }
+    @keyframes specPulse {
+      0%, 100% { transform: scaleY(var(--lo, .15)); opacity: .7; }
+      50%       { transform: scaleY(var(--hi, .8));  opacity: 1; }
+    }
+
+    #title {
+      font-family: var(--font-head); font-size: 15px; font-weight: 700;
+      letter-spacing: 5px; text-transform: uppercase;
+      color: var(--green);
+      text-shadow: 0 0 14px var(--green), 0 0 30px rgba(0,232,124,.35);
+      position: relative; z-index: 1; white-space: nowrap;
+    }
+    #title em { color: var(--cyan); font-style: normal; text-shadow: 0 0 14px var(--cyan); }
+
+    #title-sub {
+      font-size: 9px; letter-spacing: 3px; color: var(--text-dim);
+      position: relative; z-index: 1; white-space: nowrap; padding-top: 2px;
+    }
+
+    #header-flex { flex: 1; }
+
+    #header-badge {
+      font-size: 9px; letter-spacing: 2px; color: var(--text-dim);
+      border: 1px solid var(--border-hi); padding: 3px 8px; border-radius: 2px;
+      position: relative; z-index: 1; white-space: nowrap;
+    }
+
+    /* ─────────────────────── Toolbar ───────────────────── */
+    #toolbar {
+      height: var(--h-toolbar); flex-shrink: 0;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 4px; padding: 0 10px;
+    }
+    .tb-sep { width: 1px; height: 20px; background: var(--border-hi); margin: 0 5px; }
+    .tb-spacer { flex: 1; }
+
+    /* ─────────────────────── Buttons ───────────────────── */
+    .btn {
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 1px; text-transform: uppercase; white-space: nowrap;
+      padding: 4px 10px;
+      background: var(--bg-surface); color: var(--text);
+      border: 1px solid var(--border-hi); border-radius: 2px;
+      cursor: pointer; transition: all .15s; flex-shrink: 0;
+    }
+    .btn:hover { background: var(--hover-bg); border-color: var(--cyan-dim); color: var(--cyan); }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: .3; cursor: not-allowed; pointer-events: none; }
+
+    .btn-green {
+      border-color: var(--green-dim); color: var(--green);
+    }
+    .btn-green:hover { background: var(--green-glow); border-color: var(--green); box-shadow: 0 0 8px var(--green-glow); color: var(--green); }
+
+    .btn-danger { border-color: var(--red-dim); color: var(--red); }
+    .btn-danger:hover { background: rgba(255,56,96,.1); border-color: var(--red); color: var(--red); }
+
+    /* ─────────────────────── Toggle ────────────────────── */
+    .tog {
+      display: flex; align-items: center; gap: 6px; cursor: pointer;
+      color: var(--text-dim); transition: color .15s; flex-shrink: 0;
+    }
+    .tog:hover { color: var(--text); }
+    .tog input[type="checkbox"] { display: none; }
+    .tog-track {
+      width: 28px; height: 14px; border-radius: 7px;
+      border: 1px solid var(--border-hi); background: var(--bg-input);
+      position: relative; transition: all .2s;
+    }
+    .tog-thumb {
+      position: absolute; top: 2px; left: 2px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--text-dim); transition: all .2s;
+    }
+    .tog input:checked ~ .tog-track { background: var(--green-muted); border-color: var(--green-dim); }
+    .tog input:checked ~ .tog-track .tog-thumb { left: 16px; background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .tog-lbl { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ─────────────────────── Content ───────────────────── */
+    #content { display: flex; flex: 1; min-height: 0; }
+
+    /* ─────────────────────── Font Panel ────────────────── */
+    #font-panel {
+      width: var(--w-fonts); flex-shrink: 0;
+      display: flex; flex-direction: column; min-height: 0;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-hi);
+    }
+
+    .panel-hdr {
+      padding: 7px 10px 6px;
+      font-family: var(--font-head); font-size: 8px; letter-spacing: 3px;
+      color: var(--cyan); text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .panel-hdr span:last-child { color: var(--text-dim); font-family: var(--font-mono); }
+
+    #font-list { flex: 1; overflow-y: auto; min-height: 0; }
+
+    .font-row {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 10px;
+      border-bottom: 1px solid rgba(22,29,54,.5);
+      cursor: pointer; transition: background .1s;
+    }
+    .font-row:hover { background: var(--hover-bg); }
+    .font-row.sel { background: var(--sel-bg); border-left: 2px solid var(--cyan-dim); padding-left: 8px; }
+
+    .font-idx { font-size: 10px; color: var(--text-dim); width: 18px; flex-shrink: 0; }
+    .font-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(255,255,255,.15); }
+    .font-face { flex: 1; font-size: 11px; color: var(--text-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .font-bi { font-size: 9px; color: var(--text-dim); flex-shrink: 0; min-width: 14px; }
+
+    /* Font Editor */
+    #font-editor {
+      border-top: 1px solid var(--border-hi);
+      background: var(--bg-surface);
+      padding: 9px 10px 10px;
+      flex-shrink: 0;
+    }
+    .fe-title {
+      font-family: var(--font-head); font-size: 8px; letter-spacing: 2px; color: var(--cyan);
+      text-transform: uppercase; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .fe-title strong { color: var(--green); font-weight: 400; }
+
+    .frow { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+    .flbl {
+      font-size: 9px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-dim); width: 46px; flex-shrink: 0;
+    }
+
+    /* ─────────────────────── Inputs ────────────────────── */
+    input[type="text"], input[type="number"] {
+      font-family: var(--font-mono); font-size: 11px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text-hi); padding: 3px 6px; border-radius: 2px;
+      outline: none; width: 100%; transition: border-color .15s;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button { opacity: .4; }
+    input[type="text"]:focus, input[type="number"]:focus {
+      border-color: var(--cyan-dim); background: #090b14;
+    }
+    input.inp-green:focus { border-color: var(--green-dim); }
+
+    .color-row { display: flex; align-items: center; gap: 3px; flex: 1; }
+    .color-row input[type="number"] { width: 44px; flex: 0 0 44px; text-align: center; }
+    .swatch {
+      width: 18px; height: 18px; border-radius: 2px;
+      border: 1px solid var(--border-hi); cursor: pointer; flex-shrink: 0;
+      transition: border-color .15s;
+    }
+    .swatch:hover { border-color: var(--cyan); }
+    input[type="color"] { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+
+    .chk-wrap { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    .chk-wrap label { font-size: 10px; cursor: pointer; color: var(--text); }
+
+    /* ─────────────────────── Font Picker ───────────────── */
+    .fp-wrap { position: relative; flex: 1; display: flex; gap: 3px; }
+    .fp-wrap input[type="text"] { flex: 1; }
+    .fp-btn {
+      flex-shrink: 0; width: 20px; height: 100%;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-left: none; color: var(--text-dim);
+      cursor: pointer; font-size: 9px; line-height: 1;
+      border-radius: 0 2px 2px 0; transition: all .15s;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+    }
+    .fp-btn:hover { background: var(--hover-bg); color: var(--cyan); border-color: var(--cyan-dim); }
+
+    #fp-dropdown {
+      position: fixed; z-index: 8000;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-hi);
+      box-shadow: 0 8px 32px rgba(0,0,0,.7), 0 0 20px var(--green-glow);
+      display: none; flex-direction: column;
+      width: 260px; max-height: 300px;
+      border-radius: 2px; overflow: hidden;
+    }
+    #fp-dropdown.open { display: flex; }
+
+    .fp-head {
+      padding: 6px 8px 5px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px;
+      flex-shrink: 0; background: var(--bg-surface);
+    }
+    .fp-head input {
+      flex: 1; font-size: 11px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text-hi); padding: 3px 6px; border-radius: 2px;
+      outline: none; width: 100%;
+    }
+    .fp-head input:focus { border-color: var(--green-dim); }
+    .fp-status {
+      font-size: 9px; color: var(--text-dim); white-space: nowrap; flex-shrink: 0;
+      letter-spacing: .5px;
+    }
+
+    #fp-list {
+      overflow-y: auto; flex: 1;
+    }
+    #fp-list::-webkit-scrollbar { width: 5px; }
+    #fp-list::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+
+    .fp-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5px 10px 4px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(22,29,54,.5);
+      transition: background .08s;
+      gap: 8px;
+    }
+    .fp-item:hover  { background: var(--hover-bg); }
+    .fp-item.fp-sel { background: var(--sel-bg); }
+    .fp-item.fp-cur { background: var(--green-glow); }
+    .fp-preview {
+      font-size: 15px; line-height: 1.2; color: var(--text-hi);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      flex: 1;
+    }
+    .fp-fname {
+      font-family: var(--font-mono); font-size: 9px;
+      color: var(--text-dim); white-space: nowrap; flex-shrink: 0;
+    }
+    .fp-loading {
+      padding: 16px; text-align: center;
+      color: var(--text-dim); font-size: 10px; letter-spacing: 1px;
+      animation: fpBlink .8s ease-in-out infinite;
+    }
+    @keyframes fpBlink { 0%,100%{opacity:.4} 50%{opacity:1} }
+    .fp-empty { padding: 12px; text-align: center; color: var(--text-dim); font-size: 10px; }
+    input[type="checkbox"].sq {
+      appearance: none; -webkit-appearance: none;
+      width: 12px; height: 12px; border: 1px solid var(--border-hi);
+      background: var(--bg-input); border-radius: 1px; cursor: pointer;
+      position: relative; flex-shrink: 0;
+    }
+    input[type="checkbox"].sq:checked { background: var(--green-muted); border-color: var(--green-dim); }
+    input[type="checkbox"].sq:checked::after {
+      content: '✓'; position: absolute; top: -2px; left: 1px;
+      font-size: 10px; color: var(--green); line-height: 1;
+    }
+
+    /* ─────────────────────── Msg Area ──────────────────── */
+    #msg-area { flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+
+    /* ─────────────────────── Batch Bar ─────────────────── */
+    #batch-bar {
+      min-height: var(--h-batch); flex-shrink: 0;
+      background: linear-gradient(90deg, rgba(0,232,124,.06) 0%, var(--bg-surface) 50%);
+      border-bottom: 1px solid var(--green-dim);
+      display: none; align-items: center; gap: 5px 6px; padding: 5px 10px;
+      position: relative; flex-wrap: wrap;
+    }
+    #batch-bar.vis { display: flex; }
+    #batch-bar::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, var(--green), transparent);
+    }
+
+    .bc { font-size: 10px; color: var(--green); letter-spacing: 1px; min-width: 78px; flex-shrink: 0; }
+    .bsep { width: 1px; height: 20px; background: var(--green-muted); margin: 0 4px; align-self: center; flex-shrink: 0; }
+    .bgrp { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .blbl { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; }
+
+    .bi {
+      font-family: var(--font-mono); font-size: 11px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text-hi); padding: 3px 5px; border-radius: 2px;
+      outline: none; width: 50px; max-width: 50px; flex: 0 0 50px; text-align: center;
+      -moz-appearance: textfield;
+    }
+    .bi::-webkit-inner-spin-button { opacity: .4; }
+    .bi:focus { border-color: var(--green-dim); }
+
+    select.bi { width: 84px; cursor: pointer; }
+
+    /* ─────────────────────── Table ─────────────────────── */
+    #tbl-wrap { flex: 1; overflow: auto; min-height: 0; }
+
+    /* grid paper background */
+    #tbl-wrap {
+      background-image:
+        linear-gradient(rgba(0,232,124,.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,232,124,.022) 1px, transparent 1px);
+      background-size: 100% 27px, 0 0;
+    }
+
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+
+    thead { position: sticky; top: 0; z-index: 10; background: var(--bg-panel); }
+    thead tr { border-bottom: 2px solid var(--border-hi); }
+    th {
+      font-family: var(--font-head); font-size: 8px; font-weight: 600;
+      letter-spacing: 1.5px; color: var(--cyan); text-transform: uppercase;
+      padding: 6px 4px; text-align: left;
+      border-right: 1px solid var(--border);
+      white-space: nowrap; overflow: hidden;
+    }
+    th:last-child { border-right: none; }
+
+    /* Column widths */
+    .c-chk  { width: 28px; }
+    .c-idx  { width: 32px; }
+    .c-text { width: auto; min-width: 150px; }
+    .c-font { width: 46px; }
+    .c-size { width: 50px; }
+    .c-xy   { width: 52px; }
+    .c-tm   { width: 50px; }
+    .c-fd   { width: 50px; }
+    .c-col  { width: 50px; }
+    .c-ext  { width: 50px; display: none; }
+
+    .show-extra .c-ext { display: table-cell; }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(22,29,54,.55);
+      transition: background .08s;
+    }
+    tbody tr:hover  { background: var(--hover-bg); }
+    tbody tr.r-sel  { background: var(--sel-bg); }
+    tbody tr.r-sel:hover { background: rgba(0,232,124,.09); }
+    tbody tr.r-empty { opacity: .32; }
+    tbody tr.r-empty td .cv { color: var(--text-dim); font-style: italic; }
+
+    td {
+      padding: 0; border-right: 1px solid rgba(22,29,54,.4);
+      vertical-align: middle; overflow: hidden;
+    }
+    td:last-child { border-right: none; }
+
+    .ti {
+      padding: 2px 4px; min-height: 27px;
+      display: flex; align-items: center;
+      width: 100%;
+    }
+    .c-chk .ti, .c-idx .ti { justify-content: center; }
+    .c-idx .ti { color: var(--text-dim); font-size: 10px; }
+
+    /* editable cell */
+    .ec { cursor: text; }
+    .ec:hover .ti { background: rgba(0,200,255,.04); }
+
+    .cv {
+      font-size: 11px; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; width: 100%; color: var(--text-hi);
+    }
+    .cv.empty { color: var(--text-dim); font-style: italic; }
+
+    /* active edit */
+    td.in-edit { padding: 0; }
+    td.in-edit input {
+      display: block; width: 100%; height: 27px;
+      background: rgba(0,232,124,.07); border: none;
+      border-top: 1px solid var(--green-dim); border-bottom: 1px solid var(--green-dim);
+      color: var(--green); font-size: 11px; padding: 0 4px;
+      border-radius: 0; outline: none;
+    }
+
+    /* tiny chips */
+    .chip-font { display: inline-flex; align-items: center; gap: 4px; }
+    .chip-dot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(255,255,255,.12); }
+    .color-swatch { width: 14px; height: 14px; border-radius: 2px; border: 1px solid rgba(255,255,255,.12); flex-shrink: 0; }
+    .color-swatch.def {
+      background: repeating-linear-gradient(45deg,rgba(100,100,100,.3) 0,rgba(100,100,100,.3) 2px,transparent 2px,transparent 4px);
+      border-style: dashed;
+    }
+
+    /* ─────────────────────── Status ────────────────────── */
+    #status {
+      height: var(--h-status); flex-shrink: 0;
+      background: var(--bg-panel); border-top: 1px solid var(--border-hi);
+      display: flex; align-items: center; gap: 14px; padding: 0 12px;
+    }
+    .si { font-size: 10px; color: var(--text-dim); display: flex; align-items: center; gap: 5px; letter-spacing: .5px; }
+    .si .sv { color: var(--text); }
+    .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+    .sdot.mod { background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: sdotPulse 1.5s ease-in-out infinite; }
+    .sdot.ok  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    @keyframes sdotPulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+    #st-spacer { flex: 1; }
+
+    /* ─────────────────────── Scrollbar ─────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan-dim); }
+
+    /* ─────────────────────── Toast ─────────────────────── */
+    #toast {
+      position: fixed; bottom: 40px; right: 20px; z-index: 8000;
+      background: var(--bg-surface); border: 1px solid var(--green-dim);
+      border-left: 3px solid var(--green);
+      color: var(--text-hi); font-size: 11px; padding: 7px 14px;
+      border-radius: 2px; box-shadow: 0 4px 20px rgba(0,0,0,.5), 0 0 20px var(--green-glow);
+      opacity: 0; transform: translateX(14px);
+      transition: opacity .25s, transform .25s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(0); }
+
+    /* ─────────────────────── Responsive ───────────────── */
+    @media (max-width: 900px) {
+      :root { --w-fonts: 210px; }
+    }
+    @media (max-width: 700px) {
+      #content { flex-direction: column; }
+      #font-panel { width: 100%; max-height: 180px; flex-direction: row; flex-wrap: wrap; }
+      #font-list { flex: 1; max-height: 130px; }
+      #font-editor { display: none; }
+    }
+
+    /* ─────────────────────── Misc ──────────────────────── */
+    .sel-all-chk { display: flex; justify-content: center; }
+
+    /* ─────────────────────── Import Modal ──────────────── */
+    #im-overlay, #rx-overlay {
+      display: none; position: fixed; inset: 0; z-index: 5000;
+      background: rgba(0,0,0,.75); backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+    }
+    #im-overlay.open, #rx-overlay.open { display: flex; }
+    #im-modal, #rx-modal {
+      background: var(--bg-panel); border: 1px solid var(--border-hi);
+      border-top: 2px solid var(--green-dim);
+      box-shadow: 0 0 0 1px var(--green-muted), 0 24px 64px rgba(0,0,0,.85), 0 0 48px var(--green-glow);
+      width: 520px; max-width: 96vw;
+      display: flex; flex-direction: column; border-radius: 2px; max-height: 90vh;
+    }
+    #im-modal { width: 580px; }
+    .im-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .im-header span {
+      font-family: var(--font-head); font-size: 10px; font-weight: 700;
+      letter-spacing: 3px; color: var(--green);
+    }
+    .im-close-btn {
+      background: none; border: none; color: var(--text-dim); cursor: pointer;
+      font-size: 13px; padding: 2px 6px; border-radius: 2px; line-height: 1;
+    }
+    .im-close-btn:hover { color: var(--red); }
+    #im-text {
+      margin: 10px 14px 0; width: calc(100% - 28px);
+      min-height: 110px; max-height: 200px; resize: vertical;
+      background: var(--bg-input); border: 1px solid var(--border); border-radius: 2px;
+      color: var(--text-hi); font-family: var(--font-mono); font-size: 11px;
+      line-height: 1.5; padding: 8px 10px; outline: none; flex-shrink: 0;
+    }
+    #im-text:focus { border-color: var(--green-dim); }
+    .im-info {
+      margin: 5px 14px 0; font-size: 10px; color: var(--text-dim);
+      letter-spacing: .5px; flex-shrink: 0; min-height: 16px;
+    }
+    .im-info.ok   { color: var(--green); }
+    .im-info.warn { color: var(--amber); }
+    .im-opts { padding: 6px 14px 6px; overflow-y: auto; flex: 1 1 auto; }
+    .im-sect {
+      display: block; font-family: var(--font-head); font-size: 8px;
+      letter-spacing: 2px; color: var(--cyan); padding: 8px 0 3px;
+    }
+    .im-row {
+      display: flex; align-items: center; gap: 6px; padding: 4px 0;
+      border-bottom: 1px solid rgba(22,29,54,.5); flex-wrap: wrap;
+    }
+    .im-row:last-child { border-bottom: none; }
+    .im-lbl { font-size: 10px; color: var(--text-dim); white-space: nowrap; letter-spacing: .5px; }
+    .im-check {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10px; color: var(--text); cursor: pointer; letter-spacing: .5px;
+    }
+    .im-check input { cursor: pointer; }
+    #im-xy-wrap, #im-slot-wrap { display: none; align-items: center; gap: 5px; margin-left: 6px; }
+    #im-xy-wrap.vis, #im-slot-wrap.vis { display: flex; }
+    #im-font, #rx-font { display: none; margin-left: 8px; }
+    #im-font.vis, #rx-font.vis { display: inline-block; }
+    .im-footer {
+      display: flex; gap: 8px; justify-content: flex-end;
+      padding: 10px 14px; border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ HEADER ══════════════════════════════════════════ -->
+  <header id="header">
+    <div id="spectrum"></div>
+    <div>
+      <div id="title">MILK<em>WAVE</em> // MSG EDITOR</div>
+      <div id="title-sub">MILKDROP CUSTOM MESSAGES · MDx12 FORMAT</div>
+    </div>
+    <div id="header-flex"></div>
+    <div id="header-badge">MDx12 · v1.0</div>
+  </header>
+
+  <!-- ══ TOOLBAR ═════════════════════════════════════════ -->
+  <div id="toolbar">
+    <button class="btn btn-green" id="btn-open">OPEN</button>
+    <button class="btn btn-green" id="btn-save">SAVE</button>
+    <button class="btn"          id="btn-save-as">SAVE AS</button>
+    <div class="tb-sep"></div>
+    <button class="btn"          id="btn-add">+ MESSAGE</button>
+    <button class="btn"          id="btn-paste">PASTE MSGS</button>
+    <div class="tb-sep"></div>
+    <label class="tog">
+      <input type="checkbox" id="chk-empty">
+      <div class="tog-track"><div class="tog-thumb"></div></div>
+      <span class="tog-lbl">Show Empty</span>
+    </label>
+    <label class="tog" style="margin-left:6px">
+      <input type="checkbox" id="chk-extra">
+      <div class="tog-track"><div class="tog-thumb"></div></div>
+      <span class="tog-lbl">Extra Cols</span>
+    </label>
+    <div class="tb-spacer"></div>
+    <span id="tb-file" style="font-size:10px; color:var(--text-dim); letter-spacing:1px">No file loaded</span>
+  </div>
+
+  <!-- ══ CONTENT ═════════════════════════════════════════ -->
+  <div id="content">
+
+    <!-- ─── Font Panel ──────────────────────────────────── -->
+    <div id="font-panel">
+      <div class="panel-hdr">
+        <span>Fonts</span>
+        <span>16 slots</span>
+      </div>
+
+      <div id="font-list"></div>
+
+      <div id="font-editor">
+        <div class="fe-title">
+          EDIT FONT <strong id="fe-slot">—</strong>
+        </div>
+
+        <div class="frow">
+          <span class="flbl">Face</span>
+          <div class="fp-wrap">
+            <input type="text" id="fe-face" class="inp-green" placeholder="arial"
+              autocomplete="off" spellcheck="false">
+            <button class="fp-btn" id="fp-btn" title="Browse system fonts">▾</button>
+          </div>
+        </div>
+        <div class="frow">
+          <span class="flbl">Style</span>
+          <div class="chk-wrap">
+            <input type="checkbox" class="sq" id="fe-bold">
+            <label for="fe-bold">Bold</label>
+          </div>
+          <div class="chk-wrap" style="margin-left:10px">
+            <input type="checkbox" class="sq" id="fe-ital">
+            <label for="fe-ital">Italic</label>
+          </div>
+        </div>
+        <div class="frow">
+          <span class="flbl">Color</span>
+          <div class="color-row">
+            <div class="swatch" id="fe-swatch" onclick="pickFontColor()"></div>
+            <input type="number" id="fe-r" min="0" max="255" placeholder="R" class="inp-green">
+            <input type="number" id="fe-g" min="0" max="255" placeholder="G" class="inp-green">
+            <input type="number" id="fe-b" min="0" max="255" placeholder="B" class="inp-green">
+            <input type="color" id="fe-picker">
+          </div>
+        </div>
+        <button class="btn btn-green" style="width:100%;margin-top:5px" id="btn-apply-font">APPLY FONT</button>
+      </div>
+    </div>
+
+    <!-- ─── Message Area ────────────────────────────────── -->
+    <div id="msg-area">
+
+      <!-- Batch Bar -->
+      <div id="batch-bar">
+        <span class="bc" id="bc-count">0 SELECTED</span>
+
+        <div class="bsep"></div>
+        <div class="bgrp">
+          <span class="blbl">Font</span>
+          <select class="bi" id="b-font"></select>
+          <button class="btn" id="btn-b-font">SET</button>
+        </div>
+
+        <div class="bsep"></div>
+        <div class="bgrp">
+          <span class="blbl">Size</span>
+          <input type="number" class="bi" id="b-size" min="5" max="100" step="1" placeholder="50">
+          <button class="btn" id="btn-b-size">SET</button>
+        </div>
+
+        <div class="bsep"></div>
+        <div class="bgrp">
+          <span class="blbl">Time</span>
+          <input type="number" class="bi" id="b-time" min="0" step=".1" placeholder="5.0">
+          <span class="blbl">Fade</span>
+          <input type="number" class="bi" id="b-fade" min="0" step=".1" placeholder="1.0">
+          <span class="blbl">Out</span>
+          <input type="number" class="bi" id="b-fout" min="0" step=".1" placeholder="1.0">
+          <button class="btn" id="btn-b-time">SET</button>
+        </div>
+
+        <div class="bsep"></div>
+        <div class="bgrp">
+          <span class="blbl">X</span>
+          <input type="number" class="bi" id="b-x" min="0" max="1" step=".01" placeholder=".50">
+          <span class="blbl">Y</span>
+          <input type="number" class="bi" id="b-y" min="0" max="1" step=".01" placeholder=".50">
+          <button class="btn" id="btn-b-pos">SET</button>
+        </div>
+
+        <div class="bsep"></div>
+        <div class="bgrp">
+          <button class="btn btn-danger" id="btn-b-clear">CLEAR TEXT</button>
+          <button class="btn btn-green" id="btn-b-rand">RANDOMIZE</button>
+          <button class="btn" id="btn-desel">DESELECT ALL</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div id="tbl-wrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th class="c-chk"><div class="sel-all-chk"><input type="checkbox" class="sq" id="chk-all"></div></th>
+              <th class="c-idx">#</th>
+              <th class="c-text">TEXT</th>
+              <th class="c-font">FONT</th>
+              <th class="c-size">SIZE</th>
+              <th class="c-xy">X</th>
+              <th class="c-xy">Y</th>
+              <th class="c-tm">TIME</th>
+              <th class="c-fd">FADE</th>
+              <th class="c-fd">FOUT</th>
+              <th class="c-col">COLOR</th>
+              <th class="c-ext">RNDX</th>
+              <th class="c-ext">RNDY</th>
+              <th class="c-ext">GROW</th>
+              <th class="c-ext">BURN</th>
+              <th class="c-ext">RR</th>
+              <th class="c-ext">RG</th>
+              <th class="c-ext">RB</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STATUS ══════════════════════════════════════════ -->
+  <div id="status">
+    <div class="si">
+      <div class="sdot" id="sdot"></div>
+      <span id="st-msg">Ready</span>
+    </div>
+    <div class="si">MSGS: <span class="sv" id="st-count">—</span></div>
+    <div class="si">FONTS: <span class="sv">16</span></div>
+    <div id="st-spacer"></div>
+    <div class="si" style="font-size:9px;letter-spacing:2px">MILKWAVE · MDx12</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="f-open" accept=".ini" style="display:none">
+
+<!-- Randomize selected modal -->
+<div id="rx-overlay">
+  <div id="rx-modal">
+    <div class="im-header">
+      <span id="rx-title">RANDOMIZE SELECTED</span>
+      <button class="im-close-btn" id="rx-close-btn">✕</button>
+    </div>
+    <div class="im-info ok" id="rx-info">0 messages selected</div>
+    <div class="im-opts">
+      <span class="im-sect">FONTS</span>
+      <div class="im-row">
+        <label class="im-check"><input type="checkbox" id="rx-rand-font" checked> Randomize fonts</label>
+        <select id="rx-font" class="bi"></select>
+      </div>
+      <span class="im-sect">SIZE &amp; TIMING</span>
+      <div class="im-row">
+        <span class="im-lbl">Size</span>
+        <input type="number" id="rx-size-min" class="bi" value="40" min="5" max="100">
+        <span class="im-lbl">–</span>
+        <input type="number" id="rx-size-max" class="bi" value="80" min="5" max="100">
+        <div class="bsep"></div>
+        <span class="im-lbl">Time</span>
+        <input type="number" id="rx-time-min" class="bi" value="3.0" min="0.1" step="0.1">
+        <span class="im-lbl">–</span>
+        <input type="number" id="rx-time-max" class="bi" value="7.0" min="0.1" step="0.1">
+      </div>
+      <div class="im-row">
+        <span class="im-lbl">Fade in</span>
+        <input type="number" id="rx-fade-min" class="bi" value="0.3" min="0" step="0.1">
+        <span class="im-lbl">–</span>
+        <input type="number" id="rx-fade-max" class="bi" value="1.0" min="0" step="0.1">
+        <div class="bsep"></div>
+        <span class="im-lbl">Fade out</span>
+        <input type="number" id="rx-fout-min" class="bi" value="0.0" min="0" step="0.1">
+        <span class="im-lbl">–</span>
+        <input type="number" id="rx-fout-max" class="bi" value="0.5" min="0" step="0.1">
+      </div>
+      <span class="im-sect">POSITION &amp; EFFECTS</span>
+      <div class="im-row">
+        <label class="im-check"><input type="checkbox" id="rx-scatter"> Randomize position</label>
+        <label class="im-check" style="margin-left:14px"><input type="checkbox" id="rx-growth"> Random growth</label>
+        <label class="im-check" style="margin-left:14px"><input type="checkbox" id="rx-burn"> Occasional burn</label>
+      </div>
+    </div>
+    <div class="im-footer">
+      <button class="btn" id="rx-btn-cancel">CANCEL</button>
+      <button class="btn btn-green" id="rx-btn-apply">APPLY TO 0 MESSAGES</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import / Paste modal -->
+<div id="im-overlay">
+  <div id="im-modal">
+    <div class="im-header">
+      <span>PASTE IMPORT</span>
+      <button class="im-close-btn" id="im-close-btn">✕</button>
+    </div>
+    <textarea id="im-text" placeholder="Paste messages here — one per line&#10;Each line becomes one message slot&#10;Blank lines are skipped"></textarea>
+    <div class="im-info" id="im-info">Paste text above to begin</div>
+    <div class="im-opts">
+      <span class="im-sect">FONTS &amp; POSITION</span>
+      <div class="im-row">
+        <label class="im-check"><input type="checkbox" id="im-rand-font" checked> Randomize fonts</label>
+        <select id="im-font" class="bi"></select>
+      </div>
+      <div class="im-row">
+        <label class="im-check"><input type="checkbox" id="im-scatter" checked> Scatter position</label>
+        <span id="im-xy-wrap">
+          <span class="im-lbl">X</span>
+          <input type="number" id="im-cx" class="bi" value="0.50" min="0" max="1" step="0.01">
+          <span class="im-lbl">Y</span>
+          <input type="number" id="im-cy" class="bi" value="0.50" min="0" max="1" step="0.01">
+        </span>
+      </div>
+      <span class="im-sect">SIZE &amp; TIMING</span>
+      <div class="im-row">
+        <span class="im-lbl">Size</span>
+        <input type="number" id="im-size-min" class="bi" value="40" min="5" max="100">
+        <span class="im-lbl">–</span>
+        <input type="number" id="im-size-max" class="bi" value="80" min="5" max="100">
+        <div class="bsep"></div>
+        <span class="im-lbl">Time</span>
+        <input type="number" id="im-time-min" class="bi" value="3.0" min="0.1" step="0.1">
+        <span class="im-lbl">–</span>
+        <input type="number" id="im-time-max" class="bi" value="7.0" min="0.1" step="0.1">
+      </div>
+      <div class="im-row">
+        <span class="im-lbl">Fade in</span>
+        <input type="number" id="im-fade-min" class="bi" value="0.3" min="0" step="0.1">
+        <span class="im-lbl">–</span>
+        <input type="number" id="im-fade-max" class="bi" value="1.0" min="0" step="0.1">
+        <div class="bsep"></div>
+        <span class="im-lbl">Fade out</span>
+        <input type="number" id="im-fout-min" class="bi" value="0.0" min="0" step="0.1">
+        <span class="im-lbl">–</span>
+        <input type="number" id="im-fout-max" class="bi" value="0.5" min="0" step="0.1">
+      </div>
+      <span class="im-sect">EFFECTS &amp; PLACEMENT</span>
+      <div class="im-row">
+        <label class="im-check"><input type="checkbox" id="im-growth"> Random growth (0.85–1.15)</label>
+        <label class="im-check" style="margin-left:14px"><input type="checkbox" id="im-burn"> Occasional burn (15% chance)</label>
+      </div>
+      <div class="im-row">
+        <label class="im-check"><input type="checkbox" id="im-overwrite"> Overwrite existing messages</label>
+        <span id="im-slot-wrap">
+          <span class="im-lbl">from slot</span>
+          <input type="number" id="im-start-slot" class="bi" value="0" min="0" max="99">
+        </span>
+      </div>
+    </div>
+    <div class="im-footer">
+      <button class="btn" id="im-btn-cancel">CANCEL</button>
+      <button class="btn btn-green" id="im-btn-import">IMPORT 0 MESSAGES</button>
+    </div>
+  </div>
+</div>
+
+<!-- Font picker dropdown (fixed overlay) -->
+<div id="fp-dropdown">
+  <div class="fp-head">
+    <input type="text" id="fp-search" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
+    <span class="fp-status" id="fp-status"></span>
+  </div>
+  <div id="fp-list"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const MAX_F = 16, MAX_M = 100;
+let fonts    = mkDefaultFonts();
+let messages = mkDefaultMsgs();
+let selFont  = 0;
+let selRows  = new Set();
+let dirty    = false;
+let curFile  = null;
+let fileHandle = null;
+let showEmpty  = false;
+let showExtra  = false;
+let editCell   = null;
+let toastTimer = null;
+
+// ─── Default Data ────────────────────────────────────────────
+function mkDefaultFonts() {
+  const faces  = ['arial','impact','times new roman','courier new','verdana','tahoma',
+                  'trebuchet ms','georgia','palatino','comic sans ms','century gothic',
+                  'franklin gothic medium','garamond','book antiqua','calibri','cambria'];
+  const colors = [
+    [255,255,255],[255,220,80],[80,200,255],[255,100,100],[100,255,150],[255,160,50],
+    [200,100,255],[80,255,220],[255,255,100],[100,180,255],[255,130,80],[150,255,100],
+    [255,80,200],[100,220,255],[200,200,255],[255,200,100]
+  ];
+  return Array.from({length:MAX_F},(_,i)=>({
+    index:i, face:faces[i]||'arial', bold:false, italic:false,
+    colorR:colors[i][0], colorG:colors[i][1], colorB:colors[i][2]
+  }));
+}
+
+function mkDefaultMsgs() {
+  const samples = [
+    {text:'MILKWAVE',      font:0, size:80,  x:.5,  y:.5,  time:5.0, fade:1.0, fadeOut:1.0},
+    {text:'Now Playing',   font:1, size:45,  x:.5,  y:.15, time:4.0, fade:.5,  fadeOut:.8},
+    {text:'Hello World',   font:2, size:50,  x:.3,  y:.7,  time:3.0, fade:.5,  fadeOut:.5},
+  ];
+  return Array.from({length:MAX_M},(_,i)=>{
+    const s = samples[i]||{};
+    return {
+      index:i, text:s.text||'',
+      font:s.font??0, size:s.size??50.0,
+      x:s.x??0.5, y:s.y??0.5,
+      randX:0.0, randY:0.0, growth:1.0,
+      time:s.time??5.0, fade:s.fade??1.0,
+      fadeOut:s.fadeOut??1.0, burnTime:0.0,
+      colorR:-1, colorG:-1, colorB:-1,
+      randR:0, randG:0, randB:0,
+      faceOverride:null, boldOverride:-1, italicOverride:-1
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INI  PARSE / SERIALIZE
+// ═══════════════════════════════════════════════════════════════
+function parseIni(txt) {
+  const s={}, lines=txt.split(/\r?\n/); let cur=null;
+  for(const raw of lines){
+    const l=raw.trim();
+    if(!l||l[0]===';'||l[0]==='#') continue;
+    const m=l.match(/^\[(.+)\]$/);
+    if(m){cur=m[1].toLowerCase();s[cur]={};}
+    else if(cur){const eq=l.indexOf('=');if(eq>0)s[cur][l.slice(0,eq).trim().toLowerCase()]=l.slice(eq+1).trim();}
+  }
+  return s;
+}
+const gStr  = (sec,k,d='')  => sec&&sec[k]!==undefined ? sec[k] : d;
+const gInt  = (sec,k,d=0)   => { const v=parseInt(sec?.[k]); return isNaN(v)?d:v; };
+const gFlt  = (sec,k,d=0.0) => { const v=parseFloat(sec?.[k]); return isNaN(v)?d:v; };
+
+function loadIni(txt) {
+  const ini = parseIni(txt);
+
+  fonts = Array.from({length:MAX_F},(_,i)=>{
+    const s=ini[`font${pad(i)}`]||{};
+    return {index:i, face:gStr(s,'face','arial'), bold:gInt(s,'bold',0)!==0,
+            italic:gInt(s,'ital',0)!==0, colorR:gInt(s,'r',255), colorG:gInt(s,'g',255), colorB:gInt(s,'b',255)};
+  });
+
+  messages = Array.from({length:MAX_M},(_,i)=>{
+    const s=ini[`message${pad(i)}`]||{};
+    const text=gStr(s,'text','');
+    if(!text) return {
+      index:i, text:'', font:0, size:50, x:.5, y:.5,
+      randX:0, randY:0, growth:1, time:5, fade:1, fadeOut:1, burnTime:0,
+      colorR:-1, colorG:-1, colorB:-1, randR:0, randG:0, randB:0,
+      faceOverride:null, boldOverride:-1, italicOverride:-1
+    };
+    const face=gStr(s,'face',''), bold=gInt(s,'bold',-1), ital=gInt(s,'ital',-1);
+    return {
+      index:i, text,
+      font:gInt(s,'font',0), size:gFlt(s,'size',50),
+      x:gFlt(s,'x',.5), y:gFlt(s,'y',.5),
+      randX:gFlt(s,'randx',0), randY:gFlt(s,'randy',0),
+      growth:gFlt(s,'growth',1), time:gFlt(s,'time',1.5),
+      fade:gFlt(s,'fade',.2), fadeOut:gFlt(s,'fadeout',0),
+      burnTime:gFlt(s,'burntime',0),
+      colorR:gInt(s,'r',-1), colorG:gInt(s,'g',-1), colorB:gInt(s,'b',-1),
+      randR:gInt(s,'randr',0), randG:gInt(s,'randg',0), randB:gInt(s,'randb',0),
+      faceOverride:face||null,
+      boldOverride:bold, italicOverride:ital
+    };
+  });
+}
+
+function serializeIni() {
+  const L=[];
+  const ln=(...a)=>L.push(...a,'');
+
+  for(const f of fonts){
+    const sec=`font${pad(f.index)}`;
+    L.push(`[${sec}]`,'face='+f.face,'bold='+(f.bold?1:0),'ital='+(f.italic?1:0),
+           'r='+f.colorR,'g='+f.colorG,'b='+f.colorB,'');
+  }
+  for(const m of messages){
+    if(!m.text) continue;
+    const sec=`message${pad(m.index)}`;
+    L.push(`[${sec}]`,
+      'text='+m.text, 'font='+m.font,
+      'size='+m.size.toFixed(1),
+      'x='+m.x.toFixed(2),'y='+m.y.toFixed(2),
+      'randx='+m.randX.toFixed(2),'randy='+m.randY.toFixed(2),
+      'growth='+m.growth.toFixed(2),
+      'time='+m.time.toFixed(1),'fade='+m.fade.toFixed(1),
+      'fadeout='+m.fadeOut.toFixed(1),'burntime='+m.burnTime.toFixed(1),
+      'r='+m.colorR,'g='+m.colorG,'b='+m.colorB,
+      'randr='+m.randR,'randg='+m.randG,'randb='+m.randB,
+    );
+    if(m.faceOverride)       L.push('face='+m.faceOverride);
+    if(m.boldOverride!==-1)  L.push('bold='+(m.boldOverride!==0?1:0));
+    if(m.italicOverride!==-1)L.push('ital='+(m.italicOverride!==0?1:0));
+    L.push('');
+  }
+  return L.join('\r\n');
+}
+
+const pad = n => String(n).padStart(2,'0');
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER — FONTS
+// ═══════════════════════════════════════════════════════════════
+function renderFonts() {
+  document.getElementById('font-list').innerHTML =
+    fonts.map(f => {
+      const col=rgb(f.colorR,f.colorG,f.colorB);
+      const bi=(f.bold?'B':'')+(f.italic?'I':'');
+      return `<div class="font-row${f.index===selFont?' sel':''}" onclick="selectFont(${f.index})">
+        <span class="font-idx">${pad(f.index)}</span>
+        <div class="font-dot" style="background:${col}"></div>
+        <span class="font-face">${esc(f.face)}</span>
+        ${bi?`<span class="font-bi">${bi}</span>`:''}
+      </div>`;
+    }).join('');
+
+  // batch-bar font select
+  document.getElementById('b-font').innerHTML =
+    fonts.map(f=>`<option value="${f.index}">${pad(f.index)} — ${esc(f.face)}</option>`).join('');
+}
+
+function renderFontEditor(f) {
+  document.getElementById('fe-slot').textContent = `#${pad(f.index)}`;
+  document.getElementById('fe-face').value = f.face;
+  document.getElementById('fe-bold').checked = f.bold;
+  document.getElementById('fe-ital').checked = f.italic;
+  document.getElementById('fe-r').value = f.colorR;
+  document.getElementById('fe-g').value = f.colorG;
+  document.getElementById('fe-b').value = f.colorB;
+  syncFontSwatch(f.colorR, f.colorG, f.colorB);
+}
+
+function syncFontSwatch(r,g,b) {
+  document.getElementById('fe-swatch').style.background = rgb(r,g,b);
+}
+
+function selectFont(idx) {
+  selFont = idx;
+  renderFonts();
+  renderFontEditor(fonts[idx]);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER — MESSAGES
+// ═══════════════════════════════════════════════════════════════
+function renderMessages() {
+  const tbody = document.getElementById('tbody');
+  const tbl   = document.getElementById('tbl');
+  tbl.classList.toggle('show-extra', showExtra);
+
+  const rows = messages.filter(m => showEmpty || m.text);
+
+  tbody.innerHTML = rows.map(m => {
+    const f    = fonts[Math.min(m.font, MAX_F-1)] || fonts[0];
+    const fcol = rgb(f.colorR,f.colorG,f.colorB);
+    const useDefCol = m.colorR===-1 && m.colorG===-1 && m.colorB===-1;
+    const mcol = useDefCol ? null : rgb(m.colorR,m.colorG,m.colorB);
+    const sel  = selRows.has(m.index);
+    const empty= !m.text;
+
+    const colorCell = useDefCol
+      ? `<div class="color-swatch def" title="Font default"></div>`
+      : `<div class="color-swatch" style="background:${mcol}" title="${m.colorR},${m.colorG},${m.colorB}"></div>`;
+
+    return `<tr class="${sel?'r-sel ':''} ${empty?'r-empty':''}" data-idx="${m.index}">
+      <td class="c-chk"><div class="ti">
+        <input type="checkbox" class="sq" ${sel?'checked':''} onchange="toggleRow(${m.index},this.checked)">
+      </div></td>
+      <td class="c-idx"><div class="ti">${pad(m.index)}</div></td>
+      ${ec(m,'text',  m.text||'—',    'c-text', !m.text)}
+      ${ec(m,'font',  fontChip(m.font,fcol), 'c-font')}
+      ${ec(m,'size',  m.size.toFixed(1),  'c-size')}
+      ${ec(m,'x',     m.x.toFixed(2),     'c-xy')}
+      ${ec(m,'y',     m.y.toFixed(2),     'c-xy')}
+      ${ec(m,'time',  m.time.toFixed(1),  'c-tm')}
+      ${ec(m,'fade',  m.fade.toFixed(1),  'c-fd')}
+      ${ec(m,'fadeOut',m.fadeOut.toFixed(1),'c-fd')}
+      <td class="c-col"><div class="ti">${colorCell}</div></td>
+      ${ec(m,'randX',    m.randX.toFixed(2),  'c-ext')}
+      ${ec(m,'randY',    m.randY.toFixed(2),  'c-ext')}
+      ${ec(m,'growth',   m.growth.toFixed(2), 'c-ext')}
+      ${ec(m,'burnTime', m.burnTime.toFixed(1),'c-ext')}
+      ${ec(m,'randR',    m.randR,             'c-ext')}
+      ${ec(m,'randG',    m.randG,             'c-ext')}
+      ${ec(m,'randB',    m.randB,             'c-ext')}
+    </tr>`;
+  }).join('');
+
+  updateStatusCount();
+}
+
+// editable cell
+function ec(msg, field, display, cls, isEmpty=false) {
+  return `<td class="${cls} ec" data-idx="${msg.index}" data-field="${field}">
+    <div class="ti"><span class="cv${isEmpty?' empty':''}">${display}</span></div>
+  </td>`;
+}
+
+function fontChip(idx,col) {
+  return `<span class="chip-font"><span class="chip-dot" style="background:${col}"></span>${pad(idx)}</span>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INLINE EDITING
+// ═══════════════════════════════════════════════════════════════
+function onTableClick(e) {
+  const td = e.target.closest('td.ec');
+  if(!td) return;
+  const idx   = parseInt(td.dataset.idx);
+  const field = td.dataset.field;
+  beginEdit(td, idx, field);
+}
+
+function beginEdit(td, msgIdx, field) {
+  if(editCell) commitEdit(true);
+
+  const msg = messages[msgIdx];
+  editCell = {td, msgIdx, field, prev: msg[field]};
+
+  const inp = document.createElement('input');
+  const isStr = (field==='text'||field==='faceOverride');
+  inp.type = isStr ? 'text' : 'number';
+  inp.value = msg[field]===null ? '' : msg[field];
+  if(!isStr) {
+    inp.step = ['x','y','randX','randY','growth'].includes(field) ? '0.01'
+             : ['time','fade','fadeOut','burnTime'].includes(field) ? '0.1'
+             : '1';
+    if(field === 'size') { inp.min = '5'; inp.max = '100'; }
+  }
+  inp.onblur = () => commitEdit(true);
+  inp.onkeydown = ev => {
+    if(ev.key==='Enter') { commitEdit(true); moveEditDown(msgIdx,field); ev.preventDefault(); }
+    else if(ev.key==='Escape') commitEdit(false);
+    else if(ev.key==='Tab')  { commitEdit(true); ev.preventDefault(); }
+  };
+
+  td.classList.add('in-edit');
+  td.innerHTML='';
+  td.appendChild(inp);
+  inp.focus(); inp.select();
+}
+
+function commitEdit(save) {
+  if(!editCell) return;
+  const {td, msgIdx, field, prev} = editCell;
+  editCell = null;
+
+  if(save) {
+    const inp = td.querySelector('input');
+    if(inp) {
+      const raw = inp.value;
+      const isStr = (field==='text'||field==='faceOverride');
+      if(isStr) {
+        messages[msgIdx][field] = raw || (field==='faceOverride' ? null : '');
+      } else {
+        const n = parseFloat(raw);
+        if(!isNaN(n)) {
+          const intFields=['font','randR','randG','randB','colorR','colorG','colorB','boldOverride','italicOverride'];
+          messages[msgIdx][field] = intFields.includes(field) ? Math.round(n) : n;
+        }
+      }
+      if(messages[msgIdx][field] !== prev) markDirty();
+    }
+  }
+
+  td.classList.remove('in-edit');
+  renderMessages();
+}
+
+function moveEditDown(curIdx, field) {
+  const visible = messages.filter(m => showEmpty || m.text);
+  const pos = visible.findIndex(m => m.index===curIdx);
+  if(pos>=0 && pos<visible.length-1) {
+    setTimeout(()=>{
+      const nextIdx = visible[pos+1].index;
+      const nextTd  = document.querySelector(`td[data-idx="${nextIdx}"][data-field="${field}"]`);
+      if(nextTd) beginEdit(nextTd, nextIdx, field);
+    },0);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SELECTION
+// ═══════════════════════════════════════════════════════════════
+function toggleRow(idx, checked) {
+  if(checked) selRows.add(idx); else selRows.delete(idx);
+  syncBatchBar();
+  syncSelectAll();
+}
+
+function syncSelectAll() {
+  const vis = messages.filter(m => showEmpty||m.text);
+  const all = vis.length>0 && vis.every(m=>selRows.has(m.index));
+  const chk = document.getElementById('chk-all');
+  chk.checked = all;
+  chk.indeterminate = !all && selRows.size>0;
+}
+
+function syncBatchBar() {
+  const bar = document.getElementById('batch-bar');
+  document.getElementById('bc-count').textContent = `${selRows.size} SELECTED`;
+  bar.classList.toggle('vis', selRows.size>0);
+}
+
+function deselectAll() {
+  selRows.clear();
+  renderMessages();
+  syncBatchBar();
+  syncSelectAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BATCH OPERATIONS
+// ═══════════════════════════════════════════════════════════════
+function batchFont() {
+  const f = parseInt(document.getElementById('b-font').value);
+  selRows.forEach(i=>messages[i].font=f);
+  markDirty(); renderMessages(); renderFonts();
+  toast(`Set font ${pad(f)} → ${selRows.size} messages`);
+}
+
+function batchSize() {
+  const v = parseFloat(document.getElementById('b-size').value);
+  if(isNaN(v)) return;
+  selRows.forEach(i=>messages[i].size=v);
+  markDirty(); renderMessages();
+  toast(`Set size ${v} → ${selRows.size} messages`);
+}
+
+function batchTiming() {
+  const t  = parseFloat(document.getElementById('b-time').value);
+  const fd = parseFloat(document.getElementById('b-fade').value);
+  const fo = parseFloat(document.getElementById('b-fout').value);
+  let changed=false;
+  selRows.forEach(i=>{
+    if(!isNaN(t))  { messages[i].time=t;    changed=true; }
+    if(!isNaN(fd)) { messages[i].fade=fd;   changed=true; }
+    if(!isNaN(fo)) { messages[i].fadeOut=fo;changed=true; }
+  });
+  if(changed){markDirty(); renderMessages();}
+  toast(`Updated timing → ${selRows.size} messages`);
+}
+
+function batchPos() {
+  const x=parseFloat(document.getElementById('b-x').value);
+  const y=parseFloat(document.getElementById('b-y').value);
+  let changed=false;
+  selRows.forEach(i=>{
+    if(!isNaN(x)){messages[i].x=Math.min(1,Math.max(0,x));changed=true;}
+    if(!isNaN(y)){messages[i].y=Math.min(1,Math.max(0,y));changed=true;}
+  });
+  if(changed){markDirty(); renderMessages();}
+  toast(`Set position → ${selRows.size} messages`);
+}
+
+function batchClear() {
+  if(!confirm(`Clear text from ${selRows.size} message(s)?`)) return;
+  selRows.forEach(i=>messages[i].text='');
+  selRows.clear();
+  markDirty(); renderMessages(); syncBatchBar(); syncSelectAll();
+  toast('Text cleared');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FONT EDITOR
+// ═══════════════════════════════════════════════════════════════
+function applyFont() {
+  const f=fonts[selFont];
+  f.face    = document.getElementById('fe-face').value.trim()||'arial';
+  f.bold    = document.getElementById('fe-bold').checked;
+  f.italic  = document.getElementById('fe-ital').checked;
+  f.colorR  = clamp(parseInt(document.getElementById('fe-r').value)||0);
+  f.colorG  = clamp(parseInt(document.getElementById('fe-g').value)||0);
+  f.colorB  = clamp(parseInt(document.getElementById('fe-b').value)||0);
+  syncFontSwatch(f.colorR,f.colorG,f.colorB);
+  markDirty(); renderFonts(); renderMessages();
+  toast(`Font ${pad(selFont)} updated`);
+}
+
+function pickFontColor() {
+  const f=fonts[selFont];
+  const pk=document.getElementById('fe-picker');
+  pk.value='#'+[f.colorR,f.colorG,f.colorB].map(v=>v.toString(16).padStart(2,'0')).join('');
+  pk.style.pointerEvents='all'; pk.click(); pk.style.pointerEvents='none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILE OPS
+// ═══════════════════════════════════════════════════════════════
+async function openFile() {
+  if(window.showOpenFilePicker){
+    try {
+      const [handle] = await showOpenFilePicker({
+        types:[{description:'INI Files',accept:{'text/plain':['.ini']}}], multiple:false
+      });
+      fileHandle=handle; curFile=handle.name;
+      const txt=await (await handle.getFile()).text();
+      applyLoaded(txt);
+    } catch(e){ if(e.name!=='AbortError') fallbackOpen(); }
+  } else fallbackOpen();
+}
+
+function fallbackOpen() { document.getElementById('f-open').click(); }
+
+async function saveFile() {
+  if(!curFile){ await saveAs(); return; }
+  const txt=serializeIni();
+  if(fileHandle){
+    try{
+      const w=await fileHandle.createWritable();
+      await w.write(txt); await w.close();
+      markClean(); toast('Saved');
+    } catch(e){ fallbackSave(txt); }
+  } else fallbackSave(txt);
+}
+
+async function saveAs() {
+  if(window.showSaveFilePicker){
+    try{
+      const handle=await showSaveFilePicker({
+        suggestedName:curFile||'messages.ini',
+        types:[{description:'INI Files',accept:{'text/plain':['.ini']}}]
+      });
+      fileHandle=handle; curFile=handle.name;
+      const w=await handle.createWritable();
+      await w.write(serializeIni()); await w.close();
+      markClean(); updateTbFile(); toast(`Saved: ${curFile}`);
+    } catch(e){ if(e.name!=='AbortError') fallbackSave(serializeIni()); }
+  } else fallbackSave(serializeIni());
+}
+
+function fallbackSave(txt){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download=curFile||'messages.ini'; a.click();
+  URL.revokeObjectURL(a.href);
+  markClean(); toast('Downloaded: '+(curFile||'messages.ini'));
+}
+
+function applyLoaded(txt) {
+  loadIni(txt); selRows.clear();
+  renderFonts(); renderFontEditor(fonts[selFont]);
+  renderMessages(); markClean(); updateTbFile();
+  toast(`Loaded: ${curFile}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATUS
+// ═══════════════════════════════════════════════════════════════
+function markDirty(){
+  dirty=true;
+  document.getElementById('sdot').className='sdot mod';
+  document.getElementById('st-msg').textContent='Modified';
+}
+function markClean(){
+  dirty=false;
+  document.getElementById('sdot').className='sdot ok';
+  document.getElementById('st-msg').textContent='Saved';
+}
+function updateStatusCount(){
+  const n=messages.filter(m=>m.text).length;
+  document.getElementById('st-count').textContent=`${n} / ${MAX_M}`;
+}
+function updateTbFile(){
+  document.getElementById('tb-file').textContent=curFile||'No file loaded';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+const rgb   = (r,g,b) => `rgb(${r},${g},${b})`;
+const clamp = (v,lo=0,hi=255) => Math.min(hi,Math.max(lo,v));
+const esc   = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// ═══════════════════════════════════════════════════════════════
+// SPECTRUM
+// ═══════════════════════════════════════════════════════════════
+function initSpectrum(){
+  const el=document.getElementById('spectrum');
+  for(let i=0;i<22;i++){
+    const b=document.createElement('div');
+    b.className='spec-bar';
+    const lo=(0.08+Math.random()*.25).toFixed(2);
+    const hi=(0.35+Math.random()*.65).toFixed(2);
+    const dur=(0.55+Math.random()*1.1).toFixed(2);
+    const del=(Math.random()*2.5).toFixed(2);
+    b.style.cssText=`--lo:${lo};--hi:${hi};height:${Math.round(hi*32)}px;animation-duration:${dur}s;animation-delay:${del}s;opacity:${(0.4+Math.random()*.6).toFixed(2)}`;
+    el.appendChild(b);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FONT PICKER
+// ═══════════════════════════════════════════════════════════════
+const FALLBACK_FONTS = [
+  'Arial','Arial Black','Arial Narrow','Arial Rounded MT Bold',
+  'Bahnschrift','Calibri','Cambria','Cambria Math','Candara',
+  'Comic Sans MS','Consolas','Constantia','Corbel','Courier New',
+  'Ebrima','Franklin Gothic Medium','Gabriola','Gadugi','Georgia',
+  'Impact','Ink Free','Javanese Text','Leelawadee UI','Lucida Console',
+  'Lucida Sans Unicode','Malgun Gothic','Microsoft Himalaya','Microsoft JhengHei',
+  'Microsoft New Tai Lue','Microsoft PhagsPa','Microsoft Sans Serif',
+  'Microsoft Tai Le','Microsoft YaHei','Microsoft Yi Baiti','MingLiU-ExtB',
+  'Mongolian Baiti','MS Gothic','MV Boli','Myanmar Text','Nirmala UI',
+  'Palatino Linotype','Segoe MDL2 Assets','Segoe Print','Segoe Script',
+  'Segoe UI','Segoe UI Historic','Segoe UI Emoji','Segoe UI Symbol',
+  'SimSun','Sitka','Sylfaen','Symbol','Tahoma','Times New Roman',
+  'Trebuchet MS','Verdana','Webdings','Wingdings','Yu Gothic',
+];
+
+let fpAllFonts   = [];    // full list of family names
+let fpFiltered   = [];    // currently filtered
+let fpHighlight  = -1;    // keyboard cursor index
+let fpLoaded     = false;
+let fpOpen       = false;
+let fpJustPicked = false; // suppress re-open after a pick
+
+async function fpLoad() {
+  if(fpLoaded) return;
+  fpLoaded = true;
+  setFpStatus('Loading…');
+  try {
+    if(window.queryLocalFonts) {
+      // Race with a 2-second timeout in case the permission prompt hangs
+      const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 2000));
+      const raw = await Promise.race([window.queryLocalFonts(), timeout]);
+      const families = [...new Set(raw.map(f => f.family))].sort((a,b)=>a.localeCompare(b));
+      fpAllFonts = families.length > 0 ? families : FALLBACK_FONTS;
+    } else {
+      fpAllFonts = FALLBACK_FONTS;
+    }
+  } catch(e) {
+    // Permission denied, timed out, or API unsupported — use curated list
+    fpAllFonts = FALLBACK_FONTS;
+  }
+  setFpStatus(`${fpAllFonts.length} fonts`);
+  fpFilter(document.getElementById('fp-search').value);
+}
+
+function setFpStatus(s){ document.getElementById('fp-status').textContent = s; }
+
+function fpFilter(q) {
+  const term = q.trim().toLowerCase();
+  fpFiltered = term ? fpAllFonts.filter(f => f.toLowerCase().includes(term)) : fpAllFonts;
+  fpHighlight = fpFiltered.findIndex(f => f.toLowerCase() === document.getElementById('fe-face').value.trim().toLowerCase());
+  if(fpHighlight < 0 && fpFiltered.length) fpHighlight = 0;
+  fpRenderList();
+}
+
+function fpRenderList() {
+  const list  = document.getElementById('fp-list');
+  const limit = Math.min(fpFiltered.length, 120);   // cap visible to 120
+  const cur   = document.getElementById('fe-face').value.trim().toLowerCase();
+
+  if(!fpFiltered.length) {
+    list.innerHTML = '<div class="fp-empty">No fonts matched</div>';
+    setFpStatus('0 results');
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for(let i = 0; i < limit; i++) {
+    const name = fpFiltered[i];
+    const div  = document.createElement('div');
+    div.className = 'fp-item' +
+      (i === fpHighlight ? ' fp-sel' : '') +
+      (name.toLowerCase() === cur ? ' fp-cur' : '');
+    div.dataset.idx = i;
+
+    // preview: font name in its own typeface
+    const prev  = document.createElement('span');
+    prev.className = 'fp-preview';
+    prev.style.fontFamily = `'${name}', sans-serif`;
+    prev.textContent = name;
+
+    // small label in mono so you can still read it
+    const lbl = document.createElement('span');
+    lbl.className = 'fp-fname';
+    lbl.textContent = name;
+
+    div.appendChild(prev);
+    div.appendChild(lbl);
+    div.addEventListener('mousedown', ev => {
+      ev.preventDefault();     // keep focus on search input
+      fpPick(name);
+    });
+    frag.appendChild(div);
+  }
+  list.innerHTML = '';
+  list.appendChild(frag);
+
+  const q = fpFiltered.length > limit
+    ? `${limit} of ${fpFiltered.length}`
+    : `${fpFiltered.length}`;
+  setFpStatus(q);
+
+  // scroll highlight into view
+  fpScrollHighlight();
+}
+
+function fpScrollHighlight() {
+  const list = document.getElementById('fp-list');
+  const sel  = list.querySelector('.fp-sel');
+  if(sel) sel.scrollIntoView({block:'nearest'});
+}
+
+function fpPick(name) {
+  document.getElementById('fe-face').value = name;
+  fpJustPicked = true;
+  fpClose();
+  setTimeout(() => { fpJustPicked = false; }, 100);
+}
+
+function fpOpen_() {
+  if(fpOpen) return;
+  fpOpen = true;
+
+  const dd   = document.getElementById('fp-dropdown');
+  const inp  = document.getElementById('fe-face');
+  const rect = inp.getBoundingClientRect();
+  const ddH  = 300;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+
+  // position: prefer above (since font editor is at bottom of panel)
+  if(spaceAbove >= ddH || spaceAbove > spaceBelow) {
+    dd.style.top    = Math.max(4, rect.top - ddH) + 'px';
+    dd.style.height = Math.min(ddH, rect.top - 4) + 'px';
+  } else {
+    dd.style.top    = rect.bottom + 'px';
+    dd.style.height = Math.min(ddH, spaceBelow - 4) + 'px';
+  }
+  dd.style.left  = rect.left + 'px';
+  dd.style.width = Math.max(240, rect.width + 20) + 'px';
+  dd.classList.add('open');
+
+  // sync search to current value
+  const search = document.getElementById('fp-search');
+  search.value = '';
+  search.focus();
+
+  fpLoad().then(() => fpFilter(''));
+}
+
+function fpClose() {
+  if(!fpOpen) return;
+  fpOpen = false;
+  document.getElementById('fp-dropdown').classList.remove('open');
+  document.getElementById('fe-face').focus();
+}
+
+function fpToggle() {
+  fpOpen ? fpClose() : fpOpen_();
+}
+
+function fpMoveHighlight(dir) {
+  if(!fpFiltered.length) return;
+  fpHighlight = Math.max(0, Math.min(fpFiltered.length - 1, fpHighlight + dir));
+  // update DOM selection class
+  const items = document.getElementById('fp-list').querySelectorAll('.fp-item');
+  items.forEach((el,i) => el.classList.toggle('fp-sel', i === fpHighlight));
+  fpScrollHighlight();
+}
+
+function initFontPicker() {
+  const faceInp  = document.getElementById('fe-face');
+  const fpBtn_el = document.getElementById('fp-btn');
+  const search   = document.getElementById('fp-search');
+  const dd       = document.getElementById('fp-dropdown');
+
+  // open picker when face input is focused (not via button)
+  faceInp.addEventListener('focus', () => { if(!fpOpen && !fpJustPicked) fpOpen_(); });
+  faceInp.addEventListener('input', () => {
+    if(!fpOpen) fpOpen_();
+    fpFilter(faceInp.value);
+  });
+  faceInp.addEventListener('keydown', ev => {
+    if(!fpOpen) return;
+    if(ev.key === 'ArrowDown')  { fpMoveHighlight(1);  ev.preventDefault(); }
+    if(ev.key === 'ArrowUp')    { fpMoveHighlight(-1); ev.preventDefault(); }
+    if(ev.key === 'Enter')      { if(fpFiltered[fpHighlight]) fpPick(fpFiltered[fpHighlight]); ev.preventDefault(); }
+    if(ev.key === 'Escape')     { fpClose(); ev.preventDefault(); }
+  });
+
+  fpBtn_el.addEventListener('click', ev => {
+    ev.stopPropagation();
+    fpToggle();
+  });
+
+  // search box inside dropdown
+  search.addEventListener('input',   () => fpFilter(search.value));
+  search.addEventListener('keydown', ev => {
+    if(ev.key === 'ArrowDown')  { fpMoveHighlight(1);  ev.preventDefault(); }
+    if(ev.key === 'ArrowUp')    { fpMoveHighlight(-1); ev.preventDefault(); }
+    if(ev.key === 'Enter')      { if(fpFiltered[fpHighlight]) fpPick(fpFiltered[fpHighlight]); ev.preventDefault(); }
+    if(ev.key === 'Escape')     { fpClose(); ev.preventDefault(); }
+  });
+
+  // close on outside click
+  document.addEventListener('mousedown', ev => {
+    if(fpOpen && !dd.contains(ev.target) && !faceInp.contains(ev.target) && ev.target !== fpBtn_el)
+      fpClose();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PASTE IMPORT
+// ═══════════════════════════════════════════════════════════════
+const rand       = (lo,hi) => lo + Math.random()*(hi-lo);
+const randInt    = (lo,hi) => Math.floor(rand(lo, hi+0.9999));
+const randChance = p => Math.random() < p;
+
+function imOpen() {
+  // populate fixed-font select with current font list
+  document.getElementById('im-font').innerHTML =
+    fonts.map(f=>`<option value="${f.index}">${pad(f.index)} — ${esc(f.face)}</option>`).join('');
+  imSyncUi();
+  document.getElementById('im-overlay').classList.add('open');
+  document.getElementById('im-text').focus();
+}
+
+function imClose() {
+  document.getElementById('im-overlay').classList.remove('open');
+}
+
+function imGetLines() {
+  return document.getElementById('im-text').value
+    .split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+}
+
+function imCountAvail() {
+  const overwrite = document.getElementById('im-overwrite').checked;
+  if(overwrite) {
+    const start = Math.min(99, Math.max(0, parseInt(document.getElementById('im-start-slot').value)||0));
+    return MAX_M - start;
+  }
+  return messages.filter(m=>!m.text).length;
+}
+
+function imSyncUi() {
+  const randFont = document.getElementById('im-rand-font').checked;
+  const scatter  = document.getElementById('im-scatter').checked;
+  const overwrite= document.getElementById('im-overwrite').checked;
+  document.getElementById('im-font').classList.toggle('vis', !randFont);
+  document.getElementById('im-xy-wrap').classList.toggle('vis', !scatter);
+  document.getElementById('im-slot-wrap').classList.toggle('vis', overwrite);
+  imUpdateInfo();
+}
+
+function imUpdateInfo() {
+  const lines = imGetLines();
+  const avail = imCountAvail();
+  const n     = Math.min(lines.length, avail);
+  const el    = document.getElementById('im-info');
+  document.getElementById('im-btn-import').textContent = `IMPORT ${n} MESSAGES`;
+  if(!lines.length) {
+    el.textContent='Paste text above to begin'; el.className='im-info';
+  } else if(!avail) {
+    el.textContent='No available slots — enable "Overwrite" or clear some messages'; el.className='im-info warn';
+  } else {
+    const extra = lines.length > avail ? ` · ${lines.length-avail} line(s) discarded` : '';
+    el.textContent=`${lines.length} line${lines.length!==1?'s':''} → ${n} will be imported${extra}`;
+    el.className='im-info ok';
+  }
+}
+
+function imApply() {
+  const lines = imGetLines();
+  if(!lines.length) return;
+  const randFont = document.getElementById('im-rand-font').checked;
+  const fixedFont= parseInt(document.getElementById('im-font').value)||0;
+  const scatter  = document.getElementById('im-scatter').checked;
+  const cx    = parseFloat(document.getElementById('im-cx').value)||0.5;
+  const cy    = parseFloat(document.getElementById('im-cy').value)||0.5;
+  const szLo  = parseFloat(document.getElementById('im-size-min').value)||40;
+  const szHi  = parseFloat(document.getElementById('im-size-max').value)||80;
+  const tmLo  = parseFloat(document.getElementById('im-time-min').value)||3;
+  const tmHi  = parseFloat(document.getElementById('im-time-max').value)||7;
+  const fdLo  = parseFloat(document.getElementById('im-fade-min').value)||0.3;
+  const fdHi  = parseFloat(document.getElementById('im-fade-max').value)||1.0;
+  const foLo  = parseFloat(document.getElementById('im-fout-min').value)||0;
+  const foHi  = parseFloat(document.getElementById('im-fout-max').value)||0.5;
+  const doGrowth = document.getElementById('im-growth').checked;
+  const doBurn   = document.getElementById('im-burn').checked;
+  const overwrite= document.getElementById('im-overwrite').checked;
+  const startSlot= overwrite ? Math.min(99,Math.max(0,parseInt(document.getElementById('im-start-slot').value)||0)) : 0;
+
+  let li=0, count=0;
+  if(overwrite) {
+    for(let i=startSlot; i<MAX_M && li<lines.length; i++) {
+      imFillSlot(messages[i], lines[li++], randFont, fixedFont, scatter, cx, cy, szLo, szHi, tmLo, tmHi, fdLo, fdHi, foLo, foHi, doGrowth, doBurn);
+      count++;
+    }
+  } else {
+    for(let i=0; i<MAX_M && li<lines.length; i++) {
+      if(!messages[i].text) {
+        imFillSlot(messages[i], lines[li++], randFont, fixedFont, scatter, cx, cy, szLo, szHi, tmLo, tmHi, fdLo, fdHi, foLo, foHi, doGrowth, doBurn);
+        count++;
+      }
+    }
+  }
+  markDirty(); renderMessages(); imClose();
+  toast(`Imported ${count} message${count!==1?'s':''}`);
+}
+
+function imFillSlot(msg, text, randFont, fixedFont, scatter, cx, cy, szLo, szHi, tmLo, tmHi, fdLo, fdHi, foLo, foHi, doGrowth, doBurn) {
+  msg.text     = text;
+  msg.font     = randFont ? randInt(0, MAX_F-1) : fixedFont;
+  msg.size     = parseFloat(rand(szLo, szHi).toFixed(1));
+  msg.x        = scatter ? parseFloat(rand(0.05, 0.95).toFixed(2)) : cx;
+  msg.y        = scatter ? parseFloat(rand(0.08, 0.92).toFixed(2)) : cy;
+  msg.time     = parseFloat(rand(tmLo, tmHi).toFixed(1));
+  msg.fade     = parseFloat(rand(fdLo, fdHi).toFixed(1));
+  msg.fadeOut  = parseFloat(rand(foLo, foHi).toFixed(1));
+  msg.growth   = doGrowth ? parseFloat(rand(0.85,1.15).toFixed(2)) : 1.0;
+  msg.burnTime = doBurn && randChance(0.15) ? parseFloat(rand(0.1,0.5).toFixed(1)) : 0.0;
+  msg.randX=0; msg.randY=0;
+  msg.colorR=-1; msg.colorG=-1; msg.colorB=-1;
+  msg.randR=0; msg.randG=0; msg.randB=0;
+  msg.faceOverride=null; msg.boldOverride=-1; msg.italicOverride=-1;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RANDOMIZE SELECTED
+// ═══════════════════════════════════════════════════════════════
+function rxOpen() {
+  if(!selRows.size) { toast('Select messages first'); return; }
+  document.getElementById('rx-font').innerHTML =
+    fonts.map(f=>`<option value="${f.index}">${pad(f.index)} — ${esc(f.face)}</option>`).join('');
+  rxSyncUi();
+  document.getElementById('rx-overlay').classList.add('open');
+}
+
+function rxClose() {
+  document.getElementById('rx-overlay').classList.remove('open');
+}
+
+function rxSyncUi() {
+  const randFont = document.getElementById('rx-rand-font').checked;
+  document.getElementById('rx-font').classList.toggle('vis', !randFont);
+  const n = selRows.size;
+  document.getElementById('rx-info').textContent = `${n} message${n!==1?'s':''} selected`;
+  document.getElementById('rx-btn-apply').textContent = `APPLY TO ${n} MESSAGE${n!==1?'S':''}`;
+}
+
+function rxApply() {
+  if(!selRows.size) return;
+  const randFont = document.getElementById('rx-rand-font').checked;
+  const fixedFont= parseInt(document.getElementById('rx-font').value)||0;
+  const scatter  = document.getElementById('rx-scatter').checked;
+  const szLo  = parseFloat(document.getElementById('rx-size-min').value)||40;
+  const szHi  = parseFloat(document.getElementById('rx-size-max').value)||80;
+  const tmLo  = parseFloat(document.getElementById('rx-time-min').value)||3;
+  const tmHi  = parseFloat(document.getElementById('rx-time-max').value)||7;
+  const fdLo  = parseFloat(document.getElementById('rx-fade-min').value)||0.3;
+  const fdHi  = parseFloat(document.getElementById('rx-fade-max').value)||1.0;
+  const foLo  = parseFloat(document.getElementById('rx-fout-min').value)||0;
+  const foHi  = parseFloat(document.getElementById('rx-fout-max').value)||0.5;
+  const doGrowth = document.getElementById('rx-growth').checked;
+  const doBurn   = document.getElementById('rx-burn').checked;
+
+  let count=0;
+  selRows.forEach(idx => {
+    const msg = messages[idx];
+    if(!msg.text) return;
+    msg.font    = randFont ? randInt(0, MAX_F-1) : fixedFont;
+    msg.size    = parseFloat(rand(szLo, szHi).toFixed(1));
+    if(scatter) {
+      msg.x = parseFloat(rand(0.05, 0.95).toFixed(2));
+      msg.y = parseFloat(rand(0.08, 0.92).toFixed(2));
+    }
+    msg.time    = parseFloat(rand(tmLo, tmHi).toFixed(1));
+    msg.fade    = parseFloat(rand(fdLo, fdHi).toFixed(1));
+    msg.fadeOut = parseFloat(rand(foLo, foHi).toFixed(1));
+    msg.growth  = doGrowth ? parseFloat(rand(0.85,1.15).toFixed(2)) : 1.0;
+    msg.burnTime= doBurn && randChance(0.15) ? parseFloat(rand(0.1,0.5).toFixed(1)) : 0.0;
+    count++;
+  });
+
+  markDirty(); renderMessages(); rxClose();
+  toast(`Randomized ${count} message${count!==1?'s':''}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init(){
+  initSpectrum();
+  renderFonts();
+  renderFontEditor(fonts[0]);
+  renderMessages();
+
+  // file open input fallback
+  document.getElementById('f-open').addEventListener('change', e=>{
+    const file=e.target.files[0]; if(!file) return;
+    curFile=file.name; updateTbFile();
+    file.text().then(txt=>applyLoaded(txt));
+    e.target.value='';
+  });
+
+  // toolbar
+  document.getElementById('btn-open').onclick    = openFile;
+  document.getElementById('btn-save').onclick    = saveFile;
+  document.getElementById('btn-save-as').onclick = saveAs;
+
+  document.getElementById('btn-add').onclick = () => {
+    const empty=messages.find(m=>!m.text);
+    if(!empty){ toast('No empty slots!'); return; }
+    empty.text='New Message'; markDirty(); renderMessages();
+    toast(`Added message to slot ${pad(empty.index)}`);
+  };
+
+  // toggles
+  document.getElementById('chk-empty').addEventListener('change', e=>{
+    showEmpty=e.target.checked; renderMessages();
+  });
+  document.getElementById('chk-extra').addEventListener('change', e=>{
+    showExtra=e.target.checked; renderMessages();
+  });
+
+  // select all
+  document.getElementById('chk-all').addEventListener('change', e=>{
+    const vis=messages.filter(m=>showEmpty||m.text);
+    if(e.target.checked) vis.forEach(m=>selRows.add(m.index));
+    else selRows.clear();
+    renderMessages(); syncBatchBar();
+  });
+
+  // batch ops
+  document.getElementById('btn-b-font').onclick = batchFont;
+  document.getElementById('btn-b-size').onclick = batchSize;
+  document.getElementById('btn-b-time').onclick = batchTiming;
+  document.getElementById('btn-b-pos').onclick  = batchPos;
+  document.getElementById('btn-b-clear').onclick= batchClear;
+  document.getElementById('btn-b-rand').onclick = rxOpen;
+  document.getElementById('btn-desel').onclick  = deselectAll;
+
+  // font editor
+  document.getElementById('btn-apply-font').onclick = applyFont;
+  document.getElementById('fe-picker').addEventListener('input', e=>{
+    const h=e.target.value;
+    const r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16), b=parseInt(h.slice(5,7),16);
+    document.getElementById('fe-r').value=r;
+    document.getElementById('fe-g').value=g;
+    document.getElementById('fe-b').value=b;
+    syncFontSwatch(r,g,b);
+  });
+  ['fe-r','fe-g','fe-b'].forEach(id=>
+    document.getElementById(id).addEventListener('input',()=>{
+      syncFontSwatch(
+        parseInt(document.getElementById('fe-r').value)||0,
+        parseInt(document.getElementById('fe-g').value)||0,
+        parseInt(document.getElementById('fe-b').value)||0
+      );
+    })
+  );
+
+  // table click delegation
+  document.getElementById('tbody').addEventListener('click', onTableClick);
+
+  // close edit on outside click
+  document.addEventListener('click', e=>{
+    if(editCell && !e.target.closest('td.in-edit') && !e.target.closest('td.ec'))
+      commitEdit(true);
+  });
+
+  // font picker
+  initFontPicker();
+
+  // paste import modal
+  document.getElementById('btn-paste').onclick    = imOpen;
+  document.getElementById('im-close-btn').onclick = imClose;
+  document.getElementById('im-btn-cancel').onclick= imClose;
+  document.getElementById('im-btn-import').onclick= imApply;
+  document.getElementById('im-overlay').addEventListener('mousedown', e=>{
+    if(e.target===document.getElementById('im-overlay')) imClose();
+  });
+  // randomize modal
+  document.getElementById('rx-close-btn').onclick  = rxClose;
+  document.getElementById('rx-btn-cancel').onclick  = rxClose;
+  document.getElementById('rx-btn-apply').onclick   = rxApply;
+  document.getElementById('rx-overlay').addEventListener('mousedown', e=>{
+    if(e.target===document.getElementById('rx-overlay')) rxClose();
+  });
+  document.getElementById('rx-rand-font').addEventListener('change', rxSyncUi);
+
+  document.getElementById('im-rand-font').addEventListener('change', imSyncUi);
+  document.getElementById('im-scatter').addEventListener('change', imSyncUi);
+  document.getElementById('im-overwrite').addEventListener('change', imSyncUi);
+  document.getElementById('im-start-slot').addEventListener('input', imUpdateInfo);
+  document.getElementById('im-text').addEventListener('input', imUpdateInfo);
+
+  // keyboard shortcuts
+  document.addEventListener('keydown', e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'){ e.preventDefault(); saveFile(); }
+    if((e.ctrlKey||e.metaKey)&&e.key==='o'){ e.preventDefault(); openFile(); }
+    if(e.key==='Escape'){
+      if(document.getElementById('rx-overlay').classList.contains('open')) { rxClose(); return; }
+      if(document.getElementById('im-overlay').classList.contains('open')) { imClose(); return; }
+      if(fpOpen)    { fpClose();       return; }
+      if(editCell)  { commitEdit(false); }
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

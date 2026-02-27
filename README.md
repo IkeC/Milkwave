@@ -87,11 +87,11 @@ For a chronological list of Milkwave releases and features, read the [Changes](C
 
 This project incorporates the work of many different authors over the years, as listed below. Naturally, the entirety of this project is Open Source and there will never be a paid version of it.
 
-However, if you're satisfied with the additions I made and you want to support my work, you may do so using [**Ko-fi**](https://ko-fi.com/ikeserver) or [**PayPal**](https://www.paypal.com/ncp/payment/5XMP3S69PJLCU). You'll be listed as a supporter within the next program release unless you don't want to.
+However, if you're satisfied with the additions we made within Milkwave and you want to support our work, you may do so using [**Ko-fi**](https://ko-fi.com/ikeserver) or [**PayPal**](https://www.paypal.com/ncp/payment/5XMP3S69PJLCU). You'll be listed as a supporter within the next program release unless you don't want to.
 
-Many thanks to **Shanev**, **Tures1955** and **hatecubed** for supporting the development of Milkwave. ❤️
+Many thanks to **Shane**, **Tures1955** and **hatecubed** for supporting the development of Milkwave. ❤️
 
-I may add new features or fix bugs if people are actually using this, so don't be shy to [open an issue](https://github.com/IkeC/Milkwave/issues) or join my [**Discord**](https://bit.ly/Ikes-Discord)!
+We may add new features or fix bugs if people are actually using this, so don't be shy to [open an issue](https://github.com/IkeC/Milkwave/issues) or join my [**Discord**](https://bit.ly/Ikes-Discord)!
 
 ## Acknowledgements
 

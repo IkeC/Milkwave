@@ -1,15 +1,24 @@
 ## v3.5 (unreleased)
 
-* Remote: "Preset mode" for button panel
+* "Input" tab
+  - Mix Visualizer output with Webcam or Spout senders
+  - Choose layer order and blending mode (luma key, opacity)
+* Controller support
+  - Trigger Visualizer functions with a game controller
+  - Fully configurable: Assign any scriptable action to any button
+* "Preset mode" for button panel
+  - Assign up to 45 presets to buttons for quick access
   - Right-click button to assign current preset (with screenshot capture)
   - Left-click to send preset to Visualizer
-  - Middle-click to clear button
-  - Press switch button (lower right) to switch modes
-* Remote: Toggle color/monochrome display for button images
-* Remote: Automatically change Hue over time (color cycyle)
-* Remote: Set preset auto change time
-* Visualizer: Save screenshot (Ctrl+X)
-* Visualizer: Key bindings to alter Quality (Ctrl+Q) and Hue (Ctrl+H)
+* "Settings" tab
+  - Set preset auto change time, lock and random
+  - Automatically change Hue over time (color cycle)
+  - Open bundled Milkwave Message Editor (by @shanevbg)
+* Toggle color/monochrome display for button images
+* Visualizer updates
+  - Save screenshot (Ctrl+X)
+  - Key bindings to alter Quality (Ctrl+Q) and Hue (Ctrl+H)
+  - Stability improvements and bug fixes
 
 ## v3.4 (2025-11-22)
 

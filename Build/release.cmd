@@ -21,6 +21,7 @@ copy *.ini %releasePath%
 copy *.txt %releasePath%
 copy settings-remote.json %releasePath%
 copy controller-remote.json %releasePath%
+copy messages-editor.html %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.exe %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.dll %releasePath%
 copy %remoteBuildPath%\MilkwaveRemote.runtimeconfig.json %releasePath%

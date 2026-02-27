@@ -3238,7 +3238,7 @@ namespace MilkwaveRemote {
       var builder = RtfBuilder.Create(toolStripMenuItemDarkMode.Checked)
         .AppendText("Milkwave Supporters — Thank you very much!  ❤️")
         .AppendParagraphBreak()
-        .AppendText("• Shanev").AppendLine()
+        .AppendText("• Shane").AppendLine()
         .AppendText("• Tures1955").AppendLine()
         .AppendText("• hatecubed")
         .AppendParagraphBreak()
