@@ -1463,6 +1463,8 @@ namespace MilkwaveRemote {
                     }
                   } else if (key.Equals("LOCKED", StringComparison.OrdinalIgnoreCase)) {
                     chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                  } else if (key.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) {
+                    chkSettingsPresetRandom.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                   } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
                     chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                   } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
@@ -5851,6 +5853,11 @@ namespace MilkwaveRemote {
       SendUnicodeChars("~");
     }
 
+    private void chkSettingsPresetRandom_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendUnicodeChars("r");
+    }
+
     private void LoadPresetDeck() {
       try {
         string path = Path.Combine(BaseDir, milkwavePresetDeckFile);
@@ -6679,5 +6686,6 @@ namespace MilkwaveRemote {
     private void btnControllerInputConfig_Click(object sender, EventArgs e) {
       OpenFile(milkwaveControllerFile);
     }
+
   } // end class
 } // end namespace

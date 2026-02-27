@@ -11431,6 +11431,7 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0")
     + L"|HUE=" + std::to_wstring(m_ColShiftHue)
     + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0")
+    + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1")
     + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0")
     + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0")
     + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f))

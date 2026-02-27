@@ -321,9 +321,9 @@ IDS_ERROR_IMPORTING_BAD_FILENAME_OR_NOT_OVERWRITEABLE
 "(error exporting - bad filename, or file can not be overwritten)"
 IDS_INVALID_PATH        "(invalid path)"
 IDS_ENTER_THE_NEW_NAME_FOR_X "Enter the new name for ""%s"":"
-IDS_PRESET_ORDER_IS_NOW_X "Preset order is now %s"
-IDS_SEQUENTIAL          "SEQUENTIAL"
-IDS_RANDOM              "RANDOM"
+IDS_PRESET_ORDER_IS_NOW_X "Preset order: %s"
+IDS_SEQUENTIAL          "Sequential"
+IDS_RANDOM              "Random"
 END
 
 STRINGTABLE
