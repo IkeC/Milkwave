@@ -118,6 +118,7 @@ namespace MilkwaveRemote {
     private string milkwaveMidiFile = "midi-remote.json";
     private string milkwavePresetDeckFile = "presetdeck-remote.json";
     private string milkwaveControllerFile = "controller-remote.json";
+    private string milkwaveMessagesEditorFile = "messages-editor.html";
 
     private string milkwaveSpritesFile = "sprites.ini";
     private string milkwaveMessagesFile = "messages.ini";
@@ -4812,7 +4813,13 @@ namespace MilkwaveRemote {
           toolStripMenuItemButtonPanel.Checked = false;
           SetPanelsVisibility();
         } else if (e.Button == MouseButtons.Right) {
-          toolStripMenuItemButtonPanel.Checked = !toolStripMenuItemButtonPanel.Checked;
+          if (toolStripMenuItemButtonPanel.Checked) {
+            toolStripMenuItemTabsPanel.Checked = true;
+            toolStripMenuItemButtonPanel.Checked = false;
+          } else {
+            toolStripMenuItemTabsPanel.Checked = false;
+            toolStripMenuItemButtonPanel.Checked = true;
+          }
           SetPanelsVisibility();
         } else if (!string.IsNullOrEmpty(statusBar.Text) && !statusBar.Text.StartsWith("Copied ")) {
           Clipboard.SetText(statusBar.Text);
@@ -6687,5 +6694,9 @@ namespace MilkwaveRemote {
       OpenFile(milkwaveControllerFile);
     }
 
+    private void btnMessagesEditorOpen_Click(object sender, EventArgs e) {
+      // open the messages editor (messages-editor.html) in the default browser
+      OpenFile(milkwaveMessagesEditorFile);
+    }
   } // end class
 } // end namespace
