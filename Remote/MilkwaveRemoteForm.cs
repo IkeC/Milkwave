@@ -1936,10 +1936,9 @@ namespace MilkwaveRemote {
         string token = s.Trim();
         string tokenUpper = token.ToUpper();
         if (tokenUpper.Equals("NEXT")) {
-          btnSpace.PerformClick();
-          Thread.Sleep(100);
+          SendPostMessage(VK_SPACE, "Space");
         } else if (tokenUpper.Equals("PREV")) {
-          btnBackspace.PerformClick();
+          SendPostMessage(VK_BACKSPACE, "Backspace");
         } else if (tokenUpper.Equals("STOP")) {
           chkAutoplay.CheckState = CheckState.Unchecked;
         } else if (tokenUpper.Equals("RESET")) {
