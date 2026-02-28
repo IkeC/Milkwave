@@ -1724,7 +1724,6 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   m_pNewState->Default();
 
   // Initialize video capture
-  m_pVideoCapture = new VideoCapture();
   m_pVideoCaptureTexture = nullptr;
   m_nVideoCaptureWidth = 640;      // Default video capture dimensions
   m_nVideoCaptureHeight = 480;

@@ -6715,5 +6715,17 @@ namespace MilkwaveRemote {
         SetStatusText($"Error clearing cache: {ex.Message}");
       }
     }
+
+    private void numLumaThreshold_Click(object sender, EventArgs e) {
+      numLumaThreshold.Value = 20;
+    }
+
+    private void numLumaSoftness_Click(object sender, EventArgs e) {
+      numLumaSoftness.Value = 20;
+    }
+
+    private void numInputMixOpacity_Click(object sender, EventArgs e) {
+      numInputMixOpacity.Value = 100;
+    }
   } // end class
 } // end namespace

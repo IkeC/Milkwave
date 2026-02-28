@@ -2708,6 +2708,7 @@ namespace MilkwaveRemote
       label13.Text = "Luma Key";
       label13.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label13, "Luma Key threshold\r\nControls the brightness cutoff point (0–100%)");
+      label13.Click += numLumaThreshold_Click;
       // 
       // label12
       // 
@@ -2718,6 +2719,7 @@ namespace MilkwaveRemote
       label12.Text = "Opacity";
       label12.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label12, "Set Opacity of top layer");
+      label12.Click += numInputMixOpacity_Click;
       // 
       // chkInputTop
       // 
@@ -2764,6 +2766,7 @@ namespace MilkwaveRemote
       label14.Text = "Softness";
       label14.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label14, "Luma Key softness\r\nControls the feathering/transparency gradient at the edges of the cutoff\r\n");
+      label14.Click += numLumaSoftness_Click;
       // 
       // label15
       // 
