@@ -228,8 +228,8 @@ namespace MilkwaveRemote
       label16 = new Label();
       label9 = new Label();
       chkSettingsPresetRandom = new CheckBox();
-      label18 = new Label();
       btnMessagesEditorOpen = new Button();
+      label18 = new Label();
       label17 = new Label();
       numInputMixOpacity = new NumericUpDown();
       numLumaThreshold = new NumericUpDown();
@@ -358,6 +358,9 @@ namespace MilkwaveRemote
       cboMidi1Action = new ComboBox();
       txtMidi1Inc = new TextBox();
       tabSettings = new TabPage();
+      btnCacheClear = new Button();
+      btnCacheCompile = new Button();
+      label19 = new Label();
       numPresetChange = new NumericUpDown();
       numSettingsBrightness = new NumericUpDown();
       numSettingsSaturation = new NumericUpDown();
@@ -2833,25 +2836,25 @@ namespace MilkwaveRemote
       chkSettingsPresetRandom.UseVisualStyleBackColor = true;
       chkSettingsPresetRandom.CheckedChanged += chkSettingsPresetRandom_CheckedChanged;
       // 
-      // label18
-      // 
-      label18.Location = new Point(352, 121);
-      label18.Name = "label18";
-      label18.Size = new Size(51, 23);
-      label18.TabIndex = 181;
-      label18.Text = "Editor";
-      label18.TextAlign = ContentAlignment.MiddleRight;
-      // 
       // btnMessagesEditorOpen
       // 
-      btnMessagesEditorOpen.Location = new Point(408, 122);
+      btnMessagesEditorOpen.Location = new Point(409, 150);
       btnMessagesEditorOpen.Name = "btnMessagesEditorOpen";
-      btnMessagesEditorOpen.Size = new Size(56, 23);
+      btnMessagesEditorOpen.Size = new Size(60, 23);
       btnMessagesEditorOpen.TabIndex = 182;
       btnMessagesEditorOpen.Text = "Open";
       toolTip1.SetToolTip(btnMessagesEditorOpen, "Open the browser-based interactive messages.ini editor");
       btnMessagesEditorOpen.UseVisualStyleBackColor = true;
       btnMessagesEditorOpen.Click += btnMessagesEditorOpen_Click;
+      // 
+      // label18
+      // 
+      label18.Location = new Point(353, 150);
+      label18.Name = "label18";
+      label18.Size = new Size(51, 23);
+      label18.TabIndex = 181;
+      label18.Text = "Editor";
+      label18.TextAlign = ContentAlignment.MiddleRight;
       // 
       // label17
       // 
@@ -4569,6 +4572,9 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(btnCacheClear);
+      tabSettings.Controls.Add(btnCacheCompile);
+      tabSettings.Controls.Add(label19);
       tabSettings.Controls.Add(btnMessagesEditorOpen);
       tabSettings.Controls.Add(label18);
       tabSettings.Controls.Add(label17);
@@ -4615,6 +4621,35 @@ namespace MilkwaveRemote
       tabSettings.Size = new Size(611, 183);
       tabSettings.TabIndex = 4;
       tabSettings.Text = "Settings";
+      // 
+      // btnCacheClear
+      // 
+      btnCacheClear.Location = new Point(475, 121);
+      btnCacheClear.Name = "btnCacheClear";
+      btnCacheClear.Size = new Size(57, 23);
+      btnCacheClear.TabIndex = 185;
+      btnCacheClear.Text = "Clear";
+      btnCacheClear.UseVisualStyleBackColor = true;
+      btnCacheClear.Click += btnCacheClear_Click;
+      // 
+      // btnCacheCompile
+      // 
+      btnCacheCompile.Location = new Point(409, 121);
+      btnCacheCompile.Name = "btnCacheCompile";
+      btnCacheCompile.Size = new Size(60, 23);
+      btnCacheCompile.TabIndex = 184;
+      btnCacheCompile.Text = "Compile";
+      btnCacheCompile.UseVisualStyleBackColor = true;
+      btnCacheCompile.Click += btnCacheCompile_Click;
+      // 
+      // label19
+      // 
+      label19.Location = new Point(353, 121);
+      label19.Name = "label19";
+      label19.Size = new Size(51, 23);
+      label19.TabIndex = 183;
+      label19.Text = "Cache";
+      label19.TextAlign = ContentAlignment.MiddleRight;
       // 
       // numPresetChange
       // 
@@ -5497,5 +5532,8 @@ namespace MilkwaveRemote
     private Label label17;
     private Button btnMessagesEditorOpen;
     private Label label18;
+    private Button btnCacheCompile;
+    private Label label19;
+    private Button btnCacheClear;
   }
 }

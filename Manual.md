@@ -112,9 +112,9 @@ For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolut
 
 The "Preset" row allows you to set the lock mode for the current preset (same as pressing ~ in the Visualizer). If "Locked" is checked, the preset will not changed as time progresses. If unlocked, it will change after the time defined by "Next after" (plus blending times). "Random" toggles between random and sequential preset order (same as pressing "R" in the Visualizer).
 
-"Config" allows you to quickly the most important configuration files in a text editor. You can also open Shanes [Message Editor](https://github.com/shanevbg/MDx12Messages) from here to edit the _messages.ini_ file in a more user-friendly way.
+"Config" allows you to quickly the most important configuration files in a text editor. "Compile" allows you to precompile the shaders defined in _precompile.txt_. This will usually take 2-3 minutes and happen in the background. You may also "Clear" the cache, which will simply remove all files from the _cache_ folder. This may be useful if you want to reset all shaders to be recompiled, eg. after a Milkwave update. 
 
-Set "Change preset after" to automatically change to the next preset after the defined time in seconds. Note that _fBlendTimeAuto_ and a value between 0 and _fTimeBetweenPresetsRand_ (defined in _settings.ini_) are added to determine the actual duration. If "Locked" is checked, automatic preset changing is disabled.
+You may also open Shanes [Message Editor](https://github.com/shanevbg/MDx12Messages) from here to edit the _messages.ini_ file in a more user-friendly way.
 
 ## Tab "Fonts"
 

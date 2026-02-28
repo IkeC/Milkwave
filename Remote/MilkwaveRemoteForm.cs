@@ -186,7 +186,7 @@ namespace MilkwaveRemote {
 
     private const int VK_ENTER = 0x0D;
     private const int VK_BACKSPACE = 0x08;
-    
+
     private const int VK_CURSOR_LEFT = 0x25;
     private const int VK_CURSOR_UP = 0x26;
     private const int VK_CURSOR_RIGHT = 0x27;
@@ -284,7 +284,8 @@ namespace MilkwaveRemote {
       SpoutInput,
       InputMixOnTop,
       InputMixOpacity,
-      InputMixLuma
+      InputMixLuma,
+      PrecompileCache
     }
 
     private class PendingThumbnail {
@@ -1717,6 +1718,9 @@ namespace MilkwaveRemote {
               }
               SendingMessage = false;
               return;
+            } else if (type == MessageType.PrecompileCache) {
+              message = "PRECOMPILE_CACHE";
+              statusMessage = "Requested shader cache precompilation";
             } else if (type == MessageType.Message) {
               if (chkWrap.Checked && messageToSend.Length >= numWrap.Value && !messageToSend.Contains("//") && !messageToSend.Contains(Environment.NewLine)) {
                 // try auto-wrap
@@ -6689,6 +6693,27 @@ namespace MilkwaveRemote {
     private void btnMessagesEditorOpen_Click(object sender, EventArgs e) {
       // open the messages editor (messages-editor.html) in the default browser
       OpenFile(milkwaveMessagesEditorFile);
+    }
+
+    private void btnCacheCompile_Click(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.PrecompileCache);
+    }
+
+    private void btnCacheClear_Click(object sender, EventArgs e) {
+      try {
+        string cacheDir = Path.Combine(BaseDir, "cache");
+        if (Directory.Exists(cacheDir)) {
+          string[] files = Directory.GetFiles(cacheDir);
+          foreach (string file in files) {
+            File.Delete(file);
+          }
+          SetStatusText($"Cleared {files.Length} files from cache directory");
+        } else {
+          SetStatusText("Cache directory not found or already empty");
+        }
+      } catch (Exception ex) {
+        SetStatusText($"Error clearing cache: {ex.Message}");
+      }
     }
   } // end class
 } // end namespace

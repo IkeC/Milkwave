@@ -14,6 +14,7 @@
   - Set preset auto change time, lock and random
   - Automatically change Hue over time (color cycle)
   - Open bundled Milkwave Message Editor (by @shanevbg)
+  - Run shader precompilation and clear cache
 * Toggle color/monochrome display for button images
 * Visualizer updates
   - Save screenshot (Ctrl+X)

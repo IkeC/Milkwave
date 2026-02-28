@@ -1760,17 +1760,19 @@ static int StartAudioCaptureThread(HINSTANCE instance, int nestingLevel) {
 }
 
 unsigned __stdcall DoSetup(void* param) {
+  bool manualTrigger = (param != nullptr);
 
-  Sleep(3000); // wait for the render thread to initialize the plugin completely
-  HINSTANCE instance = (HINSTANCE)param;
+  if (!manualTrigger) {
+    Sleep(3000); // wait for the render thread to initialize the plugin completely
+  }
 
-  if (g_plugin.m_ShaderCaching && g_plugin.m_ShaderPrecompileOnStartup) {
+  if (manualTrigger || (g_plugin.m_ShaderCaching && g_plugin.m_ShaderPrecompileOnStartup)) {
 
     std::wstring cacheDir = std::wstring(g_plugin.m_szBaseDir) + L"cache";
     std::wstring compiledListPath = cacheDir + L"\\compiled.txt";
 
     // Abort if compiled.txt already exists
-    if (std::filesystem::exists(compiledListPath)) {
+    if (!manualTrigger && std::filesystem::exists(compiledListPath)) {
       milkwave.LogInfo(L"Shader cache already exists, skipping precompilation");
       return -1;
     }
@@ -1802,7 +1804,7 @@ unsigned __stdcall DoSetup(void* param) {
     // Set UTF-8 locale for the output stream
     compiledList.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t>));
 
-    g_plugin.AddNotification(L"Shader cache empty, precompiling shaders", 10 * 60);
+    g_plugin.AddNotification(L"Precompiling shaders", 10 * 60);
 
     int compiledShaders = 0;
     std::string line;
@@ -1890,14 +1892,30 @@ void PrecompilePresetShaders(std::wstring& wLine, std::wofstream& compiledList, 
   }
 }
 
-void StartSetupThread(HINSTANCE instance) {
-  threadSetup = (HANDLE)_beginthreadex(
+void StartSetupThread(bool manualTrigger) {
+  if (threadSetup != nullptr) {
+    DWORD result = WaitForSingleObject(threadSetup, 0);
+    if (result == WAIT_TIMEOUT) {
+      milkwave.LogInfo(L"Precompilation already running");
+      if (manualTrigger) g_plugin.AddNotification(L"Precompilation already running");
+      return;
+    }
+    CloseHandle(threadSetup);
+    threadSetup = nullptr;
+  }
+
+  HANDLE thread = (HANDLE)_beginthreadex(
     nullptr,
     0,
     &DoSetup,
-    (void*)instance,
+    (void*)(manualTrigger ? 1 : 0),
     0,
     &threadId);
+
+  if (thread) {
+    SetThreadPriority(thread, THREAD_PRIORITY_BELOW_NORMAL);
+    threadSetup = thread;
+  }
 }
 
 int StartThreads(HINSTANCE instance) {
@@ -1932,7 +1950,7 @@ int StartThreads(HINSTANCE instance) {
     // WaitForSingleObject(threadRender, INFINITE);
 
     milkwave.LogInfo(L"Starting setup thread");
-    StartSetupThread(instance);
+    StartSetupThread(false);
 
     if (g_plugin.m_bEnableAudioCapture) {
       milkwave.LogInfo(L"Starting audio capture thread");

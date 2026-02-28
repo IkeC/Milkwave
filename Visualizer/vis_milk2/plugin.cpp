@@ -11390,6 +11390,11 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     CaptureScreenshot();
     OutputDebugStringW(L"[CAPTURE] CaptureScreenshot() returned\n");
   }
+  else if (wcsncmp(sMessage, L"PRECOMPILE_CACHE", 16) == 0) {
+    milkwave->LogInfo(L"PRECOMPILE_CACHE message received");
+    extern void StartSetupThread(bool manualTrigger);
+    StartSetupThread(true);
+  }
 }
 
 void CPlugin::SendPresetChangedInfoToMilkwaveRemote() {
