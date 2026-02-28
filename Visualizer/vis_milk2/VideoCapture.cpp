@@ -705,6 +705,13 @@ if (pTexture) {
             }
         }
 
+        // Lock the frame buffer ONLY WHILE COPYING TO TEXTURE
+        // Use try_lock to avoid blocking the render thread
+        std::unique_lock<std::mutex> lock(m_frameMutex, std::try_to_lock);
+        if (!lock.owns_lock()) {
+            return false; // Could not acquire lock, skip copying frame
+        }
+
         // Lock texture - use D3DLOCK_DISCARD to avoid synchronization issues
         D3DLOCKED_RECT lockedRect;
         HRESULT hr = pTexture->LockRect(0, &lockedRect, nullptr, D3DLOCK_DISCARD);
@@ -716,23 +723,14 @@ if (pTexture) {
             return false;
         }
 
-        // Lock the frame buffer ONLY WHILE COPYING TO TEXTURE
-        // Use try_lock to avoid blocking the render thread
-        std::unique_lock<std::mutex> lock(m_frameMutex, std::try_to_lock);
-        if (lock.owns_lock()) {
-            // Copy and FLIP vertically (most webcams are bottom-up DIBs)
-            BYTE* pDest = (BYTE*)lockedRect.pBits;
-            int srcStride = m_nWidth * 4;
-            int copyWidth = min(srcStride, (int)lockedRect.Pitch);
+        // Copy and FLIP vertically (most webcams are bottom-up DIBs)
+        BYTE* pDest = (BYTE*)lockedRect.pBits;
+        int srcStride = m_nWidth * 4;
+        int copyWidth = min(srcStride, (int)lockedRect.Pitch);
 
-            for (int y = 0; y < m_nHeight; y++) {
-                int srcY = m_nHeight - 1 - y;
-                memcpy(pDest + y * lockedRect.Pitch, m_pFrameBuffer + srcY * srcStride, copyWidth);
-            }
-        } else {
-            // Couldn't acquire lock - copy zeros instead of blocking
-            BYTE* pDest = (BYTE*)lockedRect.pBits;
-            ZeroMemory(pDest, lockedRect.Pitch * m_nHeight);
+        for (int y = 0; y < m_nHeight; y++) {
+            int srcY = m_nHeight - 1 - y;
+            memcpy(pDest + y * lockedRect.Pitch, m_pFrameBuffer + srcY * srcStride, copyWidth);
         }
 
         HRESULT hrUnlock = pTexture->UnlockRect(0);
