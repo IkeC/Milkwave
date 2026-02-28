@@ -240,18 +240,19 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
 
     if (m_lpPS_InputMix) {
         lpDevice->SetPixelShader(m_lpPS_InputMix);
+        float luma_active = (m_bInputMixLumaActive && !isBackground) ? 1.0f : 0.0f;
         float lumaParams[4] = { 
             m_fInputMixLumakeyThreshold, 
             m_fInputMixLumakeySoftness, 
             m_fInputMixOpacity,
-            m_bInputMixLumaActive ? 1.0f : 0.0f 
+            luma_active
         };
         lpDevice->SetPixelShaderConstantF(0, lumaParams, 1);
 
         if (frameCount % 60 == 0 && milkwave) {
              wchar_t buf[256];
-             swprintf_s(buf, L"Luma/Opacity RENDERING: luma=%d, opac=%.2f, thr=%.2f, soft=%.2f", 
-                 m_bInputMixLumaActive, m_fInputMixOpacity, m_fInputMixLumakeyThreshold, m_fInputMixLumakeySoftness);
+             swprintf_s(buf, L"Luma/Opacity RENDERING (INPUT): luma_active=%.1f (luma=%d, bg=%d), opac=%.2f, thr=%.2f, soft=%.2f", 
+                 luma_active, m_bInputMixLumaActive, isBackground, m_fInputMixOpacity, m_fInputMixLumakeyThreshold, m_fInputMixLumakeySoftness);
              milkwave->LogInfo(buf);
         }
     } else {

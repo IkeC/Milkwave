@@ -3846,11 +3846,12 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
         // add the last line with optional lumakey support (COMP only)
         if (p) {
             if (shaderType == SHADER_COMP) {
+
               char szLastLine[] = 
                   "    float luma_v = dot(ret.xyz, float3(0.299, 0.587, 0.114));\n"
                   "    float luma_a = (luma_params.w > 0.5) ? saturate((luma_v - luma_params.x) / max(0.0001, luma_params.y)) : 1.0;\n"
-                  "    float opacity_a = (luma_params.w > 0.5) ? luma_params.z : 1.0;\n"
-                  "    _return_value = float4(shiftHSV(ret.xyz), luma_a * opacity_a * _vDiffuse.w);";
+                  "    _return_value = float4(shiftHSV(ret.xyz), luma_a * _vDiffuse.w);"; 
+
               sprintf(p, " %s\n}\n", szLastLine);
             } else {
               char szLastLine[] = "    _return_value = float4(shiftHSV(ret.xyz), _vDiffuse.w);";
