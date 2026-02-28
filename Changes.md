@@ -1,4 +1,4 @@
-## v3.5 (unreleased)
+## v3.5 (2026-03-01)
 
 * "Input" tab
   - Mix Visualizer output with Webcam or Spout senders
