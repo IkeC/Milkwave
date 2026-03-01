@@ -1301,189 +1301,193 @@ namespace MilkwaveRemote {
     }
 
     protected override void WndProc(ref Message m) {
-      if (m.Msg == WM_NEXT_PRESET) {
-        if (chkPresetRandom.Checked) {
-          SelectRandomPreset();
-        } else {
-          SelectNextPreset();
-        }
-        btnPresetSend_Click(null, null);
-      } else if (m.Msg == WM_PREV_PRESET) {
-        SelectPreviousPreset();
-        btnPresetSend_Click(null, null);
-      } else if (m.Msg == WM_COVER_CHANGED) {
-        RefreshSpriteButtonImages(false);
-      } else if (m.Msg == WM_SPRITE_MODE) {
-        ApplyVisualizerMode(true);
-      } else if (m.Msg == WM_MESSAGE_MODE) {
-        ApplyVisualizerMode(false);
-      } else if (m.Msg == WM_COPYDATA) {
-        // Extract the COPYDATASTRUCT from the message
-        COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
-        if (cds.lpData != IntPtr.Zero) {
-          // Convert the received data to a string
-          string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
-          if (receivedString.StartsWith("WAVE|")) {
-            string waveInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
-            string[] waveParams = waveInfo.Split('|');
-            updatingWaveParams = true;
-            foreach (string param in waveParams) {
-              string[] keyValue = param.Split('=');
-              if (keyValue.Length == 2) {
-                string key = keyValue[0].Trim();
-                string value = keyValue[1].Trim();
-                try {
-                  if (key.Equals("MODE", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveMode.Value = int.Parse(value);
-                  } else if (key.Equals("ALPHA", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveAlpha.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("COLORR", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveR.Value = int.Parse(value);
-                  } else if (key.Equals("COLORG", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveG.Value = int.Parse(value);
-                  } else if (key.Equals("COLORB", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveB.Value = int.Parse(value);
-                  } else if (key.Equals("PUSHX", StringComparison.OrdinalIgnoreCase)) {
-                    numWavePushX.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("PUSHY", StringComparison.OrdinalIgnoreCase)) {
-                    numWavePushY.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("ZOOM", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveZoom.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("WARP", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveWarp.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("ROTATION", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveRotation.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("DECAY", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveDecay.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("SCALE", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveScale.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("ECHO", StringComparison.OrdinalIgnoreCase)) {
-                    numWaveEcho.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("BRIGHTEN", StringComparison.OrdinalIgnoreCase)) {
-                    chkWaveBrighten.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("DARKEN", StringComparison.OrdinalIgnoreCase)) {
-                    chkWaveDarken.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("SOLARIZE", StringComparison.OrdinalIgnoreCase)) {
-                    chkWaveSolarize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("INVERT", StringComparison.OrdinalIgnoreCase)) {
-                    chkWaveInvert.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("ADDITIVE", StringComparison.OrdinalIgnoreCase)) {
-                    chkWaveAdditive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("DOTTED", StringComparison.OrdinalIgnoreCase)) {
-                    chkWaveDotted.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("THICK", StringComparison.OrdinalIgnoreCase)) {
-                    chkWaveThick.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("VOLALPHA", StringComparison.OrdinalIgnoreCase)) {
-                    chkWaveVolAlpha.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+      try {
+        if (m.Msg == WM_NEXT_PRESET) {
+          if (chkPresetRandom.Checked) {
+            SelectRandomPreset();
+          } else {
+            SelectNextPreset();
+          }
+          btnPresetSend_Click(null, null);
+        } else if (m.Msg == WM_PREV_PRESET) {
+          SelectPreviousPreset();
+          btnPresetSend_Click(null, null);
+        } else if (m.Msg == WM_COVER_CHANGED) {
+          RefreshSpriteButtonImages(false);
+        } else if (m.Msg == WM_SPRITE_MODE) {
+          ApplyVisualizerMode(true);
+        } else if (m.Msg == WM_MESSAGE_MODE) {
+          ApplyVisualizerMode(false);
+        } else if (m.Msg == WM_COPYDATA) {
+          // Extract the COPYDATASTRUCT from the message
+          COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
+          if (cds.lpData != IntPtr.Zero) {
+            // Convert the received data to a string
+            string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
+            if (receivedString.StartsWith("WAVE|")) {
+              string waveInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
+              string[] waveParams = waveInfo.Split('|');
+              updatingWaveParams = true;
+              foreach (string param in waveParams) {
+                string[] keyValue = param.Split('=');
+                if (keyValue.Length == 2) {
+                  string key = keyValue[0].Trim();
+                  string value = keyValue[1].Trim();
+                  try {
+                    if (key.Equals("MODE", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveMode.Value = int.Parse(value);
+                    } else if (key.Equals("ALPHA", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveAlpha.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("COLORR", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveR.Value = int.Parse(value);
+                    } else if (key.Equals("COLORG", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveG.Value = int.Parse(value);
+                    } else if (key.Equals("COLORB", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveB.Value = int.Parse(value);
+                    } else if (key.Equals("PUSHX", StringComparison.OrdinalIgnoreCase)) {
+                      numWavePushX.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("PUSHY", StringComparison.OrdinalIgnoreCase)) {
+                      numWavePushY.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("ZOOM", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveZoom.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("WARP", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveWarp.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("ROTATION", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveRotation.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("DECAY", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveDecay.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("SCALE", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveScale.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("ECHO", StringComparison.OrdinalIgnoreCase)) {
+                      numWaveEcho.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("BRIGHTEN", StringComparison.OrdinalIgnoreCase)) {
+                      chkWaveBrighten.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("DARKEN", StringComparison.OrdinalIgnoreCase)) {
+                      chkWaveDarken.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("SOLARIZE", StringComparison.OrdinalIgnoreCase)) {
+                      chkWaveSolarize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("INVERT", StringComparison.OrdinalIgnoreCase)) {
+                      chkWaveInvert.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("ADDITIVE", StringComparison.OrdinalIgnoreCase)) {
+                      chkWaveAdditive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("DOTTED", StringComparison.OrdinalIgnoreCase)) {
+                      chkWaveDotted.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("THICK", StringComparison.OrdinalIgnoreCase)) {
+                      chkWaveThick.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("VOLALPHA", StringComparison.OrdinalIgnoreCase)) {
+                      chkWaveVolAlpha.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    }
+                  } catch (Exception ex) {
+                    // ignore
                   }
-                } catch (Exception ex) {
-                  // ignore
                 }
               }
-            }
-            updatingWaveParams = false;
-          } else if (receivedString.StartsWith("PRESET=")) {
-            string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            if (receivedString.Length > 0) {
-              string findString = "RESOURCES\\PRESETS\\";
-              int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
-              string displayText = receivedString;
-              if (index > -1) {
-                displayText = receivedString.Substring(index + findString.Length);
-                displayText = Path.ChangeExtension(displayText, null);
-              }
+              updatingWaveParams = false;
+            } else if (receivedString.StartsWith("PRESET=")) {
+              string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              if (receivedString.Length > 0) {
+                string findString = "RESOURCES\\PRESETS\\";
+                int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+                string displayText = receivedString;
+                if (index > -1) {
+                  displayText = receivedString.Substring(index + findString.Length);
+                  displayText = Path.ChangeExtension(displayText, null);
+                }
 
-              // Process the received string
-              SetRunningPresetText(displayText);
-              toolTip1.SetToolTip(txtVisRunning, presetFilePath);
-              UpdateTagsDisplay(false, true);
-            }
-          } else if (receivedString.StartsWith("STATUS=")) {
-            string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            if (status.Length > 0) {
-              SetStatusText(status);
-            }
-            if (status.Equals("Sprite Mode set", StringComparison.OrdinalIgnoreCase)) {
-              ApplyVisualizerMode(true);
-            } else if (status.Equals("Message Mode set", StringComparison.OrdinalIgnoreCase)) {
-              ApplyVisualizerMode(false);
-            }
-            if (status.Contains(": error ")) {
-              string errLine = status.Substring(1, status.IndexOf(")") - 1);
-              if (int.TryParse(errLine, out int lineNumber)) {
-                if (lineNumber > 0) {
-                  lastReceivedShaderErrorLineNumber = lineNumber;
-                  MarkRow(lineNumber - (int)numOffset.Value);
-                }
+                // Process the received string
+                SetRunningPresetText(displayText);
+                toolTip1.SetToolTip(txtVisRunning, presetFilePath);
+                UpdateTagsDisplay(false, true);
               }
-            }
-          } else if (receivedString.StartsWith("OPACITY=")) {
-            string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
-              if (numOpacity.Value != parsedOpacity) {
-                // Temporarily detach the event handler
-                numOpacity.ValueChanged -= numOpacity_ValueChanged;
-                numOpacity.Value = parsedOpacity;
-                numOpacity.ValueChanged += numOpacity_ValueChanged;
+            } else if (receivedString.StartsWith("STATUS=")) {
+              string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              if (status.Length > 0) {
+                SetStatusText(status);
               }
-            }
-          } else if (receivedString.StartsWith("DEVICE=")) {
-            string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
-            RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
-          } else if (receivedString.StartsWith("SETTINGS|")) {
-            string settingsInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
-            string[] settingsParams = settingsInfo.Split('|');
-            updatingSettingsParams = true;
-            foreach (string param in settingsParams) {
-              string[] keyValue = param.Split('=');
-              if (keyValue.Length == 2) {
-                string key = keyValue[0].Trim();
-                string value = keyValue[1].Trim();
-                try {
-                  if (key.Equals("ACTIVE", StringComparison.OrdinalIgnoreCase)) {
-                    chkSpoutActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("FIXEDSIZE", StringComparison.OrdinalIgnoreCase)) {
-                    chkSpoutFixedSize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("FIXEDWIDTH", StringComparison.OrdinalIgnoreCase)) {
-                    cboSpoutWidth.Text = value;
-                  } else if (key.Equals("FIXEDHEIGHT", StringComparison.OrdinalIgnoreCase)) {
-                    cboSpoutHeight.Text = value;
-                  } else if (key.Equals("QUALITY", StringComparison.OrdinalIgnoreCase)) {
-                    numQuality.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                  } else if (key.Equals("AUTO", StringComparison.OrdinalIgnoreCase)) {
-                    chkQualityAuto.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("HUE", StringComparison.OrdinalIgnoreCase)) {
-                    if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsedHue)) {
-                      numSettingsHue.Value = Math.Clamp(parsedHue, numSettingsHue.Minimum, numSettingsHue.Maximum);
-                    }
-                  } else if (key.Equals("LOCKED", StringComparison.OrdinalIgnoreCase)) {
-                    chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) {
-                    chkSettingsPresetRandom.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
-                    chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
-                    chkMixLumaActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                  } else if (key.Equals("LUMATHR", StringComparison.OrdinalIgnoreCase)) {
-                    if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal thr)) {
-                      numLumaThreshold.Value = Math.Clamp(thr, numLumaThreshold.Minimum, numLumaThreshold.Maximum);
-                    }
-                  } else if (key.Equals("LUMASOFT", StringComparison.OrdinalIgnoreCase)) {
-                    if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal soft)) {
-                      numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
-                    }
+              if (status.Equals("Sprite Mode set", StringComparison.OrdinalIgnoreCase)) {
+                ApplyVisualizerMode(true);
+              } else if (status.Equals("Message Mode set", StringComparison.OrdinalIgnoreCase)) {
+                ApplyVisualizerMode(false);
+              }
+              if (status.Contains(": error ")) {
+                string errLine = status.Substring(1, status.IndexOf(")") - 1);
+                if (int.TryParse(errLine, out int lineNumber)) {
+                  if (lineNumber > 0) {
+                    lastReceivedShaderErrorLineNumber = lineNumber;
+                    MarkRow(lineNumber - (int)numOffset.Value);
                   }
-                } catch (Exception ex) {
-                  // ignore
                 }
               }
+            } else if (receivedString.StartsWith("OPACITY=")) {
+              string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
+                if (numOpacity.Value != parsedOpacity) {
+                  // Temporarily detach the event handler
+                  numOpacity.ValueChanged -= numOpacity_ValueChanged;
+                  numOpacity.Value = parsedOpacity;
+                  numOpacity.ValueChanged += numOpacity_ValueChanged;
+                }
+              }
+            } else if (receivedString.StartsWith("DEVICE=")) {
+              string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
+              RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
+            } else if (receivedString.StartsWith("SETTINGS|")) {
+              string settingsInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
+              string[] settingsParams = settingsInfo.Split('|');
+              updatingSettingsParams = true;
+              foreach (string param in settingsParams) {
+                string[] keyValue = param.Split('=');
+                if (keyValue.Length == 2) {
+                  string key = keyValue[0].Trim();
+                  string value = keyValue[1].Trim();
+                  try {
+                    if (key.Equals("ACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                      chkSpoutActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("FIXEDSIZE", StringComparison.OrdinalIgnoreCase)) {
+                      chkSpoutFixedSize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("FIXEDWIDTH", StringComparison.OrdinalIgnoreCase)) {
+                      cboSpoutWidth.Text = value;
+                    } else if (key.Equals("FIXEDHEIGHT", StringComparison.OrdinalIgnoreCase)) {
+                      cboSpoutHeight.Text = value;
+                    } else if (key.Equals("QUALITY", StringComparison.OrdinalIgnoreCase)) {
+                      numQuality.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                    } else if (key.Equals("AUTO", StringComparison.OrdinalIgnoreCase)) {
+                      chkQualityAuto.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("HUE", StringComparison.OrdinalIgnoreCase)) {
+                      if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsedHue)) {
+                        numSettingsHue.Value = Math.Clamp(parsedHue, numSettingsHue.Minimum, numSettingsHue.Maximum);
+                      }
+                    } else if (key.Equals("LOCKED", StringComparison.OrdinalIgnoreCase)) {
+                      chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) {
+                      chkSettingsPresetRandom.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
+                      chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                      chkMixLumaActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                    } else if (key.Equals("LUMATHR", StringComparison.OrdinalIgnoreCase)) {
+                      if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal thr)) {
+                        numLumaThreshold.Value = Math.Clamp(thr, numLumaThreshold.Minimum, numLumaThreshold.Maximum);
+                      }
+                    } else if (key.Equals("LUMASOFT", StringComparison.OrdinalIgnoreCase)) {
+                      if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal soft)) {
+                        numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
+                      }
+                    }
+                  } catch (Exception ex) {
+                    // ignore
+                  }
+                }
+              }
+              updatingSettingsParams = false;
             }
-            updatingSettingsParams = false;
           }
         }
-      }
 
-      base.WndProc(ref m);
+        base.WndProc(ref m);
+      } catch (Exception ex) {
+        Program.LogToFile($"WndProc: {ex.Message}");
+      }
     }
 
     private void SetRunningPresetText(string displayText) {
