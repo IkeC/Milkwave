@@ -3750,8 +3750,10 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   lstrcpy(&szShaderText[writePos], m_szShaderIncludeText);  // first, paste in the contents of 'inputs.fx' before the actual shader text.  Has 13's and 10's.
   writePos += m_nShaderIncludeTextLen;
 
+  bool bIsPs20 = (strcmp(szProfile, "ps_2_0") == 0);
+
   // paste in luma_params global for composite shaders (must be outside function signature for compatibility)
-  if (shaderType == SHADER_COMP && szProfile[0] == 'p') {
+  if (shaderType == SHADER_COMP && szProfile[0] == 'p' && !bIsPs20) {
       const char szLumaUniform[] = "uniform float4 luma_params;\r\n";
       lstrcpy(&szShaderText[writePos], szLumaUniform);
       writePos += lstrlen(szLumaUniform);
@@ -3844,7 +3846,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
         p = strrchr(p, '}');
         // add the last line with optional lumakey support (COMP only)
         if (p) {
-            if (shaderType == SHADER_COMP) {
+            if (shaderType == SHADER_COMP && !bIsPs20) {
 
               char szLastLine[] = 
                   "    float luma_v = dot(ret.xyz, float3(0.299, 0.587, 0.114));\n"
