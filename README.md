@@ -6,7 +6,7 @@
 
 [**Click here**](https://github.com/IkeC/Milkwave/releases/latest) to get the latest version.
 
-![Milkwave 3](https://github.com/user-attachments/assets/c828786e-d4fc-40bf-a84b-ec996eeff1b8)
+<img width="2392" height="922" alt="image" src="https://github.com/user-attachments/assets/0a8ecdd0-de26-488f-9f84-772c4d004123" />
 
 ## Visualizer Features
  
@@ -22,12 +22,14 @@
 ## Remote Features
 
 * Customizable interface - show only what you need
+* Tabbed interface with hideable top and bottom panel
 * Send common key combinations using buttons
 * Set audio device (in- or output) without restarting Visualizer
-* Amplify virtual audio signal to make Visualizer more (or less) responsive
-* Tabbed interface with hideable top and bottom panel
+* Amplify virtual audio signal
+* Game controller and video mixing support
 
-![Milkwave 3 Tabs](https://github.com/user-attachments/assets/a244f59b-8070-4314-be2d-ceb3259b33c5)
+<img width="1235" height="1032" alt="Milkwave-3.5-Tabs" src="https://github.com/user-attachments/assets/736eaa9f-3ccf-4fde-8e89-71182234d1a9" />
+<img width="1234" height="261" alt="Milkwave-3.5-Buttons" src="https://github.com/user-attachments/assets/aac0224c-ff77-447f-b27d-c301d5a81f86" />
 
 * Preset tagging
   - Tag your presets with any number of words of your choice
@@ -41,17 +43,13 @@
   - Move text around using start and end coordinates
   - Save parameter definitions as named styles for quick access
   - Send messages, parameters, presets and other commands automatically from a script file at configurable intervals based on BPM setting (see script-default.txt)
-* Shader code conversion
-  - Convert GLSL shader code to HLSL
-  - Preview converted code in the Visualizer instantly
-  - Load shader definitions from Shadertoy files
+* Input mixing
+  - Mix Spout senders or webcam input with Visualizer output
+  - Toggle layer order and blend with luma key and/or opacity
 * Wave manipulation
   - Clear current preset and start with a plain wave
   - Set wave type, zoom, warp, rotation etc. in the running preset
   - Quicksave manipulated presets to a new file
-* Font manipulation
-  - Customize display of song information, preset name and notifications
-  - Change and preview font face, style and size instantly
 * MIDI automation
   - Assign up to 50 actions to your MIDI controller
   - Select/change presets, send messages, trigger sprites, start external programs etc.
@@ -63,6 +61,13 @@
   - Control Spout output behaviour
   - Adjust render quality to improve performance and/or pixellize output
   - Quick access to configuration files
+* Font manipulation
+  - Customize display of song information, preset name and notifications
+  - Change and preview font face, style and size instantly
+* Shader code conversion
+  - Convert GLSL shader code to HLSL
+  - Preview converted code in the Visualizer instantly
+  - Load shader definitions from Shadertoy files
 
 There are many tooltips explaining all features when you hover over the form elements. Clicking the "Autoplay" button on the Message tab will run the default script file, demonstrating many Milkwave features.
 
@@ -70,7 +75,7 @@ If you have any questions, don't be afraid to [ask for support](#support)!
 
 ## History
 
-The original [MilkDrop2](https://www.geisswerks.com/milkdrop/) WinAmp plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and has since been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) project. Milkwave originally started as a fork of BeatDrop-Music-Visualizer, and most Visualizer features and improvements are still kept in tight sync between our projects.
+The original [MilkDrop2](https://www.geisswerks.com/milkdrop/) WinAmp plugin created by Ryan Geiss was turned into a Windows standalone application by Maxim Volskiy as [BeatDrop](https://github.com/mvsoft74/BeatDrop) and has since been improved upon eg. in the [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer) project. Milkwave originally started as a fork of BeatDrop-Music-Visualizer, and some Visualizer features and improvements are still kept in sync between our projects.
 
 For a more detailed explanation of all features, please read the [Manual](https://github.com/IkeC/Milkwave/blob/main/Manual.md). 
 
@@ -91,7 +96,7 @@ However, if you're satisfied with the additions we made within Milkwave and you 
 
 Many thanks to **Shane**, **Tures1955**, **hatecubed** and **catchpen** for supporting the development of Milkwave. ❤️
 
-We may add new features or fix bugs if people are actually using this, so don't be shy to [open an issue](https://github.com/IkeC/Milkwave/issues) or join my [**Discord**](https://bit.ly/Ikes-Discord)!
+We may add new features or fix bugs if you speak up, so don't be shy to [open an issue](https://github.com/IkeC/Milkwave/issues) or join my [**Discord**](https://bit.ly/Ikes-Discord)!
 
 ## Acknowledgements
 
@@ -104,7 +109,6 @@ Many thanks to:
 * Matthew van Eerde - [loopback-capture](https://github.com/mvaneerde/blog)
 * projectM - [projectm-eval](https://github.com/projectM-visualizer/projectm-eval)
 * Incubo_ - [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer)
-* milkdrop2077 - [MilkDrop3](https://github.com/milkdrop2077/MilkDrop3)
 * podenthusiast - [Milkwave Logo](https://www.freepik.com/author/podenthusiast/icons)
 * and all the preset authors!
 
