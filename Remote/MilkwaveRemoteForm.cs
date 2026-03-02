@@ -100,7 +100,7 @@ namespace MilkwaveRemote {
     private string lastScriptFileName = "script-default.txt";
     private string midiDefaultFileName = "midi-default.txt";
 
-    private string windowNotFound = "Milkwave Visualizer Window not found";
+    private string windowNotFound = "Target Window not found";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
     private string lastSpoutSenderName = "";
