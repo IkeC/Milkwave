@@ -285,7 +285,9 @@ namespace MilkwaveRemote {
       InputMixOnTop,
       InputMixOpacity,
       InputMixLuma,
-      PrecompileCache
+      PrecompileCache,
+      FFTAttack,
+      FFTDecay
     }
 
     private class PendingThumbnail {
@@ -1626,6 +1628,10 @@ namespace MilkwaveRemote {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
               message = "COL_BRIGHTNESS=" + numSettingsBrightness.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.FFTAttack) {
+              message = "FFT_ATTACK=" + numFFTAttack.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.FFTDecay) {
+              message = "FFT_DECAY=" + numFFTDecay.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.PresetLink) {
               message = "LINK=" + messageToSend;
             } else if (type == MessageType.SpoutActive) {
@@ -2118,6 +2124,16 @@ namespace MilkwaveRemote {
           string value = token.Substring(token.IndexOf("=") + 1);
           if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
             numSettingsBrightness.Value = Math.Clamp((decimal)parsedValue, numSettingsBrightness.Minimum, numSettingsBrightness.Maximum);
+          }
+        } else if (tokenUpper.StartsWith("FFTATTACK=")) {
+          string value = token.Substring(token.IndexOf("=") + 1);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numFFTAttack.Value = Math.Clamp((decimal)parsedValue, numFFTAttack.Minimum, numFFTAttack.Maximum);
+          }
+        } else if (tokenUpper.StartsWith("FFTDECAY=")) {
+          string value = token.Substring(token.IndexOf("=") + 1);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numFFTDecay.Value = Math.Clamp((decimal)parsedValue, numFFTDecay.Minimum, numFFTDecay.Maximum);
           }
         } else if (tokenUpper.Equals("RAND")) {
           SendPostMessage(VK_R, "R");
@@ -4672,6 +4688,16 @@ namespace MilkwaveRemote {
       SendToMilkwaveVisualizer("", MessageType.ColBrightness);
     }
 
+    private void numFFTAttack_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.FFTAttack);
+    }
+
+    private void numFFTDecay_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.FFTDecay);
+    }
+
     private void lblFactorTime_Click(object sender, EventArgs e) {
       numFactorTime.Value = 1;
     }
@@ -6731,6 +6757,11 @@ namespace MilkwaveRemote {
 
     private void numInputMixOpacity_Click(object sender, EventArgs e) {
       numInputMixOpacity.Value = 100;
+    }
+
+    private void label20_DoubleClick(object sender, EventArgs e) {
+      numFFTAttack.Value = 0.5m;
+      numFFTDecay.Value = 0.7m;
     }
   } // end class
 } // end namespace

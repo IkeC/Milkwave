@@ -198,6 +198,21 @@ sampler2D sampler_blur1;
 sampler2D sampler_blur2;
 sampler2D sampler_blur3;
 
+// FFT audio spectrum texture (512x1, R32F, updated each frame)
+sampler2D sampler_fft;
+#define texsize_fft float4(512.0, 1.0, 1.0/512.0, 1.0)
+
+// Get FFT magnitude at normalized position [0..1] in the spectrum
+// 0.0 = lowest frequency (DC), 1.0 = highest frequency (~22kHz)
+float get_fft(float pos) {
+    return tex2D(sampler_fft, float2(saturate(pos), 0.5)).x;
+}
+
+// Get FFT magnitude at a specific frequency in Hz
+float get_fft_hz(float freq) {
+    return get_fft(freq / 22050.0);
+}
+
 float3 shiftHSV(float3 c)
 {
     float3 rgb = c;

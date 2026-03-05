@@ -1399,6 +1399,9 @@ void CPlugin::MyReadConfig() {
   m_bInputMixOnTop = GetPrivateProfileBoolW(L"Milkwave", L"InputMixOnTop", true, pIni);
   m_cInputMixTint = (D3DCOLOR)GetPrivateProfileIntW(L"Milkwave", L"InputMixTint", 0xFFFFFFFF, pIni);
 
+  m_fFFTAttackGlobal = GetPrivateProfileFloatW(L"Milkwave", L"FFTAttack", 0.5f, pIni);
+  m_fFFTDecayGlobal  = GetPrivateProfileFloatW(L"Milkwave", L"FFTDecay",  0.7f, pIni);
+
   // --------
 
   GetPrivateProfileStringW(L"Settings", L"szPresetDir", m_szPresetDir, m_szPresetDir, sizeof(m_szPresetDir), pIni);
@@ -1597,6 +1600,9 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileFloatW(m_fInputMixLumakeySoftness, L"InputMixLumakeySoftness", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_bInputMixOnTop, L"InputMixOnTop", pIni, L"Milkwave");
   WritePrivateProfileIntW((int)m_cInputMixTint, L"InputMixTint", pIni, L"Milkwave");
+
+  WritePrivateProfileFloatW(m_fFFTAttackGlobal, L"FFTAttack", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_fFFTDecayGlobal, L"FFTDecay", pIni, L"Milkwave");
 }
 
 void CPlugin::SaveWindowSizeAndPosition(HWND hwnd) {
@@ -2344,6 +2350,12 @@ int CPlugin::AllocateMyDX9Stuff() {
   // Use the stored video capture dimensions, not the canvas size
   GetDevice()->CreateTexture(m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
   
+  // Create FFT spectrum texture (512x1, R32F, updated each frame)
+  if (GetDevice()->CreateTexture(MY_FFT_SAMPLES, 1, 1, D3DUSAGE_DYNAMIC, D3DFMT_R32F, D3DPOOL_DEFAULT, &m_lpFFTTexture, NULL) == D3D_OK)
+    milkwave->LogInfo(L"FFT texture created successfully");
+  else
+    milkwave->LogInfo(L"Failed to create FFT texture (D3DFMT_R32F not supported?)");
+
   // Restart video capture if it was enabled
   if (m_bVideoInputEnabled && m_pVideoCapture && m_nVideoDeviceIndex >= 0) {
     m_pVideoCapture->Stop();
@@ -3365,6 +3377,14 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
         }
       }
 #endif
+      else if (!wcscmp(L"fft", szRootName)) {
+        m_texture_bindings[cd.RegisterIndex].texptr = g_plugin.m_lpFFTTexture;
+        m_texcode[cd.RegisterIndex] = TEX_FFT;
+        if (!bWrapFilterSpecified) {
+          m_texture_bindings[cd.RegisterIndex].bWrap = false;   // clamp
+          m_texture_bindings[cd.RegisterIndex].bBilinear = true; // linear interpolation between bins
+        }
+      }
       else {
         m_texcode[cd.RegisterIndex] = TEX_DISK;
 
@@ -4081,6 +4101,8 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   //SafeRelease( m_pFragmentLinker );
 
   // 2. release stuff
+  SafeRelease(m_lpFFTTexture);
+  memset(m_fFFTSmoothed, 0, sizeof(m_fFFTSmoothed));
   SafeRelease(m_lpVS[0]);
   SafeRelease(m_lpVS[1]);
 
@@ -11353,6 +11375,20 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 15);
     g_plugin.m_ColShiftBrightness = std::stof(message);
   }
+  else if (wcsncmp(sMessage, L"FFT_ATTACK=", 11) == 0) {
+    std::wstring message(sMessage + 11);
+    g_plugin.m_fFFTAttackGlobal = max(0.0f, min(1.0f, std::stof(message)));
+    wchar_t buf[64];
+    swprintf(buf, 64, L"FFT Attack: %.2f", g_plugin.m_fFFTAttackGlobal);
+    g_plugin.AddError(buf, 2.0f, ERR_NOTIFY, false);
+  }
+  else if (wcsncmp(sMessage, L"FFT_DECAY=", 10) == 0) {
+    std::wstring message(sMessage + 10);
+    g_plugin.m_fFFTDecayGlobal = max(0.0f, min(1.0f, std::stof(message)));
+    wchar_t buf[64];
+    swprintf(buf, 64, L"FFT Decay: %.2f", g_plugin.m_fFFTDecayGlobal);
+    g_plugin.AddError(buf, 2.0f, ERR_NOTIFY, false);
+  }
   else if (wcsncmp(sMessage, L"VAR_QUALITY=", 12) == 0) {
     std::wstring message(sMessage + 12);
     g_plugin.m_fRenderQuality = std::stof(message);
@@ -11442,7 +11478,9 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0")
     + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0")
     + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f))
-    + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f));
+    + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f))
+    + L"|FFTATTACK=" + std::to_wstring(m_fFFTAttackGlobal)
+    + L"|FFTDECAY=" + std::to_wstring(m_fFFTDecayGlobal);
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 
@@ -11872,6 +11910,28 @@ void CPlugin::DoCustomSoundAnalysis() {
   myfft.time_to_frequency_domain(fWaveLeft, mysound.fSpecLeft);
   myfft.time_to_frequency_domain(fWaveRight, mysound.fSpecRight);
   //for (i=0; i<MY_FFT_SAMPLES; i++) fSpecLeft[i] = sqrtf(fSpecLeft[i]*fSpecLeft[i] + fSpecTemp[i]*fSpecTemp[i]);
+
+  // Apply FFT smoothing and upload to GPU texture for get_fft()/get_fft_hz() shader functions
+  {
+    float attack = m_fFFTAttackGlobal;
+    float decay  = m_fFFTDecayGlobal;
+    for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
+      float mono = (mysound.fSpecLeft[fi] + mysound.fSpecRight[fi]) * 0.5f;
+      if (mono > m_fFFTSmoothed[fi])
+        m_fFFTSmoothed[fi] += (mono - m_fFFTSmoothed[fi]) * attack;
+      else
+        m_fFFTSmoothed[fi] += (mono - m_fFFTSmoothed[fi]) * (1.0f - decay);
+    }
+    if (m_lpFFTTexture) {
+      D3DLOCKED_RECT r;
+      if (D3D_OK == m_lpFFTTexture->LockRect(0, &r, NULL, D3DLOCK_DISCARD)) {
+        float* dest = (float*)r.pBits;
+        for (int fi = 0; fi < MY_FFT_SAMPLES; fi++)
+          dest[fi] = m_fFFTSmoothed[fi];
+        m_lpFFTTexture->UnlockRect(0);
+      }
+    }
+  }
 
   // DeepSeek - Update the sample rate (we don't need to check HRESULT every frame)
   static DWORD lastCheck = 0;

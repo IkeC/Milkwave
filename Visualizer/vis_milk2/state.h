@@ -266,6 +266,10 @@ public:
   // fps-dependant:
   CBlendableFloat		m_fDecay;			// 1.0 = none, 0.95 = heavy decay
 
+  // FFT smoothing parameters (per-preset)
+  float m_fFFTAttack = 0.5f;  // response to rising FFT values (0..1)
+  float m_fFFTDecay  = 0.7f;  // falloff rate for declining FFT values (0..1)
+
   // other:
   int					m_nWaveMode;
   int					m_nOldWaveMode;
