@@ -1107,8 +1107,9 @@ namespace MilkwaveRemote {
 
       IntPtr result = FindVisualizerWindow();
       if (result == IntPtr.Zero || !onlyIfNotFound) {
-        // Try to run MilkwaveVisualizer.exe from the same directory as the assembly
-        string visualizerPath = Path.Combine(BaseDir, "MilkwaveVisualizer.exe");
+        // Try to run the visualizer exe (configurable in settings-remote.json)
+        string exeName = string.IsNullOrEmpty(Settings.VisualizerExe) ? "MilkwaveVisualizer.exe" : Settings.VisualizerExe;
+        string visualizerPath = Path.Combine(BaseDir, exeName);
         if (File.Exists(visualizerPath)) {
           Process.Start(new ProcessStartInfo(visualizerPath) { UseShellExecute = true });
         }
@@ -4146,6 +4147,9 @@ namespace MilkwaveRemote {
       chkShaderFile.Checked = Settings.ShaderFileChecked;
       chkWrap.Checked = Settings.WrapChecked;
 
+      string savedTitle = string.IsNullOrEmpty(Settings.WindowTitle) ? cboWindowTitle.Items[0]?.ToString() ?? "Milkwave Visualizer" : Settings.WindowTitle;
+      cboWindowTitle.Text = savedTitle;
+
       numInputMixOpacity.Value = Math.Clamp(Settings.InputMixOpacity, numInputMixOpacity.Minimum, numInputMixOpacity.Maximum);
       chkInputTop.Checked = Settings.InputMixOnTop;
       chkMixLumaActive.Checked = Settings.InputMixLumaActive;
@@ -4184,6 +4188,8 @@ namespace MilkwaveRemote {
       Settings.VisIntensity = numVisIntensity.Value;
       Settings.VisShift = numVisShift.Value;
       Settings.VisVersion = (int)numVisVersion.Value;
+
+      Settings.WindowTitle = cboWindowTitle.Text;
 
       SaveSettingsToFile();
     }

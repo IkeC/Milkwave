@@ -41,5 +41,8 @@
     public bool IsPresetMode { get; set; } = false;
     public int CurrentPresetBank { get; set; } = 1;
     public bool ControllerActive { get; set; } = false;
+
+    public string VisualizerExe { get; set; } = "MilkwaveVisualizer.exe";
+    public string WindowTitle { get; set; } = "";
   }
 }
