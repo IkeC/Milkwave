@@ -110,6 +110,7 @@ Many thanks to:
 * projectM - [projectm-eval](https://github.com/projectM-visualizer/projectm-eval)
 * Incubo_ - [BeatDrop-Music-Visualizer](https://github.com/OfficialIncubo/BeatDrop-Music-Visualizer)
 * podenthusiast - [Milkwave Logo](https://www.freepik.com/author/podenthusiast/icons)
+* Shane - [MDropDX12](https://github.com/shanevbg/MDropDX12)
 * and all the preset authors!
 
 If you believe you or someone else should be mentioned here, please let me know.

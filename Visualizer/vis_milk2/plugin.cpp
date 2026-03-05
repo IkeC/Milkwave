@@ -3902,20 +3902,26 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   tempBuffer[32767] = L'\0'; // Null-terminate to avoid overflow.
   dumpmsg(tempBuffer); // Pass the non-const buffer to dumpmsg.
 
+  bool bLoadedFromCache = false;
   uint32_t checksum = crc32(szShaderText, len);
   if (m_ShaderCaching) {
     pShaderByteCode = LoadShaderBytecodeFromFile(checksum, &szProfile[0]);
   }
 
   if (pShaderByteCode != NULL && !compileOnly) {
-    // restore ConstTable from bytecode
+    // restore ConstTable from cached bytecode
     HRESULT hr = D3DXGetShaderConstantTable(
       (DWORD*)pShaderByteCode->GetBufferPointer(),
-      ppConstTable // pass the pointer to pointer
+      ppConstTable
     );
-
+    if (SUCCEEDED(hr)) {
+      bLoadedFromCache = true;
+    } else {
+      SafeRelease(pShaderByteCode); // invalid cached bytecode, fall through to compile
+    }
   }
-  else {
+
+  if (!bLoadedFromCache) {
     HRESULT hresult = D3DXCompileShader(
       szShaderText,
       len,
@@ -3974,6 +3980,24 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
     }
     else if (szProfile[0] == 'p') {
       hr = GetDevice()->CreatePixelShader((const unsigned long*)(pShaderByteCode->GetBufferPointer()), (IDirect3DPixelShader9**)ppShader);
+    }
+
+    if (hr != D3D_OK && bLoadedFromCache) {
+      // stale or incompatible cache file - recompile and retry once
+      SafeRelease(pShaderByteCode);
+      SafeRelease(*ppConstTable);
+      *ppShader = nullptr;
+      HRESULT compileResult = D3DXCompileShader(szShaderText, len, NULL, NULL, szFn, szProfile,
+        m_dwShaderFlags, &pShaderByteCode, &m_pShaderCompileErrors, ppConstTable);
+      if (D3D_OK == compileResult) {
+        hr = 1;
+        if (szProfile[0] == 'v')
+          hr = GetDevice()->CreateVertexShader((const unsigned long*)pShaderByteCode->GetBufferPointer(), (IDirect3DVertexShader9**)ppShader);
+        else if (szProfile[0] == 'p')
+          hr = GetDevice()->CreatePixelShader((const unsigned long*)pShaderByteCode->GetBufferPointer(), (IDirect3DPixelShader9**)ppShader);
+        if (D3D_OK == hr && m_ShaderCaching)
+          SaveShaderBytecodeToFile(pShaderByteCode, checksum, &szProfile[0]);
+      }
     }
 
     if (hr != D3D_OK) {
@@ -12237,7 +12261,7 @@ void CPlugin::SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t ch
     return;
   }
   std::ostringstream filePath;
-  filePath << cacheDir << "\\" << prefix << "-" << std::hex << std::uppercase << checksum << ".shader";
+  filePath << cacheDir << "\\" << prefix << "-" << std::hex << std::uppercase << m_dwShaderFlags << "-" << checksum << ".shader";
 
   std::ofstream outFile(filePath.str(), std::ios::binary);
   if (outFile.is_open()) {
@@ -12254,7 +12278,7 @@ ID3DXBuffer* CPlugin::LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix
   ID3DXBuffer* pBuffer = nullptr;
 
   std::ostringstream filePath;
-  filePath << "cache\\" << prefix << "-" << std::hex << std::uppercase << checksum << ".shader";
+  filePath << "cache\\" << prefix << "-" << std::hex << std::uppercase << m_dwShaderFlags << "-" << checksum << ".shader";
 
   std::ifstream inFile(filePath.str(), std::ios::binary | std::ios::ate);
   if (!inFile.is_open()) return nullptr;
