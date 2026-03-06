@@ -1719,7 +1719,8 @@ void CPlugin::BlurPasses() {
   IDirect3DSurface9* pNewTarget = NULL;
 
   // clear texture bindings
-  for (int i = 0; i < 16; i++)
+  int i;
+  for (i = 0; i < 16; i++)
     lpDevice->SetTexture(i, NULL);
 
   // set up fullscreen quad
@@ -2474,7 +2475,8 @@ void CPlugin::DrawCustomShapes() {
             ((((int)(*pState->m_shape[i].var_pf_g2 * 255)) & 0xFF) << 8) |
             ((((int)(*pState->m_shape[i].var_pf_b2 * 255)) & 0xFF));
 
-          for (int j = 1; j < sides + 1; j++) {
+          int j;
+          for (j = 1; j < sides + 1; j++) {
             float t = (j - 1) / (float)sides;
             if (m_bScreenDependentRenderMode)
               v[j].x = v[0].x + (float)*pState->m_shape[i].var_pf_rad * cosf(t * 3.1415927f * 2 + (float)*pState->m_shape[i].var_pf_ang + 3.1415927f * 0.25f);
@@ -2574,7 +2576,8 @@ void CPlugin::LoadCustomShapePerFrameEvallibVars(CState* pState, int i, int inst
   *pState->m_shape[i].var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->m_shape[i].var_pf_treb_att = (double)mysound.avg_rel[2];
 
-  for (int vi = 0; vi < NUM_Q_VAR; vi++)
+  int vi;
+  for (vi = 0; vi < NUM_Q_VAR; vi++)
     *pState->m_shape[i].var_pf_q[vi] = *pState->var_pf_q[vi];
   for (vi = 0; vi < NUM_T_VAR; vi++)
     *pState->m_shape[i].var_pf_t[vi] = pState->m_shape[i].t_values_after_init_code[vi];
@@ -2618,7 +2621,8 @@ void CPlugin::LoadCustomWavePerFrameEvallibVars(CState* pState, int i) {
   *pState->m_wave[i].var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->m_wave[i].var_pf_treb_att = (double)mysound.avg_rel[2];
 
-  for (int vi = 0; vi < NUM_Q_VAR; vi++)
+  int vi;
+  for (vi = 0; vi < NUM_Q_VAR; vi++)
     *pState->m_wave[i].var_pf_q[vi] = *pState->var_pf_q[vi];
   for (vi = 0; vi < NUM_T_VAR; vi++)
     *pState->m_wave[i].var_pf_t[vi] = pState->m_wave[i].t_values_after_init_code[vi];
@@ -2703,7 +2707,8 @@ void CPlugin::DrawCustomWaves() {
 
         NSEEL_code_execute(pState->m_wave[i].m_pf_codehandle);
 
-        for (int vi = 0; vi < NUM_Q_VAR; vi++)
+        int vi;
+        for (vi = 0; vi < NUM_Q_VAR; vi++)
           *pState->m_wave[i].var_pp_q[vi] = *pState->m_wave[i].var_pf_q[vi];
         for (vi = 0; vi < NUM_T_VAR; vi++)
           *pState->m_wave[i].var_pp_t[vi] = *pState->m_wave[i].var_pf_t[vi];
@@ -3859,8 +3864,11 @@ if (hr != D3D_OK)
         for (i = 0; i < nVerts; i++) {
           float rad = 0.7f + 0.7f * fR[i + sample_offset] + fWaveParam2;
           float ang = (i)*inv_nverts_minus_one * 6.28f + GetTime() * 0.2f;
-          ang == ang / 2;
-          rad == rad / 2;
+          
+          // `= = ` result not used — possible logic bug where `=` was intended
+          // ang == ang / 2;
+          // rad == rad / 2;
+
           if (i < nVerts / rad) {
             float mix = i / (nVerts * 0.1f);
             //mix = 0.7f - 0.7f * cosf(mix * 3.1416f) - sinf((GetTime()/10));
@@ -3896,47 +3904,6 @@ if (hr != D3D_OK)
       }
 
       break;
-
-      /*
-      ALTERNATIVE:
-      nVerts /= 2;
-      sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;//mysound.GoGoAlignatron(nVerts * 12/10);// only call this once nVerts is final!
-
-      if (m_pState->m_bModWaveAlphaByVolume)
-      alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
-      if (alpha < 0) alpha = 0;
-      if (alpha > 1) alpha = 1;
-      //color = D3DCOLOR_RGBA_01(cr, cg, cb, alpha);
-
-      {
-      float inv_nverts_minus_one = 1.0f / (float)(nVerts - 1);
-
-      for (i = 0; i < nVerts; i++)
-      {
-      float rad = 0.7f + 0.4f * fR[i + sample_offset] + fWaveParam2;
-      float ang = (i)* inv_nverts_minus_one * 6.28f + GetTime() * 0.2f;
-      if (i < nVerts / rad)
-      {
-      float mix = i / (nVerts * 0.1f);
-      mix = 0.5f - 0.5f * cosf(mix * 3.1416f);
-      float rad_2 = 0.5f + 0.4f * fR[i + nVerts + sample_offset] + fWaveParam2/(mix*3);
-      rad = rad_2 * (1.0f - mix) + rad * (mix);
-        //rad = rad_2 * (1.0f - mix) + rad * (GetTime() / 3); // BIG
-      }
-      v[i].x = rad * cosf(ang*2) * m_fAspectY + fWavePosX;// 0.75 = adj. for aspect ratio
-      v[i].y = rad * sinf(ang - GetTime() / 3) * m_fAspectX + fWavePosY;
-      //v[i].Diffuse = color;
-      }
-      }
-
-      // dupe last vertex to connect the lines; skip if blending
-      if (!m_pState->m_bBlending)
-      {
-      nVerts++;
-      memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
-      }
-
-      break;*/
 
     case 15: // Lasso Wave, MilkDrop2077 --------------------------------------------------------------------------------------------------------------
 
@@ -4736,7 +4703,8 @@ void CPlugin::UvToMathSpace(float u, float v, float* rad, float* ang) {
 
 void CPlugin::RestoreShaderParams() {
   LPDIRECT3DDEVICE9 lpDevice = GetDevice();
-  for (int i = 0; i < 2; i++) {
+  int i;
+  for (i = 0; i < 2; i++) {
     lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);//texaddr);
     lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);//texaddr);
     lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSW, D3DTADDRESS_WRAP);//texaddr);
@@ -4761,7 +4729,8 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   //if (p->texbind_noise   >= 0) lpDevice->SetTexture( p->texbind_noise, m_pTexNoise );
 
   // bind textures
-  for (int i = 0; i < sizeof(p->m_texture_bindings) / sizeof(p->m_texture_bindings[0]); i++) {
+  int i;
+  for (i = 0; i < sizeof(p->m_texture_bindings) / sizeof(p->m_texture_bindings[0]); i++) {
     if (p->m_texcode[i] == TEX_VS)
       lpDevice->SetTexture(i, m_lpVS[0]);
     else if (p->m_texcode[i] == TEX_FFT)
@@ -5009,7 +4978,8 @@ void CPlugin::ShowToUser_NoShaders()//int bRedraw, int nPassOverride)
         shade[i][2] = 0.6f + 0.3f * sinf(GetTime() * 30.0f * 0.0129f + 6 + i * 9 + m_fRandStart[2]);
         float max = ((shade[i][0] > shade[i][1]) ? shade[i][0] : shade[i][1]);
         if (shade[i][2] > max) max = shade[i][2];
-        for (int k = 0; k < 3; k++) {
+        int k;
+        for (k = 0; k < 3; k++) {
           shade[i][k] /= max;
           shade[i][k] = 0.5f + 0.5f * shade[i][k];
         }

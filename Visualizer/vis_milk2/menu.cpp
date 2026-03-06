@@ -99,7 +99,8 @@ bool CMilkMenu::ItemIsEnabled(int j) {
 
 void CMilkMenu::EnableItem(wchar_t* szName, bool bEnable) {
   //search submenus
-  for (int i = 0; i < m_nChildMenus; i++) {
+  int i;
+  for (i = 0; i < m_nChildMenus; i++) {
     if (!wcscmp(m_ppChildMenu[i]->GetName(), szName)) {
       m_ppChildMenu[i]->Enable(bEnable);
       if (!bEnable) {
@@ -251,8 +252,8 @@ void CMilkMenu::DrawMenu(RECT rect, int xR, int yB, int bCalcRect, RECT* pCalcRe
     int nStart = (m_nCurSel / nLines) * nLines;
 
     int nLinesDrawn = 0;
-
-    for (int i = 0; i < m_nChildMenus; i++) {
+    int i;
+    for (i = 0; i < m_nChildMenus; i++) {
       if (i >= nStart && i < nStart + nLines) {
         //rect.top += g_plugin.GetFont(SIMPLE_FONT)->DrawText(m_ppChildMenu[i]->m_szMenuName, -1, pRect, DT_SINGLELINE | DT_END_ELLIPSIS, (i == m_nCurSel) ? MENU_HILITE_COLOR : MENU_COLOR);
         if (m_ppChildMenu[i]->IsEnabled()) {

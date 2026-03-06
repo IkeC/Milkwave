@@ -1210,7 +1210,8 @@ void CPlugin::MyPreInitialize() {
   myfft.Init(576, MY_FFT_SAMPLES, -1);
   memset(&mysound, 0, sizeof(mysound));
 
-  for (int i = 0; i < PRESET_HIST_LEN; i++)
+  int i;
+  for (i = 0; i < PRESET_HIST_LEN; i++)
     m_presetHistory[i] = L"";
   m_presetHistoryPos = 0;
   m_presetHistoryBackFence = 0;
@@ -1823,7 +1824,8 @@ void CPlugin::CleanUpMyNonDx9Stuff() {
   m_menuCustomShape.Finish();
   m_menuMotion.Finish();
   m_menuPost.Finish();
-  for (int i = 0; i < MAX_CUSTOM_WAVES; i++)
+  int i;
+  for (i = 0; i < MAX_CUSTOM_WAVES; i++)
     m_menuWavecode[i].Finish();
   for (i = 0; i < MAX_CUSTOM_SHAPES; i++)
     m_menuShapecode[i].Finish();
@@ -2449,7 +2451,8 @@ int CPlugin::AllocateMyDX9Stuff() {
   // build index list for final composite blit -
   // order should be friendly for interpolation of 'ang' value!
   int* cur_index = &m_comp_indices[0];
-  for (int y = 0; y < FCGSY - 1; y++) {
+  int y;
+  for (y = 0; y < FCGSY - 1; y++) {
     if (y == FCGSY / 2 - 1)
       continue;
     for (int x = 0; x < FCGSX - 1; x++) {
@@ -2827,7 +2830,8 @@ bool CPlugin::AddNoiseTex(const wchar_t* szTexName, int size, int zoom_factor) {
     LARGE_INTEGER q;
     QueryPerformanceCounter(&q);
     srand(q.LowPart ^ q.HighPart ^ rand());
-    for (int x = 0; x < size; x++) {
+    int x;
+    for (x = 0; x < size; x++) {
       dst[x] = (((DWORD)(rand() % RANGE) + RANGE / 2) << 24) |
         (((DWORD)(rand() % RANGE) + RANGE / 2) << 16) |
         (((DWORD)(rand() % RANGE) + RANGE / 2) << 8) |
@@ -2951,7 +2955,8 @@ bool CPlugin::AddNoiseVol(const wchar_t* szTexName, int size, int zoom_factor) {
       LARGE_INTEGER q;
       QueryPerformanceCounter(&q);
       srand(q.LowPart ^ q.HighPart ^ rand());
-      for (int x = 0; x < size; x++) {
+      int x;
+      for (x = 0; x < size; x++) {
         dst[x] = (((DWORD)(rand() % RANGE) + RANGE / 2) << 24) |
           (((DWORD)(rand() % RANGE) + RANGE / 2) << 16) |
           (((DWORD)(rand() % RANGE) + RANGE / 2) << 8) |
@@ -2973,7 +2978,8 @@ bool CPlugin::AddNoiseVol(const wchar_t* szTexName, int size, int zoom_factor) {
   if (zoom_factor > 1) {
     // first go ACROSS, blending cubically on X, but only on the main lines.
     DWORD* dst = (DWORD*)r.pBits;
-    for (int z = 0; z < size; z += zoom_factor)
+    int z;
+    for (z = 0; z < size; z += zoom_factor)
       for (int y = 0; y < size; y += zoom_factor)
         for (int x = 0; x < size; x++)
           if (x % zoom_factor) {
@@ -3129,7 +3135,8 @@ bool CPlugin::EvictSomeTexture() {
   int newest = 99999999;
   int oldest = 0;
   bool bAtLeastOneFound = false;
-  for (int i = 0; i < N; i++)
+  int i;
+  for (i = 0; i < N; i++)
     if (m_textures[i].bEvictable && m_textures[i].nSizeInBytes > 0 && m_textures[i].nAge < m_nPresetsLoadedTotal - 1) // note: -1 here keeps images around for the blend-from preset, too...
     {
       newest = min(newest, m_textures[i].nAge);
@@ -3230,7 +3237,8 @@ bool PickRandomTexture(const wchar_t* prefix, wchar_t* szRetTextureFilename)  //
     StringVec temp_list;
     int N = texfiles.size();
     int len = lstrlenW(prefix);
-    for (int i = 0; i < N; i++)
+    int i;
+    for (i = 0; i < N; i++)
       if (!_wcsnicmp(prefix, texfiles[i].c_str(), len))
         temp_list.push_back(texfiles[i]);
     N = temp_list.size();
@@ -3258,7 +3266,8 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
   std::wstring RandTexName[MAX_RAND_TEX];
 
   // pass 1: find all the samplers (and texture bindings).
-  for (UINT i = 0; i < d.Constants; i++) {
+  UINT i;
+  for (i = 0; i < d.Constants; i++) {
     D3DXHANDLE h = pCT->GetConstant(NULL, i);
     unsigned int count = 1;
     pCT->GetConstantDesc(h, &cd, &count);
@@ -4066,7 +4075,8 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // Clean up input mixing shader
   SafeRelease(m_lpPS_InputMix);
 
-  for (size_t i = 0; i < m_textures.size(); i++)
+  size_t i;
+  for (i = 0; i < m_textures.size(); i++)
     if (m_textures[i].texptr) {
       // notify all CShaderParams classes that we're releasing a bindable texture!!
       size_t N = global_CShaderParams_master_list.size();
@@ -5309,7 +5319,8 @@ void CPlugin::MyRenderUI(
         UpdatePresetList(true); // make sure list is completely ready
 
         // quick checks
-        for (int mash = 0; mash < MASH_SLOTS; mash++) {
+        int mash;
+        for (mash = 0; mash < MASH_SLOTS; mash++) {
           // check validity
           if (m_nMashPreset[mash] < m_nDirs)
             m_nMashPreset[mash] = m_nDirs;
@@ -5411,7 +5422,8 @@ void CPlugin::MyRenderUI(
         };
 
 
-        for (int pass = 0; pass < 2; pass++) {
+        int pass;
+        for (pass = 0; pass < 2; pass++) {
           box = orig_rect;
           int w = 0;
           int h = 0;
@@ -8062,7 +8074,8 @@ void CPlugin::BuildMenus() {
   m_menuWave.Init(wasabiApiLangString(IDS_DRAWING_SIMPLE_WAVEFORM));
   m_menuAugment.Init(wasabiApiLangString(IDS_DRAWING_BORDERS_MOTION_VECTORS));
   m_menuPost.Init(wasabiApiLangString(IDS_POST_PROCESSING_MISC));
-  for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+  int i;
+  for (i = 0; i < MAX_CUSTOM_WAVES; i++) {
     swprintf(buf, wasabiApiLangString(IDS_CUSTOM_WAVE_X), i + 1);
     m_menuWavecode[i].Init(buf);
   }
@@ -11964,7 +11977,8 @@ void CPlugin::DoCustomSoundAnalysis() {
 
   // sum spectrum up into 3 bands
   //DeepSeek - Updated Beat Detection Splitting Algorithm
-  for (int i = 0; i < 3; i++) {
+  int i;
+  for (i = 0; i < 3; i++) {
     // Calculate which FFT bins correspond to our frequency ranges
     int start_bin, end_bin;
 

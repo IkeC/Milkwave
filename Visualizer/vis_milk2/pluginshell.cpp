@@ -595,7 +595,8 @@ void CPluginShell::CleanUpVJStuff() {
 
 int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
   // Create D3DX system font:
-  for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
+  int i;
+  for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     int fSize = m_fontinfo[i].nSize;
     if (!IsSpoutActiveAndFixed()) {
       fSize = (int)(fSize * m_fRenderQuality);
@@ -976,7 +977,8 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   }
 
   // PROTECTED STRUCTURES/POINTERS
-  for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
+  int i;
+  for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
     m_d3dx_font[i] = NULL;
   m_d3dx_desktop_font = NULL;
   m_lpDDSText = NULL;
@@ -1766,7 +1768,8 @@ void CPluginShell::AnalyzeNewSound(unsigned char* pWaveL, unsigned char* pWaveR)
   float octaves_per_band = net_octaves / 3.0f;                    // 1.9282116151858401925971388407864
   float mult = powf(2.0f, octaves_per_band); // each band's highest freq. divided by its lowest freq.; 3.805831305510122517035102576162
   // [to verify: min_freq * mult * mult * mult should equal max_freq.]
-  for (int ch = 0; ch < 2; ch++) {
+  int ch;
+  for (ch = 0; ch < 2; ch++) {
     for (i = 0; i < 3; i++) {
       // old guesswork code for this:
       //   float exp = 2.1f;
@@ -2511,7 +2514,8 @@ void CPluginShell::AlignWaves() {
   if (octaves > MAX_OCTAVES)
     octaves = MAX_OCTAVES;
 
-  for (int ch = 0; ch < 2; ch++) {
+  int ch;
+  for (ch = 0; ch < 2; ch++) {
     // only worry about matching the lower 'nSamples' samples
     float temp_new[MAX_OCTAVES][576];
     float temp_old[MAX_OCTAVES][576];
@@ -2527,10 +2531,12 @@ void CPluginShell::AlignWaves() {
     space[0] = 576 - nSamples;
 
     // potential optimization: could reuse (instead of recompute) mip levels for m_oldwave[2][]?
-    for (int octave = 1; octave < octaves; octave++) {
+    int octave;
+    for (octave = 1; octave < octaves; octave++) {
       spls[octave] = spls[octave - 1] / 2;
       space[octave] = space[octave - 1] / 2;
-      for (int n = 0; n < spls[octave]; n++) {
+      int n;
+      for (n = 0; n < spls[octave]; n++) {
         temp_new[octave][n] = 0.5f * (temp_new[octave - 1][n * 2] + temp_new[octave - 1][n * 2 + 1]);
         temp_old[octave][n] = 0.5f * (temp_old[octave - 1][n * 2] + temp_old[octave - 1][n * 2 + 1]);
       }
@@ -2540,7 +2546,8 @@ void CPluginShell::AlignWaves() {
       m_align_weights_ready = 1;
       for (octave = 0; octave < octaves; octave++) {
         int compare_samples = spls[octave] - space[octave];
-        for (int n = 0; n < compare_samples; n++) {
+          int n;
+          for (n = 0; n < compare_samples; n++) {
           // start with pyramid-shaped pdf, from 0..1..0
           if (n < compare_samples / 2)
             temp_weight[octave][n] = n * 2 / (float)compare_samples;
