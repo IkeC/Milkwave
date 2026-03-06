@@ -5730,9 +5730,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     minY = centerY - halfHeight * 0.8f * m_supertexts[supertextIndex].fBoxTop;
     maxY = centerY + halfHeight * 0.8f * m_supertexts[supertextIndex].fBoxBottom;
 
-    int boxColR = std::clamp(m_supertexts[supertextIndex].fBoxColR, 0, 255);
-    int boxColG = std::clamp(m_supertexts[supertextIndex].fBoxColG, 0, 255);
-    int boxColB = std::clamp(m_supertexts[supertextIndex].fBoxColB, 0, 255);
+    int boxColR = static_cast<int>(std::clamp(m_supertexts[supertextIndex].fBoxColR, 0.0f, 255.0f));
+    int boxColG = static_cast<int>(std::clamp(m_supertexts[supertextIndex].fBoxColG, 0.0f, 255.0f));
+    int boxColB = static_cast<int>(std::clamp(m_supertexts[supertextIndex].fBoxColB, 0.0f, 255.0f));
 
     D3DCOLOR boxCol = D3DCOLOR_ARGB(boxAlpha, boxColR, boxColG, boxColB);
 

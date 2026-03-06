@@ -2725,9 +2725,9 @@ int CPlugin::AllocateMyDX9Stuff() {
       }
 
       // try to set the current preset index
-      for (int i = 0; i < m_presets.size(); i++) {
+      for (size_t i = 0; i < m_presets.size(); i++) {
         if (wcscmp(m_presets[i].szFilename.c_str(), sFilename.c_str()) == 0) {
-          m_nCurrentPreset = i;
+          m_nCurrentPreset = (int)i;
           break;
         }
       }
@@ -3207,7 +3207,7 @@ bool PickRandomTexture(const wchar_t* prefix, wchar_t* szRetTextureFilename)  //
         continue;
 
       for (int i = 0; i < sizeof(texture_exts) / sizeof(texture_exts[0]); i++)
-        if (!wcsicmp(texture_exts[i].c_str(), ext + 1)) {
+        if (!_wcsicmp(texture_exts[i].c_str(), ext + 1)) {
           // valid texture found - add it to the list.  ("heart.jpg", for example)
           texfiles.push_back(ffd.cFileName);
           continue;
@@ -5831,7 +5831,7 @@ void CPlugin::SetOpacity(HWND hwnd) {
     printf("Failed to reapply window opacity. Error: %lu\n", error);
   }
 
-  int display = std::ceil(100 * fOpacity);
+  int display = static_cast<int>(std::ceil(100 * fOpacity));
   wchar_t buf[1024];
   swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
   g_plugin.AddNotification(buf);
@@ -5923,8 +5923,8 @@ void LoadPresetFilesViaDragAndDrop(WPARAM wParam) {
   if (GetFilename.substr(GetFilename.find_last_of(".") + 1) == "milk") //from https://stackoverflow.com/a/51999
     g_plugin.LoadPreset(convertedFileName, 0.0f);
   else {
-    wchar_t buf[1024], tmp[128];
-    swprintf(buf, L"Error: Failed to load dropped preset file: %s", convertedFileName, tmp, 128);
+    wchar_t buf[1024];
+    swprintf(buf, 1024, L"Error: Failed to load dropped preset file: %s", convertedFileName);
     g_plugin.AddError(buf, 5.0f, ERR_NOTIFY, true);
   }
   DragFinish(hDrop);
@@ -7895,13 +7895,13 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   case '~':
     m_bPresetLockedByUser = !m_bPresetLockedByUser;
     if (m_bPresetLockedByUser) {
-      wchar_t buf[1024], tmp[64];
-      swprintf(buf, L"Preset locked", tmp, 64);
+      wchar_t buf[1024];
+      swprintf(buf, 1024, L"Preset locked");
       AddNotification(buf);
     }
     else {
-      wchar_t buf[1024], tmp[64];
-      swprintf(buf, L"Preset unlocked", tmp, 64);
+      wchar_t buf[1024];
+      swprintf(buf, 1024, L"Preset unlocked");
       AddNotification(buf);
     }
     SendSettingsInfoToMilkwaveRemote();
@@ -9955,7 +9955,7 @@ retry:
     else {
       // skip normal files not ending in ".milk"
       int len = lstrlenW(fd.cFileName);
-      if (len < 5 || wcsicmp(fd.cFileName + len - 5, L".milk") != 0)
+      if (len < 5 || _wcsicmp(fd.cFileName + len - 5, L".milk") != 0)
         bSkip = true;
 
       // if it is .milk, make sure we know how to run its pixel shaders -
@@ -11095,7 +11095,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
 
     if (params.find(L"easefactor") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].fEaseFactor = std::stoi(params[L"easefactor"]);
+      m_supertexts[nextFreeSupertextIndex].fEaseFactor = std::stof(params[L"easefactor"]);
     }
 
     if (params.find(L"shadowoffset") != params.end()) {
@@ -11186,7 +11186,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       try {
         milkwave_amp_left = std::stof(params[L"l"]);
         milkwave_amp_right = std::stof(params[L"r"]);
-      } catch (const std::exception& e) {
+      } catch (const std::exception&) {
         // Handle the error if the conversion fails
         milkwave_amp_left = 1.0f; // Default value
         milkwave_amp_right = 1.0f; // Default value
@@ -11228,9 +11228,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
 
     // try to set the current preset index
-    for (int i = 0; i < m_presets.size(); i++) {
+    for (size_t i = 0; i < m_presets.size(); i++) {
       if (wcscmp(m_presets[i].szFilename.c_str(), sFilename.c_str()) == 0) {
-        m_nCurrentPreset = i;
+        m_nCurrentPreset = (int)i;
         break;
       }
     }
@@ -11306,7 +11306,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     SetOpacity(GetPluginWindow());
   }
   else if (wcsncmp(sMessage, L"STATE", 5) == 0) {
-    int display = std::ceil(100 * fOpacity);
+    int display = static_cast<int>(std::ceil(100 * fOpacity));
     wchar_t buf[1024];
     swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
@@ -11440,8 +11440,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     if (pos != std::wstring::npos) {
       std::wstring width = message.substr(0, pos);
       std::wstring height = message.substr(pos + 1);
-      nSpoutFixedWidth = std::stof(width);
-      nSpoutFixedHeight = std::stof(height);
+      nSpoutFixedWidth = std::stoi(width);
+      nSpoutFixedHeight = std::stoi(height);
       SetSpoutFixedSize(false, true);
     }
   }
@@ -11632,19 +11632,19 @@ void CPlugin::SetWaveParamsFromMessage(std::wstring& message) {
   }
   if (params.find(L"COLORR") != params.end()) {
     int colR = std::stoi(params[L"COLORR"]);
-    double colRDbl = colR / 255.0;
+    float colRDbl = colR / 255.0f;
     g_plugin.m_pState->m_fWaveR = colRDbl;
     g_plugin.m_pState->m_fMvR = colRDbl;
   }
   if (params.find(L"COLORG") != params.end()) {
     int colG = std::stoi(params[L"COLORG"]);
-    double colGDbl = colG / 255.0;
+    float colGDbl = colG / 255.0f;
     g_plugin.m_pState->m_fWaveG = colGDbl;
     g_plugin.m_pState->m_fMvG = colGDbl;
   }
   if (params.find(L"COLORB") != params.end()) {
     int colB = std::stoi(params[L"COLORB"]);
-    double colBDbl = colB / 255.0;
+    float colBDbl = colB / 255.0f;
     g_plugin.m_pState->m_fWaveB = colBDbl;
     g_plugin.m_pState->m_fMvB = colBDbl;
   }
@@ -11999,7 +11999,7 @@ void CPlugin::DoCustomSoundAnalysis() {
     }
   }
 
-  int recentBufferSize = GetFps();
+  int recentBufferSize = static_cast<int>(GetFps());
 
   // do temporal blending to create attenuated and super-attenuated versions
   for (i = 0; i < 3; i++) {
@@ -12037,11 +12037,11 @@ void CPlugin::DoCustomSoundAnalysis() {
 
     // smooth
     mysound.recent[i].push_back(mysound.imm_rel[i]);
-    if (mysound.recent[i].size() > recentBufferSize) {
+    if (mysound.recent[i].size() > static_cast<size_t>(recentBufferSize)) {
       mysound.recent[i].erase(mysound.recent[i].begin());
     }
     mysound.smooth[i] = 0;
-    int k = 0;
+    size_t k = 0;
     for (; k < mysound.recent[i].size(); k++) {
       mysound.smooth[i] += mysound.recent[i][k];
     }

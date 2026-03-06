@@ -140,7 +140,7 @@ typedef struct {
 }
 td_custom_msg;
 
-typedef struct {
+typedef struct td_supertext {
   float	fStartTime = -1.0f; // off state
   int 	bRedrawSuperText;	// true if it needs redraw
   int 	bIsSongTitle;		// false for custom message, true for song title
@@ -168,9 +168,9 @@ typedef struct {
   float fShadowOffset = 2.0f;
   float fBurnTime; // seconds
   float fBoxAlpha = 0.0f; // 0 = transparent, 255 = opaque
-  int fBoxColR = 0;
-  int fBoxColG = 0;
-  int fBoxColB = 0;
+  float fBoxColR = 0.0f;
+  float fBoxColG = 0.0f;
+  float fBoxColB = 0.0f;
   float fBoxLeft = 1.0f;
   float fBoxRight = 1.0f;
   float fBoxTop = 1.0f;
