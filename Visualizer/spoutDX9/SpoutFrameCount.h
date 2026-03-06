@@ -37,7 +37,12 @@
 #include "SpoutCommon.h"
 #include "SpoutSharedMemory.h"
 
+// Suppress C4005 warnings from DirectX SDK header conflicts with Windows SDK
+#pragma warning(push)
+#pragma warning(disable: 4005)
 #include <d3d11.h>
+#pragma warning(pop)
+
 #pragma comment (lib, "d3d11.lib") // for keyed mutex texture access
 #pragma comment (lib, "Winmm.lib") // for timer resolution functions 
 
