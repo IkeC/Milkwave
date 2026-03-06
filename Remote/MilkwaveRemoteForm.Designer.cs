@@ -5225,8 +5225,6 @@ namespace MilkwaveRemote
     private ToolStripStatusLabel statusBar;
     private ToolTip toolTip1;
     private ColorDialog colorDialogMessage;
-    private ToolStripStatusLabel statusHelp;
-    private ToolStripStatusLabel statusSupporters;
     private SplitContainer splitContainer1;
     private CheckBox chkPreview;
     private Button btnAppendSize;
@@ -5247,7 +5245,6 @@ namespace MilkwaveRemote
     private Label label7;
     private Label lblFromFile;
     private CheckBox chkAutoplay;
-    private TextBox txtAutoplay;
     private Button btnSaveParam;
     private Label lblParameters;
     private ComboBox cboParameters;
@@ -5288,7 +5285,6 @@ namespace MilkwaveRemote
     private ToolStripMenuItem toolStripMenuItemButtonPanel;
     private ToolStripMenuItem toolStripMenuItemSpriteButtonImages;
     private ToolStripMenuItem toolStripMenuItemColorButtonImages;
-    private ToolStripMenuItem toolStripMenuItemVisualizerPanel;
     private ToolStripSeparator toolStripSeparator2;
     private ToolStripMenuItem toolStripMenuItemTabsPanel;
     private Label lblPreset;
@@ -5440,7 +5436,6 @@ namespace MilkwaveRemote
     private NumericUpDown numPSVersion;
     private NumericUpDown numOffset;
     private CheckBox chkShaderFile;
-    private Button btnShaderError;
     private PictureBox picShaderError;
     private CheckBox chkShaderLeft;
     private Button btnHLSLLoad;
@@ -5552,7 +5547,6 @@ namespace MilkwaveRemote
     private Label lblChangePreset;
     private CheckBox chkPresetLocked;
     private TabPage tabInput;
-    private Button btnVideoInputSet;
     private ComboBox cboVideoInput;
     private Label label10;
     private CheckBox chkVideoMix;

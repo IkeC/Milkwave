@@ -2242,10 +2242,8 @@ namespace MilkwaveRemote {
         }
         toolTip1.SetToolTip(cboAutoplay, cboAutoplay.Text);
       } else {
-        if (txtAutoplay != null) {
-          txtAutoplay.Text = "No messages in " + fileName;
-          chkAutoplay.Enabled = false;
-        }
+        cboAutoplay.Text = "No messages in " + fileName;
+        chkAutoplay.Enabled = false;
       }
     }
 

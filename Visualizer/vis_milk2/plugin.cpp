@@ -5762,10 +5762,6 @@ void ToggleTransparency(HWND hwnd) {
   int width = rect.right - rect.left;
   int height = rect.bottom - rect.top;
 
-  //Checks if DWM (Aero) is enabled or disabled
-  BOOL dwmEnabled = FALSE;
-  DwmIsCompositionEnabled(&dwmEnabled);
-
   LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 
   // Enable the layered window attribute without affecting other styles
@@ -5774,17 +5770,17 @@ void ToggleTransparency(HWND hwnd) {
 
   SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED); // Redraws the window to fix the transparency mode issue for Windows 7, 8 and 8.1.
   if (TranspaMode) {
-    if (dwmEnabled)
-      DwmEnableComposition(DWM_EC_DISABLECOMPOSITION); //Disable Aero Composition
-    //SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
+    // Disable window transition animations while in transparent/color-key mode
+    BOOL fDisable = TRUE;
+    DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &fDisable, sizeof(fDisable));
     SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
     g_plugin.fOpacity = 1.0f;
     DragAcceptFiles(hwnd, TRUE);
   }
   else {
-    if (!dwmEnabled)
-      DwmEnableComposition(DWM_EC_ENABLECOMPOSITION); //Reenable Aero Composition
-    //SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
+    // Re-enable window transition animations when leaving transparent mode
+    BOOL fDisable = FALSE;
+    DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &fDisable, sizeof(fDisable));
     SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_ALPHA);
     DragAcceptFiles(hwnd, TRUE);
   }
