@@ -3985,7 +3985,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
     if (hr != D3D_OK && bLoadedFromCache) {
       // stale or incompatible cache file - recompile and retry once
       SafeRelease(pShaderByteCode);
-      SafeRelease(*ppConstTable);
+      if (*ppConstTable) { (*ppConstTable)->Release(); *ppConstTable = NULL; }
       *ppShader = nullptr;
       HRESULT compileResult = D3DXCompileShader(szShaderText, len, NULL, NULL, szFn, szProfile,
         m_dwShaderFlags, &pShaderByteCode, &m_pShaderCompileErrors, ppConstTable);
