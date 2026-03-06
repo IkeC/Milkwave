@@ -205,8 +205,9 @@ sampler2D sampler_fft;
 
 // Get FFT magnitude at normalized position [0..1] in the spectrum
 // 0.0 = lowest frequency (DC), 1.0 = highest frequency (~22kHz)
+// Texture stores linear magnitude; sqrt applied here for perceptual scaling.
 float get_fft(float pos) {
-    return tex2D(sampler_fft, float2(saturate(pos), 0.25)).x;
+    return sqrt(tex2D(sampler_fft, float2(saturate(pos), 0.25)).x);
 }
 
 // Get FFT magnitude at a specific frequency in Hz
@@ -216,7 +217,7 @@ float get_fft_hz(float freq) {
 
 // Get peak-hold FFT magnitude at normalized position [0..1]
 float get_fft_peak(float pos) {
-    return tex2D(sampler_fft, float2(saturate(pos), 0.75)).x;
+    return sqrt(tex2D(sampler_fft, float2(saturate(pos), 0.75)).x);
 }
 
 // Get peak-hold FFT magnitude at a specific frequency in Hz

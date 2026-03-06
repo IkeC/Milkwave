@@ -596,6 +596,7 @@ SPOUT :
 */
 
 #include "plugin.h"
+#include "../audio/audiobuf.h"
 #include "utility.h"
 #include "support.h"
 #include "resource.h"
@@ -1208,7 +1209,7 @@ void CPlugin::MyPreInitialize() {
   //m_nRatingReadProgress = -1;
 
   myfft.Init(576, MY_FFT_SAMPLES, -1);
-  m_fftShader.Init(576, MY_FFT_SAMPLES, 0);  // no equalization for clean get_fft() output
+  m_fftShader.Init(576, MY_FFT_SAMPLES, 0, 3.0f);  // Hann³ window for minimal sidelobes, no equalization
   memset(&mysound, 0, sizeof(mysound));
 
   int i;
@@ -11412,6 +11413,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"FFT_ATTACK=", 11) == 0) {
     std::wstring message(sMessage + 11);
     g_plugin.m_fFFTAttackGlobal = max(0.0f, min(1.0f, std::stof(message)));
+    if (g_plugin.m_pState)
+      g_plugin.m_pState->m_fFFTAttack = g_plugin.m_fFFTAttackGlobal;
     wchar_t buf[64];
     swprintf(buf, 64, L"FFT Attack: %.2f", g_plugin.m_fFFTAttackGlobal);
     g_plugin.AddError(buf, 2.0f, ERR_NOTIFY, false);
@@ -11419,6 +11422,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   else if (wcsncmp(sMessage, L"FFT_DECAY=", 10) == 0) {
     std::wstring message(sMessage + 10);
     g_plugin.m_fFFTDecayGlobal = max(0.0f, min(1.0f, std::stof(message)));
+    if (g_plugin.m_pState)
+      g_plugin.m_pState->m_fFFTDecay = g_plugin.m_fFFTDecayGlobal;
     wchar_t buf[64];
     swprintf(buf, 64, L"FFT Decay: %.2f", g_plugin.m_fFFTDecayGlobal);
     g_plugin.AddError(buf, 2.0f, ERR_NOTIFY, false);
@@ -11933,10 +11938,7 @@ void CPlugin::DoCustomSoundAnalysis() {
   // do our own [UN-NORMALIZED] fft
   float fWaveLeft[576];
   float fWaveRight[576];
-  for (int i = 0; i < 576; i++) {
-    fWaveLeft[i] = m_sound.fWaveform[0][i]; //left channel
-    fWaveRight[i] = m_sound.fWaveform[1][i]; //right channel
-  }
+  GetAudioBufFloat(fWaveLeft, fWaveRight, 576);
 
   memset(mysound.fSpecLeft, 0, sizeof(float) * MY_FFT_SAMPLES);
   memset(mysound.fSpecRight, 0, sizeof(float) * MY_FFT_SAMPLES);
@@ -11955,14 +11957,17 @@ void CPlugin::DoCustomSoundAnalysis() {
 
   // Apply FFT smoothing and upload to GPU texture
   {
-    float attack = m_fFFTAttackGlobal;
-    float decay  = m_fFFTDecayGlobal;
+    float attack = m_pState ? m_pState->m_fFFTAttack : m_fFFTAttackGlobal;
+    float decay  = m_pState ? m_pState->m_fFFTDecay : m_fFFTDecayGlobal;
+    const float kNoiseGate = 5e-5f;
+    const float kVisibleFloor = 2.5e-4f;
     for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
       float mono = (fShaderSpecLeft[fi] + fShaderSpecRight[fi]) * 0.5f;
-      // Normalize: apply sqrt compression and scale so values land near [0..1]
-      // Raw FFT magnitudes are proportional to FFT size; 0.017f empirically tuned
-      // to match MilkDrop3's get_fft() range at typical listening volumes.
-      mono = sqrtf(mono) * 0.017f;
+      // Store linear magnitude in texture; sqrt() is applied in the shader.
+      // This preserves dynamic range so FFT sidelobes stay proportionally small.
+      mono = mono * 0.00035f;
+      // Noise gate: zero out values below threshold to suppress window sidelobes.
+      if (mono < kNoiseGate) mono = 0.0f;
       // Attenuate low-frequency bins to reduce bass over-accentuation.
       // Bins below ~215 Hz (bin ~5) are progressively reduced.
       // The curve ramps from 0.15 at bin 0 to 1.0 at bin 5.
@@ -11977,6 +11982,8 @@ void CPlugin::DoCustomSoundAnalysis() {
         float decayFactor = (1.0f - decay) * (1.0f - decay);
         m_fFFTSmoothed[fi] += (mono - m_fFFTSmoothed[fi]) * decayFactor;
       }
+      if (m_fFFTSmoothed[fi] < kVisibleFloor)
+        m_fFFTSmoothed[fi] = 0.0f;
     }
     // Update peak hold: hold for ~0.5 seconds then decay
     for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
@@ -11986,8 +11993,8 @@ void CPlugin::DoCustomSoundAnalysis() {
       } else if (m_nFFTPeakHold[fi] > 0) {
         m_nFFTPeakHold[fi]--;
       } else {
-        m_fFFTPeak[fi] -= 0.012f;
-        if (m_fFFTPeak[fi] < 0.0f) m_fFFTPeak[fi] = 0.0f;
+        m_fFFTPeak[fi] *= 0.97f;
+        if (m_fFFTPeak[fi] < kVisibleFloor) m_fFFTPeak[fi] = 0.0f;
       }
     }
     if (m_lpFFTTexture) {
