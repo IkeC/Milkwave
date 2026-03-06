@@ -198,19 +198,30 @@ sampler2D sampler_blur1;
 sampler2D sampler_blur2;
 sampler2D sampler_blur3;
 
-// FFT audio spectrum texture (512x1, R32F, updated each frame)
+// FFT audio spectrum texture (512x2, R32F: row0=smoothed, row1=peak hold)
 sampler2D sampler_fft;
-#define texsize_fft float4(512.0, 1.0, 1.0/512.0, 1.0)
+#define texsize_fft float4(512.0, 2.0, 1.0/512.0, 0.5)
+#define HAS_FFT_PEAK 1
 
 // Get FFT magnitude at normalized position [0..1] in the spectrum
 // 0.0 = lowest frequency (DC), 1.0 = highest frequency (~22kHz)
 float get_fft(float pos) {
-    return tex2D(sampler_fft, float2(saturate(pos), 0.5)).x;
+    return tex2D(sampler_fft, float2(saturate(pos), 0.25)).x;
 }
 
 // Get FFT magnitude at a specific frequency in Hz
 float get_fft_hz(float freq) {
     return get_fft(freq / 22050.0);
+}
+
+// Get peak-hold FFT magnitude at normalized position [0..1]
+float get_fft_peak(float pos) {
+    return tex2D(sampler_fft, float2(saturate(pos), 0.75)).x;
+}
+
+// Get peak-hold FFT magnitude at a specific frequency in Hz
+float get_fft_peak_hz(float freq) {
+    return get_fft_peak(freq / 22050.0);
 }
 
 float3 shiftHSV(float3 c)

@@ -561,6 +561,7 @@ public:
 #define WM_USER_SET_INPUTMIX_TINT WM_USER + 153
 
   FFT            myfft;
+  FFT            m_fftShader;  // separate FFT for get_fft() shader texture - no equalization
   td_mysounddata mysound;
 
   // stuff for displaying text to user:
@@ -631,8 +632,10 @@ public:
 
   // DIRECTX 9:
   IDirect3DTexture9* m_lpVS[2];
-  IDirect3DTexture9* m_lpFFTTexture = nullptr;  // 512x1 R32F FFT spectrum texture
+  IDirect3DTexture9* m_lpFFTTexture = nullptr;  // 512x2 R32F FFT spectrum texture (row0=smoothed, row1=peak hold)
   float m_fFFTSmoothed[MY_FFT_SAMPLES] = {};    // smoothed mono FFT buffer
+  float m_fFFTPeak[MY_FFT_SAMPLES] = {};         // peak hold values
+  int   m_nFFTPeakHold[MY_FFT_SAMPLES] = {};    // frames remaining at current peak
 #define NUM_BLUR_TEX 6
 #if (NUM_BLUR_TEX>0)
   IDirect3DTexture9* m_lpBlur[NUM_BLUR_TEX]; // each is successively 1/2 size of prev.

@@ -1208,6 +1208,7 @@ void CPlugin::MyPreInitialize() {
   //m_nRatingReadProgress = -1;
 
   myfft.Init(576, MY_FFT_SAMPLES, -1);
+  m_fftShader.Init(576, MY_FFT_SAMPLES, 0);  // no equalization for clean get_fft() output
   memset(&mysound, 0, sizeof(mysound));
 
   int i;
@@ -2352,8 +2353,8 @@ int CPlugin::AllocateMyDX9Stuff() {
   // Use the stored video capture dimensions, not the canvas size
   GetDevice()->CreateTexture(m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
   
-  // Create FFT spectrum texture (512x1, R32F, updated each frame)
-  if (GetDevice()->CreateTexture(MY_FFT_SAMPLES, 1, 1, D3DUSAGE_DYNAMIC, D3DFMT_R32F, D3DPOOL_DEFAULT, &m_lpFFTTexture, NULL) == D3D_OK)
+  // Create FFT spectrum texture (512x2, R32F: row0=smoothed, row1=peak hold)
+  if (GetDevice()->CreateTexture(MY_FFT_SAMPLES, 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_R32F, D3DPOOL_DEFAULT, &m_lpFFTTexture, NULL) == D3D_OK)
     milkwave->LogInfo(L"FFT texture created successfully");
   else
     milkwave->LogInfo(L"Failed to create FFT texture (D3DFMT_R32F not supported?)");
@@ -11944,23 +11945,60 @@ void CPlugin::DoCustomSoundAnalysis() {
   myfft.time_to_frequency_domain(fWaveRight, mysound.fSpecRight);
   //for (i=0; i<MY_FFT_SAMPLES; i++) fSpecLeft[i] = sqrtf(fSpecLeft[i]*fSpecLeft[i] + fSpecTemp[i]*fSpecTemp[i]);
 
-  // Apply FFT smoothing and upload to GPU texture for get_fft()/get_fft_hz() shader functions
+  // Compute clean (un-equalized) FFT for get_fft()/get_fft_hz() shader functions
+  float fShaderSpecLeft[MY_FFT_SAMPLES];
+  float fShaderSpecRight[MY_FFT_SAMPLES];
+  memset(fShaderSpecLeft, 0, sizeof(float) * MY_FFT_SAMPLES);
+  memset(fShaderSpecRight, 0, sizeof(float) * MY_FFT_SAMPLES);
+  m_fftShader.time_to_frequency_domain(fWaveLeft, fShaderSpecLeft);
+  m_fftShader.time_to_frequency_domain(fWaveRight, fShaderSpecRight);
+
+  // Apply FFT smoothing and upload to GPU texture
   {
     float attack = m_fFFTAttackGlobal;
     float decay  = m_fFFTDecayGlobal;
     for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
-      float mono = (mysound.fSpecLeft[fi] + mysound.fSpecRight[fi]) * 0.5f;
+      float mono = (fShaderSpecLeft[fi] + fShaderSpecRight[fi]) * 0.5f;
+      // Normalize: apply sqrt compression and scale so values land near [0..1]
+      // Raw FFT magnitudes are proportional to FFT size; 0.017f empirically tuned
+      // to match MilkDrop3's get_fft() range at typical listening volumes.
+      mono = sqrtf(mono) * 0.017f;
+      // Attenuate low-frequency bins to reduce bass over-accentuation.
+      // Bins below ~215 Hz (bin ~5) are progressively reduced.
+      // The curve ramps from 0.15 at bin 0 to 1.0 at bin 5.
+      if (fi < 5) {
+        float t = fi / 5.0f;
+        float lowcut = 0.15f + 0.85f * t;
+        mono *= lowcut;
+      }
       if (mono > m_fFFTSmoothed[fi])
         m_fFFTSmoothed[fi] += (mono - m_fFFTSmoothed[fi]) * attack;
-      else
-        m_fFFTSmoothed[fi] += (mono - m_fFFTSmoothed[fi]) * (1.0f - decay);
+      else {
+        float decayFactor = (1.0f - decay) * (1.0f - decay);
+        m_fFFTSmoothed[fi] += (mono - m_fFFTSmoothed[fi]) * decayFactor;
+      }
+    }
+    // Update peak hold: hold for ~0.5 seconds then decay
+    for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
+      if (m_fFFTSmoothed[fi] >= m_fFFTPeak[fi]) {
+        m_fFFTPeak[fi] = m_fFFTSmoothed[fi];
+        m_nFFTPeakHold[fi] = 30;
+      } else if (m_nFFTPeakHold[fi] > 0) {
+        m_nFFTPeakHold[fi]--;
+      } else {
+        m_fFFTPeak[fi] -= 0.012f;
+        if (m_fFFTPeak[fi] < 0.0f) m_fFFTPeak[fi] = 0.0f;
+      }
     }
     if (m_lpFFTTexture) {
       D3DLOCKED_RECT r;
       if (D3D_OK == m_lpFFTTexture->LockRect(0, &r, NULL, D3DLOCK_DISCARD)) {
-        float* dest = (float*)r.pBits;
-        for (int fi = 0; fi < MY_FFT_SAMPLES; fi++)
-          dest[fi] = m_fFFTSmoothed[fi];
+        float* row0 = (float*)r.pBits;
+        float* row1 = (float*)((BYTE*)r.pBits + r.Pitch);
+        for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
+          row0[fi] = m_fFFTSmoothed[fi];
+          row1[fi] = m_fFFTPeak[fi];
+        }
         m_lpFFTTexture->UnlockRect(0);
       }
     }
