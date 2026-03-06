@@ -718,61 +718,102 @@ const unsigned char LC2UC[256] = {
  * Copies the given string TO the clipboard.
  */
 void copyStringToClipboardA(const char* source) {
-  int ok = OpenClipboard(NULL);
-  if (!ok)
+  if (!OpenClipboard(NULL))
     return;
 
-  HGLOBAL clipbuffer;
   EmptyClipboard();
-  clipbuffer = GlobalAlloc(GMEM_DDESHARE, (lstrlenA(source) + 1) * sizeof(char));
+  HGLOBAL clipbuffer = GlobalAlloc(GMEM_DDESHARE, (lstrlenA(source) + 1) * sizeof(char));
+  if (!clipbuffer) {
+    CloseClipboard();
+    return;
+  }
   char* buffer = (char*)GlobalLock(clipbuffer);
+  if (!buffer) {
+    GlobalFree(clipbuffer);
+    CloseClipboard();
+    return;
+  }
   lstrcpyA(buffer, source);
   GlobalUnlock(clipbuffer);
-  SetClipboardData(CF_TEXT, clipbuffer);
+  if (!SetClipboardData(CF_TEXT, clipbuffer))
+    GlobalFree(clipbuffer);
   CloseClipboard();
 }
 
 void copyStringToClipboardW(const wchar_t* source) {
-  int ok = OpenClipboard(NULL);
-  if (!ok)
+  if (!OpenClipboard(NULL))
     return;
 
-  HGLOBAL clipbuffer;
   EmptyClipboard();
-  clipbuffer = GlobalAlloc(GMEM_DDESHARE, (lstrlenW(source) + 1) * sizeof(wchar_t));
+  HGLOBAL clipbuffer = GlobalAlloc(GMEM_DDESHARE, (lstrlenW(source) + 1) * sizeof(wchar_t));
+  if (!clipbuffer) {
+    CloseClipboard();
+    return;
+  }
   wchar_t* buffer = (wchar_t*)GlobalLock(clipbuffer);
+  if (!buffer) {
+    GlobalFree(clipbuffer);
+    CloseClipboard();
+    return;
+  }
   lstrcpyW(buffer, source);
   GlobalUnlock(clipbuffer);
-  SetClipboardData(CF_UNICODETEXT, clipbuffer);
+  if (!SetClipboardData(CF_UNICODETEXT, clipbuffer))
+    GlobalFree(clipbuffer);
   CloseClipboard();
 }
 
 /*
  * Suppose there is a string on the clipboard.
  * This function copies it FROM there.
+ * Returns a static buffer with clipboard contents, or empty string on failure.
  */
 char* getStringFromClipboardA() {
-  int ok = OpenClipboard(NULL);
-  if (!ok)
-    return NULL;
+  static char s_emptyA[1] = { 0 };
+  static char s_clipA[64000];
+  s_clipA[0] = 0;
+
+  if (!OpenClipboard(NULL))
+    return s_emptyA;
 
   HANDLE hData = GetClipboardData(CF_TEXT);
+  if (!hData) {
+    CloseClipboard();
+    return s_emptyA;
+  }
   char* buffer = (char*)GlobalLock(hData);
+  if (!buffer) {
+    CloseClipboard();
+    return s_emptyA;
+  }
+  lstrcpynA(s_clipA, buffer, sizeof(s_clipA));
   GlobalUnlock(hData);
   CloseClipboard();
-  return buffer;
+  return s_clipA;
 }
 
 wchar_t* getStringFromClipboardW() {
-  int ok = OpenClipboard(NULL);
-  if (!ok)
-    return NULL;
+  static wchar_t s_emptyW[1] = { 0 };
+  static wchar_t s_clipW[64000];
+  s_clipW[0] = 0;
+
+  if (!OpenClipboard(NULL))
+    return s_emptyW;
 
   HANDLE hData = GetClipboardData(CF_UNICODETEXT);
+  if (!hData) {
+    CloseClipboard();
+    return s_emptyW;
+  }
   wchar_t* buffer = (wchar_t*)GlobalLock(hData);
+  if (!buffer) {
+    CloseClipboard();
+    return s_emptyW;
+  }
+  lstrcpynW(s_clipW, buffer, sizeof(s_clipW) / sizeof(wchar_t));
   GlobalUnlock(hData);
   CloseClipboard();
-  return buffer;
+  return s_clipW;
 }
 
 void ConvertCRsToLFCA(const char* src, char* dst) {
@@ -2352,13 +2393,16 @@ int CPlugin::AllocateMyDX9Stuff() {
     m_pVideoCaptureTexture = nullptr;
   }
   // Use the stored video capture dimensions, not the canvas size
-  GetDevice()->CreateTexture(m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
+  LPDIRECT3DDEVICE9EX pDev = GetDevice();
+  if (pDev) {
+    pDev->CreateTexture(m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
   
-  // Create FFT spectrum texture (512x2, R32F: row0=smoothed, row1=peak hold)
-  if (GetDevice()->CreateTexture(MY_FFT_SAMPLES, 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_R32F, D3DPOOL_DEFAULT, &m_lpFFTTexture, NULL) == D3D_OK)
-    milkwave->LogInfo(L"FFT texture created successfully");
-  else
-    milkwave->LogInfo(L"Failed to create FFT texture (D3DFMT_R32F not supported?)");
+    // Create FFT spectrum texture (512x2, R32F: row0=smoothed, row1=peak hold)
+    if (pDev->CreateTexture(MY_FFT_SAMPLES, 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_R32F, D3DPOOL_DEFAULT, &m_lpFFTTexture, NULL) == D3D_OK)
+      milkwave->LogInfo(L"FFT texture created successfully");
+    else
+      milkwave->LogInfo(L"Failed to create FFT texture (D3DFMT_R32F not supported?)");
+  }
 
   // Restart video capture if it was enabled
   if (m_bVideoInputEnabled && m_pVideoCapture && m_nVideoDeviceIndex >= 0) {
@@ -4157,27 +4201,27 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   m_texmgr.Finish();
 
   if (m_verts != NULL) {
-    delete m_verts;
+    delete[] m_verts;
     m_verts = NULL;
   }
 
   if (m_verts_temp != NULL) {
-    delete m_verts_temp;
+    delete[] m_verts_temp;
     m_verts_temp = NULL;
   }
 
   if (m_vertinfo != NULL) {
-    delete m_vertinfo;
+    delete[] m_vertinfo;
     m_vertinfo = NULL;
   }
 
   if (m_indices_list != NULL) {
-    delete m_indices_list;
+    delete[] m_indices_list;
     m_indices_list = NULL;
   }
 
   if (m_indices_strip != NULL) {
-    delete m_indices_strip;
+    delete[] m_indices_strip;
     m_indices_strip = NULL;
   }
 

@@ -327,6 +327,18 @@ void DeinitD3d() {
   }
 }
 
+// Safe D3D device Reset with error logging. Returns true on success.
+static bool SafeResetDevice() {
+  if (!pD3DDevice) return false;
+  HRESULT hr = pD3DDevice->Reset(&g_plugin.d3dPp);
+  if (SUCCEEDED(hr)) return true;
+  wchar_t buf[256];
+  swprintf_s(buf, L"D3D Reset failed: 0x%08X", hr);
+  milkwave.LogInfo(buf);
+  g_plugin.AddError(buf, 5.0f, ERR_NOTIFY, false);
+  return false;
+}
+
 //Multiple monitor stretch - Credit to @milkdropper for the code!
 void ToggleStretch(HWND hwnd) {
   if (!stretch) {
@@ -344,9 +356,7 @@ void ToggleStretch(HWND hwnd) {
     }
 
     g_plugin.SetVariableBackBuffer(width, height);
-    if (pD3DDevice) {
-        pD3DDevice->Reset(&g_plugin.d3dPp);
-    }
+    SafeResetDevice();
 
     SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
     SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
@@ -365,9 +375,7 @@ void ToggleStretch(HWND hwnd) {
     int height = lastRect.bottom - lastRect.top;
 
     g_plugin.SetVariableBackBuffer(width, height);
-    if (pD3DDevice) {
-        pD3DDevice->Reset(&g_plugin.d3dPp);
-    }
+    SafeResetDevice();
 
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     stretch = false;
@@ -567,42 +575,8 @@ static void ToggleFullScreen(HWND hwnd) {
     SetWindowPos(hwnd, HWND_TOPMOST, info.rcMonitor.left, info.rcMonitor.top, width, height, SWP_DRAWFRAME | SWP_FRAMECHANGED);
 
     g_plugin.SetVariableBackBuffer(width, height);
-    HRESULT hr = E_FAIL;
-    if (pD3DDevice) {
-        hr = pD3DDevice->Reset(&g_plugin.d3dPp);
-    }
-    if (FAILED(hr)) {
-      switch (hr) {
-      case D3DERR_DEVICELOST:
-        // Device is lost, cannot reset now. Retry later.
-        g_plugin.AddError(L"Direct3D device is lost, retry later", 5.0f, ERR_NOTIFY, false);
-        break;
-
-      case D3DERR_DEVICENOTRESET:
-        // Device is ready to be reset but failed. Consider releasing resources.
-        g_plugin.AddError(L"Direct3D device could not be reset, releasing resources", 5.0f, ERR_NOTIFY, false);
-        // Add code to release and recreate resources if necessary.
-        break;
-
-      case D3DERR_OUTOFVIDEOMEMORY:
-        // Out of video memory.
-        g_plugin.AddError(L"Out of video memory - Reduce resource usage", 5.0f, ERR_NOTIFY, false);
-        break;
-
-      case E_OUTOFMEMORY:
-        // General memory allocation failure.
-        g_plugin.AddError(L"Out of memory - Unable to reset device", 5.0f, ERR_NOTIFY, false);
-        break;
-
-      default:
-        // Unknown error.
-        wchar_t buf[256];
-        swprintf(buf, 256, L"Unknown error during Reset: 0x%08X", hr);
-        g_plugin.AddError(buf, 5.0f, ERR_NOTIFY, false);
-        break;
-      }
-
-      // Optional: Fallback to windowed mode or attempt recovery.
+    if (!SafeResetDevice()) {
+      // Fallback to windowed mode on Reset failure
       fullscreen = false;
       SetWindowLongW(hwnd, GWL_STYLE, lastWindowStyle);
       SetWindowLongW(hwnd, GWL_EXSTYLE, lastWindowStyleEx);
@@ -624,9 +598,7 @@ static void ToggleFullScreen(HWND hwnd) {
     int height = lastRect.bottom - lastRect.top;
 
     g_plugin.SetVariableBackBuffer(width, height);
-    if (pD3DDevice) {
-        pD3DDevice->Reset(&g_plugin.d3dPp);
-    }
+    SafeResetDevice();
 
     SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     fullscreen = false;
@@ -1868,14 +1840,15 @@ unsigned __stdcall DoSetup(void* param) {
 }
 
 void PrecompilePresetShaders(std::wstring& wLine, std::wofstream& compiledList, int& compiledShaders) {
-  wchar_t szFile[512];
+  wchar_t szFile[MAX_PATH * 2];
   // Treat anything without a drive letter as relative
   if (wLine.find(L":\\") == std::wstring::npos) {
-    lstrcpyW(szFile, g_plugin.m_szBaseDir);
-    lstrcatW(szFile, wLine.c_str());
+    lstrcpynW(szFile, g_plugin.m_szBaseDir, MAX_PATH * 2);
+    int dirLen = lstrlenW(szFile);
+    lstrcpynW(szFile + dirLen, wLine.c_str(), MAX_PATH * 2 - dirLen);
   }
   else {
-    lstrcpyW(szFile, wLine.c_str());
+    lstrcpynW(szFile, wLine.c_str(), MAX_PATH * 2);
   }
 
   // Compile the shader

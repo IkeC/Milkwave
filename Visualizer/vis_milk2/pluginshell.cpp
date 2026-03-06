@@ -2227,11 +2227,11 @@ LRESULT CPluginShell::PluginShellWindowProc(HWND hWnd, unsigned uMsg, WPARAM wPa
   case WM_DESTROY:
     // note: don't post quit message here if the window is being destroyed
     // and re-created on a switch between windowed & FAKE fullscreen modes.
-    if (!m_lpDX->TempIgnoreDestroyMessages()) {
+    if (!m_lpDX || !m_lpDX->TempIgnoreDestroyMessages()) {
       // this is a final exit, and not just destroy-then-recreate-the-window.
       // so, flag DXContext so it knows that someone else
       // will take care of destroying the window!
-      m_lpDX->OnTrulyExiting();
+      if (m_lpDX) m_lpDX->OnTrulyExiting();
       PostQuitMessage(0);
     }
     return FALSE;
