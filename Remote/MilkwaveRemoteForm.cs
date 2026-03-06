@@ -1013,7 +1013,7 @@ namespace MilkwaveRemote {
           Tags = loadedTags;
           SetTopTags();
         }
-      } catch (Exception ex) {
+      } catch (Exception) {
         Settings = new Settings();
         Tags = new Tags();
       }
@@ -1103,8 +1103,6 @@ namespace MilkwaveRemote {
     }
 
     private IntPtr StartVisualizerIfNotFound(bool onlyIfNotFound) {
-      bool doOpen = false;
-
       IntPtr result = FindVisualizerWindow();
       if (result == IntPtr.Zero || !onlyIfNotFound) {
         // Try to run the visualizer exe (configurable in settings-remote.json)
@@ -1264,7 +1262,7 @@ namespace MilkwaveRemote {
           }
         }
         numOffset.Value = lines + 8;
-      } catch (Exception ex) {
+      } catch (Exception) {
         // ignore
       }
 
@@ -1380,7 +1378,7 @@ namespace MilkwaveRemote {
                     } else if (key.Equals("VOLALPHA", StringComparison.OrdinalIgnoreCase)) {
                       chkWaveVolAlpha.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                     }
-                  } catch (Exception ex) {
+                  } catch (Exception) {
                     // ignore
                   }
                 }
@@ -1477,7 +1475,7 @@ namespace MilkwaveRemote {
                         numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
                       }
                     }
-                  } catch (Exception ex) {
+                  } catch (Exception) {
                     // ignore
                   }
                 }
@@ -2950,7 +2948,7 @@ namespace MilkwaveRemote {
       string settingsFile = Path.Combine(BaseDir, milkwaveSettingsFile);
       try {
         File.WriteAllText(settingsFile, jsonString);
-      } catch (UnauthorizedAccessException ex) {
+      } catch (UnauthorizedAccessException) {
         MessageBox.Show($"Unable to save settings to {settingsFile}." +
           Environment.NewLine + Environment.NewLine +
           "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
@@ -2973,7 +2971,7 @@ namespace MilkwaveRemote {
       try {
         File.WriteAllText(tagsFile, jsonString);
         SetStatusText($"Tags saved");
-      } catch (UnauthorizedAccessException ex) {
+      } catch (UnauthorizedAccessException) {
         MessageBox.Show($"Unable to save Tags to {tagsFile}." +
           Environment.NewLine + Environment.NewLine +
           "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
@@ -3112,7 +3110,7 @@ namespace MilkwaveRemote {
         txtMessage.ForeColor = fontColor;
 
         txtMessage.Refresh();
-      } catch (Exception e) {
+      } catch (Exception) {
         // ignore
       }
     }
@@ -3484,7 +3482,7 @@ namespace MilkwaveRemote {
           }
         }
         cboPresets.SelectedIndex = 0;
-      } catch (Exception e) {
+      } catch (Exception) {
         // ignore
       }
     }
@@ -4983,7 +4981,7 @@ namespace MilkwaveRemote {
         txtShaderHLSL.SelectionLength = GetNthIndex(txtShaderHLSL.Text, '\n', row) - txtShaderHLSL.SelectionStart;
         txtShaderHLSL.Focus();
         txtShaderHLSL.ScrollToCaret();
-      } catch (Exception ex) {
+      } catch (Exception) {
         // ignore
       }
     }
@@ -5439,7 +5437,7 @@ namespace MilkwaveRemote {
       string settingsFile = Path.Combine(BaseDir, milkwaveMidiFile);
       try {
         File.WriteAllText(settingsFile, jsonString);
-      } catch (UnauthorizedAccessException ex) {
+      } catch (UnauthorizedAccessException) {
         MessageBox.Show($"Unable to save settings to {settingsFile}." +
           Environment.NewLine + Environment.NewLine +
           "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",

@@ -154,6 +154,9 @@
 
 #include "..\audio\common.h"
 #include "milkwave.h"
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#define _SILENCE_LOCALE_EMPTY_DEPRECATION_WARNING
+#define _SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS
 #include <locale>
 #include <codecvt>
 #include "Milkdrop2PcmVisualizer.h"
@@ -2015,7 +2018,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
   // Set the current directory to the Release folder for debugging,
   // which is expected to be at the project root level.
   SetCurrentDirectoryW(L"../../Release");
-  wchar_t fullPath[MAX_PATH];
   GetCurrentDirectoryW(MAX_PATH, g_plugin.m_szBaseDir);
   // swprintf(cwd, sizeof(cwd) / sizeof(cwd[0]), L"WinMain: WorkingDir=%s\n", cwd);
   // Append backslash if not present

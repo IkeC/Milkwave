@@ -1,3 +1,4 @@
+#nullable disable
 using Microsoft.Win32;
 using System.ComponentModel;
 using System.Drawing.Drawing2D;

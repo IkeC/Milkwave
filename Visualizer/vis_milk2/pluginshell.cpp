@@ -212,7 +212,7 @@ int       CPluginShell::GetFrame() {
   return m_frame;
 };
 float     CPluginShell::GetTime() {
-  return m_time * m_timeFactor;
+  return (float)(m_time * m_timeFactor);
 };
 float     CPluginShell::GetFps() {
   return m_fps * m_fpsFactor;
@@ -242,6 +242,7 @@ int       CPluginShell::GetHeight() {
       return m_lpDX->m_client_height;
     }
   }
+  return 0;
 }
 
 int       CPluginShell::GetCanvasMarginX() {
@@ -270,7 +271,7 @@ int  CPluginShell::GetFontHeight(eFontIndex idx) {
       return (int)m_fontinfo[idx].nSize;
     }
     else {
-      return (int)m_fontinfo[idx].nSize * m_fRenderQuality;
+      return (int)(m_fontinfo[idx].nSize * m_fRenderQuality);
     }
   }
   else return 0;
@@ -597,7 +598,7 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
   for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     int fSize = m_fontinfo[i].nSize;
     if (!IsSpoutActiveAndFixed()) {
-      fSize *= m_fRenderQuality;
+      fSize = (int)(fSize * m_fRenderQuality);
     }
     if (D3DXCreateFontW(pDevice,  //m_font[i],
       fSize,
@@ -1459,7 +1460,7 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     float q = GetEffectiveRenderQuality(cx, cy);
     cx = (int)(cx * q);
     cy = (int)(cy * q);
-    textMargin *= q;
+    textMargin = (int)(textMargin * q);
   }
 
   int marginTop = textMargin + GetCanvasMarginY();
@@ -1970,7 +1971,7 @@ void CPluginShell::DrawDarkTranslucentBoxFullWindow() {
 }
 
 void CPluginShell::RenderBuiltInTextMsgs() {
-  int _show_press_f1_NOW = (m_show_press_f1_msg & m_time < PRESS_F1_DUR);
+  int _show_press_f1_NOW = (m_show_press_f1_msg & (m_time < PRESS_F1_DUR));
   {
     RECT r;
 
@@ -2019,7 +2020,7 @@ void CPluginShell::RenderBuiltInTextMsgs() {
       int dx;
       if (m_time < 0.75f) {
         // Phase 1: Exponential ease-in (0s to 0.75s)
-        float t = m_time / 0.75f;
+        float t = (float)m_time / 0.75f;
         dx = (int)(PRESS_F1_MAX_DX * (1 - log10f(1.0f + t * (PRESS_F1_LOG_BASE - 1.0f))) * 1.5); //Tweak
       }
       else if (m_time <= 4.25f) {
@@ -2028,8 +2029,8 @@ void CPluginShell::RenderBuiltInTextMsgs() {
       }
       else {
         // Phase 3: Exponential ease-out (4.25s to 5s)
-        float t = (m_time - 4.25f) / 0.75f;
-        dx = (int)(PRESS_F1_MAX_DX * powf(t, PRESS_F1_EXP / 1.5)); //Tweak
+        float t = ((float)m_time - 4.25f) / 0.75f;
+        dx = (int)(PRESS_F1_MAX_DX * powf(t, PRESS_F1_EXP / 1.5f)); //Tweak
       }
 
       SetRect(&r, m_left_edge, m_lower_right_corner_y - GetFontHeight(DECORATIVE_FONT), m_right_edge + dx, m_lower_right_corner_y);
@@ -2715,8 +2716,8 @@ bool CPluginShell::IsSpoutActiveAndFixed() {
 void CPluginShell::SetVariableBackBuffer(int width, int height) {
   if (IsSpoutActiveAndFixed() || width == 0 || height == 0) return;
   float q = GetEffectiveRenderQuality(width, height);
-  d3dPp.BackBufferWidth = (int)width * q;
-  d3dPp.BackBufferHeight = (int)height * q;
+  d3dPp.BackBufferWidth = (UINT)(width * q);
+  d3dPp.BackBufferHeight = (UINT)(height * q);
 }
 
 void CPluginShell::UpdateBackBufferTracking(int width, int height) {
@@ -2726,7 +2727,7 @@ void CPluginShell::UpdateBackBufferTracking(int width, int height) {
 }
 
 float CPluginShell::GetEffectiveRenderQuality(int width, int height) {
-  float q = clamp(m_fRenderQuality, 0.01, 1);
+  float q = clamp(m_fRenderQuality, 0.01f, 1.0f);
   if (bQualityAuto) {
     // adjust quality based on window/screen ratio
     // Use runtime GetProcAddress to avoid depending on an import thunk (xGetSystemMetrics)
@@ -2747,11 +2748,11 @@ float CPluginShell::GetEffectiveRenderQuality(int width, int height) {
       }
       m_screen_pixels = cxScreen * cyScreen;
     }
-    float avg_pixels = m_screen_pixels / 4;
+    float avg_pixels = (float)m_screen_pixels / 4;
     float window_pixels = (float)width * (float)height;
-    q = q * sqrt(avg_pixels / window_pixels);
+    q = q * sqrtf(avg_pixels / window_pixels);
   }
-  return clamp(q, 0.01, 1);
+  return clamp(q, 0.01f, 1.0f);
 }
 
 void CPluginShell::ResetBufferAndFonts() {

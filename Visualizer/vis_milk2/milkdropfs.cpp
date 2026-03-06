@@ -3443,7 +3443,7 @@ if (hr != D3D_OK)
       //color = D3DCOLOR_RGBA_01(cr, cg, cb, alpha);
 
       {
-        float ang = -0.75 + fWaveParam2 * 3.15;	// from -PI/2 to PI/2
+        float ang = -0.75f + fWaveParam2 * 3.15f;	// from -PI/2 to PI/2
         float dx = cosf(ang);
         float dy = sinf(ang);
 
@@ -3519,7 +3519,7 @@ if (hr != D3D_OK)
 
         ////////////////\\\\\\\\\\\\\\\\\\\\\
 
-        float ang3 = 0.75 + fWaveParam2 * 3.15;	// from -PI/2 to PI/2
+        float ang3 = 0.75f + fWaveParam2 * 3.15f;	// from -PI/2 to PI/2
         float dx3 = cosf(ang3);
         float dy3 = sinf(ang3);
 
@@ -3610,7 +3610,7 @@ if (hr != D3D_OK)
       //color = D3DCOLOR_RGBA_01(cr, cg, cb, alpha);
 
       {
-        float ang = 1.57;	// from -PI/2 to PI/2
+        float ang = 1.57f;	// from -PI/2 to PI/2
         float dx = cosf(ang);
         float dy = sinf(ang);
 
@@ -3678,7 +3678,7 @@ if (hr != D3D_OK)
 
 
         for (i = 0; i < nVerts; i++) {
-          v[i].x = edge_x[0] - 0.45 + dx * i + perp_dx * 0.35f * fL[i + sample_offset];
+          v[i].x = edge_x[0] - 0.45f + dx * i + perp_dx * 0.35f * fL[i + sample_offset];
           v[i].y = edge_y[0] + dy * i + perp_dy * 0.35f * fL[i + sample_offset];
           //v[i].Diffuse = color;
         }
@@ -3687,7 +3687,7 @@ if (hr != D3D_OK)
         ////////////////\\\\\\\\\\\\\\\\\\\\\
 
 
-        float ang3 = 1.57;	// from -PI/2 to PI/2
+        float ang3 = 1.57f;	// from -PI/2 to PI/2
         float dx3 = cosf(ang3);
         float dy3 = sinf(ang3);
 
@@ -3747,7 +3747,7 @@ if (hr != D3D_OK)
         float perp_dy3 = sinf(ang4 + 1.57f);
 
         for (i = 0; i < nVerts; i++) {
-          v[i + nVerts].x = edge_x3[0] + 0.45 + dx3 * i + perp_dx3 * (0.35f * fR[i + sample_offset]);
+          v[i + nVerts].x = edge_x3[0] + 0.45f + dx3 * i + perp_dx3 * (0.35f * fR[i + sample_offset]);
           v[i + nVerts].y = edge_y3[0] + dy3 * i + perp_dy3 * (0.35f * fR[i + sample_offset]);
           //v[i+nVerts].Diffuse = color;
         }
@@ -3879,12 +3879,12 @@ if (hr != D3D_OK)
           //v[i].x = rad * cosf(ang* 2) * m_fAspectY + fWavePosX;//
 
           if (m_bScreenDependentRenderMode) {
-            v[i].x = rad * cosf(ang * 3.1416f) / 1.5 + fWavePosX * cosf(3.1416f);
-            v[i].y = rad * sinf(ang - GetTime() / 3) / 1.5 + fWavePosY * cosf(3.1416f);
+            v[i].x = rad * cosf(ang * 3.1416f) / 1.5f + fWavePosX * cosf(3.1416f);
+            v[i].y = rad * sinf(ang - GetTime() / 3) / 1.5f + fWavePosY * cosf(3.1416f);
           }
           else {
-            v[i].x = rad * cosf(ang * 3.1416f) * m_fAspectY / 1.5 + fWavePosX * cosf(3.1416f);// 0.75 = adj. for aspect ratio
-            v[i].y = rad * sinf(ang - GetTime() / 3) * m_fAspectX / 1.5 + fWavePosY * cosf(3.1416f);
+            v[i].x = rad * cosf(ang * 3.1416f) * m_fAspectY / 1.5f + fWavePosX * cosf(3.1416f);// 0.75 = adj. for aspect ratio
+            v[i].y = rad * sinf(ang - GetTime() / 3) * m_fAspectX / 1.5f + fWavePosY * cosf(3.1416f);
           }
         }
       }
@@ -3959,8 +3959,8 @@ if (hr != D3D_OK)
         //v[i].x = cosf(ang* GetTime())*3 * m_fAspectY/3 + fWavePosX;// 0.75 = adj. for aspect ratio
         //v[i].y = sin(rad* GetTime()) *3 * sinf(ang) * m_fAspectX/3 + fWavePosY;
         //v[i].x = cos(GetTime()) / 2 + cosf(ang * 2 +tanf(t))*m_fAspectY / 2.8 + fWavePosX
-        v[i].x = cos(GetTime()) / 2 + cosf(ang * 2 + tanf(t));
-        v[i].y = sin(GetTime()) * 2 * sinf(ang * 3.14) * m_fAspectX / 2.8 + fWavePosY;
+        v[i].x = cosf(GetTime()) / 2 + cosf(ang * 2 + tanf(t));
+        v[i].y = sinf(GetTime()) * 2 * sinf(ang * 3.14f) * m_fAspectX / 2.8f + fWavePosY;
         //v[i].Diffuse = color;//(D3DCOLOR_RGBA_01(cr, cg, cb, alpha*min(1, max(0, fL[i])));
       }
 
@@ -4046,7 +4046,7 @@ if (hr != D3D_OK)
 
       {
         float time = GetTime();
-        float burst_frequency = 1.0f - fWaveParam2 + .001; // How often new bursts occur
+        float burst_frequency = 1.0f - fWaveParam2 + .001f; // How often new bursts occur
         float burst_phase = fmodf(time, burst_frequency) / burst_frequency;
 
         // Random seed based on which burst we're on
@@ -4798,7 +4798,7 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
 
   float time_since_preset_start = GetTime() - pState->GetPresetStartTime();
   float time_since_preset_start_wrapped = time_since_preset_start - (int)(time_since_preset_start / 10000) * 10000;
-  double time = GetTime() - m_fStartTime;
+  float time = GetTime() - m_fStartTime;
   float progress = (GetTime() - m_fPresetStartTime) / (m_fNextPresetTime - m_fPresetStartTime);
   float mip_x = logf((float)GetWidth()) / logf(2.0f);
   float mip_y = logf((float)GetWidth()) / logf(2.0f);
@@ -4868,17 +4868,17 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
     0.5f + 0.5f * sinf(time * 0.0133f + 4.5f),
     0.5f + 0.5f * sinf(time * 0.0217f + 3.8f)
   ));
-  if (h[12]) pCT->SetVector(lpDevice, h[12], &D3DXVECTOR4(mip_x, mip_y, mip_avg, 0));
+  if (h[12]) pCT->SetVector(lpDevice, h[12], &D3DXVECTOR4(mip_x, mip_y, mip_avg, 0.0f));
   if (h[13]) pCT->SetVector(lpDevice, h[13], &D3DXVECTOR4(blur_min[1], blur_max[1], blur_min[2], blur_max[2]));
   
   // BMV/Milkwave
   if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(m_mouseX, 
     m_mouseY != -1 ? -m_mouseY + 1 : -1, 
-    m_mouseDown ? 1 : 0, 
+    m_mouseDown ? 1.0f : 0.0f, 
     m_mouseClicked > 0 ? m_lastMouseY : -m_lastMouseY));
   if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
-  if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0));
-  if (h[17]) pCT->SetVector(lpDevice, h[17], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0));
+  if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0.0f));
+  if (h[17]) pCT->SetVector(lpDevice, h[17], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0.0f));
 
   // write q vars
   int num_q_float4s = sizeof(p->q_const_handles) / sizeof(p->q_const_handles[0]);
@@ -5702,9 +5702,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     t = 0;
   }
 
-  int boxAlpha = m_supertexts[supertextIndex].fBoxAlpha * 255;
+  int boxAlpha = static_cast<int>(m_supertexts[supertextIndex].fBoxAlpha * 255);
   boxAlpha = std::clamp(boxAlpha, 0, 255);
-  boxAlpha *= t;
+  boxAlpha = static_cast<int>(boxAlpha * t);
 
   if (boxAlpha > 0) {
 

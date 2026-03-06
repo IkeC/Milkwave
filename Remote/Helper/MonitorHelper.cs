@@ -51,7 +51,7 @@ namespace MilkwaveRemote.Helper {
           // Sum across all engines
           res = counters.Sum(c => c.NextValue());
         }
-      } catch (Exception e) {
+      } catch (Exception) {
         GpuCounters = new Lazy<List<PerformanceCounter>>(InitGpuCounters, true);
       }
       return res;
@@ -65,7 +65,7 @@ namespace MilkwaveRemote.Helper {
         if (counter != null) {
           res = counter.NextValue();
         }
-      } catch (Exception e) {
+      } catch (Exception) {
         CpuCounter = new Lazy<PerformanceCounter?>(InitCpuCounter, isThreadSafe: true);
       }
       return res;

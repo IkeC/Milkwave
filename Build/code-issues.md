@@ -29,6 +29,46 @@ Remaining build warnings and known code issues deferred for later review.
 | **C4288** | 926–928 | Nonstandard extension: loop control variable `i` declared in `for` is used outside the loop scope, conflicts with outer declaration at line 836 | Rename the inner loop variable or add a scoping block; blocked on D9035 removal |
 | **C4101** | 836 | Unreferenced local variable `i` (outer declaration shadowed by inner for-loop variable) | Remove or fold into the block once C4288 is resolved |
 | **C4553** | 3862, 3863 | `==` result not used — possible logic bug where `=` was intended | Review carefully before changing; could be a silent no-op assignment or a real bug |
+
+---
+
+## C# Warnings — `MilkwaveRemote`
+
+### `MilkwaveRemoteForm.Designer.cs`
+
+| Warning | Line(s) | Description | Action |
+|---------|---------|-------------|--------|
+| **CS0649** | 5250 | Field `txtAutoplay` never assigned | Check if this control is wired up in the designer; may be a leftover |
+| **CS0169** | 5229, 5291, 5443, 5555 | Unused fields: `statusSupporters`, `toolStripMenuItemVisualizerPanel`, `btnShaderError`, `btnVideoInputSet` | Remove if the controls are not used |
+| **CS0169** | 5228 | Unused field `statusHelp` | Remove if not used |
+
+---
+
+## Build Warnings
+
+### Project Settings
+
+| Warning | Description | Action |
+|---------|-------------|--------|
+| **D9035** | Compiler option `Zc:forScope-` is deprecated and will be removed in a future MSVC release | Remove from `plugin.vcxproj` — but first resolve C4288 scoping issues in `milkdropfs.cpp` that this option currently masks |
+
+---
+
+### `plugin.cpp`
+
+| Warning | Line(s) | Description | Action |
+|---------|---------|-------------|--------|
+| **C4995** | 5778, 5786 | `DwmEnableComposition` is deprecated | Replace with `DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, ...)` or remove DWM toggle entirely if no longer needed on modern Windows |
+
+---
+
+### `milkdropfs.cpp`
+
+| Warning | Line(s) | Description | Action |
+|---------|---------|-------------|--------|
+| **C4288** | 926–928 | Nonstandard extension: loop control variable `i` declared in `for` is used outside the loop scope, conflicts with outer declaration at line 836 | Rename the inner loop variable or add a scoping block; blocked on D9035 removal |
+| **C4101** | 836 | Unreferenced local variable `i` (outer declaration shadowed by inner for-loop variable) | Remove or fold into the block once C4288 is resolved |
+| **C4553** | 3862, 3863 | `==` result not used — possible logic bug where `=` was intended | Review carefully before changing; could be a silent no-op assignment or a real bug |
 | **C4244** | 3446, 3522, 3613, 3681, 3690, 3750, 3882–3887, 3963, 4049, 4851–4869, 4899–4901 | `double` literal constants assigned/passed to `float` fields | Change double literals to `float` literals (append `f`) or add `static_cast<float>()` |
 | **C4305** | 3613, 3690 | Truncation from `double` to `float` | Same as C4244 above |
 | **C4244** | 5705, 5707 | `float` to `int` conversion | Add `static_cast<int>()` |

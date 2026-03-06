@@ -70,7 +70,7 @@ namespace MilkwaveRemote.Helper {
 
 
     private delegate bool PreRemoveTab(int indx);
-    private PreRemoveTab PreRemoveTabPage;
+    private PreRemoveTab? PreRemoveTabPage;
     private bool OverCloseTab = false;
 
     protected override void OnMouseClick(MouseEventArgs e) {
