@@ -559,6 +559,7 @@ public:
 #define WM_USER_SET_INPUTMIX_LUMAKEY WM_USER + 151
 #define WM_USER_SET_INPUTMIX_ONTOP WM_USER + 152
 #define WM_USER_SET_INPUTMIX_TINT WM_USER + 153
+#define WM_USER_PIPE_IPC_MESSAGE WM_USER + 200  // lParam = heap-allocated wchar_t* from pipe server
 
   FFT            myfft;
   FFT            m_fftShader;  // separate FFT for get_fft() shader texture - no equalization
