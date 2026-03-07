@@ -285,7 +285,9 @@ namespace MilkwaveRemote {
       InputMixOnTop,
       InputMixOpacity,
       InputMixLuma,
-      PrecompileCache
+      PrecompileCache,
+      FFTAttack,
+      FFTDecay
     }
 
     private class PendingThumbnail {
@@ -1011,7 +1013,7 @@ namespace MilkwaveRemote {
           Tags = loadedTags;
           SetTopTags();
         }
-      } catch (Exception ex) {
+      } catch (Exception) {
         Settings = new Settings();
         Tags = new Tags();
       }
@@ -1036,6 +1038,7 @@ namespace MilkwaveRemote {
           cboFonts.Items.Add(font.Name);
           cboFont1.Items.Add(font.Name);
           cboFont2.Items.Add(font.Name);
+          cboFontMenu.Items.Add(font.Name);
           cboFont3.Items.Add(font.Name);
           cboFont4.Items.Add(font.Name);
           cboFont5.Items.Add(font.Name);
@@ -1101,12 +1104,11 @@ namespace MilkwaveRemote {
     }
 
     private IntPtr StartVisualizerIfNotFound(bool onlyIfNotFound) {
-      bool doOpen = false;
-
       IntPtr result = FindVisualizerWindow();
       if (result == IntPtr.Zero || !onlyIfNotFound) {
-        // Try to run MilkwaveVisualizer.exe from the same directory as the assembly
-        string visualizerPath = Path.Combine(BaseDir, "MilkwaveVisualizer.exe");
+        // Try to run the visualizer exe (configurable in settings-remote.json)
+        string exeName = string.IsNullOrEmpty(Settings.VisualizerExe) ? "MilkwaveVisualizer.exe" : Settings.VisualizerExe;
+        string visualizerPath = Path.Combine(BaseDir, exeName);
         if (File.Exists(visualizerPath)) {
           Process.Start(new ProcessStartInfo(visualizerPath) { UseShellExecute = true });
         }
@@ -1261,7 +1263,7 @@ namespace MilkwaveRemote {
           }
         }
         numOffset.Value = lines + 8;
-      } catch (Exception ex) {
+      } catch (Exception) {
         // ignore
       }
 
@@ -1377,7 +1379,7 @@ namespace MilkwaveRemote {
                     } else if (key.Equals("VOLALPHA", StringComparison.OrdinalIgnoreCase)) {
                       chkWaveVolAlpha.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                     }
-                  } catch (Exception ex) {
+                  } catch (Exception) {
                     // ignore
                   }
                 }
@@ -1474,7 +1476,7 @@ namespace MilkwaveRemote {
                         numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
                       }
                     }
-                  } catch (Exception ex) {
+                  } catch (Exception) {
                     // ignore
                   }
                 }
@@ -1626,6 +1628,10 @@ namespace MilkwaveRemote {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
               message = "COL_BRIGHTNESS=" + numSettingsBrightness.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.FFTAttack) {
+              message = "FFT_ATTACK=" + numFFTAttack.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.FFTDecay) {
+              message = "FFT_DECAY=" + numFFTDecay.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.PresetLink) {
               message = "LINK=" + messageToSend;
             } else if (type == MessageType.SpoutActive) {
@@ -2119,6 +2125,16 @@ namespace MilkwaveRemote {
           if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
             numSettingsBrightness.Value = Math.Clamp((decimal)parsedValue, numSettingsBrightness.Minimum, numSettingsBrightness.Maximum);
           }
+        } else if (tokenUpper.StartsWith("FFTATTACK=")) {
+          string value = token.Substring(token.IndexOf("=") + 1);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numFFTAttack.Value = Math.Clamp((decimal)parsedValue, numFFTAttack.Minimum, numFFTAttack.Maximum);
+          }
+        } else if (tokenUpper.StartsWith("FFTDECAY=")) {
+          string value = token.Substring(token.IndexOf("=") + 1);
+          if (float.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out float parsedValue)) {
+            numFFTDecay.Value = Math.Clamp((decimal)parsedValue, numFFTDecay.Minimum, numFFTDecay.Maximum);
+          }
         } else if (tokenUpper.Equals("RAND")) {
           SendPostMessage(VK_R, "R");
         } else if (tokenUpper.Equals("LOCK")) {
@@ -2227,10 +2243,8 @@ namespace MilkwaveRemote {
         }
         toolTip1.SetToolTip(cboAutoplay, cboAutoplay.Text);
       } else {
-        if (txtAutoplay != null) {
-          txtAutoplay.Text = "No messages in " + fileName;
-          chkAutoplay.Enabled = false;
-        }
+        cboAutoplay.Text = "No messages in " + fileName;
+        chkAutoplay.Enabled = false;
       }
     }
 
@@ -2933,7 +2947,7 @@ namespace MilkwaveRemote {
       string settingsFile = Path.Combine(BaseDir, milkwaveSettingsFile);
       try {
         File.WriteAllText(settingsFile, jsonString);
-      } catch (UnauthorizedAccessException ex) {
+      } catch (UnauthorizedAccessException) {
         MessageBox.Show($"Unable to save settings to {settingsFile}." +
           Environment.NewLine + Environment.NewLine +
           "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
@@ -2956,7 +2970,7 @@ namespace MilkwaveRemote {
       try {
         File.WriteAllText(tagsFile, jsonString);
         SetStatusText($"Tags saved");
-      } catch (UnauthorizedAccessException ex) {
+      } catch (UnauthorizedAccessException) {
         MessageBox.Show($"Unable to save Tags to {tagsFile}." +
           Environment.NewLine + Environment.NewLine +
           "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
@@ -3095,7 +3109,7 @@ namespace MilkwaveRemote {
         txtMessage.ForeColor = fontColor;
 
         txtMessage.Refresh();
-      } catch (Exception e) {
+      } catch (Exception) {
         // ignore
       }
     }
@@ -3467,7 +3481,7 @@ namespace MilkwaveRemote {
           }
         }
         cboPresets.SelectedIndex = 0;
-      } catch (Exception e) {
+      } catch (Exception) {
         // ignore
       }
     }
@@ -4130,6 +4144,9 @@ namespace MilkwaveRemote {
       chkShaderFile.Checked = Settings.ShaderFileChecked;
       chkWrap.Checked = Settings.WrapChecked;
 
+      string savedTitle = string.IsNullOrEmpty(Settings.WindowTitle) ? cboWindowTitle.Items[0]?.ToString() ?? "Milkwave Visualizer" : Settings.WindowTitle;
+      cboWindowTitle.Text = savedTitle;
+
       numInputMixOpacity.Value = Math.Clamp(Settings.InputMixOpacity, numInputMixOpacity.Minimum, numInputMixOpacity.Maximum);
       chkInputTop.Checked = Settings.InputMixOnTop;
       chkMixLumaActive.Checked = Settings.InputMixLumaActive;
@@ -4168,6 +4185,8 @@ namespace MilkwaveRemote {
       Settings.VisIntensity = numVisIntensity.Value;
       Settings.VisShift = numVisShift.Value;
       Settings.VisVersion = (int)numVisVersion.Value;
+
+      Settings.WindowTitle = cboWindowTitle.Text;
 
       SaveSettingsToFile();
     }
@@ -4330,6 +4349,27 @@ namespace MilkwaveRemote {
         int fontColorB2Val = int.Parse(fontColorB2);
         pnlColorFont2.BackColor = Color.FromArgb(fontColorR2Val, fontColorG2Val, fontColorB2Val);
 
+        // Menu: Ini-Index is 4
+        string fontFaceMenu = RemoteHelper.GetIniValueFonts("FontFace4", "Bahnschrift");
+        cboFontMenu.SelectedItem = fontFaceMenu;
+        string fontSizeMenu = RemoteHelper.GetIniValueFonts("FontSize4", "25");
+        numFontMenu.Value = int.Parse(fontSizeMenu);
+
+        string fontBoldMenu = RemoteHelper.GetIniValueFonts("FontBold4", "0");
+        chkMenuBold.Checked = !fontBoldMenu.Equals("0");
+        string fontItalicMenu = RemoteHelper.GetIniValueFonts("FontItalic4", "0");
+        chkMenuItalic.Checked = !fontItalicMenu.Equals("0");
+        string fontAAMenu = RemoteHelper.GetIniValueFonts("FontAA4", "1");
+        chkMenuAA.Checked = !fontAAMenu.Equals("0");
+
+        string fontColorRMenu = RemoteHelper.GetIniValueFonts("FontColorR4", "255");
+        int fontColorRMenuVal = int.Parse(fontColorRMenu);
+        string fontColorGMenu = RemoteHelper.GetIniValueFonts("FontColorG4", "255");
+        int fontColorGMenuVal = int.Parse(fontColorGMenu);
+        string fontColorBMenu = RemoteHelper.GetIniValueFonts("FontColorB4", "255");
+        int fontColorBMenuVal = int.Parse(fontColorBMenu);
+        pnlColorMenu.BackColor = Color.FromArgb(fontColorRMenuVal, fontColorGMenuVal, fontColorBMenuVal);
+
         // Artist: Ini-Index is 5!
         string fontFace3 = RemoteHelper.GetIniValueFonts("FontFace5", "Bahnschrift");
         cboFont3.SelectedItem = fontFace3;
@@ -4420,6 +4460,16 @@ namespace MilkwaveRemote {
       RemoteHelper.SetIniValueFonts("FontColorG2", pnlColorFont2.BackColor.G.ToString());
       RemoteHelper.SetIniValueFonts("FontColorB2", pnlColorFont2.BackColor.B.ToString());
 
+      // Menu: Ini-Index is 4
+      RemoteHelper.SetIniValueFonts("FontFace4", cboFontMenu.Text);
+      RemoteHelper.SetIniValueFonts("FontSize4", numFontMenu.Value.ToString());
+      RemoteHelper.SetIniValueFonts("FontBold4", chkMenuBold.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontItalic4", chkMenuItalic.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontAA4", chkMenuAA.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontColorR4", pnlColorMenu.BackColor.R.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorG4", pnlColorMenu.BackColor.G.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorB4", pnlColorMenu.BackColor.B.ToString());
+
       // Artist: Ini-Index is 5!
       RemoteHelper.SetIniValueFonts("FontFace5", cboFont3.Text);
       RemoteHelper.SetIniValueFonts("FontSize5", numFont3.Value.ToString());
@@ -4464,6 +4514,7 @@ namespace MilkwaveRemote {
       dlg.CustomColors = new int[] {
         ColorTranslator.ToOle(pnlColorFont1.BackColor),
         ColorTranslator.ToOle(pnlColorFont2.BackColor),
+        ColorTranslator.ToOle(pnlColorMenu.BackColor),
         ColorTranslator.ToOle(pnlColorFont3.BackColor),
         ColorTranslator.ToOle(pnlColorFont4.BackColor),
         ColorTranslator.ToOle(pnlColorFont5.BackColor)
@@ -4495,6 +4546,15 @@ namespace MilkwaveRemote {
       chkFontItalic2.Checked = false;
       chkFontAA2.Checked = true;
       pnlColorFont2.BackColor = Color.FromArgb(255, 86, 0);
+    }
+
+    private void lblMenu_DoubleClick(object sender, EventArgs e) {
+      cboFontMenu.SelectedItem = "Bahnschrift";
+      numFontMenu.Value = 25;
+      chkMenuBold.Checked = false;
+      chkMenuItalic.Checked = false;
+      chkMenuAA.Checked = true;
+      pnlColorMenu.BackColor = Color.FromArgb(255, 255, 255);
     }
 
     private void lblFont3_DoubleClick(object sender, EventArgs e) {
@@ -4540,6 +4600,14 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void cboFontMenu_SelectedIndexChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        RemoteHelper.SetIniValueFonts("FontFace4", cboFontMenu.Text);
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
     private void cboFont3_SelectedIndexChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         RemoteHelper.SetIniValueFonts("FontFace5", cboFont3.Text);
@@ -4575,6 +4643,14 @@ namespace MilkwaveRemote {
     private void numFont2_ValueChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         RemoteHelper.SetIniValueFonts("FontSize2", numFont2.Value.ToString());
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void numFontMenu_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        RemoteHelper.SetIniValueFonts("FontSize4", numFontMenu.Value.ToString());
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
@@ -4670,6 +4746,16 @@ namespace MilkwaveRemote {
         numSettingsBrightness.Increment = 0.02M;
       }
       SendToMilkwaveVisualizer("", MessageType.ColBrightness);
+    }
+
+    private void numFFTAttack_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.FFTAttack);
+    }
+
+    private void numFFTDecay_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.FFTDecay);
     }
 
     private void lblFactorTime_Click(object sender, EventArgs e) {
@@ -4951,7 +5037,7 @@ namespace MilkwaveRemote {
         txtShaderHLSL.SelectionLength = GetNthIndex(txtShaderHLSL.Text, '\n', row) - txtShaderHLSL.SelectionStart;
         txtShaderHLSL.Focus();
         txtShaderHLSL.ScrollToCaret();
-      } catch (Exception ex) {
+      } catch (Exception) {
         // ignore
       }
     }
@@ -5407,7 +5493,7 @@ namespace MilkwaveRemote {
       string settingsFile = Path.Combine(BaseDir, milkwaveMidiFile);
       try {
         File.WriteAllText(settingsFile, jsonString);
-      } catch (UnauthorizedAccessException ex) {
+      } catch (UnauthorizedAccessException) {
         MessageBox.Show($"Unable to save settings to {settingsFile}." +
           Environment.NewLine + Environment.NewLine +
           "Please make sure that Milkwave is installed to a directory with full write access (eg. not 'Program Files').",
@@ -5818,6 +5904,7 @@ namespace MilkwaveRemote {
     private void btnFontGlobalMinus_Click(object sender, EventArgs e) {
       numFont1.Value = Math.Clamp(numFont1.Value - 5, numFont1.Minimum, numFont1.Maximum);
       numFont2.Value = Math.Clamp(numFont2.Value - 5, numFont2.Minimum, numFont2.Maximum);
+      numFontMenu.Value = Math.Clamp(numFontMenu.Value - 5, numFontMenu.Minimum, numFontMenu.Maximum);
       numFont3.Value = Math.Clamp(numFont3.Value - 5, numFont3.Minimum, numFont3.Maximum);
       numFont4.Value = Math.Clamp(numFont4.Value - 5, numFont4.Minimum, numFont4.Maximum);
       numFont5.Value = Math.Clamp(numFont5.Value - 5, numFont5.Minimum, numFont5.Maximum);
@@ -5828,6 +5915,7 @@ namespace MilkwaveRemote {
     private void btnFontGlobalPlus_Click(object sender, EventArgs e) {
       numFont1.Value = Math.Clamp(numFont1.Value + 5, numFont1.Minimum, numFont1.Maximum);
       numFont2.Value = Math.Clamp(numFont2.Value + 5, numFont2.Minimum, numFont2.Maximum);
+      numFontMenu.Value = Math.Clamp(numFontMenu.Value + 5, numFontMenu.Minimum, numFontMenu.Maximum);
       numFont3.Value = Math.Clamp(numFont3.Value + 5, numFont3.Minimum, numFont3.Maximum);
       numFont4.Value = Math.Clamp(numFont4.Value + 5, numFont4.Minimum, numFont4.Maximum);
       numFont5.Value = Math.Clamp(numFont5.Value + 5, numFont5.Minimum, numFont5.Maximum);
@@ -6731,6 +6819,11 @@ namespace MilkwaveRemote {
 
     private void numInputMixOpacity_Click(object sender, EventArgs e) {
       numInputMixOpacity.Value = 100;
+    }
+
+    private void label20_DoubleClick(object sender, EventArgs e) {
+      numFFTAttack.Value = 0.5m;
+      numFFTDecay.Value = 0.7m;
     }
   } // end class
 } // end namespace

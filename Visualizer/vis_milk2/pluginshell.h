@@ -44,7 +44,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define TIME_HIST_SLOTS 128     // # of slots used if fps > 60.  half this many if fps==30.
 #define MAX_SONGS_PER_PAGE 40
 
-typedef struct {
+typedef struct td_fontinfo {
   wchar_t szFace[256];
   int nSize;  // size requested @ font creation time
   int bBold;
@@ -178,6 +178,9 @@ protected:
   float m_ColShiftHue = 0.0f;
   float m_ColShiftSaturation = 0.0f;
   float m_ColShiftBrightness = 0.0f;
+
+  float m_fFFTAttackGlobal = 0.5f;  // global FFT attack (0..1), controlled by Remote
+  float m_fFFTDecayGlobal  = 0.7f;  // global FFT decay  (0..1), controlled by Remote
 
   bool m_AutoHue = false;
   float m_AutoHueSeconds = 0.02f;

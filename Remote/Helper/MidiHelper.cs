@@ -34,7 +34,7 @@ namespace MilkwaveRemote.Helper {
       if (midiInDevice != null) {
         try {
           midiInDevice.Start();
-        } catch (NAudio.MmException ex) {
+        } catch (NAudio.MmException) {
           // ignore
         }
       }
@@ -45,7 +45,7 @@ namespace MilkwaveRemote.Helper {
       if (midiInDevice != null) {
         try {
           midiInDevice.Stop();
-        } catch (NAudio.MmException ex) {
+        } catch (NAudio.MmException) {
           // ignore
         }
       }

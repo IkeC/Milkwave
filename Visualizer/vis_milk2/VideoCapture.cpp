@@ -277,7 +277,12 @@ bool VideoCapture::Initialize(int deviceIndex, int width, int height) {
 
     m_nWidth = width;
     m_nHeight = height;
-    m_nBufferSize = width * height * 4; // RGBA
+    if (width <= 0 || height <= 0 || width > 16384 || height > 16384) {
+        LogToMilkwave(L"VideoCapture: Invalid dimensions, clamping to safe values");
+        m_nWidth = max(1, min(width, 16384));
+        m_nHeight = max(1, min(height, 16384));
+    }
+    m_nBufferSize = m_nWidth * m_nHeight * 4; // RGBA
     m_pFrameBuffer = new BYTE[m_nBufferSize];
     memset(m_pFrameBuffer, 0, m_nBufferSize);
 
@@ -563,8 +568,12 @@ bool VideoCapture::Initialize(int deviceIndex, int width, int height) {
             // Re-allocate frame buffer if resolution changed from requested
             if (actualWidth != m_nWidth || actualHeight != m_nHeight) {
                 LogToMilkwave(L"VideoCapture: Updating internal buffer size to match negotiated resolution");
-                m_nWidth = actualWidth;
-                m_nHeight = actualHeight;
+                if (actualWidth > 0 && actualHeight > 0 && actualWidth <= 16384 && actualHeight <= 16384) {
+                    m_nWidth = actualWidth;
+                    m_nHeight = actualHeight;
+                } else {
+                    LogToMilkwave(L"VideoCapture: Negotiated resolution out of range, keeping original");
+                }
                 delete[] m_pFrameBuffer;
                 m_nBufferSize = m_nWidth * m_nHeight * 4; // Always allocate for 4 bytes per pixel
                 m_pFrameBuffer = new BYTE[m_nBufferSize];

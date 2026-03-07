@@ -145,7 +145,7 @@ namespace MilkwaveRemote.Helper {
 
         AddReturnValue(ref result, retVarName);
 
-      } catch (Exception e) {
+      } catch (Exception) {
         Debug.Assert(false);
       }
       result = result.Replace("_conv_conv", "_conv");
@@ -247,7 +247,7 @@ namespace MilkwaveRemote.Helper {
           breakReplacement = cond;
         }
 
-      } catch (Exception e) {
+      } catch (Exception) {
         Debug.Assert(false);
       }
     }
@@ -313,7 +313,7 @@ namespace MilkwaveRemote.Helper {
         // try to replace any remaining clear uses of mat2, mat3, mat4
         result = result.Replace("mat2(", "float2x2(").Replace("mat3(", "float3x3(").Replace("mat4(", "float4x4(");
         result = result.Replace("mat2 ", "float2x2 ").Replace("mat3 ", "float3x3 ").Replace("mat4 ", "float4x4 ");
-      } catch (Exception e) {
+      } catch (Exception) {
         Debug.Assert(false);
         // couldn't parse properly, return input
         result = inputLine;

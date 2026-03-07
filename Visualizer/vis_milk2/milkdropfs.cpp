@@ -1719,7 +1719,8 @@ void CPlugin::BlurPasses() {
   IDirect3DSurface9* pNewTarget = NULL;
 
   // clear texture bindings
-  for (int i = 0; i < 16; i++)
+  int i;
+  for (i = 0; i < 16; i++)
     lpDevice->SetTexture(i, NULL);
 
   // set up fullscreen quad
@@ -2474,7 +2475,8 @@ void CPlugin::DrawCustomShapes() {
             ((((int)(*pState->m_shape[i].var_pf_g2 * 255)) & 0xFF) << 8) |
             ((((int)(*pState->m_shape[i].var_pf_b2 * 255)) & 0xFF));
 
-          for (int j = 1; j < sides + 1; j++) {
+          int j;
+          for (j = 1; j < sides + 1; j++) {
             float t = (j - 1) / (float)sides;
             if (m_bScreenDependentRenderMode)
               v[j].x = v[0].x + (float)*pState->m_shape[i].var_pf_rad * cosf(t * 3.1415927f * 2 + (float)*pState->m_shape[i].var_pf_ang + 3.1415927f * 0.25f);
@@ -2574,7 +2576,8 @@ void CPlugin::LoadCustomShapePerFrameEvallibVars(CState* pState, int i, int inst
   *pState->m_shape[i].var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->m_shape[i].var_pf_treb_att = (double)mysound.avg_rel[2];
 
-  for (int vi = 0; vi < NUM_Q_VAR; vi++)
+  int vi;
+  for (vi = 0; vi < NUM_Q_VAR; vi++)
     *pState->m_shape[i].var_pf_q[vi] = *pState->var_pf_q[vi];
   for (vi = 0; vi < NUM_T_VAR; vi++)
     *pState->m_shape[i].var_pf_t[vi] = pState->m_shape[i].t_values_after_init_code[vi];
@@ -2618,7 +2621,8 @@ void CPlugin::LoadCustomWavePerFrameEvallibVars(CState* pState, int i) {
   *pState->m_wave[i].var_pf_mid_att = (double)mysound.avg_rel[1];
   *pState->m_wave[i].var_pf_treb_att = (double)mysound.avg_rel[2];
 
-  for (int vi = 0; vi < NUM_Q_VAR; vi++)
+  int vi;
+  for (vi = 0; vi < NUM_Q_VAR; vi++)
     *pState->m_wave[i].var_pf_q[vi] = *pState->var_pf_q[vi];
   for (vi = 0; vi < NUM_T_VAR; vi++)
     *pState->m_wave[i].var_pf_t[vi] = pState->m_wave[i].t_values_after_init_code[vi];
@@ -2703,7 +2707,8 @@ void CPlugin::DrawCustomWaves() {
 
         NSEEL_code_execute(pState->m_wave[i].m_pf_codehandle);
 
-        for (int vi = 0; vi < NUM_Q_VAR; vi++)
+        int vi;
+        for (vi = 0; vi < NUM_Q_VAR; vi++)
           *pState->m_wave[i].var_pp_q[vi] = *pState->m_wave[i].var_pf_q[vi];
         for (vi = 0; vi < NUM_T_VAR; vi++)
           *pState->m_wave[i].var_pp_t[vi] = *pState->m_wave[i].var_pf_t[vi];
@@ -3443,7 +3448,7 @@ if (hr != D3D_OK)
       //color = D3DCOLOR_RGBA_01(cr, cg, cb, alpha);
 
       {
-        float ang = -0.75 + fWaveParam2 * 3.15;	// from -PI/2 to PI/2
+        float ang = -0.75f + fWaveParam2 * 3.15f;	// from -PI/2 to PI/2
         float dx = cosf(ang);
         float dy = sinf(ang);
 
@@ -3519,7 +3524,7 @@ if (hr != D3D_OK)
 
         ////////////////\\\\\\\\\\\\\\\\\\\\\
 
-        float ang3 = 0.75 + fWaveParam2 * 3.15;	// from -PI/2 to PI/2
+        float ang3 = 0.75f + fWaveParam2 * 3.15f;	// from -PI/2 to PI/2
         float dx3 = cosf(ang3);
         float dy3 = sinf(ang3);
 
@@ -3610,7 +3615,7 @@ if (hr != D3D_OK)
       //color = D3DCOLOR_RGBA_01(cr, cg, cb, alpha);
 
       {
-        float ang = 1.57;	// from -PI/2 to PI/2
+        float ang = 1.57f;	// from -PI/2 to PI/2
         float dx = cosf(ang);
         float dy = sinf(ang);
 
@@ -3678,7 +3683,7 @@ if (hr != D3D_OK)
 
 
         for (i = 0; i < nVerts; i++) {
-          v[i].x = edge_x[0] - 0.45 + dx * i + perp_dx * 0.35f * fL[i + sample_offset];
+          v[i].x = edge_x[0] - 0.45f + dx * i + perp_dx * 0.35f * fL[i + sample_offset];
           v[i].y = edge_y[0] + dy * i + perp_dy * 0.35f * fL[i + sample_offset];
           //v[i].Diffuse = color;
         }
@@ -3687,7 +3692,7 @@ if (hr != D3D_OK)
         ////////////////\\\\\\\\\\\\\\\\\\\\\
 
 
-        float ang3 = 1.57;	// from -PI/2 to PI/2
+        float ang3 = 1.57f;	// from -PI/2 to PI/2
         float dx3 = cosf(ang3);
         float dy3 = sinf(ang3);
 
@@ -3747,7 +3752,7 @@ if (hr != D3D_OK)
         float perp_dy3 = sinf(ang4 + 1.57f);
 
         for (i = 0; i < nVerts; i++) {
-          v[i + nVerts].x = edge_x3[0] + 0.45 + dx3 * i + perp_dx3 * (0.35f * fR[i + sample_offset]);
+          v[i + nVerts].x = edge_x3[0] + 0.45f + dx3 * i + perp_dx3 * (0.35f * fR[i + sample_offset]);
           v[i + nVerts].y = edge_y3[0] + dy3 * i + perp_dy3 * (0.35f * fR[i + sample_offset]);
           //v[i+nVerts].Diffuse = color;
         }
@@ -3859,8 +3864,11 @@ if (hr != D3D_OK)
         for (i = 0; i < nVerts; i++) {
           float rad = 0.7f + 0.7f * fR[i + sample_offset] + fWaveParam2;
           float ang = (i)*inv_nverts_minus_one * 6.28f + GetTime() * 0.2f;
-          ang == ang / 2;
-          rad == rad / 2;
+          
+          // `= = ` result not used — possible logic bug where `=` was intended
+          // ang == ang / 2;
+          // rad == rad / 2;
+
           if (i < nVerts / rad) {
             float mix = i / (nVerts * 0.1f);
             //mix = 0.7f - 0.7f * cosf(mix * 3.1416f) - sinf((GetTime()/10));
@@ -3879,12 +3887,12 @@ if (hr != D3D_OK)
           //v[i].x = rad * cosf(ang* 2) * m_fAspectY + fWavePosX;//
 
           if (m_bScreenDependentRenderMode) {
-            v[i].x = rad * cosf(ang * 3.1416f) / 1.5 + fWavePosX * cosf(3.1416f);
-            v[i].y = rad * sinf(ang - GetTime() / 3) / 1.5 + fWavePosY * cosf(3.1416f);
+            v[i].x = rad * cosf(ang * 3.1416f) / 1.5f + fWavePosX * cosf(3.1416f);
+            v[i].y = rad * sinf(ang - GetTime() / 3) / 1.5f + fWavePosY * cosf(3.1416f);
           }
           else {
-            v[i].x = rad * cosf(ang * 3.1416f) * m_fAspectY / 1.5 + fWavePosX * cosf(3.1416f);// 0.75 = adj. for aspect ratio
-            v[i].y = rad * sinf(ang - GetTime() / 3) * m_fAspectX / 1.5 + fWavePosY * cosf(3.1416f);
+            v[i].x = rad * cosf(ang * 3.1416f) * m_fAspectY / 1.5f + fWavePosX * cosf(3.1416f);// 0.75 = adj. for aspect ratio
+            v[i].y = rad * sinf(ang - GetTime() / 3) * m_fAspectX / 1.5f + fWavePosY * cosf(3.1416f);
           }
         }
       }
@@ -3896,47 +3904,6 @@ if (hr != D3D_OK)
       }
 
       break;
-
-      /*
-      ALTERNATIVE:
-      nVerts /= 2;
-      sample_offset = (NUM_WAVEFORM_SAMPLES - nVerts) / 2;//mysound.GoGoAlignatron(nVerts * 12/10);// only call this once nVerts is final!
-
-      if (m_pState->m_bModWaveAlphaByVolume)
-      alpha *= ((mysound.imm_rel[0] + mysound.imm_rel[1] + mysound.imm_rel[2]) * 0.333f - m_pState->m_fModWaveAlphaStart.eval(GetTime())) / (m_pState->m_fModWaveAlphaEnd.eval(GetTime()) - m_pState->m_fModWaveAlphaStart.eval(GetTime()));
-      if (alpha < 0) alpha = 0;
-      if (alpha > 1) alpha = 1;
-      //color = D3DCOLOR_RGBA_01(cr, cg, cb, alpha);
-
-      {
-      float inv_nverts_minus_one = 1.0f / (float)(nVerts - 1);
-
-      for (i = 0; i < nVerts; i++)
-      {
-      float rad = 0.7f + 0.4f * fR[i + sample_offset] + fWaveParam2;
-      float ang = (i)* inv_nverts_minus_one * 6.28f + GetTime() * 0.2f;
-      if (i < nVerts / rad)
-      {
-      float mix = i / (nVerts * 0.1f);
-      mix = 0.5f - 0.5f * cosf(mix * 3.1416f);
-      float rad_2 = 0.5f + 0.4f * fR[i + nVerts + sample_offset] + fWaveParam2/(mix*3);
-      rad = rad_2 * (1.0f - mix) + rad * (mix);
-        //rad = rad_2 * (1.0f - mix) + rad * (GetTime() / 3); // BIG
-      }
-      v[i].x = rad * cosf(ang*2) * m_fAspectY + fWavePosX;// 0.75 = adj. for aspect ratio
-      v[i].y = rad * sinf(ang - GetTime() / 3) * m_fAspectX + fWavePosY;
-      //v[i].Diffuse = color;
-      }
-      }
-
-      // dupe last vertex to connect the lines; skip if blending
-      if (!m_pState->m_bBlending)
-      {
-      nVerts++;
-      memcpy(&v[nVerts - 1], &v[0], sizeof(WFVERTEX));
-      }
-
-      break;*/
 
     case 15: // Lasso Wave, MilkDrop2077 --------------------------------------------------------------------------------------------------------------
 
@@ -3959,8 +3926,8 @@ if (hr != D3D_OK)
         //v[i].x = cosf(ang* GetTime())*3 * m_fAspectY/3 + fWavePosX;// 0.75 = adj. for aspect ratio
         //v[i].y = sin(rad* GetTime()) *3 * sinf(ang) * m_fAspectX/3 + fWavePosY;
         //v[i].x = cos(GetTime()) / 2 + cosf(ang * 2 +tanf(t))*m_fAspectY / 2.8 + fWavePosX
-        v[i].x = cos(GetTime()) / 2 + cosf(ang * 2 + tanf(t));
-        v[i].y = sin(GetTime()) * 2 * sinf(ang * 3.14) * m_fAspectX / 2.8 + fWavePosY;
+        v[i].x = cosf(GetTime()) / 2 + cosf(ang * 2 + tanf(t));
+        v[i].y = sinf(GetTime()) * 2 * sinf(ang * 3.14f) * m_fAspectX / 2.8f + fWavePosY;
         //v[i].Diffuse = color;//(D3DCOLOR_RGBA_01(cr, cg, cb, alpha*min(1, max(0, fL[i])));
       }
 
@@ -4046,7 +4013,7 @@ if (hr != D3D_OK)
 
       {
         float time = GetTime();
-        float burst_frequency = 1.0f - fWaveParam2 + .001; // How often new bursts occur
+        float burst_frequency = 1.0f - fWaveParam2 + .001f; // How often new bursts occur
         float burst_phase = fmodf(time, burst_frequency) / burst_frequency;
 
         // Random seed based on which burst we're on
@@ -4736,7 +4703,8 @@ void CPlugin::UvToMathSpace(float u, float v, float* rad, float* ang) {
 
 void CPlugin::RestoreShaderParams() {
   LPDIRECT3DDEVICE9 lpDevice = GetDevice();
-  for (int i = 0; i < 2; i++) {
+  int i;
+  for (i = 0; i < 2; i++) {
     lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);//texaddr);
     lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);//texaddr);
     lpDevice->SetSamplerState(i, D3DSAMP_ADDRESSW, D3DTADDRESS_WRAP);//texaddr);
@@ -4761,14 +4729,17 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   //if (p->texbind_noise   >= 0) lpDevice->SetTexture( p->texbind_noise, m_pTexNoise );
 
   // bind textures
-  for (int i = 0; i < sizeof(p->m_texture_bindings) / sizeof(p->m_texture_bindings[0]); i++) {
+  int i;
+  for (i = 0; i < sizeof(p->m_texture_bindings) / sizeof(p->m_texture_bindings[0]); i++) {
     if (p->m_texcode[i] == TEX_VS)
       lpDevice->SetTexture(i, m_lpVS[0]);
+    else if (p->m_texcode[i] == TEX_FFT)
+      lpDevice->SetTexture(i, m_lpFFTTexture);
     else
       lpDevice->SetTexture(i, p->m_texture_bindings[i].texptr);
 
     // also set up sampler stage, if anything is bound here...
-    if (p->m_texcode[i] == TEX_VS || p->m_texture_bindings[i].texptr) {
+    if (p->m_texcode[i] == TEX_VS || p->m_texcode[i] == TEX_FFT || p->m_texture_bindings[i].texptr) {
       bool bAniso = false;
       DWORD HQFilter = bAniso ? D3DTEXF_ANISOTROPIC : D3DTEXF_LINEAR;
       DWORD wrap = p->m_texture_bindings[i].bWrap ? D3DTADDRESS_WRAP : D3DTADDRESS_CLAMP;
@@ -4796,7 +4767,7 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
 
   float time_since_preset_start = GetTime() - pState->GetPresetStartTime();
   float time_since_preset_start_wrapped = time_since_preset_start - (int)(time_since_preset_start / 10000) * 10000;
-  double time = GetTime() - m_fStartTime;
+  float time = GetTime() - m_fStartTime;
   float progress = (GetTime() - m_fPresetStartTime) / (m_fNextPresetTime - m_fPresetStartTime);
   float mip_x = logf((float)GetWidth()) / logf(2.0f);
   float mip_y = logf((float)GetWidth()) / logf(2.0f);
@@ -4866,17 +4837,17 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
     0.5f + 0.5f * sinf(time * 0.0133f + 4.5f),
     0.5f + 0.5f * sinf(time * 0.0217f + 3.8f)
   ));
-  if (h[12]) pCT->SetVector(lpDevice, h[12], &D3DXVECTOR4(mip_x, mip_y, mip_avg, 0));
+  if (h[12]) pCT->SetVector(lpDevice, h[12], &D3DXVECTOR4(mip_x, mip_y, mip_avg, 0.0f));
   if (h[13]) pCT->SetVector(lpDevice, h[13], &D3DXVECTOR4(blur_min[1], blur_max[1], blur_min[2], blur_max[2]));
   
   // BMV/Milkwave
   if (h[14]) pCT->SetVector(lpDevice, h[14], &D3DXVECTOR4(m_mouseX, 
     m_mouseY != -1 ? -m_mouseY + 1 : -1, 
-    m_mouseDown ? 1 : 0, 
+    m_mouseDown ? 1.0f : 0.0f, 
     m_mouseClicked > 0 ? m_lastMouseY : -m_lastMouseY));
   if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
-  if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0));
-  if (h[17]) pCT->SetVector(lpDevice, h[17], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0));
+  if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0.0f));
+  if (h[17]) pCT->SetVector(lpDevice, h[17], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0.0f));
 
   // write q vars
   int num_q_float4s = sizeof(p->q_const_handles) / sizeof(p->q_const_handles[0]);
@@ -5007,7 +4978,8 @@ void CPlugin::ShowToUser_NoShaders()//int bRedraw, int nPassOverride)
         shade[i][2] = 0.6f + 0.3f * sinf(GetTime() * 30.0f * 0.0129f + 6 + i * 9 + m_fRandStart[2]);
         float max = ((shade[i][0] > shade[i][1]) ? shade[i][0] : shade[i][1]);
         if (shade[i][2] > max) max = shade[i][2];
-        for (int k = 0; k < 3; k++) {
+        int k;
+        for (k = 0; k < 3; k++) {
           shade[i][k] /= max;
           shade[i][k] = 0.5f + 0.5f * shade[i][k];
         }
@@ -5700,9 +5672,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     t = 0;
   }
 
-  int boxAlpha = m_supertexts[supertextIndex].fBoxAlpha * 255;
+  int boxAlpha = static_cast<int>(m_supertexts[supertextIndex].fBoxAlpha * 255);
   boxAlpha = std::clamp(boxAlpha, 0, 255);
-  boxAlpha *= t;
+  boxAlpha = static_cast<int>(boxAlpha * t);
 
   if (boxAlpha > 0) {
 
@@ -5728,9 +5700,9 @@ void CPlugin::ShowSongTitleAnim(int w, int h, float fProgress, int supertextInde
     minY = centerY - halfHeight * 0.8f * m_supertexts[supertextIndex].fBoxTop;
     maxY = centerY + halfHeight * 0.8f * m_supertexts[supertextIndex].fBoxBottom;
 
-    int boxColR = std::clamp(m_supertexts[supertextIndex].fBoxColR, 0, 255);
-    int boxColG = std::clamp(m_supertexts[supertextIndex].fBoxColG, 0, 255);
-    int boxColB = std::clamp(m_supertexts[supertextIndex].fBoxColB, 0, 255);
+    int boxColR = static_cast<int>(std::clamp(m_supertexts[supertextIndex].fBoxColR, 0.0f, 255.0f));
+    int boxColG = static_cast<int>(std::clamp(m_supertexts[supertextIndex].fBoxColG, 0.0f, 255.0f));
+    int boxColB = static_cast<int>(std::clamp(m_supertexts[supertextIndex].fBoxColB, 0.0f, 255.0f));
 
     D3DCOLOR boxCol = D3DCOLOR_ARGB(boxAlpha, boxColR, boxColG, boxColB);
 

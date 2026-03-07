@@ -170,6 +170,61 @@ extern wchar_t* g_szHelp;
 extern wchar_t* g_szHelp_Page2;
 extern int g_szHelp_W;
 
+static void ScanHelpText(const void* text, bool wideText, int* outLineCount, int* outMaxLineLen) {
+  *outLineCount = 1;
+  *outMaxLineLen = 0;
+  if (!text) return;
+  int lineLen = 0;
+  if (wideText) {
+    for (const wchar_t* p = (const wchar_t*)text; *p; ++p) {
+      if (*p == L'\n') { if (lineLen > *outMaxLineLen) *outMaxLineLen = lineLen; lineLen = 0; (*outLineCount)++; }
+      else if (*p != L'\r') { lineLen++; }
+    }
+  } else {
+    for (const char* p = (const char*)text; *p; ++p) {
+      if (*p == '\n') { if (lineLen > *outMaxLineLen) *outMaxLineLen = lineLen; lineLen = 0; (*outLineCount)++; }
+      else if (*p != '\r') { lineLen++; }
+    }
+  }
+  if (lineLen > *outMaxLineLen) *outMaxLineLen = lineLen;
+}
+
+static int ComputeAutoHelpFontSize(IDirect3DDevice9* pDevice, const td_fontinfo& fontInfo, int windowHeight) {
+  if (!pDevice || windowHeight <= 0)
+    return HELPSCREEN_FONT_DEFAULT_SIZE;
+
+  int lines1 = 1, len1 = 1, lines2 = 1, len2 = 1;
+  ScanHelpText(g_szHelp,       g_szHelp_W != 0, &lines1, &len1);
+  ScanHelpText(g_szHelp_Page2, g_szHelp_W != 0, &lines2, &len2);
+  int maxLines = max(lines1, lines2);
+  if (maxLines <= 0) maxLines = 1;
+
+  // Create a reference font at a known size to measure actual line height,
+  // then scale linearly.  This works because TrueType fonts scale linearly.
+  const int REF_SIZE = 20;
+  LPD3DXFONT refFont = NULL;
+  HRESULT hr = D3DXCreateFontW(pDevice, REF_SIZE, 0,
+    fontInfo.bBold ? 900 : 400, 1, fontInfo.bItalic, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+    fontInfo.bAntiAliased ? ANTIALIASED_QUALITY : DEFAULT_QUALITY, DEFAULT_PITCH,
+    fontInfo.szFace, &refFont);
+  if (FAILED(hr) || !refFont)
+    return max(6, windowHeight / maxLines);
+
+  RECT mr;
+  SetRect(&mr, 0, 0, 4096, 4096);
+  int refLineH = refFont->DrawTextW(NULL, L"Mg", -1, &mr, DT_CALCRECT, 0xFFFFFFFF);
+  SafeRelease(refFont);
+
+  if (refLineH <= 0)
+    return max(6, windowHeight / maxLines);
+
+  // targetLineH = windowHeight / maxLines
+  // fontSize = REF_SIZE * targetLineH / refLineH
+  float targetLineH = (float)windowHeight / (float)maxLines;
+  int fontSize = (int)(REF_SIZE * targetLineH / (float)refLineH);
+  return max(6, fontSize);
+}
+
 // resides in vms_desktop.dll/lib:
 //void getItemData(int x);
 
@@ -212,7 +267,7 @@ int       CPluginShell::GetFrame() {
   return m_frame;
 };
 float     CPluginShell::GetTime() {
-  return m_time * m_timeFactor;
+  return (float)(m_time * m_timeFactor);
 };
 float     CPluginShell::GetFps() {
   return m_fps * m_fpsFactor;
@@ -242,6 +297,7 @@ int       CPluginShell::GetHeight() {
       return m_lpDX->m_client_height;
     }
   }
+  return 0;
 }
 
 int       CPluginShell::GetCanvasMarginX() {
@@ -270,7 +326,7 @@ int  CPluginShell::GetFontHeight(eFontIndex idx) {
       return (int)m_fontinfo[idx].nSize;
     }
     else {
-      return (int)m_fontinfo[idx].nSize * m_fRenderQuality;
+      return (int)(m_fontinfo[idx].nSize * m_fRenderQuality);
     }
   }
   else return 0;
@@ -594,14 +650,27 @@ void CPluginShell::CleanUpVJStuff() {
 
 int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
   // Create D3DX system font:
-  for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
+  int i;
+  int helpFontSize = HELPSCREEN_FONT_DEFAULT_SIZE;
+
+  if (pDevice) {
+    // Help text is rendered as a screen overlay at actual pixel resolution.
+    int windowHeight = m_vjd3d9_device ? m_nTextWndHeight : GetHeight();
+    if (IsSpoutActiveAndFixed()) windowHeight = nSpoutFixedHeight;
+    helpFontSize = ComputeAutoHelpFontSize(pDevice, m_fontinfo[HELPSCREEN_FONT], windowHeight);
+  }
+
+  for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     int fSize = m_fontinfo[i].nSize;
-    if (!IsSpoutActiveAndFixed()) {
-      fSize *= m_fRenderQuality;
+    if (i == HELPSCREEN_FONT) {
+      fSize = helpFontSize;
+    }
+    else if (!IsSpoutActiveAndFixed()) {
+      fSize = (int)(fSize * m_fRenderQuality);
     }
     if (D3DXCreateFontW(pDevice,  //m_font[i],
       fSize,
-      fSize * 4 / 10,
+      (i == HELPSCREEN_FONT) ? 0 : fSize * 4 / 10,
       m_fontinfo[i].bBold ? 900 : 400,
       1,  // mip levels
       m_fontinfo[i].bItalic,
@@ -619,6 +688,7 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
       return false;
     }
   }
+
   // get actual font heights
   for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     RECT r;
@@ -975,7 +1045,8 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
   }
 
   // PROTECTED STRUCTURES/POINTERS
-  for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
+  int i;
+  for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
     m_d3dx_font[i] = NULL;
   m_d3dx_desktop_font = NULL;
   m_lpDDSText = NULL;
@@ -1459,7 +1530,7 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     float q = GetEffectiveRenderQuality(cx, cy);
     cx = (int)(cx * q);
     cy = (int)(cy * q);
-    textMargin *= q;
+    textMargin = (int)(textMargin * q);
   }
 
   int marginTop = textMargin + GetCanvasMarginY();
@@ -1765,7 +1836,8 @@ void CPluginShell::AnalyzeNewSound(unsigned char* pWaveL, unsigned char* pWaveR)
   float octaves_per_band = net_octaves / 3.0f;                    // 1.9282116151858401925971388407864
   float mult = powf(2.0f, octaves_per_band); // each band's highest freq. divided by its lowest freq.; 3.805831305510122517035102576162
   // [to verify: min_freq * mult * mult * mult should equal max_freq.]
-  for (int ch = 0; ch < 2; ch++) {
+  int ch;
+  for (ch = 0; ch < 2; ch++) {
     for (i = 0; i < 3; i++) {
       // old guesswork code for this:
       //   float exp = 2.1f;
@@ -1970,13 +2042,11 @@ void CPluginShell::DrawDarkTranslucentBoxFullWindow() {
 }
 
 void CPluginShell::RenderBuiltInTextMsgs() {
-  int _show_press_f1_NOW = (m_show_press_f1_msg & m_time < PRESS_F1_DUR);
+  int _show_press_f1_NOW = (m_show_press_f1_msg & (m_time < PRESS_F1_DUR));
   {
     RECT r;
 
     if (m_show_help > 0) {
-      int y = m_upper_left_corner_y;
-
       SetRect(&r, 0, 0, GetWidth(), GetHeight());
       if (m_show_help == 1) {
         if (!g_szHelp_W)
@@ -2019,7 +2089,7 @@ void CPluginShell::RenderBuiltInTextMsgs() {
       int dx;
       if (m_time < 0.75f) {
         // Phase 1: Exponential ease-in (0s to 0.75s)
-        float t = m_time / 0.75f;
+        float t = (float)m_time / 0.75f;
         dx = (int)(PRESS_F1_MAX_DX * (1 - log10f(1.0f + t * (PRESS_F1_LOG_BASE - 1.0f))) * 1.5); //Tweak
       }
       else if (m_time <= 4.25f) {
@@ -2028,8 +2098,8 @@ void CPluginShell::RenderBuiltInTextMsgs() {
       }
       else {
         // Phase 3: Exponential ease-out (4.25s to 5s)
-        float t = (m_time - 4.25f) / 0.75f;
-        dx = (int)(PRESS_F1_MAX_DX * powf(t, PRESS_F1_EXP / 1.5)); //Tweak
+        float t = ((float)m_time - 4.25f) / 0.75f;
+        dx = (int)(PRESS_F1_MAX_DX * powf(t, PRESS_F1_EXP / 1.5f)); //Tweak
       }
 
       SetRect(&r, m_left_edge, m_lower_right_corner_y - GetFontHeight(DECORATIVE_FONT), m_right_edge + dx, m_lower_right_corner_y);
@@ -2223,11 +2293,11 @@ LRESULT CPluginShell::PluginShellWindowProc(HWND hWnd, unsigned uMsg, WPARAM wPa
   case WM_DESTROY:
     // note: don't post quit message here if the window is being destroyed
     // and re-created on a switch between windowed & FAKE fullscreen modes.
-    if (!m_lpDX->TempIgnoreDestroyMessages()) {
+    if (!m_lpDX || !m_lpDX->TempIgnoreDestroyMessages()) {
       // this is a final exit, and not just destroy-then-recreate-the-window.
       // so, flag DXContext so it knows that someone else
       // will take care of destroying the window!
-      m_lpDX->OnTrulyExiting();
+      if (m_lpDX) m_lpDX->OnTrulyExiting();
       PostQuitMessage(0);
     }
     return FALSE;
@@ -2510,7 +2580,8 @@ void CPluginShell::AlignWaves() {
   if (octaves > MAX_OCTAVES)
     octaves = MAX_OCTAVES;
 
-  for (int ch = 0; ch < 2; ch++) {
+  int ch;
+  for (ch = 0; ch < 2; ch++) {
     // only worry about matching the lower 'nSamples' samples
     float temp_new[MAX_OCTAVES][576];
     float temp_old[MAX_OCTAVES][576];
@@ -2526,10 +2597,12 @@ void CPluginShell::AlignWaves() {
     space[0] = 576 - nSamples;
 
     // potential optimization: could reuse (instead of recompute) mip levels for m_oldwave[2][]?
-    for (int octave = 1; octave < octaves; octave++) {
+    int octave;
+    for (octave = 1; octave < octaves; octave++) {
       spls[octave] = spls[octave - 1] / 2;
       space[octave] = space[octave - 1] / 2;
-      for (int n = 0; n < spls[octave]; n++) {
+      int n;
+      for (n = 0; n < spls[octave]; n++) {
         temp_new[octave][n] = 0.5f * (temp_new[octave - 1][n * 2] + temp_new[octave - 1][n * 2 + 1]);
         temp_old[octave][n] = 0.5f * (temp_old[octave - 1][n * 2] + temp_old[octave - 1][n * 2 + 1]);
       }
@@ -2539,7 +2612,8 @@ void CPluginShell::AlignWaves() {
       m_align_weights_ready = 1;
       for (octave = 0; octave < octaves; octave++) {
         int compare_samples = spls[octave] - space[octave];
-        for (int n = 0; n < compare_samples; n++) {
+          int n;
+          for (n = 0; n < compare_samples; n++) {
           // start with pyramid-shaped pdf, from 0..1..0
           if (n < compare_samples / 2)
             temp_weight[octave][n] = n * 2 / (float)compare_samples;
@@ -2715,8 +2789,8 @@ bool CPluginShell::IsSpoutActiveAndFixed() {
 void CPluginShell::SetVariableBackBuffer(int width, int height) {
   if (IsSpoutActiveAndFixed() || width == 0 || height == 0) return;
   float q = GetEffectiveRenderQuality(width, height);
-  d3dPp.BackBufferWidth = (int)width * q;
-  d3dPp.BackBufferHeight = (int)height * q;
+  d3dPp.BackBufferWidth = (UINT)(width * q);
+  d3dPp.BackBufferHeight = (UINT)(height * q);
 }
 
 void CPluginShell::UpdateBackBufferTracking(int width, int height) {
@@ -2726,7 +2800,7 @@ void CPluginShell::UpdateBackBufferTracking(int width, int height) {
 }
 
 float CPluginShell::GetEffectiveRenderQuality(int width, int height) {
-  float q = clamp(m_fRenderQuality, 0.01, 1);
+  float q = clamp(m_fRenderQuality, 0.01f, 1.0f);
   if (bQualityAuto) {
     // adjust quality based on window/screen ratio
     // Use runtime GetProcAddress to avoid depending on an import thunk (xGetSystemMetrics)
@@ -2747,11 +2821,11 @@ float CPluginShell::GetEffectiveRenderQuality(int width, int height) {
       }
       m_screen_pixels = cxScreen * cyScreen;
     }
-    float avg_pixels = m_screen_pixels / 4;
+    float avg_pixels = (float)m_screen_pixels / 4;
     float window_pixels = (float)width * (float)height;
-    q = q * sqrt(avg_pixels / window_pixels);
+    q = q * sqrtf(avg_pixels / window_pixels);
   }
-  return clamp(q, 0.01, 1);
+  return clamp(q, 0.01f, 1.0f);
 }
 
 void CPluginShell::ResetBufferAndFonts() {

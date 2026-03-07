@@ -133,7 +133,8 @@ bool _GetLineByName(FILE* f, const char* szVarName, char* szRet, int nMaxRetChar
   // if current line isn't the one, check all the others...
   if (MyLineNum < 0 || (size_t)MyLineNum >= line_varName.size() || strcmp(line_varName[MyLineNum].c_str(), szVarName) != 0) {
     int N = line_varName.size();
-    for (int i = 0; i < N; i++)
+    int i;
+    for (i = 0; i < N; i++)
       if (strcmp(line_varName[i].c_str(), szVarName) == 0) {
         MyLineNum = i;
         break;
@@ -209,7 +210,8 @@ CState::CState() {
   m_pp_codehandle = NULL;
   m_pf_eel = NSEEL_VM_alloc();
   m_pv_eel = NSEEL_VM_alloc();
-  for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+  int i;
+  for (i = 0; i < MAX_CUSTOM_WAVES; i++) {
     m_wave[i].m_pf_codehandle = NULL;
     m_wave[i].m_pp_codehandle = NULL;
     m_wave[i].m_pf_eel = NSEEL_VM_alloc();
@@ -227,7 +229,8 @@ CState::~CState() {
   FreeVarsAndCode();
   NSEEL_VM_free(m_pf_eel);
   NSEEL_VM_free(m_pv_eel);
-  for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+  int i;
+  for (i = 0; i < MAX_CUSTOM_WAVES; i++) {
     NSEEL_VM_free(m_wave[i].m_pf_eel);
     NSEEL_VM_free(m_wave[i].m_pp_eel);
   }
@@ -277,7 +280,8 @@ void CState::RegisterBuiltInVariables(int flags) {
     var_pf_wave_y = NSEEL_VM_regvar(m_pf_eel, "wave_y");
     var_pf_wave_mystery = NSEEL_VM_regvar(m_pf_eel, "wave_mystery");
     var_pf_wave_mode = NSEEL_VM_regvar(m_pf_eel, "wave_mode");
-    for (int vi = 0; vi < NUM_Q_VAR; vi++) {
+    int vi;
+    for (vi = 0; vi < NUM_Q_VAR; vi++) {
       char buf[16];
       sprintf(buf, "q%d", vi + 1);
       var_pf_q[vi] = NSEEL_VM_regvar(m_pf_eel, buf);
@@ -397,7 +401,8 @@ void CState::RegisterBuiltInVariables(int flags) {
       m_wave[i].var_pf_fps = NSEEL_VM_regvar(m_wave[i].m_pf_eel, "fps");		// i
       m_wave[i].var_pf_frame = NSEEL_VM_regvar(m_wave[i].m_pf_eel, "frame");     // i
       m_wave[i].var_pf_progress = NSEEL_VM_regvar(m_wave[i].m_pf_eel, "progress");  // i
-      for (int vi = 0; vi < NUM_Q_VAR; vi++) {
+      int vi;
+      for (vi = 0; vi < NUM_Q_VAR; vi++) {
         char buf[16];
         sprintf(buf, "q%d", vi + 1);
         m_wave[i].var_pf_q[vi] = NSEEL_VM_regvar(m_wave[i].m_pf_eel, buf);
@@ -459,7 +464,8 @@ void CState::RegisterBuiltInVariables(int flags) {
       m_shape[i].var_pf_fps = NSEEL_VM_regvar(m_shape[i].m_pf_eel, "fps");		// i
       m_shape[i].var_pf_frame = NSEEL_VM_regvar(m_shape[i].m_pf_eel, "frame");     // i
       m_shape[i].var_pf_progress = NSEEL_VM_regvar(m_shape[i].m_pf_eel, "progress");  // i
-      for (int vi = 0; vi < NUM_Q_VAR; vi++) {
+      int vi;
+      for (vi = 0; vi < NUM_Q_VAR; vi++) {
         char buf[16];
         sprintf(buf, "q%d", vi + 1);
         m_shape[i].var_pf_q[vi] = NSEEL_VM_regvar(m_shape[i].m_pf_eel, buf);
@@ -530,6 +536,8 @@ void CState::Default(DWORD ApplyFlags) {
     m_fRating = 3.0f;
     // m_fDecay = 0.98f;	// 1.0 = none, 0.95 = heavy decay
     m_fDecay = 0.75f;
+    m_fFFTAttack = 0.5f;
+    m_fFFTDecay  = 0.7f;
     m_fGammaAdj = 2.0f;		// 1.0 = reg; +2.0 = double, +3.0 = triple...
     m_fVideoEchoZoom = 2.0f;
     m_fVideoEchoAlpha = 0.0f;
@@ -583,7 +591,8 @@ void CState::Default(DWORD ApplyFlags) {
     m_fMvB = 1.0f;
     m_fMvA = 1.0f;
 
-    for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+    int i;
+    for (i = 0; i < MAX_CUSTOM_WAVES; i++) {
       m_wave[i].enabled = 0;
       m_wave[i].samples = 512;
       m_wave[i].sep = 0;
@@ -875,6 +884,8 @@ bool CState::Export(const wchar_t* szIniFile) {
   fprintf(fOut, "%s=%.3f\n", "fRating", m_fRating);
   fprintf(fOut, "%s=%.3f\n", "fGammaAdj", m_fGammaAdj.eval(-1));
   fprintf(fOut, "%s=%.3f\n", "fDecay", m_fDecay.eval(-1));
+  fprintf(fOut, "%s=%.3f\n", "FFTAttack", m_fFFTAttack);
+  fprintf(fOut, "%s=%.3f\n", "FFTDecay", m_fFFTDecay);
   fprintf(fOut, "%s=%.3f\n", "fVideoEchoZoom", m_fVideoEchoZoom.eval(-1));
   fprintf(fOut, "%s=%.3f\n", "fVideoEchoAlpha", m_fVideoEchoAlpha.eval(-1));
   fprintf(fOut, "%s=%d\n", "nVideoEchoOrientation", m_nVideoEchoOrientation);
@@ -946,7 +957,8 @@ bool CState::Export(const wchar_t* szIniFile) {
   fprintf(fOut, "%s=%.3f\n", "b3x", m_fBlur3Max.eval(-1));
   fprintf(fOut, "%s=%.3f\n", "b1ed", m_fBlur1EdgeDarken.eval(-1));
 
-  for (int i = 0; i < MAX_CUSTOM_WAVES; i++)
+  int i;
+  for (i = 0; i < MAX_CUSTOM_WAVES; i++)
     if (m_wave[i].enabled) //Only saves the enabled custom waves
       m_wave[i].Export(fOut, L"dummy_filename", i);
 
@@ -1307,6 +1319,8 @@ bool CState::Import(const wchar_t* szIniFile, float fTime, CState* pOldState, DW
   if (ApplyFlags & STATE_GENERAL) {
     m_fRating = GetFastFloat("fRating", m_fRating, f);
     m_fDecay = GetFastFloat("fDecay", m_fDecay.eval(-1), f);
+    m_fFFTAttack = max(0.0f, min(1.0f, GetFastFloat("FFTAttack", m_fFFTAttack, f)));
+    m_fFFTDecay  = max(0.0f, min(1.0f, GetFastFloat("FFTDecay",  m_fFFTDecay,  f)));
     m_fGammaAdj = GetFastFloat("fGammaAdj", m_fGammaAdj.eval(-1), f);
     m_fVideoEchoZoom = GetFastFloat("fVideoEchoZoom", m_fVideoEchoZoom.eval(-1), f);
     m_fVideoEchoAlpha = GetFastFloat("fVideoEchoAlpha", m_fVideoEchoAlpha.eval(-1), f);
@@ -1355,7 +1369,8 @@ bool CState::Import(const wchar_t* szIniFile, float fTime, CState* pOldState, DW
     m_fMvB = GetFastFloat("mv_b", m_fMvB.eval(-1), f);
     m_fMvA = (GetFastInt("bMotionVectorsOn", false, f) == 0) ? 0.0f : 1.0f; // for backwards compatibility
     m_fMvA = GetFastFloat("mv_a", m_fMvA.eval(-1), f);
-    for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+    int i;
+    for (i = 0; i < MAX_CUSTOM_WAVES; i++) {
       m_wave[i].Import(f, L"dummy_filename", i);
     }
     for (i = 0; i < MAX_CUSTOM_SHAPES; i++) {
@@ -1474,7 +1489,8 @@ void CState::FreeVarsAndCode(bool bFree) {
     m_pp_codehandle = NULL;
   }
 
-  for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+  int i;
+  for (i = 0; i < MAX_CUSTOM_WAVES; i++) {
     if (m_wave[i].m_pf_codehandle) {
       if (bFree)
         NSEEL_code_free(m_wave[i].m_pf_codehandle);
@@ -1585,7 +1601,8 @@ void CState::RecompileExpressions(int flags, int bReInit) {
     *var_pf_monitor = 0;
 
     // --- Reset per-frame q variables on recompile ---
-    for (int vi = 0; vi < NUM_Q_VAR; vi++) {
+    int vi;
+    for (vi = 0; vi < NUM_Q_VAR; vi++) {
       q_values_after_init_code[vi] = 0;
       if (var_pf_q[vi]) *var_pf_q[vi] = 0;
     }
@@ -1723,7 +1740,8 @@ void CState::RecompileExpressions(int flags, int bReInit) {
               swprintf(buf, wasabiApiLangString(IDS_WARNING_PRESET_X_ERROR_IN_WAVE_X_INIT_CODE), m_szDesc, i);
               g_plugin.AddError(buf, 6.0f, ERR_PRESET, true);
 
-              for (int vi = 0; vi < NUM_Q_VAR; vi++)
+              int vi;
+              for (vi = 0; vi < NUM_Q_VAR; vi++)
                 *m_wave[i].var_pf_q[vi] = q_values_after_init_code[vi];
               for (vi = 0; vi < NUM_T_VAR; vi++)
                 m_wave[i].t_values_after_init_code[vi] = 0;
@@ -1785,7 +1803,8 @@ void CState::RecompileExpressions(int flags, int bReInit) {
               swprintf(buf, wasabiApiLangString(IDS_WARNING_PRESET_X_ERROR_IN_SHAPE_X_INIT_CODE), m_szDesc, i);
               g_plugin.AddError(buf, 6.0f, ERR_PRESET, true);
 
-              for (int vi = 0; vi < NUM_Q_VAR; vi++)
+              int vi;
+              for (vi = 0; vi < NUM_Q_VAR; vi++)
                 *m_shape[i].var_pf_q[vi] = q_values_after_init_code[vi];
               for (vi = 0; vi < NUM_T_VAR; vi++)
                 m_shape[i].t_values_after_init_code[vi] = 0;

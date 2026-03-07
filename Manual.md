@@ -116,6 +116,8 @@ The "Preset" row allows you to set the lock mode for the current preset (same as
 
 You may also open Shanes [Message Editor](https://github.com/shanevbg/MDx12Messages) from here to edit the _messages.ini_ file in a more user-friendly way.
 
+With FFT you may control equalizer attack and decay values for presets supporting FFT functions *get_fft(pos)* and *get_fft_hz(freq)*, such as _IkeC - Equalizer.milk_ from the _Milkwave_ presets folder. *get_fft_peak_hz(freq)* is exclusive to Milkwave.
+
 ## Tab "Fonts"
 
 Modify most of the fonts used to display information in the Visualizer window. Use "Save" and "Test" to see your changes. You can save and preview changes instantly if you hold the ALT key while changing fonts or sizes.

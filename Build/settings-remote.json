@@ -46,5 +46,7 @@
     "MidiEnabled": true,
     "MidiBufferDelay": 30,
     "ShadertoyFilesDirectory": "",
-    "ShadertoyFileIndex": 1
+    "ShadertoyFileIndex": 1,
+    "VisualizerExe": "MilkwaveVisualizer.exe",
+    "WindowTitle": ""
 }

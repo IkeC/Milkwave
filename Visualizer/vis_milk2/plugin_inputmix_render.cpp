@@ -47,20 +47,22 @@ void CPlugin::UpdateSpoutInputTexture() {
     static int frameCount = 0;
 
     if (firstCall) {
-        wchar_t buf[512];
-        swprintf_s(buf, L"========================= UpdateSpoutInputTexture START (First Call) =========================");
-        milkwave->LogInfo(buf);
-        swprintf_s(buf, L"  m_bSpoutInputEnabled=%d", m_bSpoutInputEnabled);
-        milkwave->LogInfo(buf);
-        swprintf_s(buf, L"  m_pSpoutReceiver=0x%p", m_pSpoutReceiver);
-        milkwave->LogInfo(buf);
-        swprintf_s(buf, L"  m_pSpoutInputTexture=0x%p", m_pSpoutInputTexture);
-        milkwave->LogInfo(buf);
+        if (milkwave) {
+            wchar_t buf[512];
+            swprintf_s(buf, L"========================= UpdateSpoutInputTexture START (First Call) =========================");
+            milkwave->LogInfo(buf);
+            swprintf_s(buf, L"  m_bSpoutInputEnabled=%d", m_bSpoutInputEnabled);
+            milkwave->LogInfo(buf);
+            swprintf_s(buf, L"  m_pSpoutReceiver=0x%p", m_pSpoutReceiver);
+            milkwave->LogInfo(buf);
+            swprintf_s(buf, L"  m_pSpoutInputTexture=0x%p", m_pSpoutInputTexture);
+            milkwave->LogInfo(buf);
+        }
         firstCall = false;
     }
 
     if (!m_bSpoutInputEnabled) {
-        if (frameCount == 0) {
+        if (frameCount == 0 && milkwave) {
             wchar_t buf[256];
             swprintf_s(buf, L"UpdateSpoutInputTexture: Spout input not enabled - returning");
             milkwave->LogInfo(buf);
@@ -69,7 +71,7 @@ void CPlugin::UpdateSpoutInputTexture() {
     }
 
     if (!m_pSpoutReceiver) {
-        if (frameCount == 0) {
+        if (frameCount == 0 && milkwave) {
             wchar_t buf[256];
             swprintf_s(buf, L"UpdateSpoutInputTexture: ERROR - no receiver - returning");
             milkwave->LogInfo(buf);
@@ -96,7 +98,7 @@ void CPlugin::UpdateSpoutInputTexture() {
             m_pSpoutReceiver->GetSenderWidth(),
             m_pSpoutReceiver->GetSenderHeight());
         AddNotification(buf);
-        milkwave->LogInfo(buf);
+        if (milkwave) milkwave->LogInfo(buf);
         wasConnected = true;
     }
     else if (!isConnected && wasConnected) {
@@ -104,12 +106,12 @@ void CPlugin::UpdateSpoutInputTexture() {
         wchar_t buf[256];
         swprintf_s(buf, L"[SPOUT DISCONNECT] Sender disconnected");
         AddNotification(buf);
-        milkwave->LogInfo(buf);
+        if (milkwave) milkwave->LogInfo(buf);
         wasConnected = false;
     }
 
     // Log every 30 frames
-    if (frameCount % 30 == 0) {
+    if (frameCount % 30 == 0 && milkwave) {
         wchar_t buf[512];
         swprintf_s(buf, L"UpdateSpoutInputTexture: Frame %d - received=%d, connected=%d, texture=0x%p", 
             frameCount, received, isConnected, m_pSpoutInputTexture);
@@ -135,7 +137,7 @@ void CPlugin::UpdateSpoutInputTexture() {
                 wchar_t buf[512];
                 swprintf_s(buf, L"[SPOUT RESIZE] Texture size changed: %dx%d -> %dx%d",
                     m_nSpoutInputWidth, m_nSpoutInputHeight, desc.Width, desc.Height);
-                milkwave->LogInfo(buf);
+                if (milkwave) milkwave->LogInfo(buf);
                 m_nSpoutInputWidth = desc.Width;
                 m_nSpoutInputHeight = desc.Height;
             }
@@ -172,7 +174,7 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
         if (firstCall) {
             wchar_t buf[256];
             swprintf_s(buf, L"CompositeInputMixing: First call with Spout texture=0x%p", pInputTexture);
-            milkwave->LogInfo(buf);
+            if (milkwave) milkwave->LogInfo(buf);
             AddNotification(L"Spout texture ready for compositing");
             firstCall = false;
         }
@@ -183,7 +185,7 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
     }
 
     // Log every 60 frames
-    if (frameCount % 60 == 0) {
+    if (frameCount % 60 == 0 && milkwave) {
         wchar_t buf[256];
         swprintf_s(buf, L"CompositeInputMixing: Frame %d - bg=%d, texture=0x%p, opacity=%.2f", 
             frameCount, isBackground, pInputTexture, m_fInputMixOpacity);
@@ -265,6 +267,8 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
 
     if (targetWidth <= 0 || targetHeight <= 0) {
         lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+        lpDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
+        lpDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
         return;
     }
 
@@ -333,9 +337,7 @@ void CPlugin::CompositeInputMixing(bool isBackground) {
     lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices, sizeof(CUSTOMVERTEX));
 
     // Clean up
-    if (m_lpPS_InputMix) {
-        lpDevice->SetPixelShader(NULL);
-    }
+    lpDevice->SetPixelShader(NULL);
     lpDevice->SetTexture(0, NULL);
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
     lpDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);

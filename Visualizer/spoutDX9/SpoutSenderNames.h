@@ -37,8 +37,14 @@
 #define __spoutSenderNames__
 
 #include <windowsx.h>
+
+// Suppress C4005 warnings from DirectX SDK header conflicts with Windows SDK
+#pragma warning(push)
+#pragma warning(disable: 4005)
 #include <d3d9.h>
 #include <d3d11.h>
+#pragma warning(pop)
+
 #include <wingdi.h>
 #include <set>
 #include <map>

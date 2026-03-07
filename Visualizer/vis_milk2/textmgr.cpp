@@ -231,13 +231,15 @@ void CTextManager::DrawNow() {
 
     // clear added/deleted flags
     void* last_dark_box = NULL;
-    for (int i = 0; i < m_nMsg[m_b]; i++) {
+    int i;
+    for (i = 0; i < m_nMsg[m_b]; i++) {
       m_msg[m_b][i].deleted = m_msg[m_b][i].added = 0;
       m_msg[m_b][i].prev_dark_box_ptr = last_dark_box;
       last_dark_box = (m_msg[m_b][i].pfont) ? last_dark_box : (void*)&m_msg[m_b][i];
     }
     last_dark_box = NULL;
-    for (int j = 0; j < m_nMsg[1 - m_b]; j++) {
+    int j;
+    for (j = 0; j < m_nMsg[1 - m_b]; j++) {
       m_msg[1 - m_b][j].deleted = m_msg[1 - m_b][j].added = 0;
       m_msg[1 - m_b][j].prev_dark_box_ptr = last_dark_box;
       last_dark_box = (m_msg[1 - m_b][j].pfont) ? last_dark_box : (void*)&m_msg[1 - m_b][j];

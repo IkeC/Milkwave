@@ -1,3 +1,13 @@
+## v3.6 (unreleased)
+
+* Support for EQ Shader presets
+* Visualizer menu font can be configured from Remote
+* Visualizer help (F1) adjusts to window size
+* Configurable Visualizer executable and target window (to support Visualizer forks such as MDropDX12 by @shanevbg)
+* Global stability improvements
+
+You can get a preview build on [my Discord](https://bit.ly/Ikes-Discord).
+
 ## v3.5 (2026-03-01)
 
 * "Input" tab

@@ -67,6 +67,9 @@ int texmgr::LoadTex(wchar_t* szFilename, int iSlot, char* szInitCode, char* szCo
   if (iSlot < 0) return TEXMGR_ERR_BAD_INDEX;
   if (iSlot >= NUM_TEX) return TEXMGR_ERR_BAD_INDEX;
 
+  // Free any existing texture in this slot before reuse
+  KillTex(iSlot);
+
   // first, if this texture is already loaded, just add another instance.
   bool bTextureInstanced = false;
   {
@@ -84,9 +87,6 @@ int texmgr::LoadTex(wchar_t* szFilename, int iSlot, char* szInitCode, char* szCo
   }
 
   if (!bTextureInstanced) {
-    // Free old resources:
-    KillTex(iSlot);
-
     wcscpy(m_tex[iSlot].szFileName, szFilename);
 
     D3DXIMAGE_INFO info;

@@ -596,6 +596,7 @@ SPOUT :
 */
 
 #include "plugin.h"
+#include "../audio/audiobuf.h"
 #include "utility.h"
 #include "support.h"
 #include "resource.h"
@@ -717,61 +718,102 @@ const unsigned char LC2UC[256] = {
  * Copies the given string TO the clipboard.
  */
 void copyStringToClipboardA(const char* source) {
-  int ok = OpenClipboard(NULL);
-  if (!ok)
+  if (!OpenClipboard(NULL))
     return;
 
-  HGLOBAL clipbuffer;
   EmptyClipboard();
-  clipbuffer = GlobalAlloc(GMEM_DDESHARE, (lstrlenA(source) + 1) * sizeof(char));
+  HGLOBAL clipbuffer = GlobalAlloc(GMEM_DDESHARE, (lstrlenA(source) + 1) * sizeof(char));
+  if (!clipbuffer) {
+    CloseClipboard();
+    return;
+  }
   char* buffer = (char*)GlobalLock(clipbuffer);
+  if (!buffer) {
+    GlobalFree(clipbuffer);
+    CloseClipboard();
+    return;
+  }
   lstrcpyA(buffer, source);
   GlobalUnlock(clipbuffer);
-  SetClipboardData(CF_TEXT, clipbuffer);
+  if (!SetClipboardData(CF_TEXT, clipbuffer))
+    GlobalFree(clipbuffer);
   CloseClipboard();
 }
 
 void copyStringToClipboardW(const wchar_t* source) {
-  int ok = OpenClipboard(NULL);
-  if (!ok)
+  if (!OpenClipboard(NULL))
     return;
 
-  HGLOBAL clipbuffer;
   EmptyClipboard();
-  clipbuffer = GlobalAlloc(GMEM_DDESHARE, (lstrlenW(source) + 1) * sizeof(wchar_t));
+  HGLOBAL clipbuffer = GlobalAlloc(GMEM_DDESHARE, (lstrlenW(source) + 1) * sizeof(wchar_t));
+  if (!clipbuffer) {
+    CloseClipboard();
+    return;
+  }
   wchar_t* buffer = (wchar_t*)GlobalLock(clipbuffer);
+  if (!buffer) {
+    GlobalFree(clipbuffer);
+    CloseClipboard();
+    return;
+  }
   lstrcpyW(buffer, source);
   GlobalUnlock(clipbuffer);
-  SetClipboardData(CF_UNICODETEXT, clipbuffer);
+  if (!SetClipboardData(CF_UNICODETEXT, clipbuffer))
+    GlobalFree(clipbuffer);
   CloseClipboard();
 }
 
 /*
  * Suppose there is a string on the clipboard.
  * This function copies it FROM there.
+ * Returns a static buffer with clipboard contents, or empty string on failure.
  */
 char* getStringFromClipboardA() {
-  int ok = OpenClipboard(NULL);
-  if (!ok)
-    return NULL;
+  static char s_emptyA[1] = { 0 };
+  static char s_clipA[64000];
+  s_clipA[0] = 0;
+
+  if (!OpenClipboard(NULL))
+    return s_emptyA;
 
   HANDLE hData = GetClipboardData(CF_TEXT);
+  if (!hData) {
+    CloseClipboard();
+    return s_emptyA;
+  }
   char* buffer = (char*)GlobalLock(hData);
+  if (!buffer) {
+    CloseClipboard();
+    return s_emptyA;
+  }
+  lstrcpynA(s_clipA, buffer, sizeof(s_clipA));
   GlobalUnlock(hData);
   CloseClipboard();
-  return buffer;
+  return s_clipA;
 }
 
 wchar_t* getStringFromClipboardW() {
-  int ok = OpenClipboard(NULL);
-  if (!ok)
-    return NULL;
+  static wchar_t s_emptyW[1] = { 0 };
+  static wchar_t s_clipW[64000];
+  s_clipW[0] = 0;
+
+  if (!OpenClipboard(NULL))
+    return s_emptyW;
 
   HANDLE hData = GetClipboardData(CF_UNICODETEXT);
+  if (!hData) {
+    CloseClipboard();
+    return s_emptyW;
+  }
   wchar_t* buffer = (wchar_t*)GlobalLock(hData);
+  if (!buffer) {
+    CloseClipboard();
+    return s_emptyW;
+  }
+  lstrcpynW(s_clipW, buffer, sizeof(s_clipW) / sizeof(wchar_t));
   GlobalUnlock(hData);
   CloseClipboard();
-  return buffer;
+  return s_clipW;
 }
 
 void ConvertCRsToLFCA(const char* src, char* dst) {
@@ -1208,9 +1250,11 @@ void CPlugin::MyPreInitialize() {
   //m_nRatingReadProgress = -1;
 
   myfft.Init(576, MY_FFT_SAMPLES, -1);
+  m_fftShader.Init(576, MY_FFT_SAMPLES, 0, 3.0f);  // Hann³ window for minimal sidelobes, no equalization
   memset(&mysound, 0, sizeof(mysound));
 
-  for (int i = 0; i < PRESET_HIST_LEN; i++)
+  int i;
+  for (i = 0; i < PRESET_HIST_LEN; i++)
     m_presetHistory[i] = L"";
   m_presetHistoryPos = 0;
   m_presetHistoryBackFence = 0;
@@ -1398,6 +1442,9 @@ void CPlugin::MyReadConfig() {
   m_fInputMixLumakeySoftness = GetPrivateProfileFloatW(L"Milkwave", L"InputMixLumakeySoftness", 0.1f, pIni);
   m_bInputMixOnTop = GetPrivateProfileBoolW(L"Milkwave", L"InputMixOnTop", true, pIni);
   m_cInputMixTint = (D3DCOLOR)GetPrivateProfileIntW(L"Milkwave", L"InputMixTint", 0xFFFFFFFF, pIni);
+
+  m_fFFTAttackGlobal = GetPrivateProfileFloatW(L"Milkwave", L"FFTAttack", 0.5f, pIni);
+  m_fFFTDecayGlobal  = GetPrivateProfileFloatW(L"Milkwave", L"FFTDecay",  0.7f, pIni);
 
   // --------
 
@@ -1597,6 +1644,9 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileFloatW(m_fInputMixLumakeySoftness, L"InputMixLumakeySoftness", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_bInputMixOnTop, L"InputMixOnTop", pIni, L"Milkwave");
   WritePrivateProfileIntW((int)m_cInputMixTint, L"InputMixTint", pIni, L"Milkwave");
+
+  WritePrivateProfileFloatW(m_fFFTAttackGlobal, L"FFTAttack", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_fFFTDecayGlobal, L"FFTDecay", pIni, L"Milkwave");
 }
 
 void CPlugin::SaveWindowSizeAndPosition(HWND hwnd) {
@@ -1817,7 +1867,8 @@ void CPlugin::CleanUpMyNonDx9Stuff() {
   m_menuCustomShape.Finish();
   m_menuMotion.Finish();
   m_menuPost.Finish();
-  for (int i = 0; i < MAX_CUSTOM_WAVES; i++)
+  int i;
+  for (i = 0; i < MAX_CUSTOM_WAVES; i++)
     m_menuWavecode[i].Finish();
   for (i = 0; i < MAX_CUSTOM_SHAPES; i++)
     m_menuShapecode[i].Finish();
@@ -2342,8 +2393,17 @@ int CPlugin::AllocateMyDX9Stuff() {
     m_pVideoCaptureTexture = nullptr;
   }
   // Use the stored video capture dimensions, not the canvas size
-  GetDevice()->CreateTexture(m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
+  LPDIRECT3DDEVICE9EX pDev = GetDevice();
+  if (pDev) {
+    pDev->CreateTexture(m_nVideoCaptureWidth, m_nVideoCaptureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pVideoCaptureTexture, NULL);
   
+    // Create FFT spectrum texture (512x2, R32F: row0=smoothed, row1=peak hold)
+    if (pDev->CreateTexture(MY_FFT_SAMPLES, 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_R32F, D3DPOOL_DEFAULT, &m_lpFFTTexture, NULL) == D3D_OK)
+      milkwave->LogInfo(L"FFT texture created successfully");
+    else
+      milkwave->LogInfo(L"Failed to create FFT texture (D3DFMT_R32F not supported?)");
+  }
+
   // Restart video capture if it was enabled
   if (m_bVideoInputEnabled && m_pVideoCapture && m_nVideoDeviceIndex >= 0) {
     m_pVideoCapture->Stop();
@@ -2437,7 +2497,8 @@ int CPlugin::AllocateMyDX9Stuff() {
   // build index list for final composite blit -
   // order should be friendly for interpolation of 'ang' value!
   int* cur_index = &m_comp_indices[0];
-  for (int y = 0; y < FCGSY - 1; y++) {
+  int y;
+  for (y = 0; y < FCGSY - 1; y++) {
     if (y == FCGSY / 2 - 1)
       continue;
     for (int x = 0; x < FCGSX - 1; x++) {
@@ -2713,9 +2774,9 @@ int CPlugin::AllocateMyDX9Stuff() {
       }
 
       // try to set the current preset index
-      for (int i = 0; i < m_presets.size(); i++) {
+      for (size_t i = 0; i < m_presets.size(); i++) {
         if (wcscmp(m_presets[i].szFilename.c_str(), sFilename.c_str()) == 0) {
-          m_nCurrentPreset = i;
+          m_nCurrentPreset = (int)i;
           break;
         }
       }
@@ -2815,7 +2876,8 @@ bool CPlugin::AddNoiseTex(const wchar_t* szTexName, int size, int zoom_factor) {
     LARGE_INTEGER q;
     QueryPerformanceCounter(&q);
     srand(q.LowPart ^ q.HighPart ^ rand());
-    for (int x = 0; x < size; x++) {
+    int x;
+    for (x = 0; x < size; x++) {
       dst[x] = (((DWORD)(rand() % RANGE) + RANGE / 2) << 24) |
         (((DWORD)(rand() % RANGE) + RANGE / 2) << 16) |
         (((DWORD)(rand() % RANGE) + RANGE / 2) << 8) |
@@ -2939,7 +3001,8 @@ bool CPlugin::AddNoiseVol(const wchar_t* szTexName, int size, int zoom_factor) {
       LARGE_INTEGER q;
       QueryPerformanceCounter(&q);
       srand(q.LowPart ^ q.HighPart ^ rand());
-      for (int x = 0; x < size; x++) {
+      int x;
+      for (x = 0; x < size; x++) {
         dst[x] = (((DWORD)(rand() % RANGE) + RANGE / 2) << 24) |
           (((DWORD)(rand() % RANGE) + RANGE / 2) << 16) |
           (((DWORD)(rand() % RANGE) + RANGE / 2) << 8) |
@@ -2961,7 +3024,8 @@ bool CPlugin::AddNoiseVol(const wchar_t* szTexName, int size, int zoom_factor) {
   if (zoom_factor > 1) {
     // first go ACROSS, blending cubically on X, but only on the main lines.
     DWORD* dst = (DWORD*)r.pBits;
-    for (int z = 0; z < size; z += zoom_factor)
+    int z;
+    for (z = 0; z < size; z += zoom_factor)
       for (int y = 0; y < size; y += zoom_factor)
         for (int x = 0; x < size; x++)
           if (x % zoom_factor) {
@@ -3117,7 +3181,8 @@ bool CPlugin::EvictSomeTexture() {
   int newest = 99999999;
   int oldest = 0;
   bool bAtLeastOneFound = false;
-  for (int i = 0; i < N; i++)
+  int i;
+  for (i = 0; i < N; i++)
     if (m_textures[i].bEvictable && m_textures[i].nSizeInBytes > 0 && m_textures[i].nAge < m_nPresetsLoadedTotal - 1) // note: -1 here keeps images around for the blend-from preset, too...
     {
       newest = min(newest, m_textures[i].nAge);
@@ -3195,7 +3260,7 @@ bool PickRandomTexture(const wchar_t* prefix, wchar_t* szRetTextureFilename)  //
         continue;
 
       for (int i = 0; i < sizeof(texture_exts) / sizeof(texture_exts[0]); i++)
-        if (!wcsicmp(texture_exts[i].c_str(), ext + 1)) {
+        if (!_wcsicmp(texture_exts[i].c_str(), ext + 1)) {
           // valid texture found - add it to the list.  ("heart.jpg", for example)
           texfiles.push_back(ffd.cFileName);
           continue;
@@ -3218,7 +3283,8 @@ bool PickRandomTexture(const wchar_t* prefix, wchar_t* szRetTextureFilename)  //
     StringVec temp_list;
     int N = texfiles.size();
     int len = lstrlenW(prefix);
-    for (int i = 0; i < N; i++)
+    int i;
+    for (i = 0; i < N; i++)
       if (!_wcsnicmp(prefix, texfiles[i].c_str(), len))
         temp_list.push_back(texfiles[i]);
     N = temp_list.size();
@@ -3246,7 +3312,8 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
   std::wstring RandTexName[MAX_RAND_TEX];
 
   // pass 1: find all the samplers (and texture bindings).
-  for (UINT i = 0; i < d.Constants; i++) {
+  UINT i;
+  for (i = 0; i < d.Constants; i++) {
     D3DXHANDLE h = pCT->GetConstant(NULL, i);
     unsigned int count = 1;
     pCT->GetConstantDesc(h, &cd, &count);
@@ -3365,6 +3432,14 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
         }
       }
 #endif
+      else if (!wcscmp(L"fft", szRootName)) {
+        m_texture_bindings[cd.RegisterIndex].texptr = g_plugin.m_lpFFTTexture;
+        m_texcode[cd.RegisterIndex] = TEX_FFT;
+        if (!bWrapFilterSpecified) {
+          m_texture_bindings[cd.RegisterIndex].bWrap = false;   // clamp
+          m_texture_bindings[cd.RegisterIndex].bBilinear = true; // linear interpolation between bins
+        }
+      }
       else {
         m_texcode[cd.RegisterIndex] = TEX_DISK;
 
@@ -3882,20 +3957,26 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   tempBuffer[32767] = L'\0'; // Null-terminate to avoid overflow.
   dumpmsg(tempBuffer); // Pass the non-const buffer to dumpmsg.
 
+  bool bLoadedFromCache = false;
   uint32_t checksum = crc32(szShaderText, len);
   if (m_ShaderCaching) {
     pShaderByteCode = LoadShaderBytecodeFromFile(checksum, &szProfile[0]);
   }
 
   if (pShaderByteCode != NULL && !compileOnly) {
-    // restore ConstTable from bytecode
+    // restore ConstTable from cached bytecode
     HRESULT hr = D3DXGetShaderConstantTable(
       (DWORD*)pShaderByteCode->GetBufferPointer(),
-      ppConstTable // pass the pointer to pointer
+      ppConstTable
     );
-
+    if (SUCCEEDED(hr)) {
+      bLoadedFromCache = true;
+    } else {
+      SafeRelease(pShaderByteCode); // invalid cached bytecode, fall through to compile
+    }
   }
-  else {
+
+  if (!bLoadedFromCache) {
     HRESULT hresult = D3DXCompileShader(
       szShaderText,
       len,
@@ -3954,6 +4035,24 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
     }
     else if (szProfile[0] == 'p') {
       hr = GetDevice()->CreatePixelShader((const unsigned long*)(pShaderByteCode->GetBufferPointer()), (IDirect3DPixelShader9**)ppShader);
+    }
+
+    if (hr != D3D_OK && bLoadedFromCache) {
+      // stale or incompatible cache file - recompile and retry once
+      SafeRelease(pShaderByteCode);
+      if (*ppConstTable) { (*ppConstTable)->Release(); *ppConstTable = NULL; }
+      *ppShader = nullptr;
+      HRESULT compileResult = D3DXCompileShader(szShaderText, len, NULL, NULL, szFn, szProfile,
+        m_dwShaderFlags, &pShaderByteCode, &m_pShaderCompileErrors, ppConstTable);
+      if (D3D_OK == compileResult) {
+        hr = 1;
+        if (szProfile[0] == 'v')
+          hr = GetDevice()->CreateVertexShader((const unsigned long*)pShaderByteCode->GetBufferPointer(), (IDirect3DVertexShader9**)ppShader);
+        else if (szProfile[0] == 'p')
+          hr = GetDevice()->CreatePixelShader((const unsigned long*)pShaderByteCode->GetBufferPointer(), (IDirect3DPixelShader9**)ppShader);
+        if (D3D_OK == hr && m_ShaderCaching)
+          SaveShaderBytecodeToFile(pShaderByteCode, checksum, &szProfile[0]);
+      }
     }
 
     if (hr != D3D_OK) {
@@ -4022,7 +4121,8 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // Clean up input mixing shader
   SafeRelease(m_lpPS_InputMix);
 
-  for (size_t i = 0; i < m_textures.size(); i++)
+  size_t i;
+  for (i = 0; i < m_textures.size(); i++)
     if (m_textures[i].texptr) {
       // notify all CShaderParams classes that we're releasing a bindable texture!!
       size_t N = global_CShaderParams_master_list.size();
@@ -4081,6 +4181,8 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   //SafeRelease( m_pFragmentLinker );
 
   // 2. release stuff
+  SafeRelease(m_lpFFTTexture);
+  memset(m_fFFTSmoothed, 0, sizeof(m_fFFTSmoothed));
   SafeRelease(m_lpVS[0]);
   SafeRelease(m_lpVS[1]);
 
@@ -4099,27 +4201,27 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   m_texmgr.Finish();
 
   if (m_verts != NULL) {
-    delete m_verts;
+    delete[] m_verts;
     m_verts = NULL;
   }
 
   if (m_verts_temp != NULL) {
-    delete m_verts_temp;
+    delete[] m_verts_temp;
     m_verts_temp = NULL;
   }
 
   if (m_vertinfo != NULL) {
-    delete m_vertinfo;
+    delete[] m_vertinfo;
     m_vertinfo = NULL;
   }
 
   if (m_indices_list != NULL) {
-    delete m_indices_list;
+    delete[] m_indices_list;
     m_indices_list = NULL;
   }
 
   if (m_indices_strip != NULL) {
-    delete m_indices_strip;
+    delete[] m_indices_strip;
     m_indices_strip = NULL;
   }
 
@@ -4535,6 +4637,21 @@ void CPlugin::DrawTooltip(wchar_t* str, int xR, int yB) {
 }
 
 #define MyTextOut(str, corner, bDarkBox) MyTextOut_BGCOLOR(str, corner, bDarkBox, 0xFF000000)
+
+#define MyTextOut_Color_Box(str, corner, color) { \
+    SetRect(&r, 0, 0, xR-xL, 2048); \
+	m_text.DrawTextW(pFont, str, -1, &r, DT_NOPREFIX | ((corner == MTO_UPPER_RIGHT)?0:DT_SINGLELINE) | DT_WORD_ELLIPSIS | DT_CALCRECT | ((corner == MTO_UPPER_RIGHT) ? DT_RIGHT : 0), color, false, 0xFF000000); \
+    int w = r.right - r.left; \
+    if      (corner == MTO_UPPER_LEFT ) SetRect(&r, xL, *upper_left_corner_y, xL+w, *upper_left_corner_y + h); \
+    else if (corner == MTO_UPPER_RIGHT) SetRect(&r, xR-w, *upper_right_corner_y, xR, *upper_right_corner_y + h); \
+    else if (corner == MTO_LOWER_LEFT ) SetRect(&r, xL, *lower_left_corner_y - h, xL+w, *lower_left_corner_y); \
+    else if (corner == MTO_LOWER_RIGHT) SetRect(&r, xR-w, *lower_right_corner_y - h, xR, *lower_right_corner_y); \
+	m_text.DrawTextW(pFont, str, -1, &r, DT_NOPREFIX | ((corner == MTO_UPPER_RIGHT)?0:DT_SINGLELINE) | DT_WORD_ELLIPSIS | ((corner == MTO_UPPER_RIGHT) ? DT_RIGHT: 0), color, true, 0xFF000000); \
+    if      (corner == MTO_UPPER_LEFT ) *upper_left_corner_y  += h; \
+    else if (corner == MTO_UPPER_RIGHT) *upper_right_corner_y += h; \
+    else if (corner == MTO_LOWER_LEFT ) *lower_left_corner_y  -= h; \
+    else if (corner == MTO_LOWER_RIGHT) *lower_right_corner_y -= h; \
+}
 
 #define MyTextOut_Shadow(str, corner) { \
     /* calc rect size */        \
@@ -5263,7 +5380,8 @@ void CPlugin::MyRenderUI(
         UpdatePresetList(true); // make sure list is completely ready
 
         // quick checks
-        for (int mash = 0; mash < MASH_SLOTS; mash++) {
+        int mash;
+        for (mash = 0; mash < MASH_SLOTS; mash++) {
           // check validity
           if (m_nMashPreset[mash] < m_nDirs)
             m_nMashPreset[mash] = m_nDirs;
@@ -5365,7 +5483,8 @@ void CPlugin::MyRenderUI(
         };
 
 
-        for (int pass = 0; pass < 2; pass++) {
+        int pass;
+        for (pass = 0; pass < 2; pass++) {
           box = orig_rect;
           int w = 0;
           int h = 0;
@@ -5476,11 +5595,13 @@ void CPlugin::MyRenderUI(
         m_UI_mode = UI_REGULAR;
       }
       else {
-        MyTextOut(wasabiApiLangString(IDS_LOAD_WHICH_PRESET_PLUS_COMMANDS), MTO_UPPER_LEFT, true);
+        SelectFont(PLAYLIST_FONT);
+        DWORD menuColor = GetFontColor(PLAYLIST_FONT);
+        MyTextOut_Color_Box(wasabiApiLangString(IDS_LOAD_WHICH_PRESET_PLUS_COMMANDS), MTO_UPPER_LEFT, menuColor);
 
         wchar_t buf[MAX_PATH + 64];
         swprintf(buf, wasabiApiLangString(IDS_DIRECTORY_OF_X), m_szPresetDir);
-        MyTextOut(buf, MTO_UPPER_LEFT, true);
+        MyTextOut_Color_Box(buf, MTO_UPPER_LEFT, menuColor);
 
         *upper_left_corner_y += h / 2;
 
@@ -5491,11 +5612,11 @@ void CPlugin::MyRenderUI(
         rect.right -= PLAYLIST_INNER_MARGIN;
         rect.bottom -= PLAYLIST_INNER_MARGIN;
 
-        int lines_available = (rect.bottom - rect.top - PLAYLIST_INNER_MARGIN * 2) / GetFontHeight(SIMPLE_FONT);
+        int lines_available = (rect.bottom - rect.top - PLAYLIST_INNER_MARGIN * 2) / GetFontHeight(PLAYLIST_FONT);
 
         if (lines_available < 1) {
           // force it
-          rect.bottom = rect.top + GetFontHeight(SIMPLE_FONT) + 1;
+          rect.bottom = rect.top + GetFontHeight(PLAYLIST_FONT) + 1;
           lines_available = 1;
         }
         if (lines_available > MAX_PRESETS_PER_PAGE)
@@ -5535,7 +5656,16 @@ void CPlugin::MyRenderUI(
         if (m_bShowMenuToolTips) {
           wchar_t buf[256];
           swprintf(buf, wasabiApiLangString(IDS_PAGE_X_OF_X), m_nPresetListCurPos / lines_available + 1, (m_nPresets + lines_available - 1) / lines_available);
-          DrawTooltip(buf, xR, *lower_right_corner_y);
+          RECT r, r2;
+          SetRect(&r, 0, 0, xR - TEXT_MARGIN * 2, 2048);
+          m_text.DrawTextW(GetFont(PLAYLIST_FONT), buf, -1, &r, DT_CALCRECT, 0xFFFFFFFF, false);
+          r2.bottom = *lower_right_corner_y - TEXT_MARGIN;
+          r2.right = xR - TEXT_MARGIN;
+          r2.left = r2.right - (r.right - r.left);
+          r2.top = r2.bottom - (r.bottom - r.top);
+          RECT r3 = r2; r3.left -= 4; r3.top -= 2; r3.right += 2; r3.bottom += 2;
+          DrawDarkTranslucentBox(&r3);
+          m_text.DrawTextW(GetFont(PLAYLIST_FONT), buf, -1, &r2, 0, GetFontColor(PLAYLIST_FONT), false);
         }
 
         RECT orig_rect = rect;
@@ -5578,14 +5708,14 @@ void CPlugin::MyRenderUI(
             if (bIsRunning && m_bPresetLockedByUser)
               lstrcatW(str2, wasabiApiLangString(IDS_LOCKED));
 
-            DWORD color = bIsDir ? DIR_COLOR : PLAYLIST_COLOR_NORMAL;
+            DWORD color = bIsDir ? DIR_COLOR : GetFontColor(PLAYLIST_FONT);
             if (bIsRunning)
               color = bIsSelected ? PLAYLIST_COLOR_BOTH : PLAYLIST_COLOR_PLAYING_TRACK;
             else if (bIsSelected)
               color = PLAYLIST_COLOR_HILITE_TRACK;
 
             RECT r2 = rect;
-            rect.top += m_text.DrawTextW(GetFont(SIMPLE_FONT), str2, -1, &r2, DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX | (pass == 0 ? DT_CALCRECT : 0), color, false);
+            rect.top += m_text.DrawTextW(GetFont(PLAYLIST_FONT), str2, -1, &r2, DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX | (pass == 0 ? DT_CALCRECT : 0), color, false);
 
             if (pass == 0)  // calculating dark box
             {
@@ -5716,10 +5846,6 @@ void ToggleTransparency(HWND hwnd) {
   int width = rect.right - rect.left;
   int height = rect.bottom - rect.top;
 
-  //Checks if DWM (Aero) is enabled or disabled
-  BOOL dwmEnabled = FALSE;
-  DwmIsCompositionEnabled(&dwmEnabled);
-
   LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 
   // Enable the layered window attribute without affecting other styles
@@ -5728,17 +5854,17 @@ void ToggleTransparency(HWND hwnd) {
 
   SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED); // Redraws the window to fix the transparency mode issue for Windows 7, 8 and 8.1.
   if (TranspaMode) {
-    if (dwmEnabled)
-      DwmEnableComposition(DWM_EC_DISABLECOMPOSITION); //Disable Aero Composition
-    //SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
+    // Disable window transition animations while in transparent/color-key mode
+    BOOL fDisable = TRUE;
+    DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &fDisable, sizeof(fDisable));
     SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
     g_plugin.fOpacity = 1.0f;
     DragAcceptFiles(hwnd, TRUE);
   }
   else {
-    if (!dwmEnabled)
-      DwmEnableComposition(DWM_EC_ENABLECOMPOSITION); //Reenable Aero Composition
-    //SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
+    // Re-enable window transition animations when leaving transparent mode
+    BOOL fDisable = FALSE;
+    DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &fDisable, sizeof(fDisable));
     SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_ALPHA);
     DragAcceptFiles(hwnd, TRUE);
   }
@@ -5785,7 +5911,7 @@ void CPlugin::SetOpacity(HWND hwnd) {
     printf("Failed to reapply window opacity. Error: %lu\n", error);
   }
 
-  int display = std::ceil(100 * fOpacity);
+  int display = static_cast<int>(std::ceil(100 * fOpacity));
   wchar_t buf[1024];
   swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
   g_plugin.AddNotification(buf);
@@ -5877,8 +6003,8 @@ void LoadPresetFilesViaDragAndDrop(WPARAM wParam) {
   if (GetFilename.substr(GetFilename.find_last_of(".") + 1) == "milk") //from https://stackoverflow.com/a/51999
     g_plugin.LoadPreset(convertedFileName, 0.0f);
   else {
-    wchar_t buf[1024], tmp[128];
-    swprintf(buf, L"Error: Failed to load dropped preset file: %s", convertedFileName, tmp, 128);
+    wchar_t buf[1024];
+    swprintf(buf, 1024, L"Error: Failed to load dropped preset file: %s", convertedFileName);
     g_plugin.AddError(buf, 5.0f, ERR_NOTIFY, true);
   }
   DragFinish(hDrop);
@@ -7849,13 +7975,13 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
   case '~':
     m_bPresetLockedByUser = !m_bPresetLockedByUser;
     if (m_bPresetLockedByUser) {
-      wchar_t buf[1024], tmp[64];
-      swprintf(buf, L"Preset locked", tmp, 64);
+      wchar_t buf[1024];
+      swprintf(buf, 1024, L"Preset locked");
       AddNotification(buf);
     }
     else {
-      wchar_t buf[1024], tmp[64];
-      swprintf(buf, L"Preset unlocked", tmp, 64);
+      wchar_t buf[1024];
+      swprintf(buf, 1024, L"Preset unlocked");
       AddNotification(buf);
     }
     SendSettingsInfoToMilkwaveRemote();
@@ -8020,7 +8146,8 @@ void CPlugin::BuildMenus() {
   m_menuWave.Init(wasabiApiLangString(IDS_DRAWING_SIMPLE_WAVEFORM));
   m_menuAugment.Init(wasabiApiLangString(IDS_DRAWING_BORDERS_MOTION_VECTORS));
   m_menuPost.Init(wasabiApiLangString(IDS_POST_PROCESSING_MISC));
-  for (int i = 0; i < MAX_CUSTOM_WAVES; i++) {
+  int i;
+  for (i = 0; i < MAX_CUSTOM_WAVES; i++) {
     swprintf(buf, wasabiApiLangString(IDS_CUSTOM_WAVE_X), i + 1);
     m_menuWavecode[i].Init(buf);
   }
@@ -9909,7 +10036,7 @@ retry:
     else {
       // skip normal files not ending in ".milk"
       int len = lstrlenW(fd.cFileName);
-      if (len < 5 || wcsicmp(fd.cFileName + len - 5, L".milk") != 0)
+      if (len < 5 || _wcsicmp(fd.cFileName + len - 5, L".milk") != 0)
         bSkip = true;
 
       // if it is .milk, make sure we know how to run its pixel shaders -
@@ -11049,7 +11176,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
 
     if (params.find(L"easefactor") != params.end()) {
-      m_supertexts[nextFreeSupertextIndex].fEaseFactor = std::stoi(params[L"easefactor"]);
+      m_supertexts[nextFreeSupertextIndex].fEaseFactor = std::stof(params[L"easefactor"]);
     }
 
     if (params.find(L"shadowoffset") != params.end()) {
@@ -11140,7 +11267,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       try {
         milkwave_amp_left = std::stof(params[L"l"]);
         milkwave_amp_right = std::stof(params[L"r"]);
-      } catch (const std::exception& e) {
+      } catch (const std::exception&) {
         // Handle the error if the conversion fails
         milkwave_amp_left = 1.0f; // Default value
         milkwave_amp_right = 1.0f; // Default value
@@ -11182,9 +11309,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
 
     // try to set the current preset index
-    for (int i = 0; i < m_presets.size(); i++) {
+    for (size_t i = 0; i < m_presets.size(); i++) {
       if (wcscmp(m_presets[i].szFilename.c_str(), sFilename.c_str()) == 0) {
-        m_nCurrentPreset = i;
+        m_nCurrentPreset = (int)i;
         break;
       }
     }
@@ -11260,7 +11387,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     SetOpacity(GetPluginWindow());
   }
   else if (wcsncmp(sMessage, L"STATE", 5) == 0) {
-    int display = std::ceil(100 * fOpacity);
+    int display = static_cast<int>(std::ceil(100 * fOpacity));
     wchar_t buf[1024];
     swprintf(buf, 64, L"Opacity: %d%%", display); // Use %d for integers
     SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
@@ -11353,6 +11480,24 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 15);
     g_plugin.m_ColShiftBrightness = std::stof(message);
   }
+  else if (wcsncmp(sMessage, L"FFT_ATTACK=", 11) == 0) {
+    std::wstring message(sMessage + 11);
+    g_plugin.m_fFFTAttackGlobal = max(0.0f, min(1.0f, std::stof(message)));
+    if (g_plugin.m_pState)
+      g_plugin.m_pState->m_fFFTAttack = g_plugin.m_fFFTAttackGlobal;
+    wchar_t buf[64];
+    swprintf(buf, 64, L"FFT Attack: %.2f", g_plugin.m_fFFTAttackGlobal);
+    g_plugin.AddError(buf, 2.0f, ERR_NOTIFY, false);
+  }
+  else if (wcsncmp(sMessage, L"FFT_DECAY=", 10) == 0) {
+    std::wstring message(sMessage + 10);
+    g_plugin.m_fFFTDecayGlobal = max(0.0f, min(1.0f, std::stof(message)));
+    if (g_plugin.m_pState)
+      g_plugin.m_pState->m_fFFTDecay = g_plugin.m_fFFTDecayGlobal;
+    wchar_t buf[64];
+    swprintf(buf, 64, L"FFT Decay: %.2f", g_plugin.m_fFFTDecayGlobal);
+    g_plugin.AddError(buf, 2.0f, ERR_NOTIFY, false);
+  }
   else if (wcsncmp(sMessage, L"VAR_QUALITY=", 12) == 0) {
     std::wstring message(sMessage + 12);
     g_plugin.m_fRenderQuality = std::stof(message);
@@ -11380,8 +11525,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     if (pos != std::wstring::npos) {
       std::wstring width = message.substr(0, pos);
       std::wstring height = message.substr(pos + 1);
-      nSpoutFixedWidth = std::stof(width);
-      nSpoutFixedHeight = std::stof(height);
+      nSpoutFixedWidth = std::stoi(width);
+      nSpoutFixedHeight = std::stoi(height);
       SetSpoutFixedSize(false, true);
     }
   }
@@ -11442,7 +11587,9 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
     + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0")
     + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0")
     + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f))
-    + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f));
+    + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f))
+    + L"|FFTATTACK=" + std::to_wstring(m_fFFTAttackGlobal)
+    + L"|FFTDECAY=" + std::to_wstring(m_fFFTDecayGlobal);
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 
@@ -11570,19 +11717,19 @@ void CPlugin::SetWaveParamsFromMessage(std::wstring& message) {
   }
   if (params.find(L"COLORR") != params.end()) {
     int colR = std::stoi(params[L"COLORR"]);
-    double colRDbl = colR / 255.0;
+    float colRDbl = colR / 255.0f;
     g_plugin.m_pState->m_fWaveR = colRDbl;
     g_plugin.m_pState->m_fMvR = colRDbl;
   }
   if (params.find(L"COLORG") != params.end()) {
     int colG = std::stoi(params[L"COLORG"]);
-    double colGDbl = colG / 255.0;
+    float colGDbl = colG / 255.0f;
     g_plugin.m_pState->m_fWaveG = colGDbl;
     g_plugin.m_pState->m_fMvG = colGDbl;
   }
   if (params.find(L"COLORB") != params.end()) {
     int colB = std::stoi(params[L"COLORB"]);
-    double colBDbl = colB / 255.0;
+    float colBDbl = colB / 255.0f;
     g_plugin.m_pState->m_fWaveB = colBDbl;
     g_plugin.m_pState->m_fMvB = colBDbl;
   }
@@ -11861,10 +12008,7 @@ void CPlugin::DoCustomSoundAnalysis() {
   // do our own [UN-NORMALIZED] fft
   float fWaveLeft[576];
   float fWaveRight[576];
-  for (int i = 0; i < 576; i++) {
-    fWaveLeft[i] = m_sound.fWaveform[0][i]; //left channel
-    fWaveRight[i] = m_sound.fWaveform[1][i]; //right channel
-  }
+  GetAudioBufFloat(fWaveLeft, fWaveRight, 576);
 
   memset(mysound.fSpecLeft, 0, sizeof(float) * MY_FFT_SAMPLES);
   memset(mysound.fSpecRight, 0, sizeof(float) * MY_FFT_SAMPLES);
@@ -11872,6 +12016,70 @@ void CPlugin::DoCustomSoundAnalysis() {
   myfft.time_to_frequency_domain(fWaveLeft, mysound.fSpecLeft);
   myfft.time_to_frequency_domain(fWaveRight, mysound.fSpecRight);
   //for (i=0; i<MY_FFT_SAMPLES; i++) fSpecLeft[i] = sqrtf(fSpecLeft[i]*fSpecLeft[i] + fSpecTemp[i]*fSpecTemp[i]);
+
+  // Compute clean (un-equalized) FFT for get_fft()/get_fft_hz() shader functions
+  float fShaderSpecLeft[MY_FFT_SAMPLES];
+  float fShaderSpecRight[MY_FFT_SAMPLES];
+  memset(fShaderSpecLeft, 0, sizeof(float) * MY_FFT_SAMPLES);
+  memset(fShaderSpecRight, 0, sizeof(float) * MY_FFT_SAMPLES);
+  m_fftShader.time_to_frequency_domain(fWaveLeft, fShaderSpecLeft);
+  m_fftShader.time_to_frequency_domain(fWaveRight, fShaderSpecRight);
+
+  // Apply FFT smoothing and upload to GPU texture
+  {
+    float attack = m_pState ? m_pState->m_fFFTAttack : m_fFFTAttackGlobal;
+    float decay  = m_pState ? m_pState->m_fFFTDecay : m_fFFTDecayGlobal;
+    const float kNoiseGate = 5e-5f;
+    const float kVisibleFloor = 2.5e-4f;
+    for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
+      float mono = (fShaderSpecLeft[fi] + fShaderSpecRight[fi]) * 0.5f;
+      // Store linear magnitude in texture; sqrt() is applied in the shader.
+      // This preserves dynamic range so FFT sidelobes stay proportionally small.
+      mono = mono * 0.00035f;
+      // Noise gate: zero out values below threshold to suppress window sidelobes.
+      if (mono < kNoiseGate) mono = 0.0f;
+      // Attenuate low-frequency bins to reduce bass over-accentuation.
+      // Bins below ~215 Hz (bin ~5) are progressively reduced.
+      // The curve ramps from 0.15 at bin 0 to 1.0 at bin 5.
+      if (fi < 5) {
+        float t = fi / 5.0f;
+        float lowcut = 0.15f + 0.85f * t;
+        mono *= lowcut;
+      }
+      if (mono > m_fFFTSmoothed[fi])
+        m_fFFTSmoothed[fi] += (mono - m_fFFTSmoothed[fi]) * attack;
+      else {
+        float decayFactor = (1.0f - decay) * (1.0f - decay);
+        m_fFFTSmoothed[fi] += (mono - m_fFFTSmoothed[fi]) * decayFactor;
+      }
+      if (m_fFFTSmoothed[fi] < kVisibleFloor)
+        m_fFFTSmoothed[fi] = 0.0f;
+    }
+    // Update peak hold: hold for ~0.5 seconds then decay
+    for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
+      if (m_fFFTSmoothed[fi] >= m_fFFTPeak[fi]) {
+        m_fFFTPeak[fi] = m_fFFTSmoothed[fi];
+        m_nFFTPeakHold[fi] = 30;
+      } else if (m_nFFTPeakHold[fi] > 0) {
+        m_nFFTPeakHold[fi]--;
+      } else {
+        m_fFFTPeak[fi] *= 0.97f;
+        if (m_fFFTPeak[fi] < kVisibleFloor) m_fFFTPeak[fi] = 0.0f;
+      }
+    }
+    if (m_lpFFTTexture) {
+      D3DLOCKED_RECT r;
+      if (D3D_OK == m_lpFFTTexture->LockRect(0, &r, NULL, D3DLOCK_DISCARD)) {
+        float* row0 = (float*)r.pBits;
+        float* row1 = (float*)((BYTE*)r.pBits + r.Pitch);
+        for (int fi = 0; fi < MY_FFT_SAMPLES; fi++) {
+          row0[fi] = m_fFFTSmoothed[fi];
+          row1[fi] = m_fFFTPeak[fi];
+        }
+        m_lpFFTTexture->UnlockRect(0);
+      }
+    }
+  }
 
   // DeepSeek - Update the sample rate (we don't need to check HRESULT every frame)
   static DWORD lastCheck = 0;
@@ -11884,7 +12092,8 @@ void CPlugin::DoCustomSoundAnalysis() {
 
   // sum spectrum up into 3 bands
   //DeepSeek - Updated Beat Detection Splitting Algorithm
-  for (int i = 0; i < 3; i++) {
+  int i;
+  for (i = 0; i < 3; i++) {
     // Calculate which FFT bins correspond to our frequency ranges
     int start_bin, end_bin;
 
@@ -11915,7 +12124,7 @@ void CPlugin::DoCustomSoundAnalysis() {
     }
   }
 
-  int recentBufferSize = GetFps();
+  int recentBufferSize = static_cast<int>(GetFps());
 
   // do temporal blending to create attenuated and super-attenuated versions
   for (i = 0; i < 3; i++) {
@@ -11953,11 +12162,11 @@ void CPlugin::DoCustomSoundAnalysis() {
 
     // smooth
     mysound.recent[i].push_back(mysound.imm_rel[i]);
-    if (mysound.recent[i].size() > recentBufferSize) {
+    if (mysound.recent[i].size() > static_cast<size_t>(recentBufferSize)) {
       mysound.recent[i].erase(mysound.recent[i].begin());
     }
     mysound.smooth[i] = 0;
-    int k = 0;
+    size_t k = 0;
     for (; k < mysound.recent[i].size(); k++) {
       mysound.smooth[i] += mysound.recent[i][k];
     }
@@ -12177,7 +12386,7 @@ void CPlugin::SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t ch
     return;
   }
   std::ostringstream filePath;
-  filePath << cacheDir << "\\" << prefix << "-" << std::hex << std::uppercase << checksum << ".shader";
+  filePath << cacheDir << "\\" << prefix << "-" << std::hex << std::uppercase << m_dwShaderFlags << "-" << checksum << ".shader";
 
   std::ofstream outFile(filePath.str(), std::ios::binary);
   if (outFile.is_open()) {
@@ -12194,7 +12403,7 @@ ID3DXBuffer* CPlugin::LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix
   ID3DXBuffer* pBuffer = nullptr;
 
   std::ostringstream filePath;
-  filePath << "cache\\" << prefix << "-" << std::hex << std::uppercase << checksum << ".shader";
+  filePath << "cache\\" << prefix << "-" << std::hex << std::uppercase << m_dwShaderFlags << "-" << checksum << ".shader";
 
   std::ifstream inFile(filePath.str(), std::ios::binary | std::ios::ate);
   if (!inFile.is_open()) return nullptr;
