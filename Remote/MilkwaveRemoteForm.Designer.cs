@@ -228,6 +228,11 @@ namespace MilkwaveRemote
       chkSettingsPresetRandom = new CheckBox();
       btnMessagesEditorOpen = new Button();
       label20 = new Label();
+      chkMenuAA = new CheckBox();
+      lblMenu = new Label();
+      numFontMenu = new NumericUpDown();
+      cboFontMenu = new ComboBox();
+      pnlColorMenu = new Panel();
       label15 = new Label();
       label16 = new Label();
       label18 = new Label();
@@ -375,6 +380,8 @@ namespace MilkwaveRemote
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
       tabFonts = new TabPage();
+      chkMenuItalic = new CheckBox();
+      chkMenuBold = new CheckBox();
       btnTestFonts = new Button();
       chkFontItalic5 = new CheckBox();
       chkFontBold5 = new CheckBox();
@@ -412,6 +419,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numOffset).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsHueAuto).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFontMenu).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numInputMixOpacity).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numLumaThreshold).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numLumaSoftness).BeginInit();
@@ -1709,7 +1717,7 @@ namespace MilkwaveRemote
       chkFontAA3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontAA3.Appearance = Appearance.Button;
       chkFontAA3.FlatStyle = FlatStyle.System;
-      chkFontAA3.Location = new Point(461, 65);
+      chkFontAA3.Location = new Point(461, 94);
       chkFontAA3.Margin = new Padding(3, 2, 3, 2);
       chkFontAA3.Name = "chkFontAA3";
       chkFontAA3.Size = new Size(49, 23);
@@ -1722,7 +1730,7 @@ namespace MilkwaveRemote
       // 
       // lblFont3
       // 
-      lblFont3.Location = new Point(1, 64);
+      lblFont3.Location = new Point(1, 93);
       lblFont3.Name = "lblFont3";
       lblFont3.Size = new Size(67, 24);
       lblFont3.TabIndex = 141;
@@ -1734,7 +1742,7 @@ namespace MilkwaveRemote
       // numFont3
       // 
       numFont3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numFont3.Location = new Point(255, 65);
+      numFont3.Location = new Point(255, 94);
       numFont3.Margin = new Padding(3, 2, 3, 2);
       numFont3.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
       numFont3.Name = "numFont3";
@@ -1749,7 +1757,7 @@ namespace MilkwaveRemote
       // 
       pnlColorFont3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       pnlColorFont3.BorderStyle = BorderStyle.FixedSingle;
-      pnlColorFont3.Location = new Point(307, 65);
+      pnlColorFont3.Location = new Point(307, 94);
       pnlColorFont3.Name = "pnlColorFont3";
       pnlColorFont3.Size = new Size(38, 23);
       pnlColorFont3.TabIndex = 139;
@@ -1761,7 +1769,7 @@ namespace MilkwaveRemote
       chkFontAA4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontAA4.Appearance = Appearance.Button;
       chkFontAA4.FlatStyle = FlatStyle.System;
-      chkFontAA4.Location = new Point(461, 94);
+      chkFontAA4.Location = new Point(461, 123);
       chkFontAA4.Margin = new Padding(3, 2, 3, 2);
       chkFontAA4.Name = "chkFontAA4";
       chkFontAA4.Size = new Size(49, 23);
@@ -1774,7 +1782,7 @@ namespace MilkwaveRemote
       // 
       // lblFont4
       // 
-      lblFont4.Location = new Point(1, 93);
+      lblFont4.Location = new Point(1, 122);
       lblFont4.Name = "lblFont4";
       lblFont4.Size = new Size(67, 24);
       lblFont4.TabIndex = 148;
@@ -1786,7 +1794,7 @@ namespace MilkwaveRemote
       // numFont4
       // 
       numFont4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numFont4.Location = new Point(255, 94);
+      numFont4.Location = new Point(255, 123);
       numFont4.Margin = new Padding(3, 2, 3, 2);
       numFont4.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
       numFont4.Name = "numFont4";
@@ -1801,7 +1809,7 @@ namespace MilkwaveRemote
       // 
       pnlColorFont4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       pnlColorFont4.BorderStyle = BorderStyle.FixedSingle;
-      pnlColorFont4.Location = new Point(307, 94);
+      pnlColorFont4.Location = new Point(307, 123);
       pnlColorFont4.Name = "pnlColorFont4";
       pnlColorFont4.Size = new Size(38, 23);
       pnlColorFont4.TabIndex = 146;
@@ -1813,7 +1821,7 @@ namespace MilkwaveRemote
       chkFontAA5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontAA5.Appearance = Appearance.Button;
       chkFontAA5.FlatStyle = FlatStyle.System;
-      chkFontAA5.Location = new Point(461, 123);
+      chkFontAA5.Location = new Point(461, 152);
       chkFontAA5.Margin = new Padding(3, 2, 3, 2);
       chkFontAA5.Name = "chkFontAA5";
       chkFontAA5.Size = new Size(49, 23);
@@ -1826,7 +1834,7 @@ namespace MilkwaveRemote
       // 
       // lblFont5
       // 
-      lblFont5.Location = new Point(1, 122);
+      lblFont5.Location = new Point(1, 151);
       lblFont5.Name = "lblFont5";
       lblFont5.Size = new Size(67, 24);
       lblFont5.TabIndex = 155;
@@ -1838,7 +1846,7 @@ namespace MilkwaveRemote
       // numFont5
       // 
       numFont5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numFont5.Location = new Point(255, 123);
+      numFont5.Location = new Point(255, 152);
       numFont5.Margin = new Padding(3, 2, 3, 2);
       numFont5.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
       numFont5.Name = "numFont5";
@@ -1853,7 +1861,7 @@ namespace MilkwaveRemote
       // 
       pnlColorFont5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       pnlColorFont5.BorderStyle = BorderStyle.FixedSingle;
-      pnlColorFont5.Location = new Point(307, 123);
+      pnlColorFont5.Location = new Point(307, 152);
       pnlColorFont5.Name = "pnlColorFont5";
       pnlColorFont5.Size = new Size(38, 23);
       pnlColorFont5.TabIndex = 153;
@@ -1881,7 +1889,7 @@ namespace MilkwaveRemote
       cboFont5.AutoCompleteSource = AutoCompleteSource.ListItems;
       cboFont5.DropDownStyle = ComboBoxStyle.DropDownList;
       cboFont5.FormattingEnabled = true;
-      cboFont5.Location = new Point(71, 123);
+      cboFont5.Location = new Point(71, 152);
       cboFont5.Name = "cboFont5";
       cboFont5.Size = new Size(178, 23);
       cboFont5.TabIndex = 152;
@@ -1895,7 +1903,7 @@ namespace MilkwaveRemote
       cboFont4.AutoCompleteSource = AutoCompleteSource.ListItems;
       cboFont4.DropDownStyle = ComboBoxStyle.DropDownList;
       cboFont4.FormattingEnabled = true;
-      cboFont4.Location = new Point(71, 94);
+      cboFont4.Location = new Point(71, 123);
       cboFont4.Name = "cboFont4";
       cboFont4.Size = new Size(178, 23);
       cboFont4.TabIndex = 145;
@@ -1909,7 +1917,7 @@ namespace MilkwaveRemote
       cboFont3.AutoCompleteSource = AutoCompleteSource.ListItems;
       cboFont3.DropDownStyle = ComboBoxStyle.DropDownList;
       cboFont3.FormattingEnabled = true;
-      cboFont3.Location = new Point(71, 65);
+      cboFont3.Location = new Point(71, 94);
       cboFont3.Name = "cboFont3";
       cboFont3.Size = new Size(178, 23);
       cboFont3.TabIndex = 138;
@@ -2844,6 +2852,72 @@ namespace MilkwaveRemote
       label20.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label20, "Equalizer Attack/Decay\r\nFor equalizer presets using FFT data, the attack value controls how quickly EQ bars rise, and decay controls how slowly they fall\r\nDouble-click: Reset to default (0,5/0.7)\r\n");
       label20.DoubleClick += label20_DoubleClick;
+      // 
+      // chkMenuAA
+      // 
+      chkMenuAA.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkMenuAA.Appearance = Appearance.Button;
+      chkMenuAA.FlatStyle = FlatStyle.System;
+      chkMenuAA.Location = new Point(461, 65);
+      chkMenuAA.Margin = new Padding(3, 2, 3, 2);
+      chkMenuAA.Name = "chkMenuAA";
+      chkMenuAA.Size = new Size(49, 23);
+      chkMenuAA.TabIndex = 168;
+      chkMenuAA.Text = "AA";
+      chkMenuAA.TextAlign = ContentAlignment.MiddleCenter;
+      chkMenuAA.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkMenuAA, "Anti-Aliased");
+      chkMenuAA.UseVisualStyleBackColor = true;
+      // 
+      // lblMenu
+      // 
+      lblMenu.Location = new Point(1, 64);
+      lblMenu.Name = "lblMenu";
+      lblMenu.Size = new Size(67, 24);
+      lblMenu.TabIndex = 165;
+      lblMenu.Text = "Menu";
+      lblMenu.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblMenu, "Extra Font 4: Menu\r\nDouble-click: Set default values");
+      lblMenu.DoubleClick += lblMenu_DoubleClick;
+      // 
+      // numFontMenu
+      // 
+      numFontMenu.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      numFontMenu.Location = new Point(255, 65);
+      numFontMenu.Margin = new Padding(3, 2, 3, 2);
+      numFontMenu.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+      numFontMenu.Name = "numFontMenu";
+      numFontMenu.Size = new Size(46, 23);
+      numFontMenu.TabIndex = 164;
+      numFontMenu.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numFontMenu, "Font size\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      numFontMenu.Value = new decimal(new int[] { 25, 0, 0, 0 });
+      numFontMenu.ValueChanged += numFontMenu_ValueChanged;
+      // 
+      // cboFontMenu
+      // 
+      cboFontMenu.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      cboFontMenu.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboFontMenu.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboFontMenu.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboFontMenu.FormattingEnabled = true;
+      cboFontMenu.Location = new Point(71, 65);
+      cboFontMenu.Name = "cboFontMenu";
+      cboFontMenu.Size = new Size(178, 23);
+      cboFontMenu.TabIndex = 162;
+      toolTip1.SetToolTip(cboFontMenu, "Font face\r\nAlt+Mousewheel: Save and preview instantly\r\n");
+      cboFontMenu.SelectedIndexChanged += cboFontMenu_SelectedIndexChanged;
+      // 
+      // pnlColorMenu
+      // 
+      pnlColorMenu.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      pnlColorMenu.BorderStyle = BorderStyle.FixedSingle;
+      pnlColorMenu.Location = new Point(307, 65);
+      pnlColorMenu.Name = "pnlColorMenu";
+      pnlColorMenu.Size = new Size(38, 23);
+      pnlColorMenu.TabIndex = 163;
+      toolTip1.SetToolTip(pnlColorMenu, "Font color");
+      pnlColorMenu.Click += pnlColorFont_Click;
       // 
       // label15
       // 
@@ -4833,6 +4907,13 @@ namespace MilkwaveRemote
       // 
       tabFonts.BackColor = SystemColors.ControlLight;
       tabFonts.BorderStyle = BorderStyle.FixedSingle;
+      tabFonts.Controls.Add(chkMenuAA);
+      tabFonts.Controls.Add(chkMenuItalic);
+      tabFonts.Controls.Add(chkMenuBold);
+      tabFonts.Controls.Add(lblMenu);
+      tabFonts.Controls.Add(numFontMenu);
+      tabFonts.Controls.Add(cboFontMenu);
+      tabFonts.Controls.Add(pnlColorMenu);
       tabFonts.Controls.Add(btnFontGlobalPlus);
       tabFonts.Controls.Add(btnFontGlobalMinus);
       tabFonts.Controls.Add(btnTestFonts);
@@ -4880,6 +4961,36 @@ namespace MilkwaveRemote
       tabFonts.TabIndex = 3;
       tabFonts.Text = "Fonts";
       // 
+      // chkMenuItalic
+      // 
+      chkMenuItalic.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkMenuItalic.Appearance = Appearance.Button;
+      chkMenuItalic.FlatStyle = FlatStyle.System;
+      chkMenuItalic.Location = new Point(406, 65);
+      chkMenuItalic.Margin = new Padding(3, 2, 3, 2);
+      chkMenuItalic.Name = "chkMenuItalic";
+      chkMenuItalic.Size = new Size(49, 23);
+      chkMenuItalic.TabIndex = 167;
+      chkMenuItalic.Text = "Italic";
+      chkMenuItalic.TextAlign = ContentAlignment.MiddleCenter;
+      chkMenuItalic.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkMenuItalic.UseVisualStyleBackColor = true;
+      // 
+      // chkMenuBold
+      // 
+      chkMenuBold.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkMenuBold.Appearance = Appearance.Button;
+      chkMenuBold.FlatStyle = FlatStyle.System;
+      chkMenuBold.Location = new Point(351, 65);
+      chkMenuBold.Margin = new Padding(3, 2, 3, 2);
+      chkMenuBold.Name = "chkMenuBold";
+      chkMenuBold.Size = new Size(49, 23);
+      chkMenuBold.TabIndex = 166;
+      chkMenuBold.Text = "Bold";
+      chkMenuBold.TextAlign = ContentAlignment.MiddleCenter;
+      chkMenuBold.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkMenuBold.UseVisualStyleBackColor = true;
+      // 
       // btnTestFonts
       // 
       btnTestFonts.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -4897,7 +5008,7 @@ namespace MilkwaveRemote
       chkFontItalic5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontItalic5.Appearance = Appearance.Button;
       chkFontItalic5.FlatStyle = FlatStyle.System;
-      chkFontItalic5.Location = new Point(406, 123);
+      chkFontItalic5.Location = new Point(406, 152);
       chkFontItalic5.Margin = new Padding(3, 2, 3, 2);
       chkFontItalic5.Name = "chkFontItalic5";
       chkFontItalic5.Size = new Size(49, 23);
@@ -4912,7 +5023,7 @@ namespace MilkwaveRemote
       chkFontBold5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontBold5.Appearance = Appearance.Button;
       chkFontBold5.FlatStyle = FlatStyle.System;
-      chkFontBold5.Location = new Point(351, 123);
+      chkFontBold5.Location = new Point(351, 152);
       chkFontBold5.Margin = new Padding(3, 2, 3, 2);
       chkFontBold5.Name = "chkFontBold5";
       chkFontBold5.Size = new Size(49, 23);
@@ -4927,7 +5038,7 @@ namespace MilkwaveRemote
       chkFontItalic4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontItalic4.Appearance = Appearance.Button;
       chkFontItalic4.FlatStyle = FlatStyle.System;
-      chkFontItalic4.Location = new Point(406, 94);
+      chkFontItalic4.Location = new Point(406, 123);
       chkFontItalic4.Margin = new Padding(3, 2, 3, 2);
       chkFontItalic4.Name = "chkFontItalic4";
       chkFontItalic4.Size = new Size(49, 23);
@@ -4942,7 +5053,7 @@ namespace MilkwaveRemote
       chkFontBold4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontBold4.Appearance = Appearance.Button;
       chkFontBold4.FlatStyle = FlatStyle.System;
-      chkFontBold4.Location = new Point(351, 94);
+      chkFontBold4.Location = new Point(351, 123);
       chkFontBold4.Margin = new Padding(3, 2, 3, 2);
       chkFontBold4.Name = "chkFontBold4";
       chkFontBold4.Size = new Size(49, 23);
@@ -4957,7 +5068,7 @@ namespace MilkwaveRemote
       chkFontItalic3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontItalic3.Appearance = Appearance.Button;
       chkFontItalic3.FlatStyle = FlatStyle.System;
-      chkFontItalic3.Location = new Point(406, 65);
+      chkFontItalic3.Location = new Point(406, 94);
       chkFontItalic3.Margin = new Padding(3, 2, 3, 2);
       chkFontItalic3.Name = "chkFontItalic3";
       chkFontItalic3.Size = new Size(49, 23);
@@ -4972,7 +5083,7 @@ namespace MilkwaveRemote
       chkFontBold3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkFontBold3.Appearance = Appearance.Button;
       chkFontBold3.FlatStyle = FlatStyle.System;
-      chkFontBold3.Location = new Point(351, 65);
+      chkFontBold3.Location = new Point(351, 94);
       chkFontBold3.Margin = new Padding(3, 2, 3, 2);
       chkFontBold3.Name = "chkFontBold3";
       chkFontBold3.Size = new Size(49, 23);
@@ -5158,6 +5269,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numOffset).EndInit();
       ((System.ComponentModel.ISupportInitialize)numShadertoyFileIndex).EndInit();
       ((System.ComponentModel.ISupportInitialize)numSettingsHueAuto).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFontMenu).EndInit();
       ((System.ComponentModel.ISupportInitialize)numInputMixOpacity).EndInit();
       ((System.ComponentModel.ISupportInitialize)numLumaThreshold).EndInit();
       ((System.ComponentModel.ISupportInitialize)numLumaSoftness).EndInit();
@@ -5580,5 +5692,12 @@ namespace MilkwaveRemote
     private Button btnCacheClear;
     private NumericUpDown numFFTAttack;
     private Label label20;
+    private CheckBox chkMenuBold;
+    private CheckBox chkMenuItalic;
+    private CheckBox chkMenuAA;
+    private Label lblMenu;
+    private NumericUpDown numFontMenu;
+    private ComboBox cboFontMenu;
+    private Panel pnlColorMenu;
   }
 }

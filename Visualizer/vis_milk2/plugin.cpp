@@ -4638,6 +4638,21 @@ void CPlugin::DrawTooltip(wchar_t* str, int xR, int yB) {
 
 #define MyTextOut(str, corner, bDarkBox) MyTextOut_BGCOLOR(str, corner, bDarkBox, 0xFF000000)
 
+#define MyTextOut_Color_Box(str, corner, color) { \
+    SetRect(&r, 0, 0, xR-xL, 2048); \
+	m_text.DrawTextW(pFont, str, -1, &r, DT_NOPREFIX | ((corner == MTO_UPPER_RIGHT)?0:DT_SINGLELINE) | DT_WORD_ELLIPSIS | DT_CALCRECT | ((corner == MTO_UPPER_RIGHT) ? DT_RIGHT : 0), color, false, 0xFF000000); \
+    int w = r.right - r.left; \
+    if      (corner == MTO_UPPER_LEFT ) SetRect(&r, xL, *upper_left_corner_y, xL+w, *upper_left_corner_y + h); \
+    else if (corner == MTO_UPPER_RIGHT) SetRect(&r, xR-w, *upper_right_corner_y, xR, *upper_right_corner_y + h); \
+    else if (corner == MTO_LOWER_LEFT ) SetRect(&r, xL, *lower_left_corner_y - h, xL+w, *lower_left_corner_y); \
+    else if (corner == MTO_LOWER_RIGHT) SetRect(&r, xR-w, *lower_right_corner_y - h, xR, *lower_right_corner_y); \
+	m_text.DrawTextW(pFont, str, -1, &r, DT_NOPREFIX | ((corner == MTO_UPPER_RIGHT)?0:DT_SINGLELINE) | DT_WORD_ELLIPSIS | ((corner == MTO_UPPER_RIGHT) ? DT_RIGHT: 0), color, true, 0xFF000000); \
+    if      (corner == MTO_UPPER_LEFT ) *upper_left_corner_y  += h; \
+    else if (corner == MTO_UPPER_RIGHT) *upper_right_corner_y += h; \
+    else if (corner == MTO_LOWER_LEFT ) *lower_left_corner_y  -= h; \
+    else if (corner == MTO_LOWER_RIGHT) *lower_right_corner_y -= h; \
+}
+
 #define MyTextOut_Shadow(str, corner) { \
     /* calc rect size */        \
     SetRect(&r, 0, 0, xR-xL, 2048); \
@@ -5580,11 +5595,13 @@ void CPlugin::MyRenderUI(
         m_UI_mode = UI_REGULAR;
       }
       else {
-        MyTextOut(wasabiApiLangString(IDS_LOAD_WHICH_PRESET_PLUS_COMMANDS), MTO_UPPER_LEFT, true);
+        SelectFont(PLAYLIST_FONT);
+        DWORD menuColor = GetFontColor(PLAYLIST_FONT);
+        MyTextOut_Color_Box(wasabiApiLangString(IDS_LOAD_WHICH_PRESET_PLUS_COMMANDS), MTO_UPPER_LEFT, menuColor);
 
         wchar_t buf[MAX_PATH + 64];
         swprintf(buf, wasabiApiLangString(IDS_DIRECTORY_OF_X), m_szPresetDir);
-        MyTextOut(buf, MTO_UPPER_LEFT, true);
+        MyTextOut_Color_Box(buf, MTO_UPPER_LEFT, menuColor);
 
         *upper_left_corner_y += h / 2;
 
@@ -5595,11 +5612,11 @@ void CPlugin::MyRenderUI(
         rect.right -= PLAYLIST_INNER_MARGIN;
         rect.bottom -= PLAYLIST_INNER_MARGIN;
 
-        int lines_available = (rect.bottom - rect.top - PLAYLIST_INNER_MARGIN * 2) / GetFontHeight(SIMPLE_FONT);
+        int lines_available = (rect.bottom - rect.top - PLAYLIST_INNER_MARGIN * 2) / GetFontHeight(PLAYLIST_FONT);
 
         if (lines_available < 1) {
           // force it
-          rect.bottom = rect.top + GetFontHeight(SIMPLE_FONT) + 1;
+          rect.bottom = rect.top + GetFontHeight(PLAYLIST_FONT) + 1;
           lines_available = 1;
         }
         if (lines_available > MAX_PRESETS_PER_PAGE)
@@ -5639,7 +5656,16 @@ void CPlugin::MyRenderUI(
         if (m_bShowMenuToolTips) {
           wchar_t buf[256];
           swprintf(buf, wasabiApiLangString(IDS_PAGE_X_OF_X), m_nPresetListCurPos / lines_available + 1, (m_nPresets + lines_available - 1) / lines_available);
-          DrawTooltip(buf, xR, *lower_right_corner_y);
+          RECT r, r2;
+          SetRect(&r, 0, 0, xR - TEXT_MARGIN * 2, 2048);
+          m_text.DrawTextW(GetFont(PLAYLIST_FONT), buf, -1, &r, DT_CALCRECT, 0xFFFFFFFF, false);
+          r2.bottom = *lower_right_corner_y - TEXT_MARGIN;
+          r2.right = xR - TEXT_MARGIN;
+          r2.left = r2.right - (r.right - r.left);
+          r2.top = r2.bottom - (r.bottom - r.top);
+          RECT r3 = r2; r3.left -= 4; r3.top -= 2; r3.right += 2; r3.bottom += 2;
+          DrawDarkTranslucentBox(&r3);
+          m_text.DrawTextW(GetFont(PLAYLIST_FONT), buf, -1, &r2, 0, GetFontColor(PLAYLIST_FONT), false);
         }
 
         RECT orig_rect = rect;
@@ -5682,14 +5708,14 @@ void CPlugin::MyRenderUI(
             if (bIsRunning && m_bPresetLockedByUser)
               lstrcatW(str2, wasabiApiLangString(IDS_LOCKED));
 
-            DWORD color = bIsDir ? DIR_COLOR : PLAYLIST_COLOR_NORMAL;
+            DWORD color = bIsDir ? DIR_COLOR : GetFontColor(PLAYLIST_FONT);
             if (bIsRunning)
               color = bIsSelected ? PLAYLIST_COLOR_BOTH : PLAYLIST_COLOR_PLAYING_TRACK;
             else if (bIsSelected)
               color = PLAYLIST_COLOR_HILITE_TRACK;
 
             RECT r2 = rect;
-            rect.top += m_text.DrawTextW(GetFont(SIMPLE_FONT), str2, -1, &r2, DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX | (pass == 0 ? DT_CALCRECT : 0), color, false);
+            rect.top += m_text.DrawTextW(GetFont(PLAYLIST_FONT), str2, -1, &r2, DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX | (pass == 0 ? DT_CALCRECT : 0), color, false);
 
             if (pass == 0)  // calculating dark box
             {

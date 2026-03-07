@@ -1038,6 +1038,7 @@ namespace MilkwaveRemote {
           cboFonts.Items.Add(font.Name);
           cboFont1.Items.Add(font.Name);
           cboFont2.Items.Add(font.Name);
+          cboFontMenu.Items.Add(font.Name);
           cboFont3.Items.Add(font.Name);
           cboFont4.Items.Add(font.Name);
           cboFont5.Items.Add(font.Name);
@@ -4348,6 +4349,27 @@ namespace MilkwaveRemote {
         int fontColorB2Val = int.Parse(fontColorB2);
         pnlColorFont2.BackColor = Color.FromArgb(fontColorR2Val, fontColorG2Val, fontColorB2Val);
 
+        // Menu: Ini-Index is 4
+        string fontFaceMenu = RemoteHelper.GetIniValueFonts("FontFace4", "Bahnschrift");
+        cboFontMenu.SelectedItem = fontFaceMenu;
+        string fontSizeMenu = RemoteHelper.GetIniValueFonts("FontSize4", "25");
+        numFontMenu.Value = int.Parse(fontSizeMenu);
+
+        string fontBoldMenu = RemoteHelper.GetIniValueFonts("FontBold4", "0");
+        chkMenuBold.Checked = !fontBoldMenu.Equals("0");
+        string fontItalicMenu = RemoteHelper.GetIniValueFonts("FontItalic4", "0");
+        chkMenuItalic.Checked = !fontItalicMenu.Equals("0");
+        string fontAAMenu = RemoteHelper.GetIniValueFonts("FontAA4", "1");
+        chkMenuAA.Checked = !fontAAMenu.Equals("0");
+
+        string fontColorRMenu = RemoteHelper.GetIniValueFonts("FontColorR4", "255");
+        int fontColorRMenuVal = int.Parse(fontColorRMenu);
+        string fontColorGMenu = RemoteHelper.GetIniValueFonts("FontColorG4", "255");
+        int fontColorGMenuVal = int.Parse(fontColorGMenu);
+        string fontColorBMenu = RemoteHelper.GetIniValueFonts("FontColorB4", "255");
+        int fontColorBMenuVal = int.Parse(fontColorBMenu);
+        pnlColorMenu.BackColor = Color.FromArgb(fontColorRMenuVal, fontColorGMenuVal, fontColorBMenuVal);
+
         // Artist: Ini-Index is 5!
         string fontFace3 = RemoteHelper.GetIniValueFonts("FontFace5", "Bahnschrift");
         cboFont3.SelectedItem = fontFace3;
@@ -4438,6 +4460,16 @@ namespace MilkwaveRemote {
       RemoteHelper.SetIniValueFonts("FontColorG2", pnlColorFont2.BackColor.G.ToString());
       RemoteHelper.SetIniValueFonts("FontColorB2", pnlColorFont2.BackColor.B.ToString());
 
+      // Menu: Ini-Index is 4
+      RemoteHelper.SetIniValueFonts("FontFace4", cboFontMenu.Text);
+      RemoteHelper.SetIniValueFonts("FontSize4", numFontMenu.Value.ToString());
+      RemoteHelper.SetIniValueFonts("FontBold4", chkMenuBold.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontItalic4", chkMenuItalic.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontAA4", chkMenuAA.Checked ? "1" : "0");
+      RemoteHelper.SetIniValueFonts("FontColorR4", pnlColorMenu.BackColor.R.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorG4", pnlColorMenu.BackColor.G.ToString());
+      RemoteHelper.SetIniValueFonts("FontColorB4", pnlColorMenu.BackColor.B.ToString());
+
       // Artist: Ini-Index is 5!
       RemoteHelper.SetIniValueFonts("FontFace5", cboFont3.Text);
       RemoteHelper.SetIniValueFonts("FontSize5", numFont3.Value.ToString());
@@ -4482,6 +4514,7 @@ namespace MilkwaveRemote {
       dlg.CustomColors = new int[] {
         ColorTranslator.ToOle(pnlColorFont1.BackColor),
         ColorTranslator.ToOle(pnlColorFont2.BackColor),
+        ColorTranslator.ToOle(pnlColorMenu.BackColor),
         ColorTranslator.ToOle(pnlColorFont3.BackColor),
         ColorTranslator.ToOle(pnlColorFont4.BackColor),
         ColorTranslator.ToOle(pnlColorFont5.BackColor)
@@ -4513,6 +4546,15 @@ namespace MilkwaveRemote {
       chkFontItalic2.Checked = false;
       chkFontAA2.Checked = true;
       pnlColorFont2.BackColor = Color.FromArgb(255, 86, 0);
+    }
+
+    private void lblMenu_DoubleClick(object sender, EventArgs e) {
+      cboFontMenu.SelectedItem = "Bahnschrift";
+      numFontMenu.Value = 25;
+      chkMenuBold.Checked = false;
+      chkMenuItalic.Checked = false;
+      chkMenuAA.Checked = true;
+      pnlColorMenu.BackColor = Color.FromArgb(255, 255, 255);
     }
 
     private void lblFont3_DoubleClick(object sender, EventArgs e) {
@@ -4558,6 +4600,14 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void cboFontMenu_SelectedIndexChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        RemoteHelper.SetIniValueFonts("FontFace4", cboFontMenu.Text);
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
     private void cboFont3_SelectedIndexChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         RemoteHelper.SetIniValueFonts("FontFace5", cboFont3.Text);
@@ -4593,6 +4643,14 @@ namespace MilkwaveRemote {
     private void numFont2_ValueChanged(object sender, EventArgs e) {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
         RemoteHelper.SetIniValueFonts("FontSize2", numFont2.Value.ToString());
+        SendToMilkwaveVisualizer("", MessageType.Config);
+        SendToMilkwaveVisualizer("", MessageType.TestFonts);
+      }
+    }
+
+    private void numFontMenu_ValueChanged(object sender, EventArgs e) {
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt) {
+        RemoteHelper.SetIniValueFonts("FontSize4", numFontMenu.Value.ToString());
         SendToMilkwaveVisualizer("", MessageType.Config);
         SendToMilkwaveVisualizer("", MessageType.TestFonts);
       }
