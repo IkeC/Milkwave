@@ -83,7 +83,7 @@ warp_6=`#define num_bars 31.0
 warp_7=`#define num_blocks 31.0
 warp_8=`#define bar_spacing 0.006
 warp_9=`#define block_spacing 0.007
-warp_10=`#define bar_height_scale 1.7
+warp_10=`#define bar_height_scale 1.02
 warp_11=`#define peak_opacity 0.5
 warp_12=`#define ENABLE_PEAK 1  // Set to 0 to disable peak hold blocks
 warp_13=`#define min_freq_hz 30.0
@@ -105,108 +105,106 @@ warp_28=`    // Which bar are we in?
 warp_29=`    float bar_index = floor(uv.x / total_unit);
 warp_30=`    float bar_x_start = bar_index * total_unit + bar_spacing * 0.5;
 warp_31=`    float bar_x_end = bar_x_start + actual_bar_width;
-warp_32=`    if (bar_index < 0.5) bar_x_start = 0.0;
-warp_33=`    if (bar_index > num_bars - 1.5) bar_x_end = 1.0;
-warp_34=`    float inside_bar = step(bar_x_start, uv.x) * step(uv.x, bar_x_end);
-warp_35=`
-warp_36=`    // Sample a log-spaced frequency band per bar instead of a single center frequency.
-warp_37=`    float band_t0 = bar_index / num_bars;
-warp_38=`    float band_t1 = (bar_index + 1.0) / num_bars;
-warp_39=`    float log_min_freq = log(min_freq_hz);
-warp_40=`    float log_max_freq = log(max_freq_hz);
-warp_41=`    float band_log_lo = lerp(log_min_freq, log_max_freq, band_t0);
-warp_42=`    float band_log_hi = lerp(log_min_freq, log_max_freq, band_t1);
-warp_43=`
-warp_44=`    float fft_val = 0.0;
-warp_45=`    float peak_val = 0.0;
-warp_46=`    for (float sample_i = 0.0; sample_i < band_samples; sample_i += 1.0) {
-warp_47=`        float sample_t = (sample_i + 0.5) / band_samples;
-warp_48=`        float sample_freq = exp(lerp(band_log_lo, band_log_hi, sample_t));
-warp_49=`        fft_val += get_fft_hz(sample_freq);
-warp_50=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
-warp_51=`        peak_val += get_fft_peak_hz(sample_freq);
-warp_52=`#endif
-warp_53=`    }
-warp_54=`    fft_val /= band_samples;
-warp_55=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
-warp_56=`    peak_val /= band_samples;
-warp_57=`#endif
-warp_58=`
-warp_59=`    // Slight tilt correction to keep bass from dominating and wake up the top end.
-warp_60=`    float freq_t = bar_index / (num_bars - 1.0);
-warp_61=`    float band_gain = lerp(0.82, 1.28, freq_t);
-warp_62=`    fft_val *= band_gain;
-warp_63=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
-warp_64=`    peak_val *= band_gain;
-warp_65=`#endif
-warp_66=`
-warp_67=`    float bar_h = fft_val * bar_height_scale;
-warp_68=`#ifdef vis_intensity
-warp_69=`    bar_h *= vis_intensity;
-warp_70=`#endif
-warp_71=`
-warp_72=`    // Peak hold (Milkwave only)
-warp_73=`    float peak_h = 0.0;
-warp_74=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
-warp_75=`    peak_h = peak_val * bar_height_scale;
-warp_76=`#ifdef vis_version
-warp_77=`    if (vis_version > 1) peak_h = 0.0;
+warp_32=`    float inside_bar = step(bar_x_start, uv.x) * step(uv.x, bar_x_end);
+warp_33=`
+warp_34=`    // Sample a log-spaced frequency band per bar instead of a single center frequency.
+warp_35=`    float band_t0 = bar_index / num_bars;
+warp_36=`    float band_t1 = (bar_index + 1.0) / num_bars;
+warp_37=`    float log_min_freq = log(min_freq_hz);
+warp_38=`    float log_max_freq = log(max_freq_hz);
+warp_39=`    float band_log_lo = lerp(log_min_freq, log_max_freq, band_t0);
+warp_40=`    float band_log_hi = lerp(log_min_freq, log_max_freq, band_t1);
+warp_41=`
+warp_42=`    float fft_val = 0.0;
+warp_43=`    float peak_val = 0.0;
+warp_44=`    for (float sample_i = 0.0; sample_i < band_samples; sample_i += 1.0) {
+warp_45=`        float sample_t = (sample_i + 0.5) / band_samples;
+warp_46=`        float sample_freq = exp(lerp(band_log_lo, band_log_hi, sample_t));
+warp_47=`        fft_val += get_fft_hz(sample_freq);
+warp_48=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
+warp_49=`        peak_val += get_fft_peak_hz(sample_freq);
+warp_50=`#endif
+warp_51=`    }
+warp_52=`    fft_val /= band_samples;
+warp_53=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
+warp_54=`    peak_val /= band_samples;
+warp_55=`#endif
+warp_56=`
+warp_57=`    // Slight tilt correction to keep bass from dominating and wake up the top end.
+warp_58=`    float freq_t = bar_index / (num_bars - 1.0);
+warp_59=`    float band_gain = lerp(0.82, 1.28, freq_t);
+warp_60=`    fft_val *= band_gain;
+warp_61=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
+warp_62=`    peak_val *= band_gain;
+warp_63=`#endif
+warp_64=`
+warp_65=`    float intensity_scale = 1.0;
+warp_66=`#ifdef vis_intensity
+warp_67=`    intensity_scale = vis_intensity;
+warp_68=`#endif
+warp_69=`    float bar_h = fft_val * bar_height_scale * intensity_scale;
+warp_70=`
+warp_71=`    // Peak hold (Milkwave only)
+warp_72=`    float peak_h = 0.0;
+warp_73=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
+warp_74=`    peak_h = peak_val * bar_height_scale * intensity_scale;
+warp_75=`#ifdef vis_version
+warp_76=`    if (vis_version > 1) peak_h = 0.0;
+warp_77=`#endif
 warp_78=`#endif
-warp_79=`#endif
-warp_80=`
-warp_81=`    // Block grid
-warp_82=`    float num_lit_blocks = bar_h * num_blocks;
-warp_83=`    float block_index = floor(uv.y / block_unit);
-warp_84=`    float block_y_start = block_index * block_unit + block_spacing * 0.5;
-warp_85=`    float block_y_end = block_y_start + block_height;
-warp_86=`    float inside_block = step(block_y_start, uv.y) * step(uv.y, block_y_end);
-warp_87=`    float block_lit = step(block_index, num_lit_blocks - 1.0);
-warp_88=`    float mask = inside_bar * inside_block * block_lit;
-warp_89=`
-warp_90=`    // Peak hold block: single block at peak position, hidden when silent
-warp_91=`    float peak_block_index = floor(peak_h * num_blocks);
-warp_92=`    float peak_visible = step(0.01, peak_h);
-warp_93=`    float peak_block_lit = inside_bar * inside_block * peak_visible *
-warp_94=`        step(block_index, peak_block_index) *
-warp_95=`        step(peak_block_index, block_index);
-warp_96=`
-warp_97=`    // Color: dark green (bottom) to yellow to orange to red to purple (top)
-warp_98=`    float height_ratio = block_index / num_blocks;
-warp_99=`    float t_color = pow(height_ratio, 0.65);
-warp_100=`    float3 dkgreen = float3(0.0, 0.55, 0.05);
-warp_101=`    float3 green   = float3(0.15, 1.0, 0.1);
-warp_102=`    float3 yellow  = float3(1.0, 1.0, 0.0);
-warp_103=`    float3 orange  = float3(1.0, 0.45, 0.0);
-warp_104=`    float3 red     = float3(1.0, 0.05, 0.05);
-warp_105=`    float3 purple  = float3(0.8, 0.1, 1.0);
-warp_106=`    float3 col;
-warp_107=`    if (t_color < 0.15) {
-warp_108=`        col = lerp(dkgreen, green, t_color / 0.15);
-warp_109=`    } else if (t_color < 0.35) {
-warp_110=`        col = lerp(green, yellow, (t_color - 0.15) / 0.20);
-warp_111=`    } else if (t_color < 0.6) {
-warp_112=`        col = lerp(yellow, orange, (t_color - 0.35) / 0.25);
-warp_113=`    } else if (t_color < 0.8) {
-warp_114=`        col = lerp(orange, red, (t_color - 0.6) / 0.20);
-warp_115=`    } else {
-warp_116=`        col = lerp(red, purple, (t_color - 0.8) / 0.20);
-warp_117=`    }
-warp_118=`
-warp_119=`    float brightness = 0.85 + height_ratio * 0.15;
-warp_120=`    color = col * brightness * mask;
-warp_121=`
-warp_122=`    // Peak block: same color as the bar at that height, with defined opacity
-warp_123=`    float eff_peak_opacity = peak_opacity;
-warp_124=`#ifdef vis_shift
-warp_125=`    eff_peak_opacity += vis_shift;
-warp_126=`#endif
-warp_127=`    color += col * peak_block_lit * eff_peak_opacity;
-warp_128=`
-warp_129=`    // Gamma correction
-warp_130=`    color = pow(max(color, 0.0), float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
-warp_131=`
-warp_132=`    ret = float4(color, 1.0);
-warp_133=`}
+warp_79=`    // Block grid
+warp_80=`    float num_lit_blocks = bar_h * num_blocks;
+warp_81=`    float block_index = floor(uv.y / block_unit);
+warp_82=`    float block_y_start = block_index * block_unit + block_spacing * 0.5;
+warp_83=`    float block_y_end = block_y_start + block_height;
+warp_84=`    float inside_block = step(block_y_start, uv.y) * step(uv.y, block_y_end);
+warp_85=`    float block_lit = step(block_index, num_lit_blocks - 1.0);
+warp_86=`    float mask = inside_bar * inside_block * block_lit;
+warp_87=`
+warp_88=`    // Peak hold block: single block at peak position, hidden when silent
+warp_89=`    float peak_block_index = floor(peak_h * num_blocks);
+warp_90=`    float peak_visible = step(0.01, peak_h);
+warp_91=`    float peak_block_lit = inside_bar * inside_block * peak_visible *
+warp_92=`        step(block_index, peak_block_index) *
+warp_93=`        step(peak_block_index, block_index);
+warp_94=`
+warp_95=`    // Color: dark green (bottom) to yellow to orange to red to purple (top)
+warp_96=`    float height_ratio = block_index / num_blocks;
+warp_97=`    float t_color = pow(height_ratio, 0.65);
+warp_98=`    float3 dkgreen = float3(0.0, 0.55, 0.009);
+warp_99=`    float3 green   = float3(0.16, 1.0, 0.034);
+warp_100=`    float3 yellow  = float3(1.0, 0.644, 0.0);
+warp_101=`    float3 orange  = float3(1.0, 0.232, 0.0);
+warp_102=`    float3 red     = float3(1.0, 0.015, 0.071);
+warp_103=`    float3 purple  = float3(0.525, 0.034, 1.0);
+warp_104=`    float3 col;
+warp_105=`    if (t_color < 0.15) {
+warp_106=`        col = lerp(dkgreen, green, t_color / 0.15);
+warp_107=`    } else if (t_color < 0.35) {
+warp_108=`        col = lerp(green, yellow, (t_color - 0.15) / 0.20);
+warp_109=`    } else if (t_color < 0.6) {
+warp_110=`        col = lerp(yellow, orange, (t_color - 0.35) / 0.25);
+warp_111=`    } else if (t_color < 0.8) {
+warp_112=`        col = lerp(orange, red, (t_color - 0.6) / 0.20);
+warp_113=`    } else {
+warp_114=`        col = lerp(red, purple, (t_color - 0.8) / 0.20);
+warp_115=`    }
+warp_116=`
+warp_117=`    float brightness = 0.85 + height_ratio * 0.15;
+warp_118=`    color = col * brightness * mask;
+warp_119=`
+warp_120=`    // Peak block: same color as the bar at that height, with defined opacity
+warp_121=`    float eff_peak_opacity = peak_opacity;
+warp_122=`#ifdef vis_shift
+warp_123=`    eff_peak_opacity *= (1.0 + vis_shift);  // shift=0 -> default, shift=-1 -> 0, shift=1 -> 1
+warp_124=`#endif
+warp_125=`    color += col * peak_block_lit * eff_peak_opacity;
+warp_126=`
+warp_127=`    // Gamma correction
+warp_128=`    color = pow(max(color, 0.0), float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+warp_129=`
+warp_130=`    ret = float4(color, 1.0);
+warp_131=`}
 comp_1=`shader_body
 comp_2=`{
 comp_3=`    // Flip vertically so bars grow upward from bottom
