@@ -130,81 +130,82 @@ warp_53=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
 warp_54=`    peak_val /= band_samples;
 warp_55=`#endif
 warp_56=`
-warp_57=`    // Slight tilt correction to keep bass from dominating and wake up the top end.
-warp_58=`    float freq_t = bar_index / (num_bars - 1.0);
-warp_59=`    float band_gain = lerp(0.82, 1.28, freq_t);
-warp_60=`    fft_val *= band_gain;
-warp_61=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
-warp_62=`    peak_val *= band_gain;
-warp_63=`#endif
-warp_64=`
-warp_65=`    float intensity_scale = 1.0;
-warp_66=`#ifdef vis_intensity
-warp_67=`    intensity_scale = vis_intensity;
-warp_68=`#endif
-warp_69=`    float bar_h = fft_val * bar_height_scale * intensity_scale;
-warp_70=`
-warp_71=`    // Peak hold (Milkwave only)
-warp_72=`    float peak_h = 0.0;
-warp_73=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
-warp_74=`    peak_h = peak_val * bar_height_scale * intensity_scale;
-warp_75=`#ifdef vis_version
-warp_76=`    if (vis_version > 1) peak_h = 0.0;
-warp_77=`#endif
-warp_78=`#endif
-warp_79=`    // Block grid
-warp_80=`    float num_lit_blocks = bar_h * num_blocks;
-warp_81=`    float block_index = floor(uv.y / block_unit);
-warp_82=`    float block_y_start = block_index * block_unit + block_spacing * 0.5;
-warp_83=`    float block_y_end = block_y_start + block_height;
-warp_84=`    float inside_block = step(block_y_start, uv.y) * step(uv.y, block_y_end);
-warp_85=`    float block_lit = step(block_index, num_lit_blocks - 1.0);
-warp_86=`    float mask = inside_bar * inside_block * block_lit;
-warp_87=`
-warp_88=`    // Peak hold block: single block at peak position, hidden when silent
-warp_89=`    float peak_block_index = floor(peak_h * num_blocks);
-warp_90=`    float peak_visible = step(0.01, peak_h);
-warp_91=`    float peak_block_lit = inside_bar * inside_block * peak_visible *
-warp_92=`        step(block_index, peak_block_index) *
-warp_93=`        step(peak_block_index, block_index);
-warp_94=`
-warp_95=`    // Color: dark green (bottom) to yellow to orange to red to purple (top)
-warp_96=`    float height_ratio = block_index / num_blocks;
-warp_97=`    float t_color = pow(height_ratio, 0.65);
-warp_98=`    float3 dkgreen = float3(0.0, 0.55, 0.009);
-warp_99=`    float3 green   = float3(0.16, 1.0, 0.034);
-warp_100=`    float3 yellow  = float3(1.0, 0.644, 0.0);
-warp_101=`    float3 orange  = float3(1.0, 0.232, 0.0);
-warp_102=`    float3 red     = float3(1.0, 0.015, 0.071);
-warp_103=`    float3 purple  = float3(0.525, 0.034, 1.0);
-warp_104=`    float3 col;
-warp_105=`    if (t_color < 0.15) {
-warp_106=`        col = lerp(dkgreen, green, t_color / 0.15);
-warp_107=`    } else if (t_color < 0.35) {
-warp_108=`        col = lerp(green, yellow, (t_color - 0.15) / 0.20);
-warp_109=`    } else if (t_color < 0.6) {
-warp_110=`        col = lerp(yellow, orange, (t_color - 0.35) / 0.25);
-warp_111=`    } else if (t_color < 0.8) {
-warp_112=`        col = lerp(orange, red, (t_color - 0.6) / 0.20);
-warp_113=`    } else {
-warp_114=`        col = lerp(red, purple, (t_color - 0.8) / 0.20);
-warp_115=`    }
-warp_116=`
-warp_117=`    float brightness = 0.85 + height_ratio * 0.15;
-warp_118=`    color = col * brightness * mask;
-warp_119=`
-warp_120=`    // Peak block: same color as the bar at that height, with defined opacity
-warp_121=`    float eff_peak_opacity = peak_opacity;
-warp_122=`#ifdef vis_shift
-warp_123=`    eff_peak_opacity *= (1.0 + vis_shift);  // shift=0 -> default, shift=-1 -> 0, shift=1 -> 1
-warp_124=`#endif
-warp_125=`    color += col * peak_block_lit * eff_peak_opacity;
-warp_126=`
-warp_127=`    // Gamma correction
-warp_128=`    color = pow(max(color, 0.0), float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
-warp_129=`
-warp_130=`    ret = float4(color, 1.0);
-warp_131=`}
+warp_57=`    float freq_t = bar_index / (num_bars - 1.0);
+warp_58=`    float band_gain = lerp(0.82, 1.28, freq_t);
+warp_59=`    fft_val *= band_gain;
+warp_60=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
+warp_61=`    peak_val *= band_gain;
+warp_62=`#endif
+warp_63=`    float intensity_scale = 1.0;
+warp_64=`#ifdef vis_intensity
+warp_65=`    intensity_scale = vis_intensity;
+warp_66=`#endif
+warp_67=`    float bar_h = fft_val * bar_height_scale * intensity_scale;
+warp_68=`    float peak_h = 0.0;
+warp_69=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
+warp_70=`    peak_h = peak_val * bar_height_scale * intensity_scale;
+warp_71=`#ifdef vis_version
+warp_72=`    if (vis_version > 1) peak_h = 0.0;
+warp_73=`#endif
+warp_74=`#endif
+warp_75=`    // Right-click: simulate a mountain-shaped tone at clicked frequency
+warp_76=`    float click_bar = floor(mouse_x * num_bars);
+warp_77=`    float click_weight = (mouse_clicked > 0.5) * exp(-pow(bar_index - click_bar, 2.0) * 0.04);
+warp_78=`    bar_h = max(bar_h, (1.0 - mouse_y) * click_weight);
+warp_79=`    peak_h = max(peak_h, (1.0 - mouse_y) * click_weight);
+warp_80=`    // Block grid
+warp_81=`    float num_lit_blocks = bar_h * num_blocks;
+warp_82=`    float block_index = floor(uv.y / block_unit);
+warp_83=`    float block_y_start = block_index * block_unit + block_spacing * 0.5;
+warp_84=`    float block_y_end = block_y_start + block_height;
+warp_85=`    float inside_block = step(block_y_start, uv.y) * step(uv.y, block_y_end);
+warp_86=`    float block_lit = step(block_index, num_lit_blocks - 1.0);
+warp_87=`    float mask = inside_bar * inside_block * block_lit;
+warp_88=`
+warp_89=`    // Peak hold block: single block at peak position, hidden when silent
+warp_90=`    float peak_block_index = floor(peak_h * num_blocks);
+warp_91=`    float peak_visible = step(0.01, peak_h);
+warp_92=`    float peak_block_lit = inside_bar * inside_block * peak_visible *
+warp_93=`        step(block_index, peak_block_index) *
+warp_94=`        step(peak_block_index, block_index);
+warp_95=`
+warp_96=`    // Color: dark green (bottom) to yellow to orange to red to purple (top)
+warp_97=`    float height_ratio = block_index / num_blocks;
+warp_98=`    float t_color = pow(height_ratio, 0.65);
+warp_99=`    float3 dkgreen = float3(0.0, 0.55, 0.009);
+warp_100=`    float3 green   = float3(0.16, 1.0, 0.034);
+warp_101=`    float3 yellow  = float3(1.0, 0.644, 0.0);
+warp_102=`    float3 orange  = float3(1.0, 0.232, 0.0);
+warp_103=`    float3 red     = float3(1.0, 0.015, 0.071);
+warp_104=`    float3 purple  = float3(0.525, 0.034, 1.0);
+warp_105=`    float3 col;
+warp_106=`    if (t_color < 0.15) {
+warp_107=`        col = lerp(dkgreen, green, t_color / 0.15);
+warp_108=`    } else if (t_color < 0.35) {
+warp_109=`        col = lerp(green, yellow, (t_color - 0.15) / 0.20);
+warp_110=`    } else if (t_color < 0.6) {
+warp_111=`        col = lerp(yellow, orange, (t_color - 0.35) / 0.25);
+warp_112=`    } else if (t_color < 0.8) {
+warp_113=`        col = lerp(orange, red, (t_color - 0.6) / 0.20);
+warp_114=`    } else {
+warp_115=`        col = lerp(red, purple, (t_color - 0.8) / 0.20);
+warp_116=`    }
+warp_117=`
+warp_118=`    float brightness = 0.85 + height_ratio * 0.15;
+warp_119=`    color = col * brightness * mask;
+warp_120=`
+warp_121=`    // Peak block: same color as the bar at that height, with defined opacity
+warp_122=`    float eff_peak_opacity = peak_opacity;
+warp_123=`#ifdef vis_shift
+warp_124=`    eff_peak_opacity *= (1.0 + vis_shift);  // shift=0 -> default, shift=-1 -> 0, shift=1 -> 1
+warp_125=`#endif
+warp_126=`    color += col * peak_block_lit * eff_peak_opacity;
+warp_127=`
+warp_128=`    // Gamma correction
+warp_129=`    color = pow(max(color, 0.0), float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+warp_130=`
+warp_131=`    ret = float4(color, 1.0);
+warp_132=`}
 comp_1=`shader_body
 comp_2=`{
 comp_3=`    // Flip vertically so bars grow upward from bottom
