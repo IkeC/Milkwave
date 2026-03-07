@@ -16,21 +16,6 @@ using static MilkwaveRemote.Helper.RemoteHelper;
 namespace MilkwaveRemote {
   public partial class MilkwaveRemoteForm : Form {
     [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern int GetWindowTextLength(IntPtr hWnd);
-
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern IntPtr SendMessageW(IntPtr hWnd, uint Msg, IntPtr wParam, ref COPYDATASTRUCT lParam);
-
-    [DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern IntPtr SendMessageGeneral(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -48,25 +33,7 @@ namespace MilkwaveRemote {
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
-    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-    private const uint WM_COPYDATA = 0x004A;
-
-    // Custom window messages for next/previous preset
-    // must match definitions in Milkwave Visualizer
-    private const int WM_NEXT_PRESET = 0x0400 + 100;
-    private const int WM_PREV_PRESET = 0x0400 + 101;
-    private const int WM_COVER_CHANGED = 0x0400 + 102;
-    private const int WM_SPRITE_MODE = 0x0400 + 103;
-    private const int WM_MESSAGE_MODE = 0x0400 + 104;
-    // private const int WM_CAPTURE_SCREENSHOT = 0x0400 + 105;
-    private const int WM_SETVIDEODEVICE = 0x0400 + 106;
-    private const int WM_ENABLEVIDEOMIX = 0x0400 + 107;
-    private const int WM_SETSPOUTSENDER = 0x0400 + 108;
-    private const int WM_ENABLESPOUTMIX = 0x0400 + 109;
-    private const int WM_SET_INPUTMIX_OPACITY = 0x0400 + 150;
-    private const int WM_SET_INPUTMIX_LUMAKEY = 0x0400 + 151;
-    private const int WM_SET_INPUTMIX_ONTOP = 0x0400 + 152;
+    private PipeClient? _pipeClient;
 
     private const uint WM_KEYDOWN = 0x0100;
 
@@ -100,7 +67,7 @@ namespace MilkwaveRemote {
     private string lastScriptFileName = "script-default.txt";
     private string midiDefaultFileName = "midi-default.txt";
 
-    private string windowNotFound = "Target Window not found";
+    private string windowNotFound = "Not connected to a visualizer";
     private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
     private string lastSpoutSenderName = "";
@@ -196,13 +163,6 @@ namespace MilkwaveRemote {
     public const byte VK_MEDIA_STOP = 0xB2;
     public const uint KEYEVENTF_EXTENDEDKEY = 0x1;
     public const uint KEYEVENTF_KEYUP = 0x2;
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct COPYDATASTRUCT {
-      public IntPtr dwData;
-      public int cbData;
-      public IntPtr lpData;
-    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct INPUT {
@@ -1065,7 +1025,7 @@ namespace MilkwaveRemote {
       toolStripStatusLabelMonitorGPU.Text = "";
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
-      cboWindowTitle.SelectedIndex = 0;
+      ConnectToVisualizer();
       cboSettingsOpenFile.SelectedIndex = 3;
 
       InitializeSpriteButtonSupport();
@@ -1185,19 +1145,271 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void SendStringMessage(IntPtr windowHandle, int messageId, string message) {
-      byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
-      IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
-      Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
+    private bool IsPipeConnected => _pipeClient?.IsConnected == true;
+    private List<(int pid, string name)> _discoveredInstances = new();
+    private const string RescanLabel = "↻ Rescan for visualizers...";
 
-      COPYDATASTRUCT cds = new COPYDATASTRUCT {
-        dwData = (IntPtr)messageId,
-        cbData = messageBytes.Length,
-        lpData = messagePtr
-      };
+    private void ScanAndPopulateVisualizers() {
+      _discoveredInstances = PipeClient.DiscoverVisualizers();
 
-      SendMessageW(windowHandle, WM_COPYDATA, IntPtr.Zero, ref cds);
-      Marshal.FreeHGlobal(messagePtr);
+      cboWindowTitle.SelectedIndexChanged -= cboWindowTitle_SelectedIndexChanged;
+      cboWindowTitle.Items.Clear();
+
+      if (_discoveredInstances.Count == 0) {
+        cboWindowTitle.Items.Add("(no visualizers found)");
+      } else {
+        foreach (var (pid, name) in _discoveredInstances) {
+          cboWindowTitle.Items.Add($"{name} (PID: {pid})");
+        }
+      }
+      cboWindowTitle.Items.Add(RescanLabel);
+      cboWindowTitle.SelectedIndex = 0;
+      cboWindowTitle.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
+    }
+
+    private void ConnectToVisualizer() {
+      _pipeClient?.Dispose();
+      _pipeClient = null;
+
+      ScanAndPopulateVisualizers();
+
+      if (_discoveredInstances.Count == 0) {
+        SetStatusText("No visualizer instances found");
+        return;
+      }
+
+      ConnectToInstance(_discoveredInstances[0]);
+    }
+
+    private void ConnectToInstance((int pid, string name) target) {
+      _pipeClient?.Dispose();
+      _pipeClient = new PipeClient();
+      _pipeClient.MessageReceived += OnPipeMessageReceived;
+      _pipeClient.Disconnected += OnPipeDisconnected;
+
+      if (_pipeClient.Connect(target.pid)) {
+        foundWindowTitle = $"{target.name} (PID: {target.pid})";
+        SetStatusText($"Connected to {foundWindowTitle}");
+      } else {
+        SetStatusText($"Failed to connect to {target.name} (PID: {target.pid})");
+        _pipeClient.Dispose();
+        _pipeClient = null;
+      }
+    }
+
+    private void cboWindowTitle_SelectedIndexChanged(object? sender, EventArgs e) {
+      // "Rescan" is always the last item
+      if (cboWindowTitle.SelectedIndex == cboWindowTitle.Items.Count - 1) {
+        _pipeClient?.Dispose();
+        _pipeClient = null;
+        ConnectToVisualizer();
+        return;
+      }
+
+      int idx = cboWindowTitle.SelectedIndex;
+      if (idx >= 0 && idx < _discoveredInstances.Count) {
+        ConnectToInstance(_discoveredInstances[idx]);
+      }
+    }
+
+    private void OnPipeDisconnected() {
+      if (InvokeRequired) {
+        BeginInvoke(new Action(OnPipeDisconnected));
+        return;
+      }
+      foundWindowTitle = "";
+      SetStatusText("Disconnected from visualizer");
+    }
+
+    private void OnPipeMessageReceived(string message) {
+      if (InvokeRequired) {
+        BeginInvoke(new Action<string>(OnPipeMessageReceived), message);
+        return;
+      }
+
+      try {
+        if (message.StartsWith("SIGNAL|")) {
+          string signal = message.Substring(7);
+          if (signal == "NEXT_PRESET") {
+            if (chkPresetRandom.Checked) SelectRandomPreset(); else SelectNextPreset();
+            btnPresetSend_Click(null, null);
+          } else if (signal == "PREV_PRESET") {
+            SelectPreviousPreset();
+            btnPresetSend_Click(null, null);
+          } else if (signal == "COVER_CHANGED") {
+            RefreshSpriteButtonImages(false);
+          } else if (signal == "SPRITE_MODE") {
+            ApplyVisualizerMode(true);
+          } else if (signal == "MESSAGE_MODE") {
+            ApplyVisualizerMode(false);
+          }
+        } else if (message.StartsWith("WAVE|")) {
+          string waveInfo = message.Substring(message.IndexOf("|") + 1);
+          string[] waveParams = waveInfo.Split('|');
+          updatingWaveParams = true;
+          foreach (string param in waveParams) {
+            string[] keyValue = param.Split('=');
+            if (keyValue.Length == 2) {
+              string key = keyValue[0].Trim();
+              string value = keyValue[1].Trim();
+              try {
+                if (key.Equals("MODE", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveMode.Value = int.Parse(value);
+                } else if (key.Equals("ALPHA", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveAlpha.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("COLORR", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveR.Value = int.Parse(value);
+                } else if (key.Equals("COLORG", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveG.Value = int.Parse(value);
+                } else if (key.Equals("COLORB", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveB.Value = int.Parse(value);
+                } else if (key.Equals("PUSHX", StringComparison.OrdinalIgnoreCase)) {
+                  numWavePushX.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("PUSHY", StringComparison.OrdinalIgnoreCase)) {
+                  numWavePushY.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("ZOOM", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveZoom.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("WARP", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveWarp.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("ROTATION", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveRotation.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("DECAY", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveDecay.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("SCALE", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveScale.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("ECHO", StringComparison.OrdinalIgnoreCase)) {
+                  numWaveEcho.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("BRIGHTEN", StringComparison.OrdinalIgnoreCase)) {
+                  chkWaveBrighten.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("DARKEN", StringComparison.OrdinalIgnoreCase)) {
+                  chkWaveDarken.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("SOLARIZE", StringComparison.OrdinalIgnoreCase)) {
+                  chkWaveSolarize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("INVERT", StringComparison.OrdinalIgnoreCase)) {
+                  chkWaveInvert.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("ADDITIVE", StringComparison.OrdinalIgnoreCase)) {
+                  chkWaveAdditive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("DOTTED", StringComparison.OrdinalIgnoreCase)) {
+                  chkWaveDotted.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("THICK", StringComparison.OrdinalIgnoreCase)) {
+                  chkWaveThick.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("VOLALPHA", StringComparison.OrdinalIgnoreCase)) {
+                  chkWaveVolAlpha.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                }
+              } catch { }
+            }
+          }
+          updatingWaveParams = false;
+        } else if (message.StartsWith("PRESET=")) {
+          string presetFilePath = message.Substring(message.IndexOf("=") + 1);
+          if (message.Length > 0) {
+            string findString = "RESOURCES\\PRESETS\\";
+            int index = message.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
+            string displayText = message;
+            if (index > -1) {
+              displayText = message.Substring(index + findString.Length);
+              displayText = Path.ChangeExtension(displayText, null);
+            }
+            SetRunningPresetText(displayText);
+            toolTip1.SetToolTip(txtVisRunning, presetFilePath);
+            UpdateTagsDisplay(false, true);
+          }
+        } else if (message.StartsWith("STATUS=")) {
+          string status = message.Substring(message.IndexOf("=") + 1);
+          if (status.Length > 0) {
+            SetStatusText(status);
+          }
+          if (status.Equals("Sprite Mode set", StringComparison.OrdinalIgnoreCase)) {
+            ApplyVisualizerMode(true);
+          } else if (status.Equals("Message Mode set", StringComparison.OrdinalIgnoreCase)) {
+            ApplyVisualizerMode(false);
+          }
+          if (status.Contains(": error ")) {
+            string errLine = status.Substring(1, status.IndexOf(")") - 1);
+            if (int.TryParse(errLine, out int lineNumber)) {
+              if (lineNumber > 0) {
+                lastReceivedShaderErrorLineNumber = lineNumber;
+                MarkRow(lineNumber - (int)numOffset.Value);
+              }
+            }
+          }
+        } else if (message.StartsWith("OPACITY=")) {
+          string opacity = message.Substring(message.IndexOf("=") + 1);
+          if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
+            if (numOpacity.Value != parsedOpacity) {
+              numOpacity.ValueChanged -= numOpacity_ValueChanged;
+              numOpacity.Value = parsedOpacity;
+              numOpacity.ValueChanged += numOpacity_ValueChanged;
+            }
+          }
+        } else if (message.StartsWith("DEVICE=")) {
+          string device = message.Substring(message.IndexOf("=") + 1);
+          RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
+        } else if (message.StartsWith("SETTINGS|")) {
+          string settingsInfo = message.Substring(message.IndexOf("|") + 1);
+          string[] settingsParams = settingsInfo.Split('|');
+          updatingSettingsParams = true;
+          foreach (string param in settingsParams) {
+            string[] keyValue = param.Split('=');
+            if (keyValue.Length == 2) {
+              string key = keyValue[0].Trim();
+              string value = keyValue[1].Trim();
+              try {
+                if (key.Equals("ACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                  chkSpoutActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("FIXEDSIZE", StringComparison.OrdinalIgnoreCase)) {
+                  chkSpoutFixedSize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("FIXEDWIDTH", StringComparison.OrdinalIgnoreCase)) {
+                  cboSpoutWidth.Text = value;
+                } else if (key.Equals("FIXEDHEIGHT", StringComparison.OrdinalIgnoreCase)) {
+                  cboSpoutHeight.Text = value;
+                } else if (key.Equals("QUALITY", StringComparison.OrdinalIgnoreCase)) {
+                  numQuality.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
+                } else if (key.Equals("AUTO", StringComparison.OrdinalIgnoreCase)) {
+                  chkQualityAuto.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("HUE", StringComparison.OrdinalIgnoreCase)) {
+                  if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsedHue)) {
+                    numSettingsHue.Value = Math.Clamp(parsedHue, numSettingsHue.Minimum, numSettingsHue.Maximum);
+                  }
+                } else if (key.Equals("LOCKED", StringComparison.OrdinalIgnoreCase)) {
+                  chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) {
+                  chkSettingsPresetRandom.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
+                  chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                  chkMixLumaActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LUMATHR", StringComparison.OrdinalIgnoreCase)) {
+                  if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal thr)) {
+                    numLumaThreshold.Value = Math.Clamp(thr, numLumaThreshold.Minimum, numLumaThreshold.Maximum);
+                  }
+                } else if (key.Equals("LUMASOFT", StringComparison.OrdinalIgnoreCase)) {
+                  if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal soft)) {
+                    numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
+                  }
+                }
+              } catch { }
+            }
+          }
+          updatingSettingsParams = false;
+        }
+      } catch (Exception ex) {
+        Program.LogToFile($"OnPipeMessageReceived: {ex.Message}");
+      }
+    }
+
+    /// <summary>
+    /// Get the HWND of the connected visualizer (for keystroke sending).
+    /// Returns IntPtr.Zero if not connected.
+    /// </summary>
+    private IntPtr GetVisualizerHwnd() {
+      if (_pipeClient == null || !_pipeClient.IsConnected) return IntPtr.Zero;
+      try {
+        var proc = Process.GetProcessById(_pipeClient.ConnectedPid);
+        return proc.MainWindowHandle;
+      } catch {
+        return IntPtr.Zero;
+      }
     }
 
     private void MainForm_Shown(object sender, EventArgs e) {
@@ -1304,188 +1516,6 @@ namespace MilkwaveRemote {
 
     protected override void WndProc(ref Message m) {
       try {
-        if (m.Msg == WM_NEXT_PRESET) {
-          if (chkPresetRandom.Checked) {
-            SelectRandomPreset();
-          } else {
-            SelectNextPreset();
-          }
-          btnPresetSend_Click(null, null);
-        } else if (m.Msg == WM_PREV_PRESET) {
-          SelectPreviousPreset();
-          btnPresetSend_Click(null, null);
-        } else if (m.Msg == WM_COVER_CHANGED) {
-          RefreshSpriteButtonImages(false);
-        } else if (m.Msg == WM_SPRITE_MODE) {
-          ApplyVisualizerMode(true);
-        } else if (m.Msg == WM_MESSAGE_MODE) {
-          ApplyVisualizerMode(false);
-        } else if (m.Msg == WM_COPYDATA) {
-          // Extract the COPYDATASTRUCT from the message
-          COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
-          if (cds.lpData != IntPtr.Zero) {
-            // Convert the received data to a string
-            string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
-            if (receivedString.StartsWith("WAVE|")) {
-              string waveInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
-              string[] waveParams = waveInfo.Split('|');
-              updatingWaveParams = true;
-              foreach (string param in waveParams) {
-                string[] keyValue = param.Split('=');
-                if (keyValue.Length == 2) {
-                  string key = keyValue[0].Trim();
-                  string value = keyValue[1].Trim();
-                  try {
-                    if (key.Equals("MODE", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveMode.Value = int.Parse(value);
-                    } else if (key.Equals("ALPHA", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveAlpha.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("COLORR", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveR.Value = int.Parse(value);
-                    } else if (key.Equals("COLORG", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveG.Value = int.Parse(value);
-                    } else if (key.Equals("COLORB", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveB.Value = int.Parse(value);
-                    } else if (key.Equals("PUSHX", StringComparison.OrdinalIgnoreCase)) {
-                      numWavePushX.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("PUSHY", StringComparison.OrdinalIgnoreCase)) {
-                      numWavePushY.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("ZOOM", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveZoom.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("WARP", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveWarp.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("ROTATION", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveRotation.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("DECAY", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveDecay.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("SCALE", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveScale.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("ECHO", StringComparison.OrdinalIgnoreCase)) {
-                      numWaveEcho.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("BRIGHTEN", StringComparison.OrdinalIgnoreCase)) {
-                      chkWaveBrighten.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("DARKEN", StringComparison.OrdinalIgnoreCase)) {
-                      chkWaveDarken.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("SOLARIZE", StringComparison.OrdinalIgnoreCase)) {
-                      chkWaveSolarize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("INVERT", StringComparison.OrdinalIgnoreCase)) {
-                      chkWaveInvert.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("ADDITIVE", StringComparison.OrdinalIgnoreCase)) {
-                      chkWaveAdditive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("DOTTED", StringComparison.OrdinalIgnoreCase)) {
-                      chkWaveDotted.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("THICK", StringComparison.OrdinalIgnoreCase)) {
-                      chkWaveThick.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("VOLALPHA", StringComparison.OrdinalIgnoreCase)) {
-                      chkWaveVolAlpha.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    }
-                  } catch (Exception) {
-                    // ignore
-                  }
-                }
-              }
-              updatingWaveParams = false;
-            } else if (receivedString.StartsWith("PRESET=")) {
-              string presetFilePath = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              if (receivedString.Length > 0) {
-                string findString = "RESOURCES\\PRESETS\\";
-                int index = receivedString.IndexOf(findString, StringComparison.CurrentCultureIgnoreCase);
-                string displayText = receivedString;
-                if (index > -1) {
-                  displayText = receivedString.Substring(index + findString.Length);
-                  displayText = Path.ChangeExtension(displayText, null);
-                }
-
-                // Process the received string
-                SetRunningPresetText(displayText);
-                toolTip1.SetToolTip(txtVisRunning, presetFilePath);
-                UpdateTagsDisplay(false, true);
-              }
-            } else if (receivedString.StartsWith("STATUS=")) {
-              string status = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              if (status.Length > 0) {
-                SetStatusText(status);
-              }
-              if (status.Equals("Sprite Mode set", StringComparison.OrdinalIgnoreCase)) {
-                ApplyVisualizerMode(true);
-              } else if (status.Equals("Message Mode set", StringComparison.OrdinalIgnoreCase)) {
-                ApplyVisualizerMode(false);
-              }
-              if (status.Contains(": error ")) {
-                string errLine = status.Substring(1, status.IndexOf(")") - 1);
-                if (int.TryParse(errLine, out int lineNumber)) {
-                  if (lineNumber > 0) {
-                    lastReceivedShaderErrorLineNumber = lineNumber;
-                    MarkRow(lineNumber - (int)numOffset.Value);
-                  }
-                }
-              }
-            } else if (receivedString.StartsWith("OPACITY=")) {
-              string opacity = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              if (int.TryParse(opacity, out int parsedOpacity) && parsedOpacity >= 0 && parsedOpacity <= 100) {
-                if (numOpacity.Value != parsedOpacity) {
-                  // Temporarily detach the event handler
-                  numOpacity.ValueChanged -= numOpacity_ValueChanged;
-                  numOpacity.Value = parsedOpacity;
-                  numOpacity.ValueChanged += numOpacity_ValueChanged;
-                }
-              }
-            } else if (receivedString.StartsWith("DEVICE=")) {
-              string device = receivedString.Substring(receivedString.IndexOf("=") + 1);
-              RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
-            } else if (receivedString.StartsWith("SETTINGS|")) {
-              string settingsInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
-              string[] settingsParams = settingsInfo.Split('|');
-              updatingSettingsParams = true;
-              foreach (string param in settingsParams) {
-                string[] keyValue = param.Split('=');
-                if (keyValue.Length == 2) {
-                  string key = keyValue[0].Trim();
-                  string value = keyValue[1].Trim();
-                  try {
-                    if (key.Equals("ACTIVE", StringComparison.OrdinalIgnoreCase)) {
-                      chkSpoutActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("FIXEDSIZE", StringComparison.OrdinalIgnoreCase)) {
-                      chkSpoutFixedSize.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("FIXEDWIDTH", StringComparison.OrdinalIgnoreCase)) {
-                      cboSpoutWidth.Text = value;
-                    } else if (key.Equals("FIXEDHEIGHT", StringComparison.OrdinalIgnoreCase)) {
-                      cboSpoutHeight.Text = value;
-                    } else if (key.Equals("QUALITY", StringComparison.OrdinalIgnoreCase)) {
-                      numQuality.Value = decimal.Parse(value, CultureInfo.InvariantCulture);
-                    } else if (key.Equals("AUTO", StringComparison.OrdinalIgnoreCase)) {
-                      chkQualityAuto.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("HUE", StringComparison.OrdinalIgnoreCase)) {
-                      if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsedHue)) {
-                        numSettingsHue.Value = Math.Clamp(parsedHue, numSettingsHue.Minimum, numSettingsHue.Maximum);
-                      }
-                    } else if (key.Equals("LOCKED", StringComparison.OrdinalIgnoreCase)) {
-                      chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) {
-                      chkSettingsPresetRandom.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
-                      chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
-                      chkMixLumaActive.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
-                    } else if (key.Equals("LUMATHR", StringComparison.OrdinalIgnoreCase)) {
-                      if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal thr)) {
-                        numLumaThreshold.Value = Math.Clamp(thr, numLumaThreshold.Minimum, numLumaThreshold.Maximum);
-                      }
-                    } else if (key.Equals("LUMASOFT", StringComparison.OrdinalIgnoreCase)) {
-                      if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal soft)) {
-                        numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
-                      }
-                    }
-                  } catch (Exception) {
-                    // ignore
-                  }
-                }
-              }
-              updatingSettingsParams = false;
-            }
-          }
-        }
-
         base.WndProc(ref m);
       } catch (Exception ex) {
         Program.LogToFile($"WndProc: {ex.Message}");
@@ -1496,24 +1526,16 @@ namespace MilkwaveRemote {
       txtVisRunning.Text = displayText.Replace("PRESET=", "");
     }
 
+    /// <summary>
+    /// Find the visualizer's main window handle (for keystroke sending and WM_CLOSE).
+    /// Uses the connected pipe's PID to get the process's MainWindowHandle.
+    /// </summary>
     private nint FindVisualizerWindow() {
-      IntPtr foundWindow = IntPtr.Zero;
-      EnumWindows((hWnd, lParam) => {
-        int length = GetWindowTextLength(hWnd);
-        if (length == 0) return true;
-
-        StringBuilder windowTitle = new StringBuilder(length + 1);
-        GetWindowText(hWnd, windowTitle, windowTitle.Capacity);
-
-        if (windowTitle.ToString().Equals(cboWindowTitle.Text, StringComparison.InvariantCultureIgnoreCase)) {
-          foundWindow = hWnd;
-          foundWindowTitle = windowTitle.ToString();
-          return false; // Stop enumeration
-        }
-
-        return true; // Continue enumeration
-      }, IntPtr.Zero);
-      return foundWindow;
+      IntPtr hwnd = GetVisualizerHwnd();
+      if (hwnd != IntPtr.Zero) {
+        foundWindowTitle = _pipeClient != null ? $"PID {_pipeClient.ConnectedPid}" : "";
+      }
+      return hwnd;
     }
 
     private void btnSend_Click(object sender, EventArgs e) {
@@ -1532,14 +1554,12 @@ namespace MilkwaveRemote {
 
     private void SendToMilkwaveVisualizer(string messageToSend, MessageType type) {
       SetStatusText("");
-      string partialTitle = cboWindowTitle.Text;
       string statusMessage = "";
 
       try {
         if (!SendingMessage) {
           SendingMessage = true;
-          IntPtr foundWindow = FindVisualizerWindow();
-          if (foundWindow != IntPtr.Zero) {
+          if (IsPipeConnected) {
             string message = "";
             if (type == MessageType.Wave) {
               message = "WAVE" +
@@ -1660,32 +1680,22 @@ namespace MilkwaveRemote {
               bool mixEnabled = chkSpoutMix.Checked;
               statusMessage = $"Spout mixing {(mixEnabled ? "enabled" : "disabled")}: {senderName}";
 
-              // Use direct window messages - send sender name FIRST, then enable
-              if (foundWindow != IntPtr.Zero) {
-                if (mixEnabled && senderName.Length > 0) {
-                  SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
-                  System.Threading.Thread.Sleep(50);
-                }
-                PostMessage(foundWindow, WM_ENABLESPOUTMIX, (IntPtr)(mixEnabled ? 1 : 0), IntPtr.Zero);
-                if (statusMessage.Length > 0) {
-                  SetStatusText($"{statusMessage} {foundWindowTitle}");
-                }
-              } else {
-                SetStatusText(windowNotFound);
+              if (mixEnabled && senderName.Length > 0) {
+                _pipeClient!.SendSpoutSender(senderName);
+                System.Threading.Thread.Sleep(50);
+              }
+              _pipeClient!.SendSignal($"ENABLESPOUTMIX={( mixEnabled ? 1 : 0)}");
+              if (statusMessage.Length > 0) {
+                SetStatusText($"{statusMessage} {foundWindowTitle}");
               }
               SendingMessage = false;
               return;
             } else if (type == MessageType.InputMixOnTop) {
               try {
                 if (updatingSettingsParams) return;
-
                 bool onTop = chkInputTop.Checked;
-                if (foundWindow != IntPtr.Zero) {
-                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
-                  SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")} on {foundWindowTitle}");
-                } else {
-                  SetStatusText(windowNotFound);
-                }
+                _pipeClient!.SendSignal($"SET_INPUTMIX_ONTOP={( onTop ? 1 : 0)}");
+                SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")} on {foundWindowTitle}");
               } catch (Exception ex) {
                 SetStatusText($"Error setting input layer position: {ex.Message}");
               }
@@ -1694,14 +1704,9 @@ namespace MilkwaveRemote {
             } else if (type == MessageType.InputMixOpacity) {
               try {
                 if (updatingSettingsParams) return;
-
                 int opacityInt = (int)numInputMixOpacity.Value;
-                if (foundWindow != IntPtr.Zero) {
-                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
-                  SetStatusText($"Input mix opacity set to {opacityInt}% on {foundWindowTitle}");
-                } else {
-                  SetStatusText(windowNotFound);
-                }
+                _pipeClient!.SendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
+                SetStatusText($"Input mix opacity set to {opacityInt}% on {foundWindowTitle}");
               } catch (Exception ex) {
                 SetStatusText($"Error setting input mix opacity: {ex.Message}");
               }
@@ -1710,19 +1715,14 @@ namespace MilkwaveRemote {
             } else if (type == MessageType.InputMixLuma) {
               try {
                 if (updatingSettingsParams) return;
-
                 bool active = chkMixLumaActive.Checked;
                 int threshold = active ? (int)numLumaThreshold.Value : -1;
                 int softness = (int)numLumaSoftness.Value;
-                if (foundWindow != IntPtr.Zero) {
-                  PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)threshold, (IntPtr)softness);
-                  if (active)
-                    SetStatusText($"Luma Key set to {threshold}% (softness {softness}%) on {foundWindowTitle}");
-                  else
-                    SetStatusText($"Luma Key disabled on {foundWindowTitle}");
-                } else {
-                  SetStatusText(windowNotFound);
-                }
+                _pipeClient!.SendSignal($"SET_INPUTMIX_LUMAKEY={threshold}|{softness}");
+                if (active)
+                  SetStatusText($"Luma Key set to {threshold}% (softness {softness}%) on {foundWindowTitle}");
+                else
+                  SetStatusText($"Luma Key disabled on {foundWindowTitle}");
               } catch (Exception ex) {
                 SetStatusText($"Error setting input luma key: {ex.Message}");
               }
@@ -1792,22 +1792,10 @@ namespace MilkwaveRemote {
               }
             }
 
-            byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
-            IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
-            Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
-
-            COPYDATASTRUCT cds = new COPYDATASTRUCT {
-              dwData = 1,
-              cbData = messageBytes.Length,
-              lpData = messagePtr
-            };
-
-            SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
+            _pipeClient!.Send(message);
             if (statusMessage.Length > 0) {
               SetStatusText($"{statusMessage} {foundWindowTitle}");
             }
-
-            Marshal.FreeHGlobal(messagePtr);
 
           } else {
             SetStatusText(windowNotFound);
@@ -2929,13 +2917,16 @@ namespace MilkwaveRemote {
           SaveMIDISettings();
         }
 
-        IntPtr foundWindow = FindVisualizerWindow();
-        if (foundWindow != IntPtr.Zero) {
-          // Close the Visualizer window if CloseVisualizerWithRemote=true or Alt ot Ctrl key are pressed
-          if (Settings.CloseVisualizerWithRemote || (Control.ModifierKeys & Keys.Alt) == Keys.Alt || (Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        // Close the Visualizer window if CloseVisualizerWithRemote=true or Alt or Ctrl key are pressed
+        if (Settings.CloseVisualizerWithRemote || (Control.ModifierKeys & Keys.Alt) == Keys.Alt || (Control.ModifierKeys & Keys.Control) == Keys.Control) {
+          IntPtr foundWindow = GetVisualizerHwnd();
+          if (foundWindow != IntPtr.Zero) {
             PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
           }
         }
+
+        _pipeClient?.Dispose();
+        _pipeClient = null;
 
       } catch (Exception ex) {
         Program.SaveErrorToFile(ex, "Error");
@@ -6509,20 +6500,19 @@ namespace MilkwaveRemote {
           chkSpoutMix.Checked = false;
         }
 
-        IntPtr foundWindow = FindVisualizerWindow();
-        if (foundWindow != IntPtr.Zero) {
+        if (IsPipeConnected) {
           // Always send current mix settings (opacity and layer position) beforehand
           if (enabled) {
             int opacityInt = (int)numInputMixOpacity.Value;
             bool onTop = chkInputTop.Checked;
-            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
-            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+            _pipeClient!.SendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
+            _pipeClient!.SendSignal($"SET_INPUTMIX_ONTOP={(onTop ? 1 : 0)}");
 
             // Send Luma Key settings
             bool lumaActive = chkMixLumaActive.Checked;
             int lumaThreshold = lumaActive ? (int)numLumaThreshold.Value : -1;
             int lumaSoftness = (int)numLumaSoftness.Value;
-            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)lumaThreshold, (IntPtr)lumaSoftness);
+            _pipeClient!.SendSignal($"SET_INPUTMIX_LUMAKEY={lumaThreshold}|{lumaSoftness}");
 
             System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
           }
@@ -6530,12 +6520,12 @@ namespace MilkwaveRemote {
           // Always send device index first (even if already sent) to ensure it's initialized
           if (enabled && cboVideoInput.SelectedIndex >= 0) {
             int deviceIndex = cboVideoInput.SelectedIndex;
-            PostMessage(foundWindow, WM_SETVIDEODEVICE, (IntPtr)deviceIndex, IntPtr.Zero);
+            _pipeClient!.SendSignal($"SETVIDEODEVICE={deviceIndex}");
             System.Threading.Thread.Sleep(100); // Give device time to initialize
           }
 
           // Then enable/disable mixing
-          PostMessage(foundWindow, WM_ENABLEVIDEOMIX, (IntPtr)(enabled ? 1 : 0), IntPtr.Zero);
+          _pipeClient!.SendSignal($"ENABLEVIDEOMIX={(enabled ? 1 : 0)}");
 
           if (enabled && cboVideoInput.SelectedIndex >= 0) {
             SetStatusText($"Video mixing enabled: {cboVideoInput.Text}");
@@ -6557,10 +6547,9 @@ namespace MilkwaveRemote {
     private void cboVideoInput_SelectedIndexChanged(object sender, EventArgs e) {
       try {
         if (chkVideoMix.Checked && cboVideoInput.SelectedIndex >= 0) {
-          IntPtr foundWindow = FindVisualizerWindow();
-          if (foundWindow != IntPtr.Zero) {
+          if (IsPipeConnected) {
             int deviceIndex = cboVideoInput.SelectedIndex;
-            PostMessage(foundWindow, WM_SETVIDEODEVICE, (IntPtr)deviceIndex, IntPtr.Zero);
+            _pipeClient!.SendSignal($"SETVIDEODEVICE={deviceIndex}");
             SetStatusText($"Video source changed: {cboVideoInput.Text}");
           } else {
             SetStatusText(windowNotFound);
@@ -6596,20 +6585,19 @@ namespace MilkwaveRemote {
           chkVideoMix.Checked = false;
         }
 
-        IntPtr foundWindow = FindVisualizerWindow();
-        if (foundWindow != IntPtr.Zero) {
+        if (IsPipeConnected) {
           // Always send current mix settings (opacity and layer position) beforehand
           if (enabled) {
             int opacityInt = (int)numInputMixOpacity.Value;
             bool onTop = chkInputTop.Checked;
-            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
-            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
+            _pipeClient!.SendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
+            _pipeClient!.SendSignal($"SET_INPUTMIX_ONTOP={(onTop ? 1 : 0)}");
 
             // Send Luma Key settings
             bool lumaActive = chkMixLumaActive.Checked;
             int lumaThreshold = lumaActive ? (int)numLumaThreshold.Value : -1;
             int lumaSoftness = (int)numLumaSoftness.Value;
-            PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)lumaThreshold, (IntPtr)lumaSoftness);
+            _pipeClient!.SendSignal($"SET_INPUTMIX_LUMAKEY={lumaThreshold}|{lumaSoftness}");
 
             System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
           }
@@ -6617,11 +6605,11 @@ namespace MilkwaveRemote {
           // Send sender name and then enable/disable mixing
           if (enabled && cboSputInput.SelectedIndex >= 0) {
             string senderName = cboSputInput.Text;
-            SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
+            _pipeClient!.SendSpoutSender(senderName);
             System.Threading.Thread.Sleep(50);
           }
 
-          PostMessage(foundWindow, WM_ENABLESPOUTMIX, (IntPtr)(enabled ? 1 : 0), IntPtr.Zero);
+          _pipeClient!.SendSignal($"ENABLESPOUTMIX={(enabled ? 1 : 0)}");
 
           if (enabled && cboSputInput.SelectedIndex >= 0) {
             SetStatusText($"Spout mixing enabled: {cboSputInput.Text}");
@@ -6645,9 +6633,8 @@ namespace MilkwaveRemote {
           string senderName = cboSputInput.Text;
           if (senderName == lastSpoutSenderName) return; // Ignore if name hasn't changed (avoids noise from refresh timer)
 
-          IntPtr foundWindow = FindVisualizerWindow();
-          if (foundWindow != IntPtr.Zero) {
-            SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
+          if (IsPipeConnected) {
+            _pipeClient!.SendSpoutSender(senderName);
             SetStatusText($"Spout sender changed: {senderName}");
             lastSpoutSenderName = senderName;
           } else {
@@ -6746,32 +6733,16 @@ namespace MilkwaveRemote {
     #region Device Enumeration (OBS-Style Pattern)
 
     /// <summary>
-    /// Send selected Spout sender to visualizer via window message
+    /// Send selected Spout sender to visualizer via pipe
     /// </summary>
     private void SendSpoutSenderToVisualizer(string senderName) {
       try {
-        IntPtr hWnd = FindVisualizerWindow();
-        if (hWnd == IntPtr.Zero) {
-          Debug.WriteLine("Visualizer window not found");
-          return;
+        if (IsPipeConnected) {
+          _pipeClient!.SendSpoutSender(senderName);
+          Debug.WriteLine($"Sent Spout sender '{senderName}' to visualizer");
+        } else {
+          Debug.WriteLine("Not connected to visualizer");
         }
-
-        // Convert sender name to wide char for Windows message
-        byte[] senderBytes = Encoding.Unicode.GetBytes(senderName);
-        IntPtr senderPtr = Marshal.AllocHGlobal(senderBytes.Length + 2);
-        Marshal.Copy(senderBytes, 0, senderPtr, senderBytes.Length);
-        Marshal.WriteInt16(senderPtr, senderBytes.Length, 0); // Null terminator
-
-        COPYDATASTRUCT cds = new COPYDATASTRUCT {
-          dwData = (IntPtr)WM_SETSPOUTSENDER,
-          cbData = senderBytes.Length + 2,
-          lpData = senderPtr
-        };
-
-        SendMessageW(hWnd, WM_COPYDATA, IntPtr.Zero, ref cds);
-        Marshal.FreeHGlobal(senderPtr);
-
-        Debug.WriteLine($"Sent Spout sender '{senderName}' to visualizer");
       } catch (Exception ex) {
         Debug.WriteLine($"Error sending Spout sender to visualizer: {ex.Message}");
       }

@@ -142,6 +142,7 @@
 // older Windows versions: Entry Point Not Found Fix
 
 #include "plugin.h"
+#include "pipe_server.h"
 #include "resource.h"
 #include "pluginshell.h"
 
@@ -171,6 +172,7 @@ namespace fs = std::filesystem;
 
 CPlugin g_plugin;
 Milkwave milkwave;
+PipeServer g_pipeServer;
 HINSTANCE api_orig_hinstance = nullptr;
 _locale_t g_use_C_locale;
 char keyMappings[8];
@@ -1133,9 +1135,21 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     break;
   }
 
-  case (0x004A): // WM_COPYDATA
+  case WM_USER_PIPE_IPC_MESSAGE:
   {
-    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    // Received from pipe server — lParam is heap-allocated wchar_t*, wParam is dwData
+    wchar_t* message = (wchar_t*)lParam;
+    DWORD_PTR dwData = (DWORD_PTR)wParam;
+    if (message) {
+      if (dwData == 1) {
+        g_plugin.LaunchMessage(message);
+      }
+      else if (dwData == (WM_USER + 108)) { // WM_USER_SET_SPOUT_SENDER equivalent
+        g_plugin.SetSpoutSender(message);
+      }
+      free(message);
+    }
+    return 0;
   }
 
   default:
@@ -1436,6 +1450,10 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     BackbufferWidth,
     BackbufferHeight);
 
+  // Start named pipe IPC server (replaces WM_COPYDATA)
+  // Use WM_USER as signal base (Milkwave uses WM_USER+N, not WM_APP+N)
+  g_pipeServer.Start(hwnd, WM_USER_PIPE_IPC_MESSAGE, WM_USER);
+
   MSG msg;
   msg.message = WM_NULL;
 
@@ -1473,6 +1491,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   }
   milkwave.LogInfo(L"CreateWindowAndRun: Message loop ended");
 
+  g_pipeServer.Stop();
   g_plugin.MyWriteConfig();
   g_plugin.PluginQuit();
 

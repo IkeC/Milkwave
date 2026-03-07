@@ -1514,15 +1514,15 @@ namespace MilkwaveRemote
       // cboWindowTitle
       // 
       cboWindowTitle.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      cboWindowTitle.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-      cboWindowTitle.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboWindowTitle.DropDownStyle = ComboBoxStyle.DropDownList;
       cboWindowTitle.FormattingEnabled = true;
-      cboWindowTitle.Items.AddRange(new object[] { "Milkwave Visualizer", "Milkwave Visualizer 2", "Milkwave Visualizer 3", "Milkwave Visualizer 4", "Milkwave Visualizer 5", "MDropDX12" });
+      cboWindowTitle.Items.AddRange(new object[] { "(scanning...)" });
       cboWindowTitle.Location = new Point(74, 67);
       cboWindowTitle.Name = "cboWindowTitle";
       cboWindowTitle.Size = new Size(254, 23);
       cboWindowTitle.TabIndex = 108;
-      toolTip1.SetToolTip(cboWindowTitle, "Target window title");
+      toolTip1.SetToolTip(cboWindowTitle, "Select visualizer instance to control");
+      cboWindowTitle.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
       // 
       // chkWaveVolAlpha
       // 
