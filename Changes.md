@@ -3,8 +3,9 @@
 * Support for equalizer shader presets (FFT)
   - Adjust FFT attack/decay on Settings tab
 * New preset: IkeC - Equalizer
+  - 5 different versions (switch on Settings tab)
   - Band peak marking and mouse support (Right-click)
-  - Supports Intensity, Shift and Version parameters
+  - Supports Intensity and Shift parameters
 * Configurable Visualizer executable and target window 
   - For Visualizer forks such as MDropDX12 by @shanevbg
 * Visualizer menu font can be configured from Remote
