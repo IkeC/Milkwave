@@ -8,6 +8,7 @@ L                       Load specific preset
 M                       Show/hide preset-editing menu
 N                       Show per-frame monitor
 S                       Save new preset
+
 CTRL + S                Quicksave preset to /presets/Quicksave folder
 SHIFT + CTRL + S        Quicksave preset to /presets/Quicksave2 folder
 CTRL + D                Set current audio device to default
@@ -27,12 +28,9 @@ SHIFT + CTRL + DEL      Clear all the sprites/messages
 CTRL + K                Kills all the sprites
 CTRL + T                Kills custom messages/song titles
 
-Q / q    Wave echo zoom +/-         [ / ]    X +/-
-W / w    Wave mode +/-              { / }    Y +/-
-E / e    Wave alpha +/-             < / >    Rotation +/-
-U / u    Wave warp scale +/-        A        Do random mini-mash-up
-I / i    Wave zoom +/-              D        Toggle shader locks
-O / o    Wave warp amount +/-       F        Tooggle echo orientation
-P / p    Video echo alpha +/-       !        Randomize warp shader
-G / g    Gamma adjustment +/-       @        Randomize comp shader
-J / j    Wave scale +/-
+A   Do random mini-mash-up      Q / q   Wave echo zoom +/-      [ / ]   X +/-
+D   Toggle shader locks         P / p   Video echo alpha +/-    { / }   Y +/-
+F   Tooggle echo orientation    G / g   Gamma adjustment +/-    < / >   Rotation +/-
+!   Randomize warp shader       U / u   Wave warp scale +/-     W / w   Wave mode +/-
+@   Randomize comp shader       J / j   Wave scale +/-          E / e   Wave alpha +/-
+O / o   Wave warp amount +/-    I / i   Wave zoom +/-

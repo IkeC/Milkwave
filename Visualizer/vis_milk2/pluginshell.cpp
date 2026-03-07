@@ -170,6 +170,61 @@ extern wchar_t* g_szHelp;
 extern wchar_t* g_szHelp_Page2;
 extern int g_szHelp_W;
 
+static void ScanHelpText(const void* text, bool wideText, int* outLineCount, int* outMaxLineLen) {
+  *outLineCount = 1;
+  *outMaxLineLen = 0;
+  if (!text) return;
+  int lineLen = 0;
+  if (wideText) {
+    for (const wchar_t* p = (const wchar_t*)text; *p; ++p) {
+      if (*p == L'\n') { if (lineLen > *outMaxLineLen) *outMaxLineLen = lineLen; lineLen = 0; (*outLineCount)++; }
+      else if (*p != L'\r') { lineLen++; }
+    }
+  } else {
+    for (const char* p = (const char*)text; *p; ++p) {
+      if (*p == '\n') { if (lineLen > *outMaxLineLen) *outMaxLineLen = lineLen; lineLen = 0; (*outLineCount)++; }
+      else if (*p != '\r') { lineLen++; }
+    }
+  }
+  if (lineLen > *outMaxLineLen) *outMaxLineLen = lineLen;
+}
+
+static int ComputeAutoHelpFontSize(IDirect3DDevice9* pDevice, const td_fontinfo& fontInfo, int windowHeight) {
+  if (!pDevice || windowHeight <= 0)
+    return HELPSCREEN_FONT_DEFAULT_SIZE;
+
+  int lines1 = 1, len1 = 1, lines2 = 1, len2 = 1;
+  ScanHelpText(g_szHelp,       g_szHelp_W != 0, &lines1, &len1);
+  ScanHelpText(g_szHelp_Page2, g_szHelp_W != 0, &lines2, &len2);
+  int maxLines = max(lines1, lines2);
+  if (maxLines <= 0) maxLines = 1;
+
+  // Create a reference font at a known size to measure actual line height,
+  // then scale linearly.  This works because TrueType fonts scale linearly.
+  const int REF_SIZE = 20;
+  LPD3DXFONT refFont = NULL;
+  HRESULT hr = D3DXCreateFontW(pDevice, REF_SIZE, 0,
+    fontInfo.bBold ? 900 : 400, 1, fontInfo.bItalic, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+    fontInfo.bAntiAliased ? ANTIALIASED_QUALITY : DEFAULT_QUALITY, DEFAULT_PITCH,
+    fontInfo.szFace, &refFont);
+  if (FAILED(hr) || !refFont)
+    return max(6, windowHeight / maxLines);
+
+  RECT mr;
+  SetRect(&mr, 0, 0, 4096, 4096);
+  int refLineH = refFont->DrawTextW(NULL, L"Mg", -1, &mr, DT_CALCRECT, 0xFFFFFFFF);
+  SafeRelease(refFont);
+
+  if (refLineH <= 0)
+    return max(6, windowHeight / maxLines);
+
+  // targetLineH = windowHeight / maxLines
+  // fontSize = REF_SIZE * targetLineH / refLineH
+  float targetLineH = (float)windowHeight / (float)maxLines;
+  int fontSize = (int)(REF_SIZE * targetLineH / (float)refLineH);
+  return max(6, fontSize);
+}
+
 // resides in vms_desktop.dll/lib:
 //void getItemData(int x);
 
@@ -596,14 +651,26 @@ void CPluginShell::CleanUpVJStuff() {
 int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
   // Create D3DX system font:
   int i;
+  int helpFontSize = HELPSCREEN_FONT_DEFAULT_SIZE;
+
+  if (pDevice) {
+    // Help text is rendered as a screen overlay at actual pixel resolution.
+    int windowHeight = m_vjd3d9_device ? m_nTextWndHeight : GetHeight();
+    if (IsSpoutActiveAndFixed()) windowHeight = nSpoutFixedHeight;
+    helpFontSize = ComputeAutoHelpFontSize(pDevice, m_fontinfo[HELPSCREEN_FONT], windowHeight);
+  }
+
   for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     int fSize = m_fontinfo[i].nSize;
-    if (!IsSpoutActiveAndFixed()) {
+    if (i == HELPSCREEN_FONT) {
+      fSize = helpFontSize;
+    }
+    else if (!IsSpoutActiveAndFixed()) {
       fSize = (int)(fSize * m_fRenderQuality);
     }
     if (D3DXCreateFontW(pDevice,  //m_font[i],
       fSize,
-      fSize * 4 / 10,
+      (i == HELPSCREEN_FONT) ? 0 : fSize * 4 / 10,
       m_fontinfo[i].bBold ? 900 : 400,
       1,  // mip levels
       m_fontinfo[i].bItalic,
@@ -621,6 +688,7 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
       return false;
     }
   }
+
   // get actual font heights
   for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     RECT r;
@@ -1979,8 +2047,6 @@ void CPluginShell::RenderBuiltInTextMsgs() {
     RECT r;
 
     if (m_show_help > 0) {
-      int y = m_upper_left_corner_y;
-
       SetRect(&r, 0, 0, GetWidth(), GetHeight());
       if (m_show_help == 1) {
         if (!g_szHelp_W)

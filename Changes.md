@@ -1,9 +1,11 @@
 ## v3.6 (unreleased)
 
-* Support for EQ Shader presets (introduced in MilkDrop 3.33)
-* Configurable Visualizer executable and target window to support Milkwave Visualizer forks (such as MDropDX12 by @shanevbg)
+* Support for EQ Shader presets
+* Configurable Visualizer executable and target window (to support Visualizer forks such as MDropDX12 by @shanevbg)
+* Visualizer help (F1) adjusts to window size
+* Visualizer stability improvements
 
-If want a v3.6 preview build, contact me.
+If want a v3.6 preview build, join the Discord.
 
 ## v3.5 (2026-03-01)
 
