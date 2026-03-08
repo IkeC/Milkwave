@@ -15,6 +15,7 @@ internal class PipeClient : IDisposable {
   private Thread? _readThread;
   private readonly object _lock = new();
   private bool _disposed;
+  private int _disconnected;
 
   /// <summary>Fired on the thread-pool when a message arrives from the visualizer.</summary>
   public event Action<string>? MessageReceived;
@@ -48,6 +49,7 @@ internal class PipeClient : IDisposable {
           _pipe = pipe;
         }
 
+        Interlocked.Exchange(ref _disconnected, 0);
         _cts = new CancellationTokenSource();
         _readThread = new Thread(ReadLoop) { IsBackground = true, Name = "PipeClientReader" };
         _readThread.Start();
@@ -86,6 +88,7 @@ internal class PipeClient : IDisposable {
         _pipe = null;
       }
     }
+    _readThread?.Join(2000);
     _readThread = null;
     _cts?.Dispose();
     _cts = null;
@@ -93,8 +96,9 @@ internal class PipeClient : IDisposable {
 
   private void ReadLoop() {
     byte[] buffer = new byte[65536];
+    CancellationToken ct = _cts?.Token ?? CancellationToken.None;
     try {
-      while (_cts != null && !_cts.IsCancellationRequested) {
+      while (!ct.IsCancellationRequested) {
         NamedPipeClientStream? pipe;
         lock (_lock) { pipe = _pipe; }
         if (pipe == null || !pipe.IsConnected)
@@ -127,7 +131,8 @@ internal class PipeClient : IDisposable {
         _pipe = null;
       }
     }
-    Disconnected?.Invoke();
+    if (Interlocked.Exchange(ref _disconnected, 1) == 0)
+      Disconnected?.Invoke();
   }
 
   public void Dispose() {
