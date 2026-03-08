@@ -2907,7 +2907,7 @@ namespace MilkwaveRemote
       // 
       chkUseDX12.Appearance = Appearance.Button;
       chkUseDX12.FlatStyle = FlatStyle.System;
-      chkUseDX12.Location = new Point(367, 152);
+      chkUseDX12.Location = new Point(368, 152);
       chkUseDX12.Margin = new Padding(3, 2, 3, 2);
       chkUseDX12.Name = "chkUseDX12";
       chkUseDX12.Size = new Size(56, 23);

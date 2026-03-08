@@ -6484,7 +6484,8 @@ namespace MilkwaveRemote {
 
       pendingThumbnailAssignments[buttonIndex] = pendingThumbnail;
 
-      string captureDir = Path.Combine(BaseDir, "capture");
+      string captureDir = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), "capture");
+
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] BaseDir: {BaseDir}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Capture dir: {captureDir}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Full preset path: {fullPresetPath}");
@@ -6504,7 +6505,8 @@ namespace MilkwaveRemote {
         return;
       }
 
-      string captureDir = Path.Combine(BaseDir, "capture");
+      string captureDir = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), "capture");
+
       System.Diagnostics.Debug.WriteLine($"[PollCapture] Polling directory: {captureDir}");
 
       if (!Directory.Exists(captureDir)) {
