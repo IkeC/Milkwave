@@ -964,9 +964,14 @@ namespace MilkwaveRemote {
         if (loadedSettings != null) {
           Settings = loadedSettings;
         }
+      } catch (Exception) {
+        Settings = new Settings();
+      }
+
+      try {
         string tagsFile = Path.Combine(BaseDir, milkwaveTagsFile);
-        jsonString = File.ReadAllText(tagsFile);
-        Tags? loadedTags = JsonSerializer.Deserialize<Tags>(jsonString, new JsonSerializerOptions {
+        string tagsJson = File.ReadAllText(tagsFile);
+        Tags? loadedTags = JsonSerializer.Deserialize<Tags>(tagsJson, new JsonSerializerOptions {
           PropertyNameCaseInsensitive = true
         });
         if (loadedTags != null) {
@@ -974,7 +979,6 @@ namespace MilkwaveRemote {
           SetTopTags();
         }
       } catch (Exception) {
-        Settings = new Settings();
         Tags = new Tags();
       }
 
@@ -1064,23 +1068,13 @@ namespace MilkwaveRemote {
     }
 
     private IntPtr StartVisualizerIfNotFound(bool onlyIfNotFound) {
-      IntPtr result = FindVisualizerWindow();
-      if (result == IntPtr.Zero || !onlyIfNotFound) {
-        // Try to run the visualizer exe (configurable in settings-remote.json)
-        string exeName = string.IsNullOrEmpty(Settings.VisualizerExe) ? "MilkwaveVisualizer.exe" : Settings.VisualizerExe;
-        string visualizerPath = Path.Combine(BaseDir, exeName);
-        if (File.Exists(visualizerPath)) {
-          Process.Start(new ProcessStartInfo(visualizerPath) { UseShellExecute = true });
-        }
-        int maxWait = 30; // 3 seconds
-        while (result == IntPtr.Zero && maxWait > 0) {
-          // Wait for the visualizer window to be found
-          Thread.Sleep(100);
-          result = FindVisualizerWindow();
-          maxWait--;
-        }
+      if (IsPipeConnected && onlyIfNotFound) {
+        return GetVisualizerHwnd();
       }
-      return result;
+
+      // Launch the visualizer and connect via pipe
+      LaunchAndConnectVisualizer();
+      return GetVisualizerHwnd();
     }
 
     /// <summary>
@@ -1146,8 +1140,9 @@ namespace MilkwaveRemote {
     }
 
     private bool IsPipeConnected => _pipeClient?.IsConnected == true;
-    private List<(int pid, string name)> _discoveredInstances = new();
+    private List<(int pid, string name, string exePath)> _discoveredInstances = new();
     private const string RescanLabel = "↻ Rescan for visualizers...";
+    private const string LaunchLabel = "▶ Launch visualizer...";
 
     private void ScanAndPopulateVisualizers() {
       _discoveredInstances = PipeClient.DiscoverVisualizers();
@@ -1158,9 +1153,13 @@ namespace MilkwaveRemote {
       if (_discoveredInstances.Count == 0) {
         cboWindowTitle.Items.Add("(no visualizers found)");
       } else {
-        foreach (var (pid, name) in _discoveredInstances) {
+        foreach (var (pid, name, _) in _discoveredInstances) {
           cboWindowTitle.Items.Add($"{name} (PID: {pid})");
         }
+      }
+      // Add launch option if we know the exe path
+      if (!string.IsNullOrEmpty(Settings.VisualizerExe)) {
+        cboWindowTitle.Items.Add(LaunchLabel);
       }
       cboWindowTitle.Items.Add(RescanLabel);
       cboWindowTitle.SelectedIndex = 0;
@@ -1174,14 +1173,19 @@ namespace MilkwaveRemote {
       ScanAndPopulateVisualizers();
 
       if (_discoveredInstances.Count == 0) {
-        SetStatusText("No visualizer instances found");
+        // No visualizers running — try to launch the last known one
+        if (!string.IsNullOrEmpty(Settings.VisualizerExe)) {
+          LaunchAndConnectVisualizer();
+        } else {
+          SetStatusText("No visualizer instances found");
+        }
         return;
       }
 
       ConnectToInstance(_discoveredInstances[0]);
     }
 
-    private void ConnectToInstance((int pid, string name) target) {
+    private void ConnectToInstance((int pid, string name, string exePath) target) {
       _pipeClient?.Dispose();
       _pipeClient = new PipeClient();
       _pipeClient.MessageReceived += OnPipeMessageReceived;
@@ -1190,6 +1194,13 @@ namespace MilkwaveRemote {
       if (_pipeClient.Connect(target.pid)) {
         foundWindowTitle = $"{target.name} (PID: {target.pid})";
         SetStatusText($"Connected to {foundWindowTitle}");
+
+        // Remember the full exe path for future auto-launch
+        string resolvedExe = target.exePath;
+        if (!string.IsNullOrEmpty(resolvedExe) && File.Exists(resolvedExe)) {
+          Settings.VisualizerExe = resolvedExe;
+          SaveSettingsToFile();
+        }
       } else {
         SetStatusText($"Failed to connect to {target.name} (PID: {target.pid})");
         _pipeClient.Dispose();
@@ -1197,12 +1208,60 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void LaunchAndConnectVisualizer() {
+      string exePath = Settings.VisualizerExe;
+      if (string.IsNullOrEmpty(exePath)) {
+        // Fall back to looking in BaseDir
+        exePath = Path.Combine(BaseDir, "MilkwaveVisualizer.exe");
+      }
+
+      // If it's just a filename, resolve relative to BaseDir
+      if (!Path.IsPathRooted(exePath)) {
+        exePath = Path.Combine(BaseDir, exePath);
+      }
+
+      if (!File.Exists(exePath)) {
+        SetStatusText($"Visualizer not found: {exePath}");
+        return;
+      }
+
+      SetStatusText($"Launching {Path.GetFileName(exePath)}...");
+      try {
+        Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true });
+      } catch (Exception ex) {
+        SetStatusText($"Failed to launch: {ex.Message}");
+        return;
+      }
+
+      // Poll for pipe to appear (up to 5 seconds)
+      for (int i = 0; i < 50; i++) {
+        Thread.Sleep(100);
+        var instances = PipeClient.DiscoverVisualizers();
+        if (instances.Count > 0) {
+          ScanAndPopulateVisualizers();
+          ConnectToInstance(instances[0]);
+          return;
+        }
+      }
+
+      ScanAndPopulateVisualizers();
+      SetStatusText("Visualizer launched but pipe not ready — try Rescan");
+    }
+
     private void cboWindowTitle_SelectedIndexChanged(object? sender, EventArgs e) {
+      string selected = cboWindowTitle.SelectedItem?.ToString() ?? "";
+
       // "Rescan" is always the last item
-      if (cboWindowTitle.SelectedIndex == cboWindowTitle.Items.Count - 1) {
+      if (selected == RescanLabel) {
         _pipeClient?.Dispose();
         _pipeClient = null;
         ConnectToVisualizer();
+        return;
+      }
+
+      // "Launch" option
+      if (selected == LaunchLabel) {
+        LaunchAndConnectVisualizer();
         return;
       }
 

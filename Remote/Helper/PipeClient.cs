@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MilkwaveRemote.Helper {
@@ -10,6 +11,17 @@ namespace MilkwaveRemote.Helper {
   /// Pipe name convention: \\.\pipe\Milkwave_{PID}
   /// </summary>
   public class PipeClient : IDisposable {
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageName(IntPtr hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
     private NamedPipeClientStream? _pipe;
     private CancellationTokenSource? _cts;
     private Task? _readTask;
@@ -26,12 +38,31 @@ namespace MilkwaveRemote.Helper {
     public int ConnectedPid => _connectedPid;
 
     /// <summary>
+    /// Get the full exe path for a process by PID using QueryFullProcessImageName.
+    /// Works cross-architecture (64-bit .NET querying 32-bit processes).
+    /// </summary>
+    private static string GetProcessExePath(int pid) {
+      IntPtr hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+      if (hProcess == IntPtr.Zero)
+        return "";
+      try {
+        var sb = new StringBuilder(1024);
+        uint size = (uint)sb.Capacity;
+        if (QueryFullProcessImageName(hProcess, 0, sb, ref size))
+          return sb.ToString();
+        return "";
+      } finally {
+        CloseHandle(hProcess);
+      }
+    }
+
+    /// <summary>
     /// Discover all running visualizer instances that have a pipe server.
     /// Checks for existing Milkwave_* pipes without connecting (preserves the connection slot).
-    /// Returns list of (PID, processName) tuples.
+    /// Returns list of (PID, processName, exePath) tuples.
     /// </summary>
-    public static List<(int pid, string name)> DiscoverVisualizers() {
-      var result = new List<(int, string)>();
+    public static List<(int pid, string name, string exePath)> DiscoverVisualizers() {
+      var result = new List<(int, string, string)>();
 
       try {
         // Enumerate all active Milkwave_* pipes
@@ -43,7 +74,8 @@ namespace MilkwaveRemote.Helper {
               int.TryParse(fileName.Substring("Milkwave_".Length), out int pid)) {
             try {
               var proc = Process.GetProcessById(pid);
-              result.Add((pid, proc.ProcessName));
+              string exePath = GetProcessExePath(pid);
+              result.Add((pid, proc.ProcessName, exePath));
             } catch {
               // Process no longer exists — stale pipe, skip
             }
@@ -55,7 +87,8 @@ namespace MilkwaveRemote.Helper {
         foreach (var name in names) {
           try {
             foreach (var proc in Process.GetProcessesByName(name)) {
-              result.Add((proc.Id, proc.ProcessName));
+              string exePath = GetProcessExePath(proc.Id);
+              result.Add((proc.Id, proc.ProcessName, exePath));
             }
           } catch { }
         }
