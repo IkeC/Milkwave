@@ -15,7 +15,8 @@ if exist "%OUTPUT%" del /f /q "%OUTPUT%" 2>nul
 pushd "%RELEASE_DIR%"
 
 "%SEVENZ%" a -tzip -mx=9 -mmt=on "%OUTPUT%" * ^
- -x!MDropDX12.exe ^
+ -x!*.log ^
+ -x!*error.txt ^
  -xr!log ^
  -xr!backup ^
  -xr!cache ^

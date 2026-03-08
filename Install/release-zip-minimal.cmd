@@ -16,7 +16,8 @@ pushd "%RELEASE_DIR%"
 
 echo Creating base archive (excluding all textures)...
 "%SEVENZ%" a -tzip -mx=9 -mmt=on "%OUTPUT%" * ^
- -x!MDropDX12.exe ^
+ -x!*.log ^
+ -x!*error.txt ^
  -xr!log ^
  -xr!backup ^
  -xr!cache ^
