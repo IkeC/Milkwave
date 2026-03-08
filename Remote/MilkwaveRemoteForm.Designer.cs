@@ -215,7 +215,7 @@ namespace MilkwaveRemote
       chkSpoutMix = new CheckBox();
       chkMixLumaActive = new CheckBox();
       label13 = new Label();
-      label12 = new Label();
+      lblTopLayerOpacity = new Label();
       chkInputTop = new CheckBox();
       label11 = new Label();
       lblVIdeoIn = new Label();
@@ -225,17 +225,18 @@ namespace MilkwaveRemote
       lblPresetSettings = new Label();
       chkSettingsPresetRandom = new CheckBox();
       btnMessagesEditorOpen = new Button();
-      label20 = new Label();
+      lblEQAttack = new Label();
       chkMenuAA = new CheckBox();
       lblMenu = new Label();
       numFontMenu = new NumericUpDown();
       cboFontMenu = new ComboBox();
       pnlColorMenu = new Panel();
-      label10 = new Label();
+      lblVisualizerOpacity = new Label();
       chkUseDX12 = new CheckBox();
       label9 = new Label();
+      labelEQDecay = new Label();
       label15 = new Label();
-      label16 = new Label();
+      lblTopLayer = new Label();
       lblMessageEditor = new Label();
       lblSettingsOpenFile = new Label();
       numInputMixOpacity = new NumericUpDown();
@@ -2611,11 +2612,11 @@ namespace MilkwaveRemote
       // 
       // lblChangePreset
       // 
-      lblChangePreset.Location = new Point(234, 150);
+      lblChangePreset.Location = new Point(209, 152);
       lblChangePreset.Name = "lblChangePreset";
-      lblChangePreset.Size = new Size(61, 23);
+      lblChangePreset.Size = new Size(40, 23);
       lblChangePreset.TabIndex = 176;
-      lblChangePreset.Text = "Next after";
+      lblChangePreset.Text = "After";
       lblChangePreset.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(lblChangePreset, "Next Preset after this many seconds (unless locked)\r\nNote that fBlendTimeAuto and 0..fTimeBetweenPresetsRand are added to determine the actual duration (see settings.ini)");
       // 
@@ -2623,7 +2624,7 @@ namespace MilkwaveRemote
       // 
       chkPresetLocked.Appearance = Appearance.Button;
       chkPresetLocked.FlatStyle = FlatStyle.System;
-      chkPresetLocked.Location = new Point(71, 151);
+      chkPresetLocked.Location = new Point(71, 152);
       chkPresetLocked.Name = "chkPresetLocked";
       chkPresetLocked.Size = new Size(62, 23);
       chkPresetLocked.TabIndex = 177;
@@ -2693,16 +2694,16 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(label13, "Luma Key threshold\r\nControls the brightness cutoff point (0–100%)");
       label13.Click += numLumaThreshold_Click;
       // 
-      // label12
+      // lblTopLayerOpacity
       // 
-      label12.Location = new Point(413, 35);
-      label12.Name = "label12";
-      label12.Size = new Size(71, 24);
-      label12.TabIndex = 135;
-      label12.Text = "Opacity";
-      label12.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label12, "Set Opacity of top layer");
-      label12.Click += numInputMixOpacity_Click;
+      lblTopLayerOpacity.Location = new Point(413, 35);
+      lblTopLayerOpacity.Name = "lblTopLayerOpacity";
+      lblTopLayerOpacity.Size = new Size(71, 24);
+      lblTopLayerOpacity.TabIndex = 135;
+      lblTopLayerOpacity.Text = "Opacity";
+      lblTopLayerOpacity.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblTopLayerOpacity, "Set Opacity of top layer");
+      lblTopLayerOpacity.Click += numInputMixOpacity_Click;
       // 
       // chkInputTop
       // 
@@ -2779,11 +2780,11 @@ namespace MilkwaveRemote
       // 
       // lblPresetSettings
       // 
-      lblPresetSettings.Location = new Point(7, 151);
+      lblPresetSettings.Location = new Point(6, 152);
       lblPresetSettings.Name = "lblPresetSettings";
       lblPresetSettings.Size = new Size(62, 23);
       lblPresetSettings.TabIndex = 178;
-      lblPresetSettings.Text = "Settings";
+      lblPresetSettings.Text = "Change";
       lblPresetSettings.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(lblPresetSettings, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nClick: Set 1");
       // 
@@ -2791,7 +2792,7 @@ namespace MilkwaveRemote
       // 
       chkSettingsPresetRandom.Appearance = Appearance.Button;
       chkSettingsPresetRandom.FlatStyle = FlatStyle.System;
-      chkSettingsPresetRandom.Location = new Point(142, 151);
+      chkSettingsPresetRandom.Location = new Point(142, 152);
       chkSettingsPresetRandom.Name = "chkSettingsPresetRandom";
       chkSettingsPresetRandom.Size = new Size(62, 23);
       chkSettingsPresetRandom.TabIndex = 179;
@@ -2814,16 +2815,16 @@ namespace MilkwaveRemote
       btnMessagesEditorOpen.UseVisualStyleBackColor = true;
       btnMessagesEditorOpen.Click += btnMessagesEditorOpen_Click;
       // 
-      // label20
+      // lblEQAttack
       // 
-      label20.Location = new Point(350, 65);
-      label20.Name = "label20";
-      label20.Size = new Size(51, 23);
-      label20.TabIndex = 186;
-      label20.Text = "FFT";
-      label20.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label20, "Equalizer Attack/Decay\r\nFor equalizer presets using FFT data, the attack value controls how quickly EQ bars rise, and decay controls how slowly they fall\r\nDouble-click: Reset to default (0,5/0.7)\r\n");
-      label20.DoubleClick += label20_DoubleClick;
+      lblEQAttack.Location = new Point(334, 63);
+      lblEQAttack.Name = "lblEQAttack";
+      lblEQAttack.Size = new Size(67, 23);
+      lblEQAttack.TabIndex = 186;
+      lblEQAttack.Text = "EQ Attack";
+      lblEQAttack.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblEQAttack, "Equalizer Attack\r\nFor equalizer presets using FFT data, the attack value controls how quickly EQ bars rise\r\nDouble-click: Reset to default\r\n");
+      lblEQAttack.DoubleClick += labelEQAttack_DoubleClick;
       // 
       // chkMenuAA
       // 
@@ -2891,15 +2892,16 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(pnlColorMenu, "Font color");
       pnlColorMenu.Click += pnlColorFont_Click;
       // 
-      // label10
+      // lblVisualizerOpacity
       // 
-      label10.Location = new Point(246, 150);
-      label10.Name = "label10";
-      label10.Size = new Size(55, 24);
-      label10.TabIndex = 148;
-      label10.Text = "Opacity";
-      label10.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label10, "Set Opacity of top layer");
+      lblVisualizerOpacity.Location = new Point(246, 150);
+      lblVisualizerOpacity.Name = "lblVisualizerOpacity";
+      lblVisualizerOpacity.Size = new Size(55, 24);
+      lblVisualizerOpacity.TabIndex = 148;
+      lblVisualizerOpacity.Text = "Opacity";
+      lblVisualizerOpacity.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblVisualizerOpacity, "Visualizer window opacity\r\nDouble-click: Set 100%\r\n");
+      lblVisualizerOpacity.DoubleClick += lblVisualizerOpacity_DoubleClick;
       // 
       // chkUseDX12
       // 
@@ -2915,18 +2917,29 @@ namespace MilkwaveRemote
       chkUseDX12.TextImageRelation = TextImageRelation.ImageAboveText;
       toolTip1.SetToolTip(chkUseDX12, "Use DX12 Visualizer (experimental)");
       chkUseDX12.UseVisualStyleBackColor = true;
-      chkUseDX12.CheckedChanged += new EventHandler(chkUseDX12_CheckedChanged);
+      chkUseDX12.CheckedChanged += chkUseDX12_CheckedChanged;
       // 
       // label9
       // 
       label9.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      label9.Location = new Point(380, 65);
+      label9.Location = new Point(379, 65);
       label9.Name = "label9";
       label9.Size = new Size(41, 23);
       label9.TabIndex = 108;
       label9.Text = "Wrap";
       label9.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label9, "Double-click to remove this style\r\nRight-click to fill frm elements from current parameters");
+      // 
+      // labelEQDecay
+      // 
+      labelEQDecay.Location = new Point(467, 63);
+      labelEQDecay.Name = "labelEQDecay";
+      labelEQDecay.Size = new Size(67, 23);
+      labelEQDecay.TabIndex = 189;
+      labelEQDecay.Text = "EQ Decay";
+      labelEQDecay.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(labelEQDecay, "Equalizer Decay\r\nFor equalizer presets using FFT data, the decay value controls how slowly the bars fall\r\nDouble-click: Reset to default\r\n");
+      labelEQDecay.DoubleClick += labelEQDecay_DoubleClick;
       // 
       // label15
       // 
@@ -2937,15 +2950,14 @@ namespace MilkwaveRemote
       label15.Text = "Controller";
       label15.TextAlign = ContentAlignment.MiddleRight;
       // 
-      // label16
+      // lblTopLayer
       // 
-      label16.Location = new Point(425, 7);
-      label16.Name = "label16";
-      label16.Size = new Size(59, 24);
-      label16.TabIndex = 147;
-      label16.Text = "Top Layer";
-      label16.TextAlign = ContentAlignment.MiddleRight;
-      label16.Click += label16_Click;
+      lblTopLayer.Location = new Point(425, 7);
+      lblTopLayer.Name = "lblTopLayer";
+      lblTopLayer.Size = new Size(59, 24);
+      lblTopLayer.TabIndex = 147;
+      lblTopLayer.Text = "Top Layer";
+      lblTopLayer.TextAlign = ContentAlignment.MiddleRight;
       // 
       // lblMessageEditor
       // 
@@ -3892,7 +3904,7 @@ namespace MilkwaveRemote
       // numPresetChange
       // 
       numPresetChange.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numPresetChange.Location = new Point(301, 152);
+      numPresetChange.Location = new Point(255, 153);
       numPresetChange.Margin = new Padding(3, 2, 3, 2);
       numPresetChange.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numPresetChange.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -3954,7 +3966,7 @@ namespace MilkwaveRemote
       tabInOut.BackColor = SystemColors.ControlLight;
       tabInOut.BorderStyle = BorderStyle.FixedSingle;
       tabInOut.Controls.Add(chkUseDX12);
-      tabInOut.Controls.Add(label10);
+      tabInOut.Controls.Add(lblVisualizerOpacity);
       tabInOut.Controls.Add(cboWindowTitle);
       tabInOut.Controls.Add(numOpacity);
       tabInOut.Controls.Add(lblWindow);
@@ -3964,7 +3976,7 @@ namespace MilkwaveRemote
       tabInOut.Controls.Add(lblAudioDevice);
       tabInOut.Controls.Add(cboAudioDevice);
       tabInOut.Controls.Add(btnSetAudioDevice);
-      tabInOut.Controls.Add(label16);
+      tabInOut.Controls.Add(lblTopLayer);
       tabInOut.Controls.Add(btnControllerInputConfig);
       tabInOut.Controls.Add(chkControllerActive);
       tabInOut.Controls.Add(btnControllerInputScan);
@@ -3975,7 +3987,7 @@ namespace MilkwaveRemote
       tabInOut.Controls.Add(label13);
       tabInOut.Controls.Add(numLumaSoftness);
       tabInOut.Controls.Add(numLumaThreshold);
-      tabInOut.Controls.Add(label12);
+      tabInOut.Controls.Add(lblTopLayerOpacity);
       tabInOut.Controls.Add(numInputMixOpacity);
       tabInOut.Controls.Add(chkInputTop);
       tabInOut.Controls.Add(chkSpoutMix);
@@ -4058,9 +4070,10 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(labelEQDecay);
       tabSettings.Controls.Add(numFFTDecay);
       tabSettings.Controls.Add(numFFTAttack);
-      tabSettings.Controls.Add(label20);
+      tabSettings.Controls.Add(lblEQAttack);
       tabSettings.Controls.Add(btnCacheClear);
       tabSettings.Controls.Add(btnCacheCompile);
       tabSettings.Controls.Add(label19);
@@ -4105,7 +4118,7 @@ namespace MilkwaveRemote
       // 
       numFFTDecay.DecimalPlaces = 2;
       numFFTDecay.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFFTDecay.Location = new Point(473, 65);
+      numFFTDecay.Location = new Point(540, 65);
       numFFTDecay.Margin = new Padding(3, 2, 3, 2);
       numFFTDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numFFTDecay.Name = "numFFTDecay";
@@ -5681,7 +5694,7 @@ namespace MilkwaveRemote
     private CheckBox chkInputTop;
     private NumericUpDown numFFTDecay;
     private NumericUpDown numInputMixOpacity;
-    private Label label12;
+    private Label lblTopLayerOpacity;
     private Label label13;
     private NumericUpDown numLumaSoftness;
     private NumericUpDown numLumaThreshold;
@@ -5692,7 +5705,7 @@ namespace MilkwaveRemote
     private Label label15;
     private CheckBox chkControllerActive;
     private Button btnControllerInputConfig;
-    private Label label16;
+    private Label lblTopLayer;
     private CheckBox chkSettingsPresetRandom;
     private Label lblPresetSettings;
     private Label lblSettingsOpenFile;
@@ -5702,7 +5715,7 @@ namespace MilkwaveRemote
     private Label label19;
     private Button btnCacheClear;
     private NumericUpDown numFFTAttack;
-    private Label label20;
+    private Label lblEQAttack;
     private CheckBox chkMenuBold;
     private CheckBox chkMenuItalic;
     private CheckBox chkMenuAA;
@@ -5710,9 +5723,10 @@ namespace MilkwaveRemote
     private NumericUpDown numFontMenu;
     private ComboBox cboFontMenu;
     private Panel pnlColorMenu;
-    private Label label10;
+    private Label lblVisualizerOpacity;
     private CheckBox chkUseDX12;
     private Label label9;
     private Button btnSettingsOpenFile;
+    private Label labelEQDecay;
   }
 }
