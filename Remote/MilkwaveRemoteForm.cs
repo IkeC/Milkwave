@@ -147,6 +147,8 @@ namespace MilkwaveRemote {
     private MidiHelper MidiHelper;
     private RemoteHelper RemoteHelper;
     private PipeClient pipeClient = new PipeClient();
+    private System.Windows.Forms.Timer? reconnectTimer;
+    private int reconnectAttempts;
 
     private OpenFileDialog ofd;
     private OpenFileDialog ofdShader;
@@ -1084,6 +1086,7 @@ namespace MilkwaveRemote {
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
       pipeClient.MessageReceived += OnPipeMessageReceived;
+      pipeClient.Disconnected += OnPipeDisconnected;
       LoadAndSetSettings();
       RefreshSpriteButtonImages();
       ApplyPanelMode(); // This will call UpdateModeToggleButton
@@ -1284,6 +1287,39 @@ namespace MilkwaveRemote {
         return;
       }
       ProcessReceivedString(message);
+    }
+
+    private void OnPipeDisconnected() {
+      if (InvokeRequired) {
+        BeginInvoke(OnPipeDisconnected);
+        return;
+      }
+      if (!chkUseDX12.Checked) return;
+      reconnectAttempts = 0;
+      reconnectTimer?.Stop();
+      reconnectTimer = new System.Windows.Forms.Timer { Interval = 3000 };
+      reconnectTimer.Tick += OnReconnectTimerTick;
+      reconnectTimer.Start();
+      SetStatusText("DX12 visualizer disconnected. Reconnecting...");
+    }
+
+    private void OnReconnectTimerTick(object? sender, EventArgs e) {
+      reconnectAttempts++;
+      if (EnsurePipeConnected()) {
+        reconnectTimer?.Stop();
+        reconnectTimer?.Dispose();
+        reconnectTimer = null;
+        SetStatusText("Reconnected to DX12 visualizer");
+        return;
+      }
+      if (reconnectAttempts >= 10) {
+        reconnectTimer?.Stop();
+        reconnectTimer?.Dispose();
+        reconnectTimer = null;
+        SetStatusText("DX12 visualizer connection lost");
+      } else {
+        SetStatusText($"Reconnecting to DX12 visualizer ({reconnectAttempts}/10)...");
+      }
     }
 
     private void MainForm_Shown(object sender, EventArgs e) {
@@ -3083,6 +3119,9 @@ namespace MilkwaveRemote {
           if (shouldCloseVis && pipeClient.IsConnected) {
             SendPipeMessage("SEND=0x1B"); // VK_ESCAPE — triggers close in MDropDX12
           }
+          reconnectTimer?.Stop();
+          reconnectTimer?.Dispose();
+          reconnectTimer = null;
           pipeClient.Dispose();
         } else {
           IntPtr foundWindow = FindVisualizerWindow();
@@ -4325,6 +4364,9 @@ namespace MilkwaveRemote {
 
     private void chkUseDX12_CheckedChanged(object? sender, EventArgs e) {
       if (updatingSettingsParams) return;
+      reconnectTimer?.Stop();
+      reconnectTimer?.Dispose();
+      reconnectTimer = null;
       if (chkUseDX12.Checked) {
         cboWindowTitle.Text = "MDropDX12";
       } else {
