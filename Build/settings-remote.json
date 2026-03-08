@@ -48,5 +48,6 @@
     "ShadertoyFilesDirectory": "",
     "ShadertoyFileIndex": 1,
     "VisualizerExe": "MilkwaveVisualizer.exe",
+    "VisualizerExeDX12": "MDropDX12.exe",
     "WindowTitle": ""
 }

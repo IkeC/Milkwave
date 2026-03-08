@@ -2915,6 +2915,7 @@ namespace MilkwaveRemote
       chkUseDX12.TextImageRelation = TextImageRelation.ImageAboveText;
       toolTip1.SetToolTip(chkUseDX12, "Use DX12 Visualizer (experimental)");
       chkUseDX12.UseVisualStyleBackColor = true;
+      chkUseDX12.CheckedChanged += new EventHandler(chkUseDX12_CheckedChanged);
       // 
       // label9
       // 

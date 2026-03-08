@@ -7,7 +7,7 @@
   - Band peak marking and mouse support (Right-click)
   - Supports Intensity and Shift parameters
 * DirectX 12 Visualizer support (experimental)
-  - For Visualizer fork [MDropDX12](https://github.com/shanevbg/MDropDX12) by @shanevbg
+  - For Visualizer fork [MDropDX12](https://github.com/shanevbg/MDropDX12) by @shanevbg (included)
 * Visualizer menu font can be configured from Remote
 * Visualizer help (F1) adjusts to window size
 * Restructured Remote tabs and controls
