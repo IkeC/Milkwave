@@ -1066,7 +1066,7 @@ namespace MilkwaveRemote {
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
       cboWindowTitle.SelectedIndex = 0;
-      cboSettingsOpenFile.SelectedIndex = 3;
+      cboSettingsOpenFile.SelectedIndex = 0;
 
       InitializeSpriteButtonSupport();
       InitializePresetDeckButtons();
@@ -4892,7 +4892,7 @@ namespace MilkwaveRemote {
           if (Settings.RemoteWindowCompactSize.Height > 0) {
             Height = Settings.RemoteWindowCompactSize.Height;
           } else {
-            Height = cboAudioDevice.Top + cboAudioDevice.Height + statusBar.Height + 137;
+            Height = cboFont5.Top + cboFont5.Height + statusBar.Height + 137;
           }
 
           toolStripMenuItemButtonPanel.Checked = false;
@@ -6824,6 +6824,10 @@ namespace MilkwaveRemote {
     private void label20_DoubleClick(object sender, EventArgs e) {
       numFFTAttack.Value = 0.5m;
       numFFTDecay.Value = 0.7m;
+    }
+
+    private void label16_Click(object sender, EventArgs e) {
+
     }
   } // end class
 } // end namespace

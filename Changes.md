@@ -6,10 +6,11 @@
   - 5 different versions (switch on Settings tab)
   - Band peak marking and mouse support (Right-click)
   - Supports Intensity and Shift parameters
-* Configurable Visualizer executable and target window 
-  - For Visualizer forks such as MDropDX12 by @shanevbg
+* DirectX 12 Visualizer support (experimental)
+  - For Visualizer fork [MDropDX12](https://github.com/shanevbg/MDropDX12) by @shanevbg
 * Visualizer menu font can be configured from Remote
 * Visualizer help (F1) adjusts to window size
+* Restructured Remote tabs and controls
 * Global stability improvements
 
 You can get a preview build on [my Discord](https://bit.ly/Ikes-Discord).
