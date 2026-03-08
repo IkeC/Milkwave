@@ -25,7 +25,32 @@ internal class PipeClient : IDisposable {
   public bool IsConnected => _pipe is { IsConnected: true };
 
   /// <summary>
-  /// Discover a running MDropDX12 process and connect to its named pipe.
+  /// Discover running visualizer instances by scanning for Milkwave_* named pipes.
+  /// Falls back to process name search if pipe enumeration fails.
+  /// </summary>
+  public static List<(int pid, string processName)> DiscoverVisualizers() {
+    var results = new List<(int pid, string processName)>();
+    try {
+      foreach (string path in Directory.GetFiles(@"\\.\pipe\", "Milkwave_*")) {
+        string name = Path.GetFileName(path);
+        if (name.StartsWith("Milkwave_") && int.TryParse(name.Substring(9), out int pid)) {
+          try {
+            var proc = Process.GetProcessById(pid);
+            results.Add((pid, proc.ProcessName));
+          } catch {
+            // Process no longer exists — stale pipe
+          }
+        }
+      }
+    } catch {
+      // Pipe enumeration not available — fall back below
+    }
+    return results;
+  }
+
+  /// <summary>
+  /// Discover a running visualizer and connect to its named pipe.
+  /// Tries pipe enumeration first, then falls back to process name search.
   /// </summary>
   /// <param name="exeName">Executable name to look for (e.g. "MDropDX12.exe").</param>
   /// <returns>True if connected successfully.</returns>
@@ -33,31 +58,43 @@ internal class PipeClient : IDisposable {
     Disconnect();
 
     string baseName = Path.GetFileNameWithoutExtension(exeName);
-    Process[] procs = Process.GetProcessesByName(baseName);
-    if (procs.Length == 0)
-      return false;
 
-    foreach (var proc in procs) {
-      string pipeName = $"Milkwave_{proc.Id}";
-      try {
-        var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-        pipe.Connect(1000); // 1-second timeout
-        pipe.ReadMode = PipeTransmissionMode.Message;
-
-        lock (_lock) {
-          _pipe = pipe;
-        }
-
-        _cts = new CancellationTokenSource();
-        _readThread = new Thread(ReadLoop) { IsBackground = true, Name = "PipeClientReader" };
-        _readThread.Start();
-
+    // Try pipe enumeration first — works even if exe is renamed
+    var visualizers = DiscoverVisualizers();
+    foreach (var (pid, processName) in visualizers) {
+      if (!processName.Equals(baseName, StringComparison.OrdinalIgnoreCase))
+        continue;
+      if (TryConnectToPipe($"Milkwave_{pid}"))
         return true;
-      } catch {
-        // Try next process instance
-      }
+    }
+
+    // Fall back to process name search
+    Process[] procs = Process.GetProcessesByName(baseName);
+    foreach (var proc in procs) {
+      if (TryConnectToPipe($"Milkwave_{proc.Id}"))
+        return true;
     }
     return false;
+  }
+
+  private bool TryConnectToPipe(string pipeName) {
+    try {
+      var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+      pipe.Connect(1000); // 1-second timeout
+      pipe.ReadMode = PipeTransmissionMode.Message;
+
+      lock (_lock) {
+        _pipe = pipe;
+      }
+
+      _cts = new CancellationTokenSource();
+      _readThread = new Thread(ReadLoop) { IsBackground = true, Name = "PipeClientReader" };
+      _readThread.Start();
+
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /// <summary>Send a UTF-16 message to the visualizer.</summary>
