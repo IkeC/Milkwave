@@ -4,6 +4,11 @@
 * Visualizer menu font can be configured from Remote
 * Visualizer help (F1) adjusts to window size
 * Configurable Visualizer executable and target window (to support Visualizer forks such as MDropDX12 by @shanevbg)
+* Replaced WM_COPYDATA IPC with Named Pipes (`\\.\pipe\Milkwave_<PID>`) — PID-based auto-discovery, no window title matching needed
+* Remote remembers last connected visualizer exe path and auto-launches it on startup
+* Remote instance picker dropdown with Launch and Rescan options for multi-visualizer support
+* Cross-architecture exe path discovery via QueryFullProcessImageName (64-bit Remote querying 32-bit Visualizer)
+* Fixed settings load bug where tags file failure would reset all settings to defaults
 * Global stability improvements
 
 You can get a preview build on [my Discord](https://bit.ly/Ikes-Discord).
