@@ -32,15 +32,9 @@ The currently playing Visualizer preset is displayed after the "Running" label. 
 
 Your most used tags are displayed as buttons automatically after the "Most used" label. Note that you may delete the file _tags-remote.json_ anytime if you want to start from scratch.
 
-Your audio input and output devices are displayed after the "Device" label. If you don't wish to see input devices (such as microphones), set _settings.ini:IncludeInputDevices=0_. Use "Set" to set the Visualizer input source to the selected device. Use Ctrl+D in the Visualizer window to display the currently active device.
-
-Use "Amp" to amplify the virtual audio level for the Visualizer, eg. if you feel the preset should react more to your music. If "Link" is checked, left and right audio channels are amplified equally.
-
 ## Tab "Message"
 
 Use "Send" to send the text after "Message" to display in the Visualizer window. Toggle "Preview" to see a "what you see is what you get" version of your text. If "Wrap" is checked, text will be wrapped to two lines if the text is longer than the number in the drop-down box. You can manually define a line break within your text by writing "//". Note that this feature is rather experimental and may clip your text sometimes depending on your used font face and size.
-
-The "Window" label shows the window title of the Visualizer that the Remote will send its commands to. You may start multiple Visualizer windows and control them all by changing the target window. Change the opacity of the Visualizer window using the "%" box.
 
 Right-Click the "Parameters" label to display a list of all available parameters for the text message display. You can save a parameter line to the named slot after "Style" by pressing "Save".
 
@@ -50,27 +44,59 @@ You can load a list of parameter lines from a file and send them to the Visualiz
 
 Instead of selecting and sending lines from the fine manually, you may check the "Autoplay" to play them sequentially. Use the "BPM" and "Beats" parameters to control the interval between sending each line. Check the "Rand" button to send a random line on each interval (excluding the last sent line).
 
+"Config" allows you to quickly open the most important configuration files in a text editor. You may also open Shanes [Message Editor](https://github.com/shanevbg/MDx12Messages) from here to edit the _messages.ini_ file in a more user-friendly way.
+
 ### Fade-in, Fade-Out and Burntime
 
 You can define default values for fade-in ("fade", default 0.2), fade-out ("fadeout", default 0.0) and burntime ("burntime", default 0.1) in settings.ini, and override them per message as a parameter.
 
 If a burntime > 0 is defined, the message will be "baked" into the background and slowly fade away for the defined burntime duration. Note that this won't work with all presets, and if you define a fadeout > 0, the burntime will be irrelevant because the message will fade out before there's something to "burn in".
 
-## Tab "Wave"
+## Tab "In/Out"
 
-Manipulate factors of the default wave of the current preset and display the changes instantly in the Visualizer. If the "Link" button is checked, values are received from and sent to the currently running preset instantly, if not click "Send" to send your values. Use "Clear" to display a default wave. 
+The "Window" label shows the window title of the Visualizer that the Remote will send its commands to. You may start multiple Visualizer windows and control them all by changing the target window. Change the opacity of the Visualizer window using the "%" box.
 
-Use the "Quicksave" button or press Ctrl+S in the Visualizer to save the current preset instantly to the _presets/Quicksave_ folder as a new file. Press Shift+Ctrl+S to save to _presets/Quicksave2_ instead.
+Check "DX12" to use the MDropDX12 Visualizer instead of the standard Milkwave Visualizer. In this mode, commands are sent via named pipe rather than window messages. The configurable executable names are stored in _settings-remote.json_ as _VisualizerExe_ and _VisualizerExeDX12_.
 
-## Tab "Input"
+Your audio input and output devices are displayed after the "Device" label. If you don't wish to see input devices (such as microphones), set _settings.ini:IncludeInputDevices=0_. Use "Set" to set the Visualizer input source to the selected device. Use Ctrl+D in the Visualizer window to display the currently active device.
 
-The elements here allow you to mix video sources such as webcams or Spout feeds into the Visualizer output. You can either mix a webcam input or a Spout feed, using the "Mix" buttons. If you want to use [OBS](https://obsproject.com/) as a source, activate Spout output in OBS rather than using the OBS virtual camera, as the latter is not supported by Milkwave.
+Use "Amp" to amplify the virtual audio level for the Visualizer, eg. if you feel the preset should react more to your music. If "Link" is checked, left and right audio channels are amplified equally.
+
+The elements here also allow you to mix video sources such as webcams or Spout feeds into the Visualizer output. You can either mix a webcam input or a Spout feed, using the "Mix" buttons. If you want to use [OBS](https://obsproject.com/) as a source, activate Spout output in OBS rather than using the OBS virtual camera, as the latter is not supported by Milkwave.
 
 Set Luma Key to "Active" to make a certain color in the input source transparent. Adjust threshold to set the tolerance for the keying, and adjust "Softness" to make the edges of the keyed area softer.
 
 "Top Layer" allows you to set either the input source or the Visualizer's preset rendering as the top layer of the Visualizer output. "Opacity" sets the opacity of the top layer.
 
 "Controller" allows you to select a game controller. If "Active", it will send the commands defined in _controller-remote.json_ to the Visualizer when you press buttons. You can edit the command list in _controller-remote.json_ or use the "Config" button to open the file in a text editor.
+
+## Tab "Settings"
+
+Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
+
+The "Intensity", "Shift" and "Version" values can be read by presets that support the Milkwave specific vis_intensity, vis_shift and vis_version variables (see below). As above, you can change these values live while a preset is running.
+
+With "Hue", "Saturation" and "Brightness", you can change the overall color tone of the Visualizer output. This may be useful if you want to adapt the colors of a preset to your room lighting, or just want to experiment with different looks. You may also set "Auto" to automatically shift the colors over time.
+
+With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" Spout resolution is used.
+
+If you select "Auto", Milkwave tries to make the "perceived" Visualizer quality similar on different window sizes by adjusting the backbuffer size accordingly.
+
+Keep in mind that many settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
+
+For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.
+
+The "Preset" row allows you to set the lock mode for the current preset (same as pressing ~ in the Visualizer). If "Locked" is checked, the preset will not changed as time progresses. If unlocked, it will change after the time defined by "Next after" (plus blending times). "Random" toggles between random and sequential preset order (same as pressing "R" in the Visualizer).
+
+"Compile" allows you to precompile the shaders defined in _precompile.txt_. This will usually take 2-3 minutes and happen in the background. You may also "Clear" the cache, which will simply remove all files from the _cache_ folder. This may be useful if you want to reset all shaders to be recompiled, eg. after a Milkwave update.
+
+With FFT you may control equalizer attack and decay values for presets supporting FFT functions *get_fft(pos)* and *get_fft_hz(freq)*, such as _IkeC - Equalizer.milk_ from the _Milkwave_ presets folder. *get_fft_peak_hz(freq)* is exclusive to Milkwave.
+
+## Tab "Fonts"
+
+Modify most of the fonts used to display information in the Visualizer window. Use "Save" and "Test" to see your changes. You can save and preview changes instantly if you hold the ALT key while changing fonts or sizes.
+
+Changes are saved to the _Fonts_ section in _settings.ini_. Of course you may edit them there manually as well.
 
 ## Tab "MIDI"
 
@@ -94,35 +120,11 @@ Your MIDI assignments are kept in _midi-remote.json_ and automatically loaded an
 
 If you want to hide the MIDI tab and prevent initialisation completely (eg. because it interferes with your MIDI setup in other programs), set MidiEnabled=false in _settings-remote.json_.
 
-## Tab "Settings"
+## Tab "Wave"
 
-Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
+Manipulate factors of the default wave of the current preset and display the changes instantly in the Visualizer. If the "Link" button is checked, values are received from and sent to the currently running preset instantly, if not click "Send" to send your values. Use "Clear" to display a default wave. 
 
-The "Intensity", "Shift" and "Version" values can be read by presets that support the Milkwave specific vis_intensity, vis_shift and vis_version variables (see below). As above, you can change these values live while a preset is running.
-
-With "Hue", "Saturation" and "Brightness", you can change the overall color tone of the Visualizer output. This may be useful if you want to adapt the colors of a preset to your room lighting, or just want to experiment with different looks. You may also set "Auto" to automatically shift the colors over time.
-
-With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" Spout resolution is used.
-
-If you select "Auto", Milkwave tries to make the "perceived" Visualizer quality similar on different window sizes by adjusting the backbuffer size accordingly.
-
-Keep in mind that many settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
-
-For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.
-
-The "Preset" row allows you to set the lock mode for the current preset (same as pressing ~ in the Visualizer). If "Locked" is checked, the preset will not changed as time progresses. If unlocked, it will change after the time defined by "Next after" (plus blending times). "Random" toggles between random and sequential preset order (same as pressing "R" in the Visualizer).
-
-"Config" allows you to quickly the most important configuration files in a text editor. "Compile" allows you to precompile the shaders defined in _precompile.txt_. This will usually take 2-3 minutes and happen in the background. You may also "Clear" the cache, which will simply remove all files from the _cache_ folder. This may be useful if you want to reset all shaders to be recompiled, eg. after a Milkwave update. 
-
-You may also open Shanes [Message Editor](https://github.com/shanevbg/MDx12Messages) from here to edit the _messages.ini_ file in a more user-friendly way.
-
-With FFT you may control equalizer attack and decay values for presets supporting FFT functions *get_fft(pos)* and *get_fft_hz(freq)*, such as _IkeC - Equalizer.milk_ from the _Milkwave_ presets folder. *get_fft_peak_hz(freq)* is exclusive to Milkwave.
-
-## Tab "Fonts"
-
-Modify most of the fonts used to display information in the Visualizer window. Use "Save" and "Test" to see your changes. You can save and preview changes instantly if you hold the ALT key while changing fonts or sizes.
-
-Changes are saved to the _Fonts_ section in _settings.ini_. Of course you may edit them there manually as well.
+Use the "Quicksave" button or press Ctrl+S in the Visualizer to save the current preset instantly to the _presets/Quicksave_ folder as a new file. Press Shift+Ctrl+S to save to _presets/Quicksave2_ instead.
 
 ## Tab "Shader"
 
