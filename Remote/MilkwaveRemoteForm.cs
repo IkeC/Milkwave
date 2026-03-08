@@ -100,6 +100,12 @@ namespace MilkwaveRemote {
     private string BaseDir = AppDomain.CurrentDomain.BaseDirectory;
 #endif
 
+    private string GetVisualizerDir(bool isDX12) {
+      string subPath = isDX12 ? Settings.VisualizerDX12Path : Settings.VisualizerPath;
+      if (string.IsNullOrEmpty(subPath)) return BaseDir;
+      return Path.IsPathRooted(subPath) ? subPath : Path.Combine(BaseDir, subPath);
+    }
+
     private string VisualizerPresetsFolder = "";
     private string ShaderFilesFolder = "";
     private string PresetsShaderConvFolder = "";
@@ -119,8 +125,9 @@ namespace MilkwaveRemote {
     private string milkwaveControllerFile = "controller-remote.json";
     private string milkwaveMessagesEditorFile = "messages-editor.html";
 
-    private string milkwaveSpritesFile = "sprites.ini";
-    private string milkwaveMessagesFile = "messages.ini";
+    private string visualizerSpritesFile = "sprites.ini";
+    private string visualizerMessagesFile = "messages.ini";
+    private string visualizerSettingsFile = "settings.ini";
 
     private readonly Dictionary<Button, string> spriteButtonSectionMap = new();
     private readonly Dictionary<Button, string> spriteButtonLabelMap = new();
@@ -377,7 +384,7 @@ namespace MilkwaveRemote {
 
     private void LoadSpriteDefinitions() {
       spriteSectionImageMap.Clear();
-      string spritesPath = Path.Combine(BaseDir, milkwaveSpritesFile);
+      string spritesPath = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), visualizerSpritesFile);
 
       if (!File.Exists(spritesPath)) {
         return;
@@ -425,7 +432,7 @@ namespace MilkwaveRemote {
 
     private void LoadMessageDefinitions() {
       messageCodeTextMap.Clear();
-      string messagesPath = Path.Combine(BaseDir, milkwaveMessagesFile);
+      string messagesPath = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), visualizerMessagesFile);
 
       if (!File.Exists(messagesPath)) {
         return;
@@ -597,7 +604,7 @@ namespace MilkwaveRemote {
         if (!string.IsNullOrWhiteSpace(label) && TryGetMessageText(label, out string messageText)) {
           toolTip1.SetToolTip(button, $"Message {label}: {messageText}");
         } else if (!string.IsNullOrWhiteSpace(label)) {
-          toolTip1.SetToolTip(button, $"Message {label}: (not defined in {milkwaveMessagesFile})");
+          toolTip1.SetToolTip(button, $"Message {label}: (not defined in {visualizerMessagesFile})");
         } else {
           toolTip1.SetToolTip(button, "Message slot");
         }
@@ -887,7 +894,7 @@ namespace MilkwaveRemote {
     }
 
     private bool UpdateSpriteDefinition(string section, string newValue) {
-      string spritesPath = Path.Combine(BaseDir, milkwaveSpritesFile);
+      string spritesPath = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), visualizerSpritesFile);
       if (!File.Exists(spritesPath)) {
         return false;
       }
@@ -1103,7 +1110,7 @@ namespace MilkwaveRemote {
       txtShaderHLSL.Font = new Font(txtShaderHLSL.Font.FontFamily, 10f, txtShaderHLSL.Font.Style);
       txtShaderGLSL.Font = txtShaderHLSL.Font;
 
-      RemoteHelper = new RemoteHelper(Path.Combine(BaseDir, "settings.ini"));
+      RemoteHelper = new RemoteHelper(Path.Combine(GetVisualizerDir(chkUseDX12.Checked), visualizerSettingsFile));
 
       string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
       if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
@@ -1119,10 +1126,11 @@ namespace MilkwaveRemote {
         List<(IntPtr hwnd, RECT rect)> existingRects = FindAllVisualizerWindowRects();
 
         // Try to run the visualizer exe (configurable in settings-remote.json)
-        string exeName = chkUseDX12.Checked
+        bool isDX12 = chkUseDX12.Checked;
+        string exeName = isDX12
           ? (string.IsNullOrEmpty(Settings.VisualizerExeDX12) ? "MDropDX12.exe" : Settings.VisualizerExeDX12)
           : (string.IsNullOrEmpty(Settings.VisualizerExe) ? "MilkwaveVisualizer.exe" : Settings.VisualizerExe);
-        string visualizerPath = Path.Combine(BaseDir, exeName);
+        string visualizerPath = Path.Combine(GetVisualizerDir(isDX12), exeName);
         if (File.Exists(visualizerPath)) {
           Process.Start(new ProcessStartInfo(visualizerPath) { UseShellExecute = true });
         }

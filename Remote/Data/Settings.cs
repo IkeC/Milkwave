@@ -42,7 +42,9 @@
     public int CurrentPresetBank { get; set; } = 1;
     public bool ControllerActive { get; set; } = false;
 
+    public string VisualizerPath { get; set; } = "";
     public string VisualizerExe { get; set; } = "MilkwaveVisualizer.exe";
+    public string VisualizerDX12Path { get; set; } = "";
     public string VisualizerExeDX12 { get; set; } = "MDropDX12.exe";
     public bool UseDX12 { get; set; } = false;
     public string WindowTitle { get; set; } = "";

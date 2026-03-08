@@ -47,7 +47,9 @@
     "MidiBufferDelay": 30,
     "ShadertoyFilesDirectory": "",
     "ShadertoyFileIndex": 1,
+    "VisualizerPath": "",
     "VisualizerExe": "MilkwaveVisualizer.exe",
+    "VisualizerDX12Path": "MDropDX12",
     "VisualizerExeDX12": "MDropDX12.exe",
     "WindowTitle": ""
 }
