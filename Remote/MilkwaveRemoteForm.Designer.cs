@@ -83,7 +83,6 @@ namespace MilkwaveRemote
       txtVisRunning = new TextBox();
       cboPresets = new ComboBox();
       numAmpLeft = new NumericUpDown();
-      lblAmp = new Label();
       numAmpRight = new NumericUpDown();
       lblCurrentPreset = new Label();
       chkAmpLinked = new CheckBox();
@@ -92,7 +91,6 @@ namespace MilkwaveRemote
       btnSetAudioDevice = new Button();
       cboAudioDevice = new ComboBox();
       numOpacity = new NumericUpDown();
-      lblPercent = new Label();
       lblAudioDevice = new Label();
       btnSendFile = new Button();
       cboAutoplay = new ComboBox();
@@ -159,7 +157,7 @@ namespace MilkwaveRemote
       lblFactorFrame = new Label();
       lblFactorTime = new Label();
       lblFactorFPS = new Label();
-      btnOpenSettingsFile = new Button();
+      btnSettingsOpenFile = new Button();
       txtFilterTags = new TextBox();
       btnSendShader = new Button();
       txtShaderinfo = new TextBox();
@@ -220,11 +218,11 @@ namespace MilkwaveRemote
       label12 = new Label();
       chkInputTop = new CheckBox();
       label11 = new Label();
-      label10 = new Label();
+      lblVIdeoIn = new Label();
       label14 = new Label();
       chkControllerActive = new CheckBox();
       btnControllerInputConfig = new Button();
-      label9 = new Label();
+      lblPresetSettings = new Label();
       chkSettingsPresetRandom = new CheckBox();
       btnMessagesEditorOpen = new Button();
       label20 = new Label();
@@ -233,10 +231,13 @@ namespace MilkwaveRemote
       numFontMenu = new NumericUpDown();
       cboFontMenu = new ComboBox();
       pnlColorMenu = new Panel();
+      label10 = new Label();
+      chkUseDX12 = new CheckBox();
+      label9 = new Label();
       label15 = new Label();
       label16 = new Label();
-      label18 = new Label();
-      label17 = new Label();
+      lblMessageEditor = new Label();
+      lblSettingsOpenFile = new Label();
       numInputMixOpacity = new NumericUpDown();
       numLumaThreshold = new NumericUpDown();
       numLumaSoftness = new NumericUpDown();
@@ -307,23 +308,44 @@ namespace MilkwaveRemote
       btnTag2 = new Button();
       btnTag3 = new Button();
       btnTag1 = new Button();
+      numPresetChange = new NumericUpDown();
       tabMessage = new TabPage();
-      tabWave = new TabPage();
-      numWaveEcho = new NumericUpDown();
-      numWaveScale = new NumericUpDown();
-      numWaveDecay = new NumericUpDown();
-      numWaveWarp = new NumericUpDown();
-      numWaveRotation = new NumericUpDown();
-      numWaveZoom = new NumericUpDown();
-      numWavePushY = new NumericUpDown();
-      numWavePushX = new NumericUpDown();
-      tabInput = new TabPage();
+      tabInOut = new TabPage();
       btnControllerInputScan = new Button();
       cboInputController = new ComboBox();
       btnSpoutInputScan = new Button();
       cboSputInput = new ComboBox();
       btnVideoInputScan = new Button();
       cboVideoInput = new ComboBox();
+      tabSettings = new TabPage();
+      numFFTDecay = new NumericUpDown();
+      numFFTAttack = new NumericUpDown();
+      btnCacheClear = new Button();
+      btnCacheCompile = new Button();
+      label19 = new Label();
+      numSettingsBrightness = new NumericUpDown();
+      numSettingsSaturation = new NumericUpDown();
+      numSettingsHue = new NumericUpDown();
+      btnQualityDouble = new Button();
+      btnQualityHalf = new Button();
+      numQuality = new NumericUpDown();
+      numFactorFPS = new NumericUpDown();
+      numFactorFrame = new NumericUpDown();
+      numFactorTime = new NumericUpDown();
+      tabFonts = new TabPage();
+      chkMenuItalic = new CheckBox();
+      chkMenuBold = new CheckBox();
+      btnTestFonts = new Button();
+      chkFontItalic5 = new CheckBox();
+      chkFontBold5 = new CheckBox();
+      chkFontItalic4 = new CheckBox();
+      chkFontBold4 = new CheckBox();
+      chkFontItalic3 = new CheckBox();
+      chkFontBold3 = new CheckBox();
+      chkFontItalic2 = new CheckBox();
+      chkFontBold2 = new CheckBox();
+      chkFontItalic1 = new CheckBox();
+      chkFontBold1 = new CheckBox();
       tabMidi = new TabPage();
       label6 = new Label();
       label8 = new Label();
@@ -363,36 +385,15 @@ namespace MilkwaveRemote
       lblBank = new Label();
       cboMidi1Action = new ComboBox();
       txtMidi1Inc = new TextBox();
-      tabSettings = new TabPage();
-      numFFTDecay = new NumericUpDown();
-      numFFTAttack = new NumericUpDown();
-      btnCacheClear = new Button();
-      btnCacheCompile = new Button();
-      label19 = new Label();
-      numPresetChange = new NumericUpDown();
-      numSettingsBrightness = new NumericUpDown();
-      numSettingsSaturation = new NumericUpDown();
-      numSettingsHue = new NumericUpDown();
-      btnQualityDouble = new Button();
-      btnQualityHalf = new Button();
-      numQuality = new NumericUpDown();
-      numFactorFPS = new NumericUpDown();
-      numFactorFrame = new NumericUpDown();
-      numFactorTime = new NumericUpDown();
-      tabFonts = new TabPage();
-      chkMenuItalic = new CheckBox();
-      chkMenuBold = new CheckBox();
-      btnTestFonts = new Button();
-      chkFontItalic5 = new CheckBox();
-      chkFontBold5 = new CheckBox();
-      chkFontItalic4 = new CheckBox();
-      chkFontBold4 = new CheckBox();
-      chkFontItalic3 = new CheckBox();
-      chkFontBold3 = new CheckBox();
-      chkFontItalic2 = new CheckBox();
-      chkFontBold2 = new CheckBox();
-      chkFontItalic1 = new CheckBox();
-      chkFontBold1 = new CheckBox();
+      tabWave = new TabPage();
+      numWaveEcho = new NumericUpDown();
+      numWaveScale = new NumericUpDown();
+      numWaveDecay = new NumericUpDown();
+      numWaveWarp = new NumericUpDown();
+      numWaveRotation = new NumericUpDown();
+      numWaveZoom = new NumericUpDown();
+      numWavePushY = new NumericUpDown();
+      numWavePushX = new NumericUpDown();
       tabShader = new TabPage();
       pnlTabShader = new Panel();
       panShadertoyLocal = new Panel();
@@ -435,7 +436,21 @@ namespace MilkwaveRemote
       splitContainer1.SuspendLayout();
       tabControl.SuspendLayout();
       tabPreset.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)numPresetChange).BeginInit();
       tabMessage.SuspendLayout();
+      tabInOut.SuspendLayout();
+      tabSettings.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)numFFTDecay).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFFTAttack).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsBrightness).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsSaturation).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsHue).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numQuality).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorFPS).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
+      tabFonts.SuspendLayout();
+      tabMidi.SuspendLayout();
       tabWave.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numWaveEcho).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWaveScale).BeginInit();
@@ -445,20 +460,6 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveZoom).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushY).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).BeginInit();
-      tabInput.SuspendLayout();
-      tabMidi.SuspendLayout();
-      tabSettings.SuspendLayout();
-      ((System.ComponentModel.ISupportInitialize)numFFTDecay).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numFFTAttack).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numPresetChange).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsBrightness).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsSaturation).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsHue).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numQuality).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorFPS).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
-      tabFonts.SuspendLayout();
       tabShader.SuspendLayout();
       pnlTabShader.SuspendLayout();
       panShadertoyLocal.SuspendLayout();
@@ -650,7 +651,7 @@ namespace MilkwaveRemote
       // btnAppendSize
       // 
       btnAppendSize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnAppendSize.Location = new Point(329, 124);
+      btnAppendSize.Location = new Point(330, 124);
       btnAppendSize.Margin = new Padding(0);
       btnAppendSize.Name = "btnAppendSize";
       btnAppendSize.Size = new Size(46, 22);
@@ -898,11 +899,11 @@ namespace MilkwaveRemote
       // 
       // lblWindow
       // 
-      lblWindow.Location = new Point(4, 67);
+      lblWindow.Location = new Point(1, 152);
       lblWindow.Name = "lblWindow";
       lblWindow.Size = new Size(66, 23);
       lblWindow.TabIndex = 89;
-      lblWindow.Text = "Window";
+      lblWindow.Text = "Visualizer";
       lblWindow.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(lblWindow, "Double-click: Start Visualizer if no window found\r\nCtrl+F2: Reset window\r\n");
       lblWindow.DoubleClick += lblWindow_DoubleClick;
@@ -1010,41 +1011,27 @@ namespace MilkwaveRemote
       // 
       // numAmpLeft
       // 
-      numAmpLeft.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numAmpLeft.DecimalPlaces = 2;
       numAmpLeft.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numAmpLeft.Location = new Point(416, 153);
+      numAmpLeft.Location = new Point(307, 125);
       numAmpLeft.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numAmpLeft.Name = "numAmpLeft";
-      numAmpLeft.Size = new Size(52, 23);
+      numAmpLeft.Size = new Size(55, 23);
       numAmpLeft.TabIndex = 27;
       numAmpLeft.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numAmpLeft, "Amplification factor for left channel");
       numAmpLeft.Value = new decimal(new int[] { 10, 0, 0, 65536 });
       numAmpLeft.ValueChanged += numAmpLeft_ValueChanged;
       // 
-      // lblAmp
-      // 
-      lblAmp.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      lblAmp.Location = new Point(378, 153);
-      lblAmp.Name = "lblAmp";
-      lblAmp.Size = new Size(37, 23);
-      lblAmp.TabIndex = 104;
-      lblAmp.Text = "Amp";
-      lblAmp.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblAmp, "Double-click to reset");
-      lblAmp.Click += lblAmpLeft_Click;
-      // 
       // numAmpRight
       // 
-      numAmpRight.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numAmpRight.DecimalPlaces = 2;
       numAmpRight.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-      numAmpRight.Location = new Point(474, 153);
+      numAmpRight.Location = new Point(369, 125);
       numAmpRight.Margin = new Padding(3, 2, 3, 2);
       numAmpRight.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numAmpRight.Name = "numAmpRight";
-      numAmpRight.Size = new Size(52, 23);
+      numAmpRight.Size = new Size(55, 23);
       numAmpRight.TabIndex = 28;
       numAmpRight.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numAmpRight, "Amplification factor for right channel");
@@ -1064,15 +1051,14 @@ namespace MilkwaveRemote
       // 
       // chkAmpLinked
       // 
-      chkAmpLinked.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkAmpLinked.Appearance = Appearance.Button;
       chkAmpLinked.Checked = true;
       chkAmpLinked.CheckState = CheckState.Checked;
       chkAmpLinked.FlatStyle = FlatStyle.System;
-      chkAmpLinked.Location = new Point(532, 152);
+      chkAmpLinked.Location = new Point(430, 124);
       chkAmpLinked.Margin = new Padding(3, 2, 3, 2);
       chkAmpLinked.Name = "chkAmpLinked";
-      chkAmpLinked.Size = new Size(70, 23);
+      chkAmpLinked.Size = new Size(56, 23);
       chkAmpLinked.TabIndex = 29;
       chkAmpLinked.Text = "Link";
       chkAmpLinked.TextAlign = ContentAlignment.MiddleCenter;
@@ -1092,7 +1078,7 @@ namespace MilkwaveRemote
       chkWrap.Name = "chkWrap";
       chkWrap.Size = new Size(46, 23);
       chkWrap.TabIndex = 5;
-      chkWrap.Text = "Wrap";
+      chkWrap.Text = "Set";
       chkWrap.TextAlign = ContentAlignment.MiddleCenter;
       chkWrap.TextImageRelation = TextImageRelation.ImageAboveText;
       toolTip1.SetToolTip(chkWrap, "If the line is longer than this value, try to wrap it in the middle");
@@ -1101,7 +1087,7 @@ namespace MilkwaveRemote
       // numWrap
       // 
       numWrap.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numWrap.Location = new Point(421, 67);
+      numWrap.Location = new Point(421, 66);
       numWrap.Margin = new Padding(3, 2, 3, 2);
       numWrap.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
       numWrap.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
@@ -1114,10 +1100,9 @@ namespace MilkwaveRemote
       // 
       // btnSetAudioDevice
       // 
-      btnSetAudioDevice.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnSetAudioDevice.Location = new Point(330, 152);
+      btnSetAudioDevice.Location = new Point(246, 124);
       btnSetAudioDevice.Name = "btnSetAudioDevice";
-      btnSetAudioDevice.Size = new Size(46, 23);
+      btnSetAudioDevice.Size = new Size(55, 23);
       btnSetAudioDevice.TabIndex = 35;
       btnSetAudioDevice.Text = "Set";
       toolTip1.SetToolTip(btnSetAudioDevice, "Set this device as Visualizer audio source");
@@ -1126,48 +1111,34 @@ namespace MilkwaveRemote
       // 
       // cboAudioDevice
       // 
-      cboAudioDevice.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       cboAudioDevice.DropDownStyle = ComboBoxStyle.DropDownList;
       cboAudioDevice.FormattingEnabled = true;
-      cboAudioDevice.Location = new Point(71, 153);
+      cboAudioDevice.Location = new Point(69, 125);
       cboAudioDevice.Name = "cboAudioDevice";
-      cboAudioDevice.Size = new Size(253, 23);
+      cboAudioDevice.Size = new Size(167, 23);
       cboAudioDevice.TabIndex = 34;
       toolTip1.SetToolTip(cboAudioDevice, "Alt+Mousewheel: Set in Visualizer");
       cboAudioDevice.SelectedIndexChanged += cboAudioDevice_SelectedIndexChanged;
       // 
       // numOpacity
       // 
-      numOpacity.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       numOpacity.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numOpacity.Location = new Point(334, 67);
+      numOpacity.Location = new Point(307, 153);
       numOpacity.Name = "numOpacity";
-      numOpacity.Size = new Size(46, 23);
+      numOpacity.Size = new Size(54, 23);
       numOpacity.TabIndex = 3;
       numOpacity.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numOpacity, "Opacity");
       numOpacity.Value = new decimal(new int[] { 100, 0, 0, 0 });
       numOpacity.ValueChanged += numOpacity_ValueChanged;
       // 
-      // lblPercent
-      // 
-      lblPercent.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      lblPercent.Location = new Point(381, 67);
-      lblPercent.Name = "lblPercent";
-      lblPercent.Size = new Size(23, 23);
-      lblPercent.TabIndex = 105;
-      lblPercent.Text = "%";
-      lblPercent.TextAlign = ContentAlignment.MiddleLeft;
-      toolTip1.SetToolTip(lblPercent, "Click to reset");
-      lblPercent.Click += lblPercent_Click;
-      // 
       // lblAudioDevice
       // 
-      lblAudioDevice.Location = new Point(1, 153);
+      lblAudioDevice.Location = new Point(-1, 125);
       lblAudioDevice.Name = "lblAudioDevice";
       lblAudioDevice.Size = new Size(67, 23);
       lblAudioDevice.TabIndex = 115;
-      lblAudioDevice.Text = "Device";
+      lblAudioDevice.Text = "Audio";
       lblAudioDevice.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(lblAudioDevice, "Double-click to reload list\r\nRight-click to select and set default device\r\n");
       lblAudioDevice.DoubleClick += lblAudioDevice_DoubleClick;
@@ -1513,14 +1484,13 @@ namespace MilkwaveRemote
       // 
       // cboWindowTitle
       // 
-      cboWindowTitle.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       cboWindowTitle.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
       cboWindowTitle.AutoCompleteSource = AutoCompleteSource.ListItems;
       cboWindowTitle.FormattingEnabled = true;
       cboWindowTitle.Items.AddRange(new object[] { "Milkwave Visualizer", "Milkwave Visualizer 2", "Milkwave Visualizer 3", "Milkwave Visualizer 4", "Milkwave Visualizer 5", "MDropDX12" });
-      cboWindowTitle.Location = new Point(74, 67);
+      cboWindowTitle.Location = new Point(69, 154);
       cboWindowTitle.Name = "cboWindowTitle";
-      cboWindowTitle.Size = new Size(254, 23);
+      cboWindowTitle.Size = new Size(167, 23);
       cboWindowTitle.TabIndex = 108;
       toolTip1.SetToolTip(cboWindowTitle, "Target window title");
       // 
@@ -2014,16 +1984,17 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(lblFactorFPS, "Values < 1 may speed up rendering of the preset, not affecting sprites and notifications\r\nClick: Set 1");
       lblFactorFPS.Click += lblFactorFPS_Click;
       // 
-      // btnOpenSettingsFile
+      // btnSettingsOpenFile
       // 
-      btnOpenSettingsFile.Location = new Point(540, 92);
-      btnOpenSettingsFile.Name = "btnOpenSettingsFile";
-      btnOpenSettingsFile.Size = new Size(56, 23);
-      btnOpenSettingsFile.TabIndex = 143;
-      btnOpenSettingsFile.Text = "Open";
-      toolTip1.SetToolTip(btnOpenSettingsFile, "Open file in associated editor");
-      btnOpenSettingsFile.UseVisualStyleBackColor = true;
-      btnOpenSettingsFile.Click += btnOpenSettingsIni_Click;
+      btnSettingsOpenFile.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnSettingsOpenFile.Location = new Point(229, 66);
+      btnSettingsOpenFile.Name = "btnSettingsOpenFile";
+      btnSettingsOpenFile.Size = new Size(48, 23);
+      btnSettingsOpenFile.TabIndex = 143;
+      btnSettingsOpenFile.Text = "Open";
+      toolTip1.SetToolTip(btnSettingsOpenFile, "Open file in associated editor");
+      btnSettingsOpenFile.UseVisualStyleBackColor = true;
+      btnSettingsOpenFile.Click += btnOpenSettingsIni_Click;
       // 
       // txtFilterTags
       // 
@@ -2379,7 +2350,7 @@ namespace MilkwaveRemote
       // 
       // lblSpout
       // 
-      lblSpout.Location = new Point(24, 121);
+      lblSpout.Location = new Point(24, 122);
       lblSpout.Name = "lblSpout";
       lblSpout.Size = new Size(45, 23);
       lblSpout.TabIndex = 155;
@@ -2391,7 +2362,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutActive.Appearance = Appearance.Button;
       chkSpoutActive.FlatStyle = FlatStyle.System;
-      chkSpoutActive.Location = new Point(212, 122);
+      chkSpoutActive.Location = new Point(212, 123);
       chkSpoutActive.Name = "chkSpoutActive";
       chkSpoutActive.Size = new Size(56, 23);
       chkSpoutActive.TabIndex = 156;
@@ -2406,7 +2377,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutFixedSize.Appearance = Appearance.Button;
       chkSpoutFixedSize.FlatStyle = FlatStyle.System;
-      chkSpoutFixedSize.Location = new Point(279, 122);
+      chkSpoutFixedSize.Location = new Point(279, 123);
       chkSpoutFixedSize.Name = "chkSpoutFixedSize";
       chkSpoutFixedSize.Size = new Size(56, 23);
       chkSpoutFixedSize.TabIndex = 157;
@@ -2420,7 +2391,7 @@ namespace MilkwaveRemote
       // cboSpoutWidth
       // 
       cboSpoutWidth.Items.AddRange(new object[] { "3840", "2560", "1920", "1600", "1280", "1024", "800", "640", "320" });
-      cboSpoutWidth.Location = new Point(75, 122);
+      cboSpoutWidth.Location = new Point(75, 123);
       cboSpoutWidth.Name = "cboSpoutWidth";
       cboSpoutWidth.Size = new Size(58, 23);
       cboSpoutWidth.TabIndex = 158;
@@ -2431,7 +2402,7 @@ namespace MilkwaveRemote
       // cboSpoutHeight
       // 
       cboSpoutHeight.Items.AddRange(new object[] { "2160", "1440", "1080", "900", "720", "600", "480", "240", "200" });
-      cboSpoutHeight.Location = new Point(142, 122);
+      cboSpoutHeight.Location = new Point(142, 123);
       cboSpoutHeight.Name = "cboSpoutHeight";
       cboSpoutHeight.Size = new Size(58, 23);
       cboSpoutHeight.TabIndex = 159;
@@ -2441,7 +2412,7 @@ namespace MilkwaveRemote
       // 
       // lblQuality
       // 
-      lblQuality.Location = new Point(24, 92);
+      lblQuality.Location = new Point(24, 93);
       lblQuality.Name = "lblQuality";
       lblQuality.Size = new Size(45, 23);
       lblQuality.TabIndex = 161;
@@ -2463,7 +2434,7 @@ namespace MilkwaveRemote
       // 
       // lblBrightness
       // 
-      lblBrightness.Location = new Point(326, 63);
+      lblBrightness.Location = new Point(460, 34);
       lblBrightness.Name = "lblBrightness";
       lblBrightness.Size = new Size(74, 23);
       lblBrightness.TabIndex = 169;
@@ -2509,7 +2480,7 @@ namespace MilkwaveRemote
       // 
       chkQualityAuto.Appearance = Appearance.Button;
       chkQualityAuto.FlatStyle = FlatStyle.System;
-      chkQualityAuto.Location = new Point(279, 92);
+      chkQualityAuto.Location = new Point(279, 93);
       chkQualityAuto.Name = "chkQualityAuto";
       chkQualityAuto.Size = new Size(56, 23);
       chkQualityAuto.TabIndex = 172;
@@ -2640,7 +2611,7 @@ namespace MilkwaveRemote
       // 
       // lblChangePreset
       // 
-      lblChangePreset.Location = new Point(212, 151);
+      lblChangePreset.Location = new Point(234, 150);
       lblChangePreset.Name = "lblChangePreset";
       lblChangePreset.Size = new Size(61, 23);
       lblChangePreset.TabIndex = 176;
@@ -2652,9 +2623,9 @@ namespace MilkwaveRemote
       // 
       chkPresetLocked.Appearance = Appearance.Button;
       chkPresetLocked.FlatStyle = FlatStyle.System;
-      chkPresetLocked.Location = new Point(74, 151);
+      chkPresetLocked.Location = new Point(71, 151);
       chkPresetLocked.Name = "chkPresetLocked";
-      chkPresetLocked.Size = new Size(58, 23);
+      chkPresetLocked.Size = new Size(62, 23);
       chkPresetLocked.TabIndex = 177;
       chkPresetLocked.Text = "Locked";
       chkPresetLocked.TextAlign = ContentAlignment.MiddleCenter;
@@ -2667,7 +2638,7 @@ namespace MilkwaveRemote
       // 
       chkVideoMix.Appearance = Appearance.Button;
       chkVideoMix.FlatStyle = FlatStyle.System;
-      chkVideoMix.Location = new Point(370, 8);
+      chkVideoMix.Location = new Point(307, 9);
       chkVideoMix.Margin = new Padding(3, 2, 3, 2);
       chkVideoMix.Name = "chkVideoMix";
       chkVideoMix.Size = new Size(55, 23);
@@ -2683,7 +2654,7 @@ namespace MilkwaveRemote
       // 
       chkSpoutMix.Appearance = Appearance.Button;
       chkSpoutMix.FlatStyle = FlatStyle.System;
-      chkSpoutMix.Location = new Point(370, 37);
+      chkSpoutMix.Location = new Point(307, 38);
       chkSpoutMix.Margin = new Padding(3, 2, 3, 2);
       chkSpoutMix.Name = "chkSpoutMix";
       chkSpoutMix.Size = new Size(55, 23);
@@ -2699,7 +2670,7 @@ namespace MilkwaveRemote
       // 
       chkMixLumaActive.Appearance = Appearance.Button;
       chkMixLumaActive.FlatStyle = FlatStyle.System;
-      chkMixLumaActive.Location = new Point(245, 66);
+      chkMixLumaActive.Location = new Point(246, 66);
       chkMixLumaActive.Margin = new Padding(3, 2, 3, 2);
       chkMixLumaActive.Name = "chkMixLumaActive";
       chkMixLumaActive.Size = new Size(55, 23);
@@ -2713,9 +2684,9 @@ namespace MilkwaveRemote
       // 
       // label13
       // 
-      label13.Location = new Point(0, 64);
+      label13.Location = new Point(3, 67);
       label13.Name = "label13";
-      label13.Size = new Size(66, 24);
+      label13.Size = new Size(63, 24);
       label13.TabIndex = 139;
       label13.Text = "Luma Key";
       label13.TextAlign = ContentAlignment.MiddleRight;
@@ -2724,9 +2695,9 @@ namespace MilkwaveRemote
       // 
       // label12
       // 
-      label12.Location = new Point(119, 92);
+      label12.Location = new Point(413, 35);
       label12.Name = "label12";
-      label12.Size = new Size(68, 24);
+      label12.Size = new Size(71, 24);
       label12.TabIndex = 135;
       label12.Text = "Opacity";
       label12.TextAlign = ContentAlignment.MiddleRight;
@@ -2737,10 +2708,10 @@ namespace MilkwaveRemote
       // 
       chkInputTop.Appearance = Appearance.Button;
       chkInputTop.FlatStyle = FlatStyle.System;
-      chkInputTop.Location = new Point(68, 94);
+      chkInputTop.Location = new Point(490, 9);
       chkInputTop.Margin = new Padding(3, 2, 3, 2);
       chkInputTop.Name = "chkInputTop";
-      chkInputTop.Size = new Size(49, 24);
+      chkInputTop.Size = new Size(55, 22);
       chkInputTop.TabIndex = 133;
       chkInputTop.Text = "Input";
       chkInputTop.TextAlign = ContentAlignment.MiddleCenter;
@@ -2751,27 +2722,27 @@ namespace MilkwaveRemote
       // 
       // label11
       // 
-      label11.Location = new Point(18, 37);
+      label11.Location = new Point(7, 37);
       label11.Name = "label11";
-      label11.Size = new Size(48, 24);
+      label11.Size = new Size(59, 24);
       label11.TabIndex = 128;
-      label11.Text = "Spout";
+      label11.Text = "Spout In";
       label11.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label11, "Spout Senders");
       // 
-      // label10
+      // lblVIdeoIn
       // 
-      label10.Location = new Point(18, 8);
-      label10.Name = "label10";
-      label10.Size = new Size(48, 24);
-      label10.TabIndex = 100;
-      label10.Text = "Device";
-      label10.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label10, "Cam Input Device\r\nNote: To mix OBS input, using the OBS Spout sender is recommended\r\n");
+      lblVIdeoIn.Location = new Point(7, 8);
+      lblVIdeoIn.Name = "lblVIdeoIn";
+      lblVIdeoIn.Size = new Size(59, 24);
+      lblVIdeoIn.TabIndex = 100;
+      lblVIdeoIn.Text = "Cam In";
+      lblVIdeoIn.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblVIdeoIn, "Cam Input Device\r\nNote: To mix OBS input, using the OBS Spout sender is recommended\r\n");
       // 
       // label14
       // 
-      label14.Location = new Point(121, 64);
+      label14.Location = new Point(121, 67);
       label14.Name = "label14";
       label14.Size = new Size(66, 24);
       label14.TabIndex = 141;
@@ -2784,7 +2755,7 @@ namespace MilkwaveRemote
       // 
       chkControllerActive.Appearance = Appearance.Button;
       chkControllerActive.FlatStyle = FlatStyle.System;
-      chkControllerActive.Location = new Point(432, 124);
+      chkControllerActive.Location = new Point(369, 96);
       chkControllerActive.Margin = new Padding(3, 2, 3, 2);
       chkControllerActive.Name = "chkControllerActive";
       chkControllerActive.Size = new Size(55, 23);
@@ -2797,7 +2768,7 @@ namespace MilkwaveRemote
       // 
       // btnControllerInputConfig
       // 
-      btnControllerInputConfig.Location = new Point(370, 124);
+      btnControllerInputConfig.Location = new Point(307, 96);
       btnControllerInputConfig.Name = "btnControllerInputConfig";
       btnControllerInputConfig.Size = new Size(55, 23);
       btnControllerInputConfig.TabIndex = 146;
@@ -2806,23 +2777,23 @@ namespace MilkwaveRemote
       btnControllerInputConfig.UseVisualStyleBackColor = true;
       btnControllerInputConfig.Click += btnControllerInputConfig_Click;
       // 
-      // label9
+      // lblPresetSettings
       // 
-      label9.Location = new Point(24, 151);
-      label9.Name = "label9";
-      label9.Size = new Size(45, 23);
-      label9.TabIndex = 178;
-      label9.Text = "Preset";
-      label9.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label9, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nClick: Set 1");
+      lblPresetSettings.Location = new Point(7, 151);
+      lblPresetSettings.Name = "lblPresetSettings";
+      lblPresetSettings.Size = new Size(62, 23);
+      lblPresetSettings.TabIndex = 178;
+      lblPresetSettings.Text = "Settings";
+      lblPresetSettings.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblPresetSettings, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nClick: Set 1");
       // 
       // chkSettingsPresetRandom
       // 
       chkSettingsPresetRandom.Appearance = Appearance.Button;
       chkSettingsPresetRandom.FlatStyle = FlatStyle.System;
-      chkSettingsPresetRandom.Location = new Point(139, 151);
+      chkSettingsPresetRandom.Location = new Point(142, 151);
       chkSettingsPresetRandom.Name = "chkSettingsPresetRandom";
-      chkSettingsPresetRandom.Size = new Size(61, 23);
+      chkSettingsPresetRandom.Size = new Size(62, 23);
       chkSettingsPresetRandom.TabIndex = 179;
       chkSettingsPresetRandom.Text = "Random";
       chkSettingsPresetRandom.TextAlign = ContentAlignment.MiddleCenter;
@@ -2833,9 +2804,10 @@ namespace MilkwaveRemote
       // 
       // btnMessagesEditorOpen
       // 
-      btnMessagesEditorOpen.Location = new Point(540, 63);
+      btnMessagesEditorOpen.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnMessagesEditorOpen.Location = new Point(327, 66);
       btnMessagesEditorOpen.Name = "btnMessagesEditorOpen";
-      btnMessagesEditorOpen.Size = new Size(56, 23);
+      btnMessagesEditorOpen.Size = new Size(49, 23);
       btnMessagesEditorOpen.TabIndex = 182;
       btnMessagesEditorOpen.Text = "Open";
       toolTip1.SetToolTip(btnMessagesEditorOpen, "Open the browser-based interactive messages.ini editor");
@@ -2844,7 +2816,7 @@ namespace MilkwaveRemote
       // 
       // label20
       // 
-      label20.Location = new Point(350, 151);
+      label20.Location = new Point(350, 65);
       label20.Name = "label20";
       label20.Size = new Size(51, 23);
       label20.TabIndex = 186;
@@ -2919,9 +2891,46 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(pnlColorMenu, "Font color");
       pnlColorMenu.Click += pnlColorFont_Click;
       // 
+      // label10
+      // 
+      label10.Location = new Point(246, 150);
+      label10.Name = "label10";
+      label10.Size = new Size(55, 24);
+      label10.TabIndex = 148;
+      label10.Text = "Opacity";
+      label10.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label10, "Set Opacity of top layer");
+      // 
+      // chkUseDX12
+      // 
+      chkUseDX12.Appearance = Appearance.Button;
+      chkUseDX12.FlatStyle = FlatStyle.System;
+      chkUseDX12.Location = new Point(367, 151);
+      chkUseDX12.Margin = new Padding(3, 2, 3, 2);
+      chkUseDX12.Name = "chkUseDX12";
+      chkUseDX12.Size = new Size(56, 23);
+      chkUseDX12.TabIndex = 149;
+      chkUseDX12.Text = "DX12";
+      chkUseDX12.TextAlign = ContentAlignment.MiddleCenter;
+      chkUseDX12.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkUseDX12, "Use DX12 Visualizer (experimental)");
+      chkUseDX12.UseVisualStyleBackColor = true;
+      chkUseDX12.CheckedChanged += new EventHandler(chkUseDX12_CheckedChanged);
+      // 
+      // label9
+      // 
+      label9.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      label9.Location = new Point(380, 65);
+      label9.Name = "label9";
+      label9.Size = new Size(41, 23);
+      label9.TabIndex = 108;
+      label9.Text = "Wrap";
+      label9.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label9, "Double-click to remove this style\r\nRight-click to fill frm elements from current parameters");
+      // 
       // label15
       // 
-      label15.Location = new Point(3, 124);
+      label15.Location = new Point(3, 95);
       label15.Name = "label15";
       label15.Size = new Size(63, 24);
       label15.TabIndex = 142;
@@ -2930,37 +2939,39 @@ namespace MilkwaveRemote
       // 
       // label16
       // 
-      label16.Location = new Point(0, 93);
+      label16.Location = new Point(425, 7);
       label16.Name = "label16";
-      label16.Size = new Size(66, 24);
+      label16.Size = new Size(59, 24);
       label16.TabIndex = 147;
       label16.Text = "Top Layer";
       label16.TextAlign = ContentAlignment.MiddleRight;
+      label16.Click += label16_Click;
       // 
-      // label18
+      // lblMessageEditor
       // 
-      label18.Location = new Point(479, 63);
-      label18.Name = "label18";
-      label18.Size = new Size(51, 23);
-      label18.TabIndex = 181;
-      label18.Text = "Editor";
-      label18.TextAlign = ContentAlignment.MiddleRight;
+      lblMessageEditor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      lblMessageEditor.Location = new Point(272, 66);
+      lblMessageEditor.Name = "lblMessageEditor";
+      lblMessageEditor.Size = new Size(51, 23);
+      lblMessageEditor.TabIndex = 181;
+      lblMessageEditor.Text = "Editor";
+      lblMessageEditor.TextAlign = ContentAlignment.MiddleRight;
       // 
-      // label17
+      // lblSettingsOpenFile
       // 
-      label17.Location = new Point(349, 92);
-      label17.Name = "label17";
-      label17.Size = new Size(51, 23);
-      label17.TabIndex = 180;
-      label17.Text = "Config";
-      label17.TextAlign = ContentAlignment.MiddleRight;
+      lblSettingsOpenFile.Location = new Point(19, 66);
+      lblSettingsOpenFile.Name = "lblSettingsOpenFile";
+      lblSettingsOpenFile.Size = new Size(51, 23);
+      lblSettingsOpenFile.TabIndex = 180;
+      lblSettingsOpenFile.Text = "Config";
+      lblSettingsOpenFile.TextAlign = ContentAlignment.MiddleRight;
       // 
       // numInputMixOpacity
       // 
       numInputMixOpacity.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-      numInputMixOpacity.Location = new Point(190, 96);
+      numInputMixOpacity.Location = new Point(490, 37);
       numInputMixOpacity.Name = "numInputMixOpacity";
-      numInputMixOpacity.Size = new Size(46, 23);
+      numInputMixOpacity.Size = new Size(55, 23);
       numInputMixOpacity.TabIndex = 134;
       numInputMixOpacity.TextAlign = HorizontalAlignment.Center;
       numInputMixOpacity.Value = new decimal(new int[] { 50, 0, 0, 0 });
@@ -2990,14 +3001,15 @@ namespace MilkwaveRemote
       // 
       // cboSettingsOpenFile
       // 
+      cboSettingsOpenFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       cboSettingsOpenFile.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
       cboSettingsOpenFile.AutoCompleteSource = AutoCompleteSource.ListItems;
       cboSettingsOpenFile.DropDownStyle = ComboBoxStyle.DropDownList;
       cboSettingsOpenFile.FormattingEnabled = true;
-      cboSettingsOpenFile.Items.AddRange(new object[] { "settings.ini", "sprites.ini", "messages.ini", "script-default.txt", "controller-config.json", "midi-remote.json", "settings-remote.json", "tags-remote.json" });
-      cboSettingsOpenFile.Location = new Point(406, 93);
+      cboSettingsOpenFile.Items.AddRange(new object[] { "messages.ini", "sprites.ini", "settings.ini", "script-default.txt", "controller-config.json", "midi-remote.json", "settings-remote.json", "tags-remote.json" });
+      cboSettingsOpenFile.Location = new Point(74, 67);
       cboSettingsOpenFile.Name = "cboSettingsOpenFile";
-      cboSettingsOpenFile.Size = new Size(123, 23);
+      cboSettingsOpenFile.Size = new Size(149, 23);
       cboSettingsOpenFile.TabIndex = 170;
       // 
       // btn00
@@ -3708,11 +3720,11 @@ namespace MilkwaveRemote
       tabControl.BorderColor = SystemColors.ControlLightLight;
       tabControl.Controls.Add(tabPreset);
       tabControl.Controls.Add(tabMessage);
-      tabControl.Controls.Add(tabWave);
-      tabControl.Controls.Add(tabInput);
-      tabControl.Controls.Add(tabMidi);
+      tabControl.Controls.Add(tabInOut);
       tabControl.Controls.Add(tabSettings);
       tabControl.Controls.Add(tabFonts);
+      tabControl.Controls.Add(tabMidi);
+      tabControl.Controls.Add(tabWave);
       tabControl.Controls.Add(tabShader);
       tabControl.Dock = DockStyle.Fill;
       tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
@@ -3740,7 +3752,6 @@ namespace MilkwaveRemote
       tabPreset.Controls.Add(lblTags);
       tabPreset.Controls.Add(lblLoad);
       tabPreset.Controls.Add(lblPreset);
-      tabPreset.Controls.Add(lblAudioDevice);
       tabPreset.Controls.Add(lblCurrentPreset);
       tabPreset.Controls.Add(txtFilterPresets);
       tabPreset.Controls.Add(txtFilterTags);
@@ -3761,17 +3772,16 @@ namespace MilkwaveRemote
       tabPreset.Controls.Add(btnPresetLoadTags);
       tabPreset.Controls.Add(chkPresetRandom);
       tabPreset.Controls.Add(chkPresetLink);
-      tabPreset.Controls.Add(btnSetAudioDevice);
-      tabPreset.Controls.Add(cboAudioDevice);
-      tabPreset.Controls.Add(numAmpRight);
-      tabPreset.Controls.Add(numAmpLeft);
       tabPreset.Controls.Add(btnPresetLoadDirectory);
-      tabPreset.Controls.Add(chkAmpLinked);
       tabPreset.Controls.Add(btnPresetSend);
       tabPreset.Controls.Add(btnPresetLoadFile);
       tabPreset.Controls.Add(txtVisRunning);
       tabPreset.Controls.Add(cboPresets);
-      tabPreset.Controls.Add(lblAmp);
+      tabPreset.Controls.Add(chkSettingsPresetRandom);
+      tabPreset.Controls.Add(lblPresetSettings);
+      tabPreset.Controls.Add(chkPresetLocked);
+      tabPreset.Controls.Add(numPresetChange);
+      tabPreset.Controls.Add(lblChangePreset);
       tabPreset.Location = new Point(4, 24);
       tabPreset.Margin = new Padding(0);
       tabPreset.Name = "tabPreset";
@@ -3879,16 +3889,29 @@ namespace MilkwaveRemote
       btnTag1.UseVisualStyleBackColor = true;
       btnTag1.Click += btnTag_Click;
       // 
+      // numPresetChange
+      // 
+      numPresetChange.Increment = new decimal(new int[] { 5, 0, 0, 0 });
+      numPresetChange.Location = new Point(301, 152);
+      numPresetChange.Margin = new Padding(3, 2, 3, 2);
+      numPresetChange.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
+      numPresetChange.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+      numPresetChange.Name = "numPresetChange";
+      numPresetChange.Size = new Size(40, 23);
+      numPresetChange.TabIndex = 175;
+      numPresetChange.TextAlign = HorizontalAlignment.Center;
+      numPresetChange.Value = new decimal(new int[] { 60, 0, 0, 0 });
+      numPresetChange.ValueChanged += numPresetChange_ValueChanged;
+      // 
       // tabMessage
       // 
       tabMessage.BackColor = SystemColors.ControlLight;
       tabMessage.BorderStyle = BorderStyle.FixedSingle;
-      tabMessage.Controls.Add(cboWindowTitle);
+      tabMessage.Controls.Add(label9);
       tabMessage.Controls.Add(cboAutoplay);
       tabMessage.Controls.Add(btnSendFile);
       tabMessage.Controls.Add(btnFontAppend);
       tabMessage.Controls.Add(btnSaveParam);
-      tabMessage.Controls.Add(numOpacity);
       tabMessage.Controls.Add(chkAutoplay);
       tabMessage.Controls.Add(cboFonts);
       tabMessage.Controls.Add(numBeats);
@@ -3906,16 +3929,19 @@ namespace MilkwaveRemote
       tabMessage.Controls.Add(chkPreview);
       tabMessage.Controls.Add(btnAppendSize);
       tabMessage.Controls.Add(label2);
-      tabMessage.Controls.Add(lblPercent);
       tabMessage.Controls.Add(lblFont);
       tabMessage.Controls.Add(label7);
       tabMessage.Controls.Add(lblFromFile);
       tabMessage.Controls.Add(lblColor);
       tabMessage.Controls.Add(lblParameters);
-      tabMessage.Controls.Add(lblWindow);
       tabMessage.Controls.Add(lblBPM);
       tabMessage.Controls.Add(lblStyle);
       tabMessage.Controls.Add(lblSize);
+      tabMessage.Controls.Add(btnMessagesEditorOpen);
+      tabMessage.Controls.Add(lblMessageEditor);
+      tabMessage.Controls.Add(lblSettingsOpenFile);
+      tabMessage.Controls.Add(cboSettingsOpenFile);
+      tabMessage.Controls.Add(btnSettingsOpenFile);
       tabMessage.Location = new Point(4, 24);
       tabMessage.Margin = new Padding(0);
       tabMessage.Name = "tabMessage";
@@ -3923,205 +3949,54 @@ namespace MilkwaveRemote
       tabMessage.TabIndex = 0;
       tabMessage.Text = "Message";
       // 
-      // tabWave
+      // tabInOut
       // 
-      tabWave.BackColor = SystemColors.ControlLight;
-      tabWave.BorderStyle = BorderStyle.FixedSingle;
-      tabWave.Controls.Add(pnlColorWave);
-      tabWave.Controls.Add(numWaveEcho);
-      tabWave.Controls.Add(lblEcho);
-      tabWave.Controls.Add(numWaveScale);
-      tabWave.Controls.Add(lblScale);
-      tabWave.Controls.Add(chkWaveVolAlpha);
-      tabWave.Controls.Add(chkWaveThick);
-      tabWave.Controls.Add(chkWaveDotted);
-      tabWave.Controls.Add(chkWaveAdditive);
-      tabWave.Controls.Add(chkWaveInvert);
-      tabWave.Controls.Add(chkWaveSolarize);
-      tabWave.Controls.Add(chkWaveDarken);
-      tabWave.Controls.Add(chkWaveBrighten);
-      tabWave.Controls.Add(btnWaveQuicksave);
-      tabWave.Controls.Add(numWaveDecay);
-      tabWave.Controls.Add(numWaveWarp);
-      tabWave.Controls.Add(numWaveRotation);
-      tabWave.Controls.Add(numWaveZoom);
-      tabWave.Controls.Add(numWavePushY);
-      tabWave.Controls.Add(numWavePushX);
-      tabWave.Controls.Add(btnWaveClear);
-      tabWave.Controls.Add(numWaveG);
-      tabWave.Controls.Add(numWaveB);
-      tabWave.Controls.Add(numWaveR);
-      tabWave.Controls.Add(chkWaveLink);
-      tabWave.Controls.Add(numWaveMode);
-      tabWave.Controls.Add(btnSendWave);
-      tabWave.Controls.Add(numWaveAlpha);
-      tabWave.Controls.Add(lblDecay);
-      tabWave.Controls.Add(lblWarp);
-      tabWave.Controls.Add(lblRotation);
-      tabWave.Controls.Add(lblZoom);
-      tabWave.Controls.Add(lblPushY);
-      tabWave.Controls.Add(lblPushX);
-      tabWave.Controls.Add(lblRGB);
-      tabWave.Controls.Add(lblWavemode);
-      tabWave.Location = new Point(4, 24);
-      tabWave.Margin = new Padding(0);
-      tabWave.Name = "tabWave";
-      tabWave.Size = new Size(611, 183);
-      tabWave.TabIndex = 2;
-      tabWave.Text = "Wave";
-      // 
-      // numWaveEcho
-      // 
-      numWaveEcho.DecimalPlaces = 3;
-      numWaveEcho.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveEcho.Location = new Point(410, 68);
-      numWaveEcho.Margin = new Padding(3, 2, 3, 2);
-      numWaveEcho.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
-      numWaveEcho.Name = "numWaveEcho";
-      numWaveEcho.Size = new Size(56, 23);
-      numWaveEcho.TabIndex = 150;
-      numWaveEcho.TextAlign = HorizontalAlignment.Center;
-      numWaveEcho.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numWaveEcho.ValueChanged += ctrlWave_ValueChanged;
-      // 
-      // numWaveScale
-      // 
-      numWaveScale.DecimalPlaces = 3;
-      numWaveScale.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveScale.Location = new Point(410, 37);
-      numWaveScale.Margin = new Padding(3, 2, 3, 2);
-      numWaveScale.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
-      numWaveScale.Name = "numWaveScale";
-      numWaveScale.Size = new Size(56, 23);
-      numWaveScale.TabIndex = 148;
-      numWaveScale.TextAlign = HorizontalAlignment.Center;
-      numWaveScale.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numWaveScale.ValueChanged += ctrlWave_ValueChanged;
-      // 
-      // numWaveDecay
-      // 
-      numWaveDecay.DecimalPlaces = 3;
-      numWaveDecay.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveDecay.Location = new Point(186, 67);
-      numWaveDecay.Margin = new Padding(3, 2, 3, 2);
-      numWaveDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numWaveDecay.Name = "numWaveDecay";
-      numWaveDecay.Size = new Size(56, 23);
-      numWaveDecay.TabIndex = 137;
-      numWaveDecay.TextAlign = HorizontalAlignment.Center;
-      numWaveDecay.ValueChanged += ctrlWave_ValueChanged;
-      // 
-      // numWaveWarp
-      // 
-      numWaveWarp.DecimalPlaces = 3;
-      numWaveWarp.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveWarp.Location = new Point(298, 67);
-      numWaveWarp.Margin = new Padding(3, 2, 3, 2);
-      numWaveWarp.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
-      numWaveWarp.Name = "numWaveWarp";
-      numWaveWarp.Size = new Size(56, 23);
-      numWaveWarp.TabIndex = 135;
-      numWaveWarp.TextAlign = HorizontalAlignment.Center;
-      numWaveWarp.ValueChanged += ctrlWave_ValueChanged;
-      numWaveWarp.KeyDown += numWave_KeyDown;
-      // 
-      // numWaveRotation
-      // 
-      numWaveRotation.DecimalPlaces = 3;
-      numWaveRotation.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveRotation.Location = new Point(75, 67);
-      numWaveRotation.Margin = new Padding(3, 2, 3, 2);
-      numWaveRotation.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
-      numWaveRotation.Minimum = new decimal(new int[] { 9999, 0, 0, -2147287040 });
-      numWaveRotation.Name = "numWaveRotation";
-      numWaveRotation.Size = new Size(56, 23);
-      numWaveRotation.TabIndex = 133;
-      numWaveRotation.TextAlign = HorizontalAlignment.Center;
-      numWaveRotation.ValueChanged += ctrlWave_ValueChanged;
-      numWaveRotation.KeyDown += numWave_KeyDown;
-      // 
-      // numWaveZoom
-      // 
-      numWaveZoom.DecimalPlaces = 3;
-      numWaveZoom.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWaveZoom.Location = new Point(298, 37);
-      numWaveZoom.Margin = new Padding(3, 2, 3, 2);
-      numWaveZoom.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
-      numWaveZoom.Name = "numWaveZoom";
-      numWaveZoom.Size = new Size(56, 23);
-      numWaveZoom.TabIndex = 131;
-      numWaveZoom.TextAlign = HorizontalAlignment.Center;
-      numWaveZoom.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numWaveZoom.ValueChanged += ctrlWave_ValueChanged;
-      numWaveZoom.KeyDown += numWave_KeyDown;
-      // 
-      // numWavePushY
-      // 
-      numWavePushY.DecimalPlaces = 3;
-      numWavePushY.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWavePushY.Location = new Point(186, 37);
-      numWavePushY.Margin = new Padding(3, 2, 3, 2);
-      numWavePushY.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numWavePushY.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
-      numWavePushY.Name = "numWavePushY";
-      numWavePushY.Size = new Size(56, 23);
-      numWavePushY.TabIndex = 129;
-      numWavePushY.TextAlign = HorizontalAlignment.Center;
-      numWavePushY.ValueChanged += ctrlWave_ValueChanged;
-      numWavePushY.KeyDown += numWave_KeyDown;
-      // 
-      // numWavePushX
-      // 
-      numWavePushX.DecimalPlaces = 3;
-      numWavePushX.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
-      numWavePushX.Location = new Point(75, 37);
-      numWavePushX.Margin = new Padding(3, 2, 3, 2);
-      numWavePushX.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numWavePushX.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
-      numWavePushX.Name = "numWavePushX";
-      numWavePushX.Size = new Size(56, 23);
-      numWavePushX.TabIndex = 127;
-      numWavePushX.TextAlign = HorizontalAlignment.Center;
-      numWavePushX.ValueChanged += ctrlWave_ValueChanged;
-      numWavePushX.KeyDown += numWave_KeyDown;
-      // 
-      // tabInput
-      // 
-      tabInput.BackColor = SystemColors.ControlLight;
-      tabInput.BorderStyle = BorderStyle.FixedSingle;
-      tabInput.Controls.Add(label16);
-      tabInput.Controls.Add(btnControllerInputConfig);
-      tabInput.Controls.Add(chkControllerActive);
-      tabInput.Controls.Add(btnControllerInputScan);
-      tabInput.Controls.Add(cboInputController);
-      tabInput.Controls.Add(label15);
-      tabInput.Controls.Add(label14);
-      tabInput.Controls.Add(chkMixLumaActive);
-      tabInput.Controls.Add(label13);
-      tabInput.Controls.Add(numLumaSoftness);
-      tabInput.Controls.Add(numLumaThreshold);
-      tabInput.Controls.Add(label12);
-      tabInput.Controls.Add(numInputMixOpacity);
-      tabInput.Controls.Add(chkInputTop);
-      tabInput.Controls.Add(chkSpoutMix);
-      tabInput.Controls.Add(btnSpoutInputScan);
-      tabInput.Controls.Add(cboSputInput);
-      tabInput.Controls.Add(label11);
-      tabInput.Controls.Add(btnVideoInputScan);
-      tabInput.Controls.Add(chkVideoMix);
-      tabInput.Controls.Add(cboVideoInput);
-      tabInput.Controls.Add(label10);
-      tabInput.Location = new Point(4, 24);
-      tabInput.Margin = new Padding(0);
-      tabInput.Name = "tabInput";
-      tabInput.Size = new Size(611, 183);
-      tabInput.TabIndex = 7;
-      tabInput.Text = "Input";
+      tabInOut.BackColor = SystemColors.ControlLight;
+      tabInOut.BorderStyle = BorderStyle.FixedSingle;
+      tabInOut.Controls.Add(chkUseDX12);
+      tabInOut.Controls.Add(label10);
+      tabInOut.Controls.Add(cboWindowTitle);
+      tabInOut.Controls.Add(numOpacity);
+      tabInOut.Controls.Add(lblWindow);
+      tabInOut.Controls.Add(numAmpRight);
+      tabInOut.Controls.Add(numAmpLeft);
+      tabInOut.Controls.Add(chkAmpLinked);
+      tabInOut.Controls.Add(lblAudioDevice);
+      tabInOut.Controls.Add(cboAudioDevice);
+      tabInOut.Controls.Add(btnSetAudioDevice);
+      tabInOut.Controls.Add(label16);
+      tabInOut.Controls.Add(btnControllerInputConfig);
+      tabInOut.Controls.Add(chkControllerActive);
+      tabInOut.Controls.Add(btnControllerInputScan);
+      tabInOut.Controls.Add(cboInputController);
+      tabInOut.Controls.Add(label15);
+      tabInOut.Controls.Add(label14);
+      tabInOut.Controls.Add(chkMixLumaActive);
+      tabInOut.Controls.Add(label13);
+      tabInOut.Controls.Add(numLumaSoftness);
+      tabInOut.Controls.Add(numLumaThreshold);
+      tabInOut.Controls.Add(label12);
+      tabInOut.Controls.Add(numInputMixOpacity);
+      tabInOut.Controls.Add(chkInputTop);
+      tabInOut.Controls.Add(chkSpoutMix);
+      tabInOut.Controls.Add(btnSpoutInputScan);
+      tabInOut.Controls.Add(cboSputInput);
+      tabInOut.Controls.Add(label11);
+      tabInOut.Controls.Add(btnVideoInputScan);
+      tabInOut.Controls.Add(chkVideoMix);
+      tabInOut.Controls.Add(cboVideoInput);
+      tabInOut.Controls.Add(lblVIdeoIn);
+      tabInOut.Location = new Point(4, 24);
+      tabInOut.Margin = new Padding(0);
+      tabInOut.Name = "tabInOut";
+      tabInOut.Size = new Size(611, 183);
+      tabInOut.TabIndex = 7;
+      tabInOut.Text = "In/Out";
       // 
       // btnControllerInputScan
       // 
       btnControllerInputScan.FlatStyle = FlatStyle.System;
-      btnControllerInputScan.Location = new Point(308, 124);
+      btnControllerInputScan.Location = new Point(246, 96);
       btnControllerInputScan.Name = "btnControllerInputScan";
       btnControllerInputScan.Size = new Size(55, 23);
       btnControllerInputScan.TabIndex = 144;
@@ -4132,15 +4007,15 @@ namespace MilkwaveRemote
       // 
       cboInputController.DropDownStyle = ComboBoxStyle.DropDownList;
       cboInputController.FormattingEnabled = true;
-      cboInputController.Location = new Point(69, 125);
+      cboInputController.Location = new Point(69, 96);
       cboInputController.Name = "cboInputController";
-      cboInputController.Size = new Size(232, 23);
+      cboInputController.Size = new Size(167, 23);
       cboInputController.TabIndex = 143;
       // 
       // btnSpoutInputScan
       // 
       btnSpoutInputScan.FlatStyle = FlatStyle.System;
-      btnSpoutInputScan.Location = new Point(308, 37);
+      btnSpoutInputScan.Location = new Point(246, 37);
       btnSpoutInputScan.Name = "btnSpoutInputScan";
       btnSpoutInputScan.Size = new Size(55, 23);
       btnSpoutInputScan.TabIndex = 131;
@@ -4154,14 +4029,14 @@ namespace MilkwaveRemote
       cboSputInput.FormattingEnabled = true;
       cboSputInput.Location = new Point(69, 38);
       cboSputInput.Name = "cboSputInput";
-      cboSputInput.Size = new Size(232, 23);
+      cboSputInput.Size = new Size(167, 23);
       cboSputInput.TabIndex = 129;
       cboSputInput.SelectedIndexChanged += cboSpoutInput_SelectedIndexChanged;
       // 
       // btnVideoInputScan
       // 
       btnVideoInputScan.FlatStyle = FlatStyle.System;
-      btnVideoInputScan.Location = new Point(308, 8);
+      btnVideoInputScan.Location = new Point(246, 8);
       btnVideoInputScan.Name = "btnVideoInputScan";
       btnVideoInputScan.Size = new Size(55, 23);
       btnVideoInputScan.TabIndex = 127;
@@ -4175,9 +4050,480 @@ namespace MilkwaveRemote
       cboVideoInput.FormattingEnabled = true;
       cboVideoInput.Location = new Point(69, 9);
       cboVideoInput.Name = "cboVideoInput";
-      cboVideoInput.Size = new Size(232, 23);
+      cboVideoInput.Size = new Size(167, 23);
       cboVideoInput.TabIndex = 101;
       cboVideoInput.SelectedIndexChanged += cboVideoInput_SelectedIndexChanged;
+      // 
+      // tabSettings
+      // 
+      tabSettings.BackColor = SystemColors.ControlLight;
+      tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(numFFTDecay);
+      tabSettings.Controls.Add(numFFTAttack);
+      tabSettings.Controls.Add(label20);
+      tabSettings.Controls.Add(btnCacheClear);
+      tabSettings.Controls.Add(btnCacheCompile);
+      tabSettings.Controls.Add(label19);
+      tabSettings.Controls.Add(chkHueAuto);
+      tabSettings.Controls.Add(numSettingsHueAuto);
+      tabSettings.Controls.Add(chkQualityAuto);
+      tabSettings.Controls.Add(numSettingsBrightness);
+      tabSettings.Controls.Add(lblBrightness);
+      tabSettings.Controls.Add(numSettingsSaturation);
+      tabSettings.Controls.Add(lblSaturation);
+      tabSettings.Controls.Add(numSettingsHue);
+      tabSettings.Controls.Add(lblHue);
+      tabSettings.Controls.Add(btnQualityDouble);
+      tabSettings.Controls.Add(btnQualityHalf);
+      tabSettings.Controls.Add(numQuality);
+      tabSettings.Controls.Add(lblQuality);
+      tabSettings.Controls.Add(cboSpoutHeight);
+      tabSettings.Controls.Add(cboSpoutWidth);
+      tabSettings.Controls.Add(chkSpoutFixedSize);
+      tabSettings.Controls.Add(chkSpoutActive);
+      tabSettings.Controls.Add(lblSpout);
+      tabSettings.Controls.Add(numVisVersion);
+      tabSettings.Controls.Add(lblVisVersion);
+      tabSettings.Controls.Add(numVisShift);
+      tabSettings.Controls.Add(lblVisShift);
+      tabSettings.Controls.Add(numVisIntensity);
+      tabSettings.Controls.Add(lblVisIntensity);
+      tabSettings.Controls.Add(numFactorFPS);
+      tabSettings.Controls.Add(lblFactorFPS);
+      tabSettings.Controls.Add(numFactorFrame);
+      tabSettings.Controls.Add(numFactorTime);
+      tabSettings.Controls.Add(lblFactorFrame);
+      tabSettings.Controls.Add(lblFactorTime);
+      tabSettings.Location = new Point(4, 24);
+      tabSettings.Margin = new Padding(0);
+      tabSettings.Name = "tabSettings";
+      tabSettings.Size = new Size(611, 183);
+      tabSettings.TabIndex = 4;
+      tabSettings.Text = "Settings";
+      // 
+      // numFFTDecay
+      // 
+      numFFTDecay.DecimalPlaces = 2;
+      numFFTDecay.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFFTDecay.Location = new Point(473, 65);
+      numFFTDecay.Margin = new Padding(3, 2, 3, 2);
+      numFFTDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numFFTDecay.Name = "numFFTDecay";
+      numFFTDecay.Size = new Size(56, 23);
+      numFFTDecay.TabIndex = 188;
+      numFFTDecay.TextAlign = HorizontalAlignment.Center;
+      numFFTDecay.Value = new decimal(new int[] { 7, 0, 0, 65536 });
+      numFFTDecay.ValueChanged += numFFTDecay_ValueChanged;
+      // 
+      // numFFTAttack
+      // 
+      numFFTAttack.DecimalPlaces = 2;
+      numFFTAttack.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFFTAttack.Location = new Point(406, 65);
+      numFFTAttack.Margin = new Padding(3, 2, 3, 2);
+      numFFTAttack.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numFFTAttack.Name = "numFFTAttack";
+      numFFTAttack.Size = new Size(56, 23);
+      numFFTAttack.TabIndex = 187;
+      numFFTAttack.TextAlign = HorizontalAlignment.Center;
+      numFFTAttack.Value = new decimal(new int[] { 50, 0, 0, 131072 });
+      numFFTAttack.ValueChanged += numFFTAttack_ValueChanged;
+      // 
+      // btnCacheClear
+      // 
+      btnCacheClear.Location = new Point(141, 152);
+      btnCacheClear.Name = "btnCacheClear";
+      btnCacheClear.Size = new Size(59, 23);
+      btnCacheClear.TabIndex = 185;
+      btnCacheClear.Text = "Clear";
+      btnCacheClear.UseVisualStyleBackColor = true;
+      btnCacheClear.Click += btnCacheClear_Click;
+      // 
+      // btnCacheCompile
+      // 
+      btnCacheCompile.Location = new Point(75, 152);
+      btnCacheCompile.Name = "btnCacheCompile";
+      btnCacheCompile.Size = new Size(60, 23);
+      btnCacheCompile.TabIndex = 184;
+      btnCacheCompile.Text = "Compile";
+      btnCacheCompile.UseVisualStyleBackColor = true;
+      btnCacheCompile.Click += btnCacheCompile_Click;
+      // 
+      // label19
+      // 
+      label19.Location = new Point(19, 152);
+      label19.Name = "label19";
+      label19.Size = new Size(51, 23);
+      label19.TabIndex = 183;
+      label19.Text = "Cache";
+      label19.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // numSettingsBrightness
+      // 
+      numSettingsBrightness.DecimalPlaces = 2;
+      numSettingsBrightness.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
+      numSettingsBrightness.Location = new Point(540, 36);
+      numSettingsBrightness.Margin = new Padding(3, 2, 3, 2);
+      numSettingsBrightness.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numSettingsBrightness.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
+      numSettingsBrightness.Name = "numSettingsBrightness";
+      numSettingsBrightness.Size = new Size(56, 23);
+      numSettingsBrightness.TabIndex = 168;
+      numSettingsBrightness.TextAlign = HorizontalAlignment.Center;
+      numSettingsBrightness.ValueChanged += numSettingsBrightness_ValueChanged;
+      // 
+      // numSettingsSaturation
+      // 
+      numSettingsSaturation.DecimalPlaces = 2;
+      numSettingsSaturation.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
+      numSettingsSaturation.Location = new Point(406, 36);
+      numSettingsSaturation.Margin = new Padding(3, 2, 3, 2);
+      numSettingsSaturation.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numSettingsSaturation.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
+      numSettingsSaturation.Name = "numSettingsSaturation";
+      numSettingsSaturation.Size = new Size(56, 23);
+      numSettingsSaturation.TabIndex = 166;
+      numSettingsSaturation.TextAlign = HorizontalAlignment.Center;
+      numSettingsSaturation.ValueChanged += numSettingsSaturation_ValueChanged;
+      // 
+      // numSettingsHue
+      // 
+      numSettingsHue.DecimalPlaces = 2;
+      numSettingsHue.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
+      numSettingsHue.Location = new Point(406, 7);
+      numSettingsHue.Margin = new Padding(3, 2, 3, 2);
+      numSettingsHue.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numSettingsHue.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
+      numSettingsHue.Name = "numSettingsHue";
+      numSettingsHue.Size = new Size(56, 23);
+      numSettingsHue.TabIndex = 164;
+      numSettingsHue.TextAlign = HorizontalAlignment.Center;
+      numSettingsHue.ValueChanged += numSettingsHue_ValueChanged;
+      // 
+      // btnQualityDouble
+      // 
+      btnQualityDouble.Location = new Point(212, 93);
+      btnQualityDouble.Name = "btnQualityDouble";
+      btnQualityDouble.Size = new Size(56, 23);
+      btnQualityDouble.TabIndex = 163;
+      btnQualityDouble.Text = "Double";
+      btnQualityDouble.UseVisualStyleBackColor = true;
+      btnQualityDouble.Click += btnQualityDouble_Click;
+      // 
+      // btnQualityHalf
+      // 
+      btnQualityHalf.Location = new Point(142, 93);
+      btnQualityHalf.Name = "btnQualityHalf";
+      btnQualityHalf.Size = new Size(58, 23);
+      btnQualityHalf.TabIndex = 162;
+      btnQualityHalf.Text = "Half";
+      btnQualityHalf.UseVisualStyleBackColor = true;
+      btnQualityHalf.Click += btnQualityHalf_Click;
+      // 
+      // numQuality
+      // 
+      numQuality.DecimalPlaces = 2;
+      numQuality.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
+      numQuality.Location = new Point(75, 94);
+      numQuality.Margin = new Padding(3, 2, 3, 2);
+      numQuality.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numQuality.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
+      numQuality.Name = "numQuality";
+      numQuality.Size = new Size(56, 23);
+      numQuality.TabIndex = 160;
+      numQuality.TextAlign = HorizontalAlignment.Center;
+      numQuality.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numQuality.ValueChanged += numQuality_ValueChanged;
+      // 
+      // numFactorFPS
+      // 
+      numFactorFPS.DecimalPlaces = 2;
+      numFactorFPS.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFactorFPS.Location = new Point(75, 36);
+      numFactorFPS.Margin = new Padding(3, 2, 3, 2);
+      numFactorFPS.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorFPS.Name = "numFactorFPS";
+      numFactorFPS.Size = new Size(56, 23);
+      numFactorFPS.TabIndex = 141;
+      numFactorFPS.TextAlign = HorizontalAlignment.Center;
+      numFactorFPS.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorFPS.ValueChanged += numFactorFPS_ValueChanged;
+      // 
+      // numFactorFrame
+      // 
+      numFactorFrame.Location = new Point(75, 65);
+      numFactorFrame.Margin = new Padding(3, 2, 3, 2);
+      numFactorFrame.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorFrame.Name = "numFactorFrame";
+      numFactorFrame.Size = new Size(56, 23);
+      numFactorFrame.TabIndex = 139;
+      numFactorFrame.TextAlign = HorizontalAlignment.Center;
+      numFactorFrame.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorFrame.ValueChanged += munFactorFrame_ValueChanged;
+      // 
+      // numFactorTime
+      // 
+      numFactorTime.DecimalPlaces = 2;
+      numFactorTime.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numFactorTime.Location = new Point(75, 7);
+      numFactorTime.Margin = new Padding(3, 2, 3, 2);
+      numFactorTime.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
+      numFactorTime.Name = "numFactorTime";
+      numFactorTime.Size = new Size(56, 23);
+      numFactorTime.TabIndex = 137;
+      numFactorTime.TextAlign = HorizontalAlignment.Center;
+      numFactorTime.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numFactorTime.ValueChanged += numFactorTime_ValueChanged;
+      // 
+      // tabFonts
+      // 
+      tabFonts.BackColor = SystemColors.ControlLight;
+      tabFonts.BorderStyle = BorderStyle.FixedSingle;
+      tabFonts.Controls.Add(chkMenuAA);
+      tabFonts.Controls.Add(chkMenuItalic);
+      tabFonts.Controls.Add(chkMenuBold);
+      tabFonts.Controls.Add(lblMenu);
+      tabFonts.Controls.Add(numFontMenu);
+      tabFonts.Controls.Add(cboFontMenu);
+      tabFonts.Controls.Add(pnlColorMenu);
+      tabFonts.Controls.Add(btnFontGlobalPlus);
+      tabFonts.Controls.Add(btnFontGlobalMinus);
+      tabFonts.Controls.Add(btnTestFonts);
+      tabFonts.Controls.Add(chkFontAA5);
+      tabFonts.Controls.Add(chkFontItalic5);
+      tabFonts.Controls.Add(chkFontBold5);
+      tabFonts.Controls.Add(lblFont5);
+      tabFonts.Controls.Add(numFont5);
+      tabFonts.Controls.Add(cboFont5);
+      tabFonts.Controls.Add(pnlColorFont5);
+      tabFonts.Controls.Add(chkFontAA4);
+      tabFonts.Controls.Add(chkFontItalic4);
+      tabFonts.Controls.Add(chkFontBold4);
+      tabFonts.Controls.Add(lblFont4);
+      tabFonts.Controls.Add(numFont4);
+      tabFonts.Controls.Add(cboFont4);
+      tabFonts.Controls.Add(pnlColorFont4);
+      tabFonts.Controls.Add(chkFontAA3);
+      tabFonts.Controls.Add(chkFontItalic3);
+      tabFonts.Controls.Add(chkFontBold3);
+      tabFonts.Controls.Add(lblFont3);
+      tabFonts.Controls.Add(numFont3);
+      tabFonts.Controls.Add(cboFont3);
+      tabFonts.Controls.Add(pnlColorFont3);
+      tabFonts.Controls.Add(chkFontAA2);
+      tabFonts.Controls.Add(chkFontItalic2);
+      tabFonts.Controls.Add(chkFontBold2);
+      tabFonts.Controls.Add(lblFont2);
+      tabFonts.Controls.Add(numFont2);
+      tabFonts.Controls.Add(cboFont2);
+      tabFonts.Controls.Add(pnlColorFont2);
+      tabFonts.Controls.Add(btnSettingsSave);
+      tabFonts.Controls.Add(chkFontAA1);
+      tabFonts.Controls.Add(chkFontItalic1);
+      tabFonts.Controls.Add(chkFontBold1);
+      tabFonts.Controls.Add(lblFont1);
+      tabFonts.Controls.Add(numFont1);
+      tabFonts.Controls.Add(cboFont1);
+      tabFonts.Controls.Add(pnlColorFont1);
+      tabFonts.Controls.Add(btnSettingsLoad);
+      tabFonts.Location = new Point(4, 24);
+      tabFonts.Margin = new Padding(0);
+      tabFonts.Name = "tabFonts";
+      tabFonts.Size = new Size(611, 183);
+      tabFonts.TabIndex = 3;
+      tabFonts.Text = "Fonts";
+      // 
+      // chkMenuItalic
+      // 
+      chkMenuItalic.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkMenuItalic.Appearance = Appearance.Button;
+      chkMenuItalic.FlatStyle = FlatStyle.System;
+      chkMenuItalic.Location = new Point(406, 65);
+      chkMenuItalic.Margin = new Padding(3, 2, 3, 2);
+      chkMenuItalic.Name = "chkMenuItalic";
+      chkMenuItalic.Size = new Size(49, 23);
+      chkMenuItalic.TabIndex = 167;
+      chkMenuItalic.Text = "Italic";
+      chkMenuItalic.TextAlign = ContentAlignment.MiddleCenter;
+      chkMenuItalic.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkMenuItalic.UseVisualStyleBackColor = true;
+      // 
+      // chkMenuBold
+      // 
+      chkMenuBold.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkMenuBold.Appearance = Appearance.Button;
+      chkMenuBold.FlatStyle = FlatStyle.System;
+      chkMenuBold.Location = new Point(351, 65);
+      chkMenuBold.Margin = new Padding(3, 2, 3, 2);
+      chkMenuBold.Name = "chkMenuBold";
+      chkMenuBold.Size = new Size(49, 23);
+      chkMenuBold.TabIndex = 166;
+      chkMenuBold.Text = "Bold";
+      chkMenuBold.TextAlign = ContentAlignment.MiddleCenter;
+      chkMenuBold.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkMenuBold.UseVisualStyleBackColor = true;
+      // 
+      // btnTestFonts
+      // 
+      btnTestFonts.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnTestFonts.FlatStyle = FlatStyle.System;
+      btnTestFonts.Location = new Point(516, 95);
+      btnTestFonts.Name = "btnTestFonts";
+      btnTestFonts.Size = new Size(85, 22);
+      btnTestFonts.TabIndex = 159;
+      btnTestFonts.Text = "Test";
+      btnTestFonts.UseVisualStyleBackColor = true;
+      btnTestFonts.Click += btnTestFonts_Click;
+      // 
+      // chkFontItalic5
+      // 
+      chkFontItalic5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic5.Appearance = Appearance.Button;
+      chkFontItalic5.FlatStyle = FlatStyle.System;
+      chkFontItalic5.Location = new Point(406, 152);
+      chkFontItalic5.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic5.Name = "chkFontItalic5";
+      chkFontItalic5.Size = new Size(49, 23);
+      chkFontItalic5.TabIndex = 157;
+      chkFontItalic5.Text = "Italic";
+      chkFontItalic5.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic5.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic5.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold5
+      // 
+      chkFontBold5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold5.Appearance = Appearance.Button;
+      chkFontBold5.FlatStyle = FlatStyle.System;
+      chkFontBold5.Location = new Point(351, 152);
+      chkFontBold5.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold5.Name = "chkFontBold5";
+      chkFontBold5.Size = new Size(49, 23);
+      chkFontBold5.TabIndex = 156;
+      chkFontBold5.Text = "Bold";
+      chkFontBold5.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold5.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold5.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic4
+      // 
+      chkFontItalic4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic4.Appearance = Appearance.Button;
+      chkFontItalic4.FlatStyle = FlatStyle.System;
+      chkFontItalic4.Location = new Point(406, 123);
+      chkFontItalic4.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic4.Name = "chkFontItalic4";
+      chkFontItalic4.Size = new Size(49, 23);
+      chkFontItalic4.TabIndex = 150;
+      chkFontItalic4.Text = "Italic";
+      chkFontItalic4.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic4.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic4.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold4
+      // 
+      chkFontBold4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold4.Appearance = Appearance.Button;
+      chkFontBold4.FlatStyle = FlatStyle.System;
+      chkFontBold4.Location = new Point(351, 123);
+      chkFontBold4.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold4.Name = "chkFontBold4";
+      chkFontBold4.Size = new Size(49, 23);
+      chkFontBold4.TabIndex = 149;
+      chkFontBold4.Text = "Bold";
+      chkFontBold4.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold4.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold4.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic3
+      // 
+      chkFontItalic3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic3.Appearance = Appearance.Button;
+      chkFontItalic3.FlatStyle = FlatStyle.System;
+      chkFontItalic3.Location = new Point(406, 94);
+      chkFontItalic3.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic3.Name = "chkFontItalic3";
+      chkFontItalic3.Size = new Size(49, 23);
+      chkFontItalic3.TabIndex = 143;
+      chkFontItalic3.Text = "Italic";
+      chkFontItalic3.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic3.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic3.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold3
+      // 
+      chkFontBold3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold3.Appearance = Appearance.Button;
+      chkFontBold3.FlatStyle = FlatStyle.System;
+      chkFontBold3.Location = new Point(351, 94);
+      chkFontBold3.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold3.Name = "chkFontBold3";
+      chkFontBold3.Size = new Size(49, 23);
+      chkFontBold3.TabIndex = 142;
+      chkFontBold3.Text = "Bold";
+      chkFontBold3.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold3.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold3.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic2
+      // 
+      chkFontItalic2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic2.Appearance = Appearance.Button;
+      chkFontItalic2.FlatStyle = FlatStyle.System;
+      chkFontItalic2.Location = new Point(406, 36);
+      chkFontItalic2.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic2.Name = "chkFontItalic2";
+      chkFontItalic2.Size = new Size(49, 23);
+      chkFontItalic2.TabIndex = 136;
+      chkFontItalic2.Text = "Italic";
+      chkFontItalic2.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic2.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic2.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold2
+      // 
+      chkFontBold2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold2.Appearance = Appearance.Button;
+      chkFontBold2.FlatStyle = FlatStyle.System;
+      chkFontBold2.Location = new Point(351, 36);
+      chkFontBold2.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold2.Name = "chkFontBold2";
+      chkFontBold2.Size = new Size(49, 23);
+      chkFontBold2.TabIndex = 135;
+      chkFontBold2.Text = "Bold";
+      chkFontBold2.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold2.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold2.UseVisualStyleBackColor = true;
+      // 
+      // chkFontItalic1
+      // 
+      chkFontItalic1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontItalic1.Appearance = Appearance.Button;
+      chkFontItalic1.FlatStyle = FlatStyle.System;
+      chkFontItalic1.Location = new Point(406, 7);
+      chkFontItalic1.Margin = new Padding(3, 2, 3, 2);
+      chkFontItalic1.Name = "chkFontItalic1";
+      chkFontItalic1.Size = new Size(49, 23);
+      chkFontItalic1.TabIndex = 126;
+      chkFontItalic1.Text = "Italic";
+      chkFontItalic1.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontItalic1.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontItalic1.UseVisualStyleBackColor = true;
+      // 
+      // chkFontBold1
+      // 
+      chkFontBold1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkFontBold1.Appearance = Appearance.Button;
+      chkFontBold1.FlatStyle = FlatStyle.System;
+      chkFontBold1.Location = new Point(351, 7);
+      chkFontBold1.Margin = new Padding(3, 2, 3, 2);
+      chkFontBold1.Name = "chkFontBold1";
+      chkFontBold1.Size = new Size(49, 23);
+      chkFontBold1.TabIndex = 125;
+      chkFontBold1.Text = "Bold";
+      chkFontBold1.TextAlign = ContentAlignment.MiddleCenter;
+      chkFontBold1.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkFontBold1.UseVisualStyleBackColor = true;
       // 
       // tabMidi
       // 
@@ -4658,500 +5004,167 @@ namespace MilkwaveRemote
       txtMidi1Inc.TextAlign = HorizontalAlignment.Center;
       txtMidi1Inc.TextChanged += txtMidiInc_TextChanged;
       // 
-      // tabSettings
+      // tabWave
       // 
-      tabSettings.BackColor = SystemColors.ControlLight;
-      tabSettings.BorderStyle = BorderStyle.FixedSingle;
-      tabSettings.Controls.Add(numFFTDecay);
-      tabSettings.Controls.Add(numFFTAttack);
-      tabSettings.Controls.Add(label20);
-      tabSettings.Controls.Add(btnCacheClear);
-      tabSettings.Controls.Add(btnCacheCompile);
-      tabSettings.Controls.Add(label19);
-      tabSettings.Controls.Add(btnMessagesEditorOpen);
-      tabSettings.Controls.Add(label18);
-      tabSettings.Controls.Add(label17);
-      tabSettings.Controls.Add(chkSettingsPresetRandom);
-      tabSettings.Controls.Add(label9);
-      tabSettings.Controls.Add(chkPresetLocked);
-      tabSettings.Controls.Add(numPresetChange);
-      tabSettings.Controls.Add(lblChangePreset);
-      tabSettings.Controls.Add(chkHueAuto);
-      tabSettings.Controls.Add(numSettingsHueAuto);
-      tabSettings.Controls.Add(chkQualityAuto);
-      tabSettings.Controls.Add(cboSettingsOpenFile);
-      tabSettings.Controls.Add(numSettingsBrightness);
-      tabSettings.Controls.Add(lblBrightness);
-      tabSettings.Controls.Add(numSettingsSaturation);
-      tabSettings.Controls.Add(lblSaturation);
-      tabSettings.Controls.Add(numSettingsHue);
-      tabSettings.Controls.Add(lblHue);
-      tabSettings.Controls.Add(btnQualityDouble);
-      tabSettings.Controls.Add(btnQualityHalf);
-      tabSettings.Controls.Add(numQuality);
-      tabSettings.Controls.Add(lblQuality);
-      tabSettings.Controls.Add(cboSpoutHeight);
-      tabSettings.Controls.Add(cboSpoutWidth);
-      tabSettings.Controls.Add(chkSpoutFixedSize);
-      tabSettings.Controls.Add(chkSpoutActive);
-      tabSettings.Controls.Add(lblSpout);
-      tabSettings.Controls.Add(numVisVersion);
-      tabSettings.Controls.Add(lblVisVersion);
-      tabSettings.Controls.Add(numVisShift);
-      tabSettings.Controls.Add(lblVisShift);
-      tabSettings.Controls.Add(numVisIntensity);
-      tabSettings.Controls.Add(lblVisIntensity);
-      tabSettings.Controls.Add(btnOpenSettingsFile);
-      tabSettings.Controls.Add(numFactorFPS);
-      tabSettings.Controls.Add(lblFactorFPS);
-      tabSettings.Controls.Add(numFactorFrame);
-      tabSettings.Controls.Add(numFactorTime);
-      tabSettings.Controls.Add(lblFactorFrame);
-      tabSettings.Controls.Add(lblFactorTime);
-      tabSettings.Location = new Point(4, 24);
-      tabSettings.Margin = new Padding(0);
-      tabSettings.Name = "tabSettings";
-      tabSettings.Size = new Size(611, 183);
-      tabSettings.TabIndex = 4;
-      tabSettings.Text = "Settings";
+      tabWave.BackColor = SystemColors.ControlLight;
+      tabWave.BorderStyle = BorderStyle.FixedSingle;
+      tabWave.Controls.Add(pnlColorWave);
+      tabWave.Controls.Add(numWaveEcho);
+      tabWave.Controls.Add(lblEcho);
+      tabWave.Controls.Add(numWaveScale);
+      tabWave.Controls.Add(lblScale);
+      tabWave.Controls.Add(chkWaveVolAlpha);
+      tabWave.Controls.Add(chkWaveThick);
+      tabWave.Controls.Add(chkWaveDotted);
+      tabWave.Controls.Add(chkWaveAdditive);
+      tabWave.Controls.Add(chkWaveInvert);
+      tabWave.Controls.Add(chkWaveSolarize);
+      tabWave.Controls.Add(chkWaveDarken);
+      tabWave.Controls.Add(chkWaveBrighten);
+      tabWave.Controls.Add(btnWaveQuicksave);
+      tabWave.Controls.Add(numWaveDecay);
+      tabWave.Controls.Add(numWaveWarp);
+      tabWave.Controls.Add(numWaveRotation);
+      tabWave.Controls.Add(numWaveZoom);
+      tabWave.Controls.Add(numWavePushY);
+      tabWave.Controls.Add(numWavePushX);
+      tabWave.Controls.Add(btnWaveClear);
+      tabWave.Controls.Add(numWaveG);
+      tabWave.Controls.Add(numWaveB);
+      tabWave.Controls.Add(numWaveR);
+      tabWave.Controls.Add(chkWaveLink);
+      tabWave.Controls.Add(numWaveMode);
+      tabWave.Controls.Add(btnSendWave);
+      tabWave.Controls.Add(numWaveAlpha);
+      tabWave.Controls.Add(lblDecay);
+      tabWave.Controls.Add(lblWarp);
+      tabWave.Controls.Add(lblRotation);
+      tabWave.Controls.Add(lblZoom);
+      tabWave.Controls.Add(lblPushY);
+      tabWave.Controls.Add(lblPushX);
+      tabWave.Controls.Add(lblRGB);
+      tabWave.Controls.Add(lblWavemode);
+      tabWave.Location = new Point(4, 24);
+      tabWave.Margin = new Padding(0);
+      tabWave.Name = "tabWave";
+      tabWave.Size = new Size(611, 183);
+      tabWave.TabIndex = 2;
+      tabWave.Text = "Wave";
       // 
-      // numFFTDecay
+      // numWaveEcho
       // 
-      numFFTDecay.DecimalPlaces = 2;
-      numFFTDecay.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFFTDecay.Location = new Point(473, 151);
-      numFFTDecay.Margin = new Padding(3, 2, 3, 2);
-      numFFTDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numFFTDecay.Name = "numFFTDecay";
-      numFFTDecay.Size = new Size(56, 23);
-      numFFTDecay.TabIndex = 188;
-      numFFTDecay.TextAlign = HorizontalAlignment.Center;
-      numFFTDecay.Value = new decimal(new int[] { 7, 0, 0, 65536 });
-      numFFTDecay.ValueChanged += numFFTDecay_ValueChanged;
+      numWaveEcho.DecimalPlaces = 3;
+      numWaveEcho.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWaveEcho.Location = new Point(410, 68);
+      numWaveEcho.Margin = new Padding(3, 2, 3, 2);
+      numWaveEcho.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
+      numWaveEcho.Name = "numWaveEcho";
+      numWaveEcho.Size = new Size(56, 23);
+      numWaveEcho.TabIndex = 150;
+      numWaveEcho.TextAlign = HorizontalAlignment.Center;
+      numWaveEcho.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numWaveEcho.ValueChanged += ctrlWave_ValueChanged;
       // 
-      // numFFTAttack
+      // numWaveScale
       // 
-      numFFTAttack.DecimalPlaces = 2;
-      numFFTAttack.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFFTAttack.Location = new Point(406, 151);
-      numFFTAttack.Margin = new Padding(3, 2, 3, 2);
-      numFFTAttack.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numFFTAttack.Name = "numFFTAttack";
-      numFFTAttack.Size = new Size(56, 23);
-      numFFTAttack.TabIndex = 187;
-      numFFTAttack.TextAlign = HorizontalAlignment.Center;
-      numFFTAttack.Value = new decimal(new int[] { 50, 0, 0, 131072 });
-      numFFTAttack.ValueChanged += numFFTAttack_ValueChanged;
+      numWaveScale.DecimalPlaces = 3;
+      numWaveScale.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWaveScale.Location = new Point(410, 37);
+      numWaveScale.Margin = new Padding(3, 2, 3, 2);
+      numWaveScale.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
+      numWaveScale.Name = "numWaveScale";
+      numWaveScale.Size = new Size(56, 23);
+      numWaveScale.TabIndex = 148;
+      numWaveScale.TextAlign = HorizontalAlignment.Center;
+      numWaveScale.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numWaveScale.ValueChanged += ctrlWave_ValueChanged;
       // 
-      // btnCacheClear
+      // numWaveDecay
       // 
-      btnCacheClear.Location = new Point(472, 121);
-      btnCacheClear.Name = "btnCacheClear";
-      btnCacheClear.Size = new Size(57, 23);
-      btnCacheClear.TabIndex = 185;
-      btnCacheClear.Text = "Clear";
-      btnCacheClear.UseVisualStyleBackColor = true;
-      btnCacheClear.Click += btnCacheClear_Click;
+      numWaveDecay.DecimalPlaces = 3;
+      numWaveDecay.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWaveDecay.Location = new Point(186, 67);
+      numWaveDecay.Margin = new Padding(3, 2, 3, 2);
+      numWaveDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numWaveDecay.Name = "numWaveDecay";
+      numWaveDecay.Size = new Size(56, 23);
+      numWaveDecay.TabIndex = 137;
+      numWaveDecay.TextAlign = HorizontalAlignment.Center;
+      numWaveDecay.ValueChanged += ctrlWave_ValueChanged;
       // 
-      // btnCacheCompile
+      // numWaveWarp
       // 
-      btnCacheCompile.Location = new Point(406, 121);
-      btnCacheCompile.Name = "btnCacheCompile";
-      btnCacheCompile.Size = new Size(60, 23);
-      btnCacheCompile.TabIndex = 184;
-      btnCacheCompile.Text = "Compile";
-      btnCacheCompile.UseVisualStyleBackColor = true;
-      btnCacheCompile.Click += btnCacheCompile_Click;
+      numWaveWarp.DecimalPlaces = 3;
+      numWaveWarp.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWaveWarp.Location = new Point(298, 67);
+      numWaveWarp.Margin = new Padding(3, 2, 3, 2);
+      numWaveWarp.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
+      numWaveWarp.Name = "numWaveWarp";
+      numWaveWarp.Size = new Size(56, 23);
+      numWaveWarp.TabIndex = 135;
+      numWaveWarp.TextAlign = HorizontalAlignment.Center;
+      numWaveWarp.ValueChanged += ctrlWave_ValueChanged;
+      numWaveWarp.KeyDown += numWave_KeyDown;
       // 
-      // label19
+      // numWaveRotation
       // 
-      label19.Location = new Point(350, 121);
-      label19.Name = "label19";
-      label19.Size = new Size(51, 23);
-      label19.TabIndex = 183;
-      label19.Text = "Cache";
-      label19.TextAlign = ContentAlignment.MiddleRight;
+      numWaveRotation.DecimalPlaces = 3;
+      numWaveRotation.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWaveRotation.Location = new Point(75, 67);
+      numWaveRotation.Margin = new Padding(3, 2, 3, 2);
+      numWaveRotation.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
+      numWaveRotation.Minimum = new decimal(new int[] { 9999, 0, 0, -2147287040 });
+      numWaveRotation.Name = "numWaveRotation";
+      numWaveRotation.Size = new Size(56, 23);
+      numWaveRotation.TabIndex = 133;
+      numWaveRotation.TextAlign = HorizontalAlignment.Center;
+      numWaveRotation.ValueChanged += ctrlWave_ValueChanged;
+      numWaveRotation.KeyDown += numWave_KeyDown;
       // 
-      // numPresetChange
+      // numWaveZoom
       // 
-      numPresetChange.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numPresetChange.Location = new Point(279, 152);
-      numPresetChange.Margin = new Padding(3, 2, 3, 2);
-      numPresetChange.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
-      numPresetChange.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-      numPresetChange.Name = "numPresetChange";
-      numPresetChange.Size = new Size(56, 23);
-      numPresetChange.TabIndex = 175;
-      numPresetChange.TextAlign = HorizontalAlignment.Center;
-      numPresetChange.Value = new decimal(new int[] { 60, 0, 0, 0 });
-      numPresetChange.ValueChanged += numPresetChange_ValueChanged;
+      numWaveZoom.DecimalPlaces = 3;
+      numWaveZoom.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWaveZoom.Location = new Point(298, 37);
+      numWaveZoom.Margin = new Padding(3, 2, 3, 2);
+      numWaveZoom.Maximum = new decimal(new int[] { 9999, 0, 0, 196608 });
+      numWaveZoom.Name = "numWaveZoom";
+      numWaveZoom.Size = new Size(56, 23);
+      numWaveZoom.TabIndex = 131;
+      numWaveZoom.TextAlign = HorizontalAlignment.Center;
+      numWaveZoom.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numWaveZoom.ValueChanged += ctrlWave_ValueChanged;
+      numWaveZoom.KeyDown += numWave_KeyDown;
       // 
-      // numSettingsBrightness
+      // numWavePushY
       // 
-      numSettingsBrightness.DecimalPlaces = 2;
-      numSettingsBrightness.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numSettingsBrightness.Location = new Point(406, 65);
-      numSettingsBrightness.Margin = new Padding(3, 2, 3, 2);
-      numSettingsBrightness.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numSettingsBrightness.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
-      numSettingsBrightness.Name = "numSettingsBrightness";
-      numSettingsBrightness.Size = new Size(56, 23);
-      numSettingsBrightness.TabIndex = 168;
-      numSettingsBrightness.TextAlign = HorizontalAlignment.Center;
-      numSettingsBrightness.ValueChanged += numSettingsBrightness_ValueChanged;
+      numWavePushY.DecimalPlaces = 3;
+      numWavePushY.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWavePushY.Location = new Point(186, 37);
+      numWavePushY.Margin = new Padding(3, 2, 3, 2);
+      numWavePushY.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numWavePushY.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
+      numWavePushY.Name = "numWavePushY";
+      numWavePushY.Size = new Size(56, 23);
+      numWavePushY.TabIndex = 129;
+      numWavePushY.TextAlign = HorizontalAlignment.Center;
+      numWavePushY.ValueChanged += ctrlWave_ValueChanged;
+      numWavePushY.KeyDown += numWave_KeyDown;
       // 
-      // numSettingsSaturation
+      // numWavePushX
       // 
-      numSettingsSaturation.DecimalPlaces = 2;
-      numSettingsSaturation.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numSettingsSaturation.Location = new Point(406, 36);
-      numSettingsSaturation.Margin = new Padding(3, 2, 3, 2);
-      numSettingsSaturation.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numSettingsSaturation.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
-      numSettingsSaturation.Name = "numSettingsSaturation";
-      numSettingsSaturation.Size = new Size(56, 23);
-      numSettingsSaturation.TabIndex = 166;
-      numSettingsSaturation.TextAlign = HorizontalAlignment.Center;
-      numSettingsSaturation.ValueChanged += numSettingsSaturation_ValueChanged;
-      // 
-      // numSettingsHue
-      // 
-      numSettingsHue.DecimalPlaces = 2;
-      numSettingsHue.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numSettingsHue.Location = new Point(406, 7);
-      numSettingsHue.Margin = new Padding(3, 2, 3, 2);
-      numSettingsHue.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numSettingsHue.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
-      numSettingsHue.Name = "numSettingsHue";
-      numSettingsHue.Size = new Size(56, 23);
-      numSettingsHue.TabIndex = 164;
-      numSettingsHue.TextAlign = HorizontalAlignment.Center;
-      numSettingsHue.ValueChanged += numSettingsHue_ValueChanged;
-      // 
-      // btnQualityDouble
-      // 
-      btnQualityDouble.Location = new Point(212, 92);
-      btnQualityDouble.Name = "btnQualityDouble";
-      btnQualityDouble.Size = new Size(56, 23);
-      btnQualityDouble.TabIndex = 163;
-      btnQualityDouble.Text = "Double";
-      btnQualityDouble.UseVisualStyleBackColor = true;
-      btnQualityDouble.Click += btnQualityDouble_Click;
-      // 
-      // btnQualityHalf
-      // 
-      btnQualityHalf.Location = new Point(142, 92);
-      btnQualityHalf.Name = "btnQualityHalf";
-      btnQualityHalf.Size = new Size(58, 23);
-      btnQualityHalf.TabIndex = 162;
-      btnQualityHalf.Text = "Half";
-      btnQualityHalf.UseVisualStyleBackColor = true;
-      btnQualityHalf.Click += btnQualityHalf_Click;
-      // 
-      // numQuality
-      // 
-      numQuality.DecimalPlaces = 2;
-      numQuality.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numQuality.Location = new Point(75, 93);
-      numQuality.Margin = new Padding(3, 2, 3, 2);
-      numQuality.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-      numQuality.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
-      numQuality.Name = "numQuality";
-      numQuality.Size = new Size(56, 23);
-      numQuality.TabIndex = 160;
-      numQuality.TextAlign = HorizontalAlignment.Center;
-      numQuality.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numQuality.ValueChanged += numQuality_ValueChanged;
-      // 
-      // numFactorFPS
-      // 
-      numFactorFPS.DecimalPlaces = 2;
-      numFactorFPS.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFactorFPS.Location = new Point(75, 36);
-      numFactorFPS.Margin = new Padding(3, 2, 3, 2);
-      numFactorFPS.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
-      numFactorFPS.Name = "numFactorFPS";
-      numFactorFPS.Size = new Size(56, 23);
-      numFactorFPS.TabIndex = 141;
-      numFactorFPS.TextAlign = HorizontalAlignment.Center;
-      numFactorFPS.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numFactorFPS.ValueChanged += numFactorFPS_ValueChanged;
-      // 
-      // numFactorFrame
-      // 
-      numFactorFrame.Location = new Point(75, 65);
-      numFactorFrame.Margin = new Padding(3, 2, 3, 2);
-      numFactorFrame.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
-      numFactorFrame.Name = "numFactorFrame";
-      numFactorFrame.Size = new Size(56, 23);
-      numFactorFrame.TabIndex = 139;
-      numFactorFrame.TextAlign = HorizontalAlignment.Center;
-      numFactorFrame.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numFactorFrame.ValueChanged += munFactorFrame_ValueChanged;
-      // 
-      // numFactorTime
-      // 
-      numFactorTime.DecimalPlaces = 2;
-      numFactorTime.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFactorTime.Location = new Point(75, 7);
-      numFactorTime.Margin = new Padding(3, 2, 3, 2);
-      numFactorTime.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
-      numFactorTime.Name = "numFactorTime";
-      numFactorTime.Size = new Size(56, 23);
-      numFactorTime.TabIndex = 137;
-      numFactorTime.TextAlign = HorizontalAlignment.Center;
-      numFactorTime.Value = new decimal(new int[] { 1, 0, 0, 0 });
-      numFactorTime.ValueChanged += numFactorTime_ValueChanged;
-      // 
-      // tabFonts
-      // 
-      tabFonts.BackColor = SystemColors.ControlLight;
-      tabFonts.BorderStyle = BorderStyle.FixedSingle;
-      tabFonts.Controls.Add(chkMenuAA);
-      tabFonts.Controls.Add(chkMenuItalic);
-      tabFonts.Controls.Add(chkMenuBold);
-      tabFonts.Controls.Add(lblMenu);
-      tabFonts.Controls.Add(numFontMenu);
-      tabFonts.Controls.Add(cboFontMenu);
-      tabFonts.Controls.Add(pnlColorMenu);
-      tabFonts.Controls.Add(btnFontGlobalPlus);
-      tabFonts.Controls.Add(btnFontGlobalMinus);
-      tabFonts.Controls.Add(btnTestFonts);
-      tabFonts.Controls.Add(chkFontAA5);
-      tabFonts.Controls.Add(chkFontItalic5);
-      tabFonts.Controls.Add(chkFontBold5);
-      tabFonts.Controls.Add(lblFont5);
-      tabFonts.Controls.Add(numFont5);
-      tabFonts.Controls.Add(cboFont5);
-      tabFonts.Controls.Add(pnlColorFont5);
-      tabFonts.Controls.Add(chkFontAA4);
-      tabFonts.Controls.Add(chkFontItalic4);
-      tabFonts.Controls.Add(chkFontBold4);
-      tabFonts.Controls.Add(lblFont4);
-      tabFonts.Controls.Add(numFont4);
-      tabFonts.Controls.Add(cboFont4);
-      tabFonts.Controls.Add(pnlColorFont4);
-      tabFonts.Controls.Add(chkFontAA3);
-      tabFonts.Controls.Add(chkFontItalic3);
-      tabFonts.Controls.Add(chkFontBold3);
-      tabFonts.Controls.Add(lblFont3);
-      tabFonts.Controls.Add(numFont3);
-      tabFonts.Controls.Add(cboFont3);
-      tabFonts.Controls.Add(pnlColorFont3);
-      tabFonts.Controls.Add(chkFontAA2);
-      tabFonts.Controls.Add(chkFontItalic2);
-      tabFonts.Controls.Add(chkFontBold2);
-      tabFonts.Controls.Add(lblFont2);
-      tabFonts.Controls.Add(numFont2);
-      tabFonts.Controls.Add(cboFont2);
-      tabFonts.Controls.Add(pnlColorFont2);
-      tabFonts.Controls.Add(btnSettingsSave);
-      tabFonts.Controls.Add(chkFontAA1);
-      tabFonts.Controls.Add(chkFontItalic1);
-      tabFonts.Controls.Add(chkFontBold1);
-      tabFonts.Controls.Add(lblFont1);
-      tabFonts.Controls.Add(numFont1);
-      tabFonts.Controls.Add(cboFont1);
-      tabFonts.Controls.Add(pnlColorFont1);
-      tabFonts.Controls.Add(btnSettingsLoad);
-      tabFonts.Location = new Point(4, 24);
-      tabFonts.Margin = new Padding(0);
-      tabFonts.Name = "tabFonts";
-      tabFonts.Size = new Size(611, 183);
-      tabFonts.TabIndex = 3;
-      tabFonts.Text = "Fonts";
-      // 
-      // chkMenuItalic
-      // 
-      chkMenuItalic.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkMenuItalic.Appearance = Appearance.Button;
-      chkMenuItalic.FlatStyle = FlatStyle.System;
-      chkMenuItalic.Location = new Point(406, 65);
-      chkMenuItalic.Margin = new Padding(3, 2, 3, 2);
-      chkMenuItalic.Name = "chkMenuItalic";
-      chkMenuItalic.Size = new Size(49, 23);
-      chkMenuItalic.TabIndex = 167;
-      chkMenuItalic.Text = "Italic";
-      chkMenuItalic.TextAlign = ContentAlignment.MiddleCenter;
-      chkMenuItalic.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkMenuItalic.UseVisualStyleBackColor = true;
-      // 
-      // chkMenuBold
-      // 
-      chkMenuBold.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkMenuBold.Appearance = Appearance.Button;
-      chkMenuBold.FlatStyle = FlatStyle.System;
-      chkMenuBold.Location = new Point(351, 65);
-      chkMenuBold.Margin = new Padding(3, 2, 3, 2);
-      chkMenuBold.Name = "chkMenuBold";
-      chkMenuBold.Size = new Size(49, 23);
-      chkMenuBold.TabIndex = 166;
-      chkMenuBold.Text = "Bold";
-      chkMenuBold.TextAlign = ContentAlignment.MiddleCenter;
-      chkMenuBold.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkMenuBold.UseVisualStyleBackColor = true;
-      // 
-      // btnTestFonts
-      // 
-      btnTestFonts.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnTestFonts.FlatStyle = FlatStyle.System;
-      btnTestFonts.Location = new Point(516, 95);
-      btnTestFonts.Name = "btnTestFonts";
-      btnTestFonts.Size = new Size(85, 22);
-      btnTestFonts.TabIndex = 159;
-      btnTestFonts.Text = "Test";
-      btnTestFonts.UseVisualStyleBackColor = true;
-      btnTestFonts.Click += btnTestFonts_Click;
-      // 
-      // chkFontItalic5
-      // 
-      chkFontItalic5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic5.Appearance = Appearance.Button;
-      chkFontItalic5.FlatStyle = FlatStyle.System;
-      chkFontItalic5.Location = new Point(406, 152);
-      chkFontItalic5.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic5.Name = "chkFontItalic5";
-      chkFontItalic5.Size = new Size(49, 23);
-      chkFontItalic5.TabIndex = 157;
-      chkFontItalic5.Text = "Italic";
-      chkFontItalic5.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic5.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic5.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold5
-      // 
-      chkFontBold5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold5.Appearance = Appearance.Button;
-      chkFontBold5.FlatStyle = FlatStyle.System;
-      chkFontBold5.Location = new Point(351, 152);
-      chkFontBold5.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold5.Name = "chkFontBold5";
-      chkFontBold5.Size = new Size(49, 23);
-      chkFontBold5.TabIndex = 156;
-      chkFontBold5.Text = "Bold";
-      chkFontBold5.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold5.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold5.UseVisualStyleBackColor = true;
-      // 
-      // chkFontItalic4
-      // 
-      chkFontItalic4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic4.Appearance = Appearance.Button;
-      chkFontItalic4.FlatStyle = FlatStyle.System;
-      chkFontItalic4.Location = new Point(406, 123);
-      chkFontItalic4.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic4.Name = "chkFontItalic4";
-      chkFontItalic4.Size = new Size(49, 23);
-      chkFontItalic4.TabIndex = 150;
-      chkFontItalic4.Text = "Italic";
-      chkFontItalic4.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic4.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic4.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold4
-      // 
-      chkFontBold4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold4.Appearance = Appearance.Button;
-      chkFontBold4.FlatStyle = FlatStyle.System;
-      chkFontBold4.Location = new Point(351, 123);
-      chkFontBold4.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold4.Name = "chkFontBold4";
-      chkFontBold4.Size = new Size(49, 23);
-      chkFontBold4.TabIndex = 149;
-      chkFontBold4.Text = "Bold";
-      chkFontBold4.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold4.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold4.UseVisualStyleBackColor = true;
-      // 
-      // chkFontItalic3
-      // 
-      chkFontItalic3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic3.Appearance = Appearance.Button;
-      chkFontItalic3.FlatStyle = FlatStyle.System;
-      chkFontItalic3.Location = new Point(406, 94);
-      chkFontItalic3.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic3.Name = "chkFontItalic3";
-      chkFontItalic3.Size = new Size(49, 23);
-      chkFontItalic3.TabIndex = 143;
-      chkFontItalic3.Text = "Italic";
-      chkFontItalic3.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic3.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic3.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold3
-      // 
-      chkFontBold3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold3.Appearance = Appearance.Button;
-      chkFontBold3.FlatStyle = FlatStyle.System;
-      chkFontBold3.Location = new Point(351, 94);
-      chkFontBold3.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold3.Name = "chkFontBold3";
-      chkFontBold3.Size = new Size(49, 23);
-      chkFontBold3.TabIndex = 142;
-      chkFontBold3.Text = "Bold";
-      chkFontBold3.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold3.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold3.UseVisualStyleBackColor = true;
-      // 
-      // chkFontItalic2
-      // 
-      chkFontItalic2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic2.Appearance = Appearance.Button;
-      chkFontItalic2.FlatStyle = FlatStyle.System;
-      chkFontItalic2.Location = new Point(406, 36);
-      chkFontItalic2.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic2.Name = "chkFontItalic2";
-      chkFontItalic2.Size = new Size(49, 23);
-      chkFontItalic2.TabIndex = 136;
-      chkFontItalic2.Text = "Italic";
-      chkFontItalic2.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic2.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic2.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold2
-      // 
-      chkFontBold2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold2.Appearance = Appearance.Button;
-      chkFontBold2.FlatStyle = FlatStyle.System;
-      chkFontBold2.Location = new Point(351, 36);
-      chkFontBold2.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold2.Name = "chkFontBold2";
-      chkFontBold2.Size = new Size(49, 23);
-      chkFontBold2.TabIndex = 135;
-      chkFontBold2.Text = "Bold";
-      chkFontBold2.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold2.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold2.UseVisualStyleBackColor = true;
-      // 
-      // chkFontItalic1
-      // 
-      chkFontItalic1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontItalic1.Appearance = Appearance.Button;
-      chkFontItalic1.FlatStyle = FlatStyle.System;
-      chkFontItalic1.Location = new Point(406, 7);
-      chkFontItalic1.Margin = new Padding(3, 2, 3, 2);
-      chkFontItalic1.Name = "chkFontItalic1";
-      chkFontItalic1.Size = new Size(49, 23);
-      chkFontItalic1.TabIndex = 126;
-      chkFontItalic1.Text = "Italic";
-      chkFontItalic1.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontItalic1.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontItalic1.UseVisualStyleBackColor = true;
-      // 
-      // chkFontBold1
-      // 
-      chkFontBold1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      chkFontBold1.Appearance = Appearance.Button;
-      chkFontBold1.FlatStyle = FlatStyle.System;
-      chkFontBold1.Location = new Point(351, 7);
-      chkFontBold1.Margin = new Padding(3, 2, 3, 2);
-      chkFontBold1.Name = "chkFontBold1";
-      chkFontBold1.Size = new Size(49, 23);
-      chkFontBold1.TabIndex = 125;
-      chkFontBold1.Text = "Bold";
-      chkFontBold1.TextAlign = ContentAlignment.MiddleCenter;
-      chkFontBold1.TextImageRelation = TextImageRelation.ImageAboveText;
-      chkFontBold1.UseVisualStyleBackColor = true;
+      numWavePushX.DecimalPlaces = 3;
+      numWavePushX.Increment = new decimal(new int[] { 5, 0, 0, 196608 });
+      numWavePushX.Location = new Point(75, 37);
+      numWavePushX.Margin = new Padding(3, 2, 3, 2);
+      numWavePushX.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numWavePushX.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
+      numWavePushX.Name = "numWavePushX";
+      numWavePushX.Size = new Size(56, 23);
+      numWavePushX.TabIndex = 127;
+      numWavePushX.TextAlign = HorizontalAlignment.Center;
+      numWavePushX.ValueChanged += ctrlWave_ValueChanged;
+      numWavePushX.KeyDown += numWave_KeyDown;
       // 
       // tabShader
       // 
@@ -5286,8 +5299,23 @@ namespace MilkwaveRemote
       tabControl.ResumeLayout(false);
       tabPreset.ResumeLayout(false);
       tabPreset.PerformLayout();
+      ((System.ComponentModel.ISupportInitialize)numPresetChange).EndInit();
       tabMessage.ResumeLayout(false);
       tabMessage.PerformLayout();
+      tabInOut.ResumeLayout(false);
+      tabSettings.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)numFFTDecay).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFFTAttack).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsBrightness).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsSaturation).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numSettingsHue).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numQuality).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorFPS).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
+      tabFonts.ResumeLayout(false);
+      tabMidi.ResumeLayout(false);
+      tabMidi.PerformLayout();
       tabWave.ResumeLayout(false);
       ((System.ComponentModel.ISupportInitialize)numWaveEcho).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWaveScale).EndInit();
@@ -5297,21 +5325,6 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numWaveZoom).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushY).EndInit();
       ((System.ComponentModel.ISupportInitialize)numWavePushX).EndInit();
-      tabInput.ResumeLayout(false);
-      tabMidi.ResumeLayout(false);
-      tabMidi.PerformLayout();
-      tabSettings.ResumeLayout(false);
-      ((System.ComponentModel.ISupportInitialize)numFFTDecay).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numFFTAttack).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numPresetChange).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsBrightness).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsSaturation).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numSettingsHue).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numQuality).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorFPS).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
-      ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
-      tabFonts.ResumeLayout(false);
       tabShader.ResumeLayout(false);
       pnlTabShader.ResumeLayout(false);
       pnlTabShader.PerformLayout();
@@ -5405,7 +5418,6 @@ namespace MilkwaveRemote
     private Button btnPresetSend;
     private Button btnPresetLoadDirectory;
     private NumericUpDown numAmpLeft;
-    private Label lblAmp;
     private NumericUpDown numAmpRight;
     private ColorDialog colorDialogWave;
     private CheckBox chkAmpLinked;
@@ -5415,7 +5427,6 @@ namespace MilkwaveRemote
     private Label lblAudioDevice;
     private ComboBox cboAudioDevice;
     private NumericUpDown numOpacity;
-    private Label lblPercent;
     private ToolStripSeparator toolStripSeparator3;
     private Button btnSendFile;
     private ComboBox cboAutoplay;
@@ -5658,9 +5669,9 @@ namespace MilkwaveRemote
     private NumericUpDown numPresetChange;
     private Label lblChangePreset;
     private CheckBox chkPresetLocked;
-    private TabPage tabInput;
+    private TabPage tabInOut;
     private ComboBox cboVideoInput;
-    private Label label10;
+    private Label lblVIdeoIn;
     private CheckBox chkVideoMix;
     private Button btnVideoInputScan;
     private Button btnSpoutInputScan;
@@ -5683,10 +5694,10 @@ namespace MilkwaveRemote
     private Button btnControllerInputConfig;
     private Label label16;
     private CheckBox chkSettingsPresetRandom;
-    private Label label9;
-    private Label label17;
+    private Label lblPresetSettings;
+    private Label lblSettingsOpenFile;
     private Button btnMessagesEditorOpen;
-    private Label label18;
+    private Label lblMessageEditor;
     private Button btnCacheCompile;
     private Label label19;
     private Button btnCacheClear;
@@ -5699,5 +5710,9 @@ namespace MilkwaveRemote
     private NumericUpDown numFontMenu;
     private ComboBox cboFontMenu;
     private Panel pnlColorMenu;
+    private Label label10;
+    private CheckBox chkUseDX12;
+    private Label label9;
+    private Button btnSettingsOpenFile;
   }
 }

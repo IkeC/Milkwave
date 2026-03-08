@@ -1,9 +1,16 @@
 ## v3.6 (unreleased)
 
-* Support for EQ Shader presets
+* Support for equalizer shader presets (FFT)
+  - Adjust FFT attack/decay on Settings tab
+* New preset: IkeC - Equalizer
+  - 5 different versions (switch on Settings tab)
+  - Band peak marking and mouse support (Right-click)
+  - Supports Intensity and Shift parameters
+* DirectX 12 Visualizer support (experimental)
+  - For Visualizer fork [MDropDX12](https://github.com/shanevbg/MDropDX12) by @shanevbg (included)
 * Visualizer menu font can be configured from Remote
 * Visualizer help (F1) adjusts to window size
-* Configurable Visualizer executable and target window (to support Visualizer forks such as MDropDX12 by @shanevbg)
+* Restructured Remote tabs and controls
 * Global stability improvements
 
 You can get a preview build on [my Discord](https://bit.ly/Ikes-Discord).

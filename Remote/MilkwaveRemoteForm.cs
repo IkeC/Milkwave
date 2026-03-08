@@ -48,6 +48,13 @@ namespace MilkwaveRemote {
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+    private const uint SWP_NOSIZE = 0x0001;
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_NOACTIVATE = 0x0010;
+
     private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     private const uint WM_COPYDATA = 0x004A;
@@ -139,6 +146,7 @@ namespace MilkwaveRemote {
     private ShaderHelper ShaderHelper = new ShaderHelper();
     private MidiHelper MidiHelper;
     private RemoteHelper RemoteHelper;
+    private PipeClient pipeClient = new PipeClient();
 
     private OpenFileDialog ofd;
     private OpenFileDialog ofdShader;
@@ -1066,7 +1074,7 @@ namespace MilkwaveRemote {
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
       cboWindowTitle.SelectedIndex = 0;
-      cboSettingsOpenFile.SelectedIndex = 3;
+      cboSettingsOpenFile.SelectedIndex = 0;
 
       InitializeSpriteButtonSupport();
       InitializePresetDeckButtons();
@@ -1075,6 +1083,7 @@ namespace MilkwaveRemote {
     }
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
+      pipeClient.MessageReceived += OnPipeMessageReceived;
       LoadAndSetSettings();
       RefreshSpriteButtonImages();
       ApplyPanelMode(); // This will call UpdateModeToggleButton
@@ -1106,8 +1115,13 @@ namespace MilkwaveRemote {
     private IntPtr StartVisualizerIfNotFound(bool onlyIfNotFound) {
       IntPtr result = FindVisualizerWindow();
       if (result == IntPtr.Zero || !onlyIfNotFound) {
+        // Collect existing visualizer window positions before launch
+        List<(IntPtr hwnd, RECT rect)> existingRects = FindAllVisualizerWindowRects();
+
         // Try to run the visualizer exe (configurable in settings-remote.json)
-        string exeName = string.IsNullOrEmpty(Settings.VisualizerExe) ? "MilkwaveVisualizer.exe" : Settings.VisualizerExe;
+        string exeName = chkUseDX12.Checked
+          ? (string.IsNullOrEmpty(Settings.VisualizerExeDX12) ? "MDropDX12.exe" : Settings.VisualizerExeDX12)
+          : (string.IsNullOrEmpty(Settings.VisualizerExe) ? "MilkwaveVisualizer.exe" : Settings.VisualizerExe);
         string visualizerPath = Path.Combine(BaseDir, exeName);
         if (File.Exists(visualizerPath)) {
           Process.Start(new ProcessStartInfo(visualizerPath) { UseShellExecute = true });
@@ -1119,8 +1133,48 @@ namespace MilkwaveRemote {
           result = FindVisualizerWindow();
           maxWait--;
         }
+
+        // After the new visualizer has fully initialized and restored its own saved position,
+        // move any existing window that is fully covered by the new one.
+        if (result != IntPtr.Zero && existingRects.Count > 0) {
+          IntPtr newHwnd = result;
+          List<(IntPtr hwnd, RECT rect)> oldWindows = existingRects;
+          Task.Delay(1500).ContinueWith(_ => {
+            if (!GetWindowRect(newHwnd, out RECT newRect)) return;
+            foreach (var (hwnd, oldRect) in oldWindows) {
+              // Check if the old window is fully covered by the new one
+              if (newRect.Left <= oldRect.Left && newRect.Top <= oldRect.Top &&
+                  newRect.Right >= oldRect.Right && newRect.Bottom >= oldRect.Bottom) {
+                SetWindowPos(hwnd, IntPtr.Zero, oldRect.Left + 40, oldRect.Top + 40, 0, 0,
+                  SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+              }
+            }
+          });
+        }
       }
       return result;
+    }
+
+    /// <summary>
+    /// Returns the handles and screen bounds of all open visualizer windows (both DX12 and standard).
+    /// </summary>
+    private List<(IntPtr hwnd, RECT rect)> FindAllVisualizerWindowRects() {
+      var knownTitles = cboWindowTitle.Items
+        .Cast<object>()
+        .Select(i => i?.ToString() ?? "")
+        .Where(s => s.Length > 0)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+      var rects = new List<(IntPtr, RECT)>();
+      EnumWindows((hWnd, _) => {
+        int len = GetWindowTextLength(hWnd);
+        if (len == 0) return true;
+        var sb = new StringBuilder(len + 1);
+        GetWindowText(hWnd, sb, sb.Capacity);
+        if (knownTitles.Contains(sb.ToString()) && GetWindowRect(hWnd, out RECT r))
+          rects.Add((hWnd, r));
+        return true;
+      }, IntPtr.Zero);
+      return rects;
     }
 
     /// <summary>
@@ -1198,6 +1252,38 @@ namespace MilkwaveRemote {
 
       SendMessageW(windowHandle, WM_COPYDATA, IntPtr.Zero, ref cds);
       Marshal.FreeHGlobal(messagePtr);
+    }
+
+    /// <summary>
+    /// Ensure the pipe client is connected to the DX12 visualizer.
+    /// Returns true if connected (or already was).
+    /// </summary>
+    private bool EnsurePipeConnected() {
+      if (pipeClient.IsConnected)
+        return true;
+      string exeName = string.IsNullOrEmpty(Settings.VisualizerExeDX12) ? "MDropDX12.exe" : Settings.VisualizerExeDX12;
+      return pipeClient.Connect(exeName);
+    }
+
+    /// <summary>
+    /// Send a message via the named pipe to the DX12 visualizer.
+    /// </summary>
+    private bool SendPipeMessage(string message) {
+      if (!EnsurePipeConnected())
+        return false;
+      return pipeClient.Send(message);
+    }
+
+    /// <summary>
+    /// Process an incoming message from the DX12 visualizer pipe.
+    /// Dispatches to the UI thread to mirror WndProc handling.
+    /// </summary>
+    private void OnPipeMessageReceived(string message) {
+      if (InvokeRequired) {
+        BeginInvoke(() => OnPipeMessageReceived(message));
+        return;
+      }
+      ProcessReceivedString(message);
     }
 
     private void MainForm_Shown(object sender, EventArgs e) {
@@ -1324,9 +1410,41 @@ namespace MilkwaveRemote {
           // Extract the COPYDATASTRUCT from the message
           COPYDATASTRUCT cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT))!;
           if (cds.lpData != IntPtr.Zero) {
-            // Convert the received data to a string
             string receivedString = Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2)?.TrimEnd('\0') ?? "";
-            if (receivedString.StartsWith("WAVE|")) {
+            ProcessReceivedString(receivedString);
+          }
+        }
+
+        base.WndProc(ref m);
+      } catch (Exception ex) {
+        Program.LogToFile($"WndProc: {ex.Message}");
+      }
+    }
+
+    /// <summary>
+    /// Process an incoming string message from the visualizer (via WM_COPYDATA or named pipe).
+    /// </summary>
+    private void ProcessReceivedString(string receivedString) {
+      // Handle SIGNAL| messages from pipe
+      if (receivedString.StartsWith("SIGNAL|")) {
+        string signal = receivedString.Substring(7);
+        if (signal == "NEXT_PRESET") {
+          if (chkPresetRandom.Checked) { SelectRandomPreset(); } else { SelectNextPreset(); }
+          btnPresetSend_Click(null, null);
+        } else if (signal == "PREV_PRESET") {
+          SelectPreviousPreset();
+          btnPresetSend_Click(null, null);
+        } else if (signal == "COVER_CHANGED") {
+          RefreshSpriteButtonImages(false);
+        } else if (signal == "SPRITE_MODE") {
+          ApplyVisualizerMode(true);
+        } else if (signal == "MESSAGE_MODE") {
+          ApplyVisualizerMode(false);
+        }
+        return;
+      }
+
+      if (receivedString.StartsWith("WAVE|")) {
               string waveInfo = receivedString.Substring(receivedString.IndexOf("|") + 1);
               string[] waveParams = waveInfo.Split('|');
               updatingWaveParams = true;
@@ -1483,13 +1601,6 @@ namespace MilkwaveRemote {
               }
               updatingSettingsParams = false;
             }
-          }
-        }
-
-        base.WndProc(ref m);
-      } catch (Exception ex) {
-        Program.LogToFile($"WndProc: {ex.Message}");
-      }
     }
 
     private void SetRunningPresetText(string displayText) {
@@ -1538,8 +1649,10 @@ namespace MilkwaveRemote {
       try {
         if (!SendingMessage) {
           SendingMessage = true;
-          IntPtr foundWindow = FindVisualizerWindow();
-          if (foundWindow != IntPtr.Zero) {
+          bool usePipe = chkUseDX12.Checked;
+          IntPtr foundWindow = usePipe ? IntPtr.Zero : FindVisualizerWindow();
+          bool hasTarget = usePipe ? EnsurePipeConnected() : (foundWindow != IntPtr.Zero);
+          if (hasTarget) {
             string message = "";
             if (type == MessageType.Wave) {
               message = "WAVE" +
@@ -1660,18 +1773,23 @@ namespace MilkwaveRemote {
               bool mixEnabled = chkSpoutMix.Checked;
               statusMessage = $"Spout mixing {(mixEnabled ? "enabled" : "disabled")}: {senderName}";
 
-              // Use direct window messages - send sender name FIRST, then enable
-              if (foundWindow != IntPtr.Zero) {
+              if (usePipe) {
+                if (mixEnabled && senderName.Length > 0) {
+                  SendPipeMessage("SPOUT_SENDER=" + senderName);
+                  System.Threading.Thread.Sleep(50);
+                }
+                SendPipeMessage("SIGNAL|ENABLESPOUTMIX=" + (mixEnabled ? "1" : "0"));
+              } else if (foundWindow != IntPtr.Zero) {
                 if (mixEnabled && senderName.Length > 0) {
                   SendStringMessage(foundWindow, WM_SETSPOUTSENDER, senderName);
                   System.Threading.Thread.Sleep(50);
                 }
                 PostMessage(foundWindow, WM_ENABLESPOUTMIX, (IntPtr)(mixEnabled ? 1 : 0), IntPtr.Zero);
-                if (statusMessage.Length > 0) {
-                  SetStatusText($"{statusMessage} {foundWindowTitle}");
-                }
               } else {
                 SetStatusText(windowNotFound);
+              }
+              if (statusMessage.Length > 0) {
+                SetStatusText($"{statusMessage}");
               }
               SendingMessage = false;
               return;
@@ -1680,7 +1798,10 @@ namespace MilkwaveRemote {
                 if (updatingSettingsParams) return;
 
                 bool onTop = chkInputTop.Checked;
-                if (foundWindow != IntPtr.Zero) {
+                if (usePipe) {
+                  SendPipeMessage("SIGNAL|SET_INPUTMIX_ONTOP=" + (onTop ? "1" : "0"));
+                  SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")}");
+                } else if (foundWindow != IntPtr.Zero) {
                   PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_ONTOP, (IntPtr)(onTop ? 1 : 0), IntPtr.Zero);
                   SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")} on {foundWindowTitle}");
                 } else {
@@ -1696,7 +1817,10 @@ namespace MilkwaveRemote {
                 if (updatingSettingsParams) return;
 
                 int opacityInt = (int)numInputMixOpacity.Value;
-                if (foundWindow != IntPtr.Zero) {
+                if (usePipe) {
+                  SendPipeMessage("SIGNAL|SET_INPUTMIX_OPACITY=" + opacityInt);
+                  SetStatusText($"Input mix opacity set to {opacityInt}%");
+                } else if (foundWindow != IntPtr.Zero) {
                   PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_OPACITY, (IntPtr)opacityInt, IntPtr.Zero);
                   SetStatusText($"Input mix opacity set to {opacityInt}% on {foundWindowTitle}");
                 } else {
@@ -1714,7 +1838,13 @@ namespace MilkwaveRemote {
                 bool active = chkMixLumaActive.Checked;
                 int threshold = active ? (int)numLumaThreshold.Value : -1;
                 int softness = (int)numLumaSoftness.Value;
-                if (foundWindow != IntPtr.Zero) {
+                if (usePipe) {
+                  SendPipeMessage("SIGNAL|SET_INPUTMIX_LUMAKEY=" + threshold + "|" + softness);
+                  if (active)
+                    SetStatusText($"Luma Key set to {threshold}% (softness {softness}%)");
+                  else
+                    SetStatusText($"Luma Key disabled");
+                } else if (foundWindow != IntPtr.Zero) {
                   PostMessage(foundWindow, (uint)WM_SET_INPUTMIX_LUMAKEY, (IntPtr)threshold, (IntPtr)softness);
                   if (active)
                     SetStatusText($"Luma Key set to {threshold}% (softness {softness}%) on {foundWindowTitle}");
@@ -1792,22 +1922,31 @@ namespace MilkwaveRemote {
               }
             }
 
-            byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
-            IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
-            Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
+            if (usePipe) {
+              if (message.Length > 0) {
+                SendPipeMessage(message);
+                if (statusMessage.Length > 0) {
+                  SetStatusText(statusMessage);
+                }
+              }
+            } else {
+              byte[] messageBytes = Encoding.Unicode.GetBytes(message + "\0");
+              IntPtr messagePtr = Marshal.AllocHGlobal(messageBytes.Length);
+              Marshal.Copy(messageBytes, 0, messagePtr, messageBytes.Length);
 
-            COPYDATASTRUCT cds = new COPYDATASTRUCT {
-              dwData = 1,
-              cbData = messageBytes.Length,
-              lpData = messagePtr
-            };
+              COPYDATASTRUCT cds = new COPYDATASTRUCT {
+                dwData = 1,
+                cbData = messageBytes.Length,
+                lpData = messagePtr
+              };
 
-            SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
-            if (statusMessage.Length > 0) {
-              SetStatusText($"{statusMessage} {foundWindowTitle}");
+              SendMessageW(foundWindow, WM_COPYDATA, IntPtr.Zero, ref cds);
+              if (statusMessage.Length > 0) {
+                SetStatusText($"{statusMessage} {foundWindowTitle}");
+              }
+
+              Marshal.FreeHGlobal(messagePtr);
             }
-
-            Marshal.FreeHGlobal(messagePtr);
 
           } else {
             SetStatusText(windowNotFound);
@@ -2249,6 +2388,15 @@ namespace MilkwaveRemote {
     }
 
     private void SendPostMessage(int VKKey, string keyName) {
+      if (chkUseDX12.Checked) {
+        if (SendPipeMessage($"SEND=0x{VKKey:X2}")) {
+          SetStatusText($"Pressed {keyName}");
+        } else {
+          SetStatusText(windowNotFound);
+        }
+        return;
+      }
+
       IntPtr foundWindow = FindVisualizerWindow();
 
       if (foundWindow != IntPtr.Zero) {
@@ -2929,10 +3077,16 @@ namespace MilkwaveRemote {
           SaveMIDISettings();
         }
 
-        IntPtr foundWindow = FindVisualizerWindow();
-        if (foundWindow != IntPtr.Zero) {
-          // Close the Visualizer window if CloseVisualizerWithRemote=true or Alt ot Ctrl key are pressed
-          if (Settings.CloseVisualizerWithRemote || (Control.ModifierKeys & Keys.Alt) == Keys.Alt || (Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        bool shouldCloseVis = Settings.CloseVisualizerWithRemote || (Control.ModifierKeys & Keys.Alt) == Keys.Alt || (Control.ModifierKeys & Keys.Control) == Keys.Control;
+
+        if (chkUseDX12.Checked) {
+          if (shouldCloseVis && pipeClient.IsConnected) {
+            SendPipeMessage("SEND=0x1B"); // VK_ESCAPE — triggers close in MDropDX12
+          }
+          pipeClient.Dispose();
+        } else {
+          IntPtr foundWindow = FindVisualizerWindow();
+          if (foundWindow != IntPtr.Zero && shouldCloseVis) {
             PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
           }
         }
@@ -4143,8 +4297,16 @@ namespace MilkwaveRemote {
       }
       chkShaderFile.Checked = Settings.ShaderFileChecked;
       chkWrap.Checked = Settings.WrapChecked;
+      chkUseDX12.Checked = Settings.UseDX12;
 
-      string savedTitle = string.IsNullOrEmpty(Settings.WindowTitle) ? cboWindowTitle.Items[0]?.ToString() ?? "Milkwave Visualizer" : Settings.WindowTitle;
+      string savedTitle;
+      if (Settings.UseDX12) {
+        savedTitle = "MDropDX12";
+      } else if (!string.IsNullOrEmpty(Settings.WindowTitle)) {
+        savedTitle = Settings.WindowTitle;
+      } else {
+        savedTitle = cboWindowTitle.Items[0]?.ToString() ?? "Milkwave Visualizer";
+      }
       cboWindowTitle.Text = savedTitle;
 
       numInputMixOpacity.Value = Math.Clamp(Settings.InputMixOpacity, numInputMixOpacity.Minimum, numInputMixOpacity.Maximum);
@@ -4159,6 +4321,20 @@ namespace MilkwaveRemote {
 
       RefreshSpriteButtonImages(false);
       updatingSettingsParams = false;
+    }
+
+    private void chkUseDX12_CheckedChanged(object? sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      if (chkUseDX12.Checked) {
+        cboWindowTitle.Text = "MDropDX12";
+      } else {
+        pipeClient.Disconnect();
+        cboWindowTitle.Text = cboWindowTitle.Items[0]?.ToString() ?? "Milkwave Visualizer";
+      }
+      StartVisualizerIfNotFound(true);
+      if (chkUseDX12.Checked) {
+        EnsurePipeConnected();
+      }
     }
 
     private void SetAndSaveSettings() {
@@ -4186,6 +4362,7 @@ namespace MilkwaveRemote {
       Settings.VisShift = numVisShift.Value;
       Settings.VisVersion = (int)numVisVersion.Value;
 
+      Settings.UseDX12 = chkUseDX12.Checked;
       Settings.WindowTitle = cboWindowTitle.Text;
 
       SaveSettingsToFile();
@@ -4892,7 +5069,7 @@ namespace MilkwaveRemote {
           if (Settings.RemoteWindowCompactSize.Height > 0) {
             Height = Settings.RemoteWindowCompactSize.Height;
           } else {
-            Height = cboAudioDevice.Top + cboAudioDevice.Height + statusBar.Height + 137;
+            Height = cboFont5.Top + cboFont5.Height + statusBar.Height + 137;
           }
 
           toolStripMenuItemButtonPanel.Checked = false;
@@ -5897,7 +6074,7 @@ namespace MilkwaveRemote {
 
     private Size GetCalculatedOptionalTopPanelSize() {
       int width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + cboPresets.Top * 4;
-      int height = cboAudioDevice.Top + cboAudioDevice.Height + cboPresets.Top;
+      int height = cboFont5.Top + cboFont5.Height + cboPresets.Top;
       return new Size(width, height);
     }
 
@@ -6824,6 +7001,10 @@ namespace MilkwaveRemote {
     private void label20_DoubleClick(object sender, EventArgs e) {
       numFFTAttack.Value = 0.5m;
       numFFTDecay.Value = 0.7m;
+    }
+
+    private void label16_Click(object sender, EventArgs e) {
+
     }
   } // end class
 } // end namespace

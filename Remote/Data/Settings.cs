@@ -43,6 +43,8 @@
     public bool ControllerActive { get; set; } = false;
 
     public string VisualizerExe { get; set; } = "MilkwaveVisualizer.exe";
+    public string VisualizerExeDX12 { get; set; } = "MDropDX12.exe";
+    public bool UseDX12 { get; set; } = false;
     public string WindowTitle { get; set; } = "";
   }
 }
