@@ -1934,7 +1934,8 @@ namespace MilkwaveRemote {
               if (message.Length > 0) {
                 SendPipeMessage(message);
                 if (statusMessage.Length > 0) {
-                  SetStatusText(statusMessage);
+                  string exeName = string.IsNullOrEmpty(Settings.VisualizerExeDX12) ? "MDropDX12.exe" : Settings.VisualizerExeDX12;
+                  SetStatusText($"{statusMessage} {exeName.Replace(".exe", "")}");
                 }
               }
             } else {
