@@ -597,6 +597,7 @@ SPOUT :
 
 #include "plugin.h"
 #include "../audio/audiobuf.h"
+#include "pipe_server.h"
 #include "utility.h"
 #include "support.h"
 #include "resource.h"
@@ -6029,47 +6030,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
   int rep;
 
   switch (uMsg) {
-  case WM_COPYDATA:
-  {
-    PCOPYDATASTRUCT pCopyData = (PCOPYDATASTRUCT)lParam;
-    if (!pCopyData) return 0;
-
-    // Handle Spout sender name message (WM_SETSPOUTSENDER)
-    if (pCopyData->dwData == (0x0400 + 108)) { // WM_SETSPOUTSENDER
-      wchar_t* senderNameRaw = (wchar_t*)pCopyData->lpData;
-      size_t nameLength = pCopyData->cbData / sizeof(wchar_t);
-
-      if (nameLength > 0 && senderNameRaw) {
-        wchar_t senderNameLocal[256];
-        size_t copyLen = (nameLength < 255) ? nameLength : 255;
-        memcpy(senderNameLocal, senderNameRaw, copyLen * sizeof(wchar_t));
-        senderNameLocal[copyLen] = L'\0';
-
-        this->SetSpoutSender(senderNameLocal);
-      }
-      return 0; // Message handled
-    }
-
-    // Standard message handling (dwData == 1)
-    if (pCopyData->dwData == 1) { // Custom identifier for the message
-      wchar_t* receivedMessageRaw = (wchar_t*)pCopyData->lpData;
-      if (!receivedMessageRaw) return 0;
-
-      // Calculate the length in wchar_t units
-      size_t messageLength = pCopyData->cbData / sizeof(wchar_t);
-
-      if (messageLength > 0) {
-        // Create a local safe copy that is guaranteed to be null-terminated
-        std::wstring safeMessage(receivedMessageRaw, messageLength);
-        // Note: safeMessage.c_str() is guaranteed to be null-terminated.
-        // We cast to non-const because LaunchMessage doesn't modify the string, 
-        // but its signature doesn't say const.
-        LaunchMessage((wchar_t*)safeMessage.c_str());
-      }
-      return 0; // Message handled
-    }
-    break;
-  }
+  // WM_COPYDATA removed — replaced by named pipe IPC (pipe_server.h)
 
   // Handle WM_ENABLE_SPOUT_MIX via PostMessage (not WM_COPYDATA)
   case WM_USER_ENABLE_SPOUT_MIX:
@@ -9755,6 +9716,10 @@ void CPlugin::OnFinishedLoadingPreset() {
 
   SendPresetChangedInfoToMilkwaveRemote();
 }
+// ─── IPC via Named Pipe ────────────────────────────────────────────────────
+// Outgoing messages are sent through g_pipeServer (pipe_server.h).
+// The old WM_COPYDATA / FindWindow code has been removed.
+
 int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
   return SendMessageToMilkwaveRemote(messageToSend, false);
 }
@@ -9762,62 +9727,22 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend) {
 int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend, bool doForce) {
   using namespace std::chrono;
   try {
-    if (!messageToSend || !*messageToSend) {
-      wprintf(L"message is null or empty.\n");
+    if (!messageToSend || !*messageToSend)
       return 0;
-    }
 
     // Thread-safe timing check
     EnterCriticalSection(&g_csRemoteMessage);
     uint64_t Now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     if (!doForce && Now - LastSentMilkwaveMessage < 100) {
-      // Skipping message send to Milkwave Remote to avoid flooding
       LeaveCriticalSection(&g_csRemoteMessage);
       return 0;
     }
     LastSentMilkwaveMessage = Now;
     LeaveCriticalSection(&g_csRemoteMessage);
 
-    // Find the Milkwave Remote window
-    HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
-    if (!hRemoteWnd) {
-      wprintf(L"Milkwave Remote window not found.\n");
-      return 0;
-    }
-
-    // Double-check window is still valid before sending
-    if (!IsWindow(hRemoteWnd)) {
-      wprintf(L"Milkwave Remote window is not valid.\n");
-      return 0;
-    }
-
-    // Prepare the COPYDATASTRUCT
-    COPYDATASTRUCT cds;
-    cds.dwData = 1; // Custom identifier for the message
-    cds.cbData = (wcslen(messageToSend) + 1) * sizeof(wchar_t); // Size of the data in bytes
-    cds.lpData = (void*)messageToSend; // Pointer to the data
-
-    // Use SendMessageTimeout to avoid hanging if receiver is busy
-    DWORD_PTR result = 0;
-    LRESULT lr = SendMessageTimeout(
-      hRemoteWnd,
-      WM_COPYDATA,
-      (WPARAM)GetPluginWindow(),
-      (LPARAM)&cds,
-      SMTO_ABORTIFHUNG | SMTO_BLOCK,
-      100,  // 100ms timeout
-      &result
-    );
-
-    if (lr == 0) {
-      wprintf(L"SendMessageTimeout failed or timed out.\n");
-      return 0;
-    }
-    
-    wprintf(L"WM_COPYDATA message sent successfully to Milkwave Remote.\n");
+    extern PipeServer g_pipeServer;
+    g_pipeServer.Send(messageToSend);
   } catch (...) {
-    // Ensure we leave critical section even if exception occurs
-    wprintf(L"Exception in SendMessageToMilkwaveRemote\n");
     return 0;
   }
   return 1;
@@ -9825,14 +9750,16 @@ int CPlugin::SendMessageToMilkwaveRemote(const wchar_t* messageToSend, bool doFo
 
 void CPlugin::PostMessageToMilkwaveRemote(UINT msg) {
   try {
-    // Find the Milkwave Remote window
-    HWND hRemoteWnd = FindWindowW(NULL, L"Milkwave Remote");
-    if (!hRemoteWnd) {
-      return;
-    }
-    if (IsWindow(hRemoteWnd)) {
-      PostMessageW(hRemoteWnd, msg, 0, 0);
-    }
+    extern PipeServer g_pipeServer;
+    // Map WM_USER+N constants to SIGNAL| pipe messages
+    const wchar_t* signal = nullptr;
+    if (msg == WM_USER + 100) signal = L"SIGNAL|NEXT_PRESET";
+    else if (msg == WM_USER + 101) signal = L"SIGNAL|PREV_PRESET";
+    else if (msg == WM_USER + 102) signal = L"SIGNAL|COVER_CHANGED";
+    else if (msg == WM_USER + 103) signal = L"SIGNAL|SPRITE_MODE";
+    else if (msg == WM_USER + 104) signal = L"SIGNAL|MESSAGE_MODE";
+    if (signal)
+      g_pipeServer.Send(signal);
   } catch (...) {
     // ignore
   }
@@ -11540,6 +11467,19 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     milkwave->LogInfo(L"PRECOMPILE_CACHE message received");
     extern void StartSetupThread(bool manualTrigger);
     StartSetupThread(true);
+  }
+  else if (wcsncmp(sMessage, L"SEND=", 5) == 0) {
+    // Keystroke sent via pipe — parse hex VK code and post WM_KEYDOWN to our window
+    std::wstring vkStr(sMessage + 5);
+    int vkCode = 0;
+    if (vkStr.length() > 2 && vkStr[0] == L'0' && (vkStr[1] == L'x' || vkStr[1] == L'X')) {
+      vkCode = wcstol(vkStr.c_str(), nullptr, 16);
+    } else {
+      vkCode = _wtoi(vkStr.c_str());
+    }
+    if (vkCode > 0) {
+      PostMessageW(GetPluginWindow(), WM_KEYDOWN, (WPARAM)vkCode, 0);
+    }
   }
 }
 

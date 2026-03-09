@@ -1,138 +1,219 @@
 using System.Diagnostics;
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MilkwaveRemote.Helper;
-
-/// <summary>
-/// Named pipe client for communicating with MDropDX12 visualizer.
-/// Pipe name format: \\.\pipe\Milkwave_{PID}
-/// Protocol: duplex message-mode, wide-char (UTF-16) null-terminated strings.
-/// </summary>
-internal class PipeClient : IDisposable {
-  private NamedPipeClientStream? _pipe;
-  private CancellationTokenSource? _cts;
-  private Thread? _readThread;
-  private readonly object _lock = new();
-  private bool _disposed;
-
-  /// <summary>Fired on the thread-pool when a message arrives from the visualizer.</summary>
-  public event Action<string>? MessageReceived;
-
-  /// <summary>Fired when the pipe disconnects unexpectedly.</summary>
-  public event Action? Disconnected;
-
-  public bool IsConnected => _pipe is { IsConnected: true };
+namespace MilkwaveRemote.Helper {
 
   /// <summary>
-  /// Discover a running MDropDX12 process and connect to its named pipe.
+  /// Named pipe client for communicating with Milkwave visualizers.
+  /// Replaces WM_COPYDATA / EnumWindows / FindWindow IPC.
+  /// Pipe name convention: \\.\pipe\Milkwave_{PID}
   /// </summary>
-  /// <param name="exeName">Executable name to look for (e.g. "MDropDX12.exe").</param>
-  /// <returns>True if connected successfully.</returns>
-  public bool Connect(string exeName) {
-    Disconnect();
+  public class PipeClient : IDisposable {
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
-    string baseName = Path.GetFileNameWithoutExtension(exeName);
-    Process[] procs = Process.GetProcessesByName(baseName);
-    if (procs.Length == 0)
-      return false;
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageName(IntPtr hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
 
-    foreach (var proc in procs) {
-      string pipeName = $"Milkwave_{proc.Id}";
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+    private NamedPipeClientStream? _pipe;
+    private CancellationTokenSource? _cts;
+    private Task? _readTask;
+    private readonly object _writeLock = new();
+    private int _connectedPid;
+
+    /// <summary>Fires on the thread pool when a message is received from the visualizer.</summary>
+    public event Action<string>? MessageReceived;
+
+    /// <summary>Fires when the pipe disconnects.</summary>
+    public event Action? Disconnected;
+
+    public bool IsConnected => _pipe?.IsConnected == true;
+    public int ConnectedPid => _connectedPid;
+
+    /// <summary>
+    /// Get the full exe path for a process by PID using QueryFullProcessImageName.
+    /// Works cross-architecture (64-bit .NET querying 32-bit processes).
+    /// </summary>
+    private static string GetProcessExePath(int pid) {
+      IntPtr hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+      if (hProcess == IntPtr.Zero)
+        return "";
       try {
-        var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-        pipe.Connect(1000); // 1-second timeout
-        pipe.ReadMode = PipeTransmissionMode.Message;
+        var sb = new StringBuilder(1024);
+        uint size = (uint)sb.Capacity;
+        if (QueryFullProcessImageName(hProcess, 0, sb, ref size))
+          return sb.ToString();
+        return "";
+      } finally {
+        CloseHandle(hProcess);
+      }
+    }
 
-        lock (_lock) {
-          _pipe = pipe;
+    /// <summary>
+    /// Discover all running visualizer instances that have a pipe server.
+    /// Checks for existing Milkwave_* pipes without connecting (preserves the connection slot).
+    /// Returns list of (PID, processName, exePath) tuples.
+    /// </summary>
+    public static List<(int pid, string name, string exePath)> DiscoverVisualizers() {
+      var result = new List<(int, string, string)>();
+
+      try {
+        // Enumerate all active Milkwave_* pipes
+        var pipeFiles = Directory.GetFiles(@"\\.\pipe\", "Milkwave_*");
+        foreach (var pipePath in pipeFiles) {
+          // Extract PID from pipe name (e.g. "\\.\pipe\Milkwave_12345" → 12345)
+          string fileName = Path.GetFileName(pipePath);
+          if (fileName.StartsWith("Milkwave_") &&
+              int.TryParse(fileName.Substring("Milkwave_".Length), out int pid)) {
+            try {
+              var proc = Process.GetProcessById(pid);
+              string exePath = GetProcessExePath(pid);
+              result.Add((pid, proc.ProcessName, exePath));
+            } catch {
+              // Process no longer exists — stale pipe, skip
+            }
+          }
         }
+      } catch {
+        // Pipe enumeration failed — fall back to process scan
+        var names = new[] { "MDropDX12", "MilkwaveVisualizer", "Milkdrop2PcmVisualizer" };
+        foreach (var name in names) {
+          try {
+            foreach (var proc in Process.GetProcessesByName(name)) {
+              string exePath = GetProcessExePath(proc.Id);
+              result.Add((proc.Id, proc.ProcessName, exePath));
+            }
+          } catch { }
+        }
+      }
 
+      return result;
+    }
+
+    /// <summary>
+    /// Connect to a visualizer by PID.
+    /// </summary>
+    public bool Connect(int pid) {
+      Disconnect();
+
+      try {
+        string pipeName = $"Milkwave_{pid}";
+        _pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+        _pipe.Connect(2000); // 2 second timeout
+        _pipe.ReadMode = PipeTransmissionMode.Message;
+        _connectedPid = pid;
+
+        // Start async read loop
         _cts = new CancellationTokenSource();
-        _readThread = new Thread(ReadLoop) { IsBackground = true, Name = "PipeClientReader" };
-        _readThread.Start();
+        _readTask = Task.Run(() => ReadLoop(_cts.Token));
 
         return true;
       } catch {
-        // Try next process instance
+        _pipe?.Dispose();
+        _pipe = null;
+        _connectedPid = 0;
+        return false;
       }
     }
-    return false;
-  }
 
-  /// <summary>Send a UTF-16 message to the visualizer.</summary>
-  public bool Send(string message) {
-    lock (_lock) {
+    /// <summary>
+    /// Send a text message to the visualizer via the pipe.
+    /// Thread-safe.
+    /// </summary>
+    public bool Send(string message) {
       if (_pipe == null || !_pipe.IsConnected)
         return false;
+
       try {
-        byte[] data = Encoding.Unicode.GetBytes(message + "\0");
-        _pipe.Write(data, 0, data.Length);
-        _pipe.Flush();
+        // UTF-16 encoding (wchar_t) with null terminator — matches C++ ReadFile expectations
+        byte[] bytes = Encoding.Unicode.GetBytes(message + "\0");
+        lock (_writeLock) {
+          _pipe.Write(bytes, 0, bytes.Length);
+          _pipe.Flush();
+        }
         return true;
       } catch {
-        HandleDisconnect();
         return false;
       }
     }
-  }
 
-  public void Disconnect() {
-    _cts?.Cancel();
-    lock (_lock) {
-      if (_pipe != null) {
-        try { _pipe.Close(); } catch { }
-        _pipe.Dispose();
-        _pipe = null;
-      }
+    /// <summary>
+    /// Send a SIGNAL message (replaces PostMessage for WM_USER+N signals).
+    /// </summary>
+    public bool SendSignal(string signalName) {
+      return Send($"SIGNAL|{signalName}");
     }
-    _readThread = null;
-    _cts?.Dispose();
-    _cts = null;
-  }
 
-  private void ReadLoop() {
-    byte[] buffer = new byte[65536];
-    try {
-      while (_cts != null && !_cts.IsCancellationRequested) {
-        NamedPipeClientStream? pipe;
-        lock (_lock) { pipe = _pipe; }
-        if (pipe == null || !pipe.IsConnected)
-          break;
+    /// <summary>
+    /// Send a Spout sender name (replaces WM_COPYDATA with dwData=WM_SETSPOUTSENDER).
+    /// </summary>
+    public bool SendSpoutSender(string senderName) {
+      return Send($"SPOUT_SENDER={senderName}");
+    }
 
-        int bytesRead;
-        try {
-          bytesRead = pipe.Read(buffer, 0, buffer.Length);
-        } catch {
-          break;
+    public void Disconnect() {
+      _cts?.Cancel();
+
+      try {
+        _pipe?.Dispose();
+      } catch { }
+
+      _pipe = null;
+      _connectedPid = 0;
+
+      try {
+        _readTask?.Wait(1000);
+      } catch { }
+
+      _readTask = null;
+      _cts?.Dispose();
+      _cts = null;
+    }
+
+    public void Dispose() {
+      Disconnect();
+      GC.SuppressFinalize(this);
+    }
+
+    private void ReadLoop(CancellationToken ct) {
+      byte[] buffer = new byte[65536]; // 64KB buffer
+
+      try {
+        while (!ct.IsCancellationRequested && _pipe != null && _pipe.IsConnected) {
+          int bytesRead = 0;
+          try {
+            bytesRead = _pipe.Read(buffer, 0, buffer.Length);
+          } catch (IOException) {
+            break; // pipe broken
+          } catch (OperationCanceledException) {
+            break;
+          }
+
+          if (bytesRead == 0)
+            break; // pipe closed
+
+          // Decode UTF-16 message (strip null terminator if present)
+          string message = Encoding.Unicode.GetString(buffer, 0, bytesRead).TrimEnd('\0');
+          if (!string.IsNullOrEmpty(message)) {
+            try {
+              MessageReceived?.Invoke(message);
+            } catch {
+              // Don't let handler exceptions kill the read loop
+            }
+          }
         }
-        if (bytesRead == 0)
-          break;
-
-        string msg = Encoding.Unicode.GetString(buffer, 0, bytesRead).TrimEnd('\0');
-        if (msg.Length > 0)
-          MessageReceived?.Invoke(msg);
+      } catch {
+        // Connection lost
       }
-    } catch {
-      // Shutting down
-    }
-    HandleDisconnect();
-  }
 
-  private void HandleDisconnect() {
-    lock (_lock) {
-      if (_pipe != null) {
-        try { _pipe.Close(); } catch { }
-        _pipe.Dispose();
-        _pipe = null;
-      }
+      Disconnected?.Invoke();
     }
-    Disconnected?.Invoke();
-  }
-
-  public void Dispose() {
-    if (_disposed) return;
-    _disposed = true;
-    Disconnect();
   }
 }
