@@ -1485,7 +1485,7 @@ namespace MilkwaveRemote
       // 
       // cboWindowTitle
       // 
-      cboWindowTitle.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      cboWindowTitle.Anchor = AnchorStyles.Top | AnchorStyles.Left;
       cboWindowTitle.DropDownStyle = ComboBoxStyle.DropDownList;
       cboWindowTitle.FormattingEnabled = true;
       cboWindowTitle.Items.AddRange(new object[] { "(scanning...)" });
