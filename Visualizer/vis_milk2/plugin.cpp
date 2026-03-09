@@ -11478,6 +11478,13 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         int vkCode = (int)wcstol(val.c_str(), nullptr, 16);
         if (vkCode > 0) {
           PostMessageW(hWnd, WM_KEYDOWN, (WPARAM)vkCode, 0);
+          // For character keys, also post WM_CHAR since HandleRegularKey
+          // processes WM_CHAR, not WM_KEYDOWN. PostMessage bypasses
+          // TranslateMessage which normally generates WM_CHAR.
+          if ((vkCode >= 0x30 && vkCode <= 0x39) || // 0-9
+              (vkCode >= 0x41 && vkCode <= 0x5A) || // A-Z
+              vkCode == 0x20)                        // Space
+            PostMessageW(hWnd, WM_CHAR, (WPARAM)vkCode, 0);
           PostMessageW(hWnd, WM_KEYUP, (WPARAM)vkCode, 0);
         }
       } else {
