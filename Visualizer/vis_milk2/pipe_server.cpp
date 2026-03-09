@@ -369,6 +369,18 @@ bool PipeServer::DispatchSignal(const wchar_t* signal) {
         PostMessageW(m_hTargetWindow, m_wmSignalBase + 105, 0, 0);
         return true;
     }
+    if (wcscmp(signal, L"FULLSCREEN") == 0) {
+        PostMessageW(m_hTargetWindow, m_wmSignalBase + 160, 0, 0);
+        return true;
+    }
+    if (wcscmp(signal, L"WATERMARK") == 0) {
+        PostMessageW(m_hTargetWindow, m_wmSignalBase + 161, 0, 0);
+        return true;
+    }
+    if (wcscmp(signal, L"BORDERLESS_FS") == 0) {
+        PostMessageW(m_hTargetWindow, m_wmSignalBase + 162, 0, 0);
+        return true;
+    }
 
     // Signals with values: KEY=VALUE
     const wchar_t* eq = wcschr(signal, L'=');

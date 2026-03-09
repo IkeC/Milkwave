@@ -1146,15 +1146,16 @@ namespace MilkwaveRemote {
     }
 
     private void LaunchAndConnectVisualizer() {
-      string exePath = Settings.VisualizerExe;
+      bool isDX12 = chkUseDX12.Checked;
+      string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
       if (string.IsNullOrEmpty(exePath)) {
-        // Fall back to looking in BaseDir
-        exePath = Path.Combine(BaseDir, "MilkwaveVisualizer.exe");
+        // Fall back to default exe name
+        exePath = isDX12 ? "MDropDX12.exe" : "MilkwaveVisualizer.exe";
       }
 
-      // If it's just a filename, resolve relative to BaseDir
+      // If it's just a filename, resolve relative to the appropriate visualizer dir
       if (!Path.IsPathRooted(exePath)) {
-        exePath = Path.Combine(BaseDir, exePath);
+        exePath = Path.Combine(GetVisualizerDir(isDX12), exePath);
       }
 
       if (!File.Exists(exePath)) {
@@ -2108,7 +2109,7 @@ namespace MilkwaveRemote {
         } else if (tokenUpper.Equals("SOUNDINFO")) {
           SendPostMessage(VK_N, "N");
         } else if (tokenUpper.Equals("FULLSCREEN")) {
-          SendInput(VK_ENTER, "Alt+Enter", false, true, false);
+          if (IsPipeConnected) _pipeClient!.Send("SIGNAL|FULLSCREEN");
         } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
           SendToMilkwaveVisualizer(token, MessageType.Message);
         }
@@ -2287,7 +2288,9 @@ namespace MilkwaveRemote {
 
     private void btnAltEnter_Click(object sender, EventArgs e) {
       if (Settings.IsPresetMode) return;
-      SendInput(VK_ENTER, "Alt+Enter", false, true, false);
+      if (!IsPipeConnected) { SetStatusText(windowNotFound); return; }
+      _pipeClient!.Send("SIGNAL|FULLSCREEN");
+      SetStatusText("Pressed Fullscreen");
     }
 
     private void btnN_Click(object sender, EventArgs e) {
@@ -3428,13 +3431,17 @@ namespace MilkwaveRemote {
 
     private void btnWatermark_Click(object sender, EventArgs e) {
       if (Settings.IsPresetMode) return;
-      SendInput(VK_F9, "F9", true, false, true);
+      if (!IsPipeConnected) { SetStatusText(windowNotFound); return; }
+      _pipeClient!.Send("SIGNAL|WATERMARK");
+      SetStatusText("Pressed Watermark Mode");
     }
 
     private void btnWatermark_MouseDown(object sender, MouseEventArgs e) {
       if (Settings.IsPresetMode) return;
       if (e.Button == MouseButtons.Right) {
-        SendInput(VK_F9, "F9", false, false, true);
+        if (!IsPipeConnected) { SetStatusText(windowNotFound); return; }
+        _pipeClient!.Send("SIGNAL|BORDERLESS_FS");
+        SetStatusText("Pressed Borderless Fullscreen");
       }
     }
 

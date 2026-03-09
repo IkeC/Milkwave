@@ -426,13 +426,12 @@ static void ToggleClickThrough(HWND hWnd) {
   }
 }
 
-static void ToggleBorderlessFullscreen(HWND hWnd) {
+static void ToggleBorderlessFullscreen(HWND hWnd, bool watermarkMode) {
   try {
     static bool previousClickthrough = false; // Store the previous clickthrough state
     static float previousOpacity = 1.0f; // Store the previous opacity (fully opaque by default)
 
-    // Check if Shift is pressed
-    bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    bool isShiftPressed = watermarkMode;
 
     // Get the work area of the monitor (excluding the taskbar)
     MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
@@ -550,7 +549,7 @@ static void ToggleBorderlessFullscreen(HWND hWnd) {
 static void ToggleFullScreen(HWND hwnd) {
   if (g_plugin.IsBorderlessFullscreen(hwnd)) {
     // ShowCursor(TRUE);
-    ToggleBorderlessFullscreen(hwnd);
+    ToggleBorderlessFullscreen(hwnd, false);
   }
   else if (!fullscreen) {
     ShowCursor(FALSE);
@@ -860,7 +859,8 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   if (wParam == VK_F9) {
     bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
     if (isCtrlPressed) {
-      ToggleBorderlessFullscreen(hWnd);
+      bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+      ToggleBorderlessFullscreen(hWnd, isShiftPressed);
     }
     else {
       ToggleClickThrough(hWnd);
@@ -1151,6 +1151,18 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
     return 0;
   }
+
+  case WM_USER + 160: // SIGNAL|FULLSCREEN
+    ToggleFullScreen(hWnd);
+    return 0;
+
+  case WM_USER + 161: // SIGNAL|WATERMARK
+    ToggleBorderlessFullscreen(hWnd, true);
+    return 0;
+
+  case WM_USER + 162: // SIGNAL|BORDERLESS_FS
+    ToggleBorderlessFullscreen(hWnd, false);
+    return 0;
 
   default:
     return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
