@@ -11469,16 +11469,22 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     StartSetupThread(true);
   }
   else if (wcsncmp(sMessage, L"SEND=", 5) == 0) {
-    // Keystroke sent via pipe — parse hex VK code and post WM_KEYDOWN to our window
-    std::wstring vkStr(sMessage + 5);
-    int vkCode = 0;
-    if (vkStr.length() > 2 && vkStr[0] == L'0' && (vkStr[1] == L'x' || vkStr[1] == L'X')) {
-      vkCode = wcstol(vkStr.c_str(), nullptr, 16);
-    } else {
-      vkCode = _wtoi(vkStr.c_str());
-    }
-    if (vkCode > 0) {
-      PostMessageW(GetPluginWindow(), WM_KEYDOWN, (WPARAM)vkCode, 0);
+    // Keystroke sent via pipe
+    std::wstring val(sMessage + 5);
+    HWND hWnd = GetPluginWindow();
+    if (hWnd && !val.empty()) {
+      if (val.length() >= 2 && val[0] == L'0' && (val[1] == L'x' || val[1] == L'X')) {
+        // Hex keycode (e.g. "0x73" for F4)
+        int vkCode = (int)wcstol(val.c_str(), nullptr, 16);
+        if (vkCode > 0) {
+          PostMessageW(hWnd, WM_KEYDOWN, (WPARAM)vkCode, 0);
+          PostMessageW(hWnd, WM_KEYUP, (WPARAM)vkCode, 0);
+        }
+      } else {
+        // Send as WM_CHAR sequence (e.g. "00" for sprite trigger, "~" for tilde)
+        for (wchar_t ch : val)
+          PostMessageW(hWnd, WM_CHAR, (WPARAM)ch, 0);
+      }
     }
   }
 }

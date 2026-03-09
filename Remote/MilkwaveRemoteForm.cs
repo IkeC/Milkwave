@@ -15,34 +15,7 @@ using static MilkwaveRemote.Helper.RemoteHelper;
 
 namespace MilkwaveRemote {
   public partial class MilkwaveRemoteForm : Form {
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
-    private const uint SWP_NOSIZE = 0x0001;
-    private const uint SWP_NOZORDER = 0x0004;
-    private const uint SWP_NOACTIVATE = 0x0010;
-
     private PipeClient? _pipeClient;
-
-    private const uint WM_KEYDOWN = 0x0100;
 
     private DarkModeCS dm;
 
@@ -171,53 +144,6 @@ namespace MilkwaveRemote {
     private const int VK_CURSOR_UP = 0x26;
     private const int VK_CURSOR_RIGHT = 0x27;
     private const int VK_CURSOR_DOWN = 0x28;
-
-    public const byte VK_MEDIA_PLAY_PAUSE = 0xB3;
-    public const byte VK_MEDIA_STOP = 0xB2;
-    public const uint KEYEVENTF_EXTENDEDKEY = 0x1;
-    public const uint KEYEVENTF_KEYUP = 0x2;
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct INPUT {
-      public uint type;
-      public InputUnion u;
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    private struct InputUnion {
-      [FieldOffset(0)]
-      public MOUSEINPUT mi;
-      [FieldOffset(0)]
-      public KEYBDINPUT ki;
-      [FieldOffset(0)]
-      public HARDWAREINPUT hi;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MOUSEINPUT {
-      public int dx;
-      public int dy;
-      public uint mouseData;
-      public uint dwFlags;
-      public uint time;
-      public IntPtr dwExtraInfo;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct KEYBDINPUT {
-      public ushort wVk;
-      public ushort wScan;
-      public uint dwFlags;
-      public uint time;
-      public IntPtr dwExtraInfo;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct HARDWAREINPUT {
-      public uint uMsg;
-      public ushort wParamL;
-      public ushort wParamH;
-    }
 
     private enum MessageType {
       Raw,
@@ -1080,14 +1006,12 @@ namespace MilkwaveRemote {
       numPresetChange.Value = Math.Clamp(timeBetweenPresets, numPresetChange.Minimum, numPresetChange.Maximum);
     }
 
-    private IntPtr StartVisualizerIfNotFound(bool onlyIfNotFound) {
-      if (IsPipeConnected && onlyIfNotFound) {
-        return GetVisualizerHwnd();
-      }
+    private void StartVisualizerIfNotFound(bool onlyIfNotFound) {
+      if (IsPipeConnected && onlyIfNotFound)
+        return;
 
       // Launch the visualizer and connect via pipe
       LaunchAndConnectVisualizer();
-      return GetVisualizerHwnd();
     }
 
     /// <summary>
@@ -1470,20 +1394,6 @@ namespace MilkwaveRemote {
       }
     }
 
-    /// <summary>
-    /// Get the HWND of the connected visualizer (for keystroke sending).
-    /// Returns IntPtr.Zero if not connected.
-    /// </summary>
-    private IntPtr GetVisualizerHwnd() {
-      if (_pipeClient == null || !_pipeClient.IsConnected) return IntPtr.Zero;
-      try {
-        var proc = Process.GetProcessById(_pipeClient.ConnectedPid);
-        return proc.MainWindowHandle;
-      } catch {
-        return IntPtr.Zero;
-      }
-    }
-
     private void MainForm_Shown(object sender, EventArgs e) {
       btnSend.Focus();
 
@@ -1599,10 +1509,6 @@ namespace MilkwaveRemote {
       txtVisRunning.Text = displayText.Replace("PRESET=", "");
     }
 
-    /// <summary>
-    /// Find the visualizer's main window handle (for keystroke sending and WM_CLOSE).
-    /// Uses the connected pipe's PID to get the process's MainWindowHandle.
-    /// </summary>
     private void btnSend_Click(object sender, EventArgs e) {
 
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
@@ -2310,308 +2216,28 @@ namespace MilkwaveRemote {
         return;
       }
 
-      // Send keystroke via pipe; fall back to PostMessage for HWND-only operations
-      IntPtr hwnd = GetVisualizerHwnd();
-      if (hwnd != IntPtr.Zero) {
-        PostMessage(hwnd, WM_KEYDOWN, (IntPtr)VKKey, IntPtr.Zero);
-        SetStatusText($"Pressed {keyName} in '{foundWindowTitle}'");
-      } else {
-        // Fall back to SEND command via pipe
-        _pipeClient!.Send($"SEND=0x{VKKey:X2}");
-        SetStatusText($"Pressed {keyName}");
-      }
+      _pipeClient!.Send($"SEND=0x{VKKey:X2}");
+      SetStatusText($"Pressed {keyName}");
     }
 
     private void SendInputTwoKeys(int VKKey, int VKKey2, string keyName) {
-      IntPtr currentWindow = GetForegroundWindow();
-      IntPtr foundWindow = GetVisualizerHwnd();
-      if (foundWindow != IntPtr.Zero) {
-        SetForegroundWindow(foundWindow);
-
-        INPUT[] inputs;
-        inputs = new INPUT[4];
-
-        inputs[0] = new INPUT {
-          type = 1, // Keyboard input
-          u = new InputUnion {
-            ki = new KEYBDINPUT {
-              wVk = (ushort)VKKey,
-              dwFlags = 0 // Key down
-            }
-          }
-        };
-
-        inputs[1] = new INPUT {
-          type = 1, // Keyboard input
-          u = new InputUnion {
-            ki = new KEYBDINPUT {
-              wVk = (ushort)VKKey,
-              dwFlags = 2 // Key up
-            }
-          }
-        };
-
-        inputs[2] = new INPUT {
-          type = 1, // Keyboard input
-          u = new InputUnion {
-            ki = new KEYBDINPUT {
-              wVk = (ushort)VKKey2,
-              dwFlags = 0 // Key down
-            }
-          }
-        };
-
-        inputs[3] = new INPUT {
-          type = 1, // Keyboard input
-          u = new InputUnion {
-            ki = new KEYBDINPUT {
-              wVk = (ushort)VKKey2,
-              dwFlags = 2 // Key up
-            }
-          }
-        };
-
-        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
-        SetStatusText($"Pressed {keyName} in '{foundWindowTitle}'");
-
-        SetForegroundWindow(currentWindow);
-      } else {
+      if (!IsPipeConnected) {
         SetStatusText(windowNotFound);
+        return;
       }
+
+      _pipeClient!.Send($"SEND={keyName}");
+      SetStatusText($"Pressed {keyName}");
     }
 
     private void SendInput(int VKKey, string keyName, bool doShift, bool doAlt, bool doCtrl) {
-      IntPtr currentWindow = GetForegroundWindow();
-      IntPtr foundWindow = GetVisualizerHwnd();
-      if (foundWindow != IntPtr.Zero) {
-        SetForegroundWindow(foundWindow);
-
-        INPUT[] inputs;
-
-        // Supported combos:
-        // Shift + Ctrl
-        // Shift
-        // Alt
-        // Ctrl
-        if (doShift && doCtrl) {
-          inputs = new INPUT[6];
-
-          inputs[0] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_SHIFT,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[1] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_CTRL,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[2] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[3] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-
-          inputs[4] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_SHIFT,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-
-          inputs[5] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_CTRL,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-        } else if (doShift) {
-          inputs = new INPUT[4];
-
-          inputs[0] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_SHIFT,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[1] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[2] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-
-          inputs[3] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_SHIFT,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-        } else if (doAlt) {
-          inputs = new INPUT[4];
-
-          inputs[0] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_ALT,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[1] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[2] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-
-          inputs[3] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_ALT,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-        } else if (doCtrl) {
-          inputs = new INPUT[4];
-
-          inputs[0] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_CTRL,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[1] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[2] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-
-          inputs[3] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = VK_CTRL,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-        } else {
-          inputs = new INPUT[2];
-
-          inputs[0] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 0 // Key down
-              }
-            }
-          };
-
-          inputs[1] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = (ushort)VKKey,
-                dwFlags = 2 // Key up
-              }
-            }
-          };
-        }
-
-        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
-        SetStatusText($"Pressed {keyName} in '{foundWindowTitle}'");
-
-        SetForegroundWindow(currentWindow);
-      } else {
+      if (!IsPipeConnected) {
         SetStatusText(windowNotFound);
+        return;
       }
+
+      _pipeClient!.Send($"SEND=0x{VKKey:X2}");
+      SetStatusText($"Pressed {keyName}");
     }
 
     private void btnF3_Click(object sender, EventArgs e) {
@@ -2640,37 +2266,13 @@ namespace MilkwaveRemote {
     }
 
     private void SendUnicodeChars(string inputString) {
-      IntPtr currentWindow = GetForegroundWindow();
-      IntPtr foundWindow = GetVisualizerHwnd();
-
-      if (foundWindow != IntPtr.Zero) {
-        SetForegroundWindow(foundWindow);
-
-        for (int i = 0; i < inputString.Length; i++) {
-          INPUT[] inputs = new INPUT[1];
-          inputs[0] = new INPUT {
-            type = 1, // Keyboard input
-            u = new InputUnion {
-              ki = new KEYBDINPUT {
-                wVk = 0,
-                wScan = (ushort)inputString[i],
-                dwFlags = 4, // KEYEVENTF_UNICODE
-                time = 0,
-                dwExtraInfo = IntPtr.Zero
-              }
-            }
-          };
-          SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
-          Thread.Sleep(50);
-        }
-
-        SetStatusText($"Pressed {inputString.ToUpper()} in '{foundWindowTitle}'");
-
-        SetForegroundWindow(currentWindow);
-
-      } else {
+      if (!IsPipeConnected) {
         SetStatusText(windowNotFound);
+        return;
       }
+
+      _pipeClient!.Send($"SEND={inputString}");
+      SetStatusText($"Pressed {inputString.ToUpper()}");
     }
 
     private void btnTilde_Click(object sender, EventArgs e) {
@@ -2994,10 +2596,7 @@ namespace MilkwaveRemote {
 
         // Close the Visualizer window if CloseVisualizerWithRemote=true or Alt or Ctrl key are pressed
         if (Settings.CloseVisualizerWithRemote || (Control.ModifierKeys & Keys.Alt) == Keys.Alt || (Control.ModifierKeys & Keys.Control) == Keys.Control) {
-          IntPtr foundWindow = GetVisualizerHwnd();
-          if (foundWindow != IntPtr.Zero) {
-            PostMessage(foundWindow, 0x0010, IntPtr.Zero, IntPtr.Zero); // WM_CLOSE message
-          }
+          _pipeClient?.Send("SEND=0x1B"); // VK_ESCAPE — triggers close
         }
 
         _pipeClient?.Dispose();
