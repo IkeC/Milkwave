@@ -204,6 +204,7 @@
     <ClCompile Include="Milkdrop2PcmVisualizer.cpp" />
     <ClCompile Include="milkdropfs.cpp" />
     <ClCompile Include="milkwave.cpp" />
+    <ClCompile Include="pipe_server.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="pluginshell.cpp" />
     <ClCompile Include="state.cpp" />
@@ -239,6 +240,7 @@
     <ClInclude Include="Milkdrop2PcmVisualizer.h" />
     <ClInclude Include="VideoCapture.h" />
     <ClInclude Include="milkwave.h" />
+    <ClInclude Include="pipe_server.h" />
     <ClInclude Include="plugin.h" />
     <ClInclude Include="pluginshell.h" />
     <ClInclude Include="resource.h" />

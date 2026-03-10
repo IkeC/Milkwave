@@ -142,6 +142,7 @@
 // older Windows versions: Entry Point Not Found Fix
 
 #include "plugin.h"
+#include "pipe_server.h"
 #include "resource.h"
 #include "pluginshell.h"
 
@@ -171,6 +172,7 @@ namespace fs = std::filesystem;
 
 CPlugin g_plugin;
 Milkwave milkwave;
+PipeServer g_pipeServer;
 HINSTANCE api_orig_hinstance = nullptr;
 _locale_t g_use_C_locale;
 char keyMappings[8];
@@ -424,13 +426,12 @@ static void ToggleClickThrough(HWND hWnd) {
   }
 }
 
-static void ToggleBorderlessFullscreen(HWND hWnd) {
+static void ToggleBorderlessFullscreen(HWND hWnd, bool watermarkMode) {
   try {
     static bool previousClickthrough = false; // Store the previous clickthrough state
     static float previousOpacity = 1.0f; // Store the previous opacity (fully opaque by default)
 
-    // Check if Shift is pressed
-    bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    bool isShiftPressed = watermarkMode;
 
     // Get the work area of the monitor (excluding the taskbar)
     MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
@@ -548,7 +549,7 @@ static void ToggleBorderlessFullscreen(HWND hWnd) {
 static void ToggleFullScreen(HWND hwnd) {
   if (g_plugin.IsBorderlessFullscreen(hwnd)) {
     // ShowCursor(TRUE);
-    ToggleBorderlessFullscreen(hwnd);
+    ToggleBorderlessFullscreen(hwnd, false);
   }
   else if (!fullscreen) {
     ShowCursor(FALSE);
@@ -858,7 +859,8 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   if (wParam == VK_F9) {
     bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
     if (isCtrlPressed) {
-      ToggleBorderlessFullscreen(hWnd);
+      bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+      ToggleBorderlessFullscreen(hWnd, isShiftPressed);
     }
     else {
       ToggleClickThrough(hWnd);
@@ -1133,10 +1135,34 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     break;
   }
 
-  case (0x004A): // WM_COPYDATA
+  case WM_USER_PIPE_IPC_MESSAGE:
   {
-    return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+    // Received from pipe server — lParam is heap-allocated wchar_t*, wParam is dwData
+    wchar_t* message = (wchar_t*)lParam;
+    DWORD_PTR dwData = (DWORD_PTR)wParam;
+    if (message) {
+      if (dwData == 1) {
+        g_plugin.LaunchMessage(message);
+      }
+      else if (dwData == (WM_USER + 108)) { // WM_USER_SET_SPOUT_SENDER equivalent
+        g_plugin.SetSpoutSender(message);
+      }
+      free(message);
+    }
+    return 0;
   }
+
+  case WM_USER + 160: // SIGNAL|FULLSCREEN
+    ToggleFullScreen(hWnd);
+    return 0;
+
+  case WM_USER + 161: // SIGNAL|WATERMARK
+    ToggleBorderlessFullscreen(hWnd, true);
+    return 0;
+
+  case WM_USER + 162: // SIGNAL|BORDERLESS_FS
+    ToggleBorderlessFullscreen(hWnd, false);
+    return 0;
 
   default:
     return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
@@ -1436,6 +1462,10 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     BackbufferWidth,
     BackbufferHeight);
 
+  // Start named pipe IPC server (replaces WM_COPYDATA)
+  // Use WM_USER as signal base (Milkwave uses WM_USER+N, not WM_APP+N)
+  g_pipeServer.Start(hwnd, WM_USER_PIPE_IPC_MESSAGE, WM_USER);
+
   MSG msg;
   msg.message = WM_NULL;
 
@@ -1473,6 +1503,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   }
   milkwave.LogInfo(L"CreateWindowAndRun: Message loop ended");
 
+  g_pipeServer.Stop();
   g_plugin.MyWriteConfig();
   g_plugin.PluginQuit();
 
