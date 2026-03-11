@@ -323,7 +323,11 @@ namespace MilkwaveRemote {
 
       try {
         string? currentSection = null;
-        foreach (string rawLine in File.ReadAllLines(messagesPath)) {
+        string[] lines;
+        using (var fs = new FileStream(messagesPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var sr = new StreamReader(fs))
+          lines = sr.ReadToEnd().Split(['\r', '\n']);
+        foreach (string rawLine in lines) {
           string trimmed = rawLine.Trim();
           if (trimmed.Length == 0 || trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.StartsWith(";", StringComparison.Ordinal)) {
             continue;
