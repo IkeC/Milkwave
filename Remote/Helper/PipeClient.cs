@@ -74,8 +74,10 @@ namespace MilkwaveRemote.Helper {
               int.TryParse(fileName.Substring("Milkwave_".Length), out int pid)) {
             try {
               var proc = Process.GetProcessById(pid);
+              string windowTitle = proc.MainWindowTitle;
+              string displayName = string.IsNullOrWhiteSpace(windowTitle) ? proc.ProcessName : windowTitle;
               string exePath = GetProcessExePath(pid);
-              result.Add((pid, proc.ProcessName, exePath));
+              result.Add((pid, displayName, exePath));
             } catch {
               // Process no longer exists — stale pipe, skip
             }
@@ -192,6 +194,8 @@ namespace MilkwaveRemote.Helper {
             bytesRead = _pipe.Read(buffer, 0, buffer.Length);
           } catch (IOException) {
             break; // pipe broken
+          } catch (ObjectDisposedException) {
+            break; // pipe disposed externally
           } catch (OperationCanceledException) {
             break;
           }

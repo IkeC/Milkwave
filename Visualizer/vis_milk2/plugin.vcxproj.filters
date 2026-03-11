@@ -112,6 +112,9 @@
     <ClCompile Include="plugin_inputmix_render.cpp">
       <Filter>musikcube</Filter>
     </ClCompile>
+    <ClCompile Include="pipe_server.cpp">
+      <Filter>musikcube</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="wasabi.h">
@@ -219,6 +222,7 @@
     <ClInclude Include="VideoCapture.h">
       <Filter>library\headers</Filter>
     </ClInclude>
+    <ClInclude Include="pipe_server.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="text1.bin">

@@ -46,6 +46,17 @@ namespace MilkwaveRemote {
       return Path.IsPathRooted(subPath) ? subPath : Path.Combine(BaseDir, subPath);
     }
 
+    /// <summary>
+    /// Determines if the currently selected visualizer is DX12 based on the discovered instance name.
+    /// </summary>
+    private bool IsSelectedVisualizerDX12() {
+      int idx = cboVisualizerInstance.SelectedIndex;
+      if (idx >= 0 && idx < _discoveredInstances.Count) {
+        return _discoveredInstances[idx].name.Contains("DX12", StringComparison.OrdinalIgnoreCase);
+      }
+      return false;
+    }
+
     private string VisualizerPresetsFolder = "";
     private string ShaderFilesFolder = "";
     private string PresetsShaderConvFolder = "";
@@ -54,7 +65,6 @@ namespace MilkwaveRemote {
     private string midiDefaultFileName = "midi-default.txt";
 
     private string windowNotFound = "Not connected to a visualizer";
-    private string foundWindowTitle = "";
     private string defaultFontName = "Segoe UI";
     private string lastSpoutSenderName = "";
 
@@ -114,35 +124,17 @@ namespace MilkwaveRemote {
     private const int VK_F11 = 0x7A;
     private const int VK_F12 = 0x7B;
 
-    private const int VK_0 = 0x30;
-    private const int VK_1 = 0x31;
-    private const int VK_2 = 0x32;
-    private const int VK_3 = 0x33;
-    private const int VK_4 = 0x34;
-    private const int VK_5 = 0x35;
-    private const int VK_6 = 0x36;
-    private const int VK_7 = 0x37;
-    private const int VK_8 = 0x38;
-    private const int VK_9 = 0x39;
-
     private const int VK_B = 0x42;
     private const int VK_K = 0x4B;
     private const int VK_N = 0x4E;
     private const int VK_R = 0x52;
 
-    private const int VK_SHIFT = 0x10;
-    private const int VK_CTRL = 0x11;
-    private const int VK_ALT = 0x12;
-
     private const int VK_SPACE = 0x20;
     private const int VK_DELETE = 0x2E;
 
-    private const int VK_ENTER = 0x0D;
     private const int VK_BACKSPACE = 0x08;
 
-    private const int VK_CURSOR_LEFT = 0x25;
     private const int VK_CURSOR_UP = 0x26;
-    private const int VK_CURSOR_RIGHT = 0x27;
     private const int VK_CURSOR_DOWN = 0x28;
 
     private enum MessageType {
@@ -268,7 +260,7 @@ namespace MilkwaveRemote {
 
     private void LoadSpriteDefinitions() {
       spriteSectionImageMap.Clear();
-      string spritesPath = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), visualizerSpritesFile);
+      string spritesPath = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), visualizerSpritesFile);
 
       if (!File.Exists(spritesPath)) {
         return;
@@ -316,7 +308,7 @@ namespace MilkwaveRemote {
 
     private void LoadMessageDefinitions() {
       messageCodeTextMap.Clear();
-      string messagesPath = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), visualizerMessagesFile);
+      string messagesPath = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), visualizerMessagesFile);
 
       if (!File.Exists(messagesPath)) {
         return;
@@ -778,7 +770,7 @@ namespace MilkwaveRemote {
     }
 
     private bool UpdateSpriteDefinition(string section, string newValue) {
-      string spritesPath = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), visualizerSpritesFile);
+      string spritesPath = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), visualizerSpritesFile);
       if (!File.Exists(spritesPath)) {
         return false;
       }
@@ -968,7 +960,11 @@ namespace MilkwaveRemote {
       toolStripStatusLabelMonitorGPU.Text = "";
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
+#if !DEBUG
       ConnectToVisualizer();
+#else
+      ScanAndPopulateVisualizers(); // DEBUG: scan only, no auto-launch
+#endif
       cboSettingsOpenFile.SelectedIndex = 0;
 
       InitializeSpriteButtonSupport();
@@ -997,7 +993,7 @@ namespace MilkwaveRemote {
       txtShaderHLSL.Font = new Font(txtShaderHLSL.Font.FontFamily, 10f, txtShaderHLSL.Font.Style);
       txtShaderGLSL.Font = txtShaderHLSL.Font;
 
-      RemoteHelper = new RemoteHelper(Path.Combine(GetVisualizerDir(chkUseDX12.Checked), visualizerSettingsFile));
+      RemoteHelper = new RemoteHelper(Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), visualizerSettingsFile));
 
       string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
       if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
@@ -1078,34 +1074,124 @@ namespace MilkwaveRemote {
 
     private bool IsPipeConnected => _pipeClient?.IsConnected == true;
     private List<(int pid, string name, string exePath)> _discoveredInstances = new();
-    private const string RescanLabel = "↻ Rescan for visualizers...";
-    private const string LaunchLabel = "▶ Launch visualizer...";
+
+    /// <summary>
+    /// Unsubscribes pipe events and disposes the client so that intentional
+    /// disconnects never trigger OnPipeDisconnected and cause a cascade loop.
+    /// </summary>
+    private void DetachAndDisposePipeClient() {
+      if (_pipeClient == null) return;
+      _pipeClient.Disconnected -= OnPipeDisconnected;
+      _pipeClient.MessageReceived -= OnPipeMessageReceived;
+      _pipeClient.Dispose();
+      _pipeClient = null;
+    }
 
     private void ScanAndPopulateVisualizers() {
       _discoveredInstances = PipeClient.DiscoverVisualizers();
 
-      cboWindowTitle.SelectedIndexChanged -= cboWindowTitle_SelectedIndexChanged;
-      cboWindowTitle.Items.Clear();
+      cboVisualizerInstance.SelectedIndexChanged -= cboWindowTitle_SelectedIndexChanged;
+      cboVisualizerInstance.Items.Clear();
 
-      if (_discoveredInstances.Count == 0) {
-        cboWindowTitle.Items.Add("(no visualizers found)");
+      bool found = _discoveredInstances.Count > 0;
+      if (!found) {
+        cboVisualizerInstance.Items.Add("No visualizers");
       } else {
         foreach (var (pid, name, _) in _discoveredInstances) {
-          cboWindowTitle.Items.Add($"{name} (PID: {pid})");
+          cboVisualizerInstance.Items.Add($"{name} (PID: {pid})");
         }
       }
-      // Add launch option if we know the exe path
-      if (!string.IsNullOrEmpty(Settings.VisualizerExe)) {
-        cboWindowTitle.Items.Add(LaunchLabel);
+      cboVisualizerInstance.Enabled = found;
+      cboVisualizerInstance.SelectedIndex = 0;
+      cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
+    }
+
+    private void btnVisualizerScan_Click(object? sender, EventArgs e) {
+      DetachAndDisposePipeClient();
+      ScanAndPopulateVisualizers();
+
+      if (_discoveredInstances.Count > 0) {
+        ConnectToInstance(_discoveredInstances[0]);
+      } else {
+        SetStatusText("No visualizer instances found");
       }
-      cboWindowTitle.Items.Add(RescanLabel);
-      cboWindowTitle.SelectedIndex = 0;
-      cboWindowTitle.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
+    }
+
+    private void btnVisualizerDX9_Click(object sender, EventArgs e) {
+      LaunchVisualizerExe(isDX12: false);
+    }
+
+    private void btnVisualizerDX12_Click(object sender, EventArgs e) {
+      LaunchVisualizerExe(isDX12: true);
+    }
+
+    /// <summary>
+    /// Launches a new visualizer window (DX9 or DX12), then polls for its pipe
+    /// and selects it in cboVisualizerInstance once it appears.
+    /// </summary>
+    private void LaunchVisualizerExe(bool isDX12) {
+      string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
+      if (string.IsNullOrEmpty(exePath)) {
+        exePath = isDX12 ? "MDropDX12.exe" : "MilkwaveVisualizer.exe";
+      }
+
+      if (!Path.IsPathRooted(exePath)) {
+        exePath = Path.Combine(GetVisualizerDir(isDX12), exePath);
+      }
+
+      if (!File.Exists(exePath)) {
+        SetStatusText($"Visualizer not found: {exePath}");
+        return;
+      }
+
+      // Snapshot existing PIDs so we can identify the newly spawned instance
+      var knownPids = new HashSet<int>(PipeClient.DiscoverVisualizers().Select(v => v.pid));
+
+      // First-time DX12 run (no cache folder) takes much longer to start due to shader compilation
+      bool isFirstDX12Run = isDX12 && !Directory.Exists(Path.Combine(GetVisualizerDir(isDX12), "cache"));
+      int pollCount = isFirstDX12Run ? 150 : 50;
+      int pollIntervalMs = isFirstDX12Run ? 200 : 100;
+
+      try {
+        Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true });
+        SetStatusText($"Launched {Path.GetFileName(exePath)}");
+      } catch (Exception ex) {
+        SetStatusText($"Failed to launch: {ex.Message}");
+        return;
+      }
+
+      // Poll off the UI thread so the form stays responsive
+      Task.Run(() => {
+        for (int i = 0; i < pollCount; i++) {
+          Thread.Sleep(pollIntervalMs);
+          var instances = PipeClient.DiscoverVisualizers();
+          var newInstance = instances.FirstOrDefault(v => !knownPids.Contains(v.pid));
+          if (newInstance.pid != 0) {
+            BeginInvoke(() => {
+              ScanAndPopulateVisualizers();
+              // Select and connect to the newly opened instance
+              int idx = _discoveredInstances.FindIndex(v => v.pid == newInstance.pid);
+              if (idx >= 0) {
+                cboVisualizerInstance.SelectedIndexChanged -= cboWindowTitle_SelectedIndexChanged;
+                cboVisualizerInstance.SelectedIndex = idx;
+                cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
+                ConnectToInstance(_discoveredInstances[idx]);
+              }
+            });
+            return;
+          }
+        }
+        // Timed out — still rescan so the combo reflects current state
+        BeginInvoke(() => {
+          ScanAndPopulateVisualizers();
+          SetStatusText("Visualizer launched but pipe not ready — try Scan");
+        });
+      });
+      SetStatusText("");
     }
 
     private void ConnectToVisualizer() {
-      _pipeClient?.Dispose();
-      _pipeClient = null;
+     DetachAndDisposePipeClient();
 
       ScanAndPopulateVisualizers();
 
@@ -1122,31 +1208,50 @@ namespace MilkwaveRemote {
       ConnectToInstance(_discoveredInstances[0]);
     }
 
-    private void ConnectToInstance((int pid, string name, string exePath) target) {
-      _pipeClient?.Dispose();
-      _pipeClient = new PipeClient();
-      _pipeClient.MessageReceived += OnPipeMessageReceived;
-      _pipeClient.Disconnected += OnPipeDisconnected;
+    private void ConnectToInstance((int pid, string name, string exePath) target, bool autoSwitch = true) {
+     DetachAndDisposePipeClient();
+     _pipeClient = new PipeClient();
+     _pipeClient.MessageReceived += OnPipeMessageReceived;
+     _pipeClient.Disconnected += OnPipeDisconnected;
 
       if (_pipeClient.Connect(target.pid)) {
-        foundWindowTitle = $"{target.name} (PID: {target.pid})";
-        SetStatusText($"Connected to {foundWindowTitle}");
+        SetStatusText($"Connected to {target.name} (PID: {target.pid})");
 
-        // Remember the full exe path for future auto-launch
+        // Remember the full exe path in the correct setting for future auto-launch
         string resolvedExe = target.exePath;
         if (!string.IsNullOrEmpty(resolvedExe) && File.Exists(resolvedExe)) {
-          Settings.VisualizerExe = resolvedExe;
+          bool targetIsDX12 = target.name.Contains("DX12", StringComparison.OrdinalIgnoreCase);
+          if (targetIsDX12) {
+            Settings.VisualizerExeDX12 = resolvedExe;
+          } else {
+            Settings.VisualizerExe = resolvedExe;
+          }
           SaveSettingsToFile();
         }
       } else {
-        SetStatusText($"Failed to connect to {target.name} (PID: {target.pid})");
-        _pipeClient.Dispose();
-        _pipeClient = null;
+        string failedMsg = $"Failed to connect";
+        DetachAndDisposePipeClient();
+        ScanAndPopulateVisualizers();
+
+        if (autoSwitch && _discoveredInstances.Count > 0) {
+          int highestIdx = _discoveredInstances
+            .Select((inst, idx) => (inst.pid, idx))
+            .OrderByDescending(x => x.pid)
+            .First().idx;
+          cboVisualizerInstance.SelectedIndexChanged -= cboWindowTitle_SelectedIndexChanged;
+          cboVisualizerInstance.SelectedIndex = highestIdx;
+          cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
+          var sw = _discoveredInstances[highestIdx];
+          ConnectToInstance(sw, autoSwitch: false); // prevent recursive auto-switch
+          SetStatusText($"{failedMsg} — switched to {sw.name} (PID: {sw.pid})");
+        } else {
+          SetStatusText(failedMsg);
+        }
       }
     }
 
     private void LaunchAndConnectVisualizer() {
-      bool isDX12 = chkUseDX12.Checked;
+      bool isDX12 = IsSelectedVisualizerDX12();
       string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
       if (string.IsNullOrEmpty(exePath)) {
         // Fall back to default exe name
@@ -1183,27 +1288,11 @@ namespace MilkwaveRemote {
       }
 
       ScanAndPopulateVisualizers();
-      SetStatusText("Visualizer launched but pipe not ready — try Rescan");
+      SetStatusText("Visualizer launched but pipe not ready — try Scan");
     }
 
     private void cboWindowTitle_SelectedIndexChanged(object? sender, EventArgs e) {
-      string selected = cboWindowTitle.SelectedItem?.ToString() ?? "";
-
-      // "Rescan" is always the last item
-      if (selected == RescanLabel) {
-        _pipeClient?.Dispose();
-        _pipeClient = null;
-        ConnectToVisualizer();
-        return;
-      }
-
-      // "Launch" option
-      if (selected == LaunchLabel) {
-        LaunchAndConnectVisualizer();
-        return;
-      }
-
-      int idx = cboWindowTitle.SelectedIndex;
+      int idx = cboVisualizerInstance.SelectedIndex;
       if (idx >= 0 && idx < _discoveredInstances.Count) {
         ConnectToInstance(_discoveredInstances[idx]);
       }
@@ -1214,8 +1303,42 @@ namespace MilkwaveRemote {
         BeginInvoke(new Action(OnPipeDisconnected));
         return;
       }
-      foundWindowTitle = "";
-      SetStatusText("Disconnected from visualizer");
+
+      int closedPid = _pipeClient?.ConnectedPid ?? 0;
+      bool wasSelected = closedPid != 0 &&
+                         cboVisualizerInstance.SelectedIndex >= 0 &&
+                         cboVisualizerInstance.SelectedIndex < _discoveredInstances.Count &&
+                         _discoveredInstances[cboVisualizerInstance.SelectedIndex].pid == closedPid;
+
+     // The pipe already disconnected naturally — just clean up without triggering the event again
+     if (_pipeClient != null) {
+       _pipeClient.Disconnected -= OnPipeDisconnected;
+       _pipeClient.MessageReceived -= OnPipeMessageReceived;
+       _pipeClient.Dispose();
+       _pipeClient = null;
+     }
+
+      ScanAndPopulateVisualizers();
+
+      if (_discoveredInstances.Count == 0) {
+        SetStatusText("Visualizer closed — no instances remaining");
+        return;
+      }
+
+      if (wasSelected) {
+        // Select and connect to the instance with the highest PID
+        int highestIdx = _discoveredInstances
+          .Select((inst, idx) => (inst.pid, idx))
+          .OrderByDescending(x => x.pid)
+          .First().idx;
+        cboVisualizerInstance.SelectedIndexChanged -= cboWindowTitle_SelectedIndexChanged;
+        cboVisualizerInstance.SelectedIndex = highestIdx;
+        cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
+        ConnectToInstance(_discoveredInstances[highestIdx]);
+        SetStatusText($"Visualizer closed — switched to {_discoveredInstances[highestIdx].name} (PID: {_discoveredInstances[highestIdx].pid})");
+      } else {
+        SetStatusText("Visualizer closed");
+      }
     }
 
     private void OnPipeMessageReceived(string message) {
@@ -1657,9 +1780,6 @@ namespace MilkwaveRemote {
                 System.Threading.Thread.Sleep(50);
               }
               _pipeClient!.SendSignal($"ENABLESPOUTMIX={(mixEnabled ? 1 : 0)}");
-              if (statusMessage.Length > 0) {
-                SetStatusText($"{statusMessage}");
-              }
               if (statusMessage.Length > 0) {
                 SetStatusText($"{statusMessage}");
               }
@@ -2221,26 +2341,6 @@ namespace MilkwaveRemote {
       SetStatusText($"Pressed {keyName}");
     }
 
-    private void SendInputTwoKeys(int VKKey, int VKKey2, string keyName) {
-      if (!IsPipeConnected) {
-        SetStatusText(windowNotFound);
-        return;
-      }
-
-      _pipeClient!.Send($"SEND={keyName}");
-      SetStatusText($"Pressed {keyName}");
-    }
-
-    private void SendInput(int VKKey, string keyName, bool doShift, bool doAlt, bool doCtrl) {
-      if (!IsPipeConnected) {
-        SetStatusText(windowNotFound);
-        return;
-      }
-
-      _pipeClient!.Send($"SEND=0x{VKKey:X2}");
-      SetStatusText($"Pressed {keyName}");
-    }
-
     private void btnF3_Click(object sender, EventArgs e) {
       if (Settings.IsPresetMode) return;
       SendPostMessage(VK_F3, "F3");
@@ -2313,50 +2413,18 @@ namespace MilkwaveRemote {
       SendPostMessage(VK_F10, "F10");
     }
 
-    private void btn00_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_0, VK_0, "00");
-      // SendUnicodeChars("00");
-    }
-
-    private void btn11_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_1, VK_1, "11");
-      // SendUnicodeChars("00");
-    }
-
-    private void btn22_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_2, VK_2, "22");
-      // SendUnicodeChars("22");
-    }
-
-    private void btn33_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_3, VK_3, "33");
-      // SendUnicodeChars("33");
-    }
-
-    private void btn44_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_4, VK_4, "44");
-      // SendUnicodeChars("44");
-    }
-
-    private void btn55_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_5, VK_5, "55");
-      // SendUnicodeChars("55");
-    }
-
-    private void btn66_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_6, VK_6, "66");
-      // SendUnicodeChars("66");
-    }
-
-    private void btn77_Click(object sender, EventArgs e) {
-      SendInputTwoKeys(VK_7, VK_7, "77");
-      // SendUnicodeChars("77");
-    }
+    private void btn00_Click(object sender, EventArgs e) { SendUnicodeChars("00"); }
+    private void btn11_Click(object sender, EventArgs e) { SendUnicodeChars("11"); }
+    private void btn22_Click(object sender, EventArgs e) { SendUnicodeChars("22"); }
+    private void btn33_Click(object sender, EventArgs e) { SendUnicodeChars("33"); }
+    private void btn44_Click(object sender, EventArgs e) { SendUnicodeChars("44"); }
+    private void btn55_Click(object sender, EventArgs e) { SendUnicodeChars("55"); }
+    private void btn66_Click(object sender, EventArgs e) { SendUnicodeChars("66"); }
+    private void btn77_Click(object sender, EventArgs e) { SendUnicodeChars("77"); }
 
     private void btn88_Click(object sender, EventArgs e) {
       if (Settings.IsPresetMode) return;
-      SendInputTwoKeys(VK_8, VK_8, "88");
-      // SendUnicodeChars("88");
+      SendUnicodeChars("88");
     }
 
     private void btnSwitchMode_Click(object sender, EventArgs e) {
@@ -2600,10 +2668,9 @@ namespace MilkwaveRemote {
         // Close the Visualizer window if CloseVisualizerWithRemote=true or Alt or Ctrl key are pressed
         if (Settings.CloseVisualizerWithRemote || (Control.ModifierKeys & Keys.Alt) == Keys.Alt || (Control.ModifierKeys & Keys.Control) == Keys.Control) {
           _pipeClient?.Send("SEND=0x1B"); // VK_ESCAPE — triggers close
-        }
+          }
 
-        _pipeClient?.Dispose();
-        _pipeClient = null;
+          DetachAndDisposePipeClient();
 
       } catch (Exception ex) {
         Program.SaveErrorToFile(ex, "Error");
@@ -3815,17 +3882,14 @@ namespace MilkwaveRemote {
       }
       chkShaderFile.Checked = Settings.ShaderFileChecked;
       chkWrap.Checked = Settings.WrapChecked;
-      chkUseDX12.Checked = Settings.UseDX12;
 
       string savedTitle;
-      if (Settings.UseDX12) {
-        savedTitle = "MDropDX12";
-      } else if (!string.IsNullOrEmpty(Settings.WindowTitle)) {
+      if (!string.IsNullOrEmpty(Settings.WindowTitle)) {
         savedTitle = Settings.WindowTitle;
       } else {
-        savedTitle = cboWindowTitle.Items[0]?.ToString() ?? "Milkwave Visualizer";
+        savedTitle = cboVisualizerInstance.Items[0]?.ToString() ?? "Milkwave Visualizer";
       }
-      cboWindowTitle.Text = savedTitle;
+      cboVisualizerInstance.Text = savedTitle;
 
       numInputMixOpacity.Value = Math.Clamp(Settings.InputMixOpacity, numInputMixOpacity.Minimum, numInputMixOpacity.Maximum);
       chkInputTop.Checked = Settings.InputMixOnTop;
@@ -3839,14 +3903,7 @@ namespace MilkwaveRemote {
 
       RefreshSpriteButtonImages(false);
       updatingSettingsParams = false;
-    }
-
-    private void chkUseDX12_CheckedChanged(object? sender, EventArgs e) {
-      if (updatingSettingsParams) return;
-      // Reconnect via pipe — rescan for the correct visualizer type
-      _pipeClient?.Dispose();
-      _pipeClient = null;
-      ConnectToVisualizer();
+      UpdateInputMixControlsEnabled();
     }
 
     private void SetAndSaveSettings() {
@@ -3874,8 +3931,8 @@ namespace MilkwaveRemote {
       Settings.VisShift = numVisShift.Value;
       Settings.VisVersion = (int)numVisVersion.Value;
 
-      Settings.UseDX12 = chkUseDX12.Checked;
-      Settings.WindowTitle = cboWindowTitle.Text;
+      Settings.UseDX12 = IsSelectedVisualizerDX12();
+      Settings.WindowTitle = cboVisualizerInstance.Text;
 
       SaveSettingsToFile();
     }
@@ -4896,10 +4953,6 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void ToggleMIDILearning(bool doLearn) {
-      MidiHelper.Learning = doLearn;
-    }
-
     private Action<MidiEventInfo> MidiMessageReceived() {
       return note => {
         // Marshal all UI changes to the UI thread
@@ -5733,7 +5786,7 @@ namespace MilkwaveRemote {
     private void Btn88_MouseDown(object? sender, MouseEventArgs e) {
       if (!Settings.IsPresetMode) {
         // In command mode, execute normal 88 action
-        SendInputTwoKeys(VK_8, VK_8, "88");
+        SendUnicodeChars("88");
         return;
       }
 
@@ -5987,7 +6040,7 @@ namespace MilkwaveRemote {
 
       pendingThumbnailAssignments[buttonIndex] = pendingThumbnail;
 
-      string captureDir = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), "capture");
+      string captureDir = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), "capture");
 
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] BaseDir: {BaseDir}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Capture dir: {captureDir}");
@@ -6008,7 +6061,7 @@ namespace MilkwaveRemote {
         return;
       }
 
-      string captureDir = Path.Combine(GetVisualizerDir(chkUseDX12.Checked), "capture");
+      string captureDir = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), "capture");
 
       System.Diagnostics.Debug.WriteLine($"[PollCapture] Polling directory: {captureDir}");
 
@@ -6181,6 +6234,15 @@ namespace MilkwaveRemote {
 
     #region Video Input Mixing
 
+    private void UpdateInputMixControlsEnabled() {
+      bool active = chkVideoMix.Checked || chkSpoutMix.Checked;
+      chkInputTop.Enabled         = active;
+      numInputMixOpacity.Enabled  = active;
+      chkMixLumaActive.Enabled    = active;
+      numLumaThreshold.Enabled    = active;
+      numLumaSoftness.Enabled     = active;
+    }
+
     private void PopulateVideoDevices() {
       try {
         DeviceManager.PopulateVideoDevices(cboVideoInput);
@@ -6242,6 +6304,7 @@ namespace MilkwaveRemote {
       } catch (Exception ex) {
         SetStatusText($"Error toggling video mix: {ex.Message}");
       }
+      UpdateInputMixControlsEnabled();
     }
 
     private void cboVideoInput_SelectedIndexChanged(object sender, EventArgs e) {
@@ -6324,6 +6387,7 @@ namespace MilkwaveRemote {
       } catch (Exception ex) {
         SetStatusText($"Error toggling Spout mix: {ex.Message}");
       }
+      UpdateInputMixControlsEnabled();
     }
 
     private void cboSpoutInput_SelectedIndexChanged(object sender, EventArgs e) {
@@ -6425,26 +6489,6 @@ namespace MilkwaveRemote {
         }
       } catch (Exception ex) {
         Debug.WriteLine($"Error polling controller: {ex.Message}");
-      }
-    }
-
-    #endregion
-
-    #region Device Enumeration (OBS-Style Pattern)
-
-    /// <summary>
-    /// Send selected Spout sender to visualizer via pipe
-    /// </summary>
-    private void SendSpoutSenderToVisualizer(string senderName) {
-      try {
-        if (IsPipeConnected) {
-          _pipeClient!.SendSpoutSender(senderName);
-          Debug.WriteLine($"Sent Spout sender '{senderName}' to visualizer");
-        } else {
-          Debug.WriteLine("Not connected to visualizer");
-        }
-      } catch (Exception ex) {
-        Debug.WriteLine($"Error sending Spout sender to visualizer: {ex.Message}");
       }
     }
 
