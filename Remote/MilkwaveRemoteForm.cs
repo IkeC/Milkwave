@@ -57,6 +57,13 @@ namespace MilkwaveRemote {
       return false;
     }
 
+    private string ConnectedVisualizerName {
+      get {
+        int idx = cboVisualizerInstance.SelectedIndex;
+        return (idx >= 0 && idx < _discoveredInstances.Count) ? _discoveredInstances[idx].name : "Visualizer";
+      }
+    }
+
     private string VisualizerPresetsFolder = "";
     private string ShaderFilesFolder = "";
     private string PresetsShaderConvFolder = "";
@@ -1683,7 +1690,7 @@ namespace MilkwaveRemote {
             } else if (type == MessageType.PresetFilePath) {
               message = "PRESET=" + messageToSend;
               string fileName = Path.GetFileNameWithoutExtension(messageToSend);
-              statusMessage = $"Sent preset \"{fileName}\" to";
+              statusMessage = $"Sent preset \"{fileName}\" to {ConnectedVisualizerName}";
             } else if (type == MessageType.Amplify) {
               message = "AMP" +
                 "|l=" + numAmpLeft.Value.ToString(CultureInfo.InvariantCulture) +

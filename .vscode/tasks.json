@@ -72,7 +72,8 @@
       "args": [
         "${workspaceFolder}\\Milkwave.sln",
         "/p:Configuration=Debug",
-        "/p:Platform=Win32"
+        "/p:Platform=Win32",
+        "/p:PlatformToolset=v143"
       ],
       "group": {
         "kind": "build",
@@ -83,7 +84,7 @@
     {
       "label": "Build RELEASE",
       "type": "shell",
-      "command": "& { msbuild '${workspaceFolder}\\Milkwave.sln' /p:Configuration=Release /p:Platform=Win32; $buildExit = $LASTEXITCODE; if ($buildExit -ne 0) { exit $buildExit }; Push-Location -LiteralPath '${workspaceFolder}\\Build'; & '.\\release.cmd'; $releaseExit = $LASTEXITCODE; Pop-Location; if ($releaseExit -ne 0) { exit $releaseExit } }",
+      "command": "& { msbuild '${workspaceFolder}\\Milkwave.sln' /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143; $buildExit = $LASTEXITCODE; if ($buildExit -ne 0) { exit $buildExit }; Push-Location -LiteralPath '${workspaceFolder}\\Build'; & '.\\release.cmd'; $releaseExit = $LASTEXITCODE; Pop-Location; if ($releaseExit -ne 0) { exit $releaseExit } }",
       "group": "build",
       "problemMatcher": "$msCompile"
     },
