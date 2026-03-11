@@ -88,7 +88,7 @@ warp_11=`#define peak_opacity 0.5
 warp_12=`#define ENABLE_PEAK 1  // Set to 0 to disable peak hold blocks
 warp_13=`#define min_freq_hz 30.0
 warp_14=`#define max_freq_hz 16000.0
-warp_15=`#define band_samples 5.0
+warp_15=`#define band_samples 48.0
 warp_16=`
 warp_17=`shader_body
 warp_18=`{
@@ -114,22 +114,22 @@ warp_37=`    float bar_x_start = bar_index * total_unit + bar_spacing * 0.5;
 warp_38=`    float bar_x_end = bar_x_start + actual_bar_width;
 warp_39=`    float inside_bar = step(bar_x_start, uv.x) * step(uv.x, bar_x_end);
 warp_40=`
-warp_41=`    // Sample a log-spaced frequency band per bar instead of a single center frequency.
+warp_41=`    // Sample FFT linearly across each log-spaced band for even bin coverage.
 warp_42=`    float band_t0 = bar_index / num_bars;
 warp_43=`    float band_t1 = (bar_index + 1.0) / num_bars;
 warp_44=`    float log_min_freq = log(min_freq_hz);
 warp_45=`    float log_max_freq = log(max_freq_hz);
-warp_46=`    float band_log_lo = lerp(log_min_freq, log_max_freq, band_t0);
-warp_47=`    float band_log_hi = lerp(log_min_freq, log_max_freq, band_t1);
+warp_46=`    float fft_pos_lo = exp(lerp(log_min_freq, log_max_freq, band_t0)) / 22050.0;
+warp_47=`    float fft_pos_hi = exp(lerp(log_min_freq, log_max_freq, band_t1)) / 22050.0;
 warp_48=`
 warp_49=`    float fft_val = 0.0;
 warp_50=`    float peak_val = 0.0;
 warp_51=`    for (float sample_i = 0.0; sample_i < band_samples; sample_i += 1.0) {
 warp_52=`        float sample_t = (sample_i + 0.5) / band_samples;
-warp_53=`        float sample_freq = exp(lerp(band_log_lo, band_log_hi, sample_t));
-warp_54=`        fft_val += get_fft_hz(sample_freq);
+warp_53=`        float fft_pos = lerp(fft_pos_lo, fft_pos_hi, sample_t);
+warp_54=`        fft_val += get_fft(fft_pos);
 warp_55=`#if defined(HAS_FFT_PEAK) && ENABLE_PEAK
-warp_56=`        peak_val += get_fft_peak_hz(sample_freq);
+warp_56=`        peak_val += get_fft_peak(fft_pos);
 warp_57=`#endif
 warp_58=`    }
 warp_59=`    fft_val /= band_samples;
