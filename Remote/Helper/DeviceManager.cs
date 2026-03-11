@@ -23,7 +23,7 @@ namespace MilkwaveRemote.Helper {
         var devices = DeviceEnumerator.EnumerateVideoDevices();
 
         if (devices.Count == 0) {
-          comboBox.Items.Add("No video devices found");
+          comboBox.Items.Add("No video devices");
           comboBox.SelectedIndex = 0;
           comboBox.Enabled = false;
           return;
@@ -119,7 +119,7 @@ namespace MilkwaveRemote.Helper {
         var senders = DeviceEnumerator.EnumerateSpoutSenders();
 
         if (senders.Count == 0) {
-          comboBox.Items.Add("No Spout senders available");
+          comboBox.Items.Add("No Spout senders");
           comboBox.SelectedIndex = 0;
           comboBox.Enabled = false;
           return;
@@ -194,7 +194,7 @@ namespace MilkwaveRemote.Helper {
         Program.LogToFile($"[DeviceManager] DeviceEnumerator returned {controllers.Count} controllers");
 
         if (controllers.Count == 0) {
-          comboBox.Items.Add("No game controllers found");
+          comboBox.Items.Add("No game controllers");
           comboBox.SelectedIndex = 0;
           comboBox.Enabled = false;
           return;
