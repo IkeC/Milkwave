@@ -33,8 +33,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Build\visualizer-keys.txt = Build\visualizer-keys.txt
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkwaveRemoteTests", "RemoteTests\MilkwaveRemoteTests.csproj", "{79CA1E64-42BC-47B1-A247-4C10B7A3855E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -49,10 +47,6 @@ Global
 		{59EA3714-8B12-3D49-A5DD-54FD9B0BA628}.Debug|Win32.Build.0 = Debug|Any CPU
 		{59EA3714-8B12-3D49-A5DD-54FD9B0BA628}.Release|Win32.ActiveCfg = Release|Any CPU
 		{59EA3714-8B12-3D49-A5DD-54FD9B0BA628}.Release|Win32.Build.0 = Release|Any CPU
-		{79CA1E64-42BC-47B1-A247-4C10B7A3855E}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{79CA1E64-42BC-47B1-A247-4C10B7A3855E}.Debug|Win32.Build.0 = Debug|Any CPU
-		{79CA1E64-42BC-47B1-A247-4C10B7A3855E}.Release|Win32.ActiveCfg = Release|Any CPU
-		{79CA1E64-42BC-47B1-A247-4C10B7A3855E}.Release|Win32.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
