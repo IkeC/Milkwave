@@ -1,21 +1,17 @@
 ## v3.6 (unreleased)
 
+* DirectX 12 Visualizer support (experimental)
+  - For Visualizer fork [MDropDX12](https://github.com/shanevbg/MDropDX12) by @shanevbg (included)
 * Support for equalizer shader presets (FFT)
   - Adjust FFT attack/decay on Settings tab
 * New preset: IkeC - Equalizer
   - 5 different versions (switch on Settings tab)
   - Band peak marking and mouse support (Right-click)
   - Supports Intensity and Shift parameters
-* DirectX 12 Visualizer support (experimental)
-  - For Visualizer fork [MDropDX12](https://github.com/shanevbg/MDropDX12) by @shanevbg (included)
 * Visualizer menu font can be configured from Remote
 * Visualizer help (F1) adjusts to window size
 * Restructured Remote tabs and controls
-* Replaced WM_COPYDATA IPC with Named Pipes (`\\.\pipe\Milkwave_<PID>`) — PID-based auto-discovery, no window title matching needed
-* Remote remembers last connected visualizer exe path and auto-launches it on startup
-* Remote instance picker dropdown with Launch and Rescan options for multi-visualizer support
-* Cross-architecture exe path discovery via QueryFullProcessImageName (64-bit Remote querying 32-bit Visualizer)
-* Fixed settings load bug where tags file failure would reset all settings to defaults
+* Named Pipes IPC Communication between Remote and Visualizers
 * Global stability improvements
 
 You can get a preview build on [my Discord](https://bit.ly/Ikes-Discord).

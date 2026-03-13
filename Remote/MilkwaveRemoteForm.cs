@@ -592,7 +592,7 @@ namespace MilkwaveRemote {
       using Image temp = Image.FromStream(stream, useEmbeddedColorManagement: false, validateImageData: false);
       using Bitmap source = new Bitmap(temp);
 
-      const int margin = 10;
+      const int margin = 4;
       int contentWidth = Math.Max(1, targetSize.Width - margin * 2);
       int contentHeight = Math.Max(1, targetSize.Height - margin * 2);
 
@@ -652,7 +652,7 @@ namespace MilkwaveRemote {
         return Rectangle.Empty;
       }
 
-      const int margin = 10;
+      const int margin = 9;
       int availableWidth = Math.Max(1, target.Width - margin * 2);
       int availableHeight = Math.Max(1, target.Height - margin * 2);
 
@@ -1239,6 +1239,9 @@ namespace MilkwaveRemote {
           }
           SaveSettingsToFile();
         }
+
+        // Request current state (running preset, wave params, settings, etc.)
+        SendToMilkwaveVisualizer("", MessageType.GetState);
       } else {
         string failedMsg = $"Failed to connect";
         DetachAndDisposePipeClient();
@@ -1690,7 +1693,7 @@ namespace MilkwaveRemote {
                 "|DOTTED=" + (chkWaveDotted.Checked ? "1" : "0") +
                 "|THICK=" + (chkWaveThick.Checked ? "1" : "0") +
                 "|VOLALPHA=" + (chkWaveVolAlpha.Checked ? "1" : "0");
-              statusMessage = $"Changed Wave in";
+              statusMessage = $"Changed Wave in {ConnectedVisualizerName}";
             } else if (type == MessageType.PresetFilePath) {
               message = "PRESET=" + messageToSend;
               string fileName = Path.GetFileNameWithoutExtension(messageToSend);
@@ -1700,7 +1703,7 @@ namespace MilkwaveRemote {
                 "|l=" + numAmpLeft.Value.ToString(CultureInfo.InvariantCulture) +
                 "|r=" + numAmpRight.Value.ToString(CultureInfo.InvariantCulture);
               statusMessage = $"Sent amplification {numAmpLeft.Value.ToString(CultureInfo.InvariantCulture)}" +
-                $"/{numAmpRight.Value.ToString(CultureInfo.InvariantCulture)} to";
+                $"/{numAmpRight.Value.ToString(CultureInfo.InvariantCulture)} to {ConnectedVisualizerName}";
             } else if (type == MessageType.AudioDevice) {
               if (cboAudioDevice.Text.Length > 0) {
                 ComboBoxItemDevice? selectedItem = (ComboBoxItemDevice?)cboAudioDevice.SelectedItem;
@@ -1864,10 +1867,10 @@ namespace MilkwaveRemote {
               if (cboParameters.Text.Length > 0) {
                 message += "|" + cboParameters.Text;
               }
-              statusMessage = $"Sent '{messageToSend}' to";
+              statusMessage = $"Sent '{messageToSend}' to {ConnectedVisualizerName}";
             } else if (type == MessageType.Raw) {
               message = messageToSend;
-              statusMessage = $"Sent '{messageToSend}' to";
+              statusMessage = $"Sent '{messageToSend}' to {ConnectedVisualizerName}";
             }
 
             // if line doesn't contain font face, size or color, use form-defined values
@@ -2531,6 +2534,16 @@ namespace MilkwaveRemote {
             SendPostMessage(VK_BACKSPACE, "Backspace");
           } else {
             SendPostMessage(VK_SPACE, "Space");
+          }
+        }
+      }
+
+      if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt && (Control.ModifierKeys & Keys.Control) == 0) {
+        if (e.KeyCode == Keys.V) {
+          e.SuppressKeyPress = true;
+          if (cboVisualizerInstance.Items.Count > 1) {
+            int next = (cboVisualizerInstance.SelectedIndex + 1) % cboVisualizerInstance.Items.Count;
+            cboVisualizerInstance.SelectedIndex = next;
           }
         }
       }
@@ -6051,18 +6064,14 @@ namespace MilkwaveRemote {
 
       pendingThumbnailAssignments[buttonIndex] = pendingThumbnail;
 
-      string captureDir = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), "capture");
-
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] BaseDir: {BaseDir}");
-      System.Diagnostics.Debug.WriteLine($"[AssignPreset] Capture dir: {captureDir}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Full preset path: {fullPresetPath}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Relative path: {maybeRelativePath}");
       System.Diagnostics.Debug.WriteLine($"[AssignPreset] Sending CAPTURE message to visualizer");
 
-      SetStatusText($"BaseDir={BaseDir}, Requesting screenshot for '{presetName}'...");
+      SetStatusText($"Requesting screenshot for '{presetName}'...");
 
       SendToMilkwaveVisualizer("CAPTURE", MessageType.CaptureScreenshot);
-
 
       Task.Run(() => PollForCaptureFile(buttonIndex));
     }
@@ -6072,61 +6081,70 @@ namespace MilkwaveRemote {
         return;
       }
 
-      string captureDir = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), "capture");
+      bool isDX12 = IsSelectedVisualizerDX12();
+      string primaryCaptureDir = Path.Combine(GetVisualizerDir(isDX12), "capture");
+      string? fallbackCaptureDir = isDX12 ? Path.Combine(GetVisualizerDir(false), "capture") : null;
 
-      System.Diagnostics.Debug.WriteLine($"[PollCapture] Polling directory: {captureDir}");
+      System.Diagnostics.Debug.WriteLine($"[PollCapture] Primary dir: {primaryCaptureDir}");
+      if (fallbackCaptureDir != null)
+        System.Diagnostics.Debug.WriteLine($"[PollCapture] Fallback dir: {fallbackCaptureDir}");
 
-      if (!Directory.Exists(captureDir)) {
-        Directory.CreateDirectory(captureDir);
-        System.Diagnostics.Debug.WriteLine($"[PollCapture] Created directory: {captureDir}");
-      }
+      if (!Directory.Exists(primaryCaptureDir))
+        Directory.CreateDirectory(primaryCaptureDir);
 
-      DateTime startTime = pending.RequestTime;
+      DateTime requestTime = pending.RequestTime;
       TimeSpan timeout = TimeSpan.FromSeconds(2);
       int pollCount = 0;
+      bool fallbackEnabled = false;
 
-      while (DateTime.Now - startTime < timeout) {
+      this.Invoke(() => SetStatusText("Acquiring screenshot..."));
+
+      while (DateTime.Now - requestTime < timeout) {
         pollCount++;
+
+        // After half a second, also start checking the fallback Milkwave capture dir (DX12 may write there)
+        if (!fallbackEnabled && fallbackCaptureDir != null && DateTime.Now - requestTime >= TimeSpan.FromMilliseconds(500)) {
+          fallbackEnabled = true;
+          System.Diagnostics.Debug.WriteLine($"[PollCapture] Enabling fallback dir after 500ms");
+        }
+
         try {
-          var allFiles = Directory.GetFiles(captureDir, "*.png");
+          FileInfo? captureFile = FindCaptureFile(primaryCaptureDir, requestTime);
 
-          if (pollCount == 1) {
-            System.Diagnostics.Debug.WriteLine($"[PollCapture] Poll #{pollCount}: {allFiles.Length} PNG files found");
-            this.Invoke(() => SetStatusText($"Polling {captureDir}: {allFiles.Length} PNG files"));
+          if (captureFile == null && fallbackEnabled && fallbackCaptureDir != null) {
+            captureFile = FindCaptureFile(fallbackCaptureDir, requestTime);
+            if (captureFile != null)
+              System.Diagnostics.Debug.WriteLine($"[PollCapture] Found file in fallback dir: {captureFile.Name}");
           }
-
-          if (pollCount % 5 == 0) {
-            System.Diagnostics.Debug.WriteLine($"[PollCapture] Poll #{pollCount}: Still waiting...");
-            this.Invoke(() => SetStatusText($"Poll #{pollCount}: {allFiles.Length} files in capture dir"));
-          }
-
-          var captureFile = allFiles
-            .Select(f => new FileInfo(f))
-            .Where(fi => fi.CreationTime >= startTime || fi.LastWriteTime >= startTime)
-            .OrderByDescending(fi => fi.CreationTime)
-            .ThenByDescending(fi => fi.LastWriteTime)
-            .FirstOrDefault();
 
           if (captureFile != null) {
-            System.Diagnostics.Debug.WriteLine($"[PollCapture] Found new file: {captureFile.Name}");
-            this.Invoke(() => SetStatusText($"Found new capture: {captureFile.Name}"));
+            System.Diagnostics.Debug.WriteLine($"[PollCapture] Found capture: {captureFile.FullName}");
+            this.Invoke(() => SetStatusText($"Found screenshot: {captureFile.Name}"));
             await ProcessCapturedThumbnail(buttonIndex, captureFile.FullName);
             return;
           }
         } catch (Exception ex) {
           System.Diagnostics.Debug.WriteLine($"[PollCapture] Exception: {ex.Message}");
           Program.SaveErrorToFile(ex, "Poll capture file");
-          this.Invoke(() => SetStatusText($"Poll error: {ex.Message}"));
         }
 
         await Task.Delay(100);
       }
 
-      System.Diagnostics.Debug.WriteLine($"[PollCapture] TIMEOUT after {pollCount} polls in {captureDir}");
+      System.Diagnostics.Debug.WriteLine($"[PollCapture] TIMEOUT after {pollCount} polls");
       this.Invoke(() => {
         pendingThumbnailAssignments.Remove(buttonIndex);
-        SetStatusText($"Timeout after {pollCount} polls. Dir: {captureDir}");
+        SetStatusText("Could not acquire screenshot");
       });
+    }
+
+    private FileInfo? FindCaptureFile(string captureDir, DateTime requestTime) {
+      if (!Directory.Exists(captureDir)) return null;
+      return Directory.GetFiles(captureDir, "*.png")
+        .Select(f => new FileInfo(f))
+        .Where(fi => fi.CreationTime >= requestTime)
+        .OrderByDescending(fi => fi.CreationTime)
+        .FirstOrDefault();
     }
 
     private async Task ProcessCapturedThumbnail(int buttonIndex, string captureFilePath) {
@@ -6135,8 +6153,9 @@ namespace MilkwaveRemote {
       }
 
       try {
-        using (var img = Image.FromFile(captureFilePath)) {
-          Image croppedImage = CropTo16x9(img);
+        using (var fs = new FileStream(captureFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        using (var img = Image.FromStream(fs, useEmbeddedColorManagement: false, validateImageData: false)) {
+          using Image croppedImage = CropTo16x9(img);
 
           string thumbnailPath = Path.Combine(BaseDir, $"resources\\buttons\\btn-{buttonIndex:D2}.png");
           string thumbnailDir = Path.GetDirectoryName(thumbnailPath);
@@ -6145,7 +6164,6 @@ namespace MilkwaveRemote {
           }
 
           croppedImage.Save(thumbnailPath, ImageFormat.Png);
-          croppedImage.Dispose();
         }
 
         this.Invoke(() => {
@@ -6189,27 +6207,58 @@ namespace MilkwaveRemote {
     }
 
     private Image CropTo16x9(Image source) {
-      int targetWidth = source.Width;
-      int targetHeight = (int)(source.Width / 16.0 * 9.0);
+      // Cap thumbnail resolution to avoid GDI+ out-of-memory on large captures
+      const int maxWidth = 640;
+      const int maxHeight = 360;
 
-      if (Math.Abs(source.Height - targetHeight) < 5) {
-        return new Bitmap(source);
+      int cropWidth = source.Width;
+      int cropHeight = (int)(source.Width / 16.0 * 9.0);
+      int yOffset = 0;
+
+      if (Math.Abs(source.Height - cropHeight) >= 5 && source.Height > cropHeight) {
+        yOffset = (source.Height - cropHeight) / 2;
+      } else {
+        cropHeight = source.Height;
       }
 
-      if (source.Height > targetHeight) {
-        int yOffset = (source.Height - targetHeight) / 2;
-        Rectangle cropRect = new Rectangle(0, yOffset, targetWidth, targetHeight);
-        Bitmap cropped = new Bitmap(targetWidth, targetHeight);
-        using (Graphics g = Graphics.FromImage(cropped)) {
-          g.DrawImage(source,
-            new Rectangle(0, 0, targetWidth, targetHeight),
-            cropRect,
+      float scale = Math.Min((float)maxWidth / cropWidth, (float)maxHeight / cropHeight);
+      int destWidth = scale < 1.0f ? (int)(cropWidth * scale) : cropWidth;
+      int destHeight = scale < 1.0f ? (int)(cropHeight * scale) : cropHeight;
+
+      // For large sources, step down in two passes to avoid GDI+ allocating a scratch
+      // buffer proportional to the full source size during HighQualityBicubic resampling.
+      // Pass 1: fast Bilinear crop+scale to 2x final size. Pass 2: Bicubic to final size.
+      if (cropWidth > maxWidth * 3 || cropHeight > maxHeight * 3) {
+        int midWidth = destWidth * 2;
+        int midHeight = destHeight * 2;
+        using Bitmap mid = new Bitmap(midWidth, midHeight);
+        using (Graphics gMid = Graphics.FromImage(mid)) {
+          gMid.InterpolationMode = InterpolationMode.Bilinear;
+          gMid.PixelOffsetMode = PixelOffsetMode.HighQuality;
+          gMid.DrawImage(source,
+            new Rectangle(0, 0, midWidth, midHeight),
+            new Rectangle(0, yOffset, cropWidth, cropHeight),
             GraphicsUnit.Pixel);
         }
-        return cropped;
+        Bitmap result = new Bitmap(destWidth, destHeight);
+        using (Graphics g = Graphics.FromImage(result)) {
+          g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+          g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+          g.DrawImage(mid, new Rectangle(0, 0, destWidth, destHeight));
+        }
+        return result;
       }
 
-      return new Bitmap(source);
+      Bitmap finalResult = new Bitmap(destWidth, destHeight);
+      using (Graphics g = Graphics.FromImage(finalResult)) {
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        g.DrawImage(source,
+          new Rectangle(0, 0, destWidth, destHeight),
+          new Rectangle(0, yOffset, cropWidth, cropHeight),
+          GraphicsUnit.Pixel);
+      }
+      return finalResult;
     }
 
     private void UnassignPresetFromDeckButton(int buttonIndex) {

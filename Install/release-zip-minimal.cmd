@@ -3,7 +3,7 @@ rem Create a release zip named Milkwave-Portable-<version>.zip using 7-Zip.
 rem This script excludes unwanted directories and includes only textures used by Milkwave presets.
 
 rem Resolve script and release directories
-set "VERSION=3.6.XXX"
+set "VERSION=3.6.RC"
 
 set "SCRIPT_DIR=%~dp0"
 set "RELEASE_DIR=%SCRIPT_DIR%..\Release"

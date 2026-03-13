@@ -908,7 +908,7 @@ namespace MilkwaveRemote
       lblWindow.TabIndex = 89;
       lblWindow.Text = "Visualizer";
       lblWindow.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblWindow, "Double-click: Start Visualizer if no window found\r\nCtrl+F2: Reset window\r\n");
+      toolTip1.SetToolTip(lblWindow, "Double-click: Start Visualizer if no window found\r\nCtrl+F2: Reset window\r\nAlt+V: Select next Visualizer\r\n");
       lblWindow.DoubleClick += lblWindow_DoubleClick;
       // 
       // btnSend
@@ -1058,7 +1058,7 @@ namespace MilkwaveRemote
       chkAmpLinked.Checked = true;
       chkAmpLinked.CheckState = CheckState.Checked;
       chkAmpLinked.FlatStyle = FlatStyle.System;
-      chkAmpLinked.Location = new Point(502, 64);
+      chkAmpLinked.Location = new Point(502, 65);
       chkAmpLinked.Margin = new Padding(3, 2, 3, 2);
       chkAmpLinked.Name = "chkAmpLinked";
       chkAmpLinked.Size = new Size(46, 23);
@@ -2980,6 +2980,7 @@ namespace MilkwaveRemote
       lblTopLayer.TabIndex = 147;
       lblTopLayer.Text = "Top Layer";
       lblTopLayer.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblTopLayer, "Enabled when Mix is active");
       // 
       // lblMessageEditor
       // 
