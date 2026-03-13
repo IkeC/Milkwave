@@ -1,127 +1,135 @@
 {
-  "version": "2.0.0",
-  "options": {
-    "shell": {
-      "executable": "powershell.exe",
-      "args": [
-        "-NoProfile",
-        "-Command",
-        "& 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\Launch-VsDevShell.ps1' -SkipAutomaticLocation;"
-      ]
-    }
-  },
-  "tasks": [
-    {
-      "label": "Build Visualizer (Debug)",
-      "type": "shell",
-      "command": "msbuild",
-      "args": [
-        "${workspaceFolder}\\Visualizer\\vis_milk2\\plugin.vcxproj",
-        "/p:Configuration=Debug",
-        "/p:Platform=Win32",
-        "/p:PlatformToolset=v143"
-      ],
-      "group": "build",
-      "problemMatcher": "$msCompile",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
-    },
-    {
-      "label": "Build Visualizer (Release)",
-      "type": "shell",
-      "command": "msbuild",
-      "args": [
-        "${workspaceFolder}\\Visualizer\\vis_milk2\\plugin.vcxproj",
-        "/p:Configuration=Release",
-        "/p:Platform=Win32",
-        "/p:PlatformToolset=v143"
-      ],
-      "group": "build",
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "Build Remote (Debug)",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "build",
-        "${workspaceFolder}\\Remote\\MilkwaveRemote.csproj",
-        "/p:Configuration=Debug"
-      ],
-      "group": "build",
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "Build Remote (Release)",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "build",
-        "${workspaceFolder}\\Remote\\MilkwaveRemote.csproj",
-        "/p:Configuration=Release"
-      ],
-      "group": "build",
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "Build Solution (Debug)",
-      "type": "shell",
-      "command": "msbuild",
-      "args": [
-        "${workspaceFolder}\\Milkwave.sln",
-        "/p:Configuration=Debug",
-        "/p:Platform=Win32",
-        "/p:PlatformToolset=v143"
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "Build RELEASE",
-      "type": "shell",
-      "command": "& { msbuild '${workspaceFolder}\\Milkwave.sln' /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143; $buildExit = $LASTEXITCODE; if ($buildExit -ne 0) { exit $buildExit }; Push-Location -LiteralPath '${workspaceFolder}\\Build'; & '.\\release.cmd'; $releaseExit = $LASTEXITCODE; Pop-Location; if ($releaseExit -ne 0) { exit $releaseExit } }",
-      "group": "build",
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "Run Release Post-Build",
-      "type": "shell",
-      "command": "${workspaceFolder}\\Build\\release.cmd",
-      "problemMatcher": [],
-      "dependsOn": ["Build Solution (Release)"]
-    },
-    {
-      "label": "Clean Solution",
-      "type": "shell",
-      "command": "msbuild",
-      "args": [
-        "${workspaceFolder}\\Milkwave.sln",
-        "/t:Clean",
-        "/p:Configuration=Debug",
-        "/p:Platform=Win32"
-      ],
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "Restore NuGet Packages",
-      "type": "shell",
-      "command": "nuget",
-      "args": [
-        "restore",
-        "${workspaceFolder}\\Milkwave.sln"
-      ],
-      "problemMatcher": []
-    },
-    {
-      "label": "Setup Developer Environment",
-      "type": "shell",
-      "command": "${workspaceFolder}\\Release\\Developer-Setup.cmd",
-      "problemMatcher": []
-    }
-  ]
+	"version": "2.0.0",
+	"options": {
+		"shell": {
+			"executable": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"& 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\Launch-VsDevShell.ps1' -SkipAutomaticLocation;"
+			]
+		}
+	},
+	"tasks": [
+		{
+			"label": "Build Visualizer (Debug)",
+			"type": "shell",
+			"command": "msbuild",
+			"args": [
+				"${workspaceFolder}\\Visualizer\\vis_milk2\\plugin.vcxproj",
+				"/p:Configuration=Debug",
+				"/p:Platform=Win32",
+				"/p:PlatformToolset=v143"
+			],
+			"group": "build",
+			"problemMatcher": "$msCompile",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Build Visualizer (Release)",
+			"type": "shell",
+			"command": "msbuild",
+			"args": [
+				"${workspaceFolder}\\Visualizer\\vis_milk2\\plugin.vcxproj",
+				"/p:Configuration=Release",
+				"/p:Platform=Win32",
+				"/p:PlatformToolset=v143"
+			],
+			"group": "build",
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Build Remote (Debug)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}\\Remote\\MilkwaveRemote.csproj",
+				"/p:Configuration=Debug"
+			],
+			"group": "build",
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Build Remote (Release)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}\\Remote\\MilkwaveRemote.csproj",
+				"/p:Configuration=Release"
+			],
+			"group": "build",
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Build Solution (Debug)",
+			"type": "shell",
+			"command": "msbuild",
+			"args": [
+				"${workspaceFolder}\\Milkwave.sln",
+				"/p:Configuration=Debug",
+				"/p:Platform=Win32",
+				"/p:PlatformToolset=v143"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Build RELEASE",
+			"type": "shell",
+			"command": "& { msbuild '${workspaceFolder}\\Milkwave.sln' /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143; $buildExit = $LASTEXITCODE; if ($buildExit -ne 0) { exit $buildExit }; Push-Location -LiteralPath '${workspaceFolder}\\Build'; & '.\\release.cmd'; $releaseExit = $LASTEXITCODE; Pop-Location; if ($releaseExit -ne 0) { exit $releaseExit } }",
+			"group": "build",
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Run Release Post-Build",
+			"type": "shell",
+			"command": "${workspaceFolder}\\Build\\release.cmd",
+			"problemMatcher": [],
+			"dependsOn": [
+				"Build Solution (Release)"
+			]
+		},
+		{
+			"label": "Clean Solution",
+			"type": "shell",
+			"command": "msbuild",
+			"args": [
+				"${workspaceFolder}\\Milkwave.sln",
+				"/t:Clean",
+				"/p:Configuration=Debug",
+				"/p:Platform=Win32"
+			],
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Restore NuGet Packages",
+			"type": "shell",
+			"command": "nuget",
+			"args": [
+				"restore",
+				"${workspaceFolder}\\Milkwave.sln"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Setup Developer Environment",
+			"type": "shell",
+			"command": "${workspaceFolder}\\Release\\Developer-Setup.cmd",
+			"problemMatcher": []
+		},
+		{
+			"label": "Copy MDropDX12",
+			"type": "shell",
+			"command": "${workspaceFolder}\\Build\\copy-MDropDX12.cmd",
+			"group": "build"
+		}
+	]
 }
