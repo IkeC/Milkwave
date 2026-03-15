@@ -2544,6 +2544,7 @@ namespace MilkwaveRemote {
           if (cboVisualizerInstance.Items.Count > 1) {
             int next = (cboVisualizerInstance.SelectedIndex + 1) % cboVisualizerInstance.Items.Count;
             cboVisualizerInstance.SelectedIndex = next;
+            SetStatusText($"Switched to {ConnectedVisualizerName}");
           }
         }
       }
