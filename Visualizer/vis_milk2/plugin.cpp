@@ -2801,8 +2801,18 @@ int CPlugin::AllocateMyDX9Stuff() {
       m_bPresetLockedByUser = false;
     m_bInitialPresetSelected = true;
   }
-  else
+  else {
     LoadShaders(&m_shaders, m_pState, false, false);  // Also force-load the shaders - otherwise they'd only get compiled on a preset switch.
+
+    // .milk2: restore permanent blend state after resize
+    // CleanUpMyDX9Stuff() sets m_bBlending=false and clears m_OldShaders,
+    // so we must re-arm the blend and reload the old preset's shaders.
+    if (m_bMilk2PermanentBlend) {
+      m_pState->m_bBlending = true;
+      m_pState->m_fBlendProgress = m_fMilk2BlendProgress;
+      LoadShaders(&m_OldShaders, m_pOldState, false, false);
+    }
+  }
 
   return true;
 }
@@ -8504,8 +8514,13 @@ void CPlugin::RandomizeBlendPattern() {
     float vy = sinf(ang);
     float band = 0.1f + 0.2f * FRAND; // 0.2 is good
     if (m_nMilk2BlendDirection != 0) {
-      // .milk2: force horizontal wipe; direction=1 → left-to-right, direction=-1 → right-to-left
-      ang = (m_nMilk2BlendDirection > 0) ? 0.0f : 3.14159265f;
+      if (m_bMilk2VerticalWipe) {
+        // .milk2 "horizontal" pattern: horizontal split line => vertical wipe direction
+        ang = (m_nMilk2BlendDirection > 0) ? 1.5707963f : -1.5707963f;  // PI/2 or -PI/2
+      } else {
+        // .milk2 "side"/"vertical" pattern: vertical split line => horizontal wipe direction
+        ang = (m_nMilk2BlendDirection > 0) ? 0.0f : 3.14159265f;
+      }
       vx = cosf(ang);
       vy = sinf(ang);
     }
@@ -9638,17 +9653,27 @@ void CPlugin::RemoveAngleBrackets(wchar_t* str) {
 // Returns -1 (random) for any name that is not explicitly mapped.
 static int Milk2PatternNameToMixtype(const char* name) {
   struct { const char* name; int type; } kMap[] = {
-    {"zoom",     0},  // uniform fade
-    {"side",     1},  // directional wipe
-    {"plasma",   2},  // fractal plasma
-    {"cercle",   3},  // radial / circle
-    {"clock",    4},  // angular clock sweep
-    {"snail",    5},  // spiral
-    {"snail2",   5},
-    {"snail3",   5},
-    {"triangle", 6},
-    {"plasma2",  2},
-    {"plasma3",  2},
+    {"zoom",           0},  // uniform fade
+    {"side",           1},  // directional wipe
+    {"horizontal",     1},  // directional wipe (horizontal)
+    {"vertical",       1},  // directional wipe (vertical)
+    {"plasma",         2},  // fractal plasma
+    {"plasma2",        2},
+    {"plasma3",        2},
+    {"cercle",         3},  // radial / circle
+    {"clock",          4},  // angular clock sweep
+    {"snail",          5},  // spiral
+    {"snail2",         5},
+    {"snail3",         5},
+    {"triangle",       6},
+    {"square",         8},  // square/diamond
+    {"curtain",       10},  // curtain
+    {"linesvertical", 10},  // vertical lines / curtain variant
+    {"donuts",        11},  // bubble / donuts
+    {"stars",         14},  // star wipe
+    {"patches",        9},  // checkerboard / patches
+    {"arrow",          1},  // directional arrow wipe
+    {"corner",         8},  // corner / square variant
   };
   for (auto& e : kMap)
     if (_stricmp(name, e.name) == 0) return e.type;
@@ -9696,6 +9721,8 @@ bool CPlugin::ParseMilk2File(const wchar_t* szPath,
     };
     std::string pat = getVal("blending_pattern");
     if (!pat.empty()) outMixType = Milk2PatternNameToMixtype(pat.c_str());
+    // "horizontal" pattern = horizontal split line => vertical wipe axis
+    m_bMilk2VerticalWipe = (!pat.empty() && _stricmp(pat.c_str(), "horizontal") == 0);
     std::string prog = getVal("blending_progress");
     if (!prog.empty()) outProgress = (float)atof(prog.c_str());
     std::string dir = getVal("blending_direction");
@@ -9772,6 +9799,7 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
   // Reset permanent .milk2 blend when loading any new preset
   m_bMilk2PermanentBlend = false;
   m_nMilk2BlendDirection = 0;
+  m_bMilk2VerticalWipe = false;
 
   // make sure preset still exists.  (might not if they are using the "back"/fwd buttons
   //  in RANDOM preset order and a file was renamed or deleted!)

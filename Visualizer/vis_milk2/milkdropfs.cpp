@@ -753,10 +753,10 @@ void CPlugin::RunPerFrameEquations(int code) {
         */
   }
 
-  if (m_pState->m_bBlending && !m_bMilk2PermanentBlend) {
+  if (m_pState->m_bBlending) {
     // For all variables that do NOT affect pixel motion, blend them NOW,
-        // so later the user can just access m_pState->m_pf_whatever.
-    // (.milk2 permanent blends are excluded: each preset keeps its own state values.)
+    // so later the user can just access m_pState->m_pf_whatever.
+    // For .milk2 permanent blends this uses the fixed blend progress from the file metadata.
     double mix = (double)CosineInterp(m_pState->m_fBlendProgress);
     double mix2 = 1.0 - mix;
     *m_pState->var_pf_decay = mix * (*m_pState->var_pf_decay) + mix2 * (*m_pOldState->var_pf_decay);

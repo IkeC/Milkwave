@@ -499,6 +499,7 @@ public:
   bool    m_bLoadingMilk2 = false;	// true when loading a .milk2 double-preset
   int     m_nMilk2MixType = -1;	// blend pattern from .milk2 metadata (-1 = random)
   int     m_nMilk2BlendDirection = 0;	// blend direction from .milk2 metadata (0 = random, -1 or 1 = forced)
+  bool    m_bMilk2VerticalWipe = false;	// true = "horizontal" pattern (horizontal split => vertical wipe axis)
   bool    m_bMilk2PermanentBlend = false;	// true = blend never completes (both presets render forever)
   float   m_fMilk2BlendProgress = 0.5f;	// fixed blend position from .milk2 header (0..1)
   unsigned int m_nMilk2PatternSeed = 0;	// deterministic seed from .milk2 random_1..5 values
