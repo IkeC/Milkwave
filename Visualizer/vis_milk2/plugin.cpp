@@ -1220,6 +1220,8 @@ void CPlugin::MyPreInitialize() {
   m_pState = &m_state_DO_NOT_USE[0];
   m_pOldState = &m_state_DO_NOT_USE[1];
   m_pNewState = &m_state_DO_NOT_USE[2];
+  m_pMilk2OldState = &m_state_DO_NOT_USE[3];
+  ZeroMemory(&m_Milk2OldShaders, sizeof(PShaderSet));
   m_UI_mode = UI_REGULAR;
   m_bShowShaderHelp = false;
 
@@ -2687,6 +2689,16 @@ int CPlugin::AllocateMyDX9Stuff() {
 
       nVert++;
     }
+  }
+
+  // .milk2: regenerate blend pattern after grid resize so the spatial blend survives resolution changes
+  if (m_bMilk2PermanentBlend && m_nMilk2MixType >= 0) {
+    int savedMixType = m_nMixType;
+    m_nMixType = m_nMilk2MixType;
+    srand(m_nMilk2PatternSeed);
+    RandomizeBlendPattern();
+    srand((unsigned int)GetTickCount());
+    m_nMixType = savedMixType;
   }
 
   // generate triangle strips for the 4 quadrants.
@@ -6001,7 +6013,8 @@ void LoadPresetFilesViaDragAndDrop(WPARAM wParam) {
 
   //if (MAX_PATH < 5 || wcsicmp(convertedFileName + MAX_PATH - 5, L".milk") != 0)
   std::string GetFilename = szDroppedPresetName;
-  if (GetFilename.substr(GetFilename.find_last_of(".") + 1) == "milk") //from https://stackoverflow.com/a/51999
+  std::string ext = GetFilename.substr(GetFilename.find_last_of(".") + 1);
+  if (ext == "milk" || ext == "milk2")
     g_plugin.LoadPreset(convertedFileName, 0.0f);
   else {
     wchar_t buf[1024];
@@ -8490,6 +8503,12 @@ void CPlugin::RandomizeBlendPattern() {
     float vx = cosf(ang);
     float vy = sinf(ang);
     float band = 0.1f + 0.2f * FRAND; // 0.2 is good
+    if (m_nMilk2BlendDirection != 0) {
+      // .milk2: force horizontal wipe; direction=1 → left-to-right, direction=-1 → right-to-left
+      ang = (m_nMilk2BlendDirection > 0) ? 0.0f : 3.14159265f;
+      vx = cosf(ang);
+      vy = sinf(ang);
+    }
     float inv_band = 1.0f / band;
 
     int nVert = 0;
@@ -8563,6 +8582,11 @@ void CPlugin::RandomizeBlendPattern() {
     float band = 0.02f + 0.14f * FRAND + 0.34f * FRAND;
     float inv_band = 1.0f / band;
     float dir = (float)((rand() % 2) * 2 - 1);      // 1=outside-in, -1=inside-out
+    if (m_nMilk2BlendDirection != 0) {
+      dir = (float)m_nMilk2BlendDirection;
+      band = 0.25f;  // fixed band width for .milk2 deterministic circle size
+      inv_band = 1.0f / band;
+    }
 
     int nVert = 0;
     for (int y = 0; y <= m_nGridY; y++) {
@@ -9607,10 +9631,147 @@ void CPlugin::RemoveAngleBrackets(wchar_t* str) {
   wcscpy_s(str, MAX_PATH, cleaned); // Copy the cleaned string back to the original
 }
 
+// .milk2 double-preset support
+// ---------------------------------------------------------------------------
+
+// Maps MilkDrop3 blend-pattern names to RandomizeBlendPattern() mixtype indices.
+// Returns -1 (random) for any name that is not explicitly mapped.
+static int Milk2PatternNameToMixtype(const char* name) {
+  struct { const char* name; int type; } kMap[] = {
+    {"zoom",     0},  // uniform fade
+    {"side",     1},  // directional wipe
+    {"plasma",   2},  // fractal plasma
+    {"cercle",   3},  // radial / circle
+    {"clock",    4},  // angular clock sweep
+    {"snail",    5},  // spiral
+    {"snail2",   5},
+    {"snail3",   5},
+    {"triangle", 6},
+    {"plasma2",  2},
+    {"plasma3",  2},
+  };
+  for (auto& e : kMap)
+    if (_stricmp(name, e.name) == 0) return e.type;
+  return -1;
+}
+
+// Forward declaration: resets _GetLineByName's static FILE* cache in state.cpp.
+// Required to prevent stale data when two Import() calls use consecutively-allocated FILE*s.
+extern void GetFast_CLEAR();
+
+// Parses a .milk2 file and writes its two preset blocks to temporary .milk files.
+// On success, outTemp1/outTemp2 hold MAX_PATH paths to temp files that the caller must delete.
+// Returns false on parse failure (malformed .milk2); temp files are not written.
+bool CPlugin::ParseMilk2File(const wchar_t* szPath,
+                              wchar_t* outTemp1, wchar_t* outTemp2,
+                              int& outMixType, float& outProgress, int& outDirection,
+                              unsigned int& outSeed) {
+  outMixType  = -1;
+  outProgress = 0.5f;
+  outDirection = 1;
+  outSeed = 0;
+
+  // Read entire file into a string buffer.
+  FILE* f = _wfopen(szPath, L"rb");
+  if (!f) return false;
+  fseek(f, 0, SEEK_END);
+  long fsize = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  std::string buf(fsize, '\0');
+  fread(&buf[0], 1, fsize, f);
+  fclose(f);
+
+  // Parse header key=value lines before [PRESET1_BEGIN].
+  {
+    size_t hdrEnd = buf.find("[PRESET1_BEGIN]");
+    if (hdrEnd == std::string::npos) return false;
+    std::string hdr = buf.substr(0, hdrEnd);
+    auto getVal = [&](const char* key) -> std::string {
+      std::string k = std::string(key) + "=";
+      size_t pos = hdr.find(k);
+      if (pos == std::string::npos) return "";
+      size_t start = pos + k.size();
+      size_t end = hdr.find_first_of("\r\n", start);
+      return hdr.substr(start, end - start);
+    };
+    std::string pat = getVal("blending_pattern");
+    if (!pat.empty()) outMixType = Milk2PatternNameToMixtype(pat.c_str());
+    std::string prog = getVal("blending_progress");
+    if (!prog.empty()) outProgress = (float)atof(prog.c_str());
+    std::string dir = getVal("blending_direction");
+    if (!dir.empty()) outDirection = atoi(dir.c_str());
+
+    // Parse random_1..5 and compute a deterministic seed for blend pattern generation
+    float randoms[5] = { 0.0f };
+    for (int i = 0; i < 5; i++) {
+      char key[16];
+      snprintf(key, sizeof(key), "random_%d", i + 1);
+      std::string val = getVal(key);
+      if (!val.empty()) randoms[i] = (float)atof(val.c_str());
+    }
+    // Hash-combine the 5 float values into a single seed (boost::hash_combine style)
+    unsigned int seed = 0;
+    for (int i = 0; i < 5; i++) {
+      unsigned int bits;
+      memcpy(&bits, &randoms[i], sizeof(bits));
+      seed ^= bits + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    outSeed = seed;
+  }
+
+  // Helper: extract text between two markers.
+  auto extractPreset = [&](const char* beginMarker, const char* endMarker) -> std::string {
+    size_t bPos = buf.find(beginMarker);
+    if (bPos == std::string::npos) return "";
+    size_t ePos = buf.find(endMarker, bPos);
+    if (ePos == std::string::npos) return "";
+    size_t contentStart = bPos + strlen(beginMarker);
+    // Skip past the marker line ending
+    contentStart = buf.find_first_of("\r\n", contentStart);
+    if (contentStart == std::string::npos) return "";
+    contentStart = buf.find_first_not_of("\r\n", contentStart);
+    if (contentStart == std::string::npos) return "";
+    return buf.substr(contentStart, ePos - contentStart);
+  };
+
+  std::string p1 = extractPreset("[PRESET1_BEGIN]", "[PRESET1_END]");
+  std::string p2 = extractPreset("[PRESET2_BEGIN]", "[PRESET2_END]");
+  if (p1.empty() || p2.empty()) return false;
+
+  // Write to Windows temp files.
+  wchar_t tempDir[MAX_PATH];
+  GetTempPathW(MAX_PATH, tempDir);
+
+  if (GetTempFileNameW(tempDir, L"mk2", 0, outTemp1) == 0) return false;
+  if (GetTempFileNameW(tempDir, L"mk2", 0, outTemp2) == 0) {
+    DeleteFileW(outTemp1);
+    return false;
+  }
+
+  auto writeTmp = [](const wchar_t* path, const std::string& text) -> bool {
+    FILE* out = _wfopen(path, L"wb");
+    if (!out) return false;
+    fwrite(text.data(), 1, text.size(), out);
+    fclose(out);
+    return true;
+  };
+
+  if (!writeTmp(outTemp1, p1) || !writeTmp(outTemp2, p2)) {
+    DeleteFileW(outTemp1);
+    DeleteFileW(outTemp2);
+    return false;
+  }
+  return true;
+}
+
 void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
   // clear old error msg...
   if (m_nFramesSinceResize > 4)
     ClearErrors(ERR_PRESET);
+
+  // Reset permanent .milk2 blend when loading any new preset
+  m_bMilk2PermanentBlend = false;
+  m_nMilk2BlendDirection = 0;
 
   // make sure preset still exists.  (might not if they are using the "back"/fwd buttons
   //  in RANDOM preset order and a file was renamed or deleted!)
@@ -9649,6 +9810,62 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
   // if no preset was valid before, make sure there is no blend, because there is nothing valid to blend from.
   if (!wcscmp(m_pState->m_szDesc, INVALID_PRESET_DESC))
     fBlendTime = 0;
+
+  // Detect .milk2 double-preset files
+  const wchar_t* lastDot = wcsrchr(szPresetFilename, L'.');
+  bool bIsMilk2 = lastDot && _wcsicmp(lastDot, L".milk2") == 0;
+
+  if (bIsMilk2) {
+    // .milk2 double-preset: parse the file, import both presets, compile shaders for both
+    m_bLoadingMilk2 = true;
+
+    int mixType = -1;
+    float progress = 0.5f;
+    int direction = 1;
+    unsigned int seed = 0;
+    if (!ParseMilk2File(szPresetFilename, m_szMilk2Temp1, m_szMilk2Temp2,
+                        mixType, progress, direction, seed)) {
+      wchar_t buf[1024];
+      swprintf(buf, L"Error: Failed to parse .milk2 file: %s", szPresetFilename);
+      AddError(buf, 6.0f, ERR_PRESET, true);
+      m_bLoadingMilk2 = false;
+      return;
+    }
+    m_nMilk2MixType = mixType;
+    m_nMilk2BlendDirection = direction;
+    m_fMilk2BlendProgress = progress;
+    m_nMilk2PatternSeed = seed;
+
+    // Import preset 1 (blend-from) into m_pMilk2OldState
+    m_pMilk2OldState->Import(m_szMilk2Temp1, GetTime(), nullptr, STATE_ALL);
+    GetFast_CLEAR();
+    // Import preset 2 (blend-to) into m_pNewState
+    m_pNewState->Import(m_szMilk2Temp2, GetTime(), m_pMilk2OldState, STATE_ALL);
+
+    // Compile shaders for preset 1 (blend-from)
+    SafeRelease(m_Milk2OldShaders.comp.ptr);
+    SafeRelease(m_Milk2OldShaders.warp.ptr);
+    SafeRelease(m_Milk2OldShaders.comp.CT);
+    SafeRelease(m_Milk2OldShaders.warp.CT);
+    ZeroMemory(&m_Milk2OldShaders, sizeof(PShaderSet));
+    LoadShaders(&m_Milk2OldShaders, m_pMilk2OldState, false, false);
+
+    // Set up incremental loading for preset 2 (blend-to) shaders via LoadPresetTick()
+    SafeRelease(m_NewShaders.comp.ptr);
+    SafeRelease(m_NewShaders.warp.ptr);
+    ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
+
+    m_nLoadingPreset = 1;
+    m_fLoadingPresetBlendTime = (fBlendTime > 0) ? fBlendTime : 1.0f;
+    lstrcpyW(m_szLoadingPreset, szPresetFilename);
+
+    // Clean up temp files
+    DeleteFileW(m_szMilk2Temp1);
+    DeleteFileW(m_szMilk2Temp2);
+
+    NumTotalPresetsLoaded++;
+    return;
+  }
 
   if (fBlendTime == 0) {
     // do it all NOW!
@@ -9783,10 +10000,52 @@ void CPlugin::LoadPresetTick() {
     m_pState = m_pNewState;
     m_pNewState = temp;
 
-    RandomizeBlendPattern();
+    // .milk2: swap in preset 1 as the blend-from state
+    if (m_bLoadingMilk2) {
+      temp = m_pOldState;
+      m_pOldState = m_pMilk2OldState;
+      m_pMilk2OldState = temp;  // recycled — will be reused on next milk2 load
+
+      // Fix descriptions: Import() derived m_szDesc from temp file paths.
+      // Override with the .milk2 filename (without path or extension).
+      const wchar_t* p = wcsrchr(m_szCurrentPresetFile, L'\\');
+      if (!p) p = m_szCurrentPresetFile; else p++;
+      wcsncpy_s(m_pState->m_szDesc, p, MAX_PATH - 1);
+      wchar_t* dot = wcsrchr(m_pState->m_szDesc, L'.');
+      if (dot) *dot = L'\0';
+      wcscpy_s(m_pOldState->m_szDesc, MAX_PATH, m_pState->m_szDesc);
+    }
+
+    if (m_bLoadingMilk2) {
+      // .milk2 uses its own blend pattern and direction from metadata
+      int savedMixType = m_nMixType;
+      m_nMixType = m_nMilk2MixType;
+      // Seed RNG for deterministic pattern generation (from .milk2 random_1..5 values)
+      srand(m_nMilk2PatternSeed);
+      // m_nMilk2BlendDirection is already set; RandomizeBlendPattern reads it for cercle/side
+      RandomizeBlendPattern();
+      srand((unsigned int)GetTickCount());  // restore randomness for normal operation
+      m_nMixType = savedMixType;
+      // Note: m_nMilk2BlendDirection stays set so resize can regenerate the same pattern
+    } else {
+      RandomizeBlendPattern();
+    }
 
     //if (fBlendTime >= 0.001f)
     m_pState->StartBlendFrom(m_pOldState, GetTime(), m_fLoadingPresetBlendTime);
+
+    // .milk2: activate permanent blend — pin progress immediately at target value (no animation)
+    if (m_bLoadingMilk2) {
+      // Clear VS[0] on the next frame so feedback-dependent shaders (e.g. SDF/distance-field
+      // presets) start from a known black state rather than from the previous preset's content.
+      // This prevents the distance field from getting permanently stuck, e.g. when frosty-caves'
+      // high blue channel causes GetDist≈0.2 everywhere → rdist≈0.8 → near-black comp output.
+      m_nFramesSinceResize = 0;
+
+      m_bMilk2PermanentBlend = true;
+      m_pState->m_bBlending = true;
+      m_pState->m_fBlendProgress = m_fMilk2BlendProgress;  // pin immediately, no transition
+    }
 
     m_fPresetStartTime = GetTime();
     m_fNextPresetTime = -1.0f;		// flags UpdateTime() to recompute this
@@ -9794,12 +10053,19 @@ void CPlugin::LoadPresetTick() {
     // release stuff from m_OldShaders, then move m_shaders to m_OldShaders, then load the new shaders.
     SafeRelease(m_OldShaders.comp.ptr);
     SafeRelease(m_OldShaders.warp.ptr);
-    m_OldShaders = m_shaders;
+    if (m_bLoadingMilk2) {
+      // .milk2: use preset 1's shaders as old, preset 2's as new
+      m_OldShaders = m_Milk2OldShaders;
+      ZeroMemory(&m_Milk2OldShaders, sizeof(PShaderSet));
+    } else {
+      m_OldShaders = m_shaders;
+    }
     m_shaders = m_NewShaders;
     ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
 
     // end slow-preset-load mode
     m_nLoadingPreset = 0;
+    m_bLoadingMilk2 = false;
 
     OnFinishedLoadingPreset();
   }
@@ -9961,9 +10227,11 @@ retry:
         swprintf(szFilename, L"*%s", fd.cFileName);
     }
     else {
-      // skip normal files not ending in ".milk"
+      // skip normal files not ending in ".milk" or ".milk2"
       int len = lstrlenW(fd.cFileName);
-      if (len < 5 || _wcsicmp(fd.cFileName + len - 5, L".milk") != 0)
+      bool bHasPresetExt = (len >= 6 && _wcsicmp(fd.cFileName + len - 6, L".milk2") == 0)
+                        || (len >= 5 && _wcsicmp(fd.cFileName + len - 5, L".milk") == 0);
+      if (!bHasPresetExt)
         bSkip = true;
 
       // if it is .milk, make sure we know how to run its pixel shaders -
