@@ -6153,6 +6153,20 @@ namespace MilkwaveRemote {
         return;
       }
 
+      // The Visualizer may still have the file open (finishing the write). Retry for up to 2 seconds.
+      const int maxWaitMs = 2000;
+      const int retryIntervalMs = 100;
+      int waited = 0;
+      while (true) {
+        try {
+          using var testFs = new FileStream(captureFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+          break; // file is accessible
+        } catch (IOException) when (waited < maxWaitMs) {
+          waited += retryIntervalMs;
+          await Task.Delay(retryIntervalMs);
+        }
+      }
+
       try {
         using (var fs = new FileStream(captureFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
         using (var img = Image.FromStream(fs, useEmbeddedColorManagement: false, validateImageData: false)) {
