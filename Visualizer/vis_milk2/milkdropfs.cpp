@@ -755,7 +755,8 @@ void CPlugin::RunPerFrameEquations(int code) {
 
   if (m_pState->m_bBlending) {
     // For all variables that do NOT affect pixel motion, blend them NOW,
-        // so later the user can just access m_pState->m_pf_whatever.
+    // so later the user can just access m_pState->m_pf_whatever.
+    // For .milk2 permanent blends this uses the fixed blend progress from the file metadata.
     double mix = (double)CosineInterp(m_pState->m_fBlendProgress);
     double mix2 = 1.0 - mix;
     *m_pState->var_pf_decay = mix * (*m_pState->var_pf_decay) + mix2 * (*m_pOldState->var_pf_decay);
@@ -889,9 +890,14 @@ void CPlugin::RenderFrame(int bRedraw) {
 
       // update m_fBlendProgress;
       if (m_pState->m_bBlending) {
-        m_pState->m_fBlendProgress = (GetTime() - m_pState->m_fBlendStartTime) / m_pState->m_fBlendDuration;
-        if (m_pState->m_fBlendProgress > 1.0f) {
-          m_pState->m_bBlending = false;
+        if (m_bMilk2PermanentBlend) {
+          // .milk2: hold blend progress at the fixed target value forever
+          m_pState->m_fBlendProgress = m_fMilk2BlendProgress;
+        } else {
+          m_pState->m_fBlendProgress = (GetTime() - m_pState->m_fBlendStartTime) / m_pState->m_fBlendDuration;
+          if (m_pState->m_fBlendProgress > 1.0f) {
+            m_pState->m_bBlending = false;
+          }
         }
       }
 

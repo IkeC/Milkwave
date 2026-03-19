@@ -19,7 +19,6 @@ vis_milk2/bin
 /Remote/.idea/.idea.Remote.dir/.idea
 /Install/sign.cmd
 /Build/notes.md
-/Build/plan*md
 /Build/*.bak
 /Release/*
 !/Release/Developer*.*
@@ -29,4 +28,6 @@ vis_milk2/bin
 /RemoteTests/obj
 /packages
 enc_temp_folder/
-/Build/code-issues.md
+/Build/plan*.md
+/Build/*issues*.md
+

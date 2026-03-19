@@ -1335,7 +1335,7 @@ namespace MilkwaveRemote {
       ScanAndPopulateVisualizers();
 
       if (_discoveredInstances.Count == 0) {
-        SetStatusText("Visualizer closed — no instances remaining");
+        SetStatusText("Visualizer closed, no instances remaining");
         return;
       }
 
@@ -1558,7 +1558,7 @@ namespace MilkwaveRemote {
       ofdShader.InitialDirectory = Path.Combine(BaseDir, ShaderFilesFolder);
 
       ofdShaderHLSL = new OpenFileDialog();
-      ofdShaderHLSL.Filter = "Presets or HLSL files|*.milk;*.hlsl|All files (*.*)|*.*";
+      ofdShaderHLSL.Filter = "Presets or HLSL files|*.milk;*.milk2;*.hlsl|All files (*.*)|*.*";
 
       string MilkwavePresetsFolder = Path.Combine(VisualizerPresetsFolder, "Milkwave");
       if (Directory.Exists(MilkwavePresetsFolder)) {
@@ -4865,7 +4865,8 @@ namespace MilkwaveRemote {
           txtShaderinfo.Clear();
 
           StringBuilder sb = new StringBuilder();
-          if (ofdShaderHLSL.FileName.EndsWith(".milk", StringComparison.InvariantCultureIgnoreCase)) {
+          if (ofdShaderHLSL.FileName.EndsWith(".milk", StringComparison.InvariantCultureIgnoreCase)
+              || ofdShaderHLSL.FileName.EndsWith(".milk2", StringComparison.InvariantCultureIgnoreCase)) {
             // If it's a preset file, extract the comp shader info
             foreach (string line in content) {
               if (line.StartsWith("comp_", StringComparison.InvariantCultureIgnoreCase)) {
