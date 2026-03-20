@@ -20,7 +20,9 @@ del /q %releasePath%\resources\buttons\btn-4*.png
 set mDropDX12Path=..\..\MDropDX12\src\mDropDX12\Release_x64
 call copy-MDropDX12.cmd
 
-copy *.ini %releasePath%
+copy settings.ini %releasePath%
+copy settings.MDropDX12.ini %releasePath%\MDropDX12\settings.ini
+
 copy *.txt %releasePath%
 copy settings-remote.json %releasePath%
 copy controller-remote.json %releasePath%

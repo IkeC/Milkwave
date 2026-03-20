@@ -53,7 +53,8 @@ Section "Milkwave" SecMilkwave
   SectionIn RO ;Make it read-only
     
   CopyFiles $INSTDIR\*.ini $INSTDIR\backup
-  CopyFiles $INSTDIR\settings-remote.json $INSTDIR\backup
+  CopyFiles $INSTDIR\script-default.txt $INSTDIR\backup
+  CopyFiles $INSTDIR\*.json $INSTDIR\backup
   
   SetOverwrite try
   
@@ -78,6 +79,9 @@ Section "Milkwave" SecMilkwave
   SetOutPath "$INSTDIR\resources\textures\"
   File /r "${RELDIR}resources\textures\*"
   
+  SetOutPath "$INSTDIR\MDropDX12\"
+  File /r "${RELDIR}MDropDX12\*"
+
   SetOutPath "$INSTDIR"
   File "${RELDIR}MilkwaveRemote.dll"
   File "${RELDIR}MilkwaveRemote.exe"
@@ -173,6 +177,7 @@ Section Uninstall
   RMDir /r "$INSTDIR\backup"
   RMDir /r "$INSTDIR\log"
   RMDir /r "$INSTDIR\runtimes"
+  RMDir /r "$INSTDIR\MDropDX12"
 
   Delete "$INSTDIR\MilkwaveRemote.dll"
   Delete "$INSTDIR\MilkwaveRemote.exe"
