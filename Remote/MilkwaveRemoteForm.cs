@@ -4705,19 +4705,33 @@ namespace MilkwaveRemote {
       try {
         if (e.Button == MouseButtons.Middle) {
           // MMB action
-          if (Settings.RemoteWindowCompactSize.Width > 0) {
-            Width = Settings.RemoteWindowCompactSize.Width;
-          } else {
-            Width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + 57;
-          }
-          if (Settings.RemoteWindowCompactSize.Height > 0) {
-            Height = Settings.RemoteWindowCompactSize.Height;
-          } else {
-            Height = cboFont5.Top + cboFont5.Height + statusBar.Height + 137;
-          }
+          bool tabsVisible = toolStripMenuItemTabsPanel.Checked;
+          bool buttonVisible = toolStripMenuItemButtonPanel.Checked;
 
-          toolStripMenuItemButtonPanel.Checked = false;
-          SetPanelsVisibility();
+          if (!tabsVisible || !buttonVisible) {
+            toolStripMenuItemTabsPanel.Checked = true;
+            toolStripMenuItemButtonPanel.Checked = true;
+            SetPanelsVisibility();
+
+            if (Settings.RemoteWindowSize.Width > 0 && Settings.RemoteWindowSize.Height > 0) {
+              WindowState = FormWindowState.Normal;
+              Size = Settings.RemoteWindowSize;
+            }
+          } else {
+            if (Settings.RemoteWindowCompactSize.Width > 0) {
+              Width = Settings.RemoteWindowCompactSize.Width;
+            } else {
+              Width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + 57;
+            }
+            if (Settings.RemoteWindowCompactSize.Height > 0) {
+              Height = Settings.RemoteWindowCompactSize.Height;
+            } else {
+              Height = cboFont5.Top + cboFont5.Height + statusBar.Height + 137;
+            }
+
+            toolStripMenuItemButtonPanel.Checked = false;
+            SetPanelsVisibility();
+          }
         } else if (e.Button == MouseButtons.Right) {
           if (toolStripMenuItemButtonPanel.Checked) {
             toolStripMenuItemTabsPanel.Checked = true;
