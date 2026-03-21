@@ -4,9 +4,9 @@ set remoteBuildPath=..\Remote\bin\Release\net8.0-windows10.0.17763.0
 set visualizerSourcePath=..\Visualizer
 set visualizerBuildPath=..\Visualizer\vis_milk2\Release
 
-copy %releasePath%\settings.ini %backupPath%\settings.ini.bak
-copy %releasePath%\settings-remote.json %backupPath%\settings-remote.json.bak
-copy %releasePath%\script-default.json %backupPath%\script-default.json.bak
+copy %releasePath%\*.ini %backupPath%
+copy %releasePath%\*.json %backupPath%
+copy %releasePath%\*.txt %backupPath%
 
 del /q %releasePath%\capture\*.*
 del /q %releasePath%\presetdeck-remote.json
@@ -21,8 +21,7 @@ set mDropDX12Path=..\..\MDropDX12\src\mDropDX12\Release_x64
 call copy-MDropDX12.cmd
 
 copy settings.ini %releasePath%
-copy MDropDX12\settings.ini %releasePath%\MDropDX12\settings.ini
-copy MDropDX12\sprites.ini %releasePath%\MDropDX12\sprites.ini
+copy MDropDX12\*.ini %releasePath%\MDropDX12
 
 copy *.txt %releasePath%
 copy settings-remote.json %releasePath%

@@ -63,7 +63,7 @@ STYLE=Style B|Switched to "Style B"
 This style uses random coordinates
 Switched to next preset|NEXT
 STYLE=Style A|COLOR=255, 102, 0|Back to "Style A" but changing color
-SEND=99|Triggering Sprite 99
+SEND=88|Triggering Sprite 88
 FONT=Courier New|Everybody likes Courier!
 FONT=Arial|Some Arial//doubleline text!
 PRESET=resources\presets\Milkwave\Geiss - Reaction Diffusion 3 (Lichen Mix).milk|COLOR=255,255,0|I like this preset!

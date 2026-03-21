@@ -141,29 +141,29 @@ comp_136=}
 comp_137=
 comp_138=float2 intersect(float3 ro,float3 rd){
 comp_139=  float d=0,h=0;
-comp_140=  float2 ret_c=0;
+comp_140=  float2 ret_c=float2(-1,-1);
 comp_141=
-comp_142=  for(int i = 0;i<120;i++){
-comp_143=  // look nice with 50 iterations
-comp_144=  float3 p = ro+d*rd;
-comp_145=  float2 s = map(p);
-comp_146=
-comp_147=  h = s.x;
-comp_148=  d+= h*.5;
-comp_149=
-comp_150=  if(abs(h)<0.005*d) {
-comp_151=    ret_c = float2(d,s.y);
-comp_152=    } else {
-comp_153=      // CONV: break unsupported, see Milkwave manual
-comp_154=      if(d>150.|| p.y>2.) {
-comp_155=        i=500;
-comp_156=      }
+comp_142=  for(float i = 0.;i<120.;i+=1.){
+comp_143=  float3 p = ro+d*rd;
+comp_144=  float2 s = map(p);
+comp_145=
+comp_146=  h = s.x;
+comp_147=  d+= h*.5;
+comp_148=
+comp_149=  if(abs(h)<0.005*d && ret_c.x < 0.) {
+comp_150=    ret_c = float2(d,s.y);
+comp_151=  }
+comp_152=  if(d>150.|| p.y>2.) { i=500.; }
+comp_153=
+comp_154=
+comp_155=
+comp_156=
 comp_157=
-comp_158=      else {
-comp_159=        ret_c = float2(-1, -1);
-comp_160=      }
+comp_158=
+comp_159=
+comp_160=
 comp_161=
-comp_162=    }
+comp_162=
 comp_163=
 comp_164=    }
 comp_165=    // end for
@@ -196,7 +196,7 @@ comp_191=      float3 id = floor(p);
 comp_192=      float c2 = smoothstep(.5,0.,length(q));
 comp_193=      c2 *= step(hash21(id.xz/id.y),.06-i*i*0.005);
 comp_194=      c += c2;
-comp_195=      p = mul(p*.6+.5*p, transpose(float3x3(3./5.,0,4./5.,0,1,0,-4./5.,0,3./5.)));
+comp_195=      p = mul(p, transpose(float3x3(3./5.,0,4./5.,0,1,0,-4./5.,0,3./5.))) * .6 + .5;
 comp_196=    }
 comp_197=
 comp_198=    c*=c;
@@ -298,11 +298,11 @@ comp_293=        float shiny = 0.88;
 comp_294=        col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),shiny),5.));
 comp_295=
 comp_296=        #ifdef VAPORWAVE
-comp_297=        col = lerp(col,float3(.4,.5,1.),smoothstep(.05,.0,i.y));
+comp_297=        col = lerp(col,float3(.4,.5,1.),1.-smoothstep(0.,.05,i.y));
 comp_298=        col = lerp(sky,col,fog);
 comp_299=        col = sqrt(col);
 comp_300=        #else
-comp_301=        col = lerp(col,float3(.8,.1,.92),smoothstep(.05,0,i.y));
+comp_301=        col = lerp(col,float3(.8,.1,.92),1.-smoothstep(0.,.05,i.y));
 comp_302=        col = lerp(sky,col,fog);
 comp_303=        // no gamma for that old cg look
 comp_304=        #endif
