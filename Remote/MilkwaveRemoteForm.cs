@@ -1084,7 +1084,51 @@ namespace MilkwaveRemote {
     }
 
     private bool IsPipeConnected => _pipeClient?.IsConnected == true;
+    private bool CanSendPipeMessage => IsPipeConnected || (chkVisualizerMulti.Checked && _discoveredInstances.Count > 0);
     private List<(int pid, string name, string exePath)> _discoveredInstances = new();
+
+    /// <summary>
+    /// Sends a message to the visualizer(s). When chkVisualizerMulti is checked,
+    /// the message is sent to all discovered instances; otherwise only the connected one.
+    /// </summary>
+    private bool PipeSend(string message) {
+      if (chkVisualizerMulti.Checked && _discoveredInstances.Count > 0) {
+        return SendToAllInstances(message);
+      }
+      return _pipeClient?.Send(message) ?? false;
+    }
+
+    /// <summary>
+    /// Sends a message to the SELECTED visualizer only, bypassing Multi-broadcast.
+    /// </summary>
+    private bool PipeSendToSelectedOnly(string message) {
+      return _pipeClient?.Send(message) ?? false;
+    }
+
+    private bool PipeSendSignal(string signalName) {
+      return PipeSend($"SIGNAL|{signalName}");
+    }
+
+    private bool PipeSendSpoutSender(string senderName) {
+      return PipeSend($"SPOUT_SENDER={senderName}");
+    }
+
+    private bool SendToAllInstances(string message) {
+      bool anySuccess = false;
+      foreach (var (pid, name, exePath) in _discoveredInstances) {
+        if (pid == (_pipeClient?.ConnectedPid ?? 0) && IsPipeConnected) {
+          if (_pipeClient!.Send(message)) anySuccess = true;
+        } else {
+          try {
+            using var tempClient = new PipeClient();
+            if (tempClient.Connect(pid)) {
+              if (tempClient.Send(message)) anySuccess = true;
+            }
+          } catch { }
+        }
+      }
+      return anySuccess;
+    }
 
     /// <summary>
     /// Unsubscribes pipe events and disposes the client so that intentional
@@ -1668,7 +1712,7 @@ namespace MilkwaveRemote {
       try {
         if (!SendingMessage) {
           SendingMessage = true;
-          if (IsPipeConnected) {
+          if (CanSendPipeMessage) {
             string message = "";
             if (type == MessageType.Wave) {
               message = "WAVE" +
@@ -1790,10 +1834,10 @@ namespace MilkwaveRemote {
               statusMessage = $"Spout mixing {(mixEnabled ? "enabled" : "disabled")}: {senderName}";
 
               if (mixEnabled && senderName.Length > 0) {
-                _pipeClient!.SendSpoutSender(senderName);
+                PipeSendSpoutSender(senderName);
                 System.Threading.Thread.Sleep(50);
               }
-              _pipeClient!.SendSignal($"ENABLESPOUTMIX={(mixEnabled ? 1 : 0)}");
+              PipeSendSignal($"ENABLESPOUTMIX={(mixEnabled ? 1 : 0)}");
               if (statusMessage.Length > 0) {
                 SetStatusText($"{statusMessage}");
               }
@@ -1803,7 +1847,7 @@ namespace MilkwaveRemote {
               try {
                 if (updatingSettingsParams) return;
                 bool onTop = chkInputTop.Checked;
-                _pipeClient!.SendSignal($"SET_INPUTMIX_ONTOP={(onTop ? 1 : 0)}");
+                PipeSendSignal($"SET_INPUTMIX_ONTOP={(onTop ? 1 : 0)}");
                 SetStatusText($"Input layer position set to {(onTop ? "Top (Overlay)" : "Background")}");
               } catch (Exception ex) {
                 SetStatusText($"Error setting input layer position: {ex.Message}");
@@ -1814,7 +1858,7 @@ namespace MilkwaveRemote {
               try {
                 if (updatingSettingsParams) return;
                 int opacityInt = (int)numInputMixOpacity.Value;
-                _pipeClient!.SendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
+                PipeSendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
                 SetStatusText($"Input mix opacity set to {opacityInt}%");
               } catch (Exception ex) {
                 SetStatusText($"Error setting input mix opacity: {ex.Message}");
@@ -1827,7 +1871,7 @@ namespace MilkwaveRemote {
                 bool active = chkMixLumaActive.Checked;
                 int threshold = active ? (int)numLumaThreshold.Value : -1;
                 int softness = (int)numLumaSoftness.Value;
-                _pipeClient!.SendSignal($"SET_INPUTMIX_LUMAKEY={threshold}|{softness}");
+                PipeSendSignal($"SET_INPUTMIX_LUMAKEY={threshold}|{softness}");
                 if (active)
                   SetStatusText($"Luma Key set to {threshold}% (softness {softness}%)");
                 else
@@ -1901,7 +1945,13 @@ namespace MilkwaveRemote {
               }
             }
 
-            _pipeClient!.Send(message);
+            if (type == MessageType.GetState || type == MessageType.CaptureScreenshot) {
+              // These operations must always target the selected visualizer only,
+              // even when Multi-send is active.
+              PipeSendToSelectedOnly(message);
+            } else {
+              PipeSend(message);
+            }
             if (statusMessage.Length > 0) {
               SetStatusText($"{statusMessage}");
             }
@@ -2243,7 +2293,7 @@ namespace MilkwaveRemote {
         } else if (tokenUpper.Equals("SOUNDINFO")) {
           SendPostMessage(VK_N, "N");
         } else if (tokenUpper.Equals("FULLSCREEN")) {
-          if (IsPipeConnected) _pipeClient!.Send("SIGNAL|FULLSCREEN");
+          if (CanSendPipeMessage) PipeSendSignal("FULLSCREEN");
         } else if (!string.IsNullOrEmpty(token)) { // no known command, send as message
           SendToMilkwaveVisualizer(token, MessageType.Message);
         }
@@ -2346,12 +2396,12 @@ namespace MilkwaveRemote {
     }
 
     private void SendPostMessage(int VKKey, string keyName) {
-      if (!IsPipeConnected) {
+      if (!CanSendPipeMessage) {
         SetStatusText(windowNotFound);
         return;
       }
 
-      _pipeClient!.Send($"SEND=0x{VKKey:X2}");
+      PipeSend($"SEND=0x{VKKey:X2}");
       SetStatusText($"Pressed {keyName}");
     }
 
@@ -2381,12 +2431,12 @@ namespace MilkwaveRemote {
     }
 
     private void SendUnicodeChars(string inputString) {
-      if (!IsPipeConnected) {
+      if (!CanSendPipeMessage) {
         SetStatusText(windowNotFound);
         return;
       }
 
-      _pipeClient!.Send($"SEND={inputString}");
+      PipeSend($"SEND={inputString}");
       SetStatusText($"Pressed {inputString.ToUpper()}");
     }
 
@@ -2402,8 +2452,8 @@ namespace MilkwaveRemote {
 
     private void btnAltEnter_Click(object sender, EventArgs e) {
       if (Settings.IsPresetMode) return;
-      if (!IsPipeConnected) { SetStatusText(windowNotFound); return; }
-      _pipeClient!.Send("SIGNAL|FULLSCREEN");
+      if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
+      PipeSendSignal("FULLSCREEN");
       SetStatusText("Pressed Fullscreen");
     }
 
@@ -3523,16 +3573,16 @@ namespace MilkwaveRemote {
 
     private void btnWatermark_Click(object sender, EventArgs e) {
       if (Settings.IsPresetMode) return;
-      if (!IsPipeConnected) { SetStatusText(windowNotFound); return; }
-      _pipeClient!.Send("SIGNAL|WATERMARK");
+      if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
+      PipeSendSignal("WATERMARK");
       SetStatusText("Pressed Watermark Mode");
     }
 
     private void btnWatermark_MouseDown(object sender, MouseEventArgs e) {
       if (Settings.IsPresetMode) return;
       if (e.Button == MouseButtons.Right) {
-        if (!IsPipeConnected) { SetStatusText(windowNotFound); return; }
-        _pipeClient!.Send("SIGNAL|BORDERLESS_FS");
+        if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
+        PipeSendSignal("BORDERLESS_FS");
         SetStatusText("Pressed Borderless Fullscreen");
       }
     }
@@ -6338,19 +6388,19 @@ namespace MilkwaveRemote {
           chkSpoutMix.Checked = false;
         }
 
-        if (IsPipeConnected) {
+        if (CanSendPipeMessage) {
           // Always send current mix settings (opacity and layer position) beforehand
           if (enabled) {
             int opacityInt = (int)numInputMixOpacity.Value;
             bool onTop = chkInputTop.Checked;
-            _pipeClient!.SendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
-            _pipeClient!.SendSignal($"SET_INPUTMIX_ONTOP={(onTop ? 1 : 0)}");
+            PipeSendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
+            PipeSendSignal($"SET_INPUTMIX_ONTOP={(onTop ? 1 : 0)}");
 
             // Send Luma Key settings
             bool lumaActive = chkMixLumaActive.Checked;
             int lumaThreshold = lumaActive ? (int)numLumaThreshold.Value : -1;
             int lumaSoftness = (int)numLumaSoftness.Value;
-            _pipeClient!.SendSignal($"SET_INPUTMIX_LUMAKEY={lumaThreshold}|{lumaSoftness}");
+            PipeSendSignal($"SET_INPUTMIX_LUMAKEY={lumaThreshold}|{lumaSoftness}");
 
             System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
           }
@@ -6358,12 +6408,12 @@ namespace MilkwaveRemote {
           // Always send device index first (even if already sent) to ensure it's initialized
           if (enabled && cboVideoInput.SelectedIndex >= 0) {
             int deviceIndex = cboVideoInput.SelectedIndex;
-            _pipeClient!.SendSignal($"SETVIDEODEVICE={deviceIndex}");
+            PipeSendSignal($"SETVIDEODEVICE={deviceIndex}");
             System.Threading.Thread.Sleep(100); // Give device time to initialize
           }
 
           // Then enable/disable mixing
-          _pipeClient!.SendSignal($"ENABLEVIDEOMIX={(enabled ? 1 : 0)}");
+          PipeSendSignal($"ENABLEVIDEOMIX={(enabled ? 1 : 0)}");
 
           if (enabled && cboVideoInput.SelectedIndex >= 0) {
             SetStatusText($"Video mixing enabled: {cboVideoInput.Text}");
@@ -6386,9 +6436,9 @@ namespace MilkwaveRemote {
     private void cboVideoInput_SelectedIndexChanged(object sender, EventArgs e) {
       try {
         if (chkVideoMix.Checked && cboVideoInput.SelectedIndex >= 0) {
-          if (IsPipeConnected) {
+          if (CanSendPipeMessage) {
             int deviceIndex = cboVideoInput.SelectedIndex;
-            _pipeClient!.SendSignal($"SETVIDEODEVICE={deviceIndex}");
+            PipeSendSignal($"SETVIDEODEVICE={deviceIndex}");
             SetStatusText($"Video source changed: {cboVideoInput.Text}");
           } else {
             SetStatusText(windowNotFound);
@@ -6424,19 +6474,19 @@ namespace MilkwaveRemote {
           chkVideoMix.Checked = false;
         }
 
-        if (IsPipeConnected) {
+        if (CanSendPipeMessage) {
           // Always send current mix settings (opacity and layer position) beforehand
           if (enabled) {
             int opacityInt = (int)numInputMixOpacity.Value;
             bool onTop = chkInputTop.Checked;
-            _pipeClient!.SendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
-            _pipeClient!.SendSignal($"SET_INPUTMIX_ONTOP={(onTop ? 1 : 0)}");
+            PipeSendSignal($"SET_INPUTMIX_OPACITY={opacityInt}");
+            PipeSendSignal($"SET_INPUTMIX_ONTOP={(onTop ? 1 : 0)}");
 
             // Send Luma Key settings
             bool lumaActive = chkMixLumaActive.Checked;
             int lumaThreshold = lumaActive ? (int)numLumaThreshold.Value : -1;
             int lumaSoftness = (int)numLumaSoftness.Value;
-            _pipeClient!.SendSignal($"SET_INPUTMIX_LUMAKEY={lumaThreshold}|{lumaSoftness}");
+            PipeSendSignal($"SET_INPUTMIX_LUMAKEY={lumaThreshold}|{lumaSoftness}");
 
             System.Threading.Thread.Sleep(50); // Small wait to ensure settings are applied
           }
@@ -6444,11 +6494,11 @@ namespace MilkwaveRemote {
           // Send sender name and then enable/disable mixing
           if (enabled && cboSputInput.SelectedIndex >= 0) {
             string senderName = cboSputInput.Text;
-            _pipeClient!.SendSpoutSender(senderName);
+            PipeSendSpoutSender(senderName);
             System.Threading.Thread.Sleep(50);
           }
 
-          _pipeClient!.SendSignal($"ENABLESPOUTMIX={(enabled ? 1 : 0)}");
+          PipeSendSignal($"ENABLESPOUTMIX={(enabled ? 1 : 0)}");
 
           if (enabled && cboSputInput.SelectedIndex >= 0) {
             SetStatusText($"Spout mixing enabled: {cboSputInput.Text}");
@@ -6473,8 +6523,8 @@ namespace MilkwaveRemote {
           string senderName = cboSputInput.Text;
           if (senderName == lastSpoutSenderName) return; // Ignore if name hasn't changed (avoids noise from refresh timer)
 
-          if (IsPipeConnected) {
-            _pipeClient!.SendSpoutSender(senderName);
+          if (CanSendPipeMessage) {
+            PipeSendSpoutSender(senderName);
             SetStatusText($"Spout sender changed: {senderName}");
             lastSpoutSenderName = senderName;
           } else {
