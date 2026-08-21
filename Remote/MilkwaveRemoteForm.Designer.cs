@@ -241,6 +241,9 @@ namespace MilkwaveRemote
       chkVisualizerMulti = new CheckBox();
       lblAmp = new Label();
       labelEQBoost = new Label();
+      lblLyricsStatus = new Label();
+      chkToggleLyrics = new CheckBox();
+      textBox1 = new TextBox();
       label15 = new Label();
       lblMessageEditor = new Label();
       lblSettingsOpenFile = new Label();
@@ -339,6 +342,7 @@ namespace MilkwaveRemote
       numFactorFPS = new NumericUpDown();
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
+      tabLyrics = new TabPage();
       tabFonts = new TabPage();
       chkMenuItalic = new CheckBox();
       chkMenuBold = new CheckBox();
@@ -457,6 +461,7 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorFPS).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
+      tabLyrics.SuspendLayout();
       tabFonts.SuspendLayout();
       tabMidi.SuspendLayout();
       tabWave.SuspendLayout();
@@ -3015,6 +3020,42 @@ namespace MilkwaveRemote
       toolTip1.SetToolTip(labelEQBoost, "Equalizer Boost Factor\r\nFor equalizer presets using FFT data, this adjusts the EQ levels\r\nDouble-click: Reset to default\r\n");
       labelEQBoost.DoubleClick += labelEQBoost_DoubleClick;
       // 
+      // lblLyricsStatus
+      // 
+      lblLyricsStatus.Location = new Point(8, 6);
+      lblLyricsStatus.Name = "lblLyricsStatus";
+      lblLyricsStatus.Size = new Size(57, 23);
+      lblLyricsStatus.TabIndex = 121;
+      lblLyricsStatus.Text = "Status";
+      lblLyricsStatus.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblLyricsStatus, "Click: Copy full path to clipboard\r\nCtrl+Click: Open file in editor\r\n");
+      // 
+      // chkToggleLyrics
+      // 
+      chkToggleLyrics.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkToggleLyrics.Appearance = Appearance.Button;
+      chkToggleLyrics.FlatStyle = FlatStyle.System;
+      chkToggleLyrics.Location = new Point(529, 7);
+      chkToggleLyrics.Margin = new Padding(3, 2, 3, 2);
+      chkToggleLyrics.Name = "chkToggleLyrics";
+      chkToggleLyrics.Size = new Size(70, 23);
+      chkToggleLyrics.TabIndex = 123;
+      chkToggleLyrics.Text = "Active";
+      chkToggleLyrics.TextAlign = ContentAlignment.MiddleCenter;
+      chkToggleLyrics.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkToggleLyrics, "Activate Lyrics");
+      chkToggleLyrics.UseVisualStyleBackColor = true;
+      // 
+      // textBox1
+      // 
+      textBox1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      textBox1.Location = new Point(71, 7);
+      textBox1.Name = "textBox1";
+      textBox1.ReadOnly = true;
+      textBox1.Size = new Size(452, 23);
+      textBox1.TabIndex = 122;
+      toolTip1.SetToolTip(textBox1, "Currently running Visualizer preset");
+      // 
       // label15
       // 
       label15.Location = new Point(4, 95);
@@ -3799,6 +3840,7 @@ namespace MilkwaveRemote
       tabControl.Controls.Add(tabMessage);
       tabControl.Controls.Add(tabInOut);
       tabControl.Controls.Add(tabSettings);
+      tabControl.Controls.Add(tabLyrics);
       tabControl.Controls.Add(tabFonts);
       tabControl.Controls.Add(tabMidi);
       tabControl.Controls.Add(tabWave);
@@ -4372,6 +4414,21 @@ namespace MilkwaveRemote
       numFactorTime.TextAlign = HorizontalAlignment.Center;
       numFactorTime.Value = new decimal(new int[] { 1, 0, 0, 0 });
       numFactorTime.ValueChanged += numFactorTime_ValueChanged;
+      // 
+      // tabLyrics
+      // 
+      tabLyrics.BackColor = SystemColors.ControlLight;
+      tabLyrics.BorderStyle = BorderStyle.FixedSingle;
+      tabLyrics.Controls.Add(lblLyricsStatus);
+      tabLyrics.Controls.Add(chkToggleLyrics);
+      tabLyrics.Controls.Add(textBox1);
+      tabLyrics.Location = new Point(4, 24);
+      tabLyrics.Margin = new Padding(0);
+      tabLyrics.Name = "tabLyrics";
+      tabLyrics.Padding = new Padding(3);
+      tabLyrics.Size = new Size(609, 183);
+      tabLyrics.TabIndex = 8;
+      tabLyrics.Text = "Lyrics";
       // 
       // tabFonts
       // 
@@ -5412,6 +5469,8 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorFPS).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
+      tabLyrics.ResumeLayout(false);
+      tabLyrics.PerformLayout();
       tabFonts.ResumeLayout(false);
       tabMidi.ResumeLayout(false);
       tabMidi.PerformLayout();
@@ -5822,5 +5881,9 @@ namespace MilkwaveRemote
     private Label lblAmp;
     private Label labelEQBoost;
     private NumericUpDown numFFTBoost;
+    private TabPage tabLyrics;
+    private Label lblLyricsStatus;
+    private CheckBox chkToggleLyrics;
+    private TextBox textBox1;
   }
 }
