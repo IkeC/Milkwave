@@ -483,7 +483,7 @@ LyricsResolution ResolveLyrics(const std::filesystem::path& installDirectory,
   result = FetchLyricsFromLrclib(track, userAgent, apiUrl);
   result.cachePath = LyricsPathForTrack(installDirectory, track);
   if (result.source == LyricsSource::Lrclib && result.document.state == LyricsDocumentState::Loaded &&
-      !result.document.lines.empty()) {
+      (!result.document.lines.empty() || !result.document.plainText.empty())) {
     std::string serialized;
     for (const auto& line : result.document.lines) {
       const auto minutes = line.startMs / 60000;
@@ -494,6 +494,7 @@ LyricsResolution ResolveLyrics(const std::filesystem::path& installDirectory,
                 << std::setw(2) << centiseconds << "] ";
       serialized += timestamp.str() + WideToUtf8(line.text) + '\n';
     }
+    if (result.document.lines.empty()) serialized = WideToUtf8(result.document.plainText);
     result.cacheSaved = SaveLyricsFileAtomic(result.cachePath, serialized);
     std::error_code existsError;
     result.cacheExists = std::filesystem::is_regular_file(result.cachePath, existsError);

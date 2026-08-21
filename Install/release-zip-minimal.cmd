@@ -3,13 +3,14 @@ rem Create a release zip named Milkwave-Portable-<version>.zip using 7-Zip.
 rem This script excludes unwanted directories and includes only textures used by Milkwave presets.
 
 rem Resolve script and release directories
-set "VERSION=4.0"
+set "VERSION=4.1"
+set "SUBNAME=Beta"
 
 set "SCRIPT_DIR=%~dp0"
 set "RELEASE_DIR=%SCRIPT_DIR%..\Release"
 set "SEVENZ=C:\Program Files\7-Zip\7z.exe"
 
-set "OUTPUT=%SCRIPT_DIR%\Milkwave-%VERSION%-Minimal.zip"
+set "OUTPUT=%SCRIPT_DIR%\Milkwave-%VERSION%-%SUBNAME%.zip"
 if exist "%OUTPUT%" del /f /q "%OUTPUT%" 2>nul
 
 pushd "%RELEASE_DIR%"
@@ -22,6 +23,7 @@ echo Creating base archive (excluding all textures)...
  -xr!backup ^
  -xr!cache ^
  -xr!capture ^
+ -xr!resources\lyrics\* ^
  -xr!resources\textures\* ^
  -xr!resources\presets\BeatDrop ^
  -xr!resources\presets\Butterchurn ^

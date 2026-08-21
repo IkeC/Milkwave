@@ -185,7 +185,10 @@ Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offs
   std::lock_guard<std::mutex> lock(lyricsMutex);
   const auto adjustedPositionMs = currentPositionMs + offsetMs;
   const auto* currentLine = lyricsDocument.CurrentLine(adjustedPositionMs);
-  if (!currentLine) return {};
+  if (!currentLine) {
+    if (!lyricsDocument.plainText.empty()) return {lyricsDocument.plainText, 1.0f};
+    return {};
+  }
 
   float opacity = 1.0f;
   const auto duration = std::max<std::int64_t>(0, fadeDurationMs);
