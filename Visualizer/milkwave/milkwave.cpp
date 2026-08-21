@@ -4,6 +4,8 @@
 #include <codecvt>
 
 namespace {
+
+constexpr std::int64_t kTimelineBackwardJitterToleranceMs = 500;
 constexpr std::int64_t ASSUMED_TIMELINE_START_OFFSET_MS = 500;
 }
 
@@ -112,10 +114,15 @@ void Milkwave::PollMediaInfo() {
           } else if (hasReportedTimeline) {
             currentDurationMs = std::max<std::int64_t>(0, timelineDurationMs);
             if (!hasReportedPosition || timelinePositionMs != lastReportedPositionMs) {
-              currentPositionMs = std::max<std::int64_t>(0, timelinePositionMs);
-              timelineBasePositionMs = currentPositionMs;
-              timelineBaseTime = current_time;
-              lastReportedPositionMs = currentPositionMs;
+              const auto reportedPositionMs = std::max<std::int64_t>(0, timelinePositionMs);
+              const auto smallBackwardCorrection = reportedPositionMs < currentPositionMs &&
+                                                   currentPositionMs - reportedPositionMs <= kTimelineBackwardJitterToleranceMs;
+              if (!smallBackwardCorrection) {
+                currentPositionMs = reportedPositionMs;
+                timelineBasePositionMs = currentPositionMs;
+                timelineBaseTime = current_time;
+              }
+              lastReportedPositionMs = reportedPositionMs;
               hasReportedPosition = true;
             }
             hasTimeline = true;
@@ -184,11 +191,9 @@ Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offs
                                                                std::int64_t fadeDurationMs) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
   const auto adjustedPositionMs = currentPositionMs + offsetMs;
+  if (lyricsDocument.lines.empty()) return {};
   const auto* currentLine = lyricsDocument.CurrentLine(adjustedPositionMs);
-  if (!currentLine) {
-    if (!lyricsDocument.plainText.empty()) return {lyricsDocument.plainText, 1.0f};
-    return {};
-  }
+  if (!currentLine) return {};
 
   float opacity = 1.0f;
   const auto duration = std::max<std::int64_t>(0, fadeDurationMs);
@@ -213,7 +218,10 @@ std::wstring Milkwave::LyricsMonitorText(bool enabled, std::int64_t offsetMs) co
   const auto* line = lyricsDocument.CurrentLine(currentPositionMs + offsetMs);
   if (line) return line->text;
   if (lyricsDocument.state == LyricsDocumentState::Loading) return L"Lyrics loading";
-  if (lyricsDocument.state == LyricsDocumentState::Loaded) return L"Lyrics loaded";
+  if (lyricsDocument.state == LyricsDocumentState::Loaded) {
+    if (lyricsDocument.lines.empty() && !lyricsDocument.plainText.empty()) return L"Lyrics missing timestamps";
+    return L"Lyrics loaded";
+  }
   return L"Lyrics unavailable";
 }
 
