@@ -586,7 +586,7 @@ HRESULT GetBufferWithRetry(
         swprintf_s(buf, L"GetBufferWithRetry: attempt %d hr=0x%08x (pData=%p, frames=%u, flags=0x%08x)", 
  attempt + 1, hr, pDataResult, framesResult, flagsResult);
       }
-      pMilkwave->LogInfo(buf);
+      pMilkwave->LogDebug(buf);
     }
 
     // Success case

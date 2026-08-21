@@ -67,8 +67,6 @@ class Milkwave {
   Milkwave();
   void Init(wchar_t* exePath);
   void SetLogDirectory(std::filesystem::path directory);
-  void LogEvent(const wchar_t* info);
-  void LogEvent(std::wstring info);
   void LogInfo(const wchar_t* info);
   void LogInfo(std::wstring info);
   void LogDebug(std::wstring info);

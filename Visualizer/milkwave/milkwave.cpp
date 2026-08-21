@@ -235,7 +235,7 @@ void Milkwave::RequestLyricsResolution() {
   lyricsDocument.state = LyricsDocumentState::Loading;
   pendingLyricsTrack = std::move(track);
   lyricsCondition.notify_one();
-  LogEvent(L"Lyrics loading: " + currentArtist + L" - " + currentTitle);
+  LogDebug(L"Lyrics loading: " + currentArtist + L" - " + currentTitle);
 }
 
 void Milkwave::LyricsWorkerLoop() {
@@ -289,9 +289,9 @@ void Milkwave::LyricsWorkerLoop() {
       }
       if (cacheSaveError != 0) message += L" cacheSaveError=" + std::to_wstring(cacheSaveError);
       if (!resolution.error.empty()) message += L" error=" + resolution.error;
-      LogEvent(std::move(message));
+      LogInfo(std::move(message));
     } else {
-      LogEvent(L"Lyrics result discarded for stale track: " + track.artist + L" - " + track.title);
+      LogInfo(L"Lyrics result discarded for stale track: " + track.artist + L" - " + track.title);
     }
   }
 }
@@ -362,16 +362,6 @@ void Milkwave::LogInfo(const wchar_t* info) {
   WriteLog(L"INFO", info ? std::wstring(info) : L"");
 }
 
-void Milkwave::LogEvent(std::wstring info) {
-  if (logLevel < 1) return;
-  WriteLog(L"EVENT", info);
-}
-
-void Milkwave::LogEvent(const wchar_t* info) {
-  if (logLevel < 1) return;
-  WriteLog(L"EVENT", info ? std::wstring(info) : L"");
-}
-
 void Milkwave::WriteLog(const wchar_t* level, const std::wstring& message) {
   try {
     std::lock_guard<std::mutex> lock(logMutex);
@@ -379,13 +369,17 @@ void Milkwave::WriteLog(const wchar_t* level, const std::wstring& message) {
     if (directory.empty()) directory = std::filesystem::current_path() / L"logs";
     std::filesystem::create_directories(directory);
 
-    std::time_t now = std::time(nullptr);
+    const auto systemNow = std::chrono::system_clock::now();
+    const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(systemNow.time_since_epoch()) % 1000;
+    const std::time_t now = std::chrono::system_clock::to_time_t(systemNow);
     std::tm localTime{};
     localtime_s(&localTime, &now);
     wchar_t date[16] = {};
-    wchar_t clockTime[16] = {};
+    wchar_t clockTime[32] = {};
     std::wcsftime(date, _countof(date), L"%Y-%m-%d", &localTime);
-    std::wcsftime(clockTime, _countof(clockTime), L"%H:%M:%S", &localTime);
+    wchar_t timeWithoutMilliseconds[16] = {};
+    std::wcsftime(timeWithoutMilliseconds, _countof(timeWithoutMilliseconds), L"%H:%M:%S", &localTime);
+    swprintf_s(clockTime, L"%s.%03lld", timeWithoutMilliseconds, static_cast<long long>(milliseconds.count()));
 
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
     std::ofstream logFile(directory / (std::wstring(date) + L".visualizer.log"), std::ios::app);

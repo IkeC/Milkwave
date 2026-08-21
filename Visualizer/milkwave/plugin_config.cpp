@@ -716,7 +716,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_TcpEnabled, L"TcpEnabled", pIni, L"Network");
   WritePrivateProfileIntW(m_TcpPort, L"TcpPort", pIni, L"Network");
 
-  ::milkwave.LogEvent(L"Configuration written: " + std::wstring(pIni));
+  ::milkwave.LogInfo(L"Configuration written: " + std::wstring(pIni));
 }
 
 void CPlugin::SaveWindowSizeAndPosition(HWND hwnd) {

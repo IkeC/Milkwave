@@ -602,7 +602,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     // to update fonts
     AllocateDX9Stuff();
     milkwave->logLevel = m_LogLevel;
-    milkwave->LogEvent(L"Configuration reloaded: " + std::wstring(GetConfigIniFile()));
+    milkwave->LogDebug(L"Config reloaded: " + std::wstring(GetConfigIniFile()));
   } else if (wcsncmp(sMessage, L"SETTINGS", 8) == 0) {
     m_fTimeBetweenPresets = GetPrivateProfileFloatW(L"Settings", L"fTimeBetweenPresets", m_fTimeBetweenPresets, GetConfigIniFile());
     m_fPresetStartTime = GetTime();

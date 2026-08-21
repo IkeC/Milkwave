@@ -1552,7 +1552,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
       } catch (const std::exception& e) {
         milkwave.LogException(L"Render loop", e, false);
       } catch (...) {
-        milkwave.LogEvent(L"ERROR: Unknown non-standard exception in render loop");
+        milkwave.LogInfo(L"ERROR: Unknown non-standard exception in render loop");
       }
       frame++;
     }
@@ -1983,7 +1983,7 @@ int StartThreads(HINSTANCE instance) {
     g_plugin.milkwave = &milkwave;
     milkwave.SetLogDirectory(std::filesystem::path(g_plugin.m_szBaseDir) / L"logs");
 
-    milkwave.LogEvent(L"Visualizer startup: LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);
+    milkwave.LogInfo(L"Visualizer startup: LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);
 
     if (g_plugin.m_CheckDirectXOnStartup) {
       if (!g_plugin.CheckForDirectX9c()) {
