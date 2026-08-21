@@ -5,6 +5,7 @@
 #include <sstream>
 #include <ctime>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 
 #include <windows.h>
@@ -20,6 +21,11 @@
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.Graphics.Imaging.h>
 #include <filesystem>
+#include <mutex>
+#include <optional>
+#include <thread>
+
+#include "Lyrics.h"
 
 using namespace winrt;
 using namespace Windows::Media::Control;
@@ -30,6 +36,8 @@ extern float milkwave_amp_right;
 
 class Milkwave {
  public:
+  ~Milkwave();
+
   std::wstring currentArtist;
   std::wstring currentTitle;
   std::wstring currentAlbum;
@@ -65,7 +73,21 @@ class Milkwave {
   void LogException(const wchar_t* context, const std::exception& e, bool showMessage);
   void UpdateCurrentPosition(std::chrono::steady_clock::time_point currentTime);
   void PollMediaInfo();
+  std::wstring CurrentLyricText() const;
   bool SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
+
+ private:
+  void RequestLyricsResolution();
+  void LyricsWorkerLoop();
+
+  std::filesystem::path lyricsInstallDirectory;
+  mutable std::mutex lyricsMutex;
+  std::condition_variable lyricsCondition;
+  std::optional<LyricsTrackIdentity> pendingLyricsTrack;
+  LyricsDocument lyricsDocument;
+  std::uint64_t lyricsRequestGeneration = 0;
+  bool stopLyricsWorker = false;
+  std::thread lyricsWorker;
 };
 
 extern Milkwave milkwave;

@@ -892,6 +892,15 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
           milkwave.doPollExplicit = true;
         }
         return 0;
+      } else if (wParam == 'L') {
+        if (GetKeyState(VK_CONTROL) & 0x8000) {
+          g_plugin.m_lyricsDisplayEnabled = !g_plugin.m_lyricsDisplayEnabled;
+          WritePrivateProfileStringW(L"Milkwave", L"LyricsDisplayEnabled",
+                                     g_plugin.m_lyricsDisplayEnabled ? L"1" : L"0",
+                                     g_plugin.GetConfigIniFile());
+          g_plugin.AddNotification(g_plugin.m_lyricsDisplayEnabled ? L"Lyrics enabled" : L"Lyrics disabled");
+          return 0;
+        }
       } else if (wParam == VK_D) {
         if (GetKeyState(VK_CONTROL) & 0x8000) {  // Check if Ctrl is pressed
           bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;

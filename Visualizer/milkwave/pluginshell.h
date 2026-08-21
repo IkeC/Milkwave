@@ -108,8 +108,12 @@ class CPluginShell {
   // ------------------------------------------------------------
  public:
   LPD3DXFONT GetFont(eFontIndex idx);  // returns a D3DX font handle for drawing text; see shell_defines.h for the definition of the 'eFontIndex' enum.
+  LPD3DXFONT GetItalicFont();
+  int GetItalicFontHeight();
   int GetFontHeight(eFontIndex idx);   // returns the height of the font, in pixels; see shell_defines.h for the definition of the 'eFontIndex' enum.
   CTextManager m_text;
+  LPD3DXFONT m_italic_font = NULL;
+  int m_italic_font_height = 0;
 
   wchar_t m_szBaseDir[MAX_PATH];
 

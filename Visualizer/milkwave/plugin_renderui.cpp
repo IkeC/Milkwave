@@ -259,6 +259,21 @@ void CPlugin::MyRenderUI(
         }
       }
 
+      if (m_lyricsDisplayEnabled) {
+        pFont = GetItalicFont();
+        h = GetItalicFontHeight();
+        std::wstring lyricText = ::milkwave.CurrentLyricText();
+        if (lyricText.empty()) {
+          MyTextOut_Shadow(L"Lyrics unavailable", MTO_UPPER_RIGHT);
+        } else {
+          lyricText = L"~ " + lyricText + L" ~";
+          MyTextOut_Shadow(lyricText.c_str(), MTO_UPPER_RIGHT);
+        }
+      } else {
+        SelectFont(SIMPLE_FONT);
+        MyTextOut_Shadow(L"Lyrics off", MTO_UPPER_RIGHT);
+      }
+
       swprintf(buf, L"  %6.2f %s", (float)(*m_pState->var_pf_monitor), wasabiApiLangString(IDS_PF_MONITOR));
       MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
 

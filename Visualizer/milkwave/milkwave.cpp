@@ -1,4 +1,5 @@
 #include "milkwave.h"
+#include "Lyrics.h"
 #include <locale>
 #include <codecvt>
 
@@ -8,6 +9,15 @@ constexpr std::int64_t ASSUMED_TIMELINE_START_OFFSET_MS = 500;
 
 Milkwave::Milkwave() {}
 
+Milkwave::~Milkwave() {
+  {
+    std::lock_guard<std::mutex> lock(lyricsMutex);
+    stopLyricsWorker = true;
+  }
+  lyricsCondition.notify_one();
+  if (lyricsWorker.joinable()) lyricsWorker.join();
+}
+
 void Milkwave::Init(wchar_t* exePath) {
   winrt::init_apartment();  // Initialize the WinRT runtime
   start_time = std::chrono::steady_clock::now();
@@ -15,10 +25,13 @@ void Milkwave::Init(wchar_t* exePath) {
 
   // Get the executable's directory
   std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
+  lyricsInstallDirectory = exeDir;
 
   // Construct the "resources/sprites/" directory path relative to the executable
   std::filesystem::path spritesDir = exeDir / "resources/sprites";
   std::filesystem::create_directories(spritesDir);
+  std::filesystem::create_directories(LyricsDirectory(exeDir));
+  lyricsWorker = std::thread(&Milkwave::LyricsWorkerLoop, this);
 
   // Construct the file path
   coverSpriteFilePath = spritesDir / "cover.png";
@@ -60,6 +73,7 @@ void Milkwave::PollMediaInfo() {
 
         auto properties = currentSession.TryGetMediaPropertiesAsync().get();
         if (properties) {
+          bool lyricsTrackChanged = properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum;
           bool trackChanged = doPollExplicit || properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum;
           if (trackChanged) {
             isSongChange = currentAlbum.length() || currentArtist.length() || currentTitle.length();
@@ -83,6 +97,7 @@ void Milkwave::PollMediaInfo() {
             lastReportedPositionMs = currentPositionMs;
             hasTimeline = hasReportedTimeline || !currentArtist.empty() || !currentTitle.empty();
             timelineApproximate = !hasReportedTimeline;
+            if (lyricsTrackChanged) RequestLyricsResolution();
           } else if (hasReportedTimeline) {
             currentDurationMs = std::max<std::int64_t>(0, timelineDurationMs);
             if (!hasReportedPosition || timelinePositionMs != lastReportedPositionMs) {
@@ -124,6 +139,12 @@ void Milkwave::PollMediaInfo() {
         isPlaying = false;
         hasPlaybackState = false;
         hasReportedPosition = false;
+        {
+          std::lock_guard<std::mutex> lock(lyricsMutex);
+          ++lyricsRequestGeneration;
+          pendingLyricsTrack.reset();
+          lyricsDocument = LyricsDocument{};
+        }
         timelineBasePositionMs = 0;
         timelineBaseTime = current_time;
         if (currentArtist.length() || currentTitle.length() || currentAlbum.length()) {
@@ -139,6 +160,48 @@ void Milkwave::PollMediaInfo() {
     }
   } catch (const std::exception& e) {
     LogException(L"PollMediaInfo", e, false);
+  }
+}
+
+std::wstring Milkwave::CurrentLyricText() const {
+  std::lock_guard<std::mutex> lock(lyricsMutex);
+  const auto* line = lyricsDocument.CurrentLine(currentPositionMs);
+  return line ? line->text : L"";
+}
+
+void Milkwave::RequestLyricsResolution() {
+  LyricsTrackIdentity track{currentArtist, currentTitle, currentAlbum, currentDurationMs};
+  std::lock_guard<std::mutex> lock(lyricsMutex);
+  ++lyricsRequestGeneration;
+  pendingLyricsTrack.reset();
+  lyricsDocument = LyricsDocument{};
+  if (track.artist.empty() && track.title.empty()) return;
+  lyricsDocument.state = LyricsDocumentState::Loading;
+  pendingLyricsTrack = std::move(track);
+  lyricsCondition.notify_one();
+}
+
+void Milkwave::LyricsWorkerLoop() {
+  winrt::init_apartment();
+  for (;;) {
+    LyricsTrackIdentity track;
+    std::uint64_t requestGeneration = 0;
+    {
+      std::unique_lock<std::mutex> lock(lyricsMutex);
+      lyricsCondition.wait(lock, [this] { return stopLyricsWorker || pendingLyricsTrack.has_value(); });
+      if (stopLyricsWorker) {
+        winrt::uninit_apartment();
+        return;
+      }
+      track = *pendingLyricsTrack;
+      pendingLyricsTrack.reset();
+      requestGeneration = lyricsRequestGeneration;
+    }
+
+    auto resolution = ResolveLyrics(lyricsInstallDirectory, track);
+
+    std::lock_guard<std::mutex> lock(lyricsMutex);
+    if (requestGeneration == lyricsRequestGeneration) lyricsDocument = std::move(resolution.document);
   }
 }
 

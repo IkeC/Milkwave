@@ -810,6 +810,7 @@ class CPlugin : public CPluginShell {
   int m_nSpoutInputHeight;
 
   int m_nFramesSinceResize;
+  bool m_lyricsDisplayEnabled = true;
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.
