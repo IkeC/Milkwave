@@ -2,11 +2,16 @@
 #include <locale>
 #include <codecvt>
 
+namespace {
+constexpr std::int64_t ASSUMED_TIMELINE_START_OFFSET_MS = 500;
+}
+
 Milkwave::Milkwave() {}
 
 void Milkwave::Init(wchar_t* exePath) {
   winrt::init_apartment();  // Initialize the WinRT runtime
   start_time = std::chrono::steady_clock::now();
+  timelineBaseTime = start_time;
 
   // Get the executable's directory
   std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
@@ -19,25 +24,44 @@ void Milkwave::Init(wchar_t* exePath) {
   coverSpriteFilePath = spritesDir / "cover.png";
 }
 
+void Milkwave::UpdateCurrentPosition(std::chrono::steady_clock::time_point currentTime) {
+  if (!hasTimeline || !isPlaying) return;
+
+  auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - timelineBaseTime).count();
+  currentPositionMs = timelineBasePositionMs + elapsedMs;
+  if (currentPositionMs < 0) currentPositionMs = 0;
+  if (currentDurationMs > 0 && currentPositionMs > currentDurationMs) currentPositionMs = currentDurationMs;
+}
+
 void Milkwave::PollMediaInfo() {
   if (!doPoll && !doPollExplicit) return;
 
   try {
     // Get the current time
     auto current_time = std::chrono::steady_clock::now();
+    UpdateCurrentPosition(current_time);
 
     // Calculate the elapsed time in seconds
     auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
 
-    // Check if 2 seconds have passed or manual poll requested
-    if (elapsed_seconds >= 2 || doPollExplicit) {
+    // Check if 1 second has passed or manual poll requested
+    if (elapsed_seconds >= 1 || doPollExplicit) {
       auto smtcManager = winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
       auto currentSession = smtcManager.GetCurrentSession();
       updated = false;
       if (currentSession) {
+        auto timeline = currentSession.GetTimelineProperties();
+        auto timelineDurationMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeline.EndTime() - timeline.StartTime()).count();
+        auto timelinePositionMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeline.Position()).count();
+        bool hasReportedTimeline = timelineDurationMs > 0 && timelinePositionMs >= 0;
+        auto playbackStatus = currentSession.GetPlaybackInfo().PlaybackStatus();
+        bool nextIsPlaying = playbackStatus == winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
+        bool playbackStateChanged = !hasPlaybackState || nextIsPlaying != isPlaying;
+
         auto properties = currentSession.TryGetMediaPropertiesAsync().get();
         if (properties) {
-          if (doPollExplicit || properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum) {
+          bool trackChanged = doPollExplicit || properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum;
+          if (trackChanged) {
             isSongChange = currentAlbum.length() || currentArtist.length() || currentTitle.length();
             currentArtist = properties.Artist().c_str();
             currentTitle = properties.Title().c_str();
@@ -49,8 +73,59 @@ void Milkwave::PollMediaInfo() {
 
             updated = true;
           }
+
+          if (trackChanged) {
+            currentPositionMs = hasReportedTimeline ? std::max<std::int64_t>(0, timelinePositionMs) : ASSUMED_TIMELINE_START_OFFSET_MS;
+            currentDurationMs = hasReportedTimeline ? std::max<std::int64_t>(0, timelineDurationMs) : 0;
+            timelineBasePositionMs = currentPositionMs;
+            timelineBaseTime = current_time;
+            hasReportedPosition = hasReportedTimeline;
+            lastReportedPositionMs = currentPositionMs;
+            hasTimeline = hasReportedTimeline || !currentArtist.empty() || !currentTitle.empty();
+            timelineApproximate = !hasReportedTimeline;
+          } else if (hasReportedTimeline) {
+            currentDurationMs = std::max<std::int64_t>(0, timelineDurationMs);
+            if (!hasReportedPosition || timelinePositionMs != lastReportedPositionMs) {
+              currentPositionMs = std::max<std::int64_t>(0, timelinePositionMs);
+              timelineBasePositionMs = currentPositionMs;
+              timelineBaseTime = current_time;
+              lastReportedPositionMs = currentPositionMs;
+              hasReportedPosition = true;
+            }
+            hasTimeline = true;
+            timelineApproximate = false;
+          }
+
+          if (playbackStateChanged) {
+            UpdateCurrentPosition(current_time);
+            timelineBasePositionMs = currentPositionMs;
+            timelineBaseTime = current_time;
+          }
+
+          if (!hasReportedTimeline && playbackStatus == winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped) {
+            currentPositionMs = 0;
+            timelineBasePositionMs = 0;
+            timelineBaseTime = current_time;
+            lastReportedPositionMs = 0;
+            hasReportedPosition = false;
+            hasTimeline = !currentArtist.empty() || !currentTitle.empty();
+            timelineApproximate = hasTimeline;
+          }
+
+          isPlaying = nextIsPlaying;
+          hasPlaybackState = true;
+          UpdateCurrentPosition(current_time);
         }
       } else {
+        currentPositionMs = 0;
+        currentDurationMs = 0;
+        hasTimeline = false;
+        timelineApproximate = false;
+        isPlaying = false;
+        hasPlaybackState = false;
+        hasReportedPosition = false;
+        timelineBasePositionMs = 0;
+        timelineBaseTime = current_time;
         if (currentArtist.length() || currentTitle.length() || currentAlbum.length()) {
           currentArtist = L"";
           currentTitle = L"";

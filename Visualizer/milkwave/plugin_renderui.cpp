@@ -9,6 +9,7 @@
 #include "defines.h"
 #include "shell_defines.h"
 #include "wasabi.h"
+#include "milkwave.h"
 
 #define MTO_UPPER_RIGHT 0
 #define MTO_UPPER_LEFT 1
@@ -242,6 +243,21 @@ void CPlugin::MyRenderUI(
     if (m_bShowDebugInfo) {
       SelectFont(SIMPLE_FONT);
       DWORD color = GetFontColor(SIMPLE_FONT);
+
+      if (::milkwave.currentArtist.length() || ::milkwave.currentTitle.length()) {
+        std::wstring trackText = ::milkwave.currentArtist;
+        if (!trackText.empty() && !::milkwave.currentTitle.empty()) trackText += L" - ";
+        trackText += ::milkwave.currentTitle;
+        MyTextOut_Shadow(trackText.c_str(), MTO_UPPER_RIGHT);
+
+        if (::milkwave.hasTimeline) {
+          auto totalSeconds = ::milkwave.currentPositionMs / 1000;
+          auto minutes = totalSeconds / 60;
+          auto seconds = totalSeconds % 60;
+          swprintf_s(buf, L"~ %02lld:%02lld", minutes, seconds);
+          MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
+        }
+      }
 
       swprintf(buf, L"  %6.2f %s", (float)(*m_pState->var_pf_monitor), wasabiApiLangString(IDS_PF_MONITOR));
       MyTextOut_Color(buf, MTO_UPPER_LEFT, color);
