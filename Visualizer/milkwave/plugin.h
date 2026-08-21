@@ -811,6 +811,20 @@ class CPlugin : public CPluginShell {
 
   int m_nFramesSinceResize;
   bool m_lyricsDisplayEnabled = true;
+  bool m_bLyricsBurnIn = false;
+  float m_lyricsPositionX = 0.50f;
+  float m_lyricsPositionY = 0.82f;
+  float m_lyricsMaxWidth = 0.82f;
+  wchar_t m_lyricsFont[256] = L"Segoe UI";
+  int m_lyricsFontSize = 32;
+  int m_lyricsColorR = 255;
+  int m_lyricsColorG = 255;
+  int m_lyricsColorB = 255;
+  int m_lyricsShadow = 2;
+  std::int64_t m_lyricsOffsetMs = 0;
+  std::int64_t m_lyricsFadeDurationMs = 250;
+  wchar_t m_lyricsApiUrl[512] = L"https://lrclib.net/api";
+  LPD3DXFONT m_lyricsFontObject = NULL;
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.
@@ -906,6 +920,7 @@ class CPlugin : public CPluginShell {
   int GetNextFreeSupertextIndex();
   void DoCustomSoundAnalysis();
   void DrawMotionVectors();
+  void RenderLyricsOverlay(bool burnIn);
 
   bool LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly);
   void UvToMathSpace(float u, float v, float* rad, float* ang);

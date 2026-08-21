@@ -23,8 +23,9 @@ void Milkwave::Init(wchar_t* exePath) {
   start_time = std::chrono::steady_clock::now();
   timelineBaseTime = start_time;
 
-  // Get the executable's directory
-  std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
+  // Init receives the configured base directory, not the executable filename.
+  std::filesystem::path exeDir = std::filesystem::path(exePath);
+  if (!exeDir.empty()) logDirectory = exeDir / L"logs";
   lyricsInstallDirectory = exeDir;
 
   // Construct the "resources/sprites/" directory path relative to the executable
@@ -35,6 +36,16 @@ void Milkwave::Init(wchar_t* exePath) {
 
   // Construct the file path
   coverSpriteFilePath = spritesDir / "cover.png";
+}
+
+void Milkwave::SetLogDirectory(std::filesystem::path directory) {
+  if (!directory.empty()) logDirectory = std::move(directory);
+}
+
+void Milkwave::SetLyricsApiUrl(std::wstring apiUrl) {
+  if (apiUrl.empty()) apiUrl = kDefaultLyricsApiUrl;
+  std::lock_guard<std::mutex> lock(lyricsMutex);
+  lyricsApiUrl = std::move(apiUrl);
 }
 
 void Milkwave::UpdateCurrentPosition(std::chrono::steady_clock::time_point currentTime) {
@@ -163,10 +174,44 @@ void Milkwave::PollMediaInfo() {
   }
 }
 
-std::wstring Milkwave::CurrentLyricText() const {
+std::wstring Milkwave::CurrentLyricText(std::int64_t offsetMs) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
-  const auto* line = lyricsDocument.CurrentLine(currentPositionMs);
+  const auto* line = lyricsDocument.CurrentLine(currentPositionMs + offsetMs);
   return line ? line->text : L"";
+}
+
+Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offsetMs,
+                                                               std::int64_t fadeDurationMs) const {
+  std::lock_guard<std::mutex> lock(lyricsMutex);
+  const auto adjustedPositionMs = currentPositionMs + offsetMs;
+  const auto* currentLine = lyricsDocument.CurrentLine(adjustedPositionMs);
+  if (!currentLine) return {};
+
+  float opacity = 1.0f;
+  const auto duration = std::max<std::int64_t>(0, fadeDurationMs);
+  if (duration > 0) {
+    const auto sinceStart = adjustedPositionMs - currentLine->startMs;
+    opacity = (std::min)(opacity, static_cast<float>(sinceStart) / static_cast<float>(duration));
+    for (const auto& line : lyricsDocument.lines) {
+      if (line.startMs > currentLine->startMs) {
+        const auto untilNext = line.startMs - adjustedPositionMs;
+        if (untilNext < duration)
+          opacity = (std::min)(opacity, static_cast<float>(untilNext) / static_cast<float>(duration));
+        break;
+      }
+    }
+  }
+  return {currentLine->text, std::clamp(opacity, 0.0f, 1.0f)};
+}
+
+std::wstring Milkwave::LyricsMonitorText(bool enabled, std::int64_t offsetMs) const {
+  if (!enabled) return L"Lyrics off";
+  std::lock_guard<std::mutex> lock(lyricsMutex);
+  const auto* line = lyricsDocument.CurrentLine(currentPositionMs + offsetMs);
+  if (line) return line->text;
+  if (lyricsDocument.state == LyricsDocumentState::Loading) return L"Lyrics loading";
+  if (lyricsDocument.state == LyricsDocumentState::Loaded) return L"Lyrics loaded";
+  return L"Lyrics unavailable";
 }
 
 void Milkwave::RequestLyricsResolution() {
@@ -179,12 +224,14 @@ void Milkwave::RequestLyricsResolution() {
   lyricsDocument.state = LyricsDocumentState::Loading;
   pendingLyricsTrack = std::move(track);
   lyricsCondition.notify_one();
+  LogEvent(L"Lyrics loading: " + currentArtist + L" - " + currentTitle);
 }
 
 void Milkwave::LyricsWorkerLoop() {
   winrt::init_apartment();
   for (;;) {
     LyricsTrackIdentity track;
+    std::wstring apiUrl;
     std::uint64_t requestGeneration = 0;
     {
       std::unique_lock<std::mutex> lock(lyricsMutex);
@@ -196,12 +243,45 @@ void Milkwave::LyricsWorkerLoop() {
       track = *pendingLyricsTrack;
       pendingLyricsTrack.reset();
       requestGeneration = lyricsRequestGeneration;
+      apiUrl = lyricsApiUrl;
     }
 
-    auto resolution = ResolveLyrics(lyricsInstallDirectory, track);
+    auto resolution = ResolveLyrics(lyricsInstallDirectory, track, L"Milkwave/1.0", apiUrl);
 
     std::lock_guard<std::mutex> lock(lyricsMutex);
-    if (requestGeneration == lyricsRequestGeneration) lyricsDocument = std::move(resolution.document);
+    if (requestGeneration == lyricsRequestGeneration) {
+      const wchar_t* stateText = L"unknown";
+      switch (resolution.document.state) {
+        case LyricsDocumentState::Loaded: stateText = L"loaded"; break;
+        case LyricsDocumentState::Instrumental: stateText = L"instrumental"; break;
+        case LyricsDocumentState::NotFound: stateText = L"not found"; break;
+        case LyricsDocumentState::Invalid: stateText = L"invalid"; break;
+        case LyricsDocumentState::Loading: stateText = L"loading"; break;
+        case LyricsDocumentState::Empty: stateText = L"empty"; break;
+      }
+      const auto lineCount = resolution.document.lines.size();
+      const auto plainTextLength = resolution.document.plainText.size();
+      const auto cachePath = resolution.cachePath;
+      const auto cacheSaved = resolution.cacheSaved;
+      const auto cacheExists = resolution.cacheExists;
+      const auto cacheSaveError = resolution.cacheSaveError;
+      lyricsDocument = std::move(resolution.document);
+      const wchar_t* sourceText = resolution.source == LyricsSource::Local ? L"local" :
+                                  resolution.source == LyricsSource::Lrclib ? L"lrclib" : L"none";
+      std::wstring message = L"Lyrics result: " + track.artist + L" - " + track.title + L" state=" + stateText +
+                             L" source=" + sourceText + L" lines=" + std::to_wstring(lineCount) +
+                             L" plainChars=" + std::to_wstring(plainTextLength) +
+                             L" http=" + std::to_wstring(resolution.httpStatus);
+      if (!cachePath.empty()) {
+        message += L" cache=" + cachePath.wstring() + L" cacheSaved=" + (cacheSaved ? L"true" : L"false") +
+                   L" cacheExists=" + (cacheExists ? L"true" : L"false");
+      }
+      if (cacheSaveError != 0) message += L" cacheSaveError=" + std::to_wstring(cacheSaveError);
+      if (!resolution.error.empty()) message += L" error=" + resolution.error;
+      LogEvent(std::move(message));
+    } else {
+      LogEvent(L"Lyrics result discarded for stale track: " + track.artist + L" - " + track.title);
+    }
   }
 }
 
@@ -254,12 +334,12 @@ bool Milkwave::SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalS
 
 void Milkwave::LogDebug(std::wstring info) {
   if (logLevel < 3) return;
-  LogInfo(info.c_str());
+  WriteLog(L"DEBUG", info);
 }
 
 void Milkwave::LogDebug(const wchar_t* info) {
   if (logLevel < 3) return;
-  LogInfo(info);
+  WriteLog(L"DEBUG", info ? std::wstring(info) : L"");
 }
 
 void Milkwave::LogInfo(std::wstring info) {
@@ -268,118 +348,85 @@ void Milkwave::LogInfo(std::wstring info) {
 
 void Milkwave::LogInfo(const wchar_t* info) {
   if (logLevel < 2) return;
+  WriteLog(L"INFO", info ? std::wstring(info) : L"");
+}
 
-  // Ensure the "log" directory exists
-  const char* logDir = "log";
-  if (_mkdir(logDir) != 0 && errno != EEXIST) {
-    std::cerr << "Failed to create or access log directory: " << logDir << std::endl;
-    return;
-  }
+void Milkwave::LogEvent(std::wstring info) {
+  if (logLevel < 1) return;
+  WriteLog(L"EVENT", info);
+}
 
-  // Get the current timestamp
-  std::time_t now = std::time(nullptr);
-  std::tm localTime;
-  localtime_s(&localTime, &now);
+void Milkwave::LogEvent(const wchar_t* info) {
+  if (logLevel < 1) return;
+  WriteLog(L"EVENT", info ? std::wstring(info) : L"");
+}
 
-  char datestring[20];
-  char timestring[20];
+void Milkwave::WriteLog(const wchar_t* level, const std::wstring& message) {
+  try {
+    std::lock_guard<std::mutex> lock(logMutex);
+    std::filesystem::path directory = logDirectory;
+    if (directory.empty()) directory = std::filesystem::current_path() / L"logs";
+    std::filesystem::create_directories(directory);
 
-  std::strftime(datestring, sizeof(datestring), "%Y-%m-%d", &localTime);
-  std::strftime(timestring, sizeof(timestring), "%H:%M:%S", &localTime);
+    std::time_t now = std::time(nullptr);
+    std::tm localTime{};
+    localtime_s(&localTime, &now);
+    wchar_t date[16] = {};
+    wchar_t clockTime[16] = {};
+    std::wcsftime(date, _countof(date), L"%Y-%m-%d", &localTime);
+    std::wcsftime(clockTime, _countof(clockTime), L"%H:%M:%S", &localTime);
 
-  // Construct the log file path
-  std::ostringstream logFilePath;
-  logFilePath << logDir << "\\" << datestring << ".visualizer.info.log";
-
-  // Open the log file in append mode
-  std::ofstream logFile(logFilePath.str(), std::ios::app);
-  if (logFile.is_open()) {
-    // Convert wchar_t* to UTF-8 std::string
-    std::wstring ws(info);
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-    std::string utf8info = conv.to_bytes(ws);
-
-    logFile << timestring << "> " << utf8info << std::endl;
-    logFile.close();
-  } else {
-    std::cerr << "Failed to open log file: " << logFilePath.str() << std::endl;
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    std::ofstream logFile(directory / (std::wstring(date) + L".visualizer.log"), std::ios::app);
+    if (!logFile.is_open()) return;
+    logFile << converter.to_bytes(clockTime) << " - [" << converter.to_bytes(level ? level : L"LOG") << "] "
+            << converter.to_bytes(message) << std::endl;
+  } catch (...) {
   }
 }
 
 void Milkwave::LogException(const wchar_t* context, const std::exception& e, bool showMessage) {
   if (logLevel < 1) return;
 
-  std::wstring ws(context);
-  std::wstring info = L"caught exception: ";
-  info += ws;
-  LogInfo(info.c_str());
-
-  std::string exceptionMessage = e.what();
-
-  // Ensure the "log" directory exists
-  const char* logDir = "log";
-  if (_mkdir(logDir) != 0 && errno != EEXIST) {
-    std::cerr << "Failed to create or access log directory: " << logDir << std::endl;
-    return;
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+  std::wstring exceptionMessage;
+  try {
+    exceptionMessage = converter.from_bytes(e.what());
+  } catch (...) {
+    exceptionMessage = L"<exception text conversion failed>";
   }
 
-  // Get the current timestamp
-  std::time_t now = std::time(nullptr);
-  std::tm localTime;
-  localtime_s(&localTime, &now);
-
-  char timestamp[20];
-  std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", &localTime);
-
-  // Construct the log file path
-  std::ostringstream logFilePath;
-  logFilePath << logDir << "\\" << timestamp << ".visualizer.error.log";
-
-  // Write the exception details to the log file
-  std::ofstream logFile(logFilePath.str());
-  if (logFile.is_open()) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-    std::string utf8info = conv.to_bytes(ws);
-
-    logFile << "Exception occurred: " << utf8info << "\n"
-            << exceptionMessage << std::endl;
-
-    // Capture and log the stack trace
-    logFile << "\nStack trace:\n";
-    HANDLE process = GetCurrentProcess();
-    SymInitialize(process, NULL, TRUE);
-
-    void* stack[64];
-    USHORT frames = CaptureStackBackTrace(0, 64, stack, NULL);
-
-    SYMBOL_INFO* symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char));
-    if (symbol == NULL) {
-      logFile << "Failed to allocate memory for SYMBOL_INFO." << std::endl;
-      SymCleanup(process);
-      return;
-    }
+  std::wstring logMessage = L"caught exception: " + std::wstring(context ? context : L"unknown") + L": " + exceptionMessage;
+  logMessage += L"\nStack trace:";
+  HANDLE process = GetCurrentProcess();
+  SymInitialize(process, NULL, TRUE);
+  void* stack[64];
+  USHORT frames = CaptureStackBackTrace(0, 64, stack, NULL);
+  SYMBOL_INFO* symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char));
+  if (symbol != NULL) {
     symbol->MaxNameLen = 255;
     symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-
     for (USHORT i = 0; i < frames; i++) {
-      SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
-      logFile << frames - i - 1 << ": " << symbol->Name << " - 0x" << std::hex << symbol->Address << std::dec << "\n";
+      if (!SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol)) continue;
+      logMessage += L"\n" + std::to_wstring(frames - i - 1) + L": ";
+      try {
+        logMessage += converter.from_bytes(symbol->Name);
+      } catch (...) {
+        logMessage += L"<unknown>";
+      }
+      wchar_t address[32] = {};
+      swprintf_s(address, L" - 0x%llX", static_cast<unsigned long long>(symbol->Address));
+      logMessage += address;
     }
-
     free(symbol);
-    SymCleanup(process);
-
-    logFile.close();
-  } else {
-    std::cerr << "Failed to open log file: " << logFilePath.str() << std::endl;
   }
+  SymCleanup(process);
+  WriteLog(L"ERROR", logMessage);
 
   if (showMessage) {
-    // Show a message box with the error details
     std::wstring message = L"An unexpected error occurred:\n\n";
-    message += std::wstring(exceptionMessage.begin(), exceptionMessage.end());
+    message += exceptionMessage;
     message += L"\n\nDetails have been written to the log directory. Please open an issue on GitHub if the problem persists.\n\nPress Ctrl+O in the Remote to restart Visualizer.";
-
     MessageBoxW(NULL, message.c_str(), L"Milkwave Error", MB_OK | MB_ICONERROR);
   }
 }

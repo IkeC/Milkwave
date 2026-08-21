@@ -174,6 +174,15 @@ int CPlugin::AllocateMyDX9Stuff() {
 
   m_nFramesSinceResize = 0;
 
+  SafeRelease(m_lyricsFontObject);
+  int lyricsFontSize = (int)(m_lyricsFontSize * m_fRenderQuality);
+  if (lyricsFontSize < 8) lyricsFontSize = 8;
+  if (lyricsFontSize > 256) lyricsFontSize = 256;
+  const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
+  D3DXCreateFontW(GetDevice(), lyricsFontSize, lyricsFontSize * 4 / 10, 400, 1, FALSE,
+                  DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH,
+                  lyricsFontFace, &m_lyricsFontObject);
+
   int nNewCanvasStretch = (m_nCanvasStretch == 0) ? 100 : m_nCanvasStretch;
 
   DWORD PSVersion = GetCaps()->PixelShaderVersion & 0xFFFF;  // 0x0300, etc.
@@ -1453,6 +1462,7 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   }
 
   SafeRelease(m_d3dx_title_font_doublesize);
+  SafeRelease(m_lyricsFontObject);
 
   // NOTE: THIS CODE IS IN THE RIGHT PLACE.
   if (m_gdi_title_font_doublesize) {

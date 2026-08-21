@@ -676,6 +676,7 @@ void CPlugin::OnFinishedLoadingPreset() {
   for (int mash = 0; mash < MASH_SLOTS; mash++)
     m_nMashPreset[mash] = m_nCurrentPreset;
 
+  milkwave->LogEvent(L"Preset activated: " + std::wstring(m_szCurrentPresetFile));
   SendPresetChangedInfoToMilkwaveRemote();
 }
 // â”€â”€â”€ IPC via Named Pipe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

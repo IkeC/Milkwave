@@ -895,7 +895,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       } else if (wParam == 'L') {
         if (GetKeyState(VK_CONTROL) & 0x8000) {
           g_plugin.m_lyricsDisplayEnabled = !g_plugin.m_lyricsDisplayEnabled;
-          WritePrivateProfileStringW(L"Milkwave", L"LyricsDisplayEnabled",
+          WritePrivateProfileStringW(L"Lyrics", L"bLyricsEnabled",
                                      g_plugin.m_lyricsDisplayEnabled ? L"1" : L"0",
                                      g_plugin.GetConfigIniFile());
           g_plugin.AddNotification(g_plugin.m_lyricsDisplayEnabled ? L"Lyrics enabled" : L"Lyrics disabled");
@@ -1550,17 +1550,9 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
           RenderFrame();
         }
       } catch (const std::exception& e) {
-        try {
-          // Convert exception message (UTF-8) to wide string for logging
-          std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-          std::wstring emsg = converter.from_bytes(e.what());
-          std::wstring logMsg = L"Exception in render loop: " + emsg;
-          milkwave.LogInfo(logMsg);
-        } catch (...) {
-          milkwave.LogInfo(L"Exception in render loop (failed to convert exception message)");
-        }
+        milkwave.LogException(L"Render loop", e, false);
       } catch (...) {
-        milkwave.LogInfo(L"Unknown non-standard exception in render loop");
+        milkwave.LogEvent(L"ERROR: Unknown non-standard exception in render loop");
       }
       frame++;
     }
@@ -1989,8 +1981,9 @@ int StartThreads(HINSTANCE instance) {
     // milkwave.Init() may only be called after the window is created due to threading issues
     milkwave.logLevel = g_plugin.m_LogLevel;
     g_plugin.milkwave = &milkwave;
+    milkwave.SetLogDirectory(std::filesystem::path(g_plugin.m_szBaseDir) / L"logs");
 
-    milkwave.LogInfo(L"Milkwave initialized, LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);
+    milkwave.LogEvent(L"Visualizer startup: LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);
 
     if (g_plugin.m_CheckDirectXOnStartup) {
       if (!g_plugin.CheckForDirectX9c()) {

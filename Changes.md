@@ -1,3 +1,6 @@
+## v4.1 (unreleased)
+* Lyrics support
+
 ## v4.0 (2026-04-19)
 
 * [MDropDX12](https://github.com/shanevbg/MDropDX12) Visualizer support (experimental)

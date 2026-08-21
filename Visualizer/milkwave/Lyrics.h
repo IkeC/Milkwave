@@ -7,6 +7,8 @@
 #include <string_view>
 #include <vector>
 
+inline constexpr wchar_t kDefaultLyricsApiUrl[] = L"https://lrclib.net/api";
+
 enum class LyricsDocumentState {
   Empty,
   Loading,
@@ -67,10 +69,16 @@ struct LyricsResolution {
   LyricsSource source = LyricsSource::None;
   int httpStatus = 0;
   std::wstring error;
+  std::filesystem::path cachePath;
+  bool cacheSaved = false;
+  bool cacheExists = false;
+  unsigned long cacheSaveError = 0;
 };
 
 LyricsResolution FetchLyricsFromLrclib(const LyricsTrackIdentity& track,
-                                       std::wstring_view userAgent = L"Milkwave/1.0");
+               std::wstring_view userAgent = L"Milkwave/1.0",
+               std::wstring_view apiUrl = kDefaultLyricsApiUrl);
 LyricsResolution ResolveLyrics(const std::filesystem::path& installDirectory,
                                const LyricsTrackIdentity& track,
-                               std::wstring_view userAgent = L"Milkwave/1.0");
+             std::wstring_view userAgent = L"Milkwave/1.0",
+             std::wstring_view apiUrl = kDefaultLyricsApiUrl);

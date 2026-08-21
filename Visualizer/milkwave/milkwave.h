@@ -66,6 +66,9 @@ class Milkwave {
 
   Milkwave();
   void Init(wchar_t* exePath);
+  void SetLogDirectory(std::filesystem::path directory);
+  void LogEvent(const wchar_t* info);
+  void LogEvent(std::wstring info);
   void LogInfo(const wchar_t* info);
   void LogInfo(std::wstring info);
   void LogDebug(std::wstring info);
@@ -73,7 +76,14 @@ class Milkwave {
   void LogException(const wchar_t* context, const std::exception& e, bool showMessage);
   void UpdateCurrentPosition(std::chrono::steady_clock::time_point currentTime);
   void PollMediaInfo();
-  std::wstring CurrentLyricText() const;
+  void SetLyricsApiUrl(std::wstring apiUrl);
+  std::wstring CurrentLyricText(std::int64_t offsetMs = 0) const;
+  struct LyricsVisualState {
+    std::wstring text;
+    float opacity = 0.0f;
+  };
+  LyricsVisualState CurrentLyricsVisualState(std::int64_t offsetMs, std::int64_t fadeDurationMs) const;
+  std::wstring LyricsMonitorText(bool enabled, std::int64_t offsetMs = 0) const;
   bool SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
 
  private:
@@ -86,8 +96,13 @@ class Milkwave {
   std::optional<LyricsTrackIdentity> pendingLyricsTrack;
   LyricsDocument lyricsDocument;
   std::uint64_t lyricsRequestGeneration = 0;
+  std::wstring lyricsApiUrl = kDefaultLyricsApiUrl;
+  std::filesystem::path logDirectory;
+  mutable std::mutex logMutex;
   bool stopLyricsWorker = false;
   std::thread lyricsWorker;
+
+  void WriteLog(const wchar_t* level, const std::wstring& message);
 };
 
 extern Milkwave milkwave;

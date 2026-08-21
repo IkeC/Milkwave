@@ -1143,6 +1143,8 @@ void CPlugin::RenderFrame(int bRedraw) {
       }
     }
 
+    RenderLyricsOverlay(true);
+
     // Change the rendertarget back to the original setup
     lpDevice->SetTexture(0, NULL);
     lpDevice->SetRenderTarget(0, pBackBuffer);

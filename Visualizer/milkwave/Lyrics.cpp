@@ -163,10 +163,34 @@ struct HttpResponse {
   std::wstring error;
 };
 
-HttpResponse GetLrclib(std::wstring_view path, std::wstring_view userAgent) {
+HttpResponse GetLrclib(std::wstring_view apiUrl, std::wstring_view path, std::wstring_view userAgent) {
   HttpResponse response;
+  const std::wstring apiUrlString(apiUrl.empty() ? kDefaultLyricsApiUrl : apiUrl);
   const std::wstring pathString(path);
   const std::wstring userAgentString(userAgent);
+  wchar_t hostName[256] = {};
+  wchar_t basePath[2048] = {};
+  URL_COMPONENTS urlComponents = {};
+  urlComponents.dwStructSize = sizeof(urlComponents);
+  urlComponents.lpszHostName = hostName;
+  urlComponents.dwHostNameLength = _countof(hostName);
+  urlComponents.lpszUrlPath = basePath;
+  urlComponents.dwUrlPathLength = _countof(basePath);
+  if (!WinHttpCrackUrl(apiUrlString.c_str(), static_cast<DWORD>(apiUrlString.length()), 0, &urlComponents)) {
+    response.error = L"Invalid lyrics API URL: " + apiUrlString;
+    return response;
+  }
+  if (urlComponents.nScheme != INTERNET_SCHEME_HTTP && urlComponents.nScheme != INTERNET_SCHEME_HTTPS) {
+    response.error = L"Lyrics API URL must use HTTP or HTTPS";
+    return response;
+  }
+
+  std::wstring requestPath(basePath, urlComponents.dwUrlPathLength);
+  while (requestPath.length() > 1 && requestPath.back() == L'/') requestPath.pop_back();
+  if (requestPath.empty()) requestPath = L"/";
+  if (!pathString.empty() && pathString.front() != L'/') requestPath += L'/';
+  requestPath += pathString;
+
   HINTERNET session = WinHttpOpen(userAgentString.c_str(), WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, nullptr, nullptr, 0);
   if (!session) {
     response.error = L"WinHttpOpen failed: " + std::to_wstring(GetLastError());
@@ -174,10 +198,11 @@ HttpResponse GetLrclib(std::wstring_view path, std::wstring_view userAgent) {
   }
   WinHttpSetTimeouts(session, 5000, 5000, 10000, 10000);
 
-  HINTERNET connection = WinHttpConnect(session, L"lrclib.net", INTERNET_DEFAULT_HTTPS_PORT, 0);
+  HINTERNET connection = WinHttpConnect(session, hostName, urlComponents.nPort, 0);
   HINTERNET request = connection
-                          ? WinHttpOpenRequest(connection, L"GET", pathString.c_str(), nullptr, WINHTTP_NO_REFERER,
-                                               WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE)
+                          ? WinHttpOpenRequest(connection, L"GET", requestPath.c_str(), nullptr, WINHTTP_NO_REFERER,
+                                               WINHTTP_DEFAULT_ACCEPT_TYPES,
+                                               urlComponents.nScheme == INTERNET_SCHEME_HTTPS ? WINHTTP_FLAG_SECURE : 0)
                           : nullptr;
   if (!connection) response.error = L"WinHttpConnect failed: " + std::to_wstring(GetLastError());
   if (connection && !request) response.error = L"WinHttpOpenRequest failed: " + std::to_wstring(GetLastError());
@@ -418,17 +443,19 @@ std::optional<std::filesystem::path> FindLocalLyrics(const std::filesystem::path
   return std::filesystem::is_regular_file(path) ? std::optional(path) : std::nullopt;
 }
 
-LyricsResolution FetchLyricsFromLrclib(const LyricsTrackIdentity& track, std::wstring_view userAgent) {
+LyricsResolution FetchLyricsFromLrclib(const LyricsTrackIdentity& track,
+                                       std::wstring_view userAgent,
+                                       std::wstring_view apiUrl) {
   const auto durationSeconds = std::max<std::int64_t>(0, (track.durationMs + 500) / 1000);
-  const std::wstring getPath = L"/api/get?track_name=" + Utf8ToWide(UrlEncode(track.title)) +
+  const std::wstring getPath = L"/get?track_name=" + Utf8ToWide(UrlEncode(track.title)) +
                                L"&artist_name=" + Utf8ToWide(UrlEncode(track.artist)) +
                                L"&album_name=" + Utf8ToWide(UrlEncode(track.album)) +
                                L"&duration=" + std::to_wstring(durationSeconds);
-  auto response = GetLrclib(getPath, userAgent);
+  auto response = GetLrclib(apiUrl, getPath, userAgent);
   if (response.status == 404 && response.error.empty()) {
-    const std::wstring searchPath = L"/api/search?track_name=" + Utf8ToWide(UrlEncode(track.title)) +
+    const std::wstring searchPath = L"/search?track_name=" + Utf8ToWide(UrlEncode(track.title)) +
                                     L"&artist_name=" + Utf8ToWide(UrlEncode(track.artist));
-    return ParseLrclibSearchResponse(GetLrclib(searchPath, userAgent));
+    return ParseLrclibSearchResponse(GetLrclib(apiUrl, searchPath, userAgent));
   }
   if (response.status < 200 || response.status >= 300) {
     LyricsResolution result;
@@ -441,20 +468,22 @@ LyricsResolution FetchLyricsFromLrclib(const LyricsTrackIdentity& track, std::ws
 
 LyricsResolution ResolveLyrics(const std::filesystem::path& installDirectory,
                                const LyricsTrackIdentity& track,
-                               std::wstring_view userAgent) {
+                               std::wstring_view userAgent,
+                               std::wstring_view apiUrl) {
   LyricsResolution result;
   if (const auto localPath = FindLocalLyrics(installDirectory, track)) {
     result.document = LoadLyricsFile(*localPath);
     if (result.document.state == LyricsDocumentState::Loaded) {
       result.source = LyricsSource::Local;
+      result.cachePath = *localPath;
       return result;
     }
   }
 
-  result = FetchLyricsFromLrclib(track, userAgent);
+  result = FetchLyricsFromLrclib(track, userAgent, apiUrl);
+  result.cachePath = LyricsPathForTrack(installDirectory, track);
   if (result.source == LyricsSource::Lrclib && result.document.state == LyricsDocumentState::Loaded &&
       !result.document.lines.empty()) {
-    const auto path = LyricsPathForTrack(installDirectory, track);
     std::string serialized;
     for (const auto& line : result.document.lines) {
       const auto minutes = line.startMs / 60000;
@@ -465,7 +494,13 @@ LyricsResolution ResolveLyrics(const std::filesystem::path& installDirectory,
                 << std::setw(2) << centiseconds << "] ";
       serialized += timestamp.str() + WideToUtf8(line.text) + '\n';
     }
-    SaveLyricsFileAtomic(path, serialized);
+    result.cacheSaved = SaveLyricsFileAtomic(result.cachePath, serialized);
+    std::error_code existsError;
+    result.cacheExists = std::filesystem::is_regular_file(result.cachePath, existsError);
+    if (!result.cacheSaved) {
+      result.cacheSaveError = GetLastError();
+      if (result.error.empty()) result.error = L"Failed to save lyrics cache";
+    }
   }
   return result;
 }

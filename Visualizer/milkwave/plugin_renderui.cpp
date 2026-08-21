@@ -160,6 +160,80 @@
       *lower_right_corner_y -= h;                                                                                                           \
   }
 
+void CPlugin::RenderLyricsOverlay(bool burnIn) {
+  if (burnIn != m_bLyricsBurnIn || !m_lyricsDisplayEnabled || !m_lyricsFontObject)
+    return;
+
+  const auto lyricState = ::milkwave.CurrentLyricsVisualState(m_lyricsOffsetMs, m_lyricsFadeDurationMs);
+  std::wstring lyricText = lyricState.text;
+  if (lyricText.empty())
+    return;
+
+  int canvasWidth = burnIn ? m_nTexSizeX : GetWidth();
+  int canvasHeight = burnIn ? m_nTexSizeY : GetHeight();
+  if (canvasWidth <= 0 || canvasHeight <= 0)
+    return;
+
+  float positionX = m_lyricsPositionX;
+  float positionY = m_lyricsPositionY;
+  float maxWidthRatio = m_lyricsMaxWidth;
+  if (positionX < 0.0f) positionX = 0.0f;
+  if (positionX > 1.0f) positionX = 1.0f;
+  if (positionY < 0.0f) positionY = 0.0f;
+  if (positionY > 1.0f) positionY = 1.0f;
+  if (maxWidthRatio < 0.05f) maxWidthRatio = 0.05f;
+  if (maxWidthRatio > 1.0f) maxWidthRatio = 1.0f;
+
+  int maxWidth = (int)(canvasWidth * maxWidthRatio);
+  int centerX = (int)(canvasWidth * positionX);
+  int centerY = (int)(canvasHeight * positionY);
+  RECT textRect = {centerX - maxWidth / 2, 0, centerX + maxWidth / 2, canvasHeight};
+  if (textRect.left < 0) textRect.left = 0;
+  if (textRect.right > canvasWidth) textRect.right = canvasWidth;
+
+  int colorR = m_lyricsColorR < 0 ? 0 : m_lyricsColorR > 255 ? 255 : m_lyricsColorR;
+  int colorG = m_lyricsColorG < 0 ? 0 : m_lyricsColorG > 255 ? 255 : m_lyricsColorG;
+  int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255 : m_lyricsColorB;
+  const DWORD alpha = static_cast<DWORD>(lyricState.opacity * 255.0f + 0.5f);
+  DWORD textColor = (alpha << 24) | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
+  DWORD drawFlags = DT_CENTER | DT_WORDBREAK;
+  RECT measuredRect = textRect;
+  int textHeight = m_lyricsFontObject->DrawTextW(NULL, lyricText.data(), -1, &measuredRect,
+                                                  drawFlags | DT_CALCRECT, textColor);
+  if (textHeight <= 0)
+    return;
+
+  textRect.top = centerY - textHeight / 2;
+  textRect.bottom = textRect.top + textHeight;
+  if (textRect.top < 0) {
+    textRect.bottom -= textRect.top;
+    textRect.top = 0;
+  }
+  if (textRect.bottom > canvasHeight) {
+    textRect.top -= textRect.bottom - canvasHeight;
+    textRect.bottom = canvasHeight;
+  }
+
+  int shadow = m_lyricsShadow;
+  if (shadow < 0) shadow = 0;
+  if (shadow > 16) shadow = 16;
+  if (shadow > 0) {
+    RECT shadowRect = textRect;
+    OffsetRect(&shadowRect, shadow, shadow);
+    if (burnIn) {
+      m_lyricsFontObject->DrawTextW(NULL, lyricText.data(), -1, &shadowRect, drawFlags, alpha << 24);
+    } else {
+      m_text.DrawTextW(m_lyricsFontObject, lyricText.data(), -1, &shadowRect, drawFlags, alpha << 24, false);
+    }
+  }
+
+  if (burnIn) {
+    m_lyricsFontObject->DrawTextW(NULL, lyricText.data(), -1, &textRect, drawFlags, textColor);
+  } else {
+    m_text.DrawTextW(m_lyricsFontObject, lyricText.data(), -1, &textRect, drawFlags, textColor, false);
+  }
+}
+
 void CPlugin::MyRenderUI(
     int* upper_left_corner_y,   // increment me!
     int* upper_right_corner_y,  // increment me!
@@ -201,6 +275,8 @@ void CPlugin::MyRenderUI(
 
   if (!GetFont(DECORATIVE_FONT))
     return;
+
+  RenderLyricsOverlay(false);
 
   // 1. render text in upper-right corner - EXCEPT USER MESSAGE - it goes last b/c it draws a box under itself
   //                                        and it should be visible over everything else (usually an error msg)
@@ -257,21 +333,9 @@ void CPlugin::MyRenderUI(
           swprintf_s(buf, L"~ %02lld:%02lld", minutes, seconds);
           MyTextOut_Shadow(buf, MTO_UPPER_RIGHT);
         }
-      }
 
-      if (m_lyricsDisplayEnabled) {
-        pFont = GetItalicFont();
-        h = GetItalicFontHeight();
-        std::wstring lyricText = ::milkwave.CurrentLyricText();
-        if (lyricText.empty()) {
-          MyTextOut_Shadow(L"Lyrics unavailable", MTO_UPPER_RIGHT);
-        } else {
-          lyricText = L"~ " + lyricText + L" ~";
-          MyTextOut_Shadow(lyricText.c_str(), MTO_UPPER_RIGHT);
-        }
-      } else {
-        SelectFont(SIMPLE_FONT);
-        MyTextOut_Shadow(L"Lyrics off", MTO_UPPER_RIGHT);
+        std::wstring lyricsText = ::milkwave.LyricsMonitorText(m_lyricsDisplayEnabled, m_lyricsOffsetMs);
+        MyTextOut_Shadow(lyricsText.c_str(), MTO_UPPER_RIGHT);
       }
 
       swprintf(buf, L"  %6.2f %s", (float)(*m_pState->var_pf_monitor), wasabiApiLangString(IDS_PF_MONITOR));

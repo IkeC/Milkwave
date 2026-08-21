@@ -17,6 +17,7 @@ CTRL + M                Toggle interative mouse control
 CTRL + Q                Double quality factor (range 0.01 - 1.0)
 SHIFT + CTRL + Q        Half quality factor (pixellize)
 CTRL + H                Shift Hue
+CTRL + L                Toggle Lyrics
 
 K                       Toggle sprite/message mode
 SHIFT + K               Enter sprite kill mode
