@@ -6850,5 +6850,9 @@ namespace MilkwaveRemote {
       numAmpLeft.Value = 1.0m;
       numAmpRight.Value = 1.0m;
     }
+
+    private void tabLyrics_Click(object sender, EventArgs e) {
+
+    }
   } // end class
 } // end namespace
