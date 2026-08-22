@@ -351,6 +351,12 @@ namespace MilkwaveRemote
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
       tabLyrics = new TabPage();
+      numLyricsMaxwidth = new NumericUpDown();
+      lblLyricsMaxwidth = new Label();
+      numLyricsShadow = new NumericUpDown();
+      lblLyricsShadow = new Label();
+      numLyricsBurn = new NumericUpDown();
+      lblLyricsBurn = new Label();
       numLyricsZoom = new NumericUpDown();
       lblLyricsZoom = new Label();
       lblLyricsOffsetY = new Label();
@@ -488,6 +494,9 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
       tabLyrics.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)numLyricsMaxwidth).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numLyricsShadow).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numLyricsBurn).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsZoom).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsOffsetY).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsOffsetX).BeginInit();
@@ -4537,6 +4546,12 @@ namespace MilkwaveRemote
       // 
       tabLyrics.BackColor = SystemColors.ControlLight;
       tabLyrics.BorderStyle = BorderStyle.FixedSingle;
+      tabLyrics.Controls.Add(numLyricsMaxwidth);
+      tabLyrics.Controls.Add(lblLyricsMaxwidth);
+      tabLyrics.Controls.Add(numLyricsShadow);
+      tabLyrics.Controls.Add(lblLyricsShadow);
+      tabLyrics.Controls.Add(numLyricsBurn);
+      tabLyrics.Controls.Add(lblLyricsBurn);
       tabLyrics.Controls.Add(numLyricsZoom);
       tabLyrics.Controls.Add(lblLyricsZoom);
       tabLyrics.Controls.Add(lblLyricsOffsetY);
@@ -4574,13 +4589,75 @@ namespace MilkwaveRemote
       tabLyrics.Text = "Lyrics";
       tabLyrics.Click += tabLyrics_Click;
       // 
+      // numLyricsMaxwidth
+      // 
+      numLyricsMaxwidth.DecimalPlaces = 2;
+      numLyricsMaxwidth.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numLyricsMaxwidth.Location = new Point(450, 150);
+      numLyricsMaxwidth.Margin = new Padding(3, 2, 3, 2);
+      numLyricsMaxwidth.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numLyricsMaxwidth.Name = "numLyricsMaxwidth";
+      numLyricsMaxwidth.Size = new Size(56, 23);
+      numLyricsMaxwidth.TabIndex = 216;
+      numLyricsMaxwidth.TextAlign = HorizontalAlignment.Center;
+      // 
+      // lblLyricsMaxwidth
+      // 
+      lblLyricsMaxwidth.Location = new Point(383, 151);
+      lblLyricsMaxwidth.Name = "lblLyricsMaxwidth";
+      lblLyricsMaxwidth.Size = new Size(61, 23);
+      lblLyricsMaxwidth.TabIndex = 215;
+      lblLyricsMaxwidth.Text = "Maxwidth";
+      lblLyricsMaxwidth.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // numLyricsShadow
+      // 
+      numLyricsShadow.Location = new Point(450, 123);
+      numLyricsShadow.Margin = new Padding(3, 2, 3, 2);
+      numLyricsShadow.Maximum = new decimal(new int[] { 16, 0, 0, 0 });
+      numLyricsShadow.Name = "numLyricsShadow";
+      numLyricsShadow.Size = new Size(56, 23);
+      numLyricsShadow.TabIndex = 214;
+      numLyricsShadow.TextAlign = HorizontalAlignment.Center;
+      // 
+      // lblLyricsShadow
+      // 
+      lblLyricsShadow.Location = new Point(383, 124);
+      lblLyricsShadow.Name = "lblLyricsShadow";
+      lblLyricsShadow.Size = new Size(61, 23);
+      lblLyricsShadow.TabIndex = 213;
+      lblLyricsShadow.Text = "Shadow";
+      lblLyricsShadow.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // numLyricsBurn
+      // 
+      numLyricsBurn.DecimalPlaces = 2;
+      numLyricsBurn.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numLyricsBurn.Location = new Point(317, 149);
+      numLyricsBurn.Margin = new Padding(3, 2, 3, 2);
+      numLyricsBurn.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numLyricsBurn.Name = "numLyricsBurn";
+      numLyricsBurn.Size = new Size(56, 23);
+      numLyricsBurn.TabIndex = 212;
+      numLyricsBurn.TextAlign = HorizontalAlignment.Center;
+      // 
+      // lblLyricsBurn
+      // 
+      lblLyricsBurn.Location = new Point(261, 150);
+      lblLyricsBurn.Name = "lblLyricsBurn";
+      lblLyricsBurn.Size = new Size(50, 23);
+      lblLyricsBurn.TabIndex = 211;
+      lblLyricsBurn.Text = "Burn";
+      lblLyricsBurn.TextAlign = ContentAlignment.MiddleRight;
+      // 
       // numLyricsZoom
       // 
       numLyricsZoom.DecimalPlaces = 2;
       numLyricsZoom.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numLyricsZoom.Location = new Point(334, 123);
+      numLyricsZoom.Location = new Point(317, 122);
       numLyricsZoom.Margin = new Padding(3, 2, 3, 2);
-      numLyricsZoom.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numLyricsZoom.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
+      numLyricsZoom.Minimum = new decimal(new int[] { 5, 0, 0, int.MinValue });
       numLyricsZoom.Name = "numLyricsZoom";
       numLyricsZoom.Size = new Size(56, 23);
       numLyricsZoom.TabIndex = 210;
@@ -4588,9 +4665,9 @@ namespace MilkwaveRemote
       // 
       // lblLyricsZoom
       // 
-      lblLyricsZoom.Location = new Point(268, 124);
+      lblLyricsZoom.Location = new Point(261, 123);
       lblLyricsZoom.Name = "lblLyricsZoom";
-      lblLyricsZoom.Size = new Size(60, 23);
+      lblLyricsZoom.Size = new Size(50, 23);
       lblLyricsZoom.TabIndex = 209;
       lblLyricsZoom.Text = "Zoom";
       lblLyricsZoom.TextAlign = ContentAlignment.MiddleRight;
@@ -5806,6 +5883,9 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
       tabLyrics.ResumeLayout(false);
       tabLyrics.PerformLayout();
+      ((System.ComponentModel.ISupportInitialize)numLyricsMaxwidth).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numLyricsShadow).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numLyricsBurn).EndInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsZoom).EndInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsOffsetY).EndInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsOffsetX).EndInit();
@@ -6251,5 +6331,11 @@ namespace MilkwaveRemote
     private Label lblLyricsOffsetY;
     private NumericUpDown numLyricsZoom;
     private Label lblLyricsZoom;
+    private NumericUpDown numLyricsBurn;
+    private Label lblLyricsBurn;
+    private NumericUpDown numLyricsShadow;
+    private Label lblLyricsShadow;
+    private NumericUpDown numLyricsMaxwidth;
+    private Label lblLyricsMaxwidth;
   }
 }
