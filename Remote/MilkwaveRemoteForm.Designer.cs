@@ -351,6 +351,15 @@ namespace MilkwaveRemote
       numFactorFrame = new NumericUpDown();
       numFactorTime = new NumericUpDown();
       tabLyrics = new TabPage();
+      numLyricsZoom = new NumericUpDown();
+      lblLyricsZoom = new Label();
+      lblLyricsOffsetY = new Label();
+      numLyricsOffsetY = new NumericUpDown();
+      numLyricsOffsetX = new NumericUpDown();
+      lblLyricsOffsetX = new Label();
+      chkLyricsAuto = new CheckBox();
+      lblLyricsCurrentLine = new Label();
+      txtLyricsCurrentLine = new TextBox();
       chkLyricsFontItalic = new CheckBox();
       chkLyricsFontBold = new CheckBox();
       btnLyricsRestart = new Button();
@@ -479,6 +488,9 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorFrame).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFactorTime).BeginInit();
       tabLyrics.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)numLyricsZoom).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numLyricsOffsetY).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)numLyricsOffsetX).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsPosY).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsPosX).BeginInit();
       tabFonts.SuspendLayout();
@@ -3044,7 +3056,7 @@ namespace MilkwaveRemote
       chkLyricsFontAA.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkLyricsFontAA.Appearance = Appearance.Button;
       chkLyricsFontAA.FlatStyle = FlatStyle.System;
-      chkLyricsFontAA.Location = new Point(550, 65);
+      chkLyricsFontAA.Location = new Point(550, 94);
       chkLyricsFontAA.Margin = new Padding(3, 2, 3, 2);
       chkLyricsFontAA.Name = "chkLyricsFontAA";
       chkLyricsFontAA.Size = new Size(49, 23);
@@ -3059,7 +3071,7 @@ namespace MilkwaveRemote
       // 
       pnlLyricsColor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       pnlLyricsColor.BorderStyle = BorderStyle.FixedSingle;
-      pnlLyricsColor.Location = new Point(396, 65);
+      pnlLyricsColor.Location = new Point(396, 94);
       pnlLyricsColor.Name = "pnlLyricsColor";
       pnlLyricsColor.Size = new Size(38, 23);
       pnlLyricsColor.TabIndex = 196;
@@ -3067,7 +3079,7 @@ namespace MilkwaveRemote
       // 
       // lblLyricsFont
       // 
-      lblLyricsFont.Location = new Point(8, 64);
+      lblLyricsFont.Location = new Point(8, 93);
       lblLyricsFont.Name = "lblLyricsFont";
       lblLyricsFont.Size = new Size(60, 24);
       lblLyricsFont.TabIndex = 198;
@@ -3077,7 +3089,7 @@ namespace MilkwaveRemote
       // numLyricsFontSize
       // 
       numLyricsFontSize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numLyricsFontSize.Location = new Point(344, 65);
+      numLyricsFontSize.Location = new Point(344, 94);
       numLyricsFontSize.Margin = new Padding(3, 2, 3, 2);
       numLyricsFontSize.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
       numLyricsFontSize.Name = "numLyricsFontSize";
@@ -3093,7 +3105,7 @@ namespace MilkwaveRemote
       cboLyricsFont.AutoCompleteSource = AutoCompleteSource.ListItems;
       cboLyricsFont.DropDownStyle = ComboBoxStyle.DropDownList;
       cboLyricsFont.FormattingEnabled = true;
-      cboLyricsFont.Location = new Point(71, 65);
+      cboLyricsFont.Location = new Point(71, 94);
       cboLyricsFont.Name = "cboLyricsFont";
       cboLyricsFont.Size = new Size(267, 23);
       cboLyricsFont.TabIndex = 195;
@@ -3112,7 +3124,7 @@ namespace MilkwaveRemote
       chkToggleLyrics.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkToggleLyrics.Appearance = Appearance.Button;
       chkToggleLyrics.FlatStyle = FlatStyle.System;
-      chkToggleLyrics.Location = new Point(529, 7);
+      chkToggleLyrics.Location = new Point(453, 7);
       chkToggleLyrics.Margin = new Padding(3, 2, 3, 2);
       chkToggleLyrics.Name = "chkToggleLyrics";
       chkToggleLyrics.Size = new Size(70, 23);
@@ -4525,6 +4537,15 @@ namespace MilkwaveRemote
       // 
       tabLyrics.BackColor = SystemColors.ControlLight;
       tabLyrics.BorderStyle = BorderStyle.FixedSingle;
+      tabLyrics.Controls.Add(numLyricsZoom);
+      tabLyrics.Controls.Add(lblLyricsZoom);
+      tabLyrics.Controls.Add(lblLyricsOffsetY);
+      tabLyrics.Controls.Add(numLyricsOffsetY);
+      tabLyrics.Controls.Add(numLyricsOffsetX);
+      tabLyrics.Controls.Add(lblLyricsOffsetX);
+      tabLyrics.Controls.Add(chkLyricsAuto);
+      tabLyrics.Controls.Add(lblLyricsCurrentLine);
+      tabLyrics.Controls.Add(txtLyricsCurrentLine);
       tabLyrics.Controls.Add(chkLyricsFontAA);
       tabLyrics.Controls.Add(chkLyricsFontItalic);
       tabLyrics.Controls.Add(chkLyricsFontBold);
@@ -4553,12 +4574,108 @@ namespace MilkwaveRemote
       tabLyrics.Text = "Lyrics";
       tabLyrics.Click += tabLyrics_Click;
       // 
+      // numLyricsZoom
+      // 
+      numLyricsZoom.DecimalPlaces = 2;
+      numLyricsZoom.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numLyricsZoom.Location = new Point(334, 123);
+      numLyricsZoom.Margin = new Padding(3, 2, 3, 2);
+      numLyricsZoom.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numLyricsZoom.Name = "numLyricsZoom";
+      numLyricsZoom.Size = new Size(56, 23);
+      numLyricsZoom.TabIndex = 210;
+      numLyricsZoom.TextAlign = HorizontalAlignment.Center;
+      // 
+      // lblLyricsZoom
+      // 
+      lblLyricsZoom.Location = new Point(268, 124);
+      lblLyricsZoom.Name = "lblLyricsZoom";
+      lblLyricsZoom.Size = new Size(60, 23);
+      lblLyricsZoom.TabIndex = 209;
+      lblLyricsZoom.Text = "Zoom";
+      lblLyricsZoom.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // lblLyricsOffsetY
+      // 
+      lblLyricsOffsetY.Location = new Point(132, 149);
+      lblLyricsOffsetY.Name = "lblLyricsOffsetY";
+      lblLyricsOffsetY.Size = new Size(58, 23);
+      lblLyricsOffsetY.TabIndex = 208;
+      lblLyricsOffsetY.Text = "Offest Y";
+      lblLyricsOffsetY.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // numLyricsOffsetY
+      // 
+      numLyricsOffsetY.DecimalPlaces = 2;
+      numLyricsOffsetY.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numLyricsOffsetY.Location = new Point(198, 149);
+      numLyricsOffsetY.Margin = new Padding(3, 2, 3, 2);
+      numLyricsOffsetY.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numLyricsOffsetY.Name = "numLyricsOffsetY";
+      numLyricsOffsetY.Size = new Size(56, 23);
+      numLyricsOffsetY.TabIndex = 207;
+      numLyricsOffsetY.TextAlign = HorizontalAlignment.Center;
+      // 
+      // numLyricsOffsetX
+      // 
+      numLyricsOffsetX.DecimalPlaces = 2;
+      numLyricsOffsetX.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numLyricsOffsetX.Location = new Point(198, 122);
+      numLyricsOffsetX.Margin = new Padding(3, 2, 3, 2);
+      numLyricsOffsetX.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numLyricsOffsetX.Name = "numLyricsOffsetX";
+      numLyricsOffsetX.Size = new Size(56, 23);
+      numLyricsOffsetX.TabIndex = 206;
+      numLyricsOffsetX.TextAlign = HorizontalAlignment.Center;
+      // 
+      // lblLyricsOffsetX
+      // 
+      lblLyricsOffsetX.Location = new Point(132, 123);
+      lblLyricsOffsetX.Name = "lblLyricsOffsetX";
+      lblLyricsOffsetX.Size = new Size(60, 23);
+      lblLyricsOffsetX.TabIndex = 205;
+      lblLyricsOffsetX.Text = "Offest X";
+      lblLyricsOffsetX.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // chkLyricsAuto
+      // 
+      chkLyricsAuto.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkLyricsAuto.Appearance = Appearance.Button;
+      chkLyricsAuto.FlatStyle = FlatStyle.System;
+      chkLyricsAuto.Location = new Point(529, 7);
+      chkLyricsAuto.Margin = new Padding(3, 2, 3, 2);
+      chkLyricsAuto.Name = "chkLyricsAuto";
+      chkLyricsAuto.Size = new Size(70, 23);
+      chkLyricsAuto.TabIndex = 204;
+      chkLyricsAuto.Text = "Auto";
+      chkLyricsAuto.TextAlign = ContentAlignment.MiddleCenter;
+      chkLyricsAuto.TextImageRelation = TextImageRelation.ImageAboveText;
+      chkLyricsAuto.UseVisualStyleBackColor = true;
+      // 
+      // lblLyricsCurrentLine
+      // 
+      lblLyricsCurrentLine.Location = new Point(8, 64);
+      lblLyricsCurrentLine.Name = "lblLyricsCurrentLine";
+      lblLyricsCurrentLine.Size = new Size(57, 23);
+      lblLyricsCurrentLine.TabIndex = 202;
+      lblLyricsCurrentLine.Text = "Line";
+      lblLyricsCurrentLine.TextAlign = ContentAlignment.MiddleRight;
+      // 
+      // txtLyricsCurrentLine
+      // 
+      txtLyricsCurrentLine.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      txtLyricsCurrentLine.Location = new Point(71, 65);
+      txtLyricsCurrentLine.Name = "txtLyricsCurrentLine";
+      txtLyricsCurrentLine.ReadOnly = true;
+      txtLyricsCurrentLine.Size = new Size(376, 23);
+      txtLyricsCurrentLine.TabIndex = 203;
+      // 
       // chkLyricsFontItalic
       // 
       chkLyricsFontItalic.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkLyricsFontItalic.Appearance = Appearance.Button;
       chkLyricsFontItalic.FlatStyle = FlatStyle.System;
-      chkLyricsFontItalic.Location = new Point(495, 65);
+      chkLyricsFontItalic.Location = new Point(495, 94);
       chkLyricsFontItalic.Margin = new Padding(3, 2, 3, 2);
       chkLyricsFontItalic.Name = "chkLyricsFontItalic";
       chkLyricsFontItalic.Size = new Size(49, 23);
@@ -4573,7 +4690,7 @@ namespace MilkwaveRemote
       chkLyricsFontBold.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       chkLyricsFontBold.Appearance = Appearance.Button;
       chkLyricsFontBold.FlatStyle = FlatStyle.System;
-      chkLyricsFontBold.Location = new Point(440, 65);
+      chkLyricsFontBold.Location = new Point(440, 94);
       chkLyricsFontBold.Margin = new Padding(3, 2, 3, 2);
       chkLyricsFontBold.Name = "chkLyricsFontBold";
       chkLyricsFontBold.Size = new Size(49, 23);
@@ -4587,7 +4704,7 @@ namespace MilkwaveRemote
       // 
       btnLyricsRestart.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       btnLyricsRestart.FlatStyle = FlatStyle.System;
-      btnLyricsRestart.Location = new Point(453, 6);
+      btnLyricsRestart.Location = new Point(453, 64);
       btnLyricsRestart.Name = "btnLyricsRestart";
       btnLyricsRestart.Size = new Size(70, 23);
       btnLyricsRestart.TabIndex = 194;
@@ -4596,7 +4713,7 @@ namespace MilkwaveRemote
       // 
       // lblLyricsPosY
       // 
-      lblLyricsPosY.Location = new Point(129, 93);
+      lblLyricsPosY.Location = new Point(18, 149);
       lblLyricsPosY.Name = "lblLyricsPosY";
       lblLyricsPosY.Size = new Size(47, 23);
       lblLyricsPosY.TabIndex = 193;
@@ -4607,20 +4724,20 @@ namespace MilkwaveRemote
       // 
       numLyricsPosY.DecimalPlaces = 2;
       numLyricsPosY.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numLyricsPosY.Location = new Point(182, 93);
+      numLyricsPosY.Location = new Point(71, 149);
       numLyricsPosY.Margin = new Padding(3, 2, 3, 2);
       numLyricsPosY.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numLyricsPosY.Name = "numLyricsPosY";
       numLyricsPosY.Size = new Size(56, 23);
       numLyricsPosY.TabIndex = 192;
       numLyricsPosY.TextAlign = HorizontalAlignment.Center;
-      numLyricsPosY.Value = new decimal(new int[] { 7, 0, 0, 65536 });
+      numLyricsPosY.Value = new decimal(new int[] { 5, 0, 0, 65536 });
       // 
       // numLyricsPosX
       // 
       numLyricsPosX.DecimalPlaces = 2;
       numLyricsPosX.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numLyricsPosX.Location = new Point(71, 93);
+      numLyricsPosX.Location = new Point(71, 122);
       numLyricsPosX.Margin = new Padding(3, 2, 3, 2);
       numLyricsPosX.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numLyricsPosX.Name = "numLyricsPosX";
@@ -4631,7 +4748,7 @@ namespace MilkwaveRemote
       // 
       // lblLyricsPosX
       // 
-      lblLyricsPosX.Location = new Point(20, 94);
+      lblLyricsPosX.Location = new Point(20, 123);
       lblLyricsPosX.Name = "lblLyricsPosX";
       lblLyricsPosX.Size = new Size(45, 23);
       lblLyricsPosX.TabIndex = 190;
@@ -5689,6 +5806,9 @@ namespace MilkwaveRemote
       ((System.ComponentModel.ISupportInitialize)numFactorTime).EndInit();
       tabLyrics.ResumeLayout(false);
       tabLyrics.PerformLayout();
+      ((System.ComponentModel.ISupportInitialize)numLyricsZoom).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numLyricsOffsetY).EndInit();
+      ((System.ComponentModel.ISupportInitialize)numLyricsOffsetX).EndInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsPosY).EndInit();
       ((System.ComponentModel.ISupportInitialize)numLyricsPosX).EndInit();
       tabFonts.ResumeLayout(false);
@@ -6122,5 +6242,14 @@ namespace MilkwaveRemote
     private Label lblLyricsFont;
     private NumericUpDown numLyricsFontSize;
     private ComboBox cboLyricsFont;
+    private Label lblLyricsCurrentLine;
+    private TextBox txtLyricsCurrentLine;
+    private CheckBox chkLyricsAuto;
+    private NumericUpDown numLyricsOffsetY;
+    private NumericUpDown numLyricsOffsetX;
+    private Label lblLyricsOffsetX;
+    private Label lblLyricsOffsetY;
+    private NumericUpDown numLyricsZoom;
+    private Label lblLyricsZoom;
   }
 }
