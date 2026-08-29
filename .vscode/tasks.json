@@ -141,6 +141,17 @@
 				"/p:Platform=Win32",
 				"/p:PlatformToolset=v143"
 			]
+		},
+		{
+			"label": "Build Visualizer (Debug)",
+			"type": "shell",
+			"command": "msbuild",
+			"args": [
+				"${workspaceFolder}\\Visualizer\\milkwave\\plugin.vcxproj",
+				"/p:Configuration=Debug",
+				"/p:Platform=Win32",
+				"/p:PlatformToolset=v143"
+			]
 		}
 	]
 }

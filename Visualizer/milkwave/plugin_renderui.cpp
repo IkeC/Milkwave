@@ -184,64 +184,92 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
   if (maxWidthRatio < 0.05f) maxWidthRatio = 0.05f;
   if (maxWidthRatio > 1.0f) maxWidthRatio = 1.0f;
 
-  int maxWidth = (int)(canvasWidth * maxWidthRatio);
-  int centerX = (int)(canvasWidth * positionX);
-  int centerY = (int)(canvasHeight * positionY);
-  RECT textRect = {centerX - maxWidth / 2, 0, centerX + maxWidth / 2, canvasHeight};
-  if (textRect.left < 0) textRect.left = 0;
-  if (textRect.right > canvasWidth) textRect.right = canvasWidth;
+  const int maxWidth = (int)(canvasWidth * maxWidthRatio);
+  const int centerX = (int)(canvasWidth * positionX);
+  const int centerY = (int)(canvasHeight * positionY);
+  RECT wrapRect = {centerX - maxWidth / 2, 0, centerX + maxWidth / 2, canvasHeight};
+  if (wrapRect.left < 0) wrapRect.left = 0;
+  if (wrapRect.right > canvasWidth) wrapRect.right = canvasWidth;
+  const int wrapWidth = wrapRect.right - wrapRect.left;
+  if (wrapWidth <= 0)
+    return;
+
+  // Wrap the lyric text manually, breaking only on blanks (spaces). GDI's
+  // DT_WORDBREAK also breaks on punctuation (e.g. between "schedule" and ","),
+  // which looks wrong for lyrics, so each line is measured here and drawn
+  // separately with DT_SINGLELINE.
+  std::vector<std::wstring> lines;
+  {
+    std::wstring current;
+    std::size_t start = 0;
+    while (start < lyricText.size()) {
+      const std::size_t wordStart = lyricText.find_first_not_of(L' ', start);
+      if (wordStart == std::wstring::npos) break;
+      const std::size_t wordEnd = lyricText.find(L' ', wordStart);
+      const std::wstring word =
+          lyricText.substr(wordStart, wordEnd == std::wstring::npos ? std::wstring::npos : wordEnd - wordStart);
+      const bool firstWord = current.empty();
+      const std::wstring candidate = firstWord ? word : current + L' ' + word;
+      RECT measure = {0, 0, wrapWidth, 1000};
+      m_lyricsFontObject->DrawTextW(NULL, candidate.data(), -1, &measure,
+                                    DT_CALCRECT | DT_SINGLELINE | DT_NOCLIP, 0xFFFFFFFF);
+      if (!firstWord && measure.right - measure.left > wrapWidth) {
+        lines.push_back(current);
+        current = word;
+      } else {
+        current = candidate;
+      }
+      if (wordEnd == std::wstring::npos) break;
+      start = wordEnd + 1;
+    }
+    if (!current.empty()) lines.push_back(current);
+  }
+  if (lines.empty())
+    return;
 
   int colorR = m_lyricsColorR < 0 ? 0 : m_lyricsColorR > 255 ? 255 : m_lyricsColorR;
   int colorG = m_lyricsColorG < 0 ? 0 : m_lyricsColorG > 255 ? 255 : m_lyricsColorG;
   int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255 : m_lyricsColorB;
   const DWORD alpha = static_cast<DWORD>(lyricState.opacity * 255.0f + 0.5f);
   DWORD textColor = (alpha << 24) | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
-  // DT_NOCLIP: D3DX9's GDI-based DrawTextW can drop the final wrapped line of
-  // text when the draw rect is exactly the DT_CALCRECT-measured height (a
-  // line-spacing/rounding mismatch between measuring and drawing). Without
-  // clipping, the last line of lyrics always renders.
-  DWORD drawFlags = DT_CENTER | DT_WORDBREAK | DT_NOCLIP;
-  RECT measuredRect = textRect;
-  int textHeight = m_lyricsFontObject->DrawTextW(NULL, lyricText.data(), -1, &measuredRect,
-                                                  drawFlags | DT_CALCRECT, textColor);
-  if (textHeight <= 0)
-    return;
 
-  // Give the draw rect a line of slack below the measured text so D3DX9/GDI
-  // never clips the last wrapped line at the measured boundary (mirrors the
-  // approach used for multi-line supertexts in milkdropfs.cpp).
+  // Line height from a reference string; used to stack the wrapped lines.
   RECT lineRect = {0, 0, 1024, 1024};
   m_lyricsFontObject->DrawTextW(NULL, L"Ag", -1, &lineRect, DT_CALCRECT | DT_SINGLELINE, 0xFFFFFFFF);
   const int lineHeight = lineRect.bottom - lineRect.top;
+  if (lineHeight <= 0)
+    return;
 
-  textRect.top = centerY - textHeight / 2;
-  textRect.bottom = textRect.top + textHeight + (lineHeight > 0 ? lineHeight : 0);
-  if (textRect.top < 0) {
-    textRect.bottom -= textRect.top;
-    textRect.top = 0;
-  }
-  if (textRect.bottom > canvasHeight) {
-    textRect.top -= textRect.bottom - canvasHeight;
-    textRect.bottom = canvasHeight;
-  }
+  const int totalHeight = static_cast<int>(lines.size()) * lineHeight;
+  int topY = centerY - totalHeight / 2;
+  if (topY < 0) topY = 0;
+  if (topY + totalHeight > canvasHeight) topY = canvasHeight - totalHeight;
+  if (topY < 0) topY = 0;
 
   int shadow = m_lyricsShadow;
   if (shadow < 0) shadow = 0;
   if (shadow > 16) shadow = 16;
-  if (shadow > 0) {
-    RECT shadowRect = textRect;
-    OffsetRect(&shadowRect, shadow, shadow);
-    if (burnIn) {
-      m_lyricsFontObject->DrawTextW(NULL, lyricText.data(), -1, &shadowRect, drawFlags, alpha << 24);
-    } else {
-      m_text.DrawTextW(m_lyricsFontObject, lyricText.data(), -1, &shadowRect, drawFlags, alpha << 24, false);
-    }
-  }
 
-  if (burnIn) {
-    m_lyricsFontObject->DrawTextW(NULL, lyricText.data(), -1, &textRect, drawFlags, textColor);
-  } else {
-    m_text.DrawTextW(m_lyricsFontObject, lyricText.data(), -1, &textRect, drawFlags, textColor, false);
+  // DT_NOCLIP: D3DX9's GDI-based DrawTextW can clip a line when the rect is
+  // exactly the measured height; without clipping each line always renders.
+  const DWORD drawFlags = DT_CENTER | DT_SINGLELINE | DT_NOCLIP;
+  for (std::size_t index = 0; index < lines.size(); ++index) {
+    RECT lineTextRect = {wrapRect.left, topY + static_cast<int>(index) * lineHeight, wrapRect.right,
+                         topY + static_cast<int>(index + 1) * lineHeight};
+    if (shadow > 0) {
+      RECT shadowRect = lineTextRect;
+      OffsetRect(&shadowRect, shadow, shadow);
+      if (burnIn) {
+        m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24);
+      } else {
+        m_text.DrawTextW(m_lyricsFontObject, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24, false);
+      }
+    }
+    if (burnIn) {
+      m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &lineTextRect, drawFlags, textColor);
+    } else {
+      m_text.DrawTextW(m_lyricsFontObject, lines[index].data(), -1, &lineTextRect, drawFlags, textColor, false);
+    }
   }
 }
 
