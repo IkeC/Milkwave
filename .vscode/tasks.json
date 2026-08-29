@@ -130,6 +130,17 @@
 			"type": "shell",
 			"command": "Get-ChildItem -Path '${workspaceFolder}\\Visualizer\\milkwave' -Include '*.cpp','*.h' -Recurse | ForEach-Object { & 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\bin\\clang-format.exe' -i $_.FullName }; Write-Host 'Done.'",
 			"problemMatcher": []
+		},
+		{
+			"label": "Build Visualizer (Debug)",
+			"type": "shell",
+			"command": "msbuild",
+			"args": [
+				"${workspaceFolder}\\Visualizer\\milkwave\\plugin.vcxproj",
+				"/p:Configuration=Debug",
+				"/p:Platform=Win32",
+				"/p:PlatformToolset=v143"
+			]
 		}
 	]
 }

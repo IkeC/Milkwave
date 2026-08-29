@@ -196,15 +196,26 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
   int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255 : m_lyricsColorB;
   const DWORD alpha = static_cast<DWORD>(lyricState.opacity * 255.0f + 0.5f);
   DWORD textColor = (alpha << 24) | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
-  DWORD drawFlags = DT_CENTER | DT_WORDBREAK;
+  // DT_NOCLIP: D3DX9's GDI-based DrawTextW can drop the final wrapped line of
+  // text when the draw rect is exactly the DT_CALCRECT-measured height (a
+  // line-spacing/rounding mismatch between measuring and drawing). Without
+  // clipping, the last line of lyrics always renders.
+  DWORD drawFlags = DT_CENTER | DT_WORDBREAK | DT_NOCLIP;
   RECT measuredRect = textRect;
   int textHeight = m_lyricsFontObject->DrawTextW(NULL, lyricText.data(), -1, &measuredRect,
                                                   drawFlags | DT_CALCRECT, textColor);
   if (textHeight <= 0)
     return;
 
+  // Give the draw rect a line of slack below the measured text so D3DX9/GDI
+  // never clips the last wrapped line at the measured boundary (mirrors the
+  // approach used for multi-line supertexts in milkdropfs.cpp).
+  RECT lineRect = {0, 0, 1024, 1024};
+  m_lyricsFontObject->DrawTextW(NULL, L"Ag", -1, &lineRect, DT_CALCRECT | DT_SINGLELINE, 0xFFFFFFFF);
+  const int lineHeight = lineRect.bottom - lineRect.top;
+
   textRect.top = centerY - textHeight / 2;
-  textRect.bottom = textRect.top + textHeight;
+  textRect.bottom = textRect.top + textHeight + (lineHeight > 0 ? lineHeight : 0);
   if (textRect.top < 0) {
     textRect.bottom -= textRect.top;
     textRect.top = 0;
