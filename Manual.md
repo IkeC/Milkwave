@@ -122,6 +122,20 @@ The "Preset" row allows you to set the lock mode for the current preset (same as
 
 With FFT you may control equalizer attack and decay values for presets supporting FFT functions *get_fft(pos)* and *get_fft_hz(freq)*, such as _IkeC - Equalizer.milk_ from the _Milkwave_ presets folder. *get_fft_peak_hz(freq)* is exclusive to Milkwave.
 
+## Tab "Lyrics"
+
+The Lyrics tab controls the synchronized lyrics overlay that the Visualizer draws on top of the visual output, and that is also included in the Spout sender. When "Auto" is active, Milkwave looks up the lyrics for the currently playing track automatically (eg. from [LRCLIB](https://lrclib.net)) and caches them locally; otherwise you can load a lyrics file manually.
+
+The "Status" field shows the current lyrics state ("Lyrics off", "Lyrics loading", "Lyrics loaded", "Lyrics missing timestamps" or "Lyrics unavailable"). "Active" turns the lyrics overlay on or off (settings.ini:LyricsEnabled), and "Auto" toggles the automatic lookup of lyrics for the current track (settings.ini:LyricsAutoLoad).
+
+The "File" field shows the lyrics file in use — only the filename is displayed, the full path appears when you hover the mouse over it. "Load" lets you pick a custom _.lrc_ or _.txt_ file, "Edit" opens the current lyrics file in the associated editor, and the current line is shown in the "Line" field. "Restart" resets the internal timeline to the start of the track, which is handy for players that don't report a position; the lyrics then begin again from the first line.
+
+The "Font" row sets the font face, size, bold/italic/antialiasing options and the text color used for the lyrics.
+
+The two bottom rows control the layout and timing of the overlay. "Pos X"/"Pos Y" place the lyrics block on the canvas, while "Start X"/"Start Y" define where the lyrics move from while they fade in and out. "Zoom" scales the font at the fade extremes (1.0 means no scaling), and "Fade" sets the fade-in/out duration in seconds (settings.ini:LyricsFade). "Width" limits the maximum width of the lyrics block as a ratio of the canvas (settings.ini:LyricsMaxWidth); longer lines wrap at word boundaries. "Burn" bakes the previous line into the background and lets it fade out over the given time in seconds (0 turns this off), similar to the burntime effect for messages. "Shadow" sets the drop shadow offset in pixels, and "Offset" shifts the lyrics timestamps by the given number of seconds (settings.ini:LyricsOffset), eg. to sync the lyrics with a delayed audio feed. Check "Autoscale" to auto-size the font so about 60 characters fit per line within the "Width" area, ignoring the set font size (settings.ini:LyricsAutoScale).
+
+You can double-click any of the labels in the two bottom rows to reset the accompanying input to its default value. All lyrics settings are stored in the _Lyrics_ section of _settings.ini_.
+
 ## Tab "Fonts"
 
 Modify most of the fonts used to display information in the Visualizer window. Use "Save" and "Test" to see your changes. You can save and preview changes instantly if you hold the ALT key while changing fonts or sizes.
