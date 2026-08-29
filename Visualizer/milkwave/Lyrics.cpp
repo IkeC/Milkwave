@@ -72,10 +72,17 @@ std::optional<Timestamp> ParseTimestamp(std::wstring_view text, std::size_t star
     std::int64_t fraction = 0;
     if (!ParseUnsigned(text, index, fraction) || index - fractionStart > 3) return std::nullopt;
     switch (index - fractionStart) {
-      case 1: fractionMs = fraction * 100; break;
-      case 2: fractionMs = fraction * 10; break;
-      case 3: fractionMs = fraction; break;
-      default: return std::nullopt;
+      case 1:
+        fractionMs = fraction * 100;
+        break;
+      case 2:
+        fractionMs = fraction * 10;
+        break;
+      case 3:
+        fractionMs = fraction;
+        break;
+      default:
+        return std::nullopt;
     }
   }
 
@@ -119,11 +126,16 @@ std::optional<std::int64_t> ParseLengthMilliseconds(std::wstring_view value) {
 
 void SetMetadataValue(LyricsMetadata& metadata, std::wstring_view key, std::wstring_view value) {
   const auto trimmed = Trim(value);
-  if (key == L"ar") metadata.artist = trimmed;
-  else if (key == L"al") metadata.album = trimmed;
-  else if (key == L"ti") metadata.title = trimmed;
-  else if (key == L"length") metadata.lengthMs = ParseLengthMilliseconds(trimmed);
-  else if (key == L"offset") metadata.offsetMs = ParseMilliseconds(trimmed);
+  if (key == L"ar")
+    metadata.artist = trimmed;
+  else if (key == L"al")
+    metadata.album = trimmed;
+  else if (key == L"ti")
+    metadata.title = trimmed;
+  else if (key == L"length")
+    metadata.lengthMs = ParseLengthMilliseconds(trimmed);
+  else if (key == L"offset")
+    metadata.offsetMs = ParseMilliseconds(trimmed);
 }
 
 std::wstring SafeFilePart(std::wstring_view value) {

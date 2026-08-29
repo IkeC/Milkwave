@@ -323,9 +323,12 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
     const int wrapWidth = wrapRect.right - wrapRect.left;
     if (wrapWidth <= 0) return;
 
-    int colorR = m_lyricsColorR < 0 ? 0 : m_lyricsColorR > 255 ? 255 : m_lyricsColorR;
-    int colorG = m_lyricsColorG < 0 ? 0 : m_lyricsColorG > 255 ? 255 : m_lyricsColorG;
-    int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255 : m_lyricsColorB;
+    int colorR = m_lyricsColorR < 0 ? 0 : m_lyricsColorR > 255 ? 255
+                                                               : m_lyricsColorR;
+    int colorG = m_lyricsColorG < 0 ? 0 : m_lyricsColorG > 255 ? 255
+                                                               : m_lyricsColorG;
+    int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255
+                                                               : m_lyricsColorB;
     const DWORD alpha = static_cast<DWORD>(drawOpacity * 255.0f + 0.5f);
     DWORD textColor = (alpha << 24) | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
 

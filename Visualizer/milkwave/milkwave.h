@@ -77,7 +77,7 @@ class Milkwave {
   void PollMediaInfo();
   void SetLyricsApiUrl(std::wstring apiUrl);
   void SetLyricsAutoLoad(bool enabled);
-  void RequestLyricsNow();  // force a lyrics resolution for the current track
+  void RequestLyricsNow();                                     // force a lyrics resolution for the current track
   bool LoadLyricsFromFile(const std::filesystem::path& path);  // load a specific lyrics file
   std::wstring CurrentLyricsFilePath() const;                  // current lyrics file, or empty
   std::wstring CurrentLyricText(std::int64_t offsetMs = 0) const;

@@ -11,7 +11,7 @@ constexpr std::int64_t ASSUMED_TIMELINE_START_OFFSET_MS = 500;
 // treat it as a real seek and let the displayed line go back. Prevents the
 // lyrics from briefly flickering back to a previous line.
 constexpr std::int64_t kLyricsBackwardJitterToleranceMs = 1000;
-}
+}  // namespace
 
 Milkwave::Milkwave() {}
 
@@ -336,12 +336,24 @@ void Milkwave::LyricsWorkerLoop() {
     if (requestGeneration == lyricsRequestGeneration) {
       const wchar_t* stateText = L"unknown";
       switch (resolution.document.state) {
-        case LyricsDocumentState::Loaded: stateText = L"loaded"; break;
-        case LyricsDocumentState::Instrumental: stateText = L"instrumental"; break;
-        case LyricsDocumentState::NotFound: stateText = L"not found"; break;
-        case LyricsDocumentState::Invalid: stateText = L"invalid"; break;
-        case LyricsDocumentState::Loading: stateText = L"loading"; break;
-        case LyricsDocumentState::Empty: stateText = L"empty"; break;
+        case LyricsDocumentState::Loaded:
+          stateText = L"loaded";
+          break;
+        case LyricsDocumentState::Instrumental:
+          stateText = L"instrumental";
+          break;
+        case LyricsDocumentState::NotFound:
+          stateText = L"not found";
+          break;
+        case LyricsDocumentState::Invalid:
+          stateText = L"invalid";
+          break;
+        case LyricsDocumentState::Loading:
+          stateText = L"loading";
+          break;
+        case LyricsDocumentState::Empty:
+          stateText = L"empty";
+          break;
       }
       const auto lineCount = resolution.document.lines.size();
       const auto plainTextLength = resolution.document.plainText.size();
@@ -359,8 +371,8 @@ void Milkwave::LyricsWorkerLoop() {
       lyricsDocument = std::move(resolution.document);
       m_lastShownLyricsPositionMs = 0;
       m_hasShownLyricsPosition = false;
-      const wchar_t* sourceText = resolution.source == LyricsSource::Local ? L"local" :
-                                  resolution.source == LyricsSource::Lrclib ? L"lrclib" : L"none";
+      const wchar_t* sourceText = resolution.source == LyricsSource::Local ? L"local" : resolution.source == LyricsSource::Lrclib ? L"lrclib"
+                                                                                                                                  : L"none";
       std::wstring message = L"Lyrics result: " + track.artist + L" - " + track.title + L" state=" + stateText +
                              L" source=" + sourceText + L" lines=" + std::to_wstring(lineCount) +
                              L" plainChars=" + std::to_wstring(plainTextLength) +

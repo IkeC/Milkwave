@@ -76,9 +76,9 @@ struct LyricsResolution {
 };
 
 LyricsResolution FetchLyricsFromLrclib(const LyricsTrackIdentity& track,
-               std::wstring_view userAgent = L"Milkwave/1.0",
-               std::wstring_view apiUrl = kDefaultLyricsApiUrl);
+                                       std::wstring_view userAgent = L"Milkwave/1.0",
+                                       std::wstring_view apiUrl = kDefaultLyricsApiUrl);
 LyricsResolution ResolveLyrics(const std::filesystem::path& installDirectory,
                                const LyricsTrackIdentity& track,
-             std::wstring_view userAgent = L"Milkwave/1.0",
-             std::wstring_view apiUrl = kDefaultLyricsApiUrl);
+                               std::wstring_view userAgent = L"Milkwave/1.0",
+                               std::wstring_view apiUrl = kDefaultLyricsApiUrl);

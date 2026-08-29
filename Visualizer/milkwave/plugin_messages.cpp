@@ -798,9 +798,12 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   } else if (wcsncmp(sMessage, L"LYRICS_COLOR=", 13) == 0) {
     int r = 0, g = 0, b = 0;
     if (swscanf_s(sMessage + 13, L"%d,%d,%d", &r, &g, &b) == 3) {
-      r = r < 0 ? 0 : r > 255 ? 255 : r;
-      g = g < 0 ? 0 : g > 255 ? 255 : g;
-      b = b < 0 ? 0 : b > 255 ? 255 : b;
+      r = r < 0 ? 0 : r > 255 ? 255
+                              : r;
+      g = g < 0 ? 0 : g > 255 ? 255
+                              : g;
+      b = b < 0 ? 0 : b > 255 ? 255
+                              : b;
       if (r != g_plugin.m_lyricsColorR || g != g_plugin.m_lyricsColorG || b != g_plugin.m_lyricsColorB) {
         g_plugin.m_lyricsColorR = r;
         g_plugin.m_lyricsColorG = g;
@@ -814,43 +817,51 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   } else if (wcsncmp(sMessage, L"LYRICS_POSX=", 12) == 0) {
     try {
       float v = std::stof(sMessage + 12);
-      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v;
+      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f
+                                     : v;
       if (v != g_plugin.m_lyricsPositionX) {
         g_plugin.m_lyricsPositionX = v;
         WritePrivateProfileFloatW(v, L"LyricsPositionX", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_POSY=", 12) == 0) {
     try {
       float v = std::stof(sMessage + 12);
-      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v;
+      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f
+                                     : v;
       if (v != g_plugin.m_lyricsPositionY) {
         g_plugin.m_lyricsPositionY = v;
         WritePrivateProfileFloatW(v, L"LyricsPositionY", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_STARTX=", 14) == 0) {
     try {
       float v = std::stof(sMessage + 14);
-      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v;
+      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f
+                                     : v;
       if (v != g_plugin.m_lyricsStartX) {
         g_plugin.m_lyricsStartX = v;
         WritePrivateProfileFloatW(v, L"LyricsStartX", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_STARTY=", 14) == 0) {
     try {
       float v = std::stof(sMessage + 14);
-      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v;
+      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f
+                                     : v;
       if (v != g_plugin.m_lyricsStartY) {
         g_plugin.m_lyricsStartY = v;
         WritePrivateProfileFloatW(v, L"LyricsStartY", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_ZOOM=", 12) == 0) {
     try {
       float v = std::stof(sMessage + 12);
@@ -861,7 +872,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         WritePrivateProfileFloatW(v, L"LyricsZoom", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_FADE=", 12) == 0) {
     try {
       float v = std::stof(sMessage + 12);
@@ -872,7 +884,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         WritePrivateProfileFloatW(v, L"LyricsFade", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_OFFSET=", 14) == 0) {
     try {
       // LyricsOffset is stored in seconds (float); internally the offset is
@@ -886,17 +899,20 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         WritePrivateProfileFloatW(seconds, L"LyricsOffset", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_WIDTH=", 13) == 0) {
     try {
       float v = std::stof(sMessage + 13);
-      v = v < 0.05f ? 0.05f : v > 1.0f ? 1.0f : v;
+      v = v < 0.05f ? 0.05f : v > 1.0f ? 1.0f
+                                       : v;
       if (v != g_plugin.m_lyricsMaxWidth) {
         g_plugin.m_lyricsMaxWidth = v;
         WritePrivateProfileFloatW(v, L"LyricsMaxWidth", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_BURN=", 12) == 0) {
     try {
       float v = std::stof(sMessage + 12);
@@ -907,7 +923,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         WritePrivateProfileFloatW(v, L"LyricsBurn", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_SHADOW=", 14) == 0) {
     try {
       int v = std::stoi(sMessage + 14);
@@ -918,7 +935,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         WritePrivateProfileIntW(v, L"LyricsShadow", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"LYRICS_AUTOSCALE=", 17) == 0) {
     const bool enabled = (sMessage[17] == L'1');
     if (enabled != g_plugin.m_lyricsAutoScale) {
@@ -936,7 +954,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         WritePrivateProfileIntW(v, L"AutoScaleLineMaxChars", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
-    } catch (...) {}
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
     std::wstring message(sMessage + 17);
     size_t pos = message.find(L'x');

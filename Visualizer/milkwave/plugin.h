@@ -727,12 +727,12 @@ class CPlugin : public CPluginShell {
 
   // DIRECTX 9:
   IDirect3DTexture9* m_lpVS[2];
-  int m_nFFTShaderInput = DEFAULT_FFT_SHADER_INPUT;  // runtime FFT input samples (configurable via settings.ini FFTSize)
+  int m_nFFTShaderInput = DEFAULT_FFT_SHADER_INPUT;     // runtime FFT input samples (configurable via settings.ini FFTSize)
   int m_nFFTShaderBins = DEFAULT_FFT_SHADER_INPUT / 2;  // runtime FFT output bins (always input / 2)
-  IDirect3DTexture9* m_lpFFTTexture = nullptr;    // R32F FFT spectrum texture (row0=smoothed, row1=peak hold)
-  float m_fFFTSmoothed[MAX_FFT_SHADER_BINS] = {};  // smoothed mono FFT buffer (sized to max)
-  float m_fFFTPeak[MAX_FFT_SHADER_BINS] = {};      // peak hold values (sized to max)
-  int m_nFFTPeakHold[MAX_FFT_SHADER_BINS] = {};    // frames remaining at current peak (sized to max)
+  IDirect3DTexture9* m_lpFFTTexture = nullptr;          // R32F FFT spectrum texture (row0=smoothed, row1=peak hold)
+  float m_fFFTSmoothed[MAX_FFT_SHADER_BINS] = {};       // smoothed mono FFT buffer (sized to max)
+  float m_fFFTPeak[MAX_FFT_SHADER_BINS] = {};           // peak hold values (sized to max)
+  int m_nFFTPeakHold[MAX_FFT_SHADER_BINS] = {};         // frames remaining at current peak (sized to max)
 #define NUM_BLUR_TEX 6
 #if (NUM_BLUR_TEX > 0)
   IDirect3DTexture9* m_lpBlur[NUM_BLUR_TEX];  // each is successively 1/2 size of prev.
@@ -819,7 +819,7 @@ class CPlugin : public CPluginShell {
   float m_lyricsPositionY = 0.82f;
   float m_lyricsStartX = 0.50f;  // lyrics move from start to position while fading
   float m_lyricsStartY = 0.50f;
-  float m_lyricsZoom = 0.95f;    // font scale applied before fade-in / after fade-out
+  float m_lyricsZoom = 0.95f;  // font scale applied before fade-in / after fade-out
   float m_lyricsMaxWidth = 0.82f;
   wchar_t m_lyricsFont[256] = L"Segoe UI";
   int m_lyricsFontSize = 32;
@@ -836,22 +836,22 @@ class CPlugin : public CPluginShell {
   LPD3DXFONT m_lyricsFontObject = NULL;
   void RecreateLyricsFont(float scale = -1.0f);  // rebuild m_lyricsFontObject; scale applies zoom (-1 = use last/1.0)
   float m_lyricsCurrentFontScale = -1.0f;        // last scale used to build m_lyricsFontObject
-  std::wstring m_lastSentLyricsStatus;  // last lyrics status pushed to the Remote
-  std::wstring m_lastSentLyricsLine;    // last current lyric line pushed to the Remote
-  std::wstring m_lastSentLyricsFile;    // last lyrics file path pushed to the Remote
-  std::wstring m_burnLyricsActiveText;  // current line rendered into the burn-in
-  std::wstring m_burnLyricsPrevText;    // previous line burning out in the texture
+  std::wstring m_lastSentLyricsStatus;           // last lyrics status pushed to the Remote
+  std::wstring m_lastSentLyricsLine;             // last current lyric line pushed to the Remote
+  std::wstring m_lastSentLyricsFile;             // last lyrics file path pushed to the Remote
+  std::wstring m_burnLyricsActiveText;           // current line rendered into the burn-in
+  std::wstring m_burnLyricsPrevText;             // previous line burning out in the texture
   double m_burnLyricsPrevChangeTime = -1.0;
 
   // Stable word-wrap: lines are laid out ONCE at the target (end-of-fade)
   // font size with m_lyricsMeasureFontObject, then rendered each frame at the
   // animated (zoom) size, so the line breaks never change while fading.
-  LPD3DXFONT m_lyricsMeasureFontObject = NULL;  // font at the target scale, used only for wrap measurement
-  float m_lyricsMeasureFontScale = -1.0f;       // target scale used to build m_lyricsMeasureFontObject
+  LPD3DXFONT m_lyricsMeasureFontObject = NULL;       // font at the target scale, used only for wrap measurement
+  float m_lyricsMeasureFontScale = -1.0f;            // target scale used to build m_lyricsMeasureFontObject
   std::vector<std::wstring> m_lyricsWrapCacheLines;  // cached wrapped lines (target layout)
-  std::wstring m_lyricsWrapCacheText;                 // text the wrap cache was built for
-  int m_lyricsWrapCacheWidth = -1;                    // wrap width (px) the wrap cache was built for
-  float m_lyricsWrapCacheScale = -1.0f;               // target scale the wrap cache was built for
+  std::wstring m_lyricsWrapCacheText;                // text the wrap cache was built for
+  int m_lyricsWrapCacheWidth = -1;                   // wrap width (px) the wrap cache was built for
+  float m_lyricsWrapCacheScale = -1.0f;              // target scale the wrap cache was built for
   void RecreateLyricsMeasureFont(float targetScale = -1.0f);
   void InvalidateLyricsWrapCache();
   void WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3DXFONT measureFont,
