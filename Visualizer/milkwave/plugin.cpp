@@ -1401,6 +1401,7 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
   std::wstring lyricsStatus = ::milkwave.LyricsMonitorText(m_lyricsDisplayEnabled, m_lyricsOffsetMs);
   std::wstring lyricsLine = m_lyricsDisplayEnabled ? ::milkwave.CurrentLyricText(m_lyricsOffsetMs) : L"";
   std::wstring lyricsFile = ::milkwave.CurrentLyricsFilePath();
+  std::wstring lyricsFont = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
   for (auto& ch : lyricsStatus) {
     if (ch == L'|') ch = L' ';
   }
@@ -1410,11 +1411,14 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
   for (auto& ch : lyricsFile) {
     if (ch == L'|') ch = L' ';
   }
+  for (auto& ch : lyricsFont) {
+    if (ch == L'|') ch = L' ';
+  }
   m_lastSentLyricsStatus = lyricsStatus;
   m_lastSentLyricsLine = lyricsLine;
   m_lastSentLyricsFile = lyricsFile;
 
-  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0") + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0") + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth) + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight) + L"|QUALITY=" + std::to_wstring(m_fRenderQuality) + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0") + L"|HUE=" + std::to_wstring(m_ColShiftHue) + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0") + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1") + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0") + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0") + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f)) + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f)) + L"|EQATTACK=" + std::to_wstring(m_fEQAttackGlobal) + L"|EQDECAY=" + std::to_wstring(m_fEQDecayGlobal) + L"|EQBOOST=" + std::to_wstring(m_fEQBoostGlobal) + L"|LYRICSACTIVE=" + std::wstring(m_lyricsDisplayEnabled ? L"1" : L"0") + L"|LYRICSAUTO=" + std::wstring(m_bLyricsAutoLoad ? L"1" : L"0") + L"|LYRICSSTATUS=" + lyricsStatus + L"|LYRICSLINE=" + lyricsLine + L"|LYRICSFILE=" + lyricsFile;
+  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0") + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0") + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth) + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight) + L"|QUALITY=" + std::to_wstring(m_fRenderQuality) + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0") + L"|HUE=" + std::to_wstring(m_ColShiftHue) + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0") + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1") + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0") + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0") + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f)) + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f)) + L"|EQATTACK=" + std::to_wstring(m_fEQAttackGlobal) + L"|EQDECAY=" + std::to_wstring(m_fEQDecayGlobal) + L"|EQBOOST=" + std::to_wstring(m_fEQBoostGlobal) + L"|LYRICSACTIVE=" + std::wstring(m_lyricsDisplayEnabled ? L"1" : L"0") + L"|LYRICSAUTO=" + std::wstring(m_bLyricsAutoLoad ? L"1" : L"0") + L"|LYRICSSTATUS=" + lyricsStatus + L"|LYRICSLINE=" + lyricsLine + L"|LYRICSFILE=" + lyricsFile + L"|LYRICSFONT=" + lyricsFont + L"|LYRICSFONTSIZE=" + std::to_wstring(m_lyricsFontSize) + L"|LYRICSFONTBOLD=" + std::wstring(m_lyricsFontBold ? L"1" : L"0") + L"|LYRICSFONTITALIC=" + std::wstring(m_lyricsFontItalic ? L"1" : L"0") + L"|LYRICSFONTAA=" + std::wstring(m_lyricsFontAA ? L"1" : L"0") + L"|LYRICSCOLORR=" + std::to_wstring(m_lyricsColorR) + L"|LYRICSCOLORG=" + std::to_wstring(m_lyricsColorG) + L"|LYRICSCOLORB=" + std::to_wstring(m_lyricsColorB) + L"|LYRICSPOSX=" + std::to_wstring(m_lyricsPositionX) + L"|LYRICSPOSY=" + std::to_wstring(m_lyricsPositionY) + L"|LYRICSSTARTX=" + std::to_wstring(m_lyricsStartX) + L"|LYRICSSTARTY=" + std::to_wstring(m_lyricsStartY) + L"|LYRICSZOOM=" + std::to_wstring(m_lyricsZoom) + L"|LYRICSFADE=" + std::to_wstring(m_lyricsFade) + L"|LYRICSWIDTH=" + std::to_wstring(m_lyricsMaxWidth) + L"|LYRICSBURN=" + std::to_wstring(m_lyricsBurn) + L"|LYRICSSHADOW=" + std::to_wstring(m_lyricsShadow) + L"|LYRICSAUTOSCALE=" + std::wstring(m_lyricsAutoScale ? L"1" : L"0") + L"|LYRICSSCALECHARS=" + std::to_wstring(m_lyricsAutoScaleLineMaxChars);
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 

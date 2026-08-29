@@ -225,7 +225,7 @@ std::wstring Milkwave::CurrentLyricText(std::int64_t offsetMs) const {
 }
 
 Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offsetMs,
-                                                               std::int64_t fadeDurationMs) const {
+                                                               float fadeSeconds) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
   const auto adjustedPositionMs = currentPositionMs + offsetMs;
   if (lyricsDocument.lines.empty()) return {};
@@ -233,7 +233,7 @@ Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offs
   if (!currentLine) return {};
 
   float opacity = 1.0f;
-  const auto duration = std::max<std::int64_t>(0, fadeDurationMs);
+  const auto duration = std::max<std::int64_t>(0, static_cast<std::int64_t>(fadeSeconds * 1000.0f));
   if (duration > 0) {
     const auto sinceStart = adjustedPositionMs - currentLine->startMs;
     opacity = (std::min)(opacity, static_cast<float>(sinceStart) / static_cast<float>(duration));

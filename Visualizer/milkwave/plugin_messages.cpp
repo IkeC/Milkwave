@@ -740,6 +740,179 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
   } else if (wcsncmp(sMessage, L"LYRICS_RESTART", 14) == 0) {
     ::milkwave.ResetTimeline();
+  } else if (wcsncmp(sMessage, L"LYRICS_FONT=", 12) == 0) {
+    std::wstring face(sMessage + 12);
+    if (!face.empty() && face.size() < _countof(g_plugin.m_lyricsFont)) {
+      lstrcpyW(g_plugin.m_lyricsFont, face.c_str());
+      WritePrivateProfileStringW(L"Lyrics", L"LyricsFont", g_plugin.m_lyricsFont, g_plugin.GetConfigIniFile());
+      g_plugin.RecreateLyricsFont();
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_FONTSIZE=", 16) == 0) {
+    try {
+      int size = std::stoi(sMessage + 16);
+      if (size < 8) size = 8;
+      if (size > 256) size = 256;
+      if (size != g_plugin.m_lyricsFontSize) {
+        g_plugin.m_lyricsFontSize = size;
+        WritePrivateProfileIntW(size, L"LyricsFontSize", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.RecreateLyricsFont();
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_FONTBOLD=", 16) == 0) {
+    const bool bold = (sMessage[16] == L'1');
+    if (bold != g_plugin.m_lyricsFontBold) {
+      g_plugin.m_lyricsFontBold = bold;
+      WritePrivateProfileIntW(bold, L"LyricsFontBold", g_plugin.GetConfigIniFile(), L"Lyrics");
+      g_plugin.RecreateLyricsFont();
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_FONTITALIC=", 18) == 0) {
+    const bool italic = (sMessage[18] == L'1');
+    if (italic != g_plugin.m_lyricsFontItalic) {
+      g_plugin.m_lyricsFontItalic = italic;
+      WritePrivateProfileIntW(italic, L"LyricsFontItalic", g_plugin.GetConfigIniFile(), L"Lyrics");
+      g_plugin.RecreateLyricsFont();
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_FONTAA=", 14) == 0) {
+    const bool aa = (sMessage[14] == L'1');
+    if (aa != g_plugin.m_lyricsFontAA) {
+      g_plugin.m_lyricsFontAA = aa;
+      WritePrivateProfileIntW(aa, L"LyricsFontAA", g_plugin.GetConfigIniFile(), L"Lyrics");
+      g_plugin.RecreateLyricsFont();
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_COLOR=", 13) == 0) {
+    int r = 0, g = 0, b = 0;
+    if (swscanf_s(sMessage + 13, L"%d,%d,%d", &r, &g, &b) == 3) {
+      r = r < 0 ? 0 : r > 255 ? 255 : r;
+      g = g < 0 ? 0 : g > 255 ? 255 : g;
+      b = b < 0 ? 0 : b > 255 ? 255 : b;
+      if (r != g_plugin.m_lyricsColorR || g != g_plugin.m_lyricsColorG || b != g_plugin.m_lyricsColorB) {
+        g_plugin.m_lyricsColorR = r;
+        g_plugin.m_lyricsColorG = g;
+        g_plugin.m_lyricsColorB = b;
+        WritePrivateProfileIntW(r, L"LyricsColorR", g_plugin.GetConfigIniFile(), L"Lyrics");
+        WritePrivateProfileIntW(g, L"LyricsColorG", g_plugin.GetConfigIniFile(), L"Lyrics");
+        WritePrivateProfileIntW(b, L"LyricsColorB", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_POSX=", 12) == 0) {
+    try {
+      float v = std::stof(sMessage + 12);
+      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v;
+      if (v != g_plugin.m_lyricsPositionX) {
+        g_plugin.m_lyricsPositionX = v;
+        WritePrivateProfileFloatW(v, L"LyricsPositionX", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_POSY=", 12) == 0) {
+    try {
+      float v = std::stof(sMessage + 12);
+      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v;
+      if (v != g_plugin.m_lyricsPositionY) {
+        g_plugin.m_lyricsPositionY = v;
+        WritePrivateProfileFloatW(v, L"LyricsPositionY", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_STARTX=", 14) == 0) {
+    try {
+      float v = std::stof(sMessage + 14);
+      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v;
+      if (v != g_plugin.m_lyricsStartX) {
+        g_plugin.m_lyricsStartX = v;
+        WritePrivateProfileFloatW(v, L"LyricsStartX", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_STARTY=", 14) == 0) {
+    try {
+      float v = std::stof(sMessage + 14);
+      v = v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v;
+      if (v != g_plugin.m_lyricsStartY) {
+        g_plugin.m_lyricsStartY = v;
+        WritePrivateProfileFloatW(v, L"LyricsStartY", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_ZOOM=", 13) == 0) {
+    try {
+      float v = std::stof(sMessage + 13);
+      if (v < 0.05f) v = 0.05f;
+      if (v > 10.0f) v = 10.0f;
+      if (v != g_plugin.m_lyricsZoom) {
+        g_plugin.m_lyricsZoom = v;
+        WritePrivateProfileFloatW(v, L"LyricsZoom", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_FADE=", 12) == 0) {
+    try {
+      float v = std::stof(sMessage + 12);
+      if (v < 0.0f) v = 0.0f;
+      if (v > 10.0f) v = 10.0f;
+      if (v != g_plugin.m_lyricsFade) {
+        g_plugin.m_lyricsFade = v;
+        WritePrivateProfileFloatW(v, L"LyricsFade", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_WIDTH=", 13) == 0) {
+    try {
+      float v = std::stof(sMessage + 13);
+      v = v < 0.05f ? 0.05f : v > 1.0f ? 1.0f : v;
+      if (v != g_plugin.m_lyricsMaxWidth) {
+        g_plugin.m_lyricsMaxWidth = v;
+        WritePrivateProfileFloatW(v, L"LyricsMaxWidth", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_BURN=", 12) == 0) {
+    try {
+      float v = std::stof(sMessage + 12);
+      if (v < 0.0f) v = 0.0f;
+      if (v > 60.0f) v = 60.0f;
+      if (v != g_plugin.m_lyricsBurn) {
+        g_plugin.m_lyricsBurn = v;
+        WritePrivateProfileFloatW(v, L"LyricsBurn", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_SHADOW=", 14) == 0) {
+    try {
+      int v = std::stoi(sMessage + 14);
+      if (v < 0) v = 0;
+      if (v > 16) v = 16;
+      if (v != g_plugin.m_lyricsShadow) {
+        g_plugin.m_lyricsShadow = v;
+        WritePrivateProfileIntW(v, L"LyricsShadow", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_AUTOSCALE=", 17) == 0) {
+    const bool enabled = (sMessage[17] == L'1');
+    if (enabled != g_plugin.m_lyricsAutoScale) {
+      g_plugin.m_lyricsAutoScale = enabled;
+      WritePrivateProfileIntW(enabled, L"LyricsAutoScale", g_plugin.GetConfigIniFile(), L"Lyrics");
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_SCALECHARS=", 18) == 0) {
+    try {
+      int v = std::stoi(sMessage + 18);
+      if (v < 10) v = 10;
+      if (v > 500) v = 500;
+      if (v != g_plugin.m_lyricsAutoScaleLineMaxChars) {
+        g_plugin.m_lyricsAutoScaleLineMaxChars = v;
+        WritePrivateProfileIntW(v, L"AutoScaleLineMaxChars", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
   } else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
     std::wstring message(sMessage + 17);
     size_t pos = message.find(L'x');

@@ -174,14 +174,7 @@ int CPlugin::AllocateMyDX9Stuff() {
 
   m_nFramesSinceResize = 0;
 
-  SafeRelease(m_lyricsFontObject);
-  int lyricsFontSize = (int)(m_lyricsFontSize * m_fRenderQuality);
-  if (lyricsFontSize < 8) lyricsFontSize = 8;
-  if (lyricsFontSize > 256) lyricsFontSize = 256;
-  const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
-  D3DXCreateFontW(GetDevice(), lyricsFontSize, lyricsFontSize * 4 / 10, 400, 1, FALSE,
-                  DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH,
-                  lyricsFontFace, &m_lyricsFontObject);
+  RecreateLyricsFont();
 
   int nNewCanvasStretch = (m_nCanvasStretch == 0) ? 100 : m_nCanvasStretch;
 
@@ -1347,6 +1340,24 @@ bool CPlugin::AddNoiseVol(const wchar_t* szTexName, int size, int zoom_factor) {
   m_textures.push_back(x);
 
   return true;
+}
+
+void CPlugin::RecreateLyricsFont(float scale) {
+  SafeRelease(m_lyricsFontObject);
+  if (scale < 0.0f) scale = m_lyricsCurrentFontScale >= 0.0f ? m_lyricsCurrentFontScale : 1.0f;
+  if (scale < 0.1f) scale = 0.1f;
+  if (scale > 10.0f) scale = 10.0f;
+  m_lyricsCurrentFontScale = scale;
+  int lyricsFontSize = (int)(m_lyricsFontSize * scale * m_fRenderQuality);
+  if (lyricsFontSize < 8) lyricsFontSize = 8;
+  if (lyricsFontSize > 256) lyricsFontSize = 256;
+  const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
+  const UINT fontWeight = m_lyricsFontBold ? FW_BOLD : FW_NORMAL;
+  const BOOL italic = m_lyricsFontItalic ? TRUE : FALSE;
+  const DWORD quality = m_lyricsFontAA ? ANTIALIASED_QUALITY : NONANTIALIASED_QUALITY;
+  D3DXCreateFontW(GetDevice(), lyricsFontSize, lyricsFontSize * 4 / 10, fontWeight, 1, italic,
+                  DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, quality, DEFAULT_PITCH,
+                  lyricsFontFace, &m_lyricsFontObject);
 }
 
 void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {

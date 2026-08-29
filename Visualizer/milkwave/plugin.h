@@ -812,23 +812,36 @@ class CPlugin : public CPluginShell {
   int m_nFramesSinceResize;
   bool m_lyricsDisplayEnabled = true;
   bool m_bLyricsAutoLoad = true;
-  bool m_bLyricsBurnIn = false;
+  bool m_lyricsAutoScale = false;  // auto-fit font so ~maxChars fit per line in the max-width area
+  int m_lyricsAutoScaleLineMaxChars = 60;
+  float m_lyricsBurn = 0.0f;  // seconds; >0 enables burn-in of lyrics into the texture
   float m_lyricsPositionX = 0.50f;
   float m_lyricsPositionY = 0.82f;
+  float m_lyricsStartX = 0.50f;  // lyrics move from start to position while fading
+  float m_lyricsStartY = 0.50f;
+  float m_lyricsZoom = 0.95f;    // font scale applied before fade-in / after fade-out
   float m_lyricsMaxWidth = 0.82f;
   wchar_t m_lyricsFont[256] = L"Segoe UI";
   int m_lyricsFontSize = 32;
+  bool m_lyricsFontBold = false;
+  bool m_lyricsFontItalic = false;
+  bool m_lyricsFontAA = true;
   int m_lyricsColorR = 255;
   int m_lyricsColorG = 255;
   int m_lyricsColorB = 255;
   int m_lyricsShadow = 2;
   std::int64_t m_lyricsOffsetMs = 0;
-  std::int64_t m_lyricsFadeDurationMs = 250;
+  float m_lyricsFade = 0.15f;  // fade in/out time in seconds
   wchar_t m_lyricsApiUrl[512] = L"https://lrclib.net/api";
   LPD3DXFONT m_lyricsFontObject = NULL;
+  void RecreateLyricsFont(float scale = -1.0f);  // rebuild m_lyricsFontObject; scale applies zoom (-1 = use last/1.0)
+  float m_lyricsCurrentFontScale = -1.0f;        // last scale used to build m_lyricsFontObject
   std::wstring m_lastSentLyricsStatus;  // last lyrics status pushed to the Remote
   std::wstring m_lastSentLyricsLine;    // last current lyric line pushed to the Remote
   std::wstring m_lastSentLyricsFile;    // last lyrics file path pushed to the Remote
+  std::wstring m_burnLyricsActiveText;  // current line rendered into the burn-in
+  std::wstring m_burnLyricsPrevText;    // previous line burning out in the texture
+  double m_burnLyricsPrevChangeTime = -1.0;
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.

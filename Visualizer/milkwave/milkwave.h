@@ -85,7 +85,7 @@ class Milkwave {
     std::wstring text;
     float opacity = 0.0f;
   };
-  LyricsVisualState CurrentLyricsVisualState(std::int64_t offsetMs, std::int64_t fadeDurationMs) const;
+  LyricsVisualState CurrentLyricsVisualState(std::int64_t offsetMs, float fadeSeconds) const;
   std::wstring LyricsMonitorText(bool enabled, std::int64_t offsetMs = 0) const;
   bool SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
 

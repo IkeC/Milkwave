@@ -161,10 +161,10 @@
   }
 
 void CPlugin::RenderLyricsOverlay(bool burnIn) {
-  if (burnIn != m_bLyricsBurnIn || !m_lyricsDisplayEnabled || !m_lyricsFontObject)
+  if (((m_lyricsBurn > 0.0f) != burnIn) || !m_lyricsDisplayEnabled || !m_lyricsFontObject)
     return;
 
-  const auto lyricState = ::milkwave.CurrentLyricsVisualState(m_lyricsOffsetMs, m_lyricsFadeDurationMs);
+  const auto lyricState = ::milkwave.CurrentLyricsVisualState(m_lyricsOffsetMs, m_lyricsFade);
   std::wstring lyricText = lyricState.text;
   if (lyricText.empty())
     return;
@@ -174,101 +174,157 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
   if (canvasWidth <= 0 || canvasHeight <= 0)
     return;
 
-  float positionX = m_lyricsPositionX;
-  float positionY = m_lyricsPositionY;
-  float maxWidthRatio = m_lyricsMaxWidth;
+  float opacity = lyricState.opacity;
+  if (opacity < 0.0f) opacity = 0.0f;
+  if (opacity > 1.0f) opacity = 1.0f;
+
+  // Lyrics move from their start position to the final position while fading.
+  float positionX = m_lyricsPositionX * opacity + m_lyricsStartX * (1.0f - opacity);
+  float positionY = m_lyricsPositionY * opacity + m_lyricsStartY * (1.0f - opacity);
   if (positionX < 0.0f) positionX = 0.0f;
   if (positionX > 1.0f) positionX = 1.0f;
   if (positionY < 0.0f) positionY = 0.0f;
   if (positionY > 1.0f) positionY = 1.0f;
+  float maxWidthRatio = m_lyricsMaxWidth;
   if (maxWidthRatio < 0.05f) maxWidthRatio = 0.05f;
   if (maxWidthRatio > 1.0f) maxWidthRatio = 1.0f;
+
+  // Zoom scales the font at fade extremes (zoom at opacity 0, full size at 1).
+  float fontScale = m_lyricsZoom + (1.0f - m_lyricsZoom) * opacity;
+  // Auto Scale: size the font so ~AutoScaleLineMaxChars characters fit within
+  // the LyricsMaxWidth area, ignoring LyricsFontSize. The measurement is
+  // normalized by the current font scale so the result is stable frame to frame.
+  if (m_lyricsAutoScale) {
+    const int maxChars = m_lyricsAutoScaleLineMaxChars > 0 ? m_lyricsAutoScaleLineMaxChars : 60;
+    const int maxWidthPixels = (int)(canvasWidth * maxWidthRatio);
+    if (maxWidthPixels > 0) {
+      const std::wstring sample(static_cast<std::size_t>(maxChars), L'W');
+      RECT sampleRect = {0, 0, maxWidthPixels, 1000};
+      m_lyricsFontObject->DrawTextW(NULL, sample.c_str(), -1, &sampleRect,
+                                    DT_CALCRECT | DT_SINGLELINE | DT_NOCLIP, 0xFFFFFFFF);
+      const int sampleWidth = sampleRect.right - sampleRect.left;
+      const float baseScale = m_lyricsCurrentFontScale >= 0.0f ? m_lyricsCurrentFontScale : 1.0f;
+      if (sampleWidth > 0) {
+        const float autoScaleBase = ((float)maxWidthPixels * baseScale) / (float)sampleWidth;
+        if (autoScaleBase > 0.0f) fontScale *= autoScaleBase;
+      }
+    }
+  }
+  if (fabsf(fontScale - m_lyricsCurrentFontScale) > 0.01f)
+    RecreateLyricsFont(fontScale);
 
   const int maxWidth = (int)(canvasWidth * maxWidthRatio);
   const int centerX = (int)(canvasWidth * positionX);
   const int centerY = (int)(canvasHeight * positionY);
-  RECT wrapRect = {centerX - maxWidth / 2, 0, centerX + maxWidth / 2, canvasHeight};
-  if (wrapRect.left < 0) wrapRect.left = 0;
-  if (wrapRect.right > canvasWidth) wrapRect.right = canvasWidth;
-  const int wrapWidth = wrapRect.right - wrapRect.left;
-  if (wrapWidth <= 0)
-    return;
+
+  // Remember the previous line so it can be "burned" into the texture on fadeout.
+  if (burnIn && m_lyricsBurn > 0.0f) {
+    const double now = GetTime();
+    if (lyricText != m_burnLyricsActiveText) {
+      if (!m_burnLyricsActiveText.empty()) {
+        m_burnLyricsPrevText = m_burnLyricsActiveText;
+        m_burnLyricsPrevChangeTime = now;
+      }
+      m_burnLyricsActiveText = lyricText;
+    }
+  }
 
   // Wrap the lyric text manually, breaking only on blanks (spaces). GDI's
   // DT_WORDBREAK also breaks on punctuation (e.g. between "schedule" and ","),
   // which looks wrong for lyrics, so each line is measured here and drawn
   // separately with DT_SINGLELINE.
-  std::vector<std::wstring> lines;
-  {
-    std::wstring current;
-    std::size_t start = 0;
-    while (start < lyricText.size()) {
-      const std::size_t wordStart = lyricText.find_first_not_of(L' ', start);
-      if (wordStart == std::wstring::npos) break;
-      const std::size_t wordEnd = lyricText.find(L' ', wordStart);
-      const std::wstring word =
-          lyricText.substr(wordStart, wordEnd == std::wstring::npos ? std::wstring::npos : wordEnd - wordStart);
-      const bool firstWord = current.empty();
-      const std::wstring candidate = firstWord ? word : current + L' ' + word;
-      RECT measure = {0, 0, wrapWidth, 1000};
-      m_lyricsFontObject->DrawTextW(NULL, candidate.data(), -1, &measure,
-                                    DT_CALCRECT | DT_SINGLELINE | DT_NOCLIP, 0xFFFFFFFF);
-      if (!firstWord && measure.right - measure.left > wrapWidth) {
-        lines.push_back(current);
-        current = word;
-      } else {
-        current = candidate;
+  auto drawWrapped = [&](const std::wstring& text, float drawOpacity, int cx, int cy) {
+    RECT wrapRect = {cx - maxWidth / 2, 0, cx + maxWidth / 2, canvasHeight};
+    if (wrapRect.left < 0) wrapRect.left = 0;
+    if (wrapRect.right > canvasWidth) wrapRect.right = canvasWidth;
+    const int wrapWidth = wrapRect.right - wrapRect.left;
+    if (wrapWidth <= 0) return;
+
+    std::vector<std::wstring> lines;
+    {
+      std::wstring current;
+      std::size_t start = 0;
+      while (start < text.size()) {
+        const std::size_t wordStart = text.find_first_not_of(L' ', start);
+        if (wordStart == std::wstring::npos) break;
+        const std::size_t wordEnd = text.find(L' ', wordStart);
+        const std::wstring word =
+            text.substr(wordStart, wordEnd == std::wstring::npos ? std::wstring::npos : wordEnd - wordStart);
+        const bool firstWord = current.empty();
+        const std::wstring candidate = firstWord ? word : current + L' ' + word;
+        RECT measure = {0, 0, wrapWidth, 1000};
+        m_lyricsFontObject->DrawTextW(NULL, candidate.data(), -1, &measure,
+                                      DT_CALCRECT | DT_SINGLELINE | DT_NOCLIP, 0xFFFFFFFF);
+        if (!firstWord && measure.right - measure.left > wrapWidth) {
+          lines.push_back(current);
+          current = word;
+        } else {
+          current = candidate;
+        }
+        if (wordEnd == std::wstring::npos) break;
+        start = wordEnd + 1;
       }
-      if (wordEnd == std::wstring::npos) break;
-      start = wordEnd + 1;
+      if (!current.empty()) lines.push_back(current);
     }
-    if (!current.empty()) lines.push_back(current);
-  }
-  if (lines.empty())
-    return;
+    if (lines.empty()) return;
 
-  int colorR = m_lyricsColorR < 0 ? 0 : m_lyricsColorR > 255 ? 255 : m_lyricsColorR;
-  int colorG = m_lyricsColorG < 0 ? 0 : m_lyricsColorG > 255 ? 255 : m_lyricsColorG;
-  int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255 : m_lyricsColorB;
-  const DWORD alpha = static_cast<DWORD>(lyricState.opacity * 255.0f + 0.5f);
-  DWORD textColor = (alpha << 24) | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
+    int colorR = m_lyricsColorR < 0 ? 0 : m_lyricsColorR > 255 ? 255 : m_lyricsColorR;
+    int colorG = m_lyricsColorG < 0 ? 0 : m_lyricsColorG > 255 ? 255 : m_lyricsColorG;
+    int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255 : m_lyricsColorB;
+    const DWORD alpha = static_cast<DWORD>(drawOpacity * 255.0f + 0.5f);
+    DWORD textColor = (alpha << 24) | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
 
-  // Line height from a reference string; used to stack the wrapped lines.
-  RECT lineRect = {0, 0, 1024, 1024};
-  m_lyricsFontObject->DrawTextW(NULL, L"Ag", -1, &lineRect, DT_CALCRECT | DT_SINGLELINE, 0xFFFFFFFF);
-  const int lineHeight = lineRect.bottom - lineRect.top;
-  if (lineHeight <= 0)
-    return;
+    // Line height from a reference string; used to stack the wrapped lines.
+    RECT lineRect = {0, 0, 1024, 1024};
+    m_lyricsFontObject->DrawTextW(NULL, L"Ag", -1, &lineRect, DT_CALCRECT | DT_SINGLELINE, 0xFFFFFFFF);
+    const int lineHeight = lineRect.bottom - lineRect.top;
+    if (lineHeight <= 0) return;
 
-  const int totalHeight = static_cast<int>(lines.size()) * lineHeight;
-  int topY = centerY - totalHeight / 2;
-  if (topY < 0) topY = 0;
-  if (topY + totalHeight > canvasHeight) topY = canvasHeight - totalHeight;
-  if (topY < 0) topY = 0;
+    const int totalHeight = static_cast<int>(lines.size()) * lineHeight;
+    int topY = cy - totalHeight / 2;
+    if (topY < 0) topY = 0;
+    if (topY + totalHeight > canvasHeight) topY = canvasHeight - totalHeight;
+    if (topY < 0) topY = 0;
 
-  int shadow = m_lyricsShadow;
-  if (shadow < 0) shadow = 0;
-  if (shadow > 16) shadow = 16;
+    int shadow = m_lyricsShadow;
+    if (shadow < 0) shadow = 0;
+    if (shadow > 16) shadow = 16;
 
-  // DT_NOCLIP: D3DX9's GDI-based DrawTextW can clip a line when the rect is
-  // exactly the measured height; without clipping each line always renders.
-  const DWORD drawFlags = DT_CENTER | DT_SINGLELINE | DT_NOCLIP;
-  for (std::size_t index = 0; index < lines.size(); ++index) {
-    RECT lineTextRect = {wrapRect.left, topY + static_cast<int>(index) * lineHeight, wrapRect.right,
-                         topY + static_cast<int>(index + 1) * lineHeight};
-    if (shadow > 0) {
-      RECT shadowRect = lineTextRect;
-      OffsetRect(&shadowRect, shadow, shadow);
+    // DT_NOCLIP: D3DX9's GDI-based DrawTextW can clip a line when the rect is
+    // exactly the measured height; without clipping each line always renders.
+    const DWORD drawFlags = DT_CENTER | DT_SINGLELINE | DT_NOCLIP;
+    for (std::size_t index = 0; index < lines.size(); ++index) {
+      RECT lineTextRect = {wrapRect.left, topY + static_cast<int>(index) * lineHeight, wrapRect.right,
+                           topY + static_cast<int>(index + 1) * lineHeight};
+      if (shadow > 0) {
+        RECT shadowRect = lineTextRect;
+        OffsetRect(&shadowRect, shadow, shadow);
+        if (burnIn) {
+          m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24);
+        } else {
+          m_text.DrawTextW(m_lyricsFontObject, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24, false);
+        }
+      }
       if (burnIn) {
-        m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24);
+        m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &lineTextRect, drawFlags, textColor);
       } else {
-        m_text.DrawTextW(m_lyricsFontObject, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24, false);
+        m_text.DrawTextW(m_lyricsFontObject, lines[index].data(), -1, &lineTextRect, drawFlags, textColor, false);
       }
     }
-    if (burnIn) {
-      m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &lineTextRect, drawFlags, textColor);
+  };
+
+  drawWrapped(lyricText, opacity, centerX, centerY);
+
+  // Burn the previous line into the texture: it fades out over m_lyricsBurn
+  // seconds after the current line takes over.
+  if (burnIn && m_lyricsBurn > 0.0f && m_burnLyricsPrevChangeTime >= 0.0 && !m_burnLyricsPrevText.empty()) {
+    const double elapsed = GetTime() - m_burnLyricsPrevChangeTime;
+    if (elapsed < m_lyricsBurn) {
+      const float burnOpacity = 1.0f - (float)(elapsed / m_lyricsBurn);
+      drawWrapped(m_burnLyricsPrevText, burnOpacity, centerX, centerY);
     } else {
-      m_text.DrawTextW(m_lyricsFontObject, lines[index].data(), -1, &lineTextRect, drawFlags, textColor, false);
+      m_burnLyricsPrevText.clear();
+      m_burnLyricsPrevChangeTime = -1.0;
     }
   }
 }
