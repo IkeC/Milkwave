@@ -895,10 +895,11 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       } else if (wParam == 'L') {
         if (GetKeyState(VK_CONTROL) & 0x8000) {
           g_plugin.m_lyricsDisplayEnabled = !g_plugin.m_lyricsDisplayEnabled;
-          WritePrivateProfileStringW(L"Lyrics", L"bLyricsEnabled",
+          WritePrivateProfileStringW(L"Lyrics", L"LyricsEnabled",
                                      g_plugin.m_lyricsDisplayEnabled ? L"1" : L"0",
                                      g_plugin.GetConfigIniFile());
           g_plugin.AddNotification(g_plugin.m_lyricsDisplayEnabled ? L"Lyrics enabled" : L"Lyrics disabled");
+          g_plugin.SendSettingsInfoToMilkwaveRemote();
           return 0;
         }
       } else if (wParam == VK_D) {

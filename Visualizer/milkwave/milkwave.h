@@ -75,6 +75,8 @@ class Milkwave {
   void UpdateCurrentPosition(std::chrono::steady_clock::time_point currentTime);
   void PollMediaInfo();
   void SetLyricsApiUrl(std::wstring apiUrl);
+  void SetLyricsAutoLoad(bool enabled);
+  void RequestLyricsNow();  // force a lyrics resolution for the current track
   std::wstring CurrentLyricText(std::int64_t offsetMs = 0) const;
   struct LyricsVisualState {
     std::wstring text;
@@ -89,6 +91,7 @@ class Milkwave {
   void LyricsWorkerLoop();
 
   std::filesystem::path lyricsInstallDirectory;
+  bool m_bLyricsAutoLoad = true;
   mutable std::mutex lyricsMutex;
   std::condition_variable lyricsCondition;
   std::optional<LyricsTrackIdentity> pendingLyricsTrack;

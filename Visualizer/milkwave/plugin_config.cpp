@@ -473,7 +473,9 @@ void CPlugin::MyReadConfig() {
   m_nAudioDeviceRequestType = GetPrivateProfileIntW(L"Milkwave", L"AudioDeviceRequestType", m_nAudioDeviceRequestType, pIni);
   m_SongInfoPollingEnabled = GetPrivateProfileBoolW(L"Milkwave", L"SongInfoPollingEnabled", m_SongInfoPollingEnabled, pIni);
   const int legacyLyricsEnabled = GetPrivateProfileIntW(L"Milkwave", L"LyricsDisplayEnabled", -1, pIni);
-  m_lyricsDisplayEnabled = GetPrivateProfileBoolW(L"Lyrics", L"bLyricsEnabled", legacyLyricsEnabled < 0 ? true : legacyLyricsEnabled != 0, pIni);
+  m_lyricsDisplayEnabled = GetPrivateProfileBoolW(L"Lyrics", L"LyricsEnabled", legacyLyricsEnabled < 0 ? true : legacyLyricsEnabled != 0, pIni);
+  m_bLyricsAutoLoad = GetPrivateProfileBoolW(L"Lyrics", L"LyricsAutoLoad", true, pIni);
+  ::milkwave.SetLyricsAutoLoad(m_bLyricsAutoLoad);
   m_SongInfoDisplayCorner = GetPrivateProfileIntW(L"Milkwave", L"SongInfoDisplayCorner", m_SongInfoDisplayCorner, pIni);
   GetPrivateProfileStringW(L"Milkwave", L"SongInfoFormat", L"Artist;Title;Album", m_SongInfoFormat, sizeof(m_SongInfoFormat), pIni);
   m_ChangePresetWithSong = GetPrivateProfileBoolW(L"Milkwave", L"ChangePresetWithSong", m_ChangePresetWithSong, pIni);
@@ -482,7 +484,7 @@ void CPlugin::MyReadConfig() {
   m_DisplayCoverWhenPressingB = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCoverWhenPressingB", m_DisplayCoverWhenPressingB, pIni);
   m_HideNotificationsWhenRemoteActive = GetPrivateProfileBoolW(L"Milkwave", L"HideNotificationsWhenRemoteActive", m_HideNotificationsWhenRemoteActive, pIni);
 
-  m_bLyricsBurnIn = GetPrivateProfileBoolW(L"Lyrics", L"bLyricsBurnIn", m_bLyricsBurnIn, pIni);
+  m_bLyricsBurnIn = GetPrivateProfileBoolW(L"Lyrics", L"LyricsBurnIn", m_bLyricsBurnIn, pIni);
   m_lyricsPositionX = GetPrivateProfileFloatW(L"Lyrics", L"LyricsPositionX", m_lyricsPositionX, pIni);
   m_lyricsPositionY = GetPrivateProfileFloatW(L"Lyrics", L"LyricsPositionY", m_lyricsPositionY, pIni);
   m_lyricsMaxWidth = GetPrivateProfileFloatW(L"Lyrics", L"LyricsMaxWidth", m_lyricsMaxWidth, pIni);
@@ -674,8 +676,9 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_blackmode, L"BlackMode", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_CheckDirectXOnStartup, L"CheckDirectXOnStartup", pIni, L"Milkwave");
 
-  WritePrivateProfileIntW(m_lyricsDisplayEnabled, L"bLyricsEnabled", pIni, L"Lyrics");
-  WritePrivateProfileIntW(m_bLyricsBurnIn, L"bLyricsBurnIn", pIni, L"Lyrics");
+  WritePrivateProfileIntW(m_lyricsDisplayEnabled, L"LyricsEnabled", pIni, L"Lyrics");
+  WritePrivateProfileIntW(m_bLyricsAutoLoad, L"LyricsAutoLoad", pIni, L"Lyrics");
+  WritePrivateProfileIntW(m_bLyricsBurnIn, L"LyricsBurnIn", pIni, L"Lyrics");
   WritePrivateProfileFloatW(m_lyricsPositionX, L"LyricsPositionX", pIni, L"Lyrics");
   WritePrivateProfileFloatW(m_lyricsPositionY, L"LyricsPositionY", pIni, L"Lyrics");
   WritePrivateProfileFloatW(m_lyricsMaxWidth, L"LyricsMaxWidth", pIni, L"Lyrics");

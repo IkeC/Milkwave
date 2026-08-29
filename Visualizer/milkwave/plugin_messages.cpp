@@ -716,6 +716,23 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     if ((status == L'0' && bSpoutFixedSize) || (status == L'1' && !bSpoutFixedSize)) {
       SetSpoutFixedSize(true, true);
     }
+  } else if (wcsncmp(sMessage, L"LYRICS_ACTIVE=", 14) == 0) {
+    const bool enabled = (sMessage[14] == L'1');
+    if (enabled != g_plugin.m_lyricsDisplayEnabled) {
+      g_plugin.m_lyricsDisplayEnabled = enabled;
+      WritePrivateProfileStringW(L"Lyrics", L"LyricsEnabled", enabled ? L"1" : L"0", g_plugin.GetConfigIniFile());
+      g_plugin.AddNotification(enabled ? L"Lyrics enabled" : L"Lyrics disabled");
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_AUTO=", 12) == 0) {
+    const bool autoLoad = (sMessage[12] == L'1');
+    if (autoLoad != g_plugin.m_bLyricsAutoLoad) {
+      g_plugin.m_bLyricsAutoLoad = autoLoad;
+      ::milkwave.SetLyricsAutoLoad(autoLoad);
+      WritePrivateProfileStringW(L"Lyrics", L"LyricsAutoLoad", autoLoad ? L"1" : L"0", g_plugin.GetConfigIniFile());
+      if (autoLoad) ::milkwave.RequestLyricsNow();  // load the current track now
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
   } else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
     std::wstring message(sMessage + 17);
     size_t pos = message.find(L'x');

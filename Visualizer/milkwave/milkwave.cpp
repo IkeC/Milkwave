@@ -44,6 +44,10 @@ void Milkwave::SetLogDirectory(std::filesystem::path directory) {
   if (!directory.empty()) logDirectory = std::move(directory);
 }
 
+void Milkwave::SetLyricsAutoLoad(bool enabled) { m_bLyricsAutoLoad = enabled; }
+
+void Milkwave::RequestLyricsNow() { RequestLyricsResolution(); }
+
 void Milkwave::SetLyricsApiUrl(std::wstring apiUrl) {
   if (apiUrl.empty()) apiUrl = kDefaultLyricsApiUrl;
   std::lock_guard<std::mutex> lock(lyricsMutex);
@@ -110,7 +114,7 @@ void Milkwave::PollMediaInfo() {
             lastReportedPositionMs = currentPositionMs;
             hasTimeline = hasReportedTimeline || !currentArtist.empty() || !currentTitle.empty();
             timelineApproximate = !hasReportedTimeline;
-            if (lyricsTrackChanged) RequestLyricsResolution();
+            if (lyricsTrackChanged && m_bLyricsAutoLoad) RequestLyricsResolution();
           } else if (hasReportedTimeline) {
             currentDurationMs = std::max<std::int64_t>(0, timelineDurationMs);
             if (!hasReportedPosition || timelinePositionMs != lastReportedPositionMs) {
@@ -213,10 +217,10 @@ Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offs
 }
 
 std::wstring Milkwave::LyricsMonitorText(bool enabled, std::int64_t offsetMs) const {
+  // Status only — the current lyric line is exposed via CurrentLyricText().
+  (void)offsetMs;
   if (!enabled) return L"Lyrics off";
   std::lock_guard<std::mutex> lock(lyricsMutex);
-  const auto* line = lyricsDocument.CurrentLine(currentPositionMs + offsetMs);
-  if (line) return line->text;
   if (lyricsDocument.state == LyricsDocumentState::Loading) return L"Lyrics loading";
   if (lyricsDocument.state == LyricsDocumentState::Loaded) {
     if (lyricsDocument.lines.empty() && !lyricsDocument.plainText.empty()) return L"Lyrics missing timestamps";

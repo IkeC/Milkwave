@@ -811,6 +811,7 @@ class CPlugin : public CPluginShell {
 
   int m_nFramesSinceResize;
   bool m_lyricsDisplayEnabled = true;
+  bool m_bLyricsAutoLoad = true;
   bool m_bLyricsBurnIn = false;
   float m_lyricsPositionX = 0.50f;
   float m_lyricsPositionY = 0.82f;
@@ -825,6 +826,8 @@ class CPlugin : public CPluginShell {
   std::int64_t m_lyricsFadeDurationMs = 250;
   wchar_t m_lyricsApiUrl[512] = L"https://lrclib.net/api";
   LPD3DXFONT m_lyricsFontObject = NULL;
+  std::wstring m_lastSentLyricsStatus;  // last lyrics status pushed to the Remote
+  std::wstring m_lastSentLyricsLine;    // last current lyric line pushed to the Remote
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.

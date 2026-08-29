@@ -195,6 +195,8 @@ namespace MilkwaveRemote {
       ColBrightness,
       HueAuto,
       HueAutoSeconds,
+      LyricsActive,
+      LyricsAuto,
       CaptureScreenshot,
       VideoInput,
       SpoutInput,
@@ -1639,6 +1641,10 @@ namespace MilkwaveRemote {
         } else if (message.StartsWith("DEVICE=")) {
           string device = message.Substring(message.IndexOf("=") + 1);
           RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
+        } else if (message.StartsWith("LYRICSSTATUS=")) {
+          txtLyricsStatus.Text = message.Substring("LYRICSSTATUS=".Length);
+        } else if (message.StartsWith("LYRICSLINE=")) {
+          txtLyricsCurrentLine.Text = message.Substring("LYRICSLINE=".Length);
         } else if (message.StartsWith("SETTINGS|")) {
           string settingsInfo = message.Substring(message.IndexOf("|") + 1);
           string[] settingsParams = settingsInfo.Split('|');
@@ -1681,6 +1687,14 @@ namespace MilkwaveRemote {
                   if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal soft)) {
                     numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
                   }
+                } else if (key.Equals("LYRICSACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                  chkToggleLyrics.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LYRICSAUTO", StringComparison.OrdinalIgnoreCase)) {
+                  chkLyricsAuto.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LYRICSSTATUS", StringComparison.OrdinalIgnoreCase)) {
+                  txtLyricsStatus.Text = value;
+                } else if (key.Equals("LYRICSLINE", StringComparison.OrdinalIgnoreCase)) {
+                  txtLyricsCurrentLine.Text = value;
                 }
               } catch { }
             }
@@ -1913,6 +1927,10 @@ namespace MilkwaveRemote {
               message = "HUE_AUTO=" + (chkHueAuto.Checked ? "1" : "0");
             } else if (type == MessageType.HueAutoSeconds) {
               message = "HUE_AUTO_SECONDS=" + numSettingsHueAuto.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsActive) {
+              message = "LYRICS_ACTIVE=" + (chkToggleLyrics.Checked ? "1" : "0");
+            } else if (type == MessageType.LyricsAuto) {
+              message = "LYRICS_AUTO=" + (chkLyricsAuto.Checked ? "1" : "0");
             } else if (type == MessageType.ColSaturation) {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
@@ -5912,6 +5930,18 @@ namespace MilkwaveRemote {
     private void chkHueAuto_CheckedChanged(object sender, EventArgs e) {
       if (!updatingSettingsParams) {
         SendToMilkwaveVisualizer("", MessageType.HueAuto);
+      }
+    }
+
+    private void chkToggleLyrics_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsActive);
+      }
+    }
+
+    private void chkLyricsAuto_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsAuto);
       }
     }
 

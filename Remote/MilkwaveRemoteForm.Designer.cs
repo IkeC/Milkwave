@@ -3106,6 +3106,7 @@ namespace MilkwaveRemote
       numLyricsFontSize.TabIndex = 197;
       numLyricsFontSize.TextAlign = HorizontalAlignment.Center;
       numLyricsFontSize.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      toolTip1.SetToolTip(numLyricsFontSize, "Font size of the lyrics overlay (settings.ini: LyricsFontSize)");
       // 
       // cboLyricsFont
       // 
@@ -3118,6 +3119,7 @@ namespace MilkwaveRemote
       cboLyricsFont.Name = "cboLyricsFont";
       cboLyricsFont.Size = new Size(267, 23);
       cboLyricsFont.TabIndex = 195;
+      toolTip1.SetToolTip(cboLyricsFont, "Font face used for the lyrics overlay (settings.ini: LyricsFont)");
       // 
       // lblLyricsStatus
       // 
@@ -3142,6 +3144,8 @@ namespace MilkwaveRemote
       chkToggleLyrics.TextAlign = ContentAlignment.MiddleCenter;
       chkToggleLyrics.TextImageRelation = TextImageRelation.ImageAboveText;
       chkToggleLyrics.UseVisualStyleBackColor = true;
+      chkToggleLyrics.CheckedChanged += chkToggleLyrics_CheckedChanged;
+      toolTip1.SetToolTip(chkToggleLyrics, "Show or hide the lyrics overlay (settings.ini: LyricsEnabled)");
       // 
       // txtLyricsStatus
       // 
@@ -3151,6 +3155,7 @@ namespace MilkwaveRemote
       txtLyricsStatus.ReadOnly = true;
       txtLyricsStatus.Size = new Size(376, 23);
       txtLyricsStatus.TabIndex = 122;
+      toolTip1.SetToolTip(txtLyricsStatus, "Current lyrics status reported by the visualizer (state or the active lyric line)");
       // 
       // lblLyricsFile
       // 
@@ -3171,6 +3176,7 @@ namespace MilkwaveRemote
       btnLoadLyricsFile.TabIndex = 126;
       btnLoadLyricsFile.Text = "Load";
       btnLoadLyricsFile.UseVisualStyleBackColor = true;
+      toolTip1.SetToolTip(btnLoadLyricsFile, "Load a lyrics (.lrc) file from disk");
       // 
       // btnEditLyricsFile
       // 
@@ -3182,6 +3188,7 @@ namespace MilkwaveRemote
       btnEditLyricsFile.TabIndex = 127;
       btnEditLyricsFile.Text = "Edit";
       btnEditLyricsFile.UseVisualStyleBackColor = true;
+      toolTip1.SetToolTip(btnEditLyricsFile, "Edit the current lyrics file in the lyrics editor");
       // 
       // label15
       // 
@@ -4600,6 +4607,7 @@ namespace MilkwaveRemote
       numLyricsMaxwidth.Size = new Size(56, 23);
       numLyricsMaxwidth.TabIndex = 216;
       numLyricsMaxwidth.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numLyricsMaxwidth, "Maximum width of the lyrics block as a ratio of the canvas width (settings.ini: LyricsMaxWidth)");
       // 
       // lblLyricsMaxwidth
       // 
@@ -4619,6 +4627,7 @@ namespace MilkwaveRemote
       numLyricsShadow.Size = new Size(56, 23);
       numLyricsShadow.TabIndex = 214;
       numLyricsShadow.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numLyricsShadow, "Shadow offset of the lyrics text, 0 to 16 px (settings.ini: LyricsShadow)");
       // 
       // lblLyricsShadow
       // 
@@ -4640,6 +4649,7 @@ namespace MilkwaveRemote
       numLyricsBurn.Size = new Size(56, 23);
       numLyricsBurn.TabIndex = 212;
       numLyricsBurn.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numLyricsBurn, "Burn-in time for the lyrics into the visualizer texture (nLyricsBurntime)");
       // 
       // lblLyricsBurn
       // 
@@ -4662,6 +4672,7 @@ namespace MilkwaveRemote
       numLyricsZoom.Size = new Size(56, 23);
       numLyricsZoom.TabIndex = 210;
       numLyricsZoom.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numLyricsZoom, "Zoom factor applied to the lyrics overlay");
       // 
       // lblLyricsZoom
       // 
@@ -4692,6 +4703,7 @@ namespace MilkwaveRemote
       numLyricsOffsetY.Size = new Size(56, 23);
       numLyricsOffsetY.TabIndex = 207;
       numLyricsOffsetY.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numLyricsOffsetY, "Extra vertical offset of the lyrics overlay (seconds of timing offset)");
       // 
       // numLyricsOffsetX
       // 
@@ -4704,6 +4716,7 @@ namespace MilkwaveRemote
       numLyricsOffsetX.Size = new Size(56, 23);
       numLyricsOffsetX.TabIndex = 206;
       numLyricsOffsetX.TextAlign = HorizontalAlignment.Center;
+      toolTip1.SetToolTip(numLyricsOffsetX, "Extra horizontal offset of the lyrics overlay (seconds of timing offset)");
       // 
       // lblLyricsOffsetX
       // 
@@ -4728,6 +4741,8 @@ namespace MilkwaveRemote
       chkLyricsAuto.TextAlign = ContentAlignment.MiddleCenter;
       chkLyricsAuto.TextImageRelation = TextImageRelation.ImageAboveText;
       chkLyricsAuto.UseVisualStyleBackColor = true;
+      chkLyricsAuto.CheckedChanged += chkLyricsAuto_CheckedChanged;
+      toolTip1.SetToolTip(chkLyricsAuto, "Automatically load/retrieve lyrics for the current track (settings.ini: LyricsAutoLoad)");
       // 
       // lblLyricsCurrentLine
       // 
@@ -4746,6 +4761,7 @@ namespace MilkwaveRemote
       txtLyricsCurrentLine.ReadOnly = true;
       txtLyricsCurrentLine.Size = new Size(376, 23);
       txtLyricsCurrentLine.TabIndex = 203;
+      toolTip1.SetToolTip(txtLyricsCurrentLine, "The lyric line currently being shown by the visualizer");
       // 
       // chkLyricsFontItalic
       // 
@@ -4761,6 +4777,7 @@ namespace MilkwaveRemote
       chkLyricsFontItalic.TextAlign = ContentAlignment.MiddleCenter;
       chkLyricsFontItalic.TextImageRelation = TextImageRelation.ImageAboveText;
       chkLyricsFontItalic.UseVisualStyleBackColor = true;
+      toolTip1.SetToolTip(chkLyricsFontItalic, "Italic lyrics font");
       // 
       // chkLyricsFontBold
       // 
@@ -4776,6 +4793,7 @@ namespace MilkwaveRemote
       chkLyricsFontBold.TextAlign = ContentAlignment.MiddleCenter;
       chkLyricsFontBold.TextImageRelation = TextImageRelation.ImageAboveText;
       chkLyricsFontBold.UseVisualStyleBackColor = true;
+      toolTip1.SetToolTip(chkLyricsFontBold, "Bold lyrics font");
       // 
       // btnLyricsRestart
       // 
@@ -4787,6 +4805,7 @@ namespace MilkwaveRemote
       btnLyricsRestart.TabIndex = 194;
       btnLyricsRestart.Text = "Restart";
       btnLyricsRestart.UseVisualStyleBackColor = true;
+      toolTip1.SetToolTip(btnLyricsRestart, "Restart lyrics retrieval for the current track");
       // 
       // lblLyricsPosY
       // 
@@ -4809,6 +4828,7 @@ namespace MilkwaveRemote
       numLyricsPosY.TabIndex = 192;
       numLyricsPosY.TextAlign = HorizontalAlignment.Center;
       numLyricsPosY.Value = new decimal(new int[] { 5, 0, 0, 65536 });
+      toolTip1.SetToolTip(numLyricsPosY, "Vertical position of the lyrics overlay, 0 (top) to 1 (bottom) (settings.ini: LyricsPositionY)");
       // 
       // numLyricsPosX
       // 
@@ -4822,6 +4842,7 @@ namespace MilkwaveRemote
       numLyricsPosX.TabIndex = 191;
       numLyricsPosX.TextAlign = HorizontalAlignment.Center;
       numLyricsPosX.Value = new decimal(new int[] { 50, 0, 0, 131072 });
+      toolTip1.SetToolTip(numLyricsPosX, "Horizontal position of the lyrics overlay, 0 (left) to 1 (right) (settings.ini: LyricsPositionX)");
       // 
       // lblLyricsPosX
       // 
@@ -4840,6 +4861,7 @@ namespace MilkwaveRemote
       txtLyricsFile.ReadOnly = true;
       txtLyricsFile.Size = new Size(376, 23);
       txtLyricsFile.TabIndex = 125;
+      toolTip1.SetToolTip(txtLyricsFile, "Path of the lyrics file in use");
       // 
       // tabFonts
       // 
