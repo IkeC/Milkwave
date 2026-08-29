@@ -828,6 +828,7 @@ class CPlugin : public CPluginShell {
   LPD3DXFONT m_lyricsFontObject = NULL;
   std::wstring m_lastSentLyricsStatus;  // last lyrics status pushed to the Remote
   std::wstring m_lastSentLyricsLine;    // last current lyric line pushed to the Remote
+  std::wstring m_lastSentLyricsFile;    // last lyrics file path pushed to the Remote
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.

@@ -733,6 +733,13 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       if (autoLoad) ::milkwave.RequestLyricsNow();  // load the current track now
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
+  } else if (wcsncmp(sMessage, L"LYRICS_LOAD=", 12) == 0) {
+    std::wstring path(sMessage + 12);
+    if (!path.empty() && ::milkwave.LoadLyricsFromFile(path)) {
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_RESTART", 14) == 0) {
+    ::milkwave.ResetTimeline();
   } else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
     std::wstring message(sMessage + 17);
     size_t pos = message.find(L'x');

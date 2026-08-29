@@ -1397,19 +1397,24 @@ void CPlugin::SendPresetWaveInfoToMilkwaveRemote() {
 
 void CPlugin::SendSettingsInfoToMilkwaveRemote() {
   // The SETTINGS| message uses '|' as the key/value delimiter, so any '|' in
-  // the lyrics status or current line text must be sanitized.
+  // the lyrics status, current line or file path must be sanitized.
   std::wstring lyricsStatus = ::milkwave.LyricsMonitorText(m_lyricsDisplayEnabled, m_lyricsOffsetMs);
   std::wstring lyricsLine = m_lyricsDisplayEnabled ? ::milkwave.CurrentLyricText(m_lyricsOffsetMs) : L"";
+  std::wstring lyricsFile = ::milkwave.CurrentLyricsFilePath();
   for (auto& ch : lyricsStatus) {
     if (ch == L'|') ch = L' ';
   }
   for (auto& ch : lyricsLine) {
     if (ch == L'|') ch = L' ';
   }
+  for (auto& ch : lyricsFile) {
+    if (ch == L'|') ch = L' ';
+  }
   m_lastSentLyricsStatus = lyricsStatus;
   m_lastSentLyricsLine = lyricsLine;
+  m_lastSentLyricsFile = lyricsFile;
 
-  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0") + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0") + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth) + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight) + L"|QUALITY=" + std::to_wstring(m_fRenderQuality) + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0") + L"|HUE=" + std::to_wstring(m_ColShiftHue) + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0") + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1") + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0") + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0") + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f)) + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f)) + L"|EQATTACK=" + std::to_wstring(m_fEQAttackGlobal) + L"|EQDECAY=" + std::to_wstring(m_fEQDecayGlobal) + L"|EQBOOST=" + std::to_wstring(m_fEQBoostGlobal) + L"|LYRICSACTIVE=" + std::wstring(m_lyricsDisplayEnabled ? L"1" : L"0") + L"|LYRICSAUTO=" + std::wstring(m_bLyricsAutoLoad ? L"1" : L"0") + L"|LYRICSSTATUS=" + lyricsStatus + L"|LYRICSLINE=" + lyricsLine;
+  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0") + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0") + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth) + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight) + L"|QUALITY=" + std::to_wstring(m_fRenderQuality) + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0") + L"|HUE=" + std::to_wstring(m_ColShiftHue) + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0") + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1") + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0") + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0") + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f)) + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f)) + L"|EQATTACK=" + std::to_wstring(m_fEQAttackGlobal) + L"|EQDECAY=" + std::to_wstring(m_fEQDecayGlobal) + L"|EQBOOST=" + std::to_wstring(m_fEQBoostGlobal) + L"|LYRICSACTIVE=" + std::wstring(m_lyricsDisplayEnabled ? L"1" : L"0") + L"|LYRICSAUTO=" + std::wstring(m_bLyricsAutoLoad ? L"1" : L"0") + L"|LYRICSSTATUS=" + lyricsStatus + L"|LYRICSLINE=" + lyricsLine + L"|LYRICSFILE=" + lyricsFile;
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 

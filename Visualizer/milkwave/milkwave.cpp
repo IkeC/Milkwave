@@ -48,6 +48,27 @@ void Milkwave::SetLyricsAutoLoad(bool enabled) { m_bLyricsAutoLoad = enabled; }
 
 void Milkwave::RequestLyricsNow() { RequestLyricsResolution(); }
 
+bool Milkwave::LoadLyricsFromFile(const std::filesystem::path& path) {
+  if (path.empty()) return false;
+  auto document = ::LoadLyricsFile(path);
+  if (document.state != LyricsDocumentState::Loaded) return false;
+
+  std::lock_guard<std::mutex> lock(lyricsMutex);
+  // Bump the generation so any in-flight auto-resolution for a stale track is
+  // discarded and doesn't overwrite the manually loaded lyrics.
+  ++lyricsRequestGeneration;
+  pendingLyricsTrack.reset();
+  lyricsDocument = std::move(document);
+  currentLyricsFile = path;
+  LogInfo(L"Lyrics loaded from file: " + path.wstring());
+  return true;
+}
+
+std::wstring Milkwave::CurrentLyricsFilePath() const {
+  std::lock_guard<std::mutex> lock(lyricsMutex);
+  return currentLyricsFile.wstring();
+}
+
 void Milkwave::SetLyricsApiUrl(std::wstring apiUrl) {
   if (apiUrl.empty()) apiUrl = kDefaultLyricsApiUrl;
   std::lock_guard<std::mutex> lock(lyricsMutex);
@@ -61,6 +82,18 @@ void Milkwave::UpdateCurrentPosition(std::chrono::steady_clock::time_point curre
   currentPositionMs = timelineBasePositionMs + elapsedMs;
   if (currentPositionMs < 0) currentPositionMs = 0;
   if (currentDurationMs > 0 && currentPositionMs > currentDurationMs) currentPositionMs = currentDurationMs;
+}
+
+void Milkwave::ResetTimeline() {
+  // Reset the internal timeline to 0 so the lyrics restart from the beginning.
+  // This is mainly for players that don't properly report a timecode: the
+  // position then counts up from zero using the internal clock. Players that
+  // do report a timeline will re-sync on the next poll.
+  currentPositionMs = 0;
+  timelineBasePositionMs = 0;
+  timelineBaseTime = std::chrono::steady_clock::now();
+  lastReportedPositionMs = 0;
+  hasReportedPosition = false;
 }
 
 void Milkwave::PollMediaInfo() {
@@ -235,6 +268,7 @@ void Milkwave::RequestLyricsResolution() {
   ++lyricsRequestGeneration;
   pendingLyricsTrack.reset();
   lyricsDocument = LyricsDocument{};
+  currentLyricsFile.clear();
   if (track.artist.empty() && track.title.empty()) return;
   lyricsDocument.state = LyricsDocumentState::Loading;
   pendingLyricsTrack = std::move(track);
@@ -280,6 +314,13 @@ void Milkwave::LyricsWorkerLoop() {
       const auto cacheSaved = resolution.cacheSaved;
       const auto cacheExists = resolution.cacheExists;
       const auto cacheSaveError = resolution.cacheSaveError;
+      // Remember the backing file when one actually exists on disk (a locally
+      // found file, or an LRCLIB result that was cached).
+      if (resolution.source == LyricsSource::Local || resolution.cacheExists) {
+        currentLyricsFile = resolution.cachePath;
+      } else {
+        currentLyricsFile.clear();
+      }
       lyricsDocument = std::move(resolution.document);
       const wchar_t* sourceText = resolution.source == LyricsSource::Local ? L"local" :
                                   resolution.source == LyricsSource::Lrclib ? L"lrclib" : L"none";

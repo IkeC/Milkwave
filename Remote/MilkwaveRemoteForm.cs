@@ -30,6 +30,7 @@ namespace MilkwaveRemote {
 
     private bool updatingWaveParams = false;
     private bool updatingSettingsParams = false;
+    private string currentLyricsFilePath = "";  // full path of the lyrics file in use
     private uint lastControllerButtons = 0;
     private Dictionary<int, string> controllerConfig = new();
 
@@ -197,6 +198,8 @@ namespace MilkwaveRemote {
       HueAutoSeconds,
       LyricsActive,
       LyricsAuto,
+      LyricsLoad,
+      LyricsRestart,
       CaptureScreenshot,
       VideoInput,
       SpoutInput,
@@ -1645,6 +1648,8 @@ namespace MilkwaveRemote {
           txtLyricsStatus.Text = message.Substring("LYRICSSTATUS=".Length);
         } else if (message.StartsWith("LYRICSLINE=")) {
           txtLyricsCurrentLine.Text = message.Substring("LYRICSLINE=".Length);
+        } else if (message.StartsWith("LYRICSFILE=")) {
+          SetCurrentLyricsFile(message.Substring("LYRICSFILE=".Length));
         } else if (message.StartsWith("SETTINGS|")) {
           string settingsInfo = message.Substring(message.IndexOf("|") + 1);
           string[] settingsParams = settingsInfo.Split('|');
@@ -1695,6 +1700,8 @@ namespace MilkwaveRemote {
                   txtLyricsStatus.Text = value;
                 } else if (key.Equals("LYRICSLINE", StringComparison.OrdinalIgnoreCase)) {
                   txtLyricsCurrentLine.Text = value;
+                } else if (key.Equals("LYRICSFILE", StringComparison.OrdinalIgnoreCase)) {
+                  SetCurrentLyricsFile(value);
                 }
               } catch { }
             }
@@ -1931,6 +1938,10 @@ namespace MilkwaveRemote {
               message = "LYRICS_ACTIVE=" + (chkToggleLyrics.Checked ? "1" : "0");
             } else if (type == MessageType.LyricsAuto) {
               message = "LYRICS_AUTO=" + (chkLyricsAuto.Checked ? "1" : "0");
+            } else if (type == MessageType.LyricsLoad) {
+              message = "LYRICS_LOAD=" + messageToSend;
+            } else if (type == MessageType.LyricsRestart) {
+              message = "LYRICS_RESTART";
             } else if (type == MessageType.ColSaturation) {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
@@ -5942,6 +5953,46 @@ namespace MilkwaveRemote {
     private void chkLyricsAuto_CheckedChanged(object sender, EventArgs e) {
       if (!updatingSettingsParams) {
         SendToMilkwaveVisualizer("", MessageType.LyricsAuto);
+      }
+    }
+
+    private void SetCurrentLyricsFile(string path) {
+      currentLyricsFilePath = path ?? "";
+      txtLyricsFile.Text = string.IsNullOrEmpty(currentLyricsFilePath) ? "" : Path.GetFileName(currentLyricsFilePath);
+      toolTip1.SetToolTip(txtLyricsFile, string.IsNullOrEmpty(currentLyricsFilePath) ? "No lyrics file loaded" : currentLyricsFilePath);
+    }
+
+    private void btnLoadLyricsFile_Click(object sender, EventArgs e) {
+      using OpenFileDialog dialog = new OpenFileDialog {
+        Title = "Load lyrics file",
+        Filter = "Lyrics files (*.lrc;*.txt)|*.lrc;*.txt|All files (*.*)|*.*",
+        InitialDirectory = string.IsNullOrEmpty(currentLyricsFilePath) ? BaseDir : Path.GetDirectoryName(currentLyricsFilePath) ?? BaseDir
+      };
+      if (dialog.ShowDialog(this) == DialogResult.OK) {
+        SetCurrentLyricsFile(dialog.FileName);
+        SendToMilkwaveVisualizer(dialog.FileName, MessageType.LyricsLoad);
+        SetStatusText($"Loaded lyrics file '{Path.GetFileName(dialog.FileName)}'");
+      }
+    }
+
+    private void btnLyricsRestart_Click(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.LyricsRestart);
+      SetStatusText("Restarted the lyrics timeline");
+    }
+
+    private void btnEditLyricsFile_Click(object sender, EventArgs e) {
+      if (string.IsNullOrEmpty(currentLyricsFilePath)) {
+        SetStatusText("No lyrics file loaded to edit");
+        return;
+      }
+      if (File.Exists(currentLyricsFilePath)) {
+        try {
+          Process.Start(new ProcessStartInfo { FileName = currentLyricsFilePath, UseShellExecute = true });
+        } catch (Exception ex) {
+          SetStatusText($"Error opening lyrics file: {ex.Message}");
+        }
+      } else {
+        SetStatusText($"Lyrics file not found: {currentLyricsFilePath}");
       }
     }
 

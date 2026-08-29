@@ -3176,7 +3176,8 @@ namespace MilkwaveRemote
       btnLoadLyricsFile.TabIndex = 126;
       btnLoadLyricsFile.Text = "Load";
       btnLoadLyricsFile.UseVisualStyleBackColor = true;
-      toolTip1.SetToolTip(btnLoadLyricsFile, "Load a lyrics (.lrc) file from disk");
+      btnLoadLyricsFile.Click += btnLoadLyricsFile_Click;
+      toolTip1.SetToolTip(btnLoadLyricsFile, "Choose a custom lyrics (.lrc) file to load into the visualizer");
       // 
       // btnEditLyricsFile
       // 
@@ -3188,7 +3189,8 @@ namespace MilkwaveRemote
       btnEditLyricsFile.TabIndex = 127;
       btnEditLyricsFile.Text = "Edit";
       btnEditLyricsFile.UseVisualStyleBackColor = true;
-      toolTip1.SetToolTip(btnEditLyricsFile, "Edit the current lyrics file in the lyrics editor");
+      btnEditLyricsFile.Click += btnEditLyricsFile_Click;
+      toolTip1.SetToolTip(btnEditLyricsFile, "Open the current lyrics file in the associated Windows editor");
       // 
       // label15
       // 
@@ -4805,7 +4807,8 @@ namespace MilkwaveRemote
       btnLyricsRestart.TabIndex = 194;
       btnLyricsRestart.Text = "Restart";
       btnLyricsRestart.UseVisualStyleBackColor = true;
-      toolTip1.SetToolTip(btnLyricsRestart, "Restart lyrics retrieval for the current track");
+      btnLyricsRestart.Click += btnLyricsRestart_Click;
+      toolTip1.SetToolTip(btnLyricsRestart, "Reset the visualizer timeline to 0 to restart the lyrics from the beginning (for players that don't report a timecode)");
       // 
       // lblLyricsPosY
       // 
@@ -4861,7 +4864,7 @@ namespace MilkwaveRemote
       txtLyricsFile.ReadOnly = true;
       txtLyricsFile.Size = new Size(376, 23);
       txtLyricsFile.TabIndex = 125;
-      toolTip1.SetToolTip(txtLyricsFile, "Path of the lyrics file in use");
+      toolTip1.SetToolTip(txtLyricsFile, "Filename of the lyrics file in use (full path shown on hover); Edit opens it in the associated editor");
       // 
       // tabFonts
       // 
