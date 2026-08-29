@@ -4877,6 +4877,7 @@ namespace MilkwaveRemote
       lblLyricsOffset.TabIndex = 220;
       lblLyricsOffset.Text = "Offset";
       lblLyricsOffset.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsOffset.DoubleClick += lblLyricsOffset_DoubleClick;
       // 
       // lblLyricsBurn
       // 
@@ -4886,6 +4887,7 @@ namespace MilkwaveRemote
       lblLyricsBurn.TabIndex = 217;
       lblLyricsBurn.Text = "Burn";
       lblLyricsBurn.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsBurn.DoubleClick += lblLyricsBurn_DoubleClick;
       // 
       // lblLyricsWidth
       // 
@@ -4895,6 +4897,7 @@ namespace MilkwaveRemote
       lblLyricsWidth.TabIndex = 215;
       lblLyricsWidth.Text = "Width";
       lblLyricsWidth.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsWidth.DoubleClick += lblLyricsWidth_DoubleClick;
       // 
       // lblLyricsShadow
       // 
@@ -4904,6 +4907,7 @@ namespace MilkwaveRemote
       lblLyricsShadow.TabIndex = 213;
       lblLyricsShadow.Text = "Shadow";
       lblLyricsShadow.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsShadow.DoubleClick += lblLyricsShadow_DoubleClick;
       // 
       // lblLyricsFade
       // 
@@ -4913,6 +4917,7 @@ namespace MilkwaveRemote
       lblLyricsFade.TabIndex = 211;
       lblLyricsFade.Text = "Fade";
       lblLyricsFade.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsFade.DoubleClick += lblLyricsFade_DoubleClick;
       // 
       // lblLyricsZoom
       // 
@@ -4922,6 +4927,7 @@ namespace MilkwaveRemote
       lblLyricsZoom.TabIndex = 209;
       lblLyricsZoom.Text = "Zoom";
       lblLyricsZoom.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsZoom.DoubleClick += lblLyricsZoom_DoubleClick;
       // 
       // lblLyricsStartY
       // 
@@ -4931,6 +4937,7 @@ namespace MilkwaveRemote
       lblLyricsStartY.TabIndex = 208;
       lblLyricsStartY.Text = "Start Y";
       lblLyricsStartY.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsStartY.DoubleClick += lblLyricsStartY_DoubleClick;
       // 
       // lblLyricsStartX
       // 
@@ -4940,6 +4947,7 @@ namespace MilkwaveRemote
       lblLyricsStartX.TabIndex = 205;
       lblLyricsStartX.Text = "Start X";
       lblLyricsStartX.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsStartX.DoubleClick += lblLyricsStartX_DoubleClick;
       // 
       // lblLyricsCurrentLine
       // 
@@ -4958,6 +4966,7 @@ namespace MilkwaveRemote
       lblLyricsPosY.TabIndex = 193;
       lblLyricsPosY.Text = "Pos Y";
       lblLyricsPosY.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsPosY.DoubleClick += lblLyricsPosY_DoubleClick;
       // 
       // lblLyricsPosX
       // 
@@ -4967,6 +4976,7 @@ namespace MilkwaveRemote
       lblLyricsPosX.TabIndex = 190;
       lblLyricsPosX.Text = "Pos X";
       lblLyricsPosX.TextAlign = ContentAlignment.MiddleRight;
+      lblLyricsPosX.DoubleClick += lblLyricsPosX_DoubleClick;
       // 
       // tabFonts
       // 

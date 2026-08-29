@@ -6213,6 +6213,24 @@ namespace MilkwaveRemote {
       }
     }
 
+    // Double-clicking any of the labels in the two bottom layout rows resets
+    // the accompanying input field to the setting's default value.
+    private void ResetLyricsNumeric(NumericUpDown numeric, decimal value) {
+      if (numeric == null) return;
+      numeric.Value = Math.Clamp(value, numeric.Minimum, numeric.Maximum);
+    }
+
+    private void lblLyricsPosX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosX, 0.5m); }
+    private void lblLyricsPosY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosY, 0.5m); }
+    private void lblLyricsStartX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartX, 0.5m); }
+    private void lblLyricsStartY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartY, 0.5m); }
+    private void lblLyricsZoom_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsZoom, 0.95m); }
+    private void lblLyricsFade_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsFade, 0.15m); }
+    private void lblLyricsWidth_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsWidth, 0.82m); }
+    private void lblLyricsBurn_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurn, 0m); }
+    private void lblLyricsShadow_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsShadow, 2m); }
+    private void lblLyricsOffset_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsTimeOffset, 0m); }
+
     private void btnEditLyricsFile_Click(object sender, EventArgs e) {
       if (string.IsNullOrEmpty(currentLyricsFilePath)) {
         SetStatusText("No lyrics file loaded to edit");

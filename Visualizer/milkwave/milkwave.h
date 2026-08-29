@@ -107,6 +107,13 @@ class Milkwave {
   bool stopLyricsWorker = false;
   std::thread lyricsWorker;
 
+  // Monotonic floor for the displayed lyric line: prevents brief "jump back"
+  // flickers caused by SMTC timeline drift. Only large backward movements
+  // (user seeks, track restart, Restart button) move the line backward.
+  mutable std::int64_t m_lastShownLyricsPositionMs = 0;
+  mutable bool m_hasShownLyricsPosition = false;
+  std::int64_t EffectiveLyricsPosition(std::int64_t adjustedPositionMs) const;
+
   void WriteLog(const wchar_t* level, const std::wstring& message);
 };
 

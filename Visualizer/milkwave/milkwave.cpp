@@ -7,6 +7,10 @@ namespace {
 
 constexpr std::int64_t kTimelineBackwardJitterToleranceMs = 500;
 constexpr std::int64_t ASSUMED_TIMELINE_START_OFFSET_MS = 500;
+// How far backward the lyric position may move (SMTC timeline drift) before we
+// treat it as a real seek and let the displayed line go back. Prevents the
+// lyrics from briefly flickering back to a previous line.
+constexpr std::int64_t kLyricsBackwardJitterToleranceMs = 1000;
 }
 
 Milkwave::Milkwave() {}
@@ -60,6 +64,8 @@ bool Milkwave::LoadLyricsFromFile(const std::filesystem::path& path) {
   pendingLyricsTrack.reset();
   lyricsDocument = std::move(document);
   currentLyricsFile = path;
+  m_lastShownLyricsPositionMs = 0;
+  m_hasShownLyricsPosition = false;
   LogInfo(L"Lyrics loaded from file: " + path.wstring());
   return true;
 }
@@ -94,6 +100,8 @@ void Milkwave::ResetTimeline() {
   timelineBaseTime = std::chrono::steady_clock::now();
   lastReportedPositionMs = 0;
   hasReportedPosition = false;
+  m_lastShownLyricsPositionMs = 0;
+  m_hasShownLyricsPosition = false;
 }
 
 void Milkwave::PollMediaInfo() {
@@ -218,28 +226,53 @@ void Milkwave::PollMediaInfo() {
   }
 }
 
+std::int64_t Milkwave::EffectiveLyricsPosition(std::int64_t adjustedPositionMs) const {
+  if (!m_hasShownLyricsPosition) {
+    m_lastShownLyricsPositionMs = adjustedPositionMs;
+    m_hasShownLyricsPosition = true;
+    return adjustedPositionMs;
+  }
+  const auto backwardMs = m_lastShownLyricsPositionMs - adjustedPositionMs;
+  if (backwardMs > kLyricsBackwardJitterToleranceMs) {
+    // Genuine backward movement (user seek, track restart, or the Restart
+    // button) — follow it and reset the floor.
+    m_lastShownLyricsPositionMs = adjustedPositionMs;
+    return adjustedPositionMs;
+  }
+  if (backwardMs > 0) {
+    // Small backward jitter (timeline/SMTC drift) — hold the forward line so
+    // the lyrics never briefly flicker back to a previous line.
+    return m_lastShownLyricsPositionMs;
+  }
+  // Forward (or equal) movement.
+  m_lastShownLyricsPositionMs = adjustedPositionMs;
+  return adjustedPositionMs;
+}
+
 std::wstring Milkwave::CurrentLyricText(std::int64_t offsetMs) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
-  const auto* line = lyricsDocument.CurrentLine(currentPositionMs + offsetMs);
+  const auto effectivePositionMs = EffectiveLyricsPosition(currentPositionMs + offsetMs);
+  const auto* line = lyricsDocument.CurrentLine(effectivePositionMs);
   return line ? line->text : L"";
 }
 
 Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offsetMs,
                                                                float fadeSeconds) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
-  const auto adjustedPositionMs = currentPositionMs + offsetMs;
   if (lyricsDocument.lines.empty()) return {};
-  const auto* currentLine = lyricsDocument.CurrentLine(adjustedPositionMs);
+  const auto adjustedPositionMs = currentPositionMs + offsetMs;
+  const auto effectivePositionMs = EffectiveLyricsPosition(adjustedPositionMs);
+  const auto* currentLine = lyricsDocument.CurrentLine(effectivePositionMs);
   if (!currentLine) return {};
 
   float opacity = 1.0f;
   const auto duration = std::max<std::int64_t>(0, static_cast<std::int64_t>(fadeSeconds * 1000.0f));
   if (duration > 0) {
-    const auto sinceStart = adjustedPositionMs - currentLine->startMs;
+    const auto sinceStart = effectivePositionMs - currentLine->startMs;
     opacity = (std::min)(opacity, static_cast<float>(sinceStart) / static_cast<float>(duration));
     for (const auto& line : lyricsDocument.lines) {
       if (line.startMs > currentLine->startMs) {
-        const auto untilNext = line.startMs - adjustedPositionMs;
+        const auto untilNext = line.startMs - effectivePositionMs;
         if (untilNext < duration)
           opacity = (std::min)(opacity, static_cast<float>(untilNext) / static_cast<float>(duration));
         break;
@@ -269,6 +302,8 @@ void Milkwave::RequestLyricsResolution() {
   pendingLyricsTrack.reset();
   lyricsDocument = LyricsDocument{};
   currentLyricsFile.clear();
+  m_lastShownLyricsPositionMs = 0;
+  m_hasShownLyricsPosition = false;
   if (track.artist.empty() && track.title.empty()) return;
   lyricsDocument.state = LyricsDocumentState::Loading;
   pendingLyricsTrack = std::move(track);
@@ -322,6 +357,8 @@ void Milkwave::LyricsWorkerLoop() {
         currentLyricsFile.clear();
       }
       lyricsDocument = std::move(resolution.document);
+      m_lastShownLyricsPositionMs = 0;
+      m_hasShownLyricsPosition = false;
       const wchar_t* sourceText = resolution.source == LyricsSource::Local ? L"local" :
                                   resolution.source == LyricsSource::Lrclib ? L"lrclib" : L"none";
       std::wstring message = L"Lyrics result: " + track.artist + L" - " + track.title + L" state=" + stateText +
