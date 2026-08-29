@@ -843,6 +843,20 @@ class CPlugin : public CPluginShell {
   std::wstring m_burnLyricsPrevText;    // previous line burning out in the texture
   double m_burnLyricsPrevChangeTime = -1.0;
 
+  // Stable word-wrap: lines are laid out ONCE at the target (end-of-fade)
+  // font size with m_lyricsMeasureFontObject, then rendered each frame at the
+  // animated (zoom) size, so the line breaks never change while fading.
+  LPD3DXFONT m_lyricsMeasureFontObject = NULL;  // font at the target scale, used only for wrap measurement
+  float m_lyricsMeasureFontScale = -1.0f;       // target scale used to build m_lyricsMeasureFontObject
+  std::vector<std::wstring> m_lyricsWrapCacheLines;  // cached wrapped lines (target layout)
+  std::wstring m_lyricsWrapCacheText;                 // text the wrap cache was built for
+  int m_lyricsWrapCacheWidth = -1;                    // wrap width (px) the wrap cache was built for
+  float m_lyricsWrapCacheScale = -1.0f;               // target scale the wrap cache was built for
+  void RecreateLyricsMeasureFont(float targetScale = -1.0f);
+  void InvalidateLyricsWrapCache();
+  void WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3DXFONT measureFont,
+                      std::vector<std::wstring>& outLines) const;
+
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.
   char m_szDefaultWarpVShaderText[32768];  // THIS HAS CHAR 13/10 CONVERTED TO LINEFEED_CONTROL_CHAR

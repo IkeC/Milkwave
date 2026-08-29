@@ -1252,6 +1252,12 @@ void CPlugin::RenderFrame(int bRedraw) {
   // =========================================================
 
   // =========================================================
+  // LYRICS overlay - drawn onto the backbuffer here so the lyrics appear in
+  // both the on-screen output AND the Spout sender (which grabs the
+  // backbuffer just below).
+  RenderLyricsOverlay(false);
+
+  // =========================================================
   //
   // SPOUT output
   //

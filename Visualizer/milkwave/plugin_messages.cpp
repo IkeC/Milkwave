@@ -746,6 +746,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       lstrcpyW(g_plugin.m_lyricsFont, face.c_str());
       WritePrivateProfileStringW(L"Lyrics", L"LyricsFont", g_plugin.m_lyricsFont, g_plugin.GetConfigIniFile());
       g_plugin.RecreateLyricsFont();
+      g_plugin.RecreateLyricsMeasureFont();
+      g_plugin.InvalidateLyricsWrapCache();
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
   } else if (wcsncmp(sMessage, L"LYRICS_FONTSIZE=", 16) == 0) {
@@ -757,6 +759,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         g_plugin.m_lyricsFontSize = size;
         WritePrivateProfileIntW(size, L"LyricsFontSize", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.RecreateLyricsFont();
+        g_plugin.RecreateLyricsMeasureFont();
+        g_plugin.InvalidateLyricsWrapCache();
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
     } catch (...) {
@@ -767,6 +771,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.m_lyricsFontBold = bold;
       WritePrivateProfileIntW(bold, L"LyricsFontBold", g_plugin.GetConfigIniFile(), L"Lyrics");
       g_plugin.RecreateLyricsFont();
+      g_plugin.RecreateLyricsMeasureFont();
+      g_plugin.InvalidateLyricsWrapCache();
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
   } else if (wcsncmp(sMessage, L"LYRICS_FONTITALIC=", 18) == 0) {
@@ -775,6 +781,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.m_lyricsFontItalic = italic;
       WritePrivateProfileIntW(italic, L"LyricsFontItalic", g_plugin.GetConfigIniFile(), L"Lyrics");
       g_plugin.RecreateLyricsFont();
+      g_plugin.RecreateLyricsMeasureFont();
+      g_plugin.InvalidateLyricsWrapCache();
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
   } else if (wcsncmp(sMessage, L"LYRICS_FONTAA=", 14) == 0) {
@@ -783,6 +791,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.m_lyricsFontAA = aa;
       WritePrivateProfileIntW(aa, L"LyricsFontAA", g_plugin.GetConfigIniFile(), L"Lyrics");
       g_plugin.RecreateLyricsFont();
+      g_plugin.RecreateLyricsMeasureFont();
+      g_plugin.InvalidateLyricsWrapCache();
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
   } else if (wcsncmp(sMessage, L"LYRICS_COLOR=", 13) == 0) {
@@ -841,9 +851,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
     } catch (...) {}
-  } else if (wcsncmp(sMessage, L"LYRICS_ZOOM=", 13) == 0) {
+  } else if (wcsncmp(sMessage, L"LYRICS_ZOOM=", 12) == 0) {
     try {
-      float v = std::stof(sMessage + 13);
+      float v = std::stof(sMessage + 12);
       if (v < 0.05f) v = 0.05f;
       if (v > 10.0f) v = 10.0f;
       if (v != g_plugin.m_lyricsZoom) {

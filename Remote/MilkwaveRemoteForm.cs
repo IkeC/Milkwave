@@ -1038,7 +1038,7 @@ namespace MilkwaveRemote {
       SetPanelsVisibility();
 
 #if DEBUG
-      //cboShadertoyURL.Text = "w3KGRK";
+      ConnectToVisualizerIfRunning();
 #else
       StartVisualizerIfNotFound(true);
 #endif
@@ -1067,6 +1067,38 @@ namespace MilkwaveRemote {
 
       // Launch the visualizer and connect via pipe
       LaunchAndConnectVisualizer();
+    }
+
+    /// <summary>
+    /// DEBUG builds: the developer launches the visualizer, so we never
+    /// auto-launch — but we do auto-connect to an already-running instance.
+    /// The visualizer's pipe may not be ready the instant this form starts
+    /// (the Remote can start before the visualizer's pipe server), so we
+    /// retry briefly instead of requiring a manual "Scan".
+    /// </summary>
+    private void ConnectToVisualizerIfRunning() {
+      var instances = PipeClient.DiscoverVisualizers();
+      if (instances.Count > 0) {
+        ScanAndPopulateVisualizers();
+        ConnectToInstance(instances[0]);
+        return;
+      }
+
+      var retryTimer = new System.Windows.Forms.Timer();
+      retryTimer.Interval = 300;
+      int tries = 0;
+      retryTimer.Tick += (s, e) => {
+        var found = PipeClient.DiscoverVisualizers();
+        if (found.Count > 0 || ++tries >= 20) {
+          retryTimer.Stop();
+          retryTimer.Dispose();
+          if (found.Count > 0) {
+            ScanAndPopulateVisualizers();
+            ConnectToInstance(found[0]);
+          }
+        }
+      };
+      retryTimer.Start();
     }
 
     /// <summary>

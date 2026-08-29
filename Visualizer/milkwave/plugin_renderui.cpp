@@ -160,8 +160,47 @@
       *lower_right_corner_y -= h;                                                                                                           \
   }
 
+void CPlugin::WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3DXFONT measureFont,
+                             std::vector<std::wstring>& outLines) const {
+  outLines.clear();
+  if (text.empty() || wrapWidthPixels <= 0 || !measureFont) return;
+  // Break only on blanks (spaces). GDI's DT_WORDBREAK also breaks on
+  // punctuation (e.g. between "schedule" and ","), which looks wrong for
+  // lyrics, so each line is measured here with DT_SINGLELINE.
+  std::wstring current;
+  std::size_t start = 0;
+  while (start < text.size()) {
+    const std::size_t wordStart = text.find_first_not_of(L' ', start);
+    if (wordStart == std::wstring::npos) break;
+    const std::size_t wordEnd = text.find(L' ', wordStart);
+    const std::wstring word =
+        text.substr(wordStart, wordEnd == std::wstring::npos ? std::wstring::npos : wordEnd - wordStart);
+    const bool firstWord = current.empty();
+    const std::wstring candidate = firstWord ? word : current + L' ' + word;
+    RECT measure = {0, 0, wrapWidthPixels, 1000};
+    measureFont->DrawTextW(NULL, candidate.data(), -1, &measure,
+                           DT_CALCRECT | DT_SINGLELINE | DT_NOCLIP, 0xFFFFFFFF);
+    if (!firstWord && measure.right - measure.left > wrapWidthPixels) {
+      outLines.push_back(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+    if (wordEnd == std::wstring::npos) break;
+    start = wordEnd + 1;
+  }
+  if (!current.empty()) outLines.push_back(current);
+}
+
 void CPlugin::RenderLyricsOverlay(bool burnIn) {
-  if (((m_lyricsBurn > 0.0f) != burnIn) || !m_lyricsDisplayEnabled || !m_lyricsFontObject)
+  // The normal overlay always renders when lyrics are enabled. The burn-in
+  // pass is an ADDITIONAL effect (like the message "burntime"): when
+  // m_lyricsBurn > 0 the lyrics are also baked into the visualizer texture so
+  // the last line lingers behind the live overlay. The two passes must not be
+  // mutually exclusive, otherwise Burn>0 would hide the normal lyrics.
+  if (!m_lyricsDisplayEnabled || !m_lyricsFontObject)
+    return;
+  if (burnIn && m_lyricsBurn <= 0.0f)
     return;
 
   const auto lyricState = ::milkwave.CurrentLyricsVisualState(m_lyricsOffsetMs, m_lyricsFade);
@@ -189,14 +228,20 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
   if (maxWidthRatio < 0.05f) maxWidthRatio = 0.05f;
   if (maxWidthRatio > 1.0f) maxWidthRatio = 1.0f;
 
-  // Zoom scales the font at fade extremes (zoom at opacity 0, full size at 1).
-  float fontScale = m_lyricsZoom + (1.0f - m_lyricsZoom) * opacity;
+  // Target (end-of-fade) font scale. The word wrap is laid out once at this
+  // scale so the line breaks always match the fully-faded rendering.
+  float targetScale = 1.0f;
+  const float sizePerScale = m_lyricsFontSize * m_fRenderQuality;
+  const float scaleForSize = sizePerScale > 0.0f ? sizePerScale : 1.0f;
   // Auto Scale: size the font so ~AutoScaleLineMaxChars characters fit within
   // the LyricsMaxWidth area, ignoring LyricsFontSize. The measurement is
   // normalized by the current font scale so the result is stable frame to frame.
   if (m_lyricsAutoScale) {
     const int maxChars = m_lyricsAutoScaleLineMaxChars > 0 ? m_lyricsAutoScaleLineMaxChars : 60;
-    const int maxWidthPixels = (int)(canvasWidth * maxWidthRatio);
+    // Measure against the on-screen window size so the overlay pass and the
+    // burn pass always agree on the target font size (otherwise the font
+    // would flip between two sizes every frame when Burn is enabled).
+    const int maxWidthPixels = (int)((float)GetWidth() * maxWidthRatio);
     if (maxWidthPixels > 0) {
       const std::wstring sample(static_cast<std::size_t>(maxChars), L'W');
       RECT sampleRect = {0, 0, maxWidthPixels, 1000};
@@ -205,13 +250,37 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
       const int sampleWidth = sampleRect.right - sampleRect.left;
       const float baseScale = m_lyricsCurrentFontScale >= 0.0f ? m_lyricsCurrentFontScale : 1.0f;
       if (sampleWidth > 0) {
-        const float autoScaleBase = ((float)maxWidthPixels * baseScale) / (float)sampleWidth;
-        if (autoScaleBase > 0.0f) fontScale *= autoScaleBase;
+        const float desiredSize = scaleForSize * baseScale * ((float)maxWidthPixels / (float)sampleWidth);
+        int targetPixels = (int)(desiredSize + 0.5f);
+        if (targetPixels < 8) targetPixels = 8;
+        if (targetPixels > 256) targetPixels = 256;
+        targetScale = (float)targetPixels / scaleForSize;
       }
     }
   }
-  if (fabsf(fontScale - m_lyricsCurrentFontScale) > 0.01f)
-    RecreateLyricsFont(fontScale);
+
+  // Zoom scales the font at fade extremes (zoom at opacity 0, full size at 1).
+  const float fontScale = (m_lyricsZoom + (1.0f - m_lyricsZoom) * opacity) * targetScale;
+
+  // Recreate the render font only when the actual rendered pixel size moves by
+  // more than one pixel. Comparing in the pixel domain (with hysteresis)
+  // instead of comparing scales keeps auto-scale and the zoom fade from
+  // oscillating between two adjacent integer font sizes (flicker).
+  const int currentPixelSize = (int)(m_lyricsFontSize * m_lyricsCurrentFontScale * m_fRenderQuality + 0.5f);
+  int targetPixelSize = (int)(m_lyricsFontSize * fontScale * m_fRenderQuality + 0.5f);
+  if (targetPixelSize < 8) targetPixelSize = 8;
+  if (targetPixelSize > 256) targetPixelSize = 256;
+  const int pixelDelta = targetPixelSize > currentPixelSize ? targetPixelSize - currentPixelSize
+                                                            : currentPixelSize - targetPixelSize;
+  if (pixelDelta > 1)
+    RecreateLyricsFont((float)targetPixelSize / scaleForSize);
+
+  // The measure font is always at the TARGET scale so wrap measurements are
+  // exact (GDI glyph widths do not scale perfectly linearly with font size).
+  const bool measureFontScaleChanged =
+      (targetScale - m_lyricsMeasureFontScale) > 0.001f || (m_lyricsMeasureFontScale - targetScale) > 0.001f;
+  if (!m_lyricsMeasureFontObject || measureFontScaleChanged)
+    RecreateLyricsMeasureFont(targetScale);
 
   const int maxWidth = (int)(canvasWidth * maxWidthRatio);
   const int centerX = (int)(canvasWidth * positionX);
@@ -229,44 +298,30 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
     }
   }
 
-  // Wrap the lyric text manually, breaking only on blanks (spaces). GDI's
-  // DT_WORDBREAK also breaks on punctuation (e.g. between "schedule" and ","),
-  // which looks wrong for lyrics, so each line is measured here and drawn
-  // separately with DT_SINGLELINE.
-  auto drawWrapped = [&](const std::wstring& text, float drawOpacity, int cx, int cy) {
+  // Lay the text out ONCE at the target scale (exact line breaks for the
+  // fully-faded rendering) and cache it, so every frame during the zoom fade
+  // draws the same lines — the wrap never changes, the text is just scaled.
+  const int wrapCacheWidth = (int)((float)GetWidth() * maxWidthRatio);
+  const bool wrapCacheScaleChanged =
+      (targetScale - m_lyricsWrapCacheScale) > 0.001f || (m_lyricsWrapCacheScale - targetScale) > 0.001f;
+  if (lyricText != m_lyricsWrapCacheText || wrapCacheWidth != m_lyricsWrapCacheWidth || wrapCacheScaleChanged ||
+      m_lyricsWrapCacheLines.empty()) {
+    WrapLyricsText(lyricText, wrapCacheWidth, m_lyricsMeasureFontObject, m_lyricsWrapCacheLines);
+    m_lyricsWrapCacheText = lyricText;
+    m_lyricsWrapCacheWidth = wrapCacheWidth;
+    m_lyricsWrapCacheScale = targetScale;
+  }
+
+  // Draw the (cached) lines at the animated font size. DT_NOCLIP: D3DX9's
+  // GDI-based DrawTextW can clip a line when the rect is exactly the measured
+  // height; without clipping each line always renders.
+  auto drawLines = [&](std::vector<std::wstring>& lines, float drawOpacity, int cx, int cy) {
+    if (lines.empty()) return;
     RECT wrapRect = {cx - maxWidth / 2, 0, cx + maxWidth / 2, canvasHeight};
     if (wrapRect.left < 0) wrapRect.left = 0;
     if (wrapRect.right > canvasWidth) wrapRect.right = canvasWidth;
     const int wrapWidth = wrapRect.right - wrapRect.left;
     if (wrapWidth <= 0) return;
-
-    std::vector<std::wstring> lines;
-    {
-      std::wstring current;
-      std::size_t start = 0;
-      while (start < text.size()) {
-        const std::size_t wordStart = text.find_first_not_of(L' ', start);
-        if (wordStart == std::wstring::npos) break;
-        const std::size_t wordEnd = text.find(L' ', wordStart);
-        const std::wstring word =
-            text.substr(wordStart, wordEnd == std::wstring::npos ? std::wstring::npos : wordEnd - wordStart);
-        const bool firstWord = current.empty();
-        const std::wstring candidate = firstWord ? word : current + L' ' + word;
-        RECT measure = {0, 0, wrapWidth, 1000};
-        m_lyricsFontObject->DrawTextW(NULL, candidate.data(), -1, &measure,
-                                      DT_CALCRECT | DT_SINGLELINE | DT_NOCLIP, 0xFFFFFFFF);
-        if (!firstWord && measure.right - measure.left > wrapWidth) {
-          lines.push_back(current);
-          current = word;
-        } else {
-          current = candidate;
-        }
-        if (wordEnd == std::wstring::npos) break;
-        start = wordEnd + 1;
-      }
-      if (!current.empty()) lines.push_back(current);
-    }
-    if (lines.empty()) return;
 
     int colorR = m_lyricsColorR < 0 ? 0 : m_lyricsColorR > 255 ? 255 : m_lyricsColorR;
     int colorG = m_lyricsColorG < 0 ? 0 : m_lyricsColorG > 255 ? 255 : m_lyricsColorG;
@@ -290,8 +345,6 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
     if (shadow < 0) shadow = 0;
     if (shadow > 16) shadow = 16;
 
-    // DT_NOCLIP: D3DX9's GDI-based DrawTextW can clip a line when the rect is
-    // exactly the measured height; without clipping each line always renders.
     const DWORD drawFlags = DT_CENTER | DT_SINGLELINE | DT_NOCLIP;
     for (std::size_t index = 0; index < lines.size(); ++index) {
       RECT lineTextRect = {wrapRect.left, topY + static_cast<int>(index) * lineHeight, wrapRect.right,
@@ -299,21 +352,29 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
       if (shadow > 0) {
         RECT shadowRect = lineTextRect;
         OffsetRect(&shadowRect, shadow, shadow);
-        if (burnIn) {
-          m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24);
-        } else {
-          m_text.DrawTextW(m_lyricsFontObject, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24, false);
-        }
+        m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24);
       }
-      if (burnIn) {
-        m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &lineTextRect, drawFlags, textColor);
-      } else {
-        m_text.DrawTextW(m_lyricsFontObject, lines[index].data(), -1, &lineTextRect, drawFlags, textColor, false);
-      }
+      m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &lineTextRect, drawFlags, textColor);
     }
   };
 
-  drawWrapped(lyricText, opacity, centerX, centerY);
+  // Draw with alpha blending so the fade opacity is actually applied. This is
+  // called mid-pipeline (e.g. just before the Spout sender reads the
+  // backbuffer), so the blend state is restored afterwards.
+  LPDIRECT3DDEVICE9 lpDevice = GetDevice();
+  DWORD oldAlphaEnable = 0, oldSrcBlend = 0, oldDestBlend = 0;
+  bool haveBlendState = false;
+  if (lpDevice) {
+    haveBlendState = true;
+    lpDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &oldAlphaEnable);
+    lpDevice->GetRenderState(D3DRS_SRCBLEND, &oldSrcBlend);
+    lpDevice->GetRenderState(D3DRS_DESTBLEND, &oldDestBlend);
+    lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+  }
+
+  drawLines(m_lyricsWrapCacheLines, opacity, centerX, centerY);
 
   // Burn the previous line into the texture: it fades out over m_lyricsBurn
   // seconds after the current line takes over.
@@ -321,11 +382,19 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
     const double elapsed = GetTime() - m_burnLyricsPrevChangeTime;
     if (elapsed < m_lyricsBurn) {
       const float burnOpacity = 1.0f - (float)(elapsed / m_lyricsBurn);
-      drawWrapped(m_burnLyricsPrevText, burnOpacity, centerX, centerY);
+      std::vector<std::wstring> prevLines;
+      WrapLyricsText(m_burnLyricsPrevText, wrapCacheWidth, m_lyricsMeasureFontObject, prevLines);
+      drawLines(prevLines, burnOpacity, centerX, centerY);
     } else {
       m_burnLyricsPrevText.clear();
       m_burnLyricsPrevChangeTime = -1.0;
     }
+  }
+
+  if (haveBlendState && lpDevice) {
+    lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, oldAlphaEnable);
+    lpDevice->SetRenderState(D3DRS_SRCBLEND, oldSrcBlend);
+    lpDevice->SetRenderState(D3DRS_DESTBLEND, oldDestBlend);
   }
 }
 
@@ -370,8 +439,6 @@ void CPlugin::MyRenderUI(
 
   if (!GetFont(DECORATIVE_FONT))
     return;
-
-  RenderLyricsOverlay(false);
 
   // 1. render text in upper-right corner - EXCEPT USER MESSAGE - it goes last b/c it draws a box under itself
   //                                        and it should be visible over everything else (usually an error msg)
