@@ -218,6 +218,7 @@ namespace MilkwaveRemote {
       LyricsWidth,
       LyricsBurn,
       LyricsShadow,
+      LyricsTimeOffset,
       LyricsAutoScale,
       CaptureScreenshot,
       VideoInput,
@@ -1792,6 +1793,8 @@ namespace MilkwaveRemote {
                   SetLyricsNumeric(numLyricsZoom, value);
                 } else if (key.Equals("LYRICSFADE", StringComparison.OrdinalIgnoreCase)) {
                   SetLyricsNumeric(numLyricsFade, value);
+                } else if (key.Equals("LYRICSOFFSET", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsTimeOffset, value);
                 } else if (key.Equals("LYRICSWIDTH", StringComparison.OrdinalIgnoreCase)) {
                   SetLyricsNumeric(numLyricsWidth, value);
                 } else if (key.Equals("LYRICSBURN", StringComparison.OrdinalIgnoreCase)) {
@@ -2070,6 +2073,8 @@ namespace MilkwaveRemote {
               message = "LYRICS_BURN=" + numLyricsBurn.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.LyricsShadow) {
               message = "LYRICS_SHADOW=" + (int)numLyricsShadow.Value;
+            } else if (type == MessageType.LyricsTimeOffset) {
+              message = "LYRICS_OFFSET=" + numLyricsTimeOffset.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.LyricsAutoScale) {
               message = "LYRICS_AUTOSCALE=" + (chkLyricsAutoScale.Checked ? "1" : "0");
             } else if (type == MessageType.ColSaturation) {
@@ -6184,6 +6189,10 @@ namespace MilkwaveRemote {
 
     private void numLyricsFade_ValueChanged(object sender, EventArgs e) {
       if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsFade);
+    }
+
+    private void numLyricsTimeOffset_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsTimeOffset);
     }
 
     private void numLyricsWidth_ValueChanged(object sender, EventArgs e) {

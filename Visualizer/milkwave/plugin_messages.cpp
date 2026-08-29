@@ -873,6 +873,20 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
     } catch (...) {}
+  } else if (wcsncmp(sMessage, L"LYRICS_OFFSET=", 14) == 0) {
+    try {
+      // LyricsOffset is stored in seconds (float); internally the offset is
+      // kept in milliseconds.
+      float seconds = std::stof(sMessage + 14);
+      if (seconds < -600.0f) seconds = -600.0f;
+      if (seconds > 600.0f) seconds = 600.0f;
+      const std::int64_t offsetMs = static_cast<std::int64_t>(seconds * 1000.0f);
+      if (offsetMs != g_plugin.m_lyricsOffsetMs) {
+        g_plugin.m_lyricsOffsetMs = offsetMs;
+        WritePrivateProfileFloatW(seconds, L"LyricsOffset", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {}
   } else if (wcsncmp(sMessage, L"LYRICS_WIDTH=", 13) == 0) {
     try {
       float v = std::stof(sMessage + 13);

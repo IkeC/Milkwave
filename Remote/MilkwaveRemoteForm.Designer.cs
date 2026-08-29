@@ -3421,7 +3421,8 @@ namespace MilkwaveRemote
       numLyricsTimeOffset.Size = new Size(56, 23);
       numLyricsTimeOffset.TabIndex = 221;
       numLyricsTimeOffset.TextAlign = HorizontalAlignment.Center;
-      toolTip1.SetToolTip(numLyricsTimeOffset, "Maximum width of the lyrics block as a ratio of the canvas width (settings.ini: LyricsMaxWidth)");
+      numLyricsTimeOffset.ValueChanged += numLyricsTimeOffset_ValueChanged;
+      toolTip1.SetToolTip(numLyricsTimeOffset, "Time offset in seconds applied to the lyrics timestamps (positive = lyrics appear later, e.g. to sync with a delayed audio feed) (settings.ini: LyricsOffset)");
       // 
       // lblLyricsFont
       // 

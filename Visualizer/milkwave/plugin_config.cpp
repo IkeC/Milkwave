@@ -504,7 +504,8 @@ void CPlugin::MyReadConfig() {
   m_lyricsColorG = GetPrivateProfileIntW(L"Lyrics", L"LyricsColorG", m_lyricsColorG, pIni);
   m_lyricsColorB = GetPrivateProfileIntW(L"Lyrics", L"LyricsColorB", m_lyricsColorB, pIni);
   m_lyricsShadow = GetPrivateProfileIntW(L"Lyrics", L"LyricsShadow", m_lyricsShadow, pIni);
-  m_lyricsOffsetMs = GetPrivateProfileIntW(L"Lyrics", L"LyricsOffsetMs", static_cast<int>(m_lyricsOffsetMs), pIni);
+  // LyricsOffset is stored in seconds (float); internally the offset is kept in milliseconds.
+  m_lyricsOffsetMs = static_cast<std::int64_t>(GetPrivateProfileFloatW(L"Lyrics", L"LyricsOffset", (float)m_lyricsOffsetMs / 1000.0f, pIni) * 1000.0f);
   m_lyricsFade = GetPrivateProfileFloatW(L"Lyrics", L"LyricsFade", m_lyricsFade, pIni);
   if (m_lyricsFade < 0.0f) m_lyricsFade = 0.0f;
   GetPrivateProfileStringW(L"Lyrics", L"LyricsApiUrl", m_lyricsApiUrl, m_lyricsApiUrl, _countof(m_lyricsApiUrl), pIni);
@@ -706,7 +707,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_lyricsColorG, L"LyricsColorG", pIni, L"Lyrics");
   WritePrivateProfileIntW(m_lyricsColorB, L"LyricsColorB", pIni, L"Lyrics");
   WritePrivateProfileIntW(m_lyricsShadow, L"LyricsShadow", pIni, L"Lyrics");
-  WritePrivateProfileIntW(static_cast<int>(m_lyricsOffsetMs), L"LyricsOffsetMs", pIni, L"Lyrics");
+  WritePrivateProfileFloatW((float)m_lyricsOffsetMs / 1000.0f, L"LyricsOffset", pIni, L"Lyrics");
   WritePrivateProfileFloatW(m_lyricsFade, L"LyricsFade", pIni, L"Lyrics");
   WritePrivateProfileStringW(L"Lyrics", L"LyricsApiUrl", m_lyricsApiUrl, pIni);
 
