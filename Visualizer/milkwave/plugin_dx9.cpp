@@ -1502,6 +1502,12 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   SafeRelease(m_d3dx_title_font_doublesize);
   SafeRelease(m_lyricsFontObject);
   SafeRelease(m_lyricsMeasureFontObject);
+  SafeRelease(m_lyricsTexture);
+  SafeRelease(m_lyricsBurnTexture);
+  m_lyricsTextureSizeX = m_lyricsTextureSizeY = 0;
+  m_lyricsBurnTextureSizeX = m_lyricsBurnTextureSizeY = 0;
+  m_lyricsTextureUseW = m_lyricsTextureUseH = 0;
+  m_lyricsBurnTextureUseW = m_lyricsBurnTextureUseH = 0;
 
   // NOTE: THIS CODE IS IN THE RIGHT PLACE.
   if (m_gdi_title_font_doublesize) {

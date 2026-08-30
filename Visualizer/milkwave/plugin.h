@@ -449,6 +449,19 @@ class CPlugin : public CPluginShell {
   bool m_DisplayCoverWhenPressingB = true;
   bool m_HideNotificationsWhenRemoteActive = false;
 
+  // Remote tab visibility (settings.ini [Milkwave] ShowTab* keys; forwarded to
+  // the Remote via SETTINGS so it can hide/show its tabs). All on by default
+  // except the Shader tab.
+  bool m_ShowTabPreset = true;
+  bool m_ShowTabMessage = true;
+  bool m_ShowTabInOut = true;
+  bool m_ShowTabSettings = true;
+  bool m_ShowTabLyrics = true;
+  bool m_ShowTabFonts = true;
+  bool m_ShowTabMidi = true;
+  bool m_ShowTabWave = true;
+  bool m_ShowTabShader = false;
+
   // Network (TCP server)
   bool m_TcpEnabled = false;
   int m_TcpPort = 9270;
@@ -812,9 +825,9 @@ class CPlugin : public CPluginShell {
   int m_nFramesSinceResize;
   bool m_lyricsDisplayEnabled = true;
   bool m_bLyricsAutoLoad = true;
-  bool m_lyricsAutoScale = false;  // auto-fit font so ~maxChars fit per line in the max-width area
-  int m_lyricsAutoScaleLineMaxChars = 60;
-  float m_lyricsBurn = 0.0f;  // seconds; >0 enables burn-in of lyrics into the texture
+  bool m_lyricsAutoScale = true;  // auto-fit font so ~LyricsFontSize chars fit per line in the max-width area (on by default)
+  float m_lyricsBurnTime = 0.0f;  // seconds; >0 enables burn-in of lyrics into the texture
+  int m_lyricsBurnType = 1;       // 0=off, 1=burn leaving line on fade-out (default), 2=burn while fading in, 3=burn only (no overlay)
   float m_lyricsPositionX = 0.50f;
   float m_lyricsPositionY = 0.82f;
   float m_lyricsStartX = 0.50f;  // lyrics move from start to position while fading
@@ -844,8 +857,8 @@ class CPlugin : public CPluginShell {
   double m_burnLyricsPrevChangeTime = -1.0;
 
   // Stable word-wrap: lines are laid out ONCE at the target (end-of-fade)
-  // font size with m_lyricsMeasureFontObject, then rendered each frame at the
-  // animated (zoom) size, so the line breaks never change while fading.
+  // font size with m_lyricsMeasureFontObject and pre-rendered into
+  // m_lyricsTexture, so the line breaks never change while fading.
   LPD3DXFONT m_lyricsMeasureFontObject = NULL;       // font at the target scale, used only for wrap measurement
   float m_lyricsMeasureFontScale = -1.0f;            // target scale used to build m_lyricsMeasureFontObject
   std::vector<std::wstring> m_lyricsWrapCacheLines;  // cached wrapped lines (target layout)
@@ -856,6 +869,34 @@ class CPlugin : public CPluginShell {
   void InvalidateLyricsWrapCache();
   void WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3DXFONT measureFont,
                       std::vector<std::wstring>& outLines) const;
+
+  // Message-style lyrics rendering: the wrapped text is drawn ONCE at the
+  // target scale into an offscreen texture and then GPU-scaled each frame, so
+  // the zoom fade is perfectly smooth (no per-frame GDI font re-rasterization
+  // at integer pixel sizes, which made the zoom step/pop like the old code).
+  LPDIRECT3DTEXTURE9 m_lyricsTexture = NULL;  // current line texture
+  int m_lyricsTextureSizeX = 0;               // texture dimensions (texels, pow2)
+  int m_lyricsTextureSizeY = 0;
+  int m_lyricsTextureUseW = 0;                // used text area inside the texture (texels)
+  int m_lyricsTextureUseH = 0;
+  std::wstring m_lyricsTextureCacheText;      // cache key: rendered text
+  float m_lyricsTextureCacheScale = -1.0f;    // cache key: target scale
+  int m_lyricsTextureCacheWrapWidth = -1;     // cache key: wrap width (px)
+  LPDIRECT3DTEXTURE9 m_lyricsBurnTexture = NULL;  // previous ("burned") line texture
+  int m_lyricsBurnTextureSizeX = 0;
+  int m_lyricsBurnTextureSizeY = 0;
+  int m_lyricsBurnTextureUseW = 0;
+  int m_lyricsBurnTextureUseH = 0;
+  std::wstring m_lyricsBurnTextureCacheText;
+  float m_lyricsBurnTextureCacheScale = -1.0f;
+  int m_lyricsBurnTextureCacheWrapWidth = -1;
+  void RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, int& texSizeY, int& useW, int& useH,
+                                 std::wstring& cacheText, float& cacheScale, int& cacheWrapWidth,
+                                 const std::wstring& text, const std::vector<std::wstring>& lines,
+                                 int wrapWidthPixels, float targetScale);
+  void DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, int texSizeX, int texSizeY,
+                             int canvasWidth, int canvasHeight, int centerX, int centerY,
+                             float scale, float opacity);
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.

@@ -888,15 +888,15 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
   } else if (wcsncmp(sMessage, L"LYRICS_OFFSET=", 14) == 0) {
     try {
-      // LyricsOffset is stored in seconds (float); internally the offset is
-      // kept in milliseconds.
+      // LyricsOffsetSeconds is stored in seconds (float); internally the
+      // offset is kept in milliseconds.
       float seconds = std::stof(sMessage + 14);
       if (seconds < -600.0f) seconds = -600.0f;
       if (seconds > 600.0f) seconds = 600.0f;
       const std::int64_t offsetMs = static_cast<std::int64_t>(seconds * 1000.0f);
       if (offsetMs != g_plugin.m_lyricsOffsetMs) {
         g_plugin.m_lyricsOffsetMs = offsetMs;
-        WritePrivateProfileFloatW(seconds, L"LyricsOffset", g_plugin.GetConfigIniFile(), L"Lyrics");
+        WritePrivateProfileFloatW(seconds, L"LyricsOffsetSeconds", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
     } catch (...) {
@@ -918,9 +918,21 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       float v = std::stof(sMessage + 12);
       if (v < 0.0f) v = 0.0f;
       if (v > 60.0f) v = 60.0f;
-      if (v != g_plugin.m_lyricsBurn) {
-        g_plugin.m_lyricsBurn = v;
-        WritePrivateProfileFloatW(v, L"LyricsBurn", g_plugin.GetConfigIniFile(), L"Lyrics");
+      if (v != g_plugin.m_lyricsBurnTime) {
+        g_plugin.m_lyricsBurnTime = v;
+        WritePrivateProfileFloatW(v, L"LyricsBurnTime", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_BURNTYPE=", 16) == 0) {
+    try {
+      int v = std::stoi(sMessage + 16);
+      if (v < 0) v = 0;
+      if (v > 3) v = 3;
+      if (v != g_plugin.m_lyricsBurnType) {
+        g_plugin.m_lyricsBurnType = v;
+        WritePrivateProfileIntW(v, L"LyricsBurnType", g_plugin.GetConfigIniFile(), L"Lyrics");
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
     } catch (...) {
@@ -943,18 +955,6 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.m_lyricsAutoScale = enabled;
       WritePrivateProfileIntW(enabled, L"LyricsAutoScale", g_plugin.GetConfigIniFile(), L"Lyrics");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
-    }
-  } else if (wcsncmp(sMessage, L"LYRICS_SCALECHARS=", 18) == 0) {
-    try {
-      int v = std::stoi(sMessage + 18);
-      if (v < 10) v = 10;
-      if (v > 500) v = 500;
-      if (v != g_plugin.m_lyricsAutoScaleLineMaxChars) {
-        g_plugin.m_lyricsAutoScaleLineMaxChars = v;
-        WritePrivateProfileIntW(v, L"AutoScaleLineMaxChars", g_plugin.GetConfigIniFile(), L"Lyrics");
-        g_plugin.SendSettingsInfoToMilkwaveRemote();
-      }
-    } catch (...) {
     }
   } else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
     std::wstring message(sMessage + 17);

@@ -1178,11 +1178,18 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
 
     case WM_RBUTTONDBLCLK: {
-      if (g_plugin.m_bEnableMouseInteraction) {
-        return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+      // Double-clicking the right mouse button toggles borderless mode. This
+      // was previously gated behind m_bEnableMouseInteraction: with the
+      // default (interaction on) the message was forwarded to
+      // PluginShellWindowProc, which has no WM_RBUTTONDBLCLK handler — so the
+      // toggle never fired (defunct). Single-click WM_RBUTTONDOWN/UP still
+      // reach the plugin for preset interaction.
+      if (g_plugin.IsBorderlessFullscreen(hWnd)) {
+        ToggleBorderlessFullscreen(hWnd, false);
+      } else {
+        ToggleBorderlessWindow(hWnd);
       }
-      ToggleBorderlessWindow(hWnd);
-      break;
+      return 0;
     }
 
     case WM_USER_PIPE_IPC_MESSAGE: {

@@ -193,14 +193,22 @@ void CPlugin::WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3
 }
 
 void CPlugin::RenderLyricsOverlay(bool burnIn) {
-  // The normal overlay always renders when lyrics are enabled. The burn-in
-  // pass is an ADDITIONAL effect (like the message "burntime"): when
-  // m_lyricsBurn > 0 the lyrics are also baked into the visualizer texture so
-  // the last line lingers behind the live overlay. The two passes must not be
-  // mutually exclusive, otherwise Burn>0 would hide the normal lyrics.
+  // The burn-in pass (burnIn=true) bakes the lyrics into the visualizer
+  // texture during RenderFrame; the normal pass (burnIn=false) draws the crisp
+  // overlay onto the backbuffer. m_lyricsBurnType controls when/how the
+  // burn-in is used:
+  //   1 = (default) burn a line into the texture only when its fade-out
+  //       starts; the current line is not baked while it is on screen.
+  //   2 = bake the current line as it fades in (original behavior); the
+  //       previous line additionally lingers for m_lyricsBurnTime.
+  //   3 = burn-in only: skip the normal backbuffer overlay entirely.
+  // Unlike earlier versions, burn types 1 and 2 do NOT disable the normal
+  // overlay (Burn>0 must never hide the live lyrics); only type 3 does.
   if (!m_lyricsDisplayEnabled || !m_lyricsFontObject)
     return;
-  if (burnIn && m_lyricsBurn <= 0.0f)
+  if (!burnIn && m_lyricsBurnType == 3)
+    return;
+  if (burnIn && (m_lyricsBurnTime <= 0.0f || m_lyricsBurnType == 0))
     return;
 
   const auto lyricState = ::milkwave.CurrentLyricsVisualState(m_lyricsOffsetMs, m_lyricsFade);
@@ -233,11 +241,13 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
   float targetScale = 1.0f;
   const float sizePerScale = m_lyricsFontSize * m_fRenderQuality;
   const float scaleForSize = sizePerScale > 0.0f ? sizePerScale : 1.0f;
-  // Auto Scale: size the font so ~AutoScaleLineMaxChars characters fit within
-  // the LyricsMaxWidth area, ignoring LyricsFontSize. The measurement is
-  // normalized by the current font scale so the result is stable frame to frame.
+  // Auto Scale: size the font so ~(70 - LyricsFontSize) characters fit within
+  // the LyricsMaxWidth area: a larger font-size value means fewer characters
+  // per line, so the glyphs render larger. The measurement is normalized by
+  // the current font scale so it stays stable frame to frame.
   if (m_lyricsAutoScale) {
-    const int maxChars = m_lyricsAutoScaleLineMaxChars > 0 ? m_lyricsAutoScaleLineMaxChars : 60;
+    int maxChars = 72 - m_lyricsFontSize;
+    if (maxChars < 8) maxChars = 8;
     // Measure against the on-screen window size so the overlay pass and the
     // burn pass always agree on the target font size (otherwise the font
     // would flip between two sizes every frame when Burn is enabled).
@@ -259,35 +269,24 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
     }
   }
 
-  // Zoom scales the font at fade extremes (zoom at opacity 0, full size at 1).
-  const float fontScale = (m_lyricsZoom + (1.0f - m_lyricsZoom) * opacity) * targetScale;
-
-  // Recreate the render font only when the actual rendered pixel size moves by
-  // more than one pixel. Comparing in the pixel domain (with hysteresis)
-  // instead of comparing scales keeps auto-scale and the zoom fade from
-  // oscillating between two adjacent integer font sizes (flicker).
-  const int currentPixelSize = (int)(m_lyricsFontSize * m_lyricsCurrentFontScale * m_fRenderQuality + 0.5f);
-  int targetPixelSize = (int)(m_lyricsFontSize * fontScale * m_fRenderQuality + 0.5f);
-  if (targetPixelSize < 8) targetPixelSize = 8;
-  if (targetPixelSize > 256) targetPixelSize = 256;
-  const int pixelDelta = targetPixelSize > currentPixelSize ? targetPixelSize - currentPixelSize
-                                                            : currentPixelSize - targetPixelSize;
-  if (pixelDelta > 1)
-    RecreateLyricsFont((float)targetPixelSize / scaleForSize);
-
-  // The measure font is always at the TARGET scale so wrap measurements are
-  // exact (GDI glyph widths do not scale perfectly linearly with font size).
+  // The measure font is always at the TARGET scale so wrap measurements and
+  // the pre-rendered texture are exact (GDI glyph widths do not scale
+  // perfectly linearly with font size). The render font is intentionally NOT
+  // recreated per-frame during the zoom anymore: the text is pre-rendered into
+  // a texture at this target scale and GPU-scaled each frame (message-style),
+  // so the zoom animates smoothly instead of stepping through integer GDI font
+  // sizes. m_lyricsFontObject is still used only for the AutoScale sample
+  // measurement above and stays at a fixed scale.
   const bool measureFontScaleChanged =
       (targetScale - m_lyricsMeasureFontScale) > 0.001f || (m_lyricsMeasureFontScale - targetScale) > 0.001f;
   if (!m_lyricsMeasureFontObject || measureFontScaleChanged)
     RecreateLyricsMeasureFont(targetScale);
 
-  const int maxWidth = (int)(canvasWidth * maxWidthRatio);
   const int centerX = (int)(canvasWidth * positionX);
   const int centerY = (int)(canvasHeight * positionY);
 
   // Remember the previous line so it can be "burned" into the texture on fadeout.
-  if (burnIn && m_lyricsBurn > 0.0f) {
+  if (burnIn && m_lyricsBurnTime > 0.0f) {
     const double now = GetTime();
     if (lyricText != m_burnLyricsActiveText) {
       if (!m_burnLyricsActiveText.empty()) {
@@ -312,16 +311,147 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
     m_lyricsWrapCacheScale = targetScale;
   }
 
-  // Draw the (cached) lines at the animated font size. DT_NOCLIP: D3DX9's
-  // GDI-based DrawTextW can clip a line when the rect is exactly the measured
-  // height; without clipping each line always renders.
-  auto drawLines = [&](std::vector<std::wstring>& lines, float drawOpacity, int cx, int cy) {
-    if (lines.empty()) return;
-    RECT wrapRect = {cx - maxWidth / 2, 0, cx + maxWidth / 2, canvasHeight};
-    if (wrapRect.left < 0) wrapRect.left = 0;
-    if (wrapRect.right > canvasWidth) wrapRect.right = canvasWidth;
-    const int wrapWidth = wrapRect.right - wrapRect.left;
-    if (wrapWidth <= 0) return;
+  // Pre-render the current wrapped text into an offscreen texture at the
+  // target scale (message-style). This happens only when the text, the target
+  // scale or the wrap width changes — NOT every frame.
+  if (!m_lyricsTexture || m_lyricsTextureCacheText != lyricText ||
+      m_lyricsTextureCacheScale != targetScale || m_lyricsTextureCacheWrapWidth != wrapCacheWidth) {
+    RenderLyricsTextToTexture(m_lyricsTexture, m_lyricsTextureSizeX, m_lyricsTextureSizeY,
+                              m_lyricsTextureUseW, m_lyricsTextureUseH, m_lyricsTextureCacheText,
+                              m_lyricsTextureCacheScale, m_lyricsTextureCacheWrapWidth,
+                              lyricText, m_lyricsWrapCacheLines, wrapCacheWidth, targetScale);
+  }
+
+  // Pre-render the previous ("burned") line into its own texture while it is
+  // still fading out of the visualizer texture.
+  if (burnIn && m_lyricsBurnTime > 0.0f && m_burnLyricsPrevChangeTime >= 0.0 && !m_burnLyricsPrevText.empty()) {
+    std::vector<std::wstring> prevLines;
+    WrapLyricsText(m_burnLyricsPrevText, wrapCacheWidth, m_lyricsMeasureFontObject, prevLines);
+    if (!m_lyricsBurnTexture || m_lyricsBurnTextureCacheText != m_burnLyricsPrevText ||
+        m_lyricsBurnTextureCacheScale != targetScale || m_lyricsBurnTextureCacheWrapWidth != wrapCacheWidth) {
+      RenderLyricsTextToTexture(m_lyricsBurnTexture, m_lyricsBurnTextureSizeX, m_lyricsBurnTextureSizeY,
+                                m_lyricsBurnTextureUseW, m_lyricsBurnTextureUseH, m_lyricsBurnTextureCacheText,
+                                m_lyricsBurnTextureCacheScale, m_lyricsBurnTextureCacheWrapWidth,
+                                m_burnLyricsPrevText, prevLines, wrapCacheWidth, targetScale);
+    }
+  }
+
+  // Continuous (GPU) zoom scale for the fade: full size at opacity 1, scaled
+  // toward m_lyricsZoom at opacity 0. Because the text is pre-rendered and
+  // drawn as a scaled quad, this animates smoothly (no integer font steps).
+  const float zoomScale = m_lyricsZoom + (1.0f - m_lyricsZoom) * opacity;
+
+  // Burn type 2 bakes the current line into the texture at its live fade
+  // opacity. Burn type 1 only burns a line when its fade-out starts, so the
+  // current line is NOT baked here while it is on screen (only the leaving
+  // line is, below).
+  const bool bakeCurrentLine = !(burnIn && m_lyricsBurnType == 1);
+  if (bakeCurrentLine)
+    DrawLyricsTextureQuad(m_lyricsTexture, m_lyricsTextureUseW, m_lyricsTextureUseH,
+                          m_lyricsTextureSizeX, m_lyricsTextureSizeY,
+                          canvasWidth, canvasHeight, centerX, centerY, zoomScale, opacity);
+
+  // Burn the previous line into the texture: it fades out over
+  // m_lyricsBurnTime seconds after the current line takes over. This is the
+  // "fade-out starts" burn used by both burn types 1 and 2.
+  if (burnIn && m_lyricsBurnTime > 0.0f && m_burnLyricsPrevChangeTime >= 0.0 && !m_burnLyricsPrevText.empty()) {
+    const double elapsed = GetTime() - m_burnLyricsPrevChangeTime;
+    if (elapsed < m_lyricsBurnTime) {
+      const float burnOpacity = 1.0f - (float)(elapsed / m_lyricsBurnTime);
+      DrawLyricsTextureQuad(m_lyricsBurnTexture, m_lyricsBurnTextureUseW, m_lyricsBurnTextureUseH,
+                            m_lyricsBurnTextureSizeX, m_lyricsBurnTextureSizeY,
+                            canvasWidth, canvasHeight, centerX, centerY, zoomScale, burnOpacity);
+    } else {
+      m_burnLyricsPrevText.clear();
+      m_burnLyricsPrevChangeTime = -1.0;
+    }
+  }
+}
+
+void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, int& texSizeY, int& useW, int& useH,
+                                        std::wstring& cacheText, float& cacheScale, int& cacheWrapWidth,
+                                        const std::wstring& text, const std::vector<std::wstring>& lines,
+                                        int wrapWidthPixels, float targetScale) {
+  if (text.empty() || lines.empty() || !m_lyricsMeasureFontObject) {
+    useW = useH = 0;
+    return;
+  }
+  if (tex && cacheText == text && cacheScale == targetScale && cacheWrapWidth == wrapWidthPixels)
+    return;  // texture already holds this text at this scale
+
+  LPDIRECT3DDEVICE9 lpDevice = GetDevice();
+  if (!lpDevice) return;
+
+  // Measure the wrapped block at the target scale (line height + max width).
+  RECT lineRect = {0, 0, 1024, 1024};
+  m_lyricsMeasureFontObject->DrawTextW(NULL, L"Ag", -1, &lineRect, DT_CALCRECT | DT_SINGLELINE, 0xFFFFFFFF);
+  const int lineHeight = lineRect.bottom - lineRect.top;
+  if (lineHeight <= 0) return;
+  int maxLineWidth = 0;
+  for (const auto& l : lines) {
+    RECT r = {0, 0, 1024, 1024};
+    m_lyricsMeasureFontObject->DrawTextW(NULL, l.c_str(), -1, &r, DT_CALCRECT | DT_SINGLELINE, 0xFFFFFFFF);
+    const int w = r.right - r.left;
+    if (w > maxLineWidth) maxLineWidth = w;
+  }
+  const int totalHeight = static_cast<int>(lines.size()) * lineHeight;
+
+  int shadow = m_lyricsShadow;
+  if (shadow < 0) shadow = 0;
+  if (shadow > 16) shadow = 16;
+  const int pad = 8 + shadow;  // antialiasing + shadow bleed so nothing clips
+  const int neededW = maxLineWidth + 2 * pad;
+  const int neededH = totalHeight + 2 * pad;
+  if (neededW <= 0 || neededH <= 0) return;
+
+  // D3D9 render-target textures are power-of-two.
+  int sizeX = 16;
+  while (sizeX < neededW) sizeX *= 2;
+  int sizeY = 16;
+  while (sizeY < neededH) sizeY *= 2;
+
+  if (!tex || texSizeX != sizeX || texSizeY != sizeY) {
+    SafeRelease(tex);
+    texSizeX = sizeX;
+    texSizeY = sizeY;
+    if (D3DXCreateTexture(lpDevice, sizeX, sizeY, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &tex) !=
+        D3D_OK) {
+      tex = NULL;
+      texSizeX = texSizeY = 0;
+      return;
+    }
+  }
+
+  // Render the text into the texture (GDI/D3DX text needs no projection).
+  IDirect3DSurface9* pOldRT = NULL;
+  lpDevice->GetRenderTarget(0, &pOldRT);
+  IDirect3DSurface9* pTexSurface = NULL;
+  if (tex->GetSurfaceLevel(0, &pTexSurface) == D3D_OK) {
+    lpDevice->SetRenderTarget(0, pTexSurface);
+    pTexSurface->Release();
+
+    // Keep the viewport covering the whole texture so Clear() and the text
+    // rects always target the full surface regardless of the ambient viewport.
+    D3DVIEWPORT9 oldViewport, texViewport;
+    lpDevice->GetViewport(&oldViewport);
+    texViewport.X = texViewport.Y = 0;
+    texViewport.Width = sizeX;
+    texViewport.Height = sizeY;
+    texViewport.MinZ = 0.0f;
+    texViewport.MaxZ = 1.0f;
+    lpDevice->SetViewport(&texViewport);
+
+    DWORD oldAlphaEnable = 0, oldSrcBlend = 0, oldDestBlend = 0;
+    lpDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &oldAlphaEnable);
+    lpDevice->GetRenderState(D3DRS_SRCBLEND, &oldSrcBlend);
+    lpDevice->GetRenderState(D3DRS_DESTBLEND, &oldDestBlend);
+
+    // Clear to transparent black.
+    lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0);
+
+    lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
     int colorR = m_lyricsColorR < 0 ? 0 : m_lyricsColorR > 255 ? 255
                                                                : m_lyricsColorR;
@@ -329,76 +459,135 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
                                                                : m_lyricsColorG;
     int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255
                                                                : m_lyricsColorB;
-    const DWORD alpha = static_cast<DWORD>(drawOpacity * 255.0f + 0.5f);
-    DWORD textColor = (alpha << 24) | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
+    const DWORD textColor = 0xFF000000 | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
 
-    // Line height from a reference string; used to stack the wrapped lines.
-    RECT lineRect = {0, 0, 1024, 1024};
-    m_lyricsFontObject->DrawTextW(NULL, L"Ag", -1, &lineRect, DT_CALCRECT | DT_SINGLELINE, 0xFFFFFFFF);
-    const int lineHeight = lineRect.bottom - lineRect.top;
-    if (lineHeight <= 0) return;
-
-    const int totalHeight = static_cast<int>(lines.size()) * lineHeight;
-    int topY = cy - totalHeight / 2;
-    if (topY < 0) topY = 0;
-    if (topY + totalHeight > canvasHeight) topY = canvasHeight - totalHeight;
-    if (topY < 0) topY = 0;
-
-    int shadow = m_lyricsShadow;
-    if (shadow < 0) shadow = 0;
-    if (shadow > 16) shadow = 16;
-
+    // Block is vertically centered within the USED area [0, neededH] and each
+    // line horizontally centered within [0, neededW]. Centering inside the
+    // full pow2 texture instead would offset the glyphs relative to the UV
+    // range [0,useW]x[0,useH] that the draw quad samples, clipping the right
+    // (and bottom) of the text.
+    const int startY = (neededH - totalHeight) / 2;
     const DWORD drawFlags = DT_CENTER | DT_SINGLELINE | DT_NOCLIP;
-    for (std::size_t index = 0; index < lines.size(); ++index) {
-      RECT lineTextRect = {wrapRect.left, topY + static_cast<int>(index) * lineHeight, wrapRect.right,
-                           topY + static_cast<int>(index + 1) * lineHeight};
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+      RECT lineTextRect = {0, startY + static_cast<int>(i) * lineHeight, neededW,
+                           startY + static_cast<int>(i + 1) * lineHeight};
       if (shadow > 0) {
         RECT shadowRect = lineTextRect;
         OffsetRect(&shadowRect, shadow, shadow);
-        m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &shadowRect, drawFlags, alpha << 24);
+        m_lyricsMeasureFontObject->DrawTextW(NULL, lines[i].data(), -1, &shadowRect, drawFlags, 0xFF000000);
       }
-      m_lyricsFontObject->DrawTextW(NULL, lines[index].data(), -1, &lineTextRect, drawFlags, textColor);
+      m_lyricsMeasureFontObject->DrawTextW(NULL, lines[i].data(), -1, &lineTextRect, drawFlags, textColor);
     }
-  };
 
-  // Draw with alpha blending so the fade opacity is actually applied. This is
-  // called mid-pipeline (e.g. just before the Spout sender reads the
-  // backbuffer), so the blend state is restored afterwards.
-  LPDIRECT3DDEVICE9 lpDevice = GetDevice();
-  DWORD oldAlphaEnable = 0, oldSrcBlend = 0, oldDestBlend = 0;
-  bool haveBlendState = false;
-  if (lpDevice) {
-    haveBlendState = true;
-    lpDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &oldAlphaEnable);
-    lpDevice->GetRenderState(D3DRS_SRCBLEND, &oldSrcBlend);
-    lpDevice->GetRenderState(D3DRS_DESTBLEND, &oldDestBlend);
-    lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-    lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-    lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-  }
-
-  drawLines(m_lyricsWrapCacheLines, opacity, centerX, centerY);
-
-  // Burn the previous line into the texture: it fades out over m_lyricsBurn
-  // seconds after the current line takes over.
-  if (burnIn && m_lyricsBurn > 0.0f && m_burnLyricsPrevChangeTime >= 0.0 && !m_burnLyricsPrevText.empty()) {
-    const double elapsed = GetTime() - m_burnLyricsPrevChangeTime;
-    if (elapsed < m_lyricsBurn) {
-      const float burnOpacity = 1.0f - (float)(elapsed / m_lyricsBurn);
-      std::vector<std::wstring> prevLines;
-      WrapLyricsText(m_burnLyricsPrevText, wrapCacheWidth, m_lyricsMeasureFontObject, prevLines);
-      drawLines(prevLines, burnOpacity, centerX, centerY);
-    } else {
-      m_burnLyricsPrevText.clear();
-      m_burnLyricsPrevChangeTime = -1.0;
-    }
-  }
-
-  if (haveBlendState && lpDevice) {
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, oldAlphaEnable);
     lpDevice->SetRenderState(D3DRS_SRCBLEND, oldSrcBlend);
     lpDevice->SetRenderState(D3DRS_DESTBLEND, oldDestBlend);
+
+    lpDevice->SetRenderTarget(0, pOldRT);
+    lpDevice->SetViewport(&oldViewport);
   }
+  SafeRelease(pOldRT);
+
+  useW = neededW;
+  useH = neededH;
+  cacheText = text;
+  cacheScale = targetScale;
+  cacheWrapWidth = wrapWidthPixels;
+}
+
+void CPlugin::DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, int texSizeX, int texSizeY,
+                                    int canvasWidth, int canvasHeight, int centerX, int centerY,
+                                    float scale, float opacity) {
+  if (!tex || useW <= 0 || useH <= 0 || texSizeX <= 0 || texSizeY <= 0)
+    return;
+  LPDIRECT3DDEVICE9 lpDevice = GetDevice();
+  if (!lpDevice) return;
+  if (opacity <= 0.0f) return;
+  if (opacity > 1.0f) opacity = 1.0f;
+  if (scale <= 0.0f) scale = 0.01f;
+  if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
+  // Save the state we modify.
+  D3DXMATRIX oldProj, oldView, oldWorld;
+  lpDevice->GetTransform(D3DTS_PROJECTION, &oldProj);
+  lpDevice->GetTransform(D3DTS_VIEW, &oldView);
+  lpDevice->GetTransform(D3DTS_WORLD, &oldWorld);
+  DWORD oldAlphaEnable = 0, oldSrcBlend = 0, oldDestBlend = 0;
+  DWORD oldMag = 0, oldMin = 0, oldMip = 0;
+  lpDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &oldAlphaEnable);
+  lpDevice->GetRenderState(D3DRS_SRCBLEND, &oldSrcBlend);
+  lpDevice->GetRenderState(D3DRS_DESTBLEND, &oldDestBlend);
+  lpDevice->GetSamplerState(0, D3DSAMP_MAGFILTER, &oldMag);
+  lpDevice->GetSamplerState(0, D3DSAMP_MINFILTER, &oldMin);
+  lpDevice->GetSamplerState(0, D3DSAMP_MIPFILTER, &oldMip);
+
+  // 2D projection: x/y in -1..1 map to the full current render target
+  // (y=-1 is top), matching how sprites and message titles are drawn.
+  D3DXMATRIX ortho, identity;
+  D3DXMatrixOrthoLH(&ortho, 2.0f, -2.0f, 0.0f, 1.0f);
+  D3DXMatrixIdentity(&identity);
+  lpDevice->SetTransform(D3DTS_PROJECTION, &ortho);
+  lpDevice->SetTransform(D3DTS_VIEW, &identity);
+  lpDevice->SetTransform(D3DTS_WORLD, &identity);
+
+  lpDevice->SetVertexShader(NULL);
+  lpDevice->SetPixelShader(NULL);
+  lpDevice->SetFVF(SPRITEVERTEX_FORMAT);
+  lpDevice->SetTexture(0, tex);
+
+  // Alpha blend for a pre-multiplied texture; LINEAR filtering keeps the GPU
+  // scaling of the zoom smooth.
+  lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+  lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+  lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+  lpDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+  lpDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+  lpDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+
+  // Texture stage: color = texture * diffuse, alpha = texture * diffuse.
+  lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+  lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+  lpDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+
+  // Quad geometry: useW/useH is the used sub-rect inside the pow2 texture; map
+  // the UVs to it and size the quad to useW*scale x useH*scale pixels so the
+  // text is 1:1 at scale==1.
+  const float halfW = useW * scale * 0.5f;
+  const float halfH = useH * scale * 0.5f;
+  const float cx = centerX * 2.0f / canvasWidth - 1.0f;
+  const float cy = centerY * 2.0f / canvasHeight - 1.0f;
+  const float nxHalfW = halfW * 2.0f / canvasWidth;
+  const float nxHalfH = halfH * 2.0f / canvasHeight;
+  const float uMax = (float)useW / (float)texSizeX;
+  const float vMax = (float)useH / (float)texSizeY;
+
+  const DWORD a = static_cast<DWORD>(opacity * 255.0f + 0.5f);
+  const DWORD diffuse = (a << 24) | (a << 16) | (a << 8) | a;  // pre-multiplied fade
+
+  SPRITEVERTEX v[4];
+  v[0].x = cx - nxHalfW; v[0].y = cy - nxHalfH; v[0].z = 0; v[0].Diffuse = diffuse; v[0].tu = 0.0f; v[0].tv = 0.0f;
+  v[1].x = cx + nxHalfW; v[1].y = cy - nxHalfH; v[1].z = 0; v[1].Diffuse = diffuse; v[1].tu = uMax; v[1].tv = 0.0f;
+  v[2].x = cx - nxHalfW; v[2].y = cy + nxHalfH; v[2].z = 0; v[2].Diffuse = diffuse; v[2].tu = 0.0f; v[2].tv = vMax;
+  v[3].x = cx + nxHalfW; v[3].y = cy + nxHalfH; v[3].z = 0; v[3].Diffuse = diffuse; v[3].tu = uMax; v[3].tv = vMax;
+
+  lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(SPRITEVERTEX));
+
+  // Restore the state we modified.
+  lpDevice->SetTransform(D3DTS_PROJECTION, &oldProj);
+  lpDevice->SetTransform(D3DTS_VIEW, &oldView);
+  lpDevice->SetTransform(D3DTS_WORLD, &oldWorld);
+  lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, oldAlphaEnable);
+  lpDevice->SetRenderState(D3DRS_SRCBLEND, oldSrcBlend);
+  lpDevice->SetRenderState(D3DRS_DESTBLEND, oldDestBlend);
+  lpDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, oldMag);
+  lpDevice->SetSamplerState(0, D3DSAMP_MINFILTER, oldMin);
+  lpDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, oldMip);
+  lpDevice->SetTexture(0, NULL);
 }
 
 void CPlugin::MyRenderUI(

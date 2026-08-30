@@ -484,11 +484,21 @@ void CPlugin::MyReadConfig() {
   m_DisplayCoverWhenPressingB = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCoverWhenPressingB", m_DisplayCoverWhenPressingB, pIni);
   m_HideNotificationsWhenRemoteActive = GetPrivateProfileBoolW(L"Milkwave", L"HideNotificationsWhenRemoteActive", m_HideNotificationsWhenRemoteActive, pIni);
 
-  m_lyricsBurn = GetPrivateProfileFloatW(L"Lyrics", L"LyricsBurn", m_lyricsBurn, pIni);
+  m_ShowTabPreset = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabPreset", m_ShowTabPreset, pIni);
+  m_ShowTabMessage = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabMessage", m_ShowTabMessage, pIni);
+  m_ShowTabInOut = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabInOut", m_ShowTabInOut, pIni);
+  m_ShowTabSettings = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabSettings", m_ShowTabSettings, pIni);
+  m_ShowTabLyrics = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabLyrics", m_ShowTabLyrics, pIni);
+  m_ShowTabFonts = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabFonts", m_ShowTabFonts, pIni);
+  m_ShowTabMidi = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabMidi", m_ShowTabMidi, pIni);
+  m_ShowTabWave = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabWave", m_ShowTabWave, pIni);
+  m_ShowTabShader = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabShader", m_ShowTabShader, pIni);
+
+  m_lyricsBurnTime = GetPrivateProfileFloatW(L"Lyrics", L"LyricsBurnTime", m_lyricsBurnTime, pIni);
+  m_lyricsBurnType = GetPrivateProfileIntW(L"Lyrics", L"LyricsBurnType", m_lyricsBurnType, pIni);
+  if (m_lyricsBurnType < 0) m_lyricsBurnType = 0;
+  if (m_lyricsBurnType > 3) m_lyricsBurnType = 3;
   m_lyricsAutoScale = GetPrivateProfileBoolW(L"Lyrics", L"LyricsAutoScale", m_lyricsAutoScale, pIni);
-  m_lyricsAutoScaleLineMaxChars = GetPrivateProfileIntW(L"Lyrics", L"AutoScaleLineMaxChars", m_lyricsAutoScaleLineMaxChars, pIni);
-  if (m_lyricsAutoScaleLineMaxChars < 10) m_lyricsAutoScaleLineMaxChars = 10;
-  if (m_lyricsAutoScaleLineMaxChars > 500) m_lyricsAutoScaleLineMaxChars = 500;
   m_lyricsPositionX = GetPrivateProfileFloatW(L"Lyrics", L"LyricsPositionX", m_lyricsPositionX, pIni);
   m_lyricsPositionY = GetPrivateProfileFloatW(L"Lyrics", L"LyricsPositionY", m_lyricsPositionY, pIni);
   m_lyricsStartX = GetPrivateProfileFloatW(L"Lyrics", L"LyricsStartX", m_lyricsStartX, pIni);
@@ -504,8 +514,8 @@ void CPlugin::MyReadConfig() {
   m_lyricsColorG = GetPrivateProfileIntW(L"Lyrics", L"LyricsColorG", m_lyricsColorG, pIni);
   m_lyricsColorB = GetPrivateProfileIntW(L"Lyrics", L"LyricsColorB", m_lyricsColorB, pIni);
   m_lyricsShadow = GetPrivateProfileIntW(L"Lyrics", L"LyricsShadow", m_lyricsShadow, pIni);
-  // LyricsOffset is stored in seconds (float); internally the offset is kept in milliseconds.
-  m_lyricsOffsetMs = static_cast<std::int64_t>(GetPrivateProfileFloatW(L"Lyrics", L"LyricsOffset", (float)m_lyricsOffsetMs / 1000.0f, pIni) * 1000.0f);
+  // LyricsOffsetSeconds is stored in seconds (float); internally the offset is kept in milliseconds.
+  m_lyricsOffsetMs = static_cast<std::int64_t>(GetPrivateProfileFloatW(L"Lyrics", L"LyricsOffsetSeconds", (float)m_lyricsOffsetMs / 1000.0f, pIni) * 1000.0f);
   m_lyricsFade = GetPrivateProfileFloatW(L"Lyrics", L"LyricsFade", m_lyricsFade, pIni);
   if (m_lyricsFade < 0.0f) m_lyricsFade = 0.0f;
   GetPrivateProfileStringW(L"Lyrics", L"LyricsApiUrl", m_lyricsApiUrl, m_lyricsApiUrl, _countof(m_lyricsApiUrl), pIni);
@@ -684,14 +694,23 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
   // WritePrivateProfileIntW(m_DisplayCoverWhenPressingB, L"mDisplayCoverWhenPressingB", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabPreset, L"ShowTabPreset", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabMessage, L"ShowTabMessage", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabInOut, L"ShowTabInOut", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabSettings, L"ShowTabSettings", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabLyrics, L"ShowTabLyrics", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabFonts, L"ShowTabFonts", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabMidi, L"ShowTabMidi", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabWave, L"ShowTabWave", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_ShowTabShader, L"ShowTabShader", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_blackmode, L"BlackMode", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_CheckDirectXOnStartup, L"CheckDirectXOnStartup", pIni, L"Milkwave");
 
   WritePrivateProfileIntW(m_lyricsDisplayEnabled, L"LyricsEnabled", pIni, L"Lyrics");
   WritePrivateProfileIntW(m_bLyricsAutoLoad, L"LyricsAutoLoad", pIni, L"Lyrics");
   WritePrivateProfileIntW(m_lyricsAutoScale, L"LyricsAutoScale", pIni, L"Lyrics");
-  WritePrivateProfileIntW(m_lyricsAutoScaleLineMaxChars, L"AutoScaleLineMaxChars", pIni, L"Lyrics");
-  WritePrivateProfileFloatW(m_lyricsBurn, L"LyricsBurn", pIni, L"Lyrics");
+  WritePrivateProfileFloatW(m_lyricsBurnTime, L"LyricsBurnTime", pIni, L"Lyrics");
+  WritePrivateProfileIntW(m_lyricsBurnType, L"LyricsBurnType", pIni, L"Lyrics");
   WritePrivateProfileFloatW(m_lyricsPositionX, L"LyricsPositionX", pIni, L"Lyrics");
   WritePrivateProfileFloatW(m_lyricsPositionY, L"LyricsPositionY", pIni, L"Lyrics");
   WritePrivateProfileFloatW(m_lyricsStartX, L"LyricsStartX", pIni, L"Lyrics");
@@ -707,7 +726,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_lyricsColorG, L"LyricsColorG", pIni, L"Lyrics");
   WritePrivateProfileIntW(m_lyricsColorB, L"LyricsColorB", pIni, L"Lyrics");
   WritePrivateProfileIntW(m_lyricsShadow, L"LyricsShadow", pIni, L"Lyrics");
-  WritePrivateProfileFloatW((float)m_lyricsOffsetMs / 1000.0f, L"LyricsOffset", pIni, L"Lyrics");
+  WritePrivateProfileFloatW((float)m_lyricsOffsetMs / 1000.0f, L"LyricsOffsetSeconds", pIni, L"Lyrics");
   WritePrivateProfileFloatW(m_lyricsFade, L"LyricsFade", pIni, L"Lyrics");
   WritePrivateProfileStringW(L"Lyrics", L"LyricsApiUrl", m_lyricsApiUrl, pIni);
 

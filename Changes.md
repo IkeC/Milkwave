@@ -1,5 +1,9 @@
 ## v4.1 (unreleased)
+
 * Lyrics support
+  - Automatic lookup, download and caching of synced lyrics (LRC) for the current track
+  - Dedicated Remote "Lyrics" tab: on/off, auto-load, font, color, position, zoom, fade, width, time offset, auto-scale and burn-in effects
+* Remote: Configurable tab visibility
 
 ## v4.0 (2026-04-19)
 

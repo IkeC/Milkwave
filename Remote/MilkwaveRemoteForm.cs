@@ -217,7 +217,7 @@ namespace MilkwaveRemote {
       LyricsFade,
       LyricsWidth,
       LyricsBurn,
-      LyricsShadow,
+      LyricsBurnType,
       LyricsTimeOffset,
       LyricsAutoScale,
       CaptureScreenshot,
@@ -1798,11 +1798,13 @@ namespace MilkwaveRemote {
                 } else if (key.Equals("LYRICSWIDTH", StringComparison.OrdinalIgnoreCase)) {
                   SetLyricsNumeric(numLyricsWidth, value);
                 } else if (key.Equals("LYRICSBURN", StringComparison.OrdinalIgnoreCase)) {
-                  SetLyricsNumeric(numLyricsBurn, value);
-                } else if (key.Equals("LYRICSSHADOW", StringComparison.OrdinalIgnoreCase)) {
-                  SetLyricsNumeric(numLyricsShadow, value);
+                  SetLyricsNumeric(numLyricsBurntime, value);
+                } else if (key.Equals("LYRICSBURNTYPE", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsBurnmode, value);
                 } else if (key.Equals("LYRICSAUTOSCALE", StringComparison.OrdinalIgnoreCase)) {
                   chkLyricsAutoScale.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.StartsWith("SHOWTAB", StringComparison.OrdinalIgnoreCase)) {
+                  ApplyTabVisibility(key, value);
                 }
               } catch { }
             }
@@ -1812,6 +1814,84 @@ namespace MilkwaveRemote {
       } catch (Exception ex) {
         Program.LogToFile($"OnPipeMessageReceived: {ex.Message}");
       }
+    }
+
+    // --- Remote tab visibility (visualizer [Milkwave] ShowTab* settings) ---
+
+    // Tab pages in their canonical (Designer) order, used to re-insert a tab at
+    // its original position when a ShowTab* setting turns it back on.
+    private static readonly string[] TabOrder = new[] {
+      "tabPreset", "tabMessage", "tabInOut", "tabSettings", "tabLyrics",
+      "tabFonts", "tabMidi", "tabWave", "tabShader",
+    };
+
+    private TabPage? GetTabPageByName(string name) => name switch {
+      "tabPreset" => tabPreset,
+      "tabMessage" => tabMessage,
+      "tabInOut" => tabInOut,
+      "tabSettings" => tabSettings,
+      "tabLyrics" => tabLyrics,
+      "tabFonts" => tabFonts,
+      "tabMidi" => tabMidi,
+      "tabWave" => tabWave,
+      "tabShader" => tabShader,
+      _ => null,
+    };
+
+    // Applies a visualizer "SHOWTAB*=" setting to the matching tab page.
+    private void ApplyTabVisibility(string key, string value) {
+      bool show = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+      string up = key.ToUpperInvariant();
+      // The MIDI tab additionally requires the Remote's own MIDI setting to be
+      // enabled (otherwise MIDI device setup is skipped and the tab is inert).
+      if (up == "SHOWTABMIDI") {
+        show = show && Settings.MidiEnabled;
+      }
+      string? tabName = up switch {
+        "SHOWTABPRESET" => "tabPreset",
+        "SHOWTABMESSAGE" => "tabMessage",
+        "SHOWTABINOUT" => "tabInOut",
+        "SHOWTABSETTINGS" => "tabSettings",
+        "SHOWTABLYRICS" => "tabLyrics",
+        "SHOWTABFONTS" => "tabFonts",
+        "SHOWTABMIDI" => "tabMidi",
+        "SHOWTABWAVE" => "tabWave",
+        "SHOWTABSHADER" => "tabShader",
+        _ => null,
+      };
+      if (tabName == null) return;
+      SetTabVisible(GetTabPageByName(tabName), show);
+    }
+
+    private void SetTabVisible(TabPage? page, bool visible) {
+      if (page == null) return;
+      bool present = tabControl.TabPages.Contains(page);
+      if (visible && !present) {
+        InsertTabAtCanonicalPosition(page);
+      } else if (!visible && present) {
+        tabControl.TabPages.Remove(page);
+      }
+      // Keep a valid tab selected when tabs are hidden/reshown.
+      if (tabControl.TabPages.Count > 0 &&
+          (tabControl.SelectedIndex < 0 || tabControl.SelectedIndex >= tabControl.TabPages.Count)) {
+        tabControl.SelectedIndex = 0;
+      }
+    }
+
+    private void InsertTabAtCanonicalPosition(TabPage page) {
+      int selfIdx = Array.FindIndex(TabOrder, n => n == page.Name);
+      int insertAt = tabControl.TabPages.Count;
+      if (selfIdx >= 0) {
+        for (int i = selfIdx + 1; i < TabOrder.Length; i++) {
+          TabPage? next = GetTabPageByName(TabOrder[i]);
+          if (next != null && tabControl.TabPages.Contains(next)) {
+            insertAt = tabControl.TabPages.IndexOf(next);
+            break;
+          }
+        }
+      }
+      if (insertAt < 0 || insertAt > tabControl.TabPages.Count) insertAt = tabControl.TabPages.Count;
+      tabControl.TabPages.Insert(insertAt, page);
     }
 
     private void MainForm_Shown(object sender, EventArgs e) {
@@ -2070,9 +2150,9 @@ namespace MilkwaveRemote {
             } else if (type == MessageType.LyricsWidth) {
               message = "LYRICS_WIDTH=" + numLyricsWidth.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.LyricsBurn) {
-              message = "LYRICS_BURN=" + numLyricsBurn.Value.ToString(CultureInfo.InvariantCulture);
-            } else if (type == MessageType.LyricsShadow) {
-              message = "LYRICS_SHADOW=" + (int)numLyricsShadow.Value;
+              message = "LYRICS_BURN=" + numLyricsBurntime.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsBurnType) {
+              message = "LYRICS_BURNTYPE=" + (int)numLyricsBurnmode.Value;
             } else if (type == MessageType.LyricsTimeOffset) {
               message = "LYRICS_OFFSET=" + numLyricsTimeOffset.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.LyricsAutoScale) {
@@ -6203,8 +6283,8 @@ namespace MilkwaveRemote {
       if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsBurn);
     }
 
-    private void numLyricsShadow_ValueChanged(object sender, EventArgs e) {
-      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsShadow);
+    private void numLyricsBurnmode_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsBurnType);
     }
 
     private void chkLyricsAutoScale_CheckedChanged(object sender, EventArgs e) {
@@ -6223,12 +6303,12 @@ namespace MilkwaveRemote {
     private void lblLyricsPosX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosX, 0.5m); }
     private void lblLyricsPosY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosY, 0.5m); }
     private void lblLyricsStartX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartX, 0.5m); }
-    private void lblLyricsStartY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartY, 0.5m); }
+    private void lblLyricsStartY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartY, 0.52m); }
     private void lblLyricsZoom_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsZoom, 0.95m); }
     private void lblLyricsFade_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsFade, 0.15m); }
-    private void lblLyricsWidth_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsWidth, 0.82m); }
-    private void lblLyricsBurn_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurn, 0m); }
-    private void lblLyricsShadow_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsShadow, 2m); }
+    private void lblLyricsWidth_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsWidth, 0.9m); }
+    private void lblLyricsBurn_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurntime, 0.2m); }
+    private void lblLyricsBurnmode_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurnmode, 0m); }
     private void lblLyricsOffset_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsTimeOffset, 0m); }
 
     private void btnEditLyricsFile_Click(object sender, EventArgs e) {
