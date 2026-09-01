@@ -1,0 +1,118 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=2
+PSVERSION_WARP=2
+PSVERSION_COMP=2
+[preset00]
+fDecay=1.000000
+fShader=0.000000
+fGammaAdj=1.980000
+warp=0
+zoom=1.001000
+wave_x=0.500000
+wave_y=0.500000
+per_frame_init_1=    x0 = .25 + rand(10)/20;
+per_frame_init_2=    y0 = .25 + rand(10)/20;
+per_frame_init_3=    vx0 = .25 - rand(10)/20;
+per_frame_init_4=    vy0 = .25 - rand(10)/20;
+per_frame_init_5=
+per_frame_init_6=    x1 = .25 + rand(10)/20;
+per_frame_init_7=    y1 = .25 + rand(10)/20;
+per_frame_init_8=    vx1 = .25 - rand(10)/20;
+per_frame_init_9=    vy1 = .25 - rand(10)/20;
+per_frame_init_10=
+per_frame_init_11=    // average of positions should be at (.5, .5)
+per_frame_init_12=    x2 = 1.5 - x0 - x1;
+per_frame_init_13=    y2 = 1.5 - y0 - y1;
+per_frame_init_14=
+per_frame_init_15=    // average of velocities should be 0
+per_frame_init_16=    vx2 = -vx0 - vx1;
+per_frame_init_17=    vy2 = -vy0 - vy1;
+per_frame_1=    dt = (1/fps)*.5;
+per_frame_2=
+per_frame_3=    x0 = x0 + vx0*dt;
+per_frame_4=    y0 = y0 + vy0*dt;
+per_frame_5=
+per_frame_6=    x1 = x1 + vx1*dt;
+per_frame_7=    y1 = y1 + vy1*dt;
+per_frame_8=
+per_frame_9=    x2 = x2 + vx2*dt;
+per_frame_10=    y2 = y2 + vy2*dt;
+per_frame_11=
+per_frame_12=    vx0 = vx0 + .2*(x1 - x0)*dt + .2*(x2 - x0)*dt + .1*(.5 - x0)*dt;
+per_frame_13=    vy0 = vy0 + .2*(y1 - y0)*dt + .2*(y2 - y0)*dt + .1*(.5 - y0)*dt;
+per_frame_14=
+per_frame_15=    vx1 = vx1 + .2*(x0 - x1)*dt + .2*(x2 - x1)*dt + .1*(.5 - x1)*dt;
+per_frame_16=    vy1 = vy1 + .2*(y0 - y1)*dt + .2*(y2 - y1)*dt + .1*(.5 - y1)*dt;
+per_frame_17=
+per_frame_18=    vx2 = vx2 + .2*(x0 - x2)*dt + .2*(x1 - x2)*dt + .1*(.5 - x2)*dt;
+per_frame_19=    vy2 = vy2 + .2*(y0 - y2)*dt + .2*(y1 - y2)*dt + .1*(.5 - y2)*dt;
+per_frame_20=
+per_frame_21=    q1 = x0;
+per_frame_22=    q2 = y0;
+per_frame_23=
+per_frame_24=    q3 = x1;
+per_frame_25=    q4 = y1;
+per_frame_26=
+per_frame_27=    q5 = x2;
+per_frame_28=    q6 = y2;
+per_frame_29=
+per_frame_30=    q8 = dt;
+per_frame_31=
+per_frame_32=    wave_r = rand(100)/100;
+per_frame_33=    wave_g = rand(100)/100;
+per_frame_34=    wave_b = rand(100)/100;
+warp_1=    shader_body {
+warp_2=        ret = tex2D(sampler_main, uv)*.999;
+warp_3=    }
+comp_1=    sampler sampler_rand00;
+comp_2=
+comp_3=    shader_body {
+comp_4=        float cutoff = 100;
+comp_5=
+comp_6=        float2 d1 = uv - float2(q1,q2);
+comp_7=        float2 d2 = uv - float2(q3,q4);
+comp_8=        float2 d3 = uv - float2(q5,q6);
+comp_9=
+comp_10=        // dot(d1,d1) is in 0...3
+comp_11=        // pot1 is in .33 ... 100
+comp_12=        // at distance 0, pot1 is 100
+comp_13=        // at distance .1, pot1 is 50
+comp_14=        // at distance .05, pot1 is 1/(.0125) = 80
+comp_15=        // at distance .11, pot1 is 1/(.0221) = 45
+comp_16=        // at distance .2, pot is 1/.05 = 20;
+comp_17=        // at distance 1, pot is 1/1.01 ~= 1;
+comp_18=        float pot1 = 1/(dot(d1,d1) + .01);
+comp_19=        float pot2 = 1/(dot(d2,d2) + .01);
+comp_20=        float pot3 = 1/(dot(d3,d3) + .01);
+comp_21=
+comp_22=        //          |stacked | center | half  | edge  |      | double | far away
+comp_23=        // ------------------| -------------------------------------------------
+comp_24=        // distance:| 0      | 0      | .05   | .1    | .11  | .2     | 1
+comp_25=        // pot:     | 300    | 100    | 80    | 50    | 45   | 20     | 1
+comp_26=        // z:       | > .1   | .1     | √2/2  |  0    | imaginary
+comp_27=        // 
+comp_28=
+comp_29=        float pot = pot1 + pot2 + pot3;
+comp_30=
+comp_31=        // pot is between 0 and 300
+comp_32=        // when distance is 0 from one and far from the others, pot is 100, z should be .1
+comp_33=        // on boundary, pot is 50, z should be 0
+comp_34=
+comp_35=        float2 texloc = uv;
+comp_36=        if (pot > 50) {
+comp_37=            float z = (sqrt(pot - 50))/70;
+comp_38=
+comp_39=            float wt1 = pot1/pot;
+comp_40=            float wt2 = pot2/pot;
+comp_41=            float wt3 = pot3/pot;
+comp_42=
+comp_43=            float3 d1z = normalize(float3(d1.x, d1.y, z));
+comp_44=            float3 d2z = normalize(float3(d2.x, d2.y, z));
+comp_45=            float3 d3z = normalize(float3(d3.x, d3.y, z));
+comp_46=            float3 n = normalize(d1z*wt1 + d2z*wt2 + d3z*wt3);
+comp_47=
+comp_48=            texloc = uv + .05*n.xy/n.z;
+comp_49=        }
+comp_50=        ret = .5*tex2D(sampler_fw_main, texloc)+.5*tex2D(sampler_rand00, texloc);
+comp_51=
+comp_52=    }
