@@ -2,8 +2,10 @@
 
 * Lyrics support
   - Automatic lookup, download and caching of synced lyrics (LRC) for the current track
+  - Manual lyrics file loading
   - Dedicated Remote "Lyrics" tab: on/off, auto-load, font, color, position, zoom, fade, width, time offset, auto-scale and burn-in effects
 * Remote: Configurable tab visibility
+* Updated presets
 
 ## v4.0 (2026-04-19)
 
@@ -31,8 +33,6 @@
 * Restructured Remote tabs and controls
 * Improved transitions quality
 * Global stability improvements
-
-You can get a preview build on [my Discord](https://bit.ly/Ikes-Discord).
 
 ## v3.5 (2026-03-01)
 

@@ -1432,7 +1432,7 @@ namespace MilkwaveRemote {
           cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
           var sw = _discoveredInstances[highestIdx];
           ConnectToInstance(sw, autoSwitch: false); // prevent recursive auto-switch
-          SetStatusText($"{failedMsg} — switched to {sw.name} (PID: {sw.pid})");
+          SetStatusText($"{failedMsg}, switched to {sw.name} (PID: {sw.pid})");
         } else {
           SetStatusText(failedMsg);
         }
@@ -1570,7 +1570,7 @@ namespace MilkwaveRemote {
         cboVisualizerInstance.SelectedIndex = highestIdx;
         cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
         ConnectToInstance(_discoveredInstances[highestIdx]);
-        SetStatusText($"Visualizer closed — switched to {_discoveredInstances[highestIdx].name} (PID: {_discoveredInstances[highestIdx].pid})");
+        SetStatusText($"Visualizer closed, switched to {_discoveredInstances[highestIdx].name} (PID: {_discoveredInstances[highestIdx].pid})");
       } else {
         SetStatusText("Visualizer closed");
       }
