@@ -26,6 +26,7 @@
 #include <thread>
 
 #include "Lyrics.h"
+#include "song_timeline.h"
 
 using namespace winrt;
 using namespace Windows::Media::Control;
@@ -90,6 +91,7 @@ class Milkwave {
   bool SaveThumbnailToFile(const winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties& properties);
 
  private:
+  bool EnsureMediaManager();
   void RequestLyricsResolution();
   void LyricsWorkerLoop();
 
@@ -106,6 +108,16 @@ class Milkwave {
   mutable std::mutex logMutex;
   bool stopLyricsWorker = false;
   std::thread lyricsWorker;
+
+  GlobalSystemMediaTransportControlsSessionManager smtcManager{nullptr};
+  GlobalSystemMediaTransportControlsSession smtcSession{nullptr};
+  std::chrono::steady_clock::time_point lastManagerAttempt;
+  std::chrono::steady_clock::time_point lastSmtcPoll;
+  std::chrono::steady_clock::time_point lastMetadataPoll;
+  bool hasManagerAttempt = false;
+  bool hasSmtcPoll = false;
+  bool hasMetadataPoll = false;
+  SongTimelineClock timelineClock;
 
   // Monotonic floor for the displayed lyric line: prevents brief "jump back"
   // flickers caused by SMTC timeline drift. Only large backward movements

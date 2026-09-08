@@ -3391,7 +3391,7 @@ namespace MilkwaveRemote
       numLyricsBurntime.TabIndex = 218;
       numLyricsBurntime.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numLyricsBurntime, "Time (seconds) to burn the previous line into the visualizer texture on fade-out (0 = off) (settings.ini: LyricsBurnTime)");
-      numLyricsBurntime.Value = new decimal(new int[] { 2, 0, 0, 65536 });
+      numLyricsBurntime.Value = new decimal(new int[] { 5, 0, 0, 65536 });
       numLyricsBurntime.ValueChanged += numLyricsBurn_ValueChanged;
       // 
       // chkLyricsAutoScale

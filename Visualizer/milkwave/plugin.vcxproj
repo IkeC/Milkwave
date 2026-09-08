@@ -250,6 +250,7 @@
     <ClInclude Include="md_defines.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="Lyrics.h" />
+    <ClInclude Include="song_timeline.h" />
     <ClInclude Include="MilkwaveVisualizer.h" />
     <ClInclude Include="VideoCapture.h" />
     <ClInclude Include="milkwave.h" />

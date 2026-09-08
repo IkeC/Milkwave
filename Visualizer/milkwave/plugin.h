@@ -826,7 +826,7 @@ class CPlugin : public CPluginShell {
   bool m_lyricsDisplayEnabled = true;
   bool m_bLyricsAutoLoad = true;
   bool m_lyricsAutoScale = true;  // auto-fit font so ~LyricsFontSize chars fit per line in the max-width area (on by default)
-  float m_lyricsBurnTime = 0.0f;  // seconds; >0 enables burn-in of lyrics into the texture
+  float m_lyricsBurnTime = 0.5f;  // seconds; >0 enables burn-in of lyrics into the texture
   int m_lyricsBurnType = 1;       // 0=off, 1=burn leaving line on fade-out (default), 2=burn while fading in, 3=burn only (no overlay)
   float m_lyricsPositionX = 0.50f;
   float m_lyricsPositionY = 0.82f;

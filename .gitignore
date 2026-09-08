@@ -34,3 +34,4 @@ enc_temp_folder/
 Remote/MilkwaveRemote.csproj.lscache
 /.local
 *.log
+*.obj

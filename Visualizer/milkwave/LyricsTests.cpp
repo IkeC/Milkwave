@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <string>
 
+#include "song_timeline.h"
+
 namespace {
 
 void TestParseAndSelection() {
@@ -26,6 +28,26 @@ void TestDuplicateAndMalformedInput() {
 
   const auto invalid = ParseLrcUtf8("\xFF");
   assert(invalid.state == LyricsDocumentState::Invalid);
+}
+
+void TestSongTimelineClock() {
+  SongTimelineClock clock;
+  clock.Update(1000, 10000, 1000, 1000, 0, true, 1.0);
+  assert(clock.Position(500) == 1500);
+
+  clock.Update(1500, 10000, 1500, 1500, 500, false, 1.0);
+  assert(clock.Position(1500) == 1500);
+  assert(clock.Position(2500) == 1500);
+
+  clock.Update(1500, 10000, 2500, 2500, 2500, true, 2.0);
+  assert(clock.Position(3000) == 2500);
+  assert(clock.Position(3500) == 3500);
+
+  clock.Update(1200, 10000, 2000, 3000, 3500, true, 1.0);
+  assert(clock.Position(3500) >= 1200);
+
+  clock.Update(9000, 5000, 4000, 4000, 4000, true, 1.0);
+  assert(clock.Position(4000) == 5000);
 }
 
 void TestLocalResolution() {
@@ -64,6 +86,7 @@ void TestLrclibFearOfTheDark() {
 int main(int argc, char** argv) {
   TestParseAndSelection();
   TestDuplicateAndMalformedInput();
+  TestSongTimelineClock();
   TestLocalResolution();
   if (argc > 1 && std::string(argv[1]) == "--network") TestLrclibFearOfTheDark();
   return 0;

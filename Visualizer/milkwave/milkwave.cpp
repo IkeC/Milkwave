@@ -28,6 +28,7 @@ void Milkwave::Init(wchar_t* exePath) {
   winrt::init_apartment();  // Initialize the WinRT runtime
   start_time = std::chrono::steady_clock::now();
   timelineBaseTime = start_time;
+  timelineClock.Reset();
 
   // Init receives the configured base directory, not the executable filename.
   std::filesystem::path exeDir = std::filesystem::path(exePath);
@@ -84,6 +85,13 @@ void Milkwave::SetLyricsApiUrl(std::wstring apiUrl) {
 void Milkwave::UpdateCurrentPosition(std::chrono::steady_clock::time_point currentTime) {
   if (!hasTimeline || !isPlaying) return;
 
+  if (timelineClock.IsInitialized()) {
+    const auto steadyMs = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime.time_since_epoch()).count();
+    currentPositionMs = timelineClock.Position(steadyMs);
+    currentDurationMs = timelineClock.Duration();
+    return;
+  }
+
   auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - timelineBaseTime).count();
   currentPositionMs = timelineBasePositionMs + elapsedMs;
   if (currentPositionMs < 0) currentPositionMs = 0;
@@ -98,129 +106,165 @@ void Milkwave::ResetTimeline() {
   currentPositionMs = 0;
   timelineBasePositionMs = 0;
   timelineBaseTime = std::chrono::steady_clock::now();
+  timelineClock.Reset();
   lastReportedPositionMs = 0;
   hasReportedPosition = false;
   m_lastShownLyricsPositionMs = 0;
   m_hasShownLyricsPosition = false;
 }
 
+bool Milkwave::EnsureMediaManager() {
+  if (smtcManager) return true;
+
+  const auto now = std::chrono::steady_clock::now();
+  if (hasManagerAttempt && now - lastManagerAttempt < 2s) return false;
+  hasManagerAttempt = true;
+  lastManagerAttempt = now;
+
+  try {
+    smtcManager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+    return static_cast<bool>(smtcManager);
+  } catch (const winrt::hresult_error& e) {
+    LogInfo(L"EnsureMediaManager failed: " + std::wstring(e.message().c_str()));
+    return false;
+  }
+}
+
 void Milkwave::PollMediaInfo() {
   if (!doPoll && !doPollExplicit) return;
 
   try {
-    // Get the current time
     auto current_time = std::chrono::steady_clock::now();
     UpdateCurrentPosition(current_time);
 
-    // Calculate the elapsed time in seconds
-    auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
+    if (!doPollExplicit && hasSmtcPoll && current_time - lastSmtcPoll < 1s) return;
+    if (!EnsureMediaManager()) return;
 
-    // Check if 1 second has passed or manual poll requested
-    if (elapsed_seconds >= 1 || doPollExplicit) {
-      auto smtcManager = winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
-      auto currentSession = smtcManager.GetCurrentSession();
-      updated = false;
-      if (currentSession) {
-        auto timeline = currentSession.GetTimelineProperties();
-        auto timelineDurationMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeline.EndTime() - timeline.StartTime()).count();
-        auto timelinePositionMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeline.Position()).count();
-        bool hasReportedTimeline = timelineDurationMs > 0 && timelinePositionMs >= 0;
-        auto playbackStatus = currentSession.GetPlaybackInfo().PlaybackStatus();
-        bool nextIsPlaying = playbackStatus == winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
-        bool playbackStateChanged = !hasPlaybackState || nextIsPlaying != isPlaying;
+    hasSmtcPoll = true;
+    lastSmtcPoll = current_time;
+    auto currentSession = smtcManager.GetCurrentSession();
+    updated = false;
+    if (currentSession) {
+      const bool sessionChanged = !smtcSession || currentSession != smtcSession;
+      smtcSession = currentSession;
+      auto timeline = currentSession.GetTimelineProperties();
+      const auto timelineStartMs = timeline.StartTime().count() / 10000;
+      const auto timelineEndMs = timeline.EndTime().count() / 10000;
+      const auto timelinePositionMs = timeline.Position().count() / 10000 - timelineStartMs;
+      const auto timelineDurationMs = timelineEndMs - timelineStartMs;
+      const bool hasReportedTimeline = timelineDurationMs > 0 && timelinePositionMs >= 0;
+      auto playbackInfo = currentSession.GetPlaybackInfo();
+      const bool nextIsPlaying = playbackInfo.PlaybackStatus() == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
+      const auto playbackRate = playbackInfo.PlaybackRate();
+      const double nextPlaybackRate = playbackRate ? playbackRate.Value() : 1.0;
+      const auto nowSteadyMs = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
+      const auto nowUtcMs = winrt::clock::now().time_since_epoch().count() / 10000;
 
+      if (hasReportedTimeline) {
+        const auto updatedUtcMs = timeline.LastUpdatedTime().time_since_epoch().count() / 10000;
+        timelineClock.Update(timelinePositionMs, timelineDurationMs, updatedUtcMs > 0 ? updatedUtcMs : nowUtcMs,
+                             nowUtcMs, nowSteadyMs, nextIsPlaying, nextPlaybackRate);
+        currentPositionMs = timelineClock.Position(nowSteadyMs);
+        currentDurationMs = timelineClock.Duration();
+        timelineBasePositionMs = currentPositionMs;
+        timelineBaseTime = current_time;
+        lastReportedPositionMs = timelinePositionMs;
+        hasReportedPosition = true;
+        hasTimeline = true;
+        timelineApproximate = false;
+      } else if (sessionChanged) {
+        timelineClock.Reset();
+        currentPositionMs = ASSUMED_TIMELINE_START_OFFSET_MS;
+        currentDurationMs = 0;
+        timelineBasePositionMs = currentPositionMs;
+        timelineBaseTime = current_time;
+        hasReportedPosition = false;
+        hasTimeline = true;
+        timelineApproximate = true;
+      }
+
+      isPlaying = nextIsPlaying;
+      hasPlaybackState = true;
+      if (!hasReportedTimeline && playbackInfo.PlaybackStatus() == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped) {
+        ResetTimeline();
+        hasTimeline = !currentArtist.empty() || !currentTitle.empty();
+        timelineApproximate = hasTimeline;
+      } else {
+        UpdateCurrentPosition(current_time);
+      }
+
+      const bool shouldPollMetadata = doPollExplicit || sessionChanged || !hasMetadataPoll || current_time - lastMetadataPoll >= 1s;
+      if (shouldPollMetadata) {
+        hasMetadataPoll = true;
+        lastMetadataPoll = current_time;
         auto properties = currentSession.TryGetMediaPropertiesAsync().get();
         if (properties) {
-          bool lyricsTrackChanged = properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum;
-          bool trackChanged = doPollExplicit || properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum;
+          const bool metadataChanged = properties.Artist().c_str() != currentArtist || properties.Title().c_str() != currentTitle || properties.AlbumTitle().c_str() != currentAlbum;
+          const bool trackChanged = sessionChanged || metadataChanged;
           if (trackChanged) {
             isSongChange = currentAlbum.length() || currentArtist.length() || currentTitle.length();
             currentArtist = properties.Artist().c_str();
             currentTitle = properties.Title().c_str();
             currentAlbum = properties.AlbumTitle().c_str();
-
-            if ((doPollExplicit || doSaveCover) && properties.Thumbnail()) {
-              SaveThumbnailToFile(properties);
+            if (hasReportedTimeline) {
+              timelineClock.Reset();
+              timelineClock.Update(timelinePositionMs, timelineDurationMs,
+                                   timeline.LastUpdatedTime().time_since_epoch().count() / 10000,
+                                   nowUtcMs, nowSteadyMs, nextIsPlaying, nextPlaybackRate);
+              currentPositionMs = timelineClock.Position(nowSteadyMs);
+              currentDurationMs = timelineClock.Duration();
+              timelineBasePositionMs = currentPositionMs;
+              timelineBaseTime = current_time;
+            } else {
+              timelineClock.Reset();
+              currentPositionMs = ASSUMED_TIMELINE_START_OFFSET_MS;
+              currentDurationMs = 0;
+              timelineBasePositionMs = currentPositionMs;
+              timelineBaseTime = current_time;
+              hasReportedPosition = false;
+              hasTimeline = true;
+              timelineApproximate = true;
             }
-
             updated = true;
           }
-
-          if (trackChanged) {
-            currentPositionMs = hasReportedTimeline ? std::max<std::int64_t>(0, timelinePositionMs) : ASSUMED_TIMELINE_START_OFFSET_MS;
-            currentDurationMs = hasReportedTimeline ? std::max<std::int64_t>(0, timelineDurationMs) : 0;
-            timelineBasePositionMs = currentPositionMs;
-            timelineBaseTime = current_time;
-            hasReportedPosition = hasReportedTimeline;
-            lastReportedPositionMs = currentPositionMs;
-            hasTimeline = hasReportedTimeline || !currentArtist.empty() || !currentTitle.empty();
-            timelineApproximate = !hasReportedTimeline;
-            if (lyricsTrackChanged && m_bLyricsAutoLoad) RequestLyricsResolution();
-          } else if (hasReportedTimeline) {
-            currentDurationMs = std::max<std::int64_t>(0, timelineDurationMs);
-            if (!hasReportedPosition || timelinePositionMs != lastReportedPositionMs) {
-              const auto reportedPositionMs = std::max<std::int64_t>(0, timelinePositionMs);
-              const auto smallBackwardCorrection = reportedPositionMs < currentPositionMs &&
-                                                   currentPositionMs - reportedPositionMs <= kTimelineBackwardJitterToleranceMs;
-              if (!smallBackwardCorrection) {
-                currentPositionMs = reportedPositionMs;
-                timelineBasePositionMs = currentPositionMs;
-                timelineBaseTime = current_time;
-              }
-              lastReportedPositionMs = reportedPositionMs;
-              hasReportedPosition = true;
-            }
-            hasTimeline = true;
-            timelineApproximate = false;
-          }
-
-          if (playbackStateChanged) {
-            UpdateCurrentPosition(current_time);
-            timelineBasePositionMs = currentPositionMs;
-            timelineBaseTime = current_time;
-          }
-
-          if (!hasReportedTimeline && playbackStatus == winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped) {
-            currentPositionMs = 0;
-            timelineBasePositionMs = 0;
-            timelineBaseTime = current_time;
-            lastReportedPositionMs = 0;
-            hasReportedPosition = false;
-            hasTimeline = !currentArtist.empty() || !currentTitle.empty();
-            timelineApproximate = hasTimeline;
-          }
-
-          isPlaying = nextIsPlaying;
-          hasPlaybackState = true;
-          UpdateCurrentPosition(current_time);
-        }
-      } else {
-        currentPositionMs = 0;
-        currentDurationMs = 0;
-        hasTimeline = false;
-        timelineApproximate = false;
-        isPlaying = false;
-        hasPlaybackState = false;
-        hasReportedPosition = false;
-        {
-          std::lock_guard<std::mutex> lock(lyricsMutex);
-          ++lyricsRequestGeneration;
-          pendingLyricsTrack.reset();
-          lyricsDocument = LyricsDocument{};
-        }
-        timelineBasePositionMs = 0;
-        timelineBaseTime = current_time;
-        if (currentArtist.length() || currentTitle.length() || currentAlbum.length()) {
-          currentArtist = L"";
-          currentTitle = L"";
-          currentAlbum = L"";
-          updated = true;
+          if ((doPollExplicit || trackChanged || doSaveCover) && properties.Thumbnail()) SaveThumbnailToFile(properties);
+          if ((trackChanged || doPollExplicit) && m_bLyricsAutoLoad) RequestLyricsResolution();
         }
       }
-
-      // Reset the start time to the current time
-      start_time = current_time;
+    } else {
+      smtcSession = nullptr;
+      hasMetadataPoll = false;
+      timelineClock.Reset();
+      currentPositionMs = 0;
+      currentDurationMs = 0;
+      hasTimeline = false;
+      timelineApproximate = false;
+      isPlaying = false;
+      hasPlaybackState = false;
+      hasReportedPosition = false;
+      {
+        std::lock_guard<std::mutex> lock(lyricsMutex);
+        ++lyricsRequestGeneration;
+        pendingLyricsTrack.reset();
+        lyricsDocument = LyricsDocument{};
+      }
+      timelineBasePositionMs = 0;
+      timelineBaseTime = current_time;
+      if (currentArtist.length() || currentTitle.length() || currentAlbum.length()) {
+        currentArtist = L"";
+        currentTitle = L"";
+        currentAlbum = L"";
+        updated = true;
+      }
     }
+
+    start_time = current_time;
+  } catch (const winrt::hresult_error& e) {
+    smtcManager = nullptr;
+    smtcSession = nullptr;
+    hasMetadataPoll = false;
+    timelineClock.Reset();
+    LogInfo(L"PollMediaInfo failed: " + std::wstring(e.message().c_str()));
   } catch (const std::exception& e) {
     LogException(L"PollMediaInfo", e, false);
   }

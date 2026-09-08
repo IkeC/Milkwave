@@ -6307,7 +6307,7 @@ namespace MilkwaveRemote {
     private void lblLyricsZoom_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsZoom, 0.95m); }
     private void lblLyricsFade_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsFade, 0.15m); }
     private void lblLyricsWidth_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsWidth, 0.9m); }
-    private void lblLyricsBurn_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurntime, 0.2m); }
+    private void lblLyricsBurn_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurntime, 0.5m); }
     private void lblLyricsBurnmode_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurnmode, 0m); }
     private void lblLyricsOffset_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsTimeOffset, 0m); }
 
