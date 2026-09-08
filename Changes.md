@@ -1,10 +1,10 @@
 ## v4.1 (unreleased)
 
 * Lyrics support
-  - Automatic lookup, download and caching of synced lyrics (LRC) for the current track
-  - Manual lyrics file loading
-  - Dedicated Remote "Lyrics" tab: on/off, auto-load, font, color, position, zoom, fade, width, time offset, auto-scale and burn-in effects
-* Remote: Configurable tab visibility
+  - Automatic lookup, download and caching of synced lyrics (LRC) for the current track (Ctrl+L)
+  - Dedicated Remote "Lyrics" tab: on/off, manual file loading, font, color, position, zoom, fade, width, time offset, auto-scale and burn-in effects
+* Visualizer IPC multi-client support (by @shanevbg)
+* Configurable Remote tab visibility
 * Updated presets
 
 ## v4.0 (2026-04-19)

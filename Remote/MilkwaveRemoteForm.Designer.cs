@@ -3382,10 +3382,10 @@ namespace MilkwaveRemote
       // numLyricsBurntime
       // 
       numLyricsBurntime.DecimalPlaces = 2;
-      numLyricsBurntime.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numLyricsBurntime.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
       numLyricsBurntime.Location = new Point(535, 123);
       numLyricsBurntime.Margin = new Padding(3, 2, 3, 2);
-      numLyricsBurntime.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+      numLyricsBurntime.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numLyricsBurntime.Name = "numLyricsBurntime";
       numLyricsBurntime.Size = new Size(56, 23);
       numLyricsBurntime.TabIndex = 218;
@@ -3416,7 +3416,7 @@ namespace MilkwaveRemote
       // numLyricsTimeOffset
       // 
       numLyricsTimeOffset.DecimalPlaces = 2;
-      numLyricsTimeOffset.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+      numLyricsTimeOffset.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
       numLyricsTimeOffset.Location = new Point(407, 151);
       numLyricsTimeOffset.Margin = new Padding(3, 2, 3, 2);
       numLyricsTimeOffset.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
