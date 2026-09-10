@@ -4,7 +4,7 @@ rem This script excludes unwanted directories and includes only textures used by
 
 rem Resolve script and release directories
 set "VERSION=4.1"
-set "SUBNAME=Beta"
+set "SUBNAME=Minimal"
 
 set "SCRIPT_DIR=%~dp0"
 set "RELEASE_DIR=%SCRIPT_DIR%..\Release"
@@ -23,6 +23,7 @@ echo Creating base archive (excluding all textures)...
  -xr!backup ^
  -xr!cache ^
  -xr!capture ^
+ -x!resources\*.json ^
  -xr!resources\lyrics\* ^
  -xr!resources\textures\* ^
  -xr!resources\presets\BeatDrop ^
@@ -34,7 +35,8 @@ echo Creating base archive (excluding all textures)...
  -xr!resources\presets\Milkdrop2077 ^
  -xr!resources\presets\Milkwave\Shader\Conv\* ^
  -xr!resources\presets\Quicksave ^
- -xr!resources\presets\Quicksave2
+ -xr!resources\presets\Quicksave2 ^
+ 
 
 echo.
 echo Adding textures used by Milkwave presets...

@@ -3,7 +3,7 @@ rem Create a release zip named Milkwave-Portable-<version>.zip using7-Zip.
 rem This script stages files into a temp folder (excluding unwanted dirs) and archives that folder.
 
 rem Resolve script and release directories
-set "VERSION=4.0"
+set "VERSION=4.1"
 
 set "SCRIPT_DIR=%~dp0"
 set "RELEASE_DIR=%SCRIPT_DIR%..\Release"
@@ -21,6 +21,7 @@ pushd "%RELEASE_DIR%"
  -xr!backup ^
  -xr!cache ^
  -xr!capture ^
+ -x!resources\*.json ^
  -xr!resources\presets\CreamOfTheCrop ^
  -xr!resources\presets\Milkwave\Shader\Conv\* ^
  -xr!resources\presets\IkeC ^
@@ -33,6 +34,7 @@ echo Created: "%OUTPUT%"
 ::pause
 ::cls
 "%SEVENZ%" d "%OUTPUT%" "resources\shader"
+"%SEVENZ%" d "%OUTPUT%" "resources\lyrics"
 "%SEVENZ%" d "%OUTPUT%" "resources\presets\Milkwave\Shader\Conv"
 
 popd

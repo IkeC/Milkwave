@@ -2012,7 +2012,7 @@ int StartThreads(HINSTANCE instance) {
     // milkwave.Init() may only be called after the window is created due to threading issues
     milkwave.logLevel = g_plugin.m_LogLevel;
     g_plugin.milkwave = &milkwave;
-    milkwave.SetLogDirectory(std::filesystem::path(g_plugin.m_szBaseDir) / L"logs");
+    milkwave.SetLogDirectory(std::filesystem::path(g_plugin.m_szBaseDir) / L"log");
 
     milkwave.LogInfo(L"Visualizer startup: Version=" + GetApplicationVersion() +
              L" LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);

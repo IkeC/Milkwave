@@ -4317,10 +4317,11 @@ namespace MilkwaveRemote {
       updatingSettingsParams = true;
       Location = Settings.RemoteWindowLocation;
       Size optimalSize = GetCalculatedOptionalTopPanelSize();
-      if (Settings.RemoteWindowSize.Width > 0 && Settings.RemoteWindowSize.Height > 0) {
+      bool hasSavedWindowSize = Settings.RemoteWindowSize.Width > 0 && Settings.RemoteWindowSize.Height > 0;
+      if (hasSavedWindowSize) {
         Size = Settings.RemoteWindowSize;
       } else {
-        Height = optimalSize.Height + statusBar.Height + 500;
+        ClientSize = new Size(ClientSize.Width, GetDefaultCompactClientHeight() * 2);
         Width = optimalSize.Width;
       }
 
@@ -4333,10 +4334,10 @@ namespace MilkwaveRemote {
       ToggleMonitors();
 
       try {
-        if (Settings.SplitterDistance1 > 0) {
+        if (hasSavedWindowSize && Settings.SplitterDistance1 > 0) {
           splitContainer1.SplitterDistance = Settings.SplitterDistance1;
         } else {
-          splitContainer1.SplitterDistance = optimalSize.Height + 50;
+          splitContainer1.SplitterDistance = GetDefaultTabPanelHeight();
         }
       } catch (Exception) {
         // igonre
@@ -5109,6 +5110,9 @@ namespace MilkwaveRemote {
               Size = Settings.RemoteWindowSize;
             }
           } else {
+            toolStripMenuItemButtonPanel.Checked = false;
+            SetPanelsVisibility();
+
             if (Settings.RemoteWindowCompactSize.Width > 0) {
               Width = Settings.RemoteWindowCompactSize.Width;
             } else {
@@ -5117,11 +5121,8 @@ namespace MilkwaveRemote {
             if (Settings.RemoteWindowCompactSize.Height > 0) {
               Height = Settings.RemoteWindowCompactSize.Height;
             } else {
-              Height = cboFont5.Top + cboFont5.Height + statusBar.Height + 137;
+              ClientSize = new Size(ClientSize.Width, GetDefaultCompactClientHeight());
             }
-
-            toolStripMenuItemButtonPanel.Checked = false;
-            SetPanelsVisibility();
           }
         } else if (e.Button == MouseButtons.Right) {
           if (toolStripMenuItemButtonPanel.Checked) {
@@ -6133,6 +6134,26 @@ namespace MilkwaveRemote {
       int width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + cboPresets.Top * 4;
       int height = cboFont5.Top + cboFont5.Height + cboPresets.Top;
       return new Size(width, height);
+    }
+
+    private int GetDefaultCompactClientHeight() {
+      return GetDefaultTabPanelHeight() + statusStrip1.Height + 5;
+    }
+
+    private int GetDefaultTabPanelHeight() {
+      int tabContentHeight = 0;
+      foreach (TabPage tabPage in tabControl.TabPages) {
+        foreach (Control control in tabPage.Controls) {
+          tabContentHeight = Math.Max(tabContentHeight, control.Bottom);
+        }
+      }
+
+      int tabChromeHeight = tabControl.Height - (tabControl.SelectedTab?.Height ?? tabControl.Height);
+      if (tabChromeHeight < 0) {
+        tabChromeHeight = 0;
+      }
+
+      return tabContentHeight + tabChromeHeight;
     }
 
     private void btnFontGlobalMinus_Click(object sender, EventArgs e) {

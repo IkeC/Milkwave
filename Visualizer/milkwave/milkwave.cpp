@@ -32,7 +32,7 @@ void Milkwave::Init(wchar_t* exePath) {
 
   // Init receives the configured base directory, not the executable filename.
   std::filesystem::path exeDir = std::filesystem::path(exePath);
-  if (!exeDir.empty()) logDirectory = exeDir / L"logs";
+  if (!exeDir.empty()) logDirectory = exeDir / L"log";
   lyricsInstallDirectory = exeDir;
 
   // Construct the "resources/sprites/" directory path relative to the executable
@@ -505,7 +505,7 @@ void Milkwave::WriteLog(const wchar_t* level, const std::wstring& message) {
   try {
     std::lock_guard<std::mutex> lock(logMutex);
     std::filesystem::path directory = logDirectory;
-    if (directory.empty()) directory = std::filesystem::current_path() / L"logs";
+    if (directory.empty()) directory = std::filesystem::current_path() / L"log";
     std::filesystem::create_directories(directory);
 
     const auto systemNow = std::chrono::system_clock::now();

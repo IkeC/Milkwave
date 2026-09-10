@@ -1,4 +1,4 @@
-## v4.1 (unreleased)
+## v4.1 (2026-09-10)
 
 * Lyrics support
   - Automatic lookup, download and caching of synced lyrics (LRC) for the current track (Ctrl+L)
