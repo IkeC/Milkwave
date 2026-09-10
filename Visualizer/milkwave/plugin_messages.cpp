@@ -740,6 +740,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     }
   } else if (wcsncmp(sMessage, L"LYRICS_RESTART", 14) == 0) {
     ::milkwave.ResetTimeline();
+  } else if (wcsncmp(sMessage, L"LYRICS_CLEAR_LINE", 17) == 0) {
+    g_plugin.m_lyricsLineClearPending = true;
   } else if (wcsncmp(sMessage, L"LYRICS_FONT=", 12) == 0) {
     std::wstring face(sMessage + 12);
     if (!face.empty() && face.size() < _countof(g_plugin.m_lyricsFont)) {

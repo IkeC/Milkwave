@@ -1243,7 +1243,8 @@ void RenderFrame() {
   }
   if (milkwave.updated) {
     if (milkwave.isSongChange && !milkwave.doPollExplicit) {
-      if (g_plugin.m_ChangePresetWithSong) {
+      if (g_plugin.m_ChangePresetWithSong &&
+          !g_plugin.m_bPresetLockedByUser && !g_plugin.m_bPresetLockedByCode) {
         g_plugin.NextPreset(g_plugin.m_fBlendTimeAuto);
       }
       if (g_plugin.m_DisplayCover) {
