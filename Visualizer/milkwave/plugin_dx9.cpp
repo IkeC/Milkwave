@@ -1385,6 +1385,12 @@ void CPlugin::RecreateLyricsMeasureFont(float targetScale) {
 void CPlugin::InvalidateLyricsWrapCache() {
   m_lyricsWrapCacheText.clear();
   m_lyricsWrapCacheLines.clear();
+  m_lyricsTextureCacheText.clear();
+  m_lyricsTextureCacheScale = -1.0f;
+  m_lyricsTextureCacheWrapWidth = -1;
+  m_lyricsBurnTextureCacheText.clear();
+  m_lyricsBurnTextureCacheScale = -1.0f;
+  m_lyricsBurnTextureCacheWrapWidth = -1;
 }
 
 void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {

@@ -423,17 +423,29 @@ void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, 
   }
 
   // Render the text into the texture (GDI/D3DX text needs no projection).
+  IDirect3DStateBlock9* stateBlock = NULL;
+  if (lpDevice->CreateStateBlock(D3DSBT_ALL, &stateBlock) != D3D_OK)
+    stateBlock = NULL;
+  if (stateBlock)
+    stateBlock->Capture();
+
   IDirect3DSurface9* pOldRT = NULL;
+  IDirect3DSurface9* pOldDepthStencil = NULL;
   lpDevice->GetRenderTarget(0, &pOldRT);
+  lpDevice->GetDepthStencilSurface(&pOldDepthStencil);
+  D3DVIEWPORT9 oldViewport;
+  lpDevice->GetViewport(&oldViewport);
   IDirect3DSurface9* pTexSurface = NULL;
-  if (tex->GetSurfaceLevel(0, &pTexSurface) == D3D_OK) {
-    lpDevice->SetRenderTarget(0, pTexSurface);
+  bool renderedTexture = false;
+  lpDevice->SetDepthStencilSurface(NULL);
+  if (tex->GetSurfaceLevel(0, &pTexSurface) == D3D_OK &&
+      lpDevice->SetRenderTarget(0, pTexSurface) == D3D_OK) {
     pTexSurface->Release();
+    pTexSurface = NULL;
 
     // Keep the viewport covering the whole texture so Clear() and the text
     // rects always target the full surface regardless of the ambient viewport.
-    D3DVIEWPORT9 oldViewport, texViewport;
-    lpDevice->GetViewport(&oldViewport);
+    D3DVIEWPORT9 texViewport;
     texViewport.X = texViewport.Y = 0;
     texViewport.Width = sizeX;
     texViewport.Height = sizeY;
@@ -482,11 +494,21 @@ void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, 
     lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, oldAlphaEnable);
     lpDevice->SetRenderState(D3DRS_SRCBLEND, oldSrcBlend);
     lpDevice->SetRenderState(D3DRS_DESTBLEND, oldDestBlend);
+    renderedTexture = true;
 
-    lpDevice->SetRenderTarget(0, pOldRT);
-    lpDevice->SetViewport(&oldViewport);
   }
+  if (stateBlock)
+    stateBlock->Apply();
+  lpDevice->SetRenderTarget(0, pOldRT);
+  lpDevice->SetDepthStencilSurface(pOldDepthStencil);
+  lpDevice->SetViewport(&oldViewport);
+  SafeRelease(pTexSurface);
   SafeRelease(pOldRT);
+  SafeRelease(pOldDepthStencil);
+  SafeRelease(stateBlock);
+
+  if (!renderedTexture)
+    return;
 
   useW = neededW;
   useH = neededH;
@@ -514,12 +536,33 @@ void CPlugin::DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, 
   lpDevice->GetTransform(D3DTS_WORLD, &oldWorld);
   DWORD oldAlphaEnable = 0, oldSrcBlend = 0, oldDestBlend = 0;
   DWORD oldMag = 0, oldMin = 0, oldMip = 0;
+  DWORD oldColorOp = 0, oldColorArg1 = 0, oldColorArg2 = 0;
+  DWORD oldAlphaOp = 0, oldAlphaArg1 = 0, oldAlphaArg2 = 0;
+  DWORD oldStage1ColorOp = 0, oldStage1AlphaOp = 0;
+  DWORD oldFVF = 0;
+  IDirect3DBaseTexture9* oldTexture0 = NULL;
+  IDirect3DBaseTexture9* oldTexture1 = NULL;
+  IDirect3DVertexShader9* oldVertexShader = NULL;
+  IDirect3DPixelShader9* oldPixelShader = NULL;
   lpDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &oldAlphaEnable);
   lpDevice->GetRenderState(D3DRS_SRCBLEND, &oldSrcBlend);
   lpDevice->GetRenderState(D3DRS_DESTBLEND, &oldDestBlend);
   lpDevice->GetSamplerState(0, D3DSAMP_MAGFILTER, &oldMag);
   lpDevice->GetSamplerState(0, D3DSAMP_MINFILTER, &oldMin);
   lpDevice->GetSamplerState(0, D3DSAMP_MIPFILTER, &oldMip);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLOROP, &oldColorOp);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLORARG1, &oldColorArg1);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLORARG2, &oldColorArg2);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAOP, &oldAlphaOp);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAARG1, &oldAlphaArg1);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAARG2, &oldAlphaArg2);
+  lpDevice->GetTextureStageState(1, D3DTSS_COLOROP, &oldStage1ColorOp);
+  lpDevice->GetTextureStageState(1, D3DTSS_ALPHAOP, &oldStage1AlphaOp);
+  lpDevice->GetFVF(&oldFVF);
+  lpDevice->GetTexture(0, &oldTexture0);
+  lpDevice->GetTexture(1, &oldTexture1);
+  lpDevice->GetVertexShader(&oldVertexShader);
+  lpDevice->GetPixelShader(&oldPixelShader);
 
   // 2D projection: x/y in -1..1 map to the full current render target
   // (y=-1 is top), matching how sprites and message titles are drawn.
@@ -587,7 +630,23 @@ void CPlugin::DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, 
   lpDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, oldMag);
   lpDevice->SetSamplerState(0, D3DSAMP_MINFILTER, oldMin);
   lpDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, oldMip);
-  lpDevice->SetTexture(0, NULL);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, oldColorOp);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, oldColorArg1);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG2, oldColorArg2);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, oldAlphaOp);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, oldAlphaArg1);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, oldAlphaArg2);
+  lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, oldStage1ColorOp);
+  lpDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, oldStage1AlphaOp);
+  lpDevice->SetFVF(oldFVF);
+  lpDevice->SetVertexShader(oldVertexShader);
+  lpDevice->SetPixelShader(oldPixelShader);
+  lpDevice->SetTexture(0, oldTexture0);
+  lpDevice->SetTexture(1, oldTexture1);
+  SafeRelease(oldTexture0);
+  SafeRelease(oldTexture1);
+  SafeRelease(oldVertexShader);
+  SafeRelease(oldPixelShader);
 }
 
 void CPlugin::MyRenderUI(
