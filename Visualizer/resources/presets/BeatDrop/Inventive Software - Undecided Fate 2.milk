@@ -90,7 +90,7 @@ wavecode_1_a=1.000000
 wave_1_per_frame1=r = 0.01*int(rand(100));
 wave_1_per_frame2=g = 0.02*int(rand(100));
 wave_1_per_frame3=b = 0.03*int(rand(100));
-wave_1_per_frame4=a = 0.01*bass+mid+treble;
+wave_1_per_frame4=a = 0.01*bass+mid+treb;
 wavecode_2_enabled=1
 wavecode_2_samples=300
 wavecode_2_sep=20
@@ -142,11 +142,11 @@ shapecode_0_border_b=1.000000
 shapecode_0_border_a=0.000000
 shape_0_per_frame1=rad = 0.2*sin(time*1.57*0.8);
 shape_0_per_frame2=r = sin(0.9*bass_att);
-shape_0_per_frame3=g = sin(mid_att*(treble_att*0.4));
-shape_0_per_frame4=b = sin(0.9*treble);
+shape_0_per_frame3=g = sin(mid_att*(treb_att*0.4));
+shape_0_per_frame4=b = sin(0.9*treb);
 shape_0_per_frame5=r2 = sin(0.6*bass);
-shape_0_per_frame6=g2 = sin(1.2*mid*(1.5*treble));
-shape_0_per_frame7=b2 = sin(1.8*treble_att);
+shape_0_per_frame6=g2 = sin(1.2*mid*(1.5*treb));
+shape_0_per_frame7=b2 = sin(1.8*treb_att);
 shape_0_per_frame8=x = 0.5 + 0.2*cos(time);
 shape_0_per_frame9=y = 0.5 + 0.2*sin(time);
 shapecode_1_enabled=0
@@ -218,5 +218,5 @@ shapecode_3_border_r=1.000000
 shapecode_3_border_g=1.000000
 shapecode_3_border_b=1.000000
 shapecode_3_border_a=0.100000
-per_frame_1=zoom = zoom + 0.09*sin(bass+mid_att+treble);
+per_frame_1=zoom = zoom + 0.09*sin(bass+mid_att+treb);
 per_frame_2=rot = sin(time*1.4)*(0.09*mid*bass);

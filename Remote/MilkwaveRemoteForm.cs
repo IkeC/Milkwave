@@ -488,7 +488,7 @@ namespace MilkwaveRemote {
         }
       } catch (Exception ex) {
         ShowSpriteLabel(button);
-        Program.SaveErrorToFile(ex, "Sprite preview");
+        Program.SaveErrorToFile(ex, "Sprite preview", showMessage: false);
       }
     }
 
@@ -928,7 +928,11 @@ namespace MilkwaveRemote {
     }
 
     public MilkwaveRemoteForm() {
+      Assembly executingAssembly = Assembly.GetExecutingAssembly();
+      FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(executingAssembly.Location);
+      string? version = fileVersionInfo.FileVersion;
       Program.LogToFile("### Milkwave Remote Starting ###");
+      Program.LogToFile($"Application version: {version ?? "unknown"}");
       InitializeComponent();
 
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
@@ -937,9 +941,6 @@ namespace MilkwaveRemote {
 
       FixNumericUpDownMouseWheel(this);
 
-      Assembly executingAssembly = Assembly.GetExecutingAssembly();
-      var fieVersionInfo = FileVersionInfo.GetVersionInfo(executingAssembly.Location);
-      var version = fieVersionInfo.FileVersion;
       toolStripMenuItemHomepage.Text = $"Milkwave {version}";
 
       try {

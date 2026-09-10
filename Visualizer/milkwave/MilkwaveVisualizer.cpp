@@ -145,6 +145,7 @@
 
 #include <ShellScalingApi.h>        // for dpi awareness
 #pragma comment(lib, "shcore.lib")  // for dpi awareness
+#pragma comment(lib, "version.lib")
 // older Windows versions: Entry Point Not Found Fix
 
 #include "plugin.h"
@@ -1980,6 +1981,27 @@ void StartSetupThread(bool manualTrigger) {
   }
 }
 
+static std::wstring GetApplicationVersion() {
+  wchar_t modulePath[MAX_PATH];
+  DWORD pathLength = GetModuleFileNameW(nullptr, modulePath, _countof(modulePath));
+  if (pathLength == 0 || pathLength >= _countof(modulePath)) return L"unknown";
+
+  DWORD versionInfoSize = GetFileVersionInfoSizeW(modulePath, nullptr);
+  if (versionInfoSize == 0) return L"unknown";
+
+  std::vector<BYTE> versionInfo(versionInfoSize);
+  if (!GetFileVersionInfoW(modulePath, 0, versionInfoSize, versionInfo.data())) return L"unknown";
+
+  LPVOID versionValue = nullptr;
+  UINT versionValueSize = 0;
+  if (!VerQueryValueW(versionInfo.data(), L"\\StringFileInfo\\040904b0\\FileVersion",
+                      &versionValue, &versionValueSize) || versionValueSize == 0) {
+    return L"unknown";
+  }
+
+  return static_cast<LPCWSTR>(versionValue);
+}
+
 int StartThreads(HINSTANCE instance) {
   try {
     // Milkwave: early init so we can read from settings
@@ -1991,7 +2013,8 @@ int StartThreads(HINSTANCE instance) {
     g_plugin.milkwave = &milkwave;
     milkwave.SetLogDirectory(std::filesystem::path(g_plugin.m_szBaseDir) / L"logs");
 
-    milkwave.LogInfo(L"Visualizer startup: LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);
+    milkwave.LogInfo(L"Visualizer startup: Version=" + GetApplicationVersion() +
+             L" LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);
 
     if (g_plugin.m_CheckDirectXOnStartup) {
       if (!g_plugin.CheckForDirectX9c()) {

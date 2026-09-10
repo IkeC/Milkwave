@@ -4801,15 +4801,6 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
         m_fInputMixOpacity,
         luma_active};
     pCT->SetVector(lpDevice, p->luma_params, (D3DXVECTOR4*)lumaValues);
-
-    static int frameCountPreset = 0;
-    if (frameCountPreset % 120 == 0 && milkwave) {
-      wchar_t buf[256];
-      swprintf_s(buf, L"ApplyShaderParams Luma: active=%.1f (luma=%d, mix=%d, top=%d)",
-                 luma_active, m_bInputMixLumaActive, bMixOn, bPresetIsTop);
-      milkwave->LogInfo(buf);
-    }
-    frameCountPreset++;
   }
   D3DXHANDLE* h = p->const_handles;
   if (h[0]) pCT->SetVector(lpDevice, h[0], &D3DXVECTOR4(aspect_x, aspect_y, 1.0f / aspect_x, 1.0f / aspect_y));

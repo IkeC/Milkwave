@@ -229,6 +229,7 @@ void Milkwave::PollMediaInfo() {
           }
           if ((doPollExplicit || trackChanged || doSaveCover) && properties.Thumbnail()) SaveThumbnailToFile(properties);
           if ((trackChanged || doPollExplicit) && m_bLyricsAutoLoad) RequestLyricsResolution();
+          if (doPollExplicit && !trackChanged) doPollExplicit = false;
         }
       }
     } else {
