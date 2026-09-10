@@ -855,6 +855,8 @@ class CPlugin : public CPluginShell {
   std::wstring m_burnLyricsActiveText;           // current line rendered into the burn-in
   std::wstring m_burnLyricsPrevText;             // previous line burning out in the texture
   double m_burnLyricsPrevChangeTime = -1.0;
+  bool m_lyricsLineClearPending = false;
+  std::int64_t m_lyricsClearedLineStartMs = -1;
 
   // Stable word-wrap: lines are laid out ONCE at the target (end-of-fade)
   // font size with m_lyricsMeasureFontObject and pre-rendered into

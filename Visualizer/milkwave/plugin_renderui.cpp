@@ -216,6 +216,19 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
   if (lyricText.empty())
     return;
 
+  if (m_lyricsLineClearPending) {
+    m_lyricsLineClearPending = false;
+    m_lyricsClearedLineStartMs = lyricState.startMs;
+    m_burnLyricsActiveText.clear();
+    m_burnLyricsPrevText.clear();
+    m_burnLyricsPrevChangeTime = -1.0;
+  }
+  if (m_lyricsClearedLineStartMs >= 0) {
+    if (lyricState.startMs == m_lyricsClearedLineStartMs)
+      return;
+    m_lyricsClearedLineStartMs = -1;
+  }
+
   int canvasWidth = burnIn ? m_nTexSizeX : GetWidth();
   int canvasHeight = burnIn ? m_nTexSizeY : GetHeight();
   if (canvasWidth <= 0 || canvasHeight <= 0)

@@ -85,6 +85,7 @@ class Milkwave {
   struct LyricsVisualState {
     std::wstring text;
     float opacity = 0.0f;
+    std::int64_t startMs = -1;
   };
   LyricsVisualState CurrentLyricsVisualState(std::int64_t offsetMs, float fadeSeconds) const;
   std::wstring LyricsMonitorText(bool enabled, std::int64_t offsetMs = 0) const;

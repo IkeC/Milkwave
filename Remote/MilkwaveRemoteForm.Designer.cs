@@ -447,6 +447,7 @@ namespace MilkwaveRemote
       panShadertoyLocal = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
+      btnLyricsLineClear = new Button();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -1161,7 +1162,7 @@ namespace MilkwaveRemote
       // 
       // btnSetAudioDevice
       // 
-      btnSetAudioDevice.Location = new Point(327, 123);
+      btnSetAudioDevice.Location = new Point(327, 124);
       btnSetAudioDevice.Name = "btnSetAudioDevice";
       btnSetAudioDevice.Size = new Size(55, 23);
       btnSetAudioDevice.TabIndex = 35;
@@ -3089,7 +3090,7 @@ namespace MilkwaveRemote
       // 
       pnlLyricsColor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       pnlLyricsColor.BorderStyle = BorderStyle.FixedSingle;
-      pnlLyricsColor.Location = new Point(299, 93);
+      pnlLyricsColor.Location = new Point(299, 94);
       pnlLyricsColor.Name = "pnlLyricsColor";
       pnlLyricsColor.Size = new Size(38, 23);
       pnlLyricsColor.TabIndex = 196;
@@ -3099,7 +3100,7 @@ namespace MilkwaveRemote
       // numLyricsFontSize
       // 
       numLyricsFontSize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      numLyricsFontSize.Location = new Point(247, 93);
+      numLyricsFontSize.Location = new Point(247, 94);
       numLyricsFontSize.Margin = new Padding(3, 2, 3, 2);
       numLyricsFontSize.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
       numLyricsFontSize.Name = "numLyricsFontSize";
@@ -3288,7 +3289,7 @@ namespace MilkwaveRemote
       txtLyricsCurrentLine.Location = new Point(71, 65);
       txtLyricsCurrentLine.Name = "txtLyricsCurrentLine";
       txtLyricsCurrentLine.ReadOnly = true;
-      txtLyricsCurrentLine.Size = new Size(451, 23);
+      txtLyricsCurrentLine.Size = new Size(376, 23);
       txtLyricsCurrentLine.TabIndex = 203;
       toolTip1.SetToolTip(txtLyricsCurrentLine, "The lyric line currently being shown by the visualizer");
       // 
@@ -3430,9 +3431,9 @@ namespace MilkwaveRemote
       // 
       // lblLyricsFont
       // 
-      lblLyricsFont.Location = new Point(8, 93);
+      lblLyricsFont.Location = new Point(18, 93);
       lblLyricsFont.Name = "lblLyricsFont";
-      lblLyricsFont.Size = new Size(60, 24);
+      lblLyricsFont.Size = new Size(47, 24);
       lblLyricsFont.TabIndex = 198;
       lblLyricsFont.Text = "Font";
       lblLyricsFont.TextAlign = ContentAlignment.MiddleRight;
@@ -4825,6 +4826,7 @@ namespace MilkwaveRemote
       // 
       tabLyrics.BackColor = SystemColors.ControlLight;
       tabLyrics.BorderStyle = BorderStyle.FixedSingle;
+      tabLyrics.Controls.Add(btnLyricsLineClear);
       tabLyrics.Controls.Add(numLyricsTimeOffset);
       tabLyrics.Controls.Add(lblLyricsOffset);
       tabLyrics.Controls.Add(chkLyricsAutoScale);
@@ -5950,6 +5952,19 @@ namespace MilkwaveRemote
       splitContainerShader.SplitterDistance = 284;
       splitContainerShader.TabIndex = 31;
       // 
+      // btnLyricsLineClear
+      //
+      btnLyricsLineClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnLyricsLineClear.FlatStyle = FlatStyle.System;
+      btnLyricsLineClear.Location = new Point(453, 64);
+      btnLyricsLineClear.Name = "btnLyricsLineClear";
+      btnLyricsLineClear.Size = new Size(70, 23);
+      btnLyricsLineClear.TabIndex = 222;
+      btnLyricsLineClear.Text = "Clear";
+      toolTip1.SetToolTip(btnLyricsLineClear, "Clear the currently displayed lyrics line without changing the timeline");
+      btnLyricsLineClear.UseVisualStyleBackColor = true;
+      btnLyricsLineClear.Click += btnLyricsLineClear_Click;
+      //
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -6486,5 +6501,6 @@ namespace MilkwaveRemote
     private Label lblLyricsBurn;
     private CheckBox chkLyricsAutoScale;
     private Label lblLyricsOffset;
+    private Button btnLyricsLineClear;
   }
 }

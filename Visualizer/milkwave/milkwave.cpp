@@ -324,7 +324,7 @@ Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offs
       }
     }
   }
-  return {currentLine->text, std::clamp(opacity, 0.0f, 1.0f)};
+  return {currentLine->text, std::clamp(opacity, 0.0f, 1.0f), currentLine->startMs};
 }
 
 std::wstring Milkwave::LyricsMonitorText(bool enabled, std::int64_t offsetMs) const {

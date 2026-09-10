@@ -203,6 +203,7 @@ namespace MilkwaveRemote {
       LyricsAuto,
       LyricsLoad,
       LyricsRestart,
+      LyricsLineClear,
       LyricsFont,
       LyricsFontSize,
       LyricsFontBold,
@@ -2124,6 +2125,8 @@ namespace MilkwaveRemote {
               message = "LYRICS_LOAD=" + messageToSend;
             } else if (type == MessageType.LyricsRestart) {
               message = "LYRICS_RESTART";
+            } else if (type == MessageType.LyricsLineClear) {
+              message = "LYRICS_CLEAR_LINE";
             } else if (type == MessageType.LyricsFont) {
               message = "LYRICS_FONT=" + cboLyricsFont.Text;
             } else if (type == MessageType.LyricsFontSize) {
@@ -6194,6 +6197,11 @@ namespace MilkwaveRemote {
     private void btnLyricsRestart_Click(object sender, EventArgs e) {
       SendToMilkwaveVisualizer("", MessageType.LyricsRestart);
       SetStatusText("Restarted the lyrics timeline");
+    }
+
+    private void btnLyricsLineClear_Click(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.LyricsLineClear);
+      SetStatusText("Cleared the displayed lyrics line");
     }
 
     private void ApplyLyricsColor() {
