@@ -174,6 +174,9 @@ int CPlugin::AllocateMyDX9Stuff() {
 
   m_nFramesSinceResize = 0;
 
+  RecreateLyricsFont();
+  RecreateLyricsMeasureFont(1.0f);
+
   int nNewCanvasStretch = (m_nCanvasStretch == 0) ? 100 : m_nCanvasStretch;
 
   DWORD PSVersion = GetCaps()->PixelShaderVersion & 0xFFFF;  // 0x0300, etc.
@@ -1340,6 +1343,50 @@ bool CPlugin::AddNoiseVol(const wchar_t* szTexName, int size, int zoom_factor) {
   return true;
 }
 
+void CPlugin::RecreateLyricsFont(float scale) {
+  SafeRelease(m_lyricsFontObject);
+  if (scale < 0.0f) scale = m_lyricsCurrentFontScale >= 0.0f ? m_lyricsCurrentFontScale : 1.0f;
+  if (scale < 0.1f) scale = 0.1f;
+  if (scale > 10.0f) scale = 10.0f;
+  m_lyricsCurrentFontScale = scale;
+  // Round (not truncate) so a scale passed in as targetSize/sizePerScale maps
+  // back to exactly targetSize — prevents off-by-one drift in the recreation
+  // hysteresis used by the lyrics render loop.
+  int lyricsFontSize = (int)(m_lyricsFontSize * scale * m_fRenderQuality + 0.5f);
+  if (lyricsFontSize < 8) lyricsFontSize = 8;
+  if (lyricsFontSize > 256) lyricsFontSize = 256;
+  const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
+  const UINT fontWeight = m_lyricsFontBold ? FW_BOLD : FW_NORMAL;
+  const BOOL italic = m_lyricsFontItalic ? TRUE : FALSE;
+  const DWORD quality = m_lyricsFontAA ? ANTIALIASED_QUALITY : NONANTIALIASED_QUALITY;
+  D3DXCreateFontW(GetDevice(), lyricsFontSize, lyricsFontSize * 4 / 10, fontWeight, 1, italic,
+                  DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, quality, DEFAULT_PITCH,
+                  lyricsFontFace, &m_lyricsFontObject);
+}
+
+void CPlugin::RecreateLyricsMeasureFont(float targetScale) {
+  SafeRelease(m_lyricsMeasureFontObject);
+  if (targetScale < 0.0f) targetScale = m_lyricsMeasureFontScale >= 0.0f ? m_lyricsMeasureFontScale : 1.0f;
+  if (targetScale < 0.1f) targetScale = 0.1f;
+  if (targetScale > 10.0f) targetScale = 10.0f;
+  m_lyricsMeasureFontScale = targetScale;
+  int lyricsFontSize = (int)(m_lyricsFontSize * targetScale * m_fRenderQuality + 0.5f);
+  if (lyricsFontSize < 8) lyricsFontSize = 8;
+  if (lyricsFontSize > 256) lyricsFontSize = 256;
+  const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
+  const UINT fontWeight = m_lyricsFontBold ? FW_BOLD : FW_NORMAL;
+  const BOOL italic = m_lyricsFontItalic ? TRUE : FALSE;
+  const DWORD quality = m_lyricsFontAA ? ANTIALIASED_QUALITY : NONANTIALIASED_QUALITY;
+  D3DXCreateFontW(GetDevice(), lyricsFontSize, lyricsFontSize * 4 / 10, fontWeight, 1, italic,
+                  DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, quality, DEFAULT_PITCH,
+                  lyricsFontFace, &m_lyricsMeasureFontObject);
+}
+
+void CPlugin::InvalidateLyricsWrapCache() {
+  m_lyricsWrapCacheText.clear();
+  m_lyricsWrapCacheLines.clear();
+}
+
 void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   // Clean up all your DX9 and D3DX textures, fonts, buffers, etc. here.
   // EVERYTHING CREATED IN ALLOCATEMYDX9STUFF() SHOULD BE CLEANED UP HERE.
@@ -1453,6 +1500,14 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   }
 
   SafeRelease(m_d3dx_title_font_doublesize);
+  SafeRelease(m_lyricsFontObject);
+  SafeRelease(m_lyricsMeasureFontObject);
+  SafeRelease(m_lyricsTexture);
+  SafeRelease(m_lyricsBurnTexture);
+  m_lyricsTextureSizeX = m_lyricsTextureSizeY = 0;
+  m_lyricsBurnTextureSizeX = m_lyricsBurnTextureSizeY = 0;
+  m_lyricsTextureUseW = m_lyricsTextureUseH = 0;
+  m_lyricsBurnTextureUseW = m_lyricsBurnTextureUseH = 0;
 
   // NOTE: THIS CODE IS IN THE RIGHT PLACE.
   if (m_gdi_title_font_doublesize) {

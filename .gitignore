@@ -32,3 +32,6 @@ enc_temp_folder/
 /Build/*issues*.md
 
 Remote/MilkwaveRemote.csproj.lscache
+/.local
+*.log
+*.obj

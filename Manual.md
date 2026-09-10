@@ -8,7 +8,7 @@ If you need help with the Visualizer itself, press F1 there to see the on-screen
 
 # Interface
 
-The Tabs panel (top half) holds most features available in the Remote, described in detail below.
+The Tabs panel (top half) holds most features available in the Remote, described in detail below. You can show or hide any of the tabs by setting the corresponding _ShowTab_ key in the _Milkwave_ section of _settings.ini_ (_ShowTabPreset_, _ShowTabMessage_, _ShowTabInOut_, _ShowTabSettings_, _ShowTabLyrics_, _ShowTabFonts_, _ShowTabMidi_, _ShowTabWave_ and _ShowTabShader_; all are on by default except the Shader tab).
 
 The Buttons panel (bottom half) has two modes: "Command" mode and "Preset" mode. You can switch between modes using the blue arrows button in the lower right corner.
 
@@ -121,6 +121,24 @@ The "Preset" row allows you to set the lock mode for the current preset (same as
 "Compile" allows you to precompile the shaders defined in _precompile.txt_. This will usually take 2-3 minutes and happen in the background. You may also "Clear" the cache, which will simply remove all files from the _cache_ folder. This may be useful if you want to reset all shaders to be recompiled, eg. after a Milkwave update.
 
 With FFT you may control equalizer attack and decay values for presets supporting FFT functions *get_fft(pos)* and *get_fft_hz(freq)*, such as _IkeC - Equalizer.milk_ from the _Milkwave_ presets folder. *get_fft_peak_hz(freq)* is exclusive to Milkwave.
+
+## Tab "Lyrics"
+
+The Lyrics tab controls the synchronized lyrics overlay that the Visualizer draws on top of the visual output, and that is also included in the Spout sender. When "Auto" is active, Milkwave looks up the lyrics for the currently playing track automatically (eg. from [LRCLIB](https://lrclib.net)) and caches them locally; otherwise you can load a lyrics file manually.
+
+The "Status" field shows the current lyrics state ("Lyrics off", "Lyrics loading", "Lyrics loaded", "Lyrics missing timestamps" or "Lyrics unavailable"). "Active" turns the lyrics overlay on or off (settings.ini:LyricsEnabled), and "Auto" toggles the automatic lookup of lyrics for the current track (settings.ini:LyricsAutoLoad).
+
+The "File" field shows the lyrics file in use — only the filename is displayed, the full path appears when you hover the mouse over it. "Load" lets you pick a custom _.lrc_ or _.txt_ file, "Edit" opens the current lyrics file in the associated editor, and the current line is shown in the "Line" field. "Restart" resets the internal timeline to the start of the track, which is handy for players that don't report a position; the lyrics then begin again from the first line.
+
+The "Font" row sets the font face, size, bold/italic/antialiasing options and the text color used for the lyrics.
+
+The two bottom rows control the layout and timing of the overlay. "Pos X"/"Pos Y" place the lyrics block on the canvas, while "Start X"/"Start Y" define where the lyrics move from while they fade in and out. "Zoom" scales the font at the fade extremes (1.0 means no scaling), and "Fade" sets the fade-in/out duration in seconds (settings.ini:LyricsFade). "Width" limits the maximum width of the lyrics block as a ratio of the canvas (settings.ini:LyricsMaxWidth); longer lines wrap at word boundaries.
+
+"Burntime" bakes the previous line into the background and lets it fade out over the given time in seconds (0 turns this off), similar to the burntime effect for messages. "Burnmode" selects when the burn-in is applied: 0 turns it off, 1 burns the leaving line when its fade-out starts, 2 bakes the current line as it fades in (the original behavior), and 3 only draws the burn-in without the crisp overlay (settings.ini:LyricsBurnTime / LyricsBurnType). "Offset" shifts the lyrics timestamps by the given number of seconds (settings.ini:LyricsOffsetSeconds), eg. to sync the lyrics with a delayed audio feed. The drop shadow is configured directly in _settings.ini_ with the _LyricsShadow_ key.
+
+"Autoscale" (on by default) auto-sizes the font so about (60 - font size) characters fit per line within the "Width" area; a larger font-size value therefore renders the lyrics bigger (settings.ini:LyricsAutoScale).
+
+You can double-click any of the labels in the two bottom rows to reset the accompanying input to its default value. All lyrics settings are stored in the _Lyrics_ section of _settings.ini_.
 
 ## Tab "Fonts"
 

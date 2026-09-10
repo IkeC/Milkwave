@@ -46,6 +46,9 @@
     <ClCompile Include="menu.cpp">
       <Filter>library\sources</Filter>
     </ClCompile>
+    <ClCompile Include="Lyrics.cpp">
+      <Filter>library\sources</Filter>
+    </ClCompile>
     <ClCompile Include="pluginshell.cpp">
       <Filter>library\sources</Filter>
     </ClCompile>
@@ -145,6 +148,9 @@
       <Filter>library\headers</Filter>
     </ClInclude>
     <ClInclude Include="menu.h">
+      <Filter>library\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Lyrics.h">
       <Filter>library\headers</Filter>
     </ClInclude>
     <ClInclude Include="plugin.h">

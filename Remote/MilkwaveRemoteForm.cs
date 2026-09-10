@@ -30,6 +30,10 @@ namespace MilkwaveRemote {
 
     private bool updatingWaveParams = false;
     private bool updatingSettingsParams = false;
+    private string currentLyricsFilePath = "";  // full path of the lyrics file in use
+    private int lyricsColorR = 255;
+    private int lyricsColorG = 255;
+    private int lyricsColorB = 255;
     private uint lastControllerButtons = 0;
     private Dictionary<int, string> controllerConfig = new();
 
@@ -195,6 +199,27 @@ namespace MilkwaveRemote {
       ColBrightness,
       HueAuto,
       HueAutoSeconds,
+      LyricsActive,
+      LyricsAuto,
+      LyricsLoad,
+      LyricsRestart,
+      LyricsFont,
+      LyricsFontSize,
+      LyricsFontBold,
+      LyricsFontItalic,
+      LyricsFontAA,
+      LyricsColor,
+      LyricsPosX,
+      LyricsPosY,
+      LyricsStartX,
+      LyricsStartY,
+      LyricsZoom,
+      LyricsFade,
+      LyricsWidth,
+      LyricsBurn,
+      LyricsBurnType,
+      LyricsTimeOffset,
+      LyricsAutoScale,
       CaptureScreenshot,
       VideoInput,
       SpoutInput,
@@ -463,7 +488,7 @@ namespace MilkwaveRemote {
         }
       } catch (Exception ex) {
         ShowSpriteLabel(button);
-        Program.SaveErrorToFile(ex, "Sprite preview");
+        Program.SaveErrorToFile(ex, "Sprite preview", showMessage: false);
       }
     }
 
@@ -903,7 +928,11 @@ namespace MilkwaveRemote {
     }
 
     public MilkwaveRemoteForm() {
+      Assembly executingAssembly = Assembly.GetExecutingAssembly();
+      FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(executingAssembly.Location);
+      string? version = fileVersionInfo.FileVersion;
       Program.LogToFile("### Milkwave Remote Starting ###");
+      Program.LogToFile($"Application version: {version ?? "unknown"}");
       InitializeComponent();
 
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
@@ -912,9 +941,6 @@ namespace MilkwaveRemote {
 
       FixNumericUpDownMouseWheel(this);
 
-      Assembly executingAssembly = Assembly.GetExecutingAssembly();
-      var fieVersionInfo = FileVersionInfo.GetVersionInfo(executingAssembly.Location);
-      var version = fieVersionInfo.FileVersion;
       toolStripMenuItemHomepage.Text = $"Milkwave {version}";
 
       try {
@@ -969,9 +995,13 @@ namespace MilkwaveRemote {
           cboFont3.Items.Add(font.Name);
           cboFont4.Items.Add(font.Name);
           cboFont5.Items.Add(font.Name);
+          cboLyricsFont.Items.Add(font.Name);
         }
         if (cboFonts.Items.Contains(defaultFontName)) {
           cboFonts.SelectedItem = defaultFontName;
+        }
+        if (cboLyricsFont.Items.Contains("Segoe UI")) {
+          cboLyricsFont.SelectedItem = "Segoe UI";
         }
       }
 
@@ -1010,7 +1040,7 @@ namespace MilkwaveRemote {
       SetPanelsVisibility();
 
 #if DEBUG
-      //cboShadertoyURL.Text = "w3KGRK";
+      ConnectToVisualizerIfRunning();
 #else
       StartVisualizerIfNotFound(true);
 #endif
@@ -1039,6 +1069,38 @@ namespace MilkwaveRemote {
 
       // Launch the visualizer and connect via pipe
       LaunchAndConnectVisualizer();
+    }
+
+    /// <summary>
+    /// DEBUG builds: the developer launches the visualizer, so we never
+    /// auto-launch — but we do auto-connect to an already-running instance.
+    /// The visualizer's pipe may not be ready the instant this form starts
+    /// (the Remote can start before the visualizer's pipe server), so we
+    /// retry briefly instead of requiring a manual "Scan".
+    /// </summary>
+    private void ConnectToVisualizerIfRunning() {
+      var instances = PipeClient.DiscoverVisualizers();
+      if (instances.Count > 0) {
+        ScanAndPopulateVisualizers();
+        ConnectToInstance(instances[0]);
+        return;
+      }
+
+      var retryTimer = new System.Windows.Forms.Timer();
+      retryTimer.Interval = 300;
+      int tries = 0;
+      retryTimer.Tick += (s, e) => {
+        var found = PipeClient.DiscoverVisualizers();
+        if (found.Count > 0 || ++tries >= 20) {
+          retryTimer.Stop();
+          retryTimer.Dispose();
+          if (found.Count > 0) {
+            ScanAndPopulateVisualizers();
+            ConnectToInstance(found[0]);
+          }
+        }
+      };
+      retryTimer.Start();
     }
 
     /// <summary>
@@ -1371,7 +1433,7 @@ namespace MilkwaveRemote {
           cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
           var sw = _discoveredInstances[highestIdx];
           ConnectToInstance(sw, autoSwitch: false); // prevent recursive auto-switch
-          SetStatusText($"{failedMsg} — switched to {sw.name} (PID: {sw.pid})");
+          SetStatusText($"{failedMsg}, switched to {sw.name} (PID: {sw.pid})");
         } else {
           SetStatusText(failedMsg);
         }
@@ -1509,7 +1571,7 @@ namespace MilkwaveRemote {
         cboVisualizerInstance.SelectedIndex = highestIdx;
         cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
         ConnectToInstance(_discoveredInstances[highestIdx]);
-        SetStatusText($"Visualizer closed — switched to {_discoveredInstances[highestIdx].name} (PID: {_discoveredInstances[highestIdx].pid})");
+        SetStatusText($"Visualizer closed, switched to {_discoveredInstances[highestIdx].name} (PID: {_discoveredInstances[highestIdx].pid})");
       } else {
         SetStatusText("Visualizer closed");
       }
@@ -1639,6 +1701,12 @@ namespace MilkwaveRemote {
         } else if (message.StartsWith("DEVICE=")) {
           string device = message.Substring(message.IndexOf("=") + 1);
           RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
+        } else if (message.StartsWith("LYRICSSTATUS=")) {
+          txtLyricsStatus.Text = message.Substring("LYRICSSTATUS=".Length);
+        } else if (message.StartsWith("LYRICSLINE=")) {
+          txtLyricsCurrentLine.Text = message.Substring("LYRICSLINE=".Length);
+        } else if (message.StartsWith("LYRICSFILE=")) {
+          SetCurrentLyricsFile(message.Substring("LYRICSFILE=".Length));
         } else if (message.StartsWith("SETTINGS|")) {
           string settingsInfo = message.Substring(message.IndexOf("|") + 1);
           string[] settingsParams = settingsInfo.Split('|');
@@ -1681,6 +1749,63 @@ namespace MilkwaveRemote {
                   if (decimal.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out decimal soft)) {
                     numLumaSoftness.Value = Math.Clamp(soft, numLumaSoftness.Minimum, numLumaSoftness.Maximum);
                   }
+                } else if (key.Equals("LYRICSACTIVE", StringComparison.OrdinalIgnoreCase)) {
+                  chkToggleLyrics.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LYRICSAUTO", StringComparison.OrdinalIgnoreCase)) {
+                  chkLyricsAuto.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LYRICSSTATUS", StringComparison.OrdinalIgnoreCase)) {
+                  txtLyricsStatus.Text = value;
+                } else if (key.Equals("LYRICSLINE", StringComparison.OrdinalIgnoreCase)) {
+                  txtLyricsCurrentLine.Text = value;
+                } else if (key.Equals("LYRICSFILE", StringComparison.OrdinalIgnoreCase)) {
+                  SetCurrentLyricsFile(value);
+                } else if (key.Equals("LYRICSFONT", StringComparison.OrdinalIgnoreCase)) {
+                  if (cboLyricsFont.Items.Contains(value)) {
+                    cboLyricsFont.SelectedItem = value;
+                  }
+                } else if (key.Equals("LYRICSFONTSIZE", StringComparison.OrdinalIgnoreCase)) {
+                  if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int fontSize)) {
+                    numLyricsFontSize.Value = Math.Clamp(fontSize, (int)numLyricsFontSize.Minimum, (int)numLyricsFontSize.Maximum);
+                  }
+                } else if (key.Equals("LYRICSFONTBOLD", StringComparison.OrdinalIgnoreCase)) {
+                  chkLyricsFontBold.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LYRICSFONTITALIC", StringComparison.OrdinalIgnoreCase)) {
+                  chkLyricsFontItalic.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LYRICSFONTAA", StringComparison.OrdinalIgnoreCase)) {
+                  chkLyricsFontAA.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("LYRICSCOLORR", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsColorR = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int r) ? Math.Clamp(r, 0, 255) : 255;
+                  ApplyLyricsColor();
+                } else if (key.Equals("LYRICSCOLORG", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsColorG = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int g) ? Math.Clamp(g, 0, 255) : 255;
+                  ApplyLyricsColor();
+                } else if (key.Equals("LYRICSCOLORB", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsColorB = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ? Math.Clamp(b, 0, 255) : 255;
+                  ApplyLyricsColor();
+                } else if (key.Equals("LYRICSPOSX", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsPosX, value);
+                } else if (key.Equals("LYRICSPOSY", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsPosY, value);
+                } else if (key.Equals("LYRICSSTARTX", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsStartX, value);
+                } else if (key.Equals("LYRICSSTARTY", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsStartY, value);
+                } else if (key.Equals("LYRICSZOOM", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsZoom, value);
+                } else if (key.Equals("LYRICSFADE", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsFade, value);
+                } else if (key.Equals("LYRICSOFFSET", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsTimeOffset, value);
+                } else if (key.Equals("LYRICSWIDTH", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsWidth, value);
+                } else if (key.Equals("LYRICSBURN", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsBurntime, value);
+                } else if (key.Equals("LYRICSBURNTYPE", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsBurnmode, value);
+                } else if (key.Equals("LYRICSAUTOSCALE", StringComparison.OrdinalIgnoreCase)) {
+                  chkLyricsAutoScale.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.StartsWith("SHOWTAB", StringComparison.OrdinalIgnoreCase)) {
+                  ApplyTabVisibility(key, value);
                 }
               } catch { }
             }
@@ -1690,6 +1815,84 @@ namespace MilkwaveRemote {
       } catch (Exception ex) {
         Program.LogToFile($"OnPipeMessageReceived: {ex.Message}");
       }
+    }
+
+    // --- Remote tab visibility (visualizer [Milkwave] ShowTab* settings) ---
+
+    // Tab pages in their canonical (Designer) order, used to re-insert a tab at
+    // its original position when a ShowTab* setting turns it back on.
+    private static readonly string[] TabOrder = new[] {
+      "tabPreset", "tabMessage", "tabInOut", "tabSettings", "tabLyrics",
+      "tabFonts", "tabMidi", "tabWave", "tabShader",
+    };
+
+    private TabPage? GetTabPageByName(string name) => name switch {
+      "tabPreset" => tabPreset,
+      "tabMessage" => tabMessage,
+      "tabInOut" => tabInOut,
+      "tabSettings" => tabSettings,
+      "tabLyrics" => tabLyrics,
+      "tabFonts" => tabFonts,
+      "tabMidi" => tabMidi,
+      "tabWave" => tabWave,
+      "tabShader" => tabShader,
+      _ => null,
+    };
+
+    // Applies a visualizer "SHOWTAB*=" setting to the matching tab page.
+    private void ApplyTabVisibility(string key, string value) {
+      bool show = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+      string up = key.ToUpperInvariant();
+      // The MIDI tab additionally requires the Remote's own MIDI setting to be
+      // enabled (otherwise MIDI device setup is skipped and the tab is inert).
+      if (up == "SHOWTABMIDI") {
+        show = show && Settings.MidiEnabled;
+      }
+      string? tabName = up switch {
+        "SHOWTABPRESET" => "tabPreset",
+        "SHOWTABMESSAGE" => "tabMessage",
+        "SHOWTABINOUT" => "tabInOut",
+        "SHOWTABSETTINGS" => "tabSettings",
+        "SHOWTABLYRICS" => "tabLyrics",
+        "SHOWTABFONTS" => "tabFonts",
+        "SHOWTABMIDI" => "tabMidi",
+        "SHOWTABWAVE" => "tabWave",
+        "SHOWTABSHADER" => "tabShader",
+        _ => null,
+      };
+      if (tabName == null) return;
+      SetTabVisible(GetTabPageByName(tabName), show);
+    }
+
+    private void SetTabVisible(TabPage? page, bool visible) {
+      if (page == null) return;
+      bool present = tabControl.TabPages.Contains(page);
+      if (visible && !present) {
+        InsertTabAtCanonicalPosition(page);
+      } else if (!visible && present) {
+        tabControl.TabPages.Remove(page);
+      }
+      // Keep a valid tab selected when tabs are hidden/reshown.
+      if (tabControl.TabPages.Count > 0 &&
+          (tabControl.SelectedIndex < 0 || tabControl.SelectedIndex >= tabControl.TabPages.Count)) {
+        tabControl.SelectedIndex = 0;
+      }
+    }
+
+    private void InsertTabAtCanonicalPosition(TabPage page) {
+      int selfIdx = Array.FindIndex(TabOrder, n => n == page.Name);
+      int insertAt = tabControl.TabPages.Count;
+      if (selfIdx >= 0) {
+        for (int i = selfIdx + 1; i < TabOrder.Length; i++) {
+          TabPage? next = GetTabPageByName(TabOrder[i]);
+          if (next != null && tabControl.TabPages.Contains(next)) {
+            insertAt = tabControl.TabPages.IndexOf(next);
+            break;
+          }
+        }
+      }
+      if (insertAt < 0 || insertAt > tabControl.TabPages.Count) insertAt = tabControl.TabPages.Count;
+      tabControl.TabPages.Insert(insertAt, page);
     }
 
     private void MainForm_Shown(object sender, EventArgs e) {
@@ -1913,6 +2116,48 @@ namespace MilkwaveRemote {
               message = "HUE_AUTO=" + (chkHueAuto.Checked ? "1" : "0");
             } else if (type == MessageType.HueAutoSeconds) {
               message = "HUE_AUTO_SECONDS=" + numSettingsHueAuto.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsActive) {
+              message = "LYRICS_ACTIVE=" + (chkToggleLyrics.Checked ? "1" : "0");
+            } else if (type == MessageType.LyricsAuto) {
+              message = "LYRICS_AUTO=" + (chkLyricsAuto.Checked ? "1" : "0");
+            } else if (type == MessageType.LyricsLoad) {
+              message = "LYRICS_LOAD=" + messageToSend;
+            } else if (type == MessageType.LyricsRestart) {
+              message = "LYRICS_RESTART";
+            } else if (type == MessageType.LyricsFont) {
+              message = "LYRICS_FONT=" + cboLyricsFont.Text;
+            } else if (type == MessageType.LyricsFontSize) {
+              message = "LYRICS_FONTSIZE=" + numLyricsFontSize.Value;
+            } else if (type == MessageType.LyricsFontBold) {
+              message = "LYRICS_FONTBOLD=" + (chkLyricsFontBold.Checked ? "1" : "0");
+            } else if (type == MessageType.LyricsFontItalic) {
+              message = "LYRICS_FONTITALIC=" + (chkLyricsFontItalic.Checked ? "1" : "0");
+            } else if (type == MessageType.LyricsFontAA) {
+              message = "LYRICS_FONTAA=" + (chkLyricsFontAA.Checked ? "1" : "0");
+            } else if (type == MessageType.LyricsColor) {
+              message = "LYRICS_COLOR=" + pnlLyricsColor.BackColor.R + "," + pnlLyricsColor.BackColor.G + "," + pnlLyricsColor.BackColor.B;
+            } else if (type == MessageType.LyricsPosX) {
+              message = "LYRICS_POSX=" + numLyricsPosX.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsPosY) {
+              message = "LYRICS_POSY=" + numLyricsPosY.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsStartX) {
+              message = "LYRICS_STARTX=" + numLyricsStartX.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsStartY) {
+              message = "LYRICS_STARTY=" + numLyricsStartY.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsZoom) {
+              message = "LYRICS_ZOOM=" + numLyricsZoom.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsFade) {
+              message = "LYRICS_FADE=" + numLyricsFade.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsWidth) {
+              message = "LYRICS_WIDTH=" + numLyricsWidth.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsBurn) {
+              message = "LYRICS_BURN=" + numLyricsBurntime.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsBurnType) {
+              message = "LYRICS_BURNTYPE=" + (int)numLyricsBurnmode.Value;
+            } else if (type == MessageType.LyricsTimeOffset) {
+              message = "LYRICS_OFFSET=" + numLyricsTimeOffset.Value.ToString(CultureInfo.InvariantCulture);
+            } else if (type == MessageType.LyricsAutoScale) {
+              message = "LYRICS_AUTOSCALE=" + (chkLyricsAutoScale.Checked ? "1" : "0");
             } else if (type == MessageType.ColSaturation) {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
@@ -5915,6 +6160,174 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void chkToggleLyrics_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsActive);
+      }
+    }
+
+    private void chkLyricsAuto_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsAuto);
+      }
+    }
+
+    private void SetCurrentLyricsFile(string path) {
+      currentLyricsFilePath = path ?? "";
+      txtLyricsFile.Text = string.IsNullOrEmpty(currentLyricsFilePath) ? "" : Path.GetFileName(currentLyricsFilePath);
+      toolTip1.SetToolTip(txtLyricsFile, string.IsNullOrEmpty(currentLyricsFilePath) ? "No lyrics file loaded" : currentLyricsFilePath);
+    }
+
+    private void btnLoadLyricsFile_Click(object sender, EventArgs e) {
+      using OpenFileDialog dialog = new OpenFileDialog {
+        Title = "Load lyrics file",
+        Filter = "Lyrics files (*.lrc;*.txt)|*.lrc;*.txt|All files (*.*)|*.*",
+        InitialDirectory = string.IsNullOrEmpty(currentLyricsFilePath) ? BaseDir : Path.GetDirectoryName(currentLyricsFilePath) ?? BaseDir
+      };
+      if (dialog.ShowDialog(this) == DialogResult.OK) {
+        SetCurrentLyricsFile(dialog.FileName);
+        SendToMilkwaveVisualizer(dialog.FileName, MessageType.LyricsLoad);
+        SetStatusText($"Loaded lyrics file '{Path.GetFileName(dialog.FileName)}'");
+      }
+    }
+
+    private void btnLyricsRestart_Click(object sender, EventArgs e) {
+      SendToMilkwaveVisualizer("", MessageType.LyricsRestart);
+      SetStatusText("Restarted the lyrics timeline");
+    }
+
+    private void ApplyLyricsColor() {
+      pnlLyricsColor.BackColor = Color.FromArgb(lyricsColorR, lyricsColorG, lyricsColorB);
+      colorDialogLyrics.Color = pnlLyricsColor.BackColor;
+    }
+
+    private void pnlLyricsColor_Click(object sender, EventArgs e) {
+      if (colorDialogLyrics.ShowDialog() == DialogResult.OK) {
+        lyricsColorR = colorDialogLyrics.Color.R;
+        lyricsColorG = colorDialogLyrics.Color.G;
+        lyricsColorB = colorDialogLyrics.Color.B;
+        ApplyLyricsColor();
+        SendToMilkwaveVisualizer("", MessageType.LyricsColor);
+      }
+    }
+
+    private void cboLyricsFont_SelectedIndexChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams && cboLyricsFont.SelectedItem != null) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsFont);
+      }
+    }
+
+    private void numLyricsFontSize_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsFontSize);
+      }
+    }
+
+    private void chkLyricsFontBold_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsFontBold);
+      }
+    }
+
+    private void chkLyricsFontItalic_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsFontItalic);
+      }
+    }
+
+    private void chkLyricsFontAA_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsFontAA);
+      }
+    }
+
+    private void SetLyricsNumeric(NumericUpDown numeric, string value) {
+      if (numeric is null) return;
+      if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsed)) {
+        numeric.Value = Math.Clamp(parsed, numeric.Minimum, numeric.Maximum);
+      }
+    }
+
+    private void numLyricsPosX_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsPosX);
+    }
+
+    private void numLyricsPosY_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsPosY);
+    }
+
+    private void numLyricsStartX_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsStartX);
+    }
+
+    private void numLyricsStartY_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsStartY);
+    }
+
+    private void numLyricsZoom_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsZoom);
+    }
+
+    private void numLyricsFade_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsFade);
+    }
+
+    private void numLyricsTimeOffset_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsTimeOffset);
+    }
+
+    private void numLyricsWidth_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsWidth);
+    }
+
+    private void numLyricsBurn_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsBurn);
+    }
+
+    private void numLyricsBurnmode_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsBurnType);
+    }
+
+    private void chkLyricsAutoScale_CheckedChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsAutoScale);
+      }
+    }
+
+    // Double-clicking any of the labels in the two bottom layout rows resets
+    // the accompanying input field to the setting's default value.
+    private void ResetLyricsNumeric(NumericUpDown numeric, decimal value) {
+      if (numeric == null) return;
+      numeric.Value = Math.Clamp(value, numeric.Minimum, numeric.Maximum);
+    }
+
+    private void lblLyricsPosX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosX, 0.5m); }
+    private void lblLyricsPosY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosY, 0.5m); }
+    private void lblLyricsStartX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartX, 0.5m); }
+    private void lblLyricsStartY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartY, 0.52m); }
+    private void lblLyricsZoom_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsZoom, 0.95m); }
+    private void lblLyricsFade_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsFade, 0.15m); }
+    private void lblLyricsWidth_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsWidth, 0.9m); }
+    private void lblLyricsBurn_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurntime, 0.5m); }
+    private void lblLyricsBurnmode_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsBurnmode, 0m); }
+    private void lblLyricsOffset_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsTimeOffset, 0m); }
+
+    private void btnEditLyricsFile_Click(object sender, EventArgs e) {
+      if (string.IsNullOrEmpty(currentLyricsFilePath)) {
+        SetStatusText("No lyrics file loaded to edit");
+        return;
+      }
+      if (File.Exists(currentLyricsFilePath)) {
+        try {
+          Process.Start(new ProcessStartInfo { FileName = currentLyricsFilePath, UseShellExecute = true });
+        } catch (Exception ex) {
+          SetStatusText($"Error opening lyrics file: {ex.Message}");
+        }
+      } else {
+        SetStatusText($"Lyrics file not found: {currentLyricsFilePath}");
+      }
+    }
+
     private void numSettingsHueAuto_ValueChanged(object sender, EventArgs e) {
       if (updatingSettingsParams) return;
       SendToMilkwaveVisualizer("", MessageType.HueAutoSeconds);
@@ -6849,6 +7262,10 @@ namespace MilkwaveRemote {
     private void lblAmp_DoubleClick(object sender, EventArgs e) {
       numAmpLeft.Value = 1.0m;
       numAmpRight.Value = 1.0m;
+    }
+
+    private void tabLyrics_Click(object sender, EventArgs e) {
+
     }
   } // end class
 } // end namespace

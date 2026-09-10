@@ -145,6 +145,7 @@
 
 #include <ShellScalingApi.h>        // for dpi awareness
 #pragma comment(lib, "shcore.lib")  // for dpi awareness
+#pragma comment(lib, "version.lib")
 // older Windows versions: Entry Point Not Found Fix
 
 #include "plugin.h"
@@ -892,6 +893,16 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
           milkwave.doPollExplicit = true;
         }
         return 0;
+      } else if (wParam == 'L') {
+        if (GetKeyState(VK_CONTROL) & 0x8000) {
+          g_plugin.m_lyricsDisplayEnabled = !g_plugin.m_lyricsDisplayEnabled;
+          WritePrivateProfileStringW(L"Lyrics", L"LyricsEnabled",
+                                     g_plugin.m_lyricsDisplayEnabled ? L"1" : L"0",
+                                     g_plugin.GetConfigIniFile());
+          g_plugin.AddNotification(g_plugin.m_lyricsDisplayEnabled ? L"Lyrics enabled" : L"Lyrics disabled");
+          g_plugin.SendSettingsInfoToMilkwaveRemote();
+          return 0;
+        }
       } else if (wParam == VK_D) {
         if (GetKeyState(VK_CONTROL) & 0x8000) {  // Check if Ctrl is pressed
           bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
@@ -1168,11 +1179,18 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
 
     case WM_RBUTTONDBLCLK: {
-      if (g_plugin.m_bEnableMouseInteraction) {
-        return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
+      // Double-clicking the right mouse button toggles borderless mode. This
+      // was previously gated behind m_bEnableMouseInteraction: with the
+      // default (interaction on) the message was forwarded to
+      // PluginShellWindowProc, which has no WM_RBUTTONDBLCLK handler — so the
+      // toggle never fired (defunct). Single-click WM_RBUTTONDOWN/UP still
+      // reach the plugin for preset interaction.
+      if (g_plugin.IsBorderlessFullscreen(hWnd)) {
+        ToggleBorderlessFullscreen(hWnd, false);
+      } else {
+        ToggleBorderlessWindow(hWnd);
       }
-      ToggleBorderlessWindow(hWnd);
-      break;
+      return 0;
     }
 
     case WM_USER_PIPE_IPC_MESSAGE: {
@@ -1541,17 +1559,9 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
           RenderFrame();
         }
       } catch (const std::exception& e) {
-        try {
-          // Convert exception message (UTF-8) to wide string for logging
-          std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-          std::wstring emsg = converter.from_bytes(e.what());
-          std::wstring logMsg = L"Exception in render loop: " + emsg;
-          milkwave.LogInfo(logMsg);
-        } catch (...) {
-          milkwave.LogInfo(L"Exception in render loop (failed to convert exception message)");
-        }
+        milkwave.LogException(L"Render loop", e, false);
       } catch (...) {
-        milkwave.LogInfo(L"Unknown non-standard exception in render loop");
+        milkwave.LogInfo(L"ERROR: Unknown non-standard exception in render loop");
       }
       frame++;
     }
@@ -1971,6 +1981,27 @@ void StartSetupThread(bool manualTrigger) {
   }
 }
 
+static std::wstring GetApplicationVersion() {
+  wchar_t modulePath[MAX_PATH];
+  DWORD pathLength = GetModuleFileNameW(nullptr, modulePath, _countof(modulePath));
+  if (pathLength == 0 || pathLength >= _countof(modulePath)) return L"unknown";
+
+  DWORD versionInfoSize = GetFileVersionInfoSizeW(modulePath, nullptr);
+  if (versionInfoSize == 0) return L"unknown";
+
+  std::vector<BYTE> versionInfo(versionInfoSize);
+  if (!GetFileVersionInfoW(modulePath, 0, versionInfoSize, versionInfo.data())) return L"unknown";
+
+  LPVOID versionValue = nullptr;
+  UINT versionValueSize = 0;
+  if (!VerQueryValueW(versionInfo.data(), L"\\StringFileInfo\\040904b0\\FileVersion",
+                      &versionValue, &versionValueSize) || versionValueSize == 0) {
+    return L"unknown";
+  }
+
+  return static_cast<LPCWSTR>(versionValue);
+}
+
 int StartThreads(HINSTANCE instance) {
   try {
     // Milkwave: early init so we can read from settings
@@ -1980,8 +2011,10 @@ int StartThreads(HINSTANCE instance) {
     // milkwave.Init() may only be called after the window is created due to threading issues
     milkwave.logLevel = g_plugin.m_LogLevel;
     g_plugin.milkwave = &milkwave;
+    milkwave.SetLogDirectory(std::filesystem::path(g_plugin.m_szBaseDir) / L"logs");
 
-    milkwave.LogInfo(L"Milkwave initialized, LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);
+    milkwave.LogInfo(L"Visualizer startup: Version=" + GetApplicationVersion() +
+             L" LogLevel=" + std::to_wstring(milkwave.logLevel) + L" BaseDir=" + g_plugin.m_szBaseDir);
 
     if (g_plugin.m_CheckDirectXOnStartup) {
       if (!g_plugin.CheckForDirectX9c()) {

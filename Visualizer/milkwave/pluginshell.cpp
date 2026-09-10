@@ -379,6 +379,12 @@ LPD3DXFONT CPluginShell::GetFont(eFontIndex idx) {
   } else
     return NULL;
 };
+LPD3DXFONT CPluginShell::GetItalicFont() {
+  return m_italic_font;
+};
+int CPluginShell::GetItalicFontHeight() {
+  return m_italic_font_height;
+};
 char* CPluginShell::GetDriverFilename() {
   if (m_lpDX)
     return m_lpDX->GetDriver();
@@ -714,6 +720,19 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
     }
   }
 
+  int italicFontSize = (int)(m_fontinfo[SIMPLE_FONT].nSize * m_fRenderQuality);
+  if (D3DXCreateFontW(pDevice, italicFontSize, italicFontSize * 4 / 10,
+                      m_fontinfo[SIMPLE_FONT].bBold ? 900 : 400, 1, TRUE,
+                      DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+                      m_fontinfo[SIMPLE_FONT].bAntiAliased ? ANTIALIASED_QUALITY : DEFAULT_QUALITY,
+                      DEFAULT_PITCH, m_fontinfo[SIMPLE_FONT].szFace, &m_italic_font) != D3D_OK) {
+    return false;
+  }
+
+  RECT italicRect;
+  SetRect(&italicRect, 0, 0, 1024, 1024);
+  m_italic_font_height = m_italic_font->DrawText(NULL, "M", -1, &italicRect, DT_CALCRECT, 0xFFFFFFFF);
+
   // get actual font heights
   for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     RECT r;
@@ -726,6 +745,8 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
 }
 
 void CPluginShell::CleanUpFonts() {
+  SafeRelease(m_italic_font);
+  m_italic_font_height = 0;
   for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
     SafeRelease(m_d3dx_font[i]);
 }

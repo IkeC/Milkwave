@@ -44,13 +44,14 @@ namespace MilkwaveRemote {
       }
     }
 
-    public static void SaveErrorToFile(Exception e, string type) {
+    public static void SaveErrorToFile(Exception e, string type, bool showMessage = true) {
       LogToFile($"{type}: {e}");
-      // Notify the user
-      string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
-      string timestamp = DateTime.Now.ToString("yyyy-MM-dd");
-      string logFilePath = Path.Combine(exeDirectory, "log", $"{timestamp}.remote.log");
-      MessageBox.Show($"An error occurred. Details have been saved to:\n{logFilePath}", type);
+      if (showMessage) {
+        string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        string timestamp = DateTime.Now.ToString("yyyy-MM-dd");
+        string logFilePath = Path.Combine(exeDirectory, "log", $"{timestamp}.remote.log");
+        MessageBox.Show($"An error occurred. Details have been saved to:\n{logFilePath}", type);
+      }
     }
 
     public static void LogToFile(string message) {

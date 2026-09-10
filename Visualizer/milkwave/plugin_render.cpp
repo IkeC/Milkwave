@@ -315,6 +315,36 @@ void CPlugin::MyRenderFn(int redraw) {
         SendSettingsInfoToMilkwaveRemote();
       }
     }
+
+    // Push the lyrics status, current line and backing file to the Remote
+    // whenever they change so the Lyrics tab stays live. No-op when unchanged
+    // and nothing is connected.
+    if (m_lyricsDisplayEnabled || !m_lastSentLyricsStatus.empty() || !m_lastSentLyricsLine.empty() || !m_lastSentLyricsFile.empty()) {
+      std::wstring lyricsStatus = ::milkwave.LyricsMonitorText(m_lyricsDisplayEnabled, m_lyricsOffsetMs);
+      std::wstring lyricsLine = m_lyricsDisplayEnabled ? ::milkwave.CurrentLyricText(m_lyricsOffsetMs) : L"";
+      std::wstring lyricsFile = ::milkwave.CurrentLyricsFilePath();
+      for (auto& ch : lyricsStatus) {
+        if (ch == L'|') ch = L' ';
+      }
+      for (auto& ch : lyricsLine) {
+        if (ch == L'|') ch = L' ';
+      }
+      for (auto& ch : lyricsFile) {
+        if (ch == L'|') ch = L' ';
+      }
+      if (lyricsStatus != m_lastSentLyricsStatus) {
+        m_lastSentLyricsStatus = lyricsStatus;
+        SendMessageToMilkwaveRemote((L"LYRICSSTATUS=" + lyricsStatus).c_str(), true);
+      }
+      if (lyricsLine != m_lastSentLyricsLine) {
+        m_lastSentLyricsLine = lyricsLine;
+        SendMessageToMilkwaveRemote((L"LYRICSLINE=" + lyricsLine).c_str(), true);
+      }
+      if (lyricsFile != m_lastSentLyricsFile) {
+        m_lastSentLyricsFile = lyricsFile;
+        SendMessageToMilkwaveRemote((L"LYRICSFILE=" + lyricsFile).c_str(), true);
+      }
+    }
   }
 
   // 2. Clear the background:

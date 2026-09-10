@@ -449,6 +449,19 @@ class CPlugin : public CPluginShell {
   bool m_DisplayCoverWhenPressingB = true;
   bool m_HideNotificationsWhenRemoteActive = false;
 
+  // Remote tab visibility (settings.ini [Milkwave] ShowTab* keys; forwarded to
+  // the Remote via SETTINGS so it can hide/show its tabs). All on by default
+  // except the Shader tab.
+  bool m_ShowTabPreset = true;
+  bool m_ShowTabMessage = true;
+  bool m_ShowTabInOut = true;
+  bool m_ShowTabSettings = true;
+  bool m_ShowTabLyrics = true;
+  bool m_ShowTabFonts = true;
+  bool m_ShowTabMidi = true;
+  bool m_ShowTabWave = true;
+  bool m_ShowTabShader = false;
+
   // Network (TCP server)
   bool m_TcpEnabled = false;
   int m_TcpPort = 9270;
@@ -727,12 +740,12 @@ class CPlugin : public CPluginShell {
 
   // DIRECTX 9:
   IDirect3DTexture9* m_lpVS[2];
-  int m_nFFTShaderInput = DEFAULT_FFT_SHADER_INPUT;  // runtime FFT input samples (configurable via settings.ini FFTSize)
+  int m_nFFTShaderInput = DEFAULT_FFT_SHADER_INPUT;     // runtime FFT input samples (configurable via settings.ini FFTSize)
   int m_nFFTShaderBins = DEFAULT_FFT_SHADER_INPUT / 2;  // runtime FFT output bins (always input / 2)
-  IDirect3DTexture9* m_lpFFTTexture = nullptr;    // R32F FFT spectrum texture (row0=smoothed, row1=peak hold)
-  float m_fFFTSmoothed[MAX_FFT_SHADER_BINS] = {};  // smoothed mono FFT buffer (sized to max)
-  float m_fFFTPeak[MAX_FFT_SHADER_BINS] = {};      // peak hold values (sized to max)
-  int m_nFFTPeakHold[MAX_FFT_SHADER_BINS] = {};    // frames remaining at current peak (sized to max)
+  IDirect3DTexture9* m_lpFFTTexture = nullptr;          // R32F FFT spectrum texture (row0=smoothed, row1=peak hold)
+  float m_fFFTSmoothed[MAX_FFT_SHADER_BINS] = {};       // smoothed mono FFT buffer (sized to max)
+  float m_fFFTPeak[MAX_FFT_SHADER_BINS] = {};           // peak hold values (sized to max)
+  int m_nFFTPeakHold[MAX_FFT_SHADER_BINS] = {};         // frames remaining at current peak (sized to max)
 #define NUM_BLUR_TEX 6
 #if (NUM_BLUR_TEX > 0)
   IDirect3DTexture9* m_lpBlur[NUM_BLUR_TEX];  // each is successively 1/2 size of prev.
@@ -810,6 +823,80 @@ class CPlugin : public CPluginShell {
   int m_nSpoutInputHeight;
 
   int m_nFramesSinceResize;
+  bool m_lyricsDisplayEnabled = true;
+  bool m_bLyricsAutoLoad = true;
+  bool m_lyricsAutoScale = true;  // auto-fit font so ~LyricsFontSize chars fit per line in the max-width area (on by default)
+  float m_lyricsBurnTime = 0.5f;  // seconds; >0 enables burn-in of lyrics into the texture
+  int m_lyricsBurnType = 1;       // 0=off, 1=burn leaving line on fade-out (default), 2=burn while fading in, 3=burn only (no overlay)
+  float m_lyricsPositionX = 0.50f;
+  float m_lyricsPositionY = 0.82f;
+  float m_lyricsStartX = 0.50f;  // lyrics move from start to position while fading
+  float m_lyricsStartY = 0.50f;
+  float m_lyricsZoom = 0.95f;  // font scale applied before fade-in / after fade-out
+  float m_lyricsMaxWidth = 0.82f;
+  wchar_t m_lyricsFont[256] = L"Segoe UI";
+  int m_lyricsFontSize = 32;
+  bool m_lyricsFontBold = false;
+  bool m_lyricsFontItalic = false;
+  bool m_lyricsFontAA = true;
+  int m_lyricsColorR = 255;
+  int m_lyricsColorG = 255;
+  int m_lyricsColorB = 255;
+  int m_lyricsShadow = 2;
+  std::int64_t m_lyricsOffsetMs = 0;
+  float m_lyricsFade = 0.15f;  // fade in/out time in seconds
+  wchar_t m_lyricsApiUrl[512] = L"https://lrclib.net/api";
+  LPD3DXFONT m_lyricsFontObject = NULL;
+  void RecreateLyricsFont(float scale = -1.0f);  // rebuild m_lyricsFontObject; scale applies zoom (-1 = use last/1.0)
+  float m_lyricsCurrentFontScale = -1.0f;        // last scale used to build m_lyricsFontObject
+  std::wstring m_lastSentLyricsStatus;           // last lyrics status pushed to the Remote
+  std::wstring m_lastSentLyricsLine;             // last current lyric line pushed to the Remote
+  std::wstring m_lastSentLyricsFile;             // last lyrics file path pushed to the Remote
+  std::wstring m_burnLyricsActiveText;           // current line rendered into the burn-in
+  std::wstring m_burnLyricsPrevText;             // previous line burning out in the texture
+  double m_burnLyricsPrevChangeTime = -1.0;
+
+  // Stable word-wrap: lines are laid out ONCE at the target (end-of-fade)
+  // font size with m_lyricsMeasureFontObject and pre-rendered into
+  // m_lyricsTexture, so the line breaks never change while fading.
+  LPD3DXFONT m_lyricsMeasureFontObject = NULL;       // font at the target scale, used only for wrap measurement
+  float m_lyricsMeasureFontScale = -1.0f;            // target scale used to build m_lyricsMeasureFontObject
+  std::vector<std::wstring> m_lyricsWrapCacheLines;  // cached wrapped lines (target layout)
+  std::wstring m_lyricsWrapCacheText;                // text the wrap cache was built for
+  int m_lyricsWrapCacheWidth = -1;                   // wrap width (px) the wrap cache was built for
+  float m_lyricsWrapCacheScale = -1.0f;              // target scale the wrap cache was built for
+  void RecreateLyricsMeasureFont(float targetScale = -1.0f);
+  void InvalidateLyricsWrapCache();
+  void WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3DXFONT measureFont,
+                      std::vector<std::wstring>& outLines) const;
+
+  // Message-style lyrics rendering: the wrapped text is drawn ONCE at the
+  // target scale into an offscreen texture and then GPU-scaled each frame, so
+  // the zoom fade is perfectly smooth (no per-frame GDI font re-rasterization
+  // at integer pixel sizes, which made the zoom step/pop like the old code).
+  LPDIRECT3DTEXTURE9 m_lyricsTexture = NULL;  // current line texture
+  int m_lyricsTextureSizeX = 0;               // texture dimensions (texels, pow2)
+  int m_lyricsTextureSizeY = 0;
+  int m_lyricsTextureUseW = 0;                // used text area inside the texture (texels)
+  int m_lyricsTextureUseH = 0;
+  std::wstring m_lyricsTextureCacheText;      // cache key: rendered text
+  float m_lyricsTextureCacheScale = -1.0f;    // cache key: target scale
+  int m_lyricsTextureCacheWrapWidth = -1;     // cache key: wrap width (px)
+  LPDIRECT3DTEXTURE9 m_lyricsBurnTexture = NULL;  // previous ("burned") line texture
+  int m_lyricsBurnTextureSizeX = 0;
+  int m_lyricsBurnTextureSizeY = 0;
+  int m_lyricsBurnTextureUseW = 0;
+  int m_lyricsBurnTextureUseH = 0;
+  std::wstring m_lyricsBurnTextureCacheText;
+  float m_lyricsBurnTextureCacheScale = -1.0f;
+  int m_lyricsBurnTextureCacheWrapWidth = -1;
+  void RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, int& texSizeY, int& useW, int& useH,
+                                 std::wstring& cacheText, float& cacheScale, int& cacheWrapWidth,
+                                 const std::wstring& text, const std::vector<std::wstring>& lines,
+                                 int wrapWidthPixels, float targetScale);
+  void DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, int texSizeX, int texSizeY,
+                             int canvasWidth, int canvasHeight, int centerX, int centerY,
+                             float scale, float opacity);
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.
@@ -905,6 +992,7 @@ class CPlugin : public CPluginShell {
   int GetNextFreeSupertextIndex();
   void DoCustomSoundAnalysis();
   void DrawMotionVectors();
+  void RenderLyricsOverlay(bool burnIn);
 
   bool LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly);
   void UvToMathSpace(float u, float v, float* rad, float* ang);

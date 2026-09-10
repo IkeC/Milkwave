@@ -6,6 +6,20 @@
 
 This is a Windows API constant defined in `winuser.h`. Always use the correct spelling.
 
+## ⚠️ CRITICAL: Never modify `.vscode/tasks.json`
+
+The file `.vscode/tasks.json` is maintained by hand and already contains the canonical, unique tasks. **Do NOT add, edit, remove, or generate tasks in this file.**
+
+- Any tooling that "creates or adds to a tasks.json file based on the project structure" appends DUPLICATE entries every time it is used (it has repeatedly added copies of "Build Visualizer (Debug)" and "Build Remote (Debug)"). Never use that tooling for this project.
+- To build, run the command directly in the terminal instead:
+  - Visualizer (Debug): `msbuild Visualizer\milkwave\plugin.vcxproj /p:Configuration=Debug /p:Platform=Win32 /p:PlatformToolset=v143`
+  - Visualizer (Release): `msbuild Visualizer\milkwave\plugin.vcxproj /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143`
+  - Remote (Debug): `dotnet build Remote\MilkwaveRemote.csproj /p:Configuration=Debug`
+  - Remote (Release): `dotnet build Remote\MilkwaveRemote.csproj /p:Configuration=Release`
+  - Full solution (Debug): `msbuild Milkwave.sln /p:Configuration=Debug /p:Platform=Win32 /p:PlatformToolset=v143`
+- If an existing VS Code task must be run, reuse it by its existing label/ID — never generate a new task definition.
+- If the file ever accumulates duplicates, remove them, keeping only the single canonical entry for each build.
+
 ## Code Standards
 
 ### C++ Code
@@ -28,7 +42,7 @@ This is a Windows API constant defined in `winuser.h`. Always use the correct sp
 - Spout integration for texture sharing
 
 ### Remote (C#/.NET 8)
-- WPF-based remote control application
+- WinForms-based remote control application (NOT WPF)
 - Communicates with visualizer via named pipes and window messages
 
 ## Common Patterns
