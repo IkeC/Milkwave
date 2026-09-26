@@ -601,6 +601,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.m_ChangePresetWithSong = enabled;
       WritePrivateProfileIntW(enabled, L"ChangePresetWithSong", g_plugin.GetConfigIniFile(), L"Milkwave");
       g_plugin.AddNotification(enabled ? L"Auto Preset Change enabled" : L"Auto Preset Change disabled");
+      // "Change with song" replaces the "After" interval, so re-arm the timer: it
+      // starts counting (again) from now when this mode is switched off.
+      g_plugin.m_fNextPresetTime = -1.0f;
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
   } else if (wcsncmp(sMessage, L"DISPLAY_COVER=", 14) == 0) {

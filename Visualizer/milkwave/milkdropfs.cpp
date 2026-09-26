@@ -862,7 +862,9 @@ void CPlugin::RenderFrame(int bRedraw) {
       m_rand_frame = D3DXVECTOR4(FRAND, FRAND, FRAND, FRAND);
 
       // randomly change the preset, if it's time
-      if (m_fNextPresetTime < GetTime()) {
+      // (skipped while "change with song" is on - presets then follow the song
+      //  instead of the "After" interval)
+      if (!m_ChangePresetWithSong && m_fNextPresetTime < GetTime()) {
         if (m_nLoadingPreset == 0)  // don't start a load if one is already underway!
           LoadRandomPreset(m_fBlendTimeAuto);
       }

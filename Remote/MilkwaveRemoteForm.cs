@@ -30,6 +30,9 @@ namespace MilkwaveRemote {
 
     private bool updatingWaveParams = false;
     private bool updatingSettingsParams = false;
+    // Control whose (otherwise invisible) disabled-state tooltip is currently shown by
+    // tabPreset_MouseMove, or null when none is shown.
+    private Control? disabledToolTipTarget;
     private string currentLyricsFilePath = "";  // full path of the lyrics file in use
     private int lyricsColorR = 255;
     private int lyricsColorG = 255;
@@ -945,6 +948,14 @@ namespace MilkwaveRemote {
 
       FixNumericUpDownMouseWheel(this);
 
+      // WinForms shows no ToolTip for a disabled control (the system routes the mouse to
+      // the parent window instead), so the tooltips of the controls that get disabled
+      // have to be shown manually - see tabPreset_MouseMove.
+      tabPreset.MouseMove += tabPreset_MouseMove;
+      tabPreset.MouseLeave += tabPreset_MouseLeave;
+
+      UpdatePresetDependentControls();
+
       toolStripMenuItemHomepage.Text = $"Milkwave {version}";
 
       try {
@@ -1821,6 +1832,9 @@ namespace MilkwaveRemote {
             }
           }
           updatingSettingsParams = false;
+          // Re-evaluate state-dependent controls ("After" vs "Song" vs "Locked") once
+          // the whole reply has been applied, regardless of key order.
+          UpdatePresetDependentControls();
         }
       } catch (Exception ex) {
         Program.LogToFile($"OnPipeMessageReceived: {ex.Message}");
@@ -6386,6 +6400,9 @@ namespace MilkwaveRemote {
     }
 
     private void chkPresetLocked_CheckedChanged(object sender, EventArgs e) {
+      // Runs before the guard below so the dependent Preset-tab controls are also
+      // updated while the lock state is being synced from the visualizer.
+      UpdatePresetDependentControls();
       if (updatingSettingsParams) return;
       SendUnicodeChars("~");
     }
@@ -6396,8 +6413,76 @@ namespace MilkwaveRemote {
     }
 
     private void chkPresetChangeWithSong_CheckedChanged(object sender, EventArgs e) {
+      // Runs before the guard below so the dependent "After" control also follows
+      // the "Song" state while it is being synced from the visualizer's SETTINGS.
+      UpdatePresetDependentControls();
       if (updatingSettingsParams) return;
       SendToMilkwaveVisualizer("", MessageType.PresetChangeWithSong);
+    }
+
+    // Some Preset-tab controls have no effect in certain states, so disable them and
+    // explain why in their tooltips instead of leaving them looking active:
+    //   - preset locked (~): no automatic preset change happens at all, so both the
+    //     "Song" and the "After" numeric are unavailable.
+    //   - "Song" (change with song) enabled: the visualizer follows the song instead of
+    //     the "After" interval, so the "After" numeric is unavailable.
+    // The "After" label stays enabled - only its numeric is disabled.
+    private void UpdatePresetDependentControls() {
+      bool locked = chkPresetLocked.Checked;
+      bool changeWithSong = chkPresetChangeWithSong.Checked;
+
+      // "Change with song" (Ctrl+A)
+      chkPresetChangeWithSong.Enabled = !locked;
+      toolTip1.SetToolTip(chkPresetChangeWithSong, locked
+        ? "Unavailable while the preset is locked (~)\r\nPresets only change with the song once the preset is unlocked."
+        : "Select next Preset when song changes\r\n(same as pressing Ctrl+A in Visualizer)\r\nReplaces the \"After\" interval while enabled.");
+
+      // "After" interval (fTimeBetweenPresets)
+      numPresetChange.Enabled = !locked && !changeWithSong;
+      string afterToolTip = locked
+        ? "Unavailable while the preset is locked (~)\r\nThe automatic preset change is skipped until the preset is unlocked."
+        : changeWithSong
+          ? "Unavailable while \"Song\" is enabled\r\nPresets change with the song instead of after this many seconds."
+          : "Next Preset after this many seconds\r\nNote that fBlendTimeAuto and 0..fTimeBetweenPresetsRand are added to determine the actual duration (see settings.ini)";
+      toolTip1.SetToolTip(numPresetChange, afterToolTip);
+
+      // State changed - drop any manually shown disabled-state tooltip so it cannot go
+      // stale (no-op when nothing is shown).
+      HideDisabledToolTip();
+    }
+
+    // A disabled control never shows its ToolTip: the system routes mouse input to the
+    // nearest enabled window instead, so the ToolTip's own hover is never raised. The tab
+    // page does receive those mouse moves, so show the explanation from here while the
+    // cursor is over one of the disabled controls.
+    private void tabPreset_MouseMove(object sender, MouseEventArgs e) {
+      Control? hit = null;
+      if (!chkPresetChangeWithSong.Enabled && chkPresetChangeWithSong.Bounds.Contains(e.Location)) {
+        hit = chkPresetChangeWithSong;
+      } else if (!numPresetChange.Enabled && numPresetChange.Bounds.Contains(e.Location)) {
+        hit = numPresetChange;
+      }
+
+      if (ReferenceEquals(hit, disabledToolTipTarget)) return;
+      disabledToolTipTarget = hit;
+
+      if (hit == null) {
+        toolTip1.Hide(tabPreset);
+        return;
+      }
+
+      string text = toolTip1.GetToolTip(hit) ?? string.Empty;
+      if (text.Length > 0) toolTip1.Show(text, tabPreset, e.X, e.Y + 22, 5000);
+    }
+
+    private void tabPreset_MouseLeave(object sender, EventArgs e) {
+      HideDisabledToolTip();
+    }
+
+    private void HideDisabledToolTip() {
+      if (disabledToolTipTarget == null) return;
+      disabledToolTipTarget = null;
+      toolTip1.Hide(tabPreset);
     }
 
     private void chkPresetDisplayCover_CheckedChanged(object sender, EventArgs e) {

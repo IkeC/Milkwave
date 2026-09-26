@@ -1,6 +1,6 @@
 ## v4.2 (unreleased)
 
-* Remote: Preset change and info buttons
+* Remote: Preset change and info buttons with improved locking logic dependency
 
 ## v4.1 (2026-09-10)
 

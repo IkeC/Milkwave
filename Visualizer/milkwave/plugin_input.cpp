@@ -1304,6 +1304,9 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
               m_ChangePresetWithSong = !m_ChangePresetWithSong;
               WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", GetConfigIniFile(), L"Milkwave");
               SendSettingsInfoToMilkwaveRemote();
+              // "Change with song" replaces the "After" interval, so re-arm the timer:
+              // it starts counting (again) from now when this mode is switched off.
+              m_fNextPresetTime = -1.0f;
               if (m_ChangePresetWithSong) {
                 AddError(L"Auto Preset Change enabled", 5.0f, ERR_NOTIFY, false);
               } else {

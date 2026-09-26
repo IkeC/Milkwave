@@ -2677,7 +2677,7 @@ namespace MilkwaveRemote
       // 
       // lblChangePreset
       // 
-      lblChangePreset.Location = new Point(302, 152);
+      lblChangePreset.Location = new Point(299, 152);
       lblChangePreset.Name = "lblChangePreset";
       lblChangePreset.Size = new Size(40, 23);
       lblChangePreset.TabIndex = 176;
@@ -2689,7 +2689,7 @@ namespace MilkwaveRemote
       // 
       chkPresetLocked.Appearance = Appearance.Button;
       chkPresetLocked.FlatStyle = FlatStyle.System;
-      chkPresetLocked.Location = new Point(71, 152);
+      chkPresetLocked.Location = new Point(147, 152);
       chkPresetLocked.Name = "chkPresetLocked";
       chkPresetLocked.Size = new Size(70, 23);
       chkPresetLocked.TabIndex = 177;
@@ -2851,13 +2851,12 @@ namespace MilkwaveRemote
       lblPresetSettings.TabIndex = 178;
       lblPresetSettings.Text = "Change";
       lblPresetSettings.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblPresetSettings, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nClick: Set 1");
       // 
       // chkSettingsPresetRandom
       // 
       chkSettingsPresetRandom.Appearance = Appearance.Button;
       chkSettingsPresetRandom.FlatStyle = FlatStyle.System;
-      chkSettingsPresetRandom.Location = new Point(223, 152);
+      chkSettingsPresetRandom.Location = new Point(71, 152);
       chkSettingsPresetRandom.Name = "chkSettingsPresetRandom";
       chkSettingsPresetRandom.Size = new Size(70, 23);
       chkSettingsPresetRandom.TabIndex = 179;
@@ -3450,7 +3449,7 @@ namespace MilkwaveRemote
       // 
       chkPresetChangeWithSong.Appearance = Appearance.Button;
       chkPresetChangeWithSong.FlatStyle = FlatStyle.System;
-      chkPresetChangeWithSong.Location = new Point(147, 152);
+      chkPresetChangeWithSong.Location = new Point(223, 152);
       chkPresetChangeWithSong.Name = "chkPresetChangeWithSong";
       chkPresetChangeWithSong.Size = new Size(70, 23);
       chkPresetChangeWithSong.TabIndex = 180;
@@ -3464,13 +3463,12 @@ namespace MilkwaveRemote
       // lblPresetInfo
       // 
       lblPresetInfo.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      lblPresetInfo.Location = new Point(413, 152);
+      lblPresetInfo.Location = new Point(402, 152);
       lblPresetInfo.Name = "lblPresetInfo";
-      lblPresetInfo.Size = new Size(35, 23);
+      lblPresetInfo.Size = new Size(46, 23);
       lblPresetInfo.TabIndex = 181;
-      lblPresetInfo.Text = "Info";
+      lblPresetInfo.Text = "Display";
       lblPresetInfo.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblPresetInfo, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nClick: Set 1");
       // 
       // chkPresetDisplayCover
       // 
@@ -4497,7 +4495,7 @@ namespace MilkwaveRemote
       // numPresetChange
       // 
       numPresetChange.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numPresetChange.Location = new Point(346, 152);
+      numPresetChange.Location = new Point(343, 152);
       numPresetChange.Margin = new Padding(3, 2, 3, 2);
       numPresetChange.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numPresetChange.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
