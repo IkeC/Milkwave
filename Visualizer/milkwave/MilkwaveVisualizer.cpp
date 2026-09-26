@@ -1240,13 +1240,19 @@ void RenderFrame() {
     memset(pcmRightIn, 0, SAMPLE_SIZE);
   }
 
+  // 'b' (song info), 'c' (cover) and the middle mouse button ask for an explicit
+  // refresh. Capture that here, because PollMediaInfo() clears the flag before we
+  // get to display anything.
+  const bool explicitPoll = milkwave.doPollExplicit;
   milkwave.PollMediaInfo();
   if (milkwave.coverUpdated) {
     g_plugin.PostMessageToMilkwaveRemote(WM_USER_COVER_CHANGED);
     milkwave.coverUpdated = false;
   }
-  if (milkwave.updated) {
-    if (milkwave.isSongChange && !milkwave.doPollExplicit) {
+  // An explicit refresh always (re-)displays the song info, even if the track did not
+  // change - otherwise pressing 'b' would do nothing while a song is playing.
+  if (milkwave.updated || explicitPoll) {
+    if (milkwave.updated && milkwave.isSongChange && !explicitPoll) {
       if (g_plugin.m_ChangePresetWithSong &&
           !g_plugin.m_bPresetLockedByUser && !g_plugin.m_bPresetLockedByCode) {
         g_plugin.NextPreset(g_plugin.m_fBlendTimeAuto);
@@ -1256,7 +1262,9 @@ void RenderFrame() {
       }
     }
 
-    if (milkwave.doPollExplicit && g_plugin.m_DisplayCoverWhenPressingB) {
+    // Only honour the "show cover when pressing b" shortcut while cover display itself
+    // is enabled (same gate as the song-change path above).
+    if (explicitPoll && g_plugin.m_DisplayCover && g_plugin.m_DisplayCoverWhenPressingB) {
       g_plugin.LaunchSprite(0, -1);
     }
 

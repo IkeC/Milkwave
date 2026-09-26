@@ -3495,10 +3495,10 @@ namespace MilkwaveRemote
       chkPresetDisplayTrack.Name = "chkPresetDisplayTrack";
       chkPresetDisplayTrack.Size = new Size(70, 23);
       chkPresetDisplayTrack.TabIndex = 183;
-      chkPresetDisplayTrack.Text = "Track";
+      chkPresetDisplayTrack.Text = "Song";
       chkPresetDisplayTrack.TextAlign = ContentAlignment.MiddleCenter;
       chkPresetDisplayTrack.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkPresetDisplayTrack, "Display track info (song info polling)\r\n(same as pressing Ctrl+B in Visualizer)");
+      toolTip1.SetToolTip(chkPresetDisplayTrack, "Display song info\r\n(same as pressing Ctrl+B in Visualizer)\r\nPress B in Visualizer to show song info anytime");
       chkPresetDisplayTrack.UseVisualStyleBackColor = true;
       chkPresetDisplayTrack.CheckedChanged += chkPresetDisplayTrack_CheckedChanged;
       // 
