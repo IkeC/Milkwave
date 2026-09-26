@@ -1,3 +1,7 @@
+## v4.2 (unreleased)
+
+* Remote: Preset change and info buttons
+
 ## v4.1 (2026-09-10)
 
 * Lyrics support

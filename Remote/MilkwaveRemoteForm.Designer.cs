@@ -266,6 +266,11 @@ namespace MilkwaveRemote
       numLyricsBurntime = new NumericUpDown();
       chkLyricsAutoScale = new CheckBox();
       numLyricsTimeOffset = new NumericUpDown();
+      btnLyricsLineClear = new Button();
+      chkPresetChangeWithSong = new CheckBox();
+      lblPresetInfo = new Label();
+      chkPresetDisplayCover = new CheckBox();
+      chkPresetDisplayTrack = new CheckBox();
       lblLyricsFont = new Label();
       lblLyricsStatus = new Label();
       lblLyricsFile = new Label();
@@ -447,7 +452,6 @@ namespace MilkwaveRemote
       panShadertoyLocal = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
-      btnLyricsLineClear = new Button();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -2673,7 +2677,7 @@ namespace MilkwaveRemote
       // 
       // lblChangePreset
       // 
-      lblChangePreset.Location = new Point(209, 152);
+      lblChangePreset.Location = new Point(302, 152);
       lblChangePreset.Name = "lblChangePreset";
       lblChangePreset.Size = new Size(40, 23);
       lblChangePreset.TabIndex = 176;
@@ -2687,7 +2691,7 @@ namespace MilkwaveRemote
       chkPresetLocked.FlatStyle = FlatStyle.System;
       chkPresetLocked.Location = new Point(71, 152);
       chkPresetLocked.Name = "chkPresetLocked";
-      chkPresetLocked.Size = new Size(62, 23);
+      chkPresetLocked.Size = new Size(70, 23);
       chkPresetLocked.TabIndex = 177;
       chkPresetLocked.Text = "Locked";
       chkPresetLocked.TextAlign = ContentAlignment.MiddleCenter;
@@ -2853,9 +2857,9 @@ namespace MilkwaveRemote
       // 
       chkSettingsPresetRandom.Appearance = Appearance.Button;
       chkSettingsPresetRandom.FlatStyle = FlatStyle.System;
-      chkSettingsPresetRandom.Location = new Point(142, 152);
+      chkSettingsPresetRandom.Location = new Point(223, 152);
       chkSettingsPresetRandom.Name = "chkSettingsPresetRandom";
-      chkSettingsPresetRandom.Size = new Size(62, 23);
+      chkSettingsPresetRandom.Size = new Size(70, 23);
       chkSettingsPresetRandom.TabIndex = 179;
       chkSettingsPresetRandom.Text = "Random";
       chkSettingsPresetRandom.TextAlign = ContentAlignment.MiddleCenter;
@@ -3428,6 +3432,77 @@ namespace MilkwaveRemote
       numLyricsTimeOffset.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numLyricsTimeOffset, "Time offset in seconds applied to the lyrics timestamps (positive = lyrics appear later, e.g. to sync with a delayed audio feed) (settings.ini: LyricsOffsetSeconds)");
       numLyricsTimeOffset.ValueChanged += numLyricsTimeOffset_ValueChanged;
+      // 
+      // btnLyricsLineClear
+      // 
+      btnLyricsLineClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      btnLyricsLineClear.FlatStyle = FlatStyle.System;
+      btnLyricsLineClear.Location = new Point(453, 64);
+      btnLyricsLineClear.Name = "btnLyricsLineClear";
+      btnLyricsLineClear.Size = new Size(70, 23);
+      btnLyricsLineClear.TabIndex = 222;
+      btnLyricsLineClear.Text = "Clear";
+      toolTip1.SetToolTip(btnLyricsLineClear, "Clear the currently displayed lyrics line without changing the timeline");
+      btnLyricsLineClear.UseVisualStyleBackColor = true;
+      btnLyricsLineClear.Click += btnLyricsLineClear_Click;
+      // 
+      // chkPresetChangeWithSong
+      // 
+      chkPresetChangeWithSong.Appearance = Appearance.Button;
+      chkPresetChangeWithSong.FlatStyle = FlatStyle.System;
+      chkPresetChangeWithSong.Location = new Point(147, 152);
+      chkPresetChangeWithSong.Name = "chkPresetChangeWithSong";
+      chkPresetChangeWithSong.Size = new Size(70, 23);
+      chkPresetChangeWithSong.TabIndex = 180;
+      chkPresetChangeWithSong.Text = "Song";
+      chkPresetChangeWithSong.TextAlign = ContentAlignment.MiddleCenter;
+      chkPresetChangeWithSong.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkPresetChangeWithSong, "Select next Preset when song changes\r\n(same as pressing Ctrl+A in Visualizer)");
+      chkPresetChangeWithSong.UseVisualStyleBackColor = true;
+      chkPresetChangeWithSong.CheckedChanged += chkPresetChangeWithSong_CheckedChanged;
+      // 
+      // lblPresetInfo
+      // 
+      lblPresetInfo.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      lblPresetInfo.Location = new Point(413, 152);
+      lblPresetInfo.Name = "lblPresetInfo";
+      lblPresetInfo.Size = new Size(35, 23);
+      lblPresetInfo.TabIndex = 181;
+      lblPresetInfo.Text = "Info";
+      lblPresetInfo.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(lblPresetInfo, "Values < 1 may slow down rendering of the preset, sprites and notifications\r\nClick: Set 1");
+      // 
+      // chkPresetDisplayCover
+      // 
+      chkPresetDisplayCover.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkPresetDisplayCover.Appearance = Appearance.Button;
+      chkPresetDisplayCover.FlatStyle = FlatStyle.System;
+      chkPresetDisplayCover.Location = new Point(530, 152);
+      chkPresetDisplayCover.Name = "chkPresetDisplayCover";
+      chkPresetDisplayCover.Size = new Size(70, 23);
+      chkPresetDisplayCover.TabIndex = 182;
+      chkPresetDisplayCover.Text = "Cover";
+      chkPresetDisplayCover.TextAlign = ContentAlignment.MiddleCenter;
+      chkPresetDisplayCover.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkPresetDisplayCover, "Display the cover art when the song changes\r\n(same as pressing Ctrl+C in Visualizer)");
+      chkPresetDisplayCover.UseVisualStyleBackColor = true;
+      chkPresetDisplayCover.CheckedChanged += chkPresetDisplayCover_CheckedChanged;
+      // 
+      // chkPresetDisplayTrack
+      // 
+      chkPresetDisplayTrack.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+      chkPresetDisplayTrack.Appearance = Appearance.Button;
+      chkPresetDisplayTrack.FlatStyle = FlatStyle.System;
+      chkPresetDisplayTrack.Location = new Point(454, 152);
+      chkPresetDisplayTrack.Name = "chkPresetDisplayTrack";
+      chkPresetDisplayTrack.Size = new Size(70, 23);
+      chkPresetDisplayTrack.TabIndex = 183;
+      chkPresetDisplayTrack.Text = "Track";
+      chkPresetDisplayTrack.TextAlign = ContentAlignment.MiddleCenter;
+      chkPresetDisplayTrack.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkPresetDisplayTrack, "Display track info (song info polling)\r\n(same as pressing Ctrl+B in Visualizer)");
+      chkPresetDisplayTrack.UseVisualStyleBackColor = true;
+      chkPresetDisplayTrack.CheckedChanged += chkPresetDisplayTrack_CheckedChanged;
       // 
       // lblLyricsFont
       // 
@@ -4274,6 +4349,10 @@ namespace MilkwaveRemote
       // 
       tabPreset.BackColor = SystemColors.ControlLight;
       tabPreset.BorderStyle = BorderStyle.FixedSingle;
+      tabPreset.Controls.Add(chkPresetDisplayTrack);
+      tabPreset.Controls.Add(chkPresetDisplayCover);
+      tabPreset.Controls.Add(lblPresetInfo);
+      tabPreset.Controls.Add(chkPresetChangeWithSong);
       tabPreset.Controls.Add(lblMostUsed);
       tabPreset.Controls.Add(lblTags);
       tabPreset.Controls.Add(lblLoad);
@@ -4418,12 +4497,12 @@ namespace MilkwaveRemote
       // numPresetChange
       // 
       numPresetChange.Increment = new decimal(new int[] { 5, 0, 0, 0 });
-      numPresetChange.Location = new Point(255, 153);
+      numPresetChange.Location = new Point(346, 152);
       numPresetChange.Margin = new Padding(3, 2, 3, 2);
       numPresetChange.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numPresetChange.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
       numPresetChange.Name = "numPresetChange";
-      numPresetChange.Size = new Size(40, 23);
+      numPresetChange.Size = new Size(50, 23);
       numPresetChange.TabIndex = 175;
       numPresetChange.TextAlign = HorizontalAlignment.Center;
       numPresetChange.Value = new decimal(new int[] { 60, 0, 0, 0 });
@@ -5952,19 +6031,6 @@ namespace MilkwaveRemote
       splitContainerShader.SplitterDistance = 284;
       splitContainerShader.TabIndex = 31;
       // 
-      // btnLyricsLineClear
-      //
-      btnLyricsLineClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnLyricsLineClear.FlatStyle = FlatStyle.System;
-      btnLyricsLineClear.Location = new Point(453, 64);
-      btnLyricsLineClear.Name = "btnLyricsLineClear";
-      btnLyricsLineClear.Size = new Size(70, 23);
-      btnLyricsLineClear.TabIndex = 222;
-      btnLyricsLineClear.Text = "Clear";
-      toolTip1.SetToolTip(btnLyricsLineClear, "Clear the currently displayed lyrics line without changing the timeline");
-      btnLyricsLineClear.UseVisualStyleBackColor = true;
-      btnLyricsLineClear.Click += btnLyricsLineClear_Click;
-      //
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -6502,5 +6568,9 @@ namespace MilkwaveRemote
     private CheckBox chkLyricsAutoScale;
     private Label lblLyricsOffset;
     private Button btnLyricsLineClear;
+    private CheckBox chkPresetChangeWithSong;
+    private CheckBox chkPresetDisplayCover;
+    private Label lblPresetInfo;
+    private CheckBox chkPresetDisplayTrack;
   }
 }

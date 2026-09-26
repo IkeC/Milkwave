@@ -595,6 +595,37 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   } else if (wcsncmp(sMessage, L"LINK=", 5) == 0) {
     std::wstring message(sMessage + 5);
     m_RemotePresetLink = std::stoi(message);
+  } else if (wcsncmp(sMessage, L"PRESET_CHANGE_WITH_SONG=", 24) == 0) {
+    const bool enabled = (sMessage[24] == L'1');
+    if (enabled != g_plugin.m_ChangePresetWithSong) {
+      g_plugin.m_ChangePresetWithSong = enabled;
+      WritePrivateProfileIntW(enabled, L"ChangePresetWithSong", g_plugin.GetConfigIniFile(), L"Milkwave");
+      g_plugin.AddNotification(enabled ? L"Auto Preset Change enabled" : L"Auto Preset Change disabled");
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"DISPLAY_COVER=", 14) == 0) {
+    const bool enabled = (sMessage[14] == L'1');
+    if (enabled != g_plugin.m_DisplayCover) {
+      g_plugin.m_DisplayCover = enabled;
+      ::milkwave.doSaveCover = enabled;
+      WritePrivateProfileIntW(enabled, L"DisplayCover", g_plugin.GetConfigIniFile(), L"Milkwave");
+      g_plugin.AddNotification(enabled ? L"Cover Display enabled" : L"Cover Display disabled");
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"SONGINFO_POLLING=", 17) == 0) {
+    const bool enabled = (sMessage[17] == L'1');
+    if (enabled != g_plugin.m_SongInfoPollingEnabled) {
+      g_plugin.m_SongInfoPollingEnabled = enabled;
+      ::milkwave.doPoll = enabled;
+      if (!enabled) {
+        ::milkwave.currentArtist = L"";
+        ::milkwave.currentTitle = L"";
+        ::milkwave.currentAlbum = L"";
+      }
+      WritePrivateProfileIntW(enabled, L"SongInfoPollingEnabled", g_plugin.GetConfigIniFile(), L"Milkwave");
+      g_plugin.AddNotification(enabled ? L"Song Info enabled" : L"Song Info disabled");
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
   } else if (wcsncmp(sMessage, L"QUICKSAVE", 9) == 0) {
     g_plugin.SaveCurrentPresetToQuicksave(false);
   } else if (wcsncmp(sMessage, L"CONFIG", 6) == 0) {

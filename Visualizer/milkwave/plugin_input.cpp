@@ -1302,6 +1302,8 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           if (m_UI_mode == UI_REGULAR) {
             if ((GetKeyState(VK_CONTROL) & mask) != 0) {
               m_ChangePresetWithSong = !m_ChangePresetWithSong;
+              WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", GetConfigIniFile(), L"Milkwave");
+              SendSettingsInfoToMilkwaveRemote();
               if (m_ChangePresetWithSong) {
                 AddError(L"Auto Preset Change enabled", 5.0f, ERR_NOTIFY, false);
               } else {

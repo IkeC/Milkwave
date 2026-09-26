@@ -876,6 +876,8 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
             milkwave.currentTitle = L"";
             milkwave.currentAlbum = L"";
           }
+          WritePrivateProfileStringW(L"Milkwave", L"SongInfoPollingEnabled", g_plugin.m_SongInfoPollingEnabled ? L"1" : L"0", g_plugin.GetConfigIniFile());
+          g_plugin.SendSettingsInfoToMilkwaveRemote();
         } else {
           milkwave.doPollExplicit = true;
         }
@@ -889,6 +891,8 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
           } else {
             g_plugin.AddNotification(L"Cover Display disabled");
           }
+          WritePrivateProfileStringW(L"Milkwave", L"DisplayCover", g_plugin.m_DisplayCover ? L"1" : L"0", g_plugin.GetConfigIniFile());
+          g_plugin.SendSettingsInfoToMilkwaveRemote();
         } else {
           milkwave.doPollExplicit = true;
         }

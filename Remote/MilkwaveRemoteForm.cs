@@ -171,6 +171,9 @@ namespace MilkwaveRemote {
       Message,
       PresetFilePath,
       PresetLink,
+      PresetChangeWithSong,
+      PresetDisplayCover,
+      PresetDisplayTrack,
       Amplify,
       Wave,
       WaveClear,
@@ -1738,6 +1741,12 @@ namespace MilkwaveRemote {
                   chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) {
                   chkSettingsPresetRandom.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("CHANGEWITHSONG", StringComparison.OrdinalIgnoreCase)) {
+                  chkPresetChangeWithSong.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("DISPLAYCOVER", StringComparison.OrdinalIgnoreCase)) {
+                  chkPresetDisplayCover.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("SONGINFOPOLLING", StringComparison.OrdinalIgnoreCase)) {
+                  chkPresetDisplayTrack.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
                   chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
@@ -2173,6 +2182,12 @@ namespace MilkwaveRemote {
               message = "EQ_BOOST=" + numFFTBoost.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.PresetLink) {
               message = "LINK=" + messageToSend;
+            } else if (type == MessageType.PresetChangeWithSong) {
+              message = "PRESET_CHANGE_WITH_SONG=" + (chkPresetChangeWithSong.Checked ? "1" : "0");
+            } else if (type == MessageType.PresetDisplayCover) {
+              message = "DISPLAY_COVER=" + (chkPresetDisplayCover.Checked ? "1" : "0");
+            } else if (type == MessageType.PresetDisplayTrack) {
+              message = "SONGINFO_POLLING=" + (chkPresetDisplayTrack.Checked ? "1" : "0");
             } else if (type == MessageType.SpoutActive) {
               message = "SPOUT_ACTIVE=" + (chkSpoutActive.Checked ? "1" : "0");
             } else if (type == MessageType.SpoutFixedSize) {
@@ -6378,6 +6393,21 @@ namespace MilkwaveRemote {
     private void chkSettingsPresetRandom_CheckedChanged(object sender, EventArgs e) {
       if (updatingSettingsParams) return;
       SendUnicodeChars("r");
+    }
+
+    private void chkPresetChangeWithSong_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.PresetChangeWithSong);
+    }
+
+    private void chkPresetDisplayCover_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.PresetDisplayCover);
+    }
+
+    private void chkPresetDisplayTrack_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.PresetDisplayTrack);
     }
 
     private void LoadPresetDeck() {
