@@ -168,7 +168,7 @@ void CPlugin::MyPreInitialize() {
   // m_bWarningsDisabled     = false;
   m_bWarningsDisabled2 = false;
   // m_bAnisotropicFiltering = true;
-  m_bPresetLockOnAtStartup = true;
+  m_bPresetLockOnAtStartup = false;  // start unlocked - locking disables the "Song"/"After" preset changes
   m_bPreventScollLockHandling = false;
   m_nMaxPSVersion_ConfigPanel = -1;  // -1 = auto, 0 = disable shaders, 2 = ps_2_0, 3 = ps_3_0
   m_nMaxPSVersion_DX9 = -1;          // 0 = no shader support, 2 = ps_2_0, 3 = ps_3_0
@@ -677,6 +677,10 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileFloatW(m_fTimeBetweenRandomCustomMsgs, L"fTimeBetweenRandomCustomMsgs", pIni, L"Settings");
 
   WritePrivateProfileIntW(m_adapterId, L"nVideoAdapterIndex", pIni, L"Settings");
+  // NOTE: writes the *live* lock into the startup preference (Milkwave has no "Preset
+  // Lock on Startup" checkbox, so this is the only way to change that preference).
+  // Side effect: saving the config while a preset is locked makes every later start
+  // begin locked, which also disables the "Song" preset change.
   WritePrivateProfileIntW(m_bPresetLockedByUser, L"bPresetLockOnAtStartup", GetConfigIniFile(), L"Settings");
   if (m_bEnablePresetStartupSavingOnClose) {
     WritePrivateProfileStringW(L"Settings", L"szPresetStartup", m_szCurrentPresetFile, pIni);

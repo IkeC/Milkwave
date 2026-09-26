@@ -32,6 +32,10 @@ The currently playing Visualizer preset is displayed after the "Running" label. 
 
 Your most used tags are displayed as buttons automatically after the "Most used" label. Note that you may delete the file _tags-remote.json_ anytime if you want to start from scratch.
 
+At the bottom, the "Preset" row controls when and how presets change. "Random" toggles between random and sequential preset order (same as pressing "R" in the Visualizer). "Locked" freezes the current preset (same as pressing "~" in the Visualizer) so that nothing changes it automatically; the preset starts unlocked (settings.ini:bPresetLockOnAtStartup), and while it is locked both "Song" and "After" are disabled. "Song" changes the preset whenever the played track changes (same as pressing Ctrl+A in the Visualizer, settings.ini:ChangePresetWithSong); it replaces the "After" interval, so while "Song" is enabled presets follow the song only and the "After" number box is disabled. "After" is the number of seconds until the next preset change (settings.ini:fTimeBetweenPresets); note that the blending time and a random extra are added to determine the actual duration (settings.ini:fBlendTimeAuto and fTimeBetweenPresetsRand). The "Display" toggles control what is shown for the currently playing track: "Track" displays the song info (same as pressing Ctrl+B in the Visualizer, settings.ini:SongInfoPollingEnabled), and "Cover" displays the cover art whenever the song changes (same as pressing Ctrl+C in the Visualizer, settings.ini:DisplayCover).
+
+The Remote keeps these toggles in sync with the Visualizer, so changing them on either side updates the other. Controls that have no effect in the current state are disabled - hover them to see a tooltip explaining why.
+
 ## Tab "Message"
 
 Use "Send" to send the text after "Message" to display in the Visualizer window. Toggle "Preview" to see a "what you see is what you get" version of your text. If "Wrap" is checked, text will be wrapped to two lines if the text is longer than the number in the drop-down box. You can manually define a line break within your text by writing "//". Note that this feature is rather experimental and may clip your text sometimes depending on your used font face and size.
@@ -115,8 +119,6 @@ If you select "Auto", Milkwave tries to make the "perceived" Visualizer quality 
 Keep in mind that many settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
 
 For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.
-
-The "Preset" row allows you to set the lock mode for the current preset (same as pressing ~ in the Visualizer). If "Locked" is checked, the preset will not changed as time progresses, and the "Song" and "After" controls are disabled in the Remote. If unlocked, it will change after the time defined by "After" (plus blending times), unless "Song" is enabled. "Song" changes the preset whenever the played track changes (same as pressing Ctrl+A in the Visualizer); while it is enabled the "After" interval is disabled, so preset changes are driven by the song only. "Random" toggles between random and sequential preset order (same as pressing "R" in the Visualizer).
 
 "Compile" allows you to precompile the shaders defined in _precompile.txt_. This will usually take 2-3 minutes and happen in the background. You may also "Clear" the cache, which will simply remove all files from the _cache_ folder. This may be useful if you want to reset all shaders to be recompiled, eg. after a Milkwave update.
 
