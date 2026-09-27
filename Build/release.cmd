@@ -40,4 +40,4 @@ copy %visualizerBuildPath%\MilkwaveVisualizer.exe %releasePath%
 
 copy %visualizerSourcePath%\resources\sprites\cover.png %releasePath%\resources\sprites\cover.png
 
-pause
+::pause

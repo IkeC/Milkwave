@@ -1035,6 +1035,16 @@ namespace MilkwaveRemote {
       controllerTimer.Interval = 50; // 20Hz polling
 
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
+
+      // Create the window handle BEFORE connecting. The visualizer replies to our STATE
+      // request immediately (SETTINGS, SIGNAL|COVER_CHANGED, ...) and Control.InvokeRequired
+      // returns FALSE while a control has no handle - so OnPipeMessageReceived would run on
+      // the pipe thread and race with the rest of this constructor (that is how
+      // buttonImageCache got corrupted -> InvalidOperationException in DisposeButtonImage).
+      // With the handle in place such messages are marshalled and queued until the message
+      // loop starts, i.e. until after this constructor has finished.
+      _ = Handle;
+
 #if !DEBUG
       ConnectToVisualizer();
 #else
