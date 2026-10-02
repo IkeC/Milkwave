@@ -447,6 +447,9 @@ class CPlugin : public CPluginShell {
   float m_SongInfoDisplaySeconds = 5.0f;
   bool m_DisplayCover = true;
   bool m_DisplayCoverWhenPressingB = true;
+  // Settings-tab "Invert": invert the preset output (composite) while leaving the
+  // text overlays (song titles, messages, lyrics) un-inverted.
+  bool m_InvertPresetOutput = false;
   bool m_HideNotificationsWhenRemoteActive = false;
 
   // Remote tab visibility (settings.ini [Milkwave] ShowTab* keys; forwarded to
@@ -981,6 +984,7 @@ class CPlugin : public CPluginShell {
   void WarpedBlit_NoShaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, bool bCullTiles, bool bFlipCulling);
   void ShowToUser_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, bool bCullTiles, bool bFlipCulling);
   void ShowToUser_NoShaders();
+  void InvertBackBuffer();
   void BlurPasses();
   void GetSafeBlurMinMax(CState* pState, float* blur_min, float* blur_max);
   void RunPerFrameEquations(int code);

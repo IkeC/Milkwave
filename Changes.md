@@ -1,6 +1,7 @@
 ## v4.2 (unreleased)
 
 * Remote: Preset change and info buttons with improved locking logic dependency
+* Settings: Invert preset output
 
 ## v4.1 (2026-09-10)
 

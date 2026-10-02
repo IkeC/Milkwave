@@ -1197,6 +1197,13 @@ void CPlugin::RenderFrame(int bRedraw) {
       }
     }
 
+    // Global "Invert" (Remote Settings tab): invert the preset output after the
+    // composite has been drawn to the backbuffer but before the text overlays
+    // below (song titles, user sprites, input overlay, lyrics), so that only the
+    // preset is inverted and all text stays un-inverted.
+    if (m_InvertPresetOutput)
+      InvertBackBuffer();
+
     for (int i = 0; i < NUM_SUPERTEXTS; i++) {
       float fProgress = (GetTime() - m_supertexts[i].fStartTime) / m_supertexts[i].fDuration;
       // finally, render song title animation to back buffer
@@ -4867,6 +4874,104 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
       pCT->SetMatrix(lpDevice, p->rot_mat[i], &temp);
     }
   }
+}
+
+//----------------------------------------------------------------------
+// Inverts everything currently in the backbuffer (the composited preset
+// output) in place. Called from RenderFrame after the composite and before
+// the text overlays, so text (song titles, messages, lyrics, sprites) is not
+// inverted. See the "Invert" setting on the Remote Settings tab.
+//----------------------------------------------------------------------
+void CPlugin::InvertBackBuffer() {
+  LPDIRECT3DDEVICE9 lpDevice = GetDevice();
+  if (!lpDevice)
+    return;
+
+  // Save the state we modify.
+  D3DXMATRIX oldProj, oldView, oldWorld;
+  lpDevice->GetTransform(D3DTS_PROJECTION, &oldProj);
+  lpDevice->GetTransform(D3DTS_VIEW, &oldView);
+  lpDevice->GetTransform(D3DTS_WORLD, &oldWorld);
+  DWORD oldAlphaEnable = 0, oldSrcBlend = 0, oldDestBlend = 0, oldFVF = 0;
+  DWORD oldColorOp = 0, oldColorArg1 = 0, oldColorArg2 = 0;
+  DWORD oldAlphaOp = 0, oldAlphaArg1 = 0, oldAlphaArg2 = 0;
+  DWORD oldStage1ColorOp = 0, oldStage1AlphaOp = 0;
+  IDirect3DBaseTexture9* oldTexture0 = NULL;
+  IDirect3DVertexShader9* oldVertexShader = NULL;
+  IDirect3DPixelShader9* oldPixelShader = NULL;
+  lpDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &oldAlphaEnable);
+  lpDevice->GetRenderState(D3DRS_SRCBLEND, &oldSrcBlend);
+  lpDevice->GetRenderState(D3DRS_DESTBLEND, &oldDestBlend);
+  lpDevice->GetFVF(&oldFVF);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLOROP, &oldColorOp);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLORARG1, &oldColorArg1);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLORARG2, &oldColorArg2);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAOP, &oldAlphaOp);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAARG1, &oldAlphaArg1);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAARG2, &oldAlphaArg2);
+  lpDevice->GetTextureStageState(1, D3DTSS_COLOROP, &oldStage1ColorOp);
+  lpDevice->GetTextureStageState(1, D3DTSS_ALPHAOP, &oldStage1AlphaOp);
+  lpDevice->GetTexture(0, &oldTexture0);
+  lpDevice->GetVertexShader(&oldVertexShader);
+  lpDevice->GetPixelShader(&oldPixelShader);
+
+  // 2D projection: x/y in -1..1 map to the full current render target (y=-1 is top).
+  D3DXMATRIX ortho, identity;
+  D3DXMatrixOrthoLH(&ortho, 2.0f, -2.0f, 0.0f, 1.0f);
+  D3DXMatrixIdentity(&identity);
+  lpDevice->SetTransform(D3DTS_PROJECTION, &ortho);
+  lpDevice->SetTransform(D3DTS_VIEW, &identity);
+  lpDevice->SetTransform(D3DTS_WORLD, &identity);
+
+  lpDevice->SetVertexShader(NULL);
+  lpDevice->SetPixelShader(NULL);
+  lpDevice->SetFVF(SPRITEVERTEX_FORMAT);
+  lpDevice->SetTexture(0, NULL);
+
+  // Source colour is the white diffuse; the result is exactly 1 - dest.
+  lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+  lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+  lpDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+  lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+  lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_INVDESTCOLOR);
+  lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+
+  SPRITEVERTEX v[4];
+  ZeroMemory(v, sizeof(v));
+  v[0].x = -1.0f; v[0].y = -1.0f; v[0].tu = 0.0f; v[0].tv = 0.0f;
+  v[1].x = 1.0f;  v[1].y = -1.0f; v[1].tu = 1.0f; v[1].tv = 0.0f;
+  v[2].x = -1.0f; v[2].y = 1.0f;  v[2].tu = 0.0f; v[2].tv = 1.0f;
+  v[3].x = 1.0f;  v[3].y = 1.0f;  v[3].tu = 1.0f; v[3].tv = 1.0f;
+  for (int i = 0; i < 4; i++)
+    v[i].Diffuse = 0xFFFFFFFF;
+
+  lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(SPRITEVERTEX));
+
+  // Restore the state we modified.
+  lpDevice->SetTransform(D3DTS_PROJECTION, &oldProj);
+  lpDevice->SetTransform(D3DTS_VIEW, &oldView);
+  lpDevice->SetTransform(D3DTS_WORLD, &oldWorld);
+  lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, oldAlphaEnable);
+  lpDevice->SetRenderState(D3DRS_SRCBLEND, oldSrcBlend);
+  lpDevice->SetRenderState(D3DRS_DESTBLEND, oldDestBlend);
+  lpDevice->SetFVF(oldFVF);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, oldColorOp);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, oldColorArg1);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG2, oldColorArg2);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, oldAlphaOp);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, oldAlphaArg1);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, oldAlphaArg2);
+  lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, oldStage1ColorOp);
+  lpDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, oldStage1AlphaOp);
+  lpDevice->SetTexture(0, oldTexture0);
+  lpDevice->SetVertexShader(oldVertexShader);
+  lpDevice->SetPixelShader(oldPixelShader);
+  SafeRelease(oldTexture0);
+  SafeRelease(oldVertexShader);
+  SafeRelease(oldPixelShader);
 }
 
 void CPlugin::ShowToUser_NoShaders()  // int bRedraw, int nPassOverride)

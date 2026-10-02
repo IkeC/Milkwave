@@ -629,6 +629,14 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.AddNotification(enabled ? L"Song Info enabled" : L"Song Info disabled");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
+  } else if (wcsncmp(sMessage, L"INVERT_PRESET=", 14) == 0) {
+    const bool enabled = (sMessage[14] == L'1');
+    if (enabled != g_plugin.m_InvertPresetOutput) {
+      g_plugin.m_InvertPresetOutput = enabled;
+      WritePrivateProfileIntW(enabled, L"InvertPresetOutput", g_plugin.GetConfigIniFile(), L"Milkwave");
+      g_plugin.AddNotification(enabled ? L"Preset Invert enabled" : L"Preset Invert disabled");
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
   } else if (wcsncmp(sMessage, L"QUICKSAVE", 9) == 0) {
     g_plugin.SaveCurrentPresetToQuicksave(false);
   } else if (wcsncmp(sMessage, L"CONFIG", 6) == 0) {

@@ -116,6 +116,8 @@ With the "Quality" setting, you can reduce the size of the backbuffer used for r
 
 If you select "Auto", Milkwave tries to make the "perceived" Visualizer quality similar on different window sizes by adjusting the backbuffer size accordingly.
 
+"Invert" inverts the colors of the preset output while leaving the text overlays (song titles, messages, lyrics) unaffected — useful for light-on-dark environments. This is a global setting stored as _InvertPresetOutput_ in the _Milkwave_ section of _settings.ini_, independent of the per-preset "Invert" filter on the Wave tab.
+
 Keep in mind that many settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
 
 For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.

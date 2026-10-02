@@ -177,6 +177,7 @@ namespace MilkwaveRemote {
       PresetChangeWithSong,
       PresetDisplayCover,
       PresetDisplayTrack,
+      InvertPreset,
       Amplify,
       Wave,
       WaveClear,
@@ -1768,6 +1769,8 @@ namespace MilkwaveRemote {
                   chkPresetDisplayCover.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("SONGINFOPOLLING", StringComparison.OrdinalIgnoreCase)) {
                   chkPresetDisplayTrack.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("INVERTPRESET", StringComparison.OrdinalIgnoreCase)) {
+                  chkInvert.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
                   chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
@@ -2212,6 +2215,8 @@ namespace MilkwaveRemote {
               message = "DISPLAY_COVER=" + (chkPresetDisplayCover.Checked ? "1" : "0");
             } else if (type == MessageType.PresetDisplayTrack) {
               message = "SONGINFO_POLLING=" + (chkPresetDisplayTrack.Checked ? "1" : "0");
+            } else if (type == MessageType.InvertPreset) {
+              message = "INVERT_PRESET=" + (chkInvert.Checked ? "1" : "0");
             } else if (type == MessageType.SpoutActive) {
               message = "SPOUT_ACTIVE=" + (chkSpoutActive.Checked ? "1" : "0");
             } else if (type == MessageType.SpoutFixedSize) {
@@ -6055,6 +6060,11 @@ namespace MilkwaveRemote {
       if (!updatingSettingsParams) {
         SendToMilkwaveVisualizer("", MessageType.QualityAuto);
       }
+    }
+
+    private void chkInvert_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.InvertPreset);
     }
 
     private void btnShadertoyFilesLoad_Click(object? sender, EventArgs? e) {

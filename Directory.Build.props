@@ -1,0 +1,31 @@
+<Project>
+
+  <!--
+    Workaround for a C# Dev Kit / MSBuild incompatibility that breaks the
+    "Build RELEASE" (and any other) msbuild.exe invocation of this solution.
+
+    C# Dev Kit injects the environment variable
+
+        CustomAfterMicrosoftCommonTargets = <csdevkit>\dist\msbuild\Microsoft.NET.ProjectData.targets
+
+    (plus EnableProjectDataOnBuild=true) into VS Code's integrated terminals.
+    That targets file loads Microsoft.NET.ProjectData.Tasks.dll, which is built
+    against .NET 10 and therefore cannot be loaded by the .NET Framework based
+    MSBuild that ships with Visual Studio 2022. Every build then fails with:
+
+        error MSB4062: ... Microsoft.NET.ProjectData.Tasks.WriteProjectDataSliceTask
+        ... "System.Runtime, Version=10.0.0.0" ... could not be found.
+
+    dotnet build is unaffected (the .NET host resolves the newer framework
+    assembly); only msbuild.exe hits this.
+
+    Disabling the opportunistic project-data write during ordinary builds keeps
+    the task from being loaded here. C# Dev Kit still produces project data via
+    its own design-time builds, so editor features are unaffected.
+    Delete this file if C# Dev Kit stops injecting that targets file.
+  -->
+  <PropertyGroup>
+    <EnableProjectDataOnBuild>false</EnableProjectDataOnBuild>
+  </PropertyGroup>
+
+</Project>

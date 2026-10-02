@@ -481,6 +481,7 @@ void CPlugin::MyReadConfig() {
   m_ChangePresetWithSong = GetPrivateProfileBoolW(L"Milkwave", L"ChangePresetWithSong", m_ChangePresetWithSong, pIni);
   m_SongInfoDisplaySeconds = GetPrivateProfileFloatW(L"Milkwave", L"SongInfoDisplaySeconds", m_SongInfoDisplaySeconds, pIni);
   m_DisplayCover = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCover", m_DisplayCover, pIni);
+  m_InvertPresetOutput = GetPrivateProfileBoolW(L"Milkwave", L"InvertPresetOutput", m_InvertPresetOutput, pIni);
   m_DisplayCoverWhenPressingB = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCoverWhenPressingB", m_DisplayCoverWhenPressingB, pIni);
   m_HideNotificationsWhenRemoteActive = GetPrivateProfileBoolW(L"Milkwave", L"HideNotificationsWhenRemoteActive", m_HideNotificationsWhenRemoteActive, pIni);
 
@@ -697,6 +698,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_SongInfoDisplayCorner, L"SongInfoDisplayCorner", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_InvertPresetOutput, L"InvertPresetOutput", pIni, L"Milkwave");
   // WritePrivateProfileIntW(m_DisplayCoverWhenPressingB, L"mDisplayCoverWhenPressingB", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ShowTabPreset, L"ShowTabPreset", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ShowTabMessage, L"ShowTabMessage", pIni, L"Milkwave");

@@ -269,6 +269,7 @@ namespace MilkwaveRemote
       chkPresetChangeWithSong = new CheckBox();
       chkPresetDisplayCover = new CheckBox();
       chkPresetDisplayTrack = new CheckBox();
+      chkInvert = new CheckBox();
       lblPresetSettings = new Label();
       lblPresetInfo = new Label();
       lblLyricsFont = new Label();
@@ -452,6 +453,7 @@ namespace MilkwaveRemote
       panShadertoyLocal = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
+      label10 = new Label();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -3483,6 +3485,21 @@ namespace MilkwaveRemote
       chkPresetDisplayTrack.UseVisualStyleBackColor = true;
       chkPresetDisplayTrack.CheckedChanged += chkPresetDisplayTrack_CheckedChanged;
       // 
+      // chkInvert
+      // 
+      chkInvert.Appearance = Appearance.Button;
+      chkInvert.FlatStyle = FlatStyle.System;
+      chkInvert.Location = new Point(354, 64);
+      chkInvert.Name = "chkInvert";
+      chkInvert.Size = new Size(56, 23);
+      chkInvert.TabIndex = 192;
+      chkInvert.Text = "Invert";
+      chkInvert.TextAlign = ContentAlignment.MiddleCenter;
+      chkInvert.TextImageRelation = TextImageRelation.ImageAboveText;
+      toolTip1.SetToolTip(chkInvert, "Invert preset output (texts are not affected)");
+      chkInvert.UseVisualStyleBackColor = true;
+      chkInvert.CheckedChanged += chkInvert_CheckedChanged;
+      // 
       // lblPresetSettings
       // 
       lblPresetSettings.Location = new Point(6, 152);
@@ -4670,6 +4687,8 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(label10);
+      tabSettings.Controls.Add(chkInvert);
       tabSettings.Controls.Add(labelEQBoost);
       tabSettings.Controls.Add(numFFTBoost);
       tabSettings.Controls.Add(labelEQDecay);
@@ -6029,6 +6048,16 @@ namespace MilkwaveRemote
       splitContainerShader.SplitterDistance = 289;
       splitContainerShader.TabIndex = 31;
       // 
+      // label10
+      // 
+      label10.Location = new Point(279, 63);
+      label10.Name = "label10";
+      label10.Size = new Size(69, 23);
+      label10.TabIndex = 193;
+      label10.Text = "Output";
+      label10.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label10, "Shift Color Saturation\r\nClick: Set 0\r\nHold Alt while changing value: Set increment to 0.05\r\n\r\n");
+      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -6570,5 +6599,7 @@ namespace MilkwaveRemote
     private CheckBox chkPresetDisplayCover;
     private Label lblPresetInfo;
     private CheckBox chkPresetDisplayTrack;
+    private CheckBox chkInvert;
+    private Label label10;
   }
 }
