@@ -662,6 +662,45 @@ void CPlugin::DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, 
   SafeRelease(oldPixelShader);
 }
 
+// Returns the height of the taskbar (or another app bar) that covers the bottom edge of
+// the render window, in text coordinates. Desktop Mode stretches the window across the
+// whole screen, so the taskbar sits on top of texts anchored to the bottom.
+int CPlugin::GetDesktopModeTaskbarHeight() {
+  if (!m_bDesktopMode) {
+    return 0;
+  }
+
+  HWND hwnd = GetPluginWindow();
+  if (hwnd == nullptr) {
+    return 0;
+  }
+
+  // The bottom texts are drawn into the bottom corner of the render window, so the
+  // monitor under that corner is the one that matters.
+  RECT windowRect = {0};
+  if (!GetWindowRect(hwnd, &windowRect)) {
+    return 0;
+  }
+  const POINT bottomRight = {windowRect.right - 1, windowRect.bottom - 1};
+  HMONITOR monitor = MonitorFromPoint(bottomRight, MONITOR_DEFAULTTONEAREST);
+
+  MONITORINFO monitorInfo = {0};
+  monitorInfo.cbSize = sizeof(MONITORINFO);
+  if (monitor == nullptr || !GetMonitorInfo(monitor, &monitorInfo)) {
+    return 0;
+  }
+
+  // The work area only excludes the taskbar when it is docked at the bottom edge.
+  const int taskbarHeight = monitorInfo.rcMonitor.bottom - monitorInfo.rcWork.bottom;
+  if (taskbarHeight <= 0) {
+    return 0;
+  }
+
+  // Text coordinates are scaled by the render quality.
+  const float scale = GetEffectiveRenderQuality(GetWidth(), GetHeight());
+  return static_cast<int>(taskbarHeight * scale + 0.5f);
+}
+
 void CPlugin::MyRenderUI(
     int* upper_left_corner_y,   // increment me!
     int* upper_right_corner_y,  // increment me!
@@ -692,6 +731,14 @@ void CPlugin::MyRenderUI(
   //   draw the text just once, to a texture, and then display the
   //   texture each frame.  This is how the help screen is done; see
   //   pluginshell.cpp for example code.
+
+  // Desktop Mode: the window covers the whole screen, so texts anchored to the
+  // bottom would end up behind the taskbar. Keep them above it.
+  if (m_bDesktopMode) {
+    const int taskbarHeight = GetDesktopModeTaskbarHeight();
+    *lower_left_corner_y -= taskbarHeight;
+    *lower_right_corner_y -= taskbarHeight;
+  }
 
   RECT r = {0};
   wchar_t buf[512] = {0};
@@ -1651,7 +1698,10 @@ void CPlugin::MyRenderUI(
             DWORD cg = m_fontinfo[fontIndex].G;
             DWORD cb = m_fontinfo[fontIndex].B;
             DWORD alpha = 0;
-            if (age_rel >= 0.0f && age_rel < 0.05f) {
+            if (m_bShowSongInfo) {
+              // Pinned with 'b': no fade in/out, the info stays on screen.
+              alpha = 255;
+            } else if (age_rel >= 0.0f && age_rel < 0.05f) {
               alpha = (DWORD)(255 * (age_rel / 0.05f));
             } else if (age_rel > 0.8f && age_rel <= 1.0f) {
               alpha = (DWORD)(255 * ((1.0f - age_rel) / 0.2f));

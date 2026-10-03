@@ -480,6 +480,7 @@ void CPlugin::MyReadConfig() {
   GetPrivateProfileStringW(L"Milkwave", L"SongInfoFormat", L"Artist;Title;Album", m_SongInfoFormat, sizeof(m_SongInfoFormat), pIni);
   m_ChangePresetWithSong = GetPrivateProfileBoolW(L"Milkwave", L"ChangePresetWithSong", m_ChangePresetWithSong, pIni);
   m_SongInfoDisplaySeconds = GetPrivateProfileFloatW(L"Milkwave", L"SongInfoDisplaySeconds", m_SongInfoDisplaySeconds, pIni);
+  m_bShowSongInfo = GetPrivateProfileBoolW(L"Milkwave", L"ShowSongInfo", m_bShowSongInfo, pIni);
   m_DisplayCover = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCover", m_DisplayCover, pIni);
   m_InvertPresetOutput = GetPrivateProfileBoolW(L"Milkwave", L"InvertPresetOutput", m_InvertPresetOutput, pIni);
   m_DisplayCoverWhenPressingB = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCoverWhenPressingB", m_DisplayCoverWhenPressingB, pIni);
@@ -552,10 +553,12 @@ void CPlugin::MyReadConfig() {
   GetPrivateProfileStringW(L"Network", L"PinHash", L"", m_szTcpPinHash, _countof(m_szTcpPinHash), pIni);
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
+  m_WindowDesktopMode = GetPrivateProfileBoolW(L"Milkwave", L"WindowDesktopMode", m_WindowDesktopMode, pIni);
   m_bAlwaysOnTop = GetPrivateProfileBoolW(L"Milkwave", L"WindowAlwaysOnTop", m_bAlwaysOnTop, pIni);
 
   fOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowOpacity", fOpacity, pIni);
   m_WindowWatermarkModeOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowWatermarkModeOpacity", m_WindowWatermarkModeOpacity, pIni);
+  m_WindowDesktopModeOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowDesktopModeOpacity", m_WindowDesktopModeOpacity, pIni);
   m_WindowX = GetPrivateProfileIntW(L"Milkwave", L"WindowX", m_WindowX, pIni);
   m_WindowY = GetPrivateProfileIntW(L"Milkwave", L"WindowY", m_WindowY, pIni);
   m_WindowWidth = GetPrivateProfileIntW(L"Milkwave", L"WindowWidth", m_WindowWidth, pIni);
@@ -696,6 +699,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_nAudioDeviceRequestType, L"AudioDeviceRequestType", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_SongInfoPollingEnabled, L"SongInfoPollingEnabled", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_SongInfoDisplayCorner, L"SongInfoDisplayCorner", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_bShowSongInfo, L"ShowSongInfo", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_InvertPresetOutput, L"InvertPresetOutput", pIni, L"Milkwave");
@@ -737,9 +741,11 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileStringW(L"Lyrics", L"LyricsApiUrl", m_lyricsApiUrl, pIni);
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_WindowDesktopMode, L"WindowDesktopMode", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_bAlwaysOnTop, L"WindowAlwaysOnTop", pIni, L"Milkwave");
 
   WritePrivateProfileFloatW(m_WindowWatermarkModeOpacity, L"WindowWatermarkModeOpacity", pIni, L"Milkwave");
+  WritePrivateProfileFloatW(m_WindowDesktopModeOpacity, L"WindowDesktopModeOpacity", pIni, L"Milkwave");
   WritePrivateProfileFloatW(fOpacity, L"WindowOpacity", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowX, L"WindowX", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowY, L"WindowY", pIni, L"Milkwave");

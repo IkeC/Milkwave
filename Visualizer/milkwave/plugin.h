@@ -418,7 +418,9 @@ class CPlugin : public CPluginShell {
   float m_MessageDefaultFadeoutTime = 0.0f;
 
   bool m_WindowBorderless = false;
+  bool m_WindowDesktopMode = false;  // persisted state: Desktop Mode is restored on the next start
   float m_WindowWatermarkModeOpacity = 0.3f;
+  float m_WindowDesktopModeOpacity = 1.0f;
   int m_WindowX = 0;
   int m_WindowY = 0;
   int m_WindowWidth = 0;
@@ -451,6 +453,7 @@ class CPlugin : public CPluginShell {
 
   bool m_ChangePresetWithSong = true;
   float m_SongInfoDisplaySeconds = 5.0f;
+  bool m_bShowSongInfo = false;  // 'b' pins the song info to the screen (persisted)
   bool m_DisplayCover = true;
   bool m_DisplayCoverWhenPressingB = true;
   // Settings-tab "Invert": invert the preset output (composite) while leaving the
@@ -849,7 +852,7 @@ class CPlugin : public CPluginShell {
   float m_lyricsZoom = 0.95f;  // font scale applied before fade-in / after fade-out
   float m_lyricsMaxWidth = 0.82f;
   wchar_t m_lyricsFont[256] = L"Segoe UI";
-  int m_lyricsFontSize = 32;
+  int m_lyricsFontSize = 40;
   bool m_lyricsFontBold = false;
   bool m_lyricsFontItalic = false;
   bool m_lyricsFontAA = true;
@@ -1034,6 +1037,7 @@ class CPlugin : public CPluginShell {
   void ToggleAlwaysOnTop(HWND hwnd);
   void SetOpacity(HWND hwnd);
   bool IsBorderlessFullscreen(HWND hWnd);
+  int GetDesktopModeTaskbarHeight();  // taskbar covering the bottom of the window, in canvas pixels (0 outside Desktop Mode)
   virtual LRESULT MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
   void KillAllSprites();
   void KillAllSupertexts();

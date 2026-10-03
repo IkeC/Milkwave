@@ -3100,7 +3100,7 @@ namespace MilkwaveRemote
       numLyricsFontSize.TabIndex = 197;
       numLyricsFontSize.TextAlign = HorizontalAlignment.Center;
       toolTip1.SetToolTip(numLyricsFontSize, "Font size of the lyrics overlay (settings.ini: LyricsFontSize)");
-      numLyricsFontSize.Value = new decimal(new int[] { 30, 0, 0, 0 });
+      numLyricsFontSize.Value = new decimal(new int[] { 40, 0, 0, 0 });
       numLyricsFontSize.ValueChanged += numLyricsFontSize_ValueChanged;
       // 
       // cboLyricsFont
@@ -3477,7 +3477,7 @@ namespace MilkwaveRemote
       chkPresetDisplayTrack.Text = "Song";
       chkPresetDisplayTrack.TextAlign = ContentAlignment.MiddleCenter;
       chkPresetDisplayTrack.TextImageRelation = TextImageRelation.ImageAboveText;
-      toolTip1.SetToolTip(chkPresetDisplayTrack, "Display song info\r\n(same as pressing Ctrl+B in Visualizer)\r\nPress B in Visualizer to show song info anytime");
+      toolTip1.SetToolTip(chkPresetDisplayTrack, "Display song info when the song changes\r\n(same as pressing Ctrl+B in Visualizer)\r\nPress B in Visualizer to show song info anytime");
       chkPresetDisplayTrack.UseVisualStyleBackColor = true;
       chkPresetDisplayTrack.CheckedChanged += chkPresetDisplayTrack_CheckedChanged;
       // 

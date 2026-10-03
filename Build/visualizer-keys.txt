@@ -28,7 +28,8 @@ RIGHT ARROW / V         next track
 DOWN ARROW / X          play/pause track
 UP ARROW / C            stop track
 CTRL + L/R ARROW        fast forward/rewind track (5 seconds)
-B / M MOUSEBUTTON       show track info
+B                       toggle track info (always visible on/off)
+M MOUSEBUTTON           show track info
 
 CTRL + A                toggle next preset when track changes
 CTRL + B                toggle track info polling

@@ -5,12 +5,17 @@
 * Visualizer: Taskbar thumbnail toolbar with buttons for the previous preset, the opacity (5% steps), the preset lock and the next preset
   - The lock button shows the current state and toggles the preset lock (same as the `~` key)
 * Visualizer: Taskbar right-click menu also offers "Open Milkwave Remote" (starts it, or brings the running Remote to the front)
+* Visualizer: Desktop Mode has its own window opacity (settings.ini: WindowDesktopModeOpacity, adjustable with the mouse wheel or the taskbar buttons)
+* Visualizer: Desktop Mode is restored on the next start when the Visualizer was closed in Desktop Mode (settings.ini: WindowDesktopMode)
+* Visualizer: In Desktop Mode the bottom screen texts (song info, FPS and similar) stay above the taskbar
+* Visualizer: 'B' toggles a permanently visible song info display (settings.ini: ShowSongInfo); the automatic display on track changes is unaffected. Switching the song info polling off (Ctrl+B) hides the pinned display as well, and the notification then reports that instead of "on track change only"
 * Visualizer: Borderless Fullscreen is no longer bound to a hotkey (still available as right-click function of Remote button 14)
 * Remote: Button 15 now defaults to Desktop Mode (Ctrl+F9) instead of Transparency
 * Remote: Button 13 (Clear Sprite/Msg) now defaults to "Clear all Sprites" (Ctrl+K) on right-click
 * Remote: Preset change and info buttons with improved locking logic dependency
 * Remote: Command button panel configurable via the [Buttons] section of _settings.ini_ (captions, commands and right-click commands with tooltips)
 * Remote: Command button functions assignable from a context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click, including a "Clear Function" entry) listing ready-made Visualizer functions
+* Lyrics: default font size is 40 now (settings.ini: LyricsFontSize)
 * Settings: Invert preset output
 
 ## v4.1 (2026-09-10)

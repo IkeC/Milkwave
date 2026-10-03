@@ -60,7 +60,11 @@ void ToggleTransparency(HWND hwnd) {
 }
 
 void CPlugin::SetOpacity(HWND hwnd) {
-  if (IsBorderlessFullscreen(hwnd)) {
+  // While a special window mode is active, remember the value for that mode
+  // instead of the normal window opacity.
+  if (g_plugin.m_bDesktopMode) {
+    g_plugin.m_WindowDesktopModeOpacity = fOpacity;
+  } else if (IsBorderlessFullscreen(hwnd)) {
     g_plugin.m_WindowWatermarkModeOpacity = fOpacity;
   }
 

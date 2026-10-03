@@ -239,6 +239,10 @@ static const UINT kThumbButtonNextPreset = 5;
 static UINT taskbarButtonCreatedMessage = 0;
 static ITaskbarList3* taskbarList = nullptr;
 static HWND renderWindow = nullptr;  // main visualizer window, set once it exists
+static bool desktopModeOpacityPending = false;  // re-apply the Desktop Mode alpha on the next frame
+// Duration of the pinned song info display (m_bShowSongInfo): large enough to never
+// expire while the app is running.
+static constexpr float kSongInfoPermanentSeconds = 1.0e9f;
 static HWND taskbarThumbnailWindow = nullptr;
 static bool taskbarPresetLockButtonLocked = false;
 static int taskbarOpacityButtonPercent = -1;
@@ -381,7 +385,16 @@ void DeinitD3d() {
 static bool SafeResetDevice() {
   if (!pD3DDevice) return false;
   HRESULT hr = pD3DDevice->Reset(&g_plugin.d3dPp);
-  if (SUCCEEDED(hr)) return true;
+  if (SUCCEEDED(hr)) {
+    // A reset leaves layered windows opaque, so the Desktop Mode opacity has to be
+    // applied again (see ToggleDesktopMode).
+    if (g_plugin.m_bDesktopMode && g_plugin.m_WindowDesktopModeOpacity < 1.0f && renderWindow != nullptr) {
+      SetLayeredWindowAttributes(
+          renderWindow, 0, static_cast<BYTE>(g_plugin.m_WindowDesktopModeOpacity * 255), LWA_ALPHA);
+      desktopModeOpacityPending = true;
+    }
+    return true;
+  }
   wchar_t buf[256];
   swprintf_s(buf, L"D3D Reset failed: 0x%08X", hr);
   milkwave.LogInfo(buf);
@@ -1396,7 +1409,7 @@ static void BuildTaskbarJumpList() {
   }
 }
 
-static void ToggleDesktopMode(HWND hWnd) {
+static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
   try {
     if (!g_plugin.m_bDesktopMode) {
       // Desktop Mode replaces the wallpaper, so leave the exclusive display
@@ -1440,10 +1453,7 @@ static void ToggleDesktopMode(HWND hWnd) {
         TranspaMode = false;
         ToggleTransparency(hWnd);
       }
-      if (g_plugin.fOpacity != 1.0f) {
-        g_plugin.fOpacity = 1.0f;
-        g_plugin.SetOpacity(hWnd);
-      }
+      g_plugin.fOpacity = g_plugin.m_WindowDesktopModeOpacity;
 
       // Keep the application in the taskbar while the render window becomes a
       // child of the WorkerW.
@@ -1451,7 +1461,6 @@ static void ToggleDesktopMode(HWND hWnd) {
 
       SetWindowLongPtrW(hWnd, GWL_STYLE, WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS);
       SetWindowLongPtrW(hWnd, GWL_EXSTYLE, WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_LAYERED);
-      SetLayeredWindowAttributes(hWnd, 0, 255, LWA_ALPHA);
       SetParent(hWnd, desktopWorkerW);
 
       const int x = GetSystemMetrics(SM_XVIRTUALSCREEN);
@@ -1466,9 +1475,22 @@ static void ToggleDesktopMode(HWND hWnd) {
       SetWindowPos(hWnd, HWND_TOP, origin.x, origin.y, width, height,
                    SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 
+      // Re-parenting and the device reset above leave the layered window opaque, so
+      // the opacity has to be applied once they are done. Setting it earlier only
+      // takes effect after the value is changed again.
+      if (g_plugin.m_WindowDesktopModeOpacity < 1.0f) {
+        g_plugin.SetOpacity(hWnd);  // also updates the Remote and shows the percentage
+        desktopModeOpacityPending = true;
+      } else {
+        SetLayeredWindowAttributes(hWnd, 0, 255, LWA_ALPHA);
+      }
+
       RefreshDesktopIcons(progman);
 
       g_plugin.m_bDesktopMode = true;
+      if (updatePersistedState) {
+        g_plugin.m_WindowDesktopMode = true;
+      }
       RegisterDesktopModeHotkey(hWnd);
       g_plugin.AddNotification(L"Desktop Mode enabled (Ctrl+F9 to exit)");
     } else {
@@ -1486,6 +1508,9 @@ static void ToggleDesktopMode(HWND hWnd) {
                    width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
       g_plugin.m_bDesktopMode = false;
+      if (updatePersistedState) {
+        g_plugin.m_WindowDesktopMode = false;
+      }
 
       // The render window is back in the taskbar, so the controller can go.
       DestroyDesktopControllerWindow();
@@ -1580,7 +1605,9 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   switch (uMsg) {
     case WM_CLOSE: {
       if (g_plugin.m_bDesktopMode) {
-        ToggleDesktopMode(hWnd);
+        // Restore the normal window, but keep the persisted Desktop Mode state so
+        // the app starts in Desktop Mode again next time.
+        ToggleDesktopMode(hWnd, false);
       }
       DestroyDesktopControllerWindow();
       g_plugin.SaveWindowSizeAndPosition(hWnd);
@@ -1698,11 +1725,30 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
             milkwave.currentArtist = L"";
             milkwave.currentTitle = L"";
             milkwave.currentAlbum = L"";
+            // Nothing can be polled anymore, so a pinned display would only freeze stale text.
+            g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_1);
+            g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_2);
+            g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_3);
           }
           WritePrivateProfileStringW(L"Milkwave", L"SongInfoPollingEnabled", g_plugin.m_SongInfoPollingEnabled ? L"1" : L"0", g_plugin.GetConfigIniFile());
           g_plugin.SendSettingsInfoToMilkwaveRemote();
         } else {
-          milkwave.doPollExplicit = true;
+          // 'b' pins the song info to the screen until it is pressed again; the
+          // automatic display on track changes is handled separately.
+          g_plugin.m_bShowSongInfo = !g_plugin.m_bShowSongInfo;
+          WritePrivateProfileStringW(L"Milkwave", L"ShowSongInfo", g_plugin.m_bShowSongInfo ? L"1" : L"0", g_plugin.GetConfigIniFile());
+          if (g_plugin.m_bShowSongInfo) {
+            g_plugin.AddNotification(L"Song info: always visible");
+            milkwave.doPollExplicit = true;  // show the current track right away
+          } else {
+            // Without Ctrl+B polling there is no track change display left to fall back to.
+            g_plugin.AddNotification(g_plugin.m_SongInfoPollingEnabled
+                                       ? L"Song info: on track change only"
+                                       : L"Song info: off (polling disabled)");
+            g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_1);
+            g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_2);
+            g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_3);
+          }
         }
         return 0;
       } else if (wParam == VK_C) {
@@ -2119,6 +2165,10 @@ void RenderFrame() {
     g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_2);
     g_plugin.ClearErrors(ERR_MSG_BOTTOM_EXTRA_3);
 
+    // 'b' pins the info to the screen, otherwise it only shows up for a few seconds
+    // (and flashes on every track change).
+    const float songInfoSeconds = g_plugin.m_bShowSongInfo ? kSongInfoPermanentSeconds : g_plugin.m_SongInfoDisplaySeconds;
+
     // Iterate over tokens in reverse order
     for (auto it = tokens.rbegin(); it != tokens.rend(); ++it) {
       std::string currentToken = *it;
@@ -2129,17 +2179,17 @@ void RenderFrame() {
       if (currentToken == "artist") {
         if (milkwave.currentArtist.length() > 0) {
           wcscpy(buf, milkwave.currentArtist.c_str());
-          g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
+          g_plugin.AddError(buf, songInfoSeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
         }
       } else if (currentToken == "title") {
         if (milkwave.currentTitle.length() > 0) {
           wcscpy(buf, milkwave.currentTitle.c_str());
-          g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_2, false);
+          g_plugin.AddError(buf, songInfoSeconds, ERR_MSG_BOTTOM_EXTRA_2, false);
         }
       } else if (currentToken == "album") {
         if (milkwave.currentAlbum.length() > 0) {
           wcscpy(buf, milkwave.currentAlbum.c_str());
-          g_plugin.AddError(buf, g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_3, false);
+          g_plugin.AddError(buf, songInfoSeconds, ERR_MSG_BOTTOM_EXTRA_3, false);
         }
       }
     }
@@ -2150,6 +2200,16 @@ void RenderFrame() {
   g_plugin.PluginRender(
       (unsigned char*)pcmLeftOut,
       (unsigned char*)pcmRightOut);
+
+  // Re-parenting the render window or resetting the D3D device can drop the
+  // layered alpha, so the Desktop Mode opacity is applied again once rendering
+  // is running (this is what makes the saved value survive a restart).
+  if (desktopModeOpacityPending) {
+    desktopModeOpacityPending = false;
+    if (g_plugin.m_bDesktopMode && renderWindow != nullptr && g_plugin.m_WindowDesktopModeOpacity < 1.0f) {
+      g_plugin.SetOpacity(renderWindow);
+    }
+  }
 
   UpdateTaskbarPresetLockButton();
   UpdateTaskbarOpacityButtons();
@@ -2365,6 +2425,11 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   // Right-click on the taskbar button -> "Toggle Desktop Mode" / "Open Milkwave Remote"
   BuildTaskbarJumpList();
+
+  // Desktop Mode was still active when the app was closed -> restore it.
+  if (g_plugin.m_WindowDesktopMode && !g_plugin.m_bDesktopMode) {
+    ToggleDesktopMode(hwnd);
+  }
 
   // Start TCP network server if enabled
   if (g_plugin.m_TcpEnabled) {

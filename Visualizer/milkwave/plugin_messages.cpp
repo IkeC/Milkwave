@@ -624,6 +624,10 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         ::milkwave.currentArtist = L"";
         ::milkwave.currentTitle = L"";
         ::milkwave.currentAlbum = L"";
+        // Nothing can be polled anymore, so a pinned display would only freeze stale text.
+        ClearErrors(ERR_MSG_BOTTOM_EXTRA_1);
+        ClearErrors(ERR_MSG_BOTTOM_EXTRA_2);
+        ClearErrors(ERR_MSG_BOTTOM_EXTRA_3);
       }
       WritePrivateProfileIntW(enabled, L"SongInfoPollingEnabled", g_plugin.GetConfigIniFile(), L"Milkwave");
       g_plugin.AddNotification(enabled ? L"Song Info enabled" : L"Song Info disabled");
