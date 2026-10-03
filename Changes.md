@@ -7,6 +7,7 @@
 * Visualizer: Taskbar right-click menu also offers "Open Milkwave Remote" (starts it, or brings the running Remote to the front)
 * Visualizer: Borderless Fullscreen is no longer bound to a hotkey (still available as right-click function of Remote button 14)
 * Remote: Button 15 now defaults to Desktop Mode (Ctrl+F9) instead of Transparency
+* Remote: Button 13 (Clear Sprite/Msg) now defaults to "Clear all Sprites" (Ctrl+K) on right-click
 * Remote: Preset change and info buttons with improved locking logic dependency
 * Remote: Command button panel configurable via the [Buttons] section of _settings.ini_ (captions, commands and right-click commands with tooltips)
 * Remote: Command button functions assignable from a context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click, including a "Clear Function" entry) listing ready-made Visualizer functions

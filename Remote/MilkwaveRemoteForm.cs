@@ -3075,7 +3075,7 @@ namespace MilkwaveRemote {
         new CommandButtonConfig { Caption = "Toggle Spout\n(F10)", Command = "SEND=0x79" },
         new CommandButtonConfig { Caption = "Fullscreen\n(Alt+Enter)", Command = "SIGNAL|FULLSCREEN" },
         new CommandButtonConfig { Caption = "Sprite/Msg Mode\n(K)", Command = "SEND=0x4B" },
-        new CommandButtonConfig { Caption = "Clear Sprite/Msg\n(Delete)", Command = "SEND=0x2E" },
+        new CommandButtonConfig { Caption = "Clear Sprite/Msg\n(Delete)", Command = "SEND=0x2E", RightClickCaption = "Clear all Sprites", RightClickCommand = "CLEARSPRITES" },
         new CommandButtonConfig { Caption = "Watermark Mode\n(Ctrl+Shift+F9)", Command = "SIGNAL|WATERMARK", RightClickCaption = "Borderless Fullscreen", RightClickCommand = "SIGNAL|BORDERLESS_FS" },
         new CommandButtonConfig { Caption = "Desktop Mode\n(Ctrl+F9)", Command = "SIGNAL|DESKTOP_MODE" },
       };
