@@ -657,6 +657,7 @@ class CPlugin : public CPluginShell {
   int m_presetHistoryFwdFence;
   void PrevPreset(float fBlendTime);
   void NextPreset(float fBlendTime);  // if not retracing our former steps, it will choose a random one.
+  void TogglePresetLock();
   void OnFinishedLoadingPreset();
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile);
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile, bool doForce);
@@ -678,6 +679,7 @@ class CPlugin : public CPluginShell {
 #define WM_USER_WATERMARK WM_USER + 161
 #define WM_USER_BORDERLESS_FS WM_USER + 162
 #define WM_USER_DESKTOP_MODE WM_USER + 169
+#define WM_USER_OPEN_REMOTE WM_USER + 170  // bring Milkwave Remote to the front, start it if needed
 // System-wide hotkey registered while Desktop Mode is active (Ctrl+F9)
 #define MW_HOTKEY_DESKTOP_MODE 0xBD01
 #define WM_USER_PIPE_IPC_MESSAGE WM_USER + 200  // lParam = heap-allocated wchar_t* from pipe server

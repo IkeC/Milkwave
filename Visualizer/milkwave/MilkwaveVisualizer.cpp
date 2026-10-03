@@ -221,14 +221,33 @@ static float desktopModePreviousOpacity = 1.0f;
 static bool desktopModePreviousClickthrough = false;
 static bool desktopModePreviousTranspaMode = false;
 
-// Desktop Mode keeps the application in the taskbar through a tiny invisible
-// top-level window, because the render window becomes a child of the WorkerW.
 static HWND desktopControllerWindow = nullptr;
 static HWND desktopControllerOwner = nullptr;
 static bool desktopControllerClassRegistered = false;
 static const wchar_t kDesktopControllerClass[] = L"MilkwaveDesktopController";
 static const wchar_t kMilkwaveAppUserModelId[] = L"IkeC.Milkwave.Visualizer";
 static const wchar_t kDesktopModeJumpListArgument[] = L"--toggle-desktop-mode=";
+static const wchar_t kOpenRemoteJumpListArgument[] = L"--open-remote=";
+
+// Taskbar thumbnail toolbar: buttons on the preview shown when the taskbar
+// button is hovered.
+static const UINT kThumbButtonPrevPreset = 1;
+static const UINT kThumbButtonOpacityDown = 2;
+static const UINT kThumbButtonPresetLock = 3;
+static const UINT kThumbButtonOpacityUp = 4;
+static const UINT kThumbButtonNextPreset = 5;
+static UINT taskbarButtonCreatedMessage = 0;
+static ITaskbarList3* taskbarList = nullptr;
+static HWND renderWindow = nullptr;  // main visualizer window, set once it exists
+static HWND taskbarThumbnailWindow = nullptr;
+static bool taskbarPresetLockButtonLocked = false;
+static int taskbarOpacityButtonPercent = -1;
+static HICON thumbPrevPresetIcon = nullptr;
+static HICON thumbNextPresetIcon = nullptr;
+static HICON thumbLockedIcon = nullptr;
+static HICON thumbUnlockedIcon = nullptr;
+static HICON thumbOpacityDownIcon = nullptr;
+static HICON thumbOpacityUpIcon = nullptr;
 
 static HMODULE module = nullptr;
 static std::atomic<HANDLE> threadRender = nullptr;
@@ -839,9 +858,374 @@ static void UnregisterDesktopModeHotkey(HWND hwnd) {
   desktopModeHotkeyRegistered = false;
 }
 
-// ── Taskbar presence and taskbar right-click task ────────────────────────────
+// ── Taskbar thumbnail toolbar (preset navigation and preset lock) ────────────
+
+// Rasterizes a shape into an icon; isSolid(x, y, size) decides whether a point
+// belongs to the shape. 16 sub-samples per pixel give soft edges.
+template <typename ShapeFn>
+static HICON CreateShapeIcon(int size, ShapeFn isSolid) {
+  if (size <= 0) {
+    return nullptr;
+  }
+
+  BITMAPINFO bitmapInfo = {0};
+  bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  bitmapInfo.bmiHeader.biWidth = size;
+  bitmapInfo.bmiHeader.biHeight = -size;  // top-down
+  bitmapInfo.bmiHeader.biPlanes = 1;
+  bitmapInfo.bmiHeader.biBitCount = 32;
+  bitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+  void* bitmapBits = nullptr;
+  HBITMAP colorBitmap = CreateDIBSection(nullptr, &bitmapInfo, DIB_RGB_COLORS, &bitmapBits, nullptr, 0);
+  if (colorBitmap == nullptr || bitmapBits == nullptr) {
+    if (colorBitmap != nullptr) {
+      DeleteObject(colorBitmap);
+    }
+    return nullptr;
+  }
+
+  const int samples = 4;  // 16 sub-samples per pixel for soft edges
+
+  DWORD* pixels = static_cast<DWORD*>(bitmapBits);
+  for (int y = 0; y < size; ++y) {
+    for (int x = 0; x < size; ++x) {
+      int covered = 0;
+      for (int sampleY = 0; sampleY < samples; ++sampleY) {
+        for (int sampleX = 0; sampleX < samples; ++sampleX) {
+          const double px = x + (sampleX + 0.5) / samples;
+          const double py = y + (sampleY + 0.5) / samples;
+          if (isSolid(px, py, size)) {
+            covered++;
+          }
+        }
+      }
+      const DWORD alpha = (DWORD)(covered * 255 / (samples * samples));
+      pixels[y * size + x] = (alpha << 24) | 0x00FFFFFF;
+    }
+  }
+
+  // The alpha channel defines the shape; CreateIconIndirect still wants a mask.
+  const int maskStride = ((size + 15) / 16) * 2;
+  std::vector<BYTE> maskBits((size_t)maskStride * size, 0);
+  HBITMAP maskBitmap = CreateBitmap(size, size, 1, 1, maskBits.data());
+
+  ICONINFO iconInfo = {0};
+  iconInfo.fIcon = TRUE;
+  iconInfo.hbmColor = colorBitmap;
+  iconInfo.hbmMask = maskBitmap;
+  HICON hIcon = CreateIconIndirect(&iconInfo);
+
+  if (maskBitmap != nullptr) {
+    DeleteObject(maskBitmap);
+  }
+  DeleteObject(colorBitmap);
+  return hIcon;
+}
+
+static HICON CreatePresetArrowIcon(bool pointLeft, int size) {
+  return CreateShapeIcon(size, [pointLeft](double px, double py, double size) {
+    const double padding = size / 8.0;
+    const double centerY = size / 2.0;
+    const double halfHeight = centerY - padding;
+    if (!pointLeft) {
+      px = size - px;
+    }
+    // progress 0 is the apex on the left edge, progress 1 the vertical base on
+    // the right edge, so the mirrored shape points to the right.
+    const double progress = (px - padding) / (size - 2.0 * padding);
+    if (progress < 0.0 || progress > 1.0) {
+      return false;
+    }
+    return fabs(py - centerY) <= halfHeight * progress;
+  });
+}
+
+// A horizontal bar, with a vertical bar added for the "+" button.
+static HICON CreateOpacityIcon(bool increase, int size) {
+  return CreateShapeIcon(size, [increase](double px, double py, double size) {
+    const double center = size * 0.5;
+    const double halfLength = size * 0.30;
+    const double halfThickness = size * 0.09;
+    if (fabs(py - center) <= halfThickness && fabs(px - center) <= halfLength) {
+      return true;
+    }
+    return increase && fabs(px - center) <= halfThickness && fabs(py - center) <= halfLength;
+  });
+}
+
+static HICON CreatePresetLockIcon(bool locked, int size) {
+  return CreateShapeIcon(size, [locked](double px, double py, double size) {
+    const double centerX = size * 0.5;
+    const double bodyTop = size * 0.44;
+
+    // Body of the padlock.
+    if (fabs(px - centerX) <= size * 0.30 && py >= bodyTop && py <= size * 0.86) {
+      return true;
+    }
+
+    // Shackle: an arc above the body. It is lifted and open on the right while
+    // the preset is not locked.
+    const double shackleCenterX = locked ? centerX : centerX - size * 0.08;
+    const double shackleCenterY = locked ? size * 0.42 : size * 0.30;
+    const double dx = px - shackleCenterX;
+    const double dy = py - shackleCenterY;
+    const double distance = sqrt(dx * dx + dy * dy);
+    if (distance < size * 0.13 || distance > size * 0.24) {
+      return false;
+    }
+    if (py <= shackleCenterY) {
+      return true;
+    }
+    // The lower half of the arc forms the legs that reach down into the body;
+    // the open shackle keeps only the left one.
+    return locked || dx <= 0.0;
+  });
+}
+
+static void EnsureTaskbarThumbnailIcons() {
+  const int iconSize = GetSystemMetrics(SM_CXSMICON);
+  if (thumbPrevPresetIcon == nullptr) {
+    thumbPrevPresetIcon = CreatePresetArrowIcon(true, iconSize);
+  }
+  if (thumbNextPresetIcon == nullptr) {
+    thumbNextPresetIcon = CreatePresetArrowIcon(false, iconSize);
+  }
+  if (thumbLockedIcon == nullptr) {
+    thumbLockedIcon = CreatePresetLockIcon(true, iconSize);
+  }
+  if (thumbUnlockedIcon == nullptr) {
+    thumbUnlockedIcon = CreatePresetLockIcon(false, iconSize);
+  }
+  if (thumbOpacityDownIcon == nullptr) {
+    thumbOpacityDownIcon = CreateOpacityIcon(false, iconSize);
+  }
+  if (thumbOpacityUpIcon == nullptr) {
+    thumbOpacityUpIcon = CreateOpacityIcon(true, iconSize);
+  }
+}
+
+// The same percentage the "Opacity: NN%" notification reports.
+static int CurrentOpacityPercent() {
+  return (int)ceil(100 * g_plugin.fOpacity);
+}
+
+static void FillTaskbarOpacityButton(THUMBBUTTON& button, UINT id, HICON icon, bool increase) {
+  wchar_t tooltip[64];
+  swprintf_s(tooltip, increase ? L"Opacity: %d%% - click to increase by 5%%" : L"Opacity: %d%% - click to decrease by 5%%",
+             CurrentOpacityPercent());
+
+  ZeroMemory(&button, sizeof(button));
+  button.iId = id;
+  button.dwMask = (THUMBBUTTONMASK)(THB_ICON | THB_TOOLTIP);
+  button.dwFlags = THBF_ENABLED;
+  button.hIcon = icon;
+  wcscpy_s(button.szTip, tooltip);
+}
+
+static void FillTaskbarPresetLockButton(THUMBBUTTON& button) {
+  const bool locked = g_plugin.m_bPresetLockedByUser;
+  ZeroMemory(&button, sizeof(button));
+  button.iId = kThumbButtonPresetLock;
+  button.dwMask = (THUMBBUTTONMASK)(THB_ICON | THB_TOOLTIP);
+  button.dwFlags = THBF_ENABLED;
+  button.hIcon = locked ? thumbLockedIcon : thumbUnlockedIcon;
+  wcscpy_s(button.szTip, locked ? L"Preset locked - click to unlock" : L"Preset unlocked - click to lock");
+}
+
+static void ReleaseTaskbarThumbnailToolbar() {
+  if (taskbarList != nullptr) {
+    taskbarList->Release();
+    taskbarList = nullptr;
+  }
+  if (thumbPrevPresetIcon != nullptr) {
+    DestroyIcon(thumbPrevPresetIcon);
+    thumbPrevPresetIcon = nullptr;
+  }
+  if (thumbNextPresetIcon != nullptr) {
+    DestroyIcon(thumbNextPresetIcon);
+    thumbNextPresetIcon = nullptr;
+  }
+  if (thumbLockedIcon != nullptr) {
+    DestroyIcon(thumbLockedIcon);
+    thumbLockedIcon = nullptr;
+  }
+  if (thumbUnlockedIcon != nullptr) {
+    DestroyIcon(thumbUnlockedIcon);
+    thumbUnlockedIcon = nullptr;
+  }
+  if (thumbOpacityDownIcon != nullptr) {
+    DestroyIcon(thumbOpacityDownIcon);
+    thumbOpacityDownIcon = nullptr;
+  }
+  if (thumbOpacityUpIcon != nullptr) {
+    DestroyIcon(thumbOpacityUpIcon);
+    thumbOpacityUpIcon = nullptr;
+  }
+  taskbarThumbnailWindow = nullptr;
+}
+
+// The taskbar object must not outlive the COM apartment it was created in, so
+// the apartment is kept initialized for the rest of the process lifetime.
+static bool EnsureTaskbarList() {
+  if (taskbarList != nullptr) {
+    return true;
+  }
+  CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  if (FAILED(CoCreateInstance(CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&taskbarList)))) {
+    taskbarList = nullptr;
+    return false;
+  }
+  if (FAILED(taskbarList->HrInit())) {
+    taskbarList->Release();
+    taskbarList = nullptr;
+    return false;
+  }
+  return true;
+}
+
+// Called whenever Explorer (re-)creates the taskbar button of a window, which
+// happens at startup and every time the button moves between the render window
+// and the Desktop Mode controller window.
+static void AddTaskbarThumbnailButtons(HWND hwnd) {
+  if (!EnsureTaskbarList()) {
+    milkwave.LogInfo(L"Taskbar: thumbnail toolbar is not available");
+    return;
+  }
+
+  EnsureTaskbarThumbnailIcons();
+
+  THUMBBUTTON buttons[5];
+  ZeroMemory(buttons, sizeof(buttons));
+  buttons[0].iId = kThumbButtonPrevPreset;
+  buttons[0].dwMask = (THUMBBUTTONMASK)(THB_ICON | THB_TOOLTIP);
+  buttons[0].dwFlags = THBF_ENABLED;
+  buttons[0].hIcon = thumbPrevPresetIcon;
+  wcscpy_s(buttons[0].szTip, L"Previous preset");
+
+  FillTaskbarOpacityButton(buttons[1], kThumbButtonOpacityDown, thumbOpacityDownIcon, false);
+  FillTaskbarPresetLockButton(buttons[2]);
+  FillTaskbarOpacityButton(buttons[3], kThumbButtonOpacityUp, thumbOpacityUpIcon, true);
+
+  buttons[4].iId = kThumbButtonNextPreset;
+  buttons[4].dwMask = (THUMBBUTTONMASK)(THB_ICON | THB_TOOLTIP);
+  buttons[4].dwFlags = THBF_ENABLED;
+  buttons[4].hIcon = thumbNextPresetIcon;
+  wcscpy_s(buttons[4].szTip, L"Next preset");
+
+  const HRESULT hr = taskbarList->ThumbBarAddButtons(hwnd, (UINT)_countof(buttons), buttons);
+  if (FAILED(hr)) {
+    // Happens when the taskbar button does not exist yet; the
+    // "TaskbarButtonCreated" notification adds the buttons then.
+    wchar_t message[160];
+    swprintf_s(message, L"Taskbar: adding thumbnail toolbar buttons failed: 0x%08X", hr);
+    milkwave.LogInfo(message);
+  } else {
+    taskbarThumbnailWindow = hwnd;
+    taskbarPresetLockButtonLocked = g_plugin.m_bPresetLockedByUser;
+    taskbarOpacityButtonPercent = CurrentOpacityPercent();
+    milkwave.LogInfo(L"Taskbar: thumbnail toolbar buttons added");
+  }
+}
+
+// The opacity can also be changed with Shift+mouse wheel or by the Remote, so
+// the opacity buttons follow the value instead of only their own clicks.
+static void UpdateTaskbarOpacityButtons() {
+  if (taskbarList == nullptr || taskbarThumbnailWindow == nullptr || !IsWindow(taskbarThumbnailWindow)) {
+    return;
+  }
+  if (CurrentOpacityPercent() == taskbarOpacityButtonPercent) {
+    return;
+  }
+
+  EnsureTaskbarThumbnailIcons();
+  THUMBBUTTON buttons[2];
+  FillTaskbarOpacityButton(buttons[0], kThumbButtonOpacityDown, thumbOpacityDownIcon, false);
+  FillTaskbarOpacityButton(buttons[1], kThumbButtonOpacityUp, thumbOpacityUpIcon, true);
+  if (SUCCEEDED(taskbarList->ThumbBarUpdateButtons(taskbarThumbnailWindow, (UINT)_countof(buttons), buttons))) {
+    taskbarOpacityButtonPercent = CurrentOpacityPercent();
+  }
+}
+
+// Unlike the Shift+mouse wheel shortcut, which uses finer steps near full
+// transparency, the buttons always step by 5%, down to 5%.
+static void ChangeWindowOpacityByStep(bool increase) {
+  if (renderWindow == nullptr || !IsWindow(renderWindow)) {
+    return;
+  }
+
+  const float previous = g_plugin.fOpacity;
+  float updated = increase ? previous + 0.05f : previous - 0.05f;
+  if (updated < 0.05f) {
+    updated = 0.05f;
+  } else if (updated > 1.0f) {
+    updated = 1.0f;
+  }
+  if (updated == previous) {
+    return;
+  }
+
+  g_plugin.fOpacity = updated;
+  g_plugin.SetOpacity(renderWindow);  // notifies the Remote and shows the percentage
+}
+
+// The preset lock can also be toggled with '~' or by the Remote, so the lock
+// button follows the state instead of only the clicks on the button itself.
+static void UpdateTaskbarPresetLockButton() {
+  if (taskbarList == nullptr || taskbarThumbnailWindow == nullptr || !IsWindow(taskbarThumbnailWindow)) {
+    return;
+  }
+  if (g_plugin.m_bPresetLockedByUser == taskbarPresetLockButtonLocked) {
+    return;
+  }
+
+  EnsureTaskbarThumbnailIcons();
+  THUMBBUTTON button;
+  FillTaskbarPresetLockButton(button);
+  if (SUCCEEDED(taskbarList->ThumbBarUpdateButtons(taskbarThumbnailWindow, 1, &button))) {
+    taskbarPresetLockButtonLocked = g_plugin.m_bPresetLockedByUser;
+  }
+}
+
+// Returns true when the command came from the thumbnail toolbar.
+static bool HandleTaskbarThumbnailButton(UINT buttonId) {
+  switch (buttonId) {
+    case kThumbButtonPrevPreset:
+      if (!g_plugin.m_bPresetLockedByCode) {
+        g_plugin.PrevPreset(g_plugin.m_fBlendTimeUser);
+      }
+      return true;
+    case kThumbButtonNextPreset:
+      if (!g_plugin.m_bPresetLockedByCode) {
+        g_plugin.NextPreset(g_plugin.m_fBlendTimeUser);
+      }
+      return true;
+    case kThumbButtonPresetLock:
+      g_plugin.TogglePresetLock();
+      UpdateTaskbarPresetLockButton();
+      return true;
+    case kThumbButtonOpacityDown:
+      ChangeWindowOpacityByStep(false);
+      UpdateTaskbarOpacityButtons();
+      return true;
+    case kThumbButtonOpacityUp:
+      ChangeWindowOpacityByStep(true);
+      UpdateTaskbarOpacityButtons();
+      return true;
+    default:
+      return false;
+  }
+}
 
 static LRESULT CALLBACK DesktopControllerWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  if (taskbarButtonCreatedMessage != 0 && uMsg == taskbarButtonCreatedMessage) {
+    AddTaskbarThumbnailButtons(hWnd);
+    return 0;
+  }
+  if (uMsg == WM_COMMAND && HIWORD(wParam) == THBN_CLICKED && HandleTaskbarThumbnailButton(LOWORD(wParam))) {
+    return 0;
+  }
+
   switch (uMsg) {
     case WM_CLOSE: {
       // The taskbar's "Close window" must close the visualizer, not just the
@@ -855,6 +1239,9 @@ static LRESULT CALLBACK DesktopControllerWndProc(HWND hWnd, UINT uMsg, WPARAM wP
     }
     case WM_DESTROY:
       desktopControllerWindow = nullptr;
+      if (taskbarThumbnailWindow == hWnd) {
+        taskbarThumbnailWindow = nullptr;
+      }
       return 0;
     default:
       return DefWindowProcW(hWnd, uMsg, wParam, lParam);
@@ -906,11 +1293,11 @@ static void DestroyDesktopControllerWindow() {
   desktopControllerOwner = nullptr;
 }
 
-// Adds a "Toggle Desktop Mode" entry to the taskbar button's right-click menu
-// (jump list tasks). Clicking it starts this exe again with
-// "--toggle-desktop-mode=<pid>"; that instance forwards the toggle over the
-// pipe and exits, see ForwardDesktopModeToggle().
-static void BuildDesktopModeJumpList() {
+// Adds the taskbar button's right-click menu entries (jump list tasks):
+// "Toggle Desktop Mode" and "Open Milkwave Remote". Clicking one starts this exe
+// again with "--<action>=<pid>"; that instance forwards the action over the pipe
+// and exits, see ForwardJumpListTask().
+static void BuildTaskbarJumpList() {
   HRESULT hrCom = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
   const bool comInitializedHere = SUCCEEDED(hrCom);
 
@@ -927,23 +1314,41 @@ static void BuildDesktopModeJumpList() {
         IObjectCollection* pTasks = nullptr;
         hr = CoCreateInstance(CLSID_EnumerableObjectCollection, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pTasks));
         if (SUCCEEDED(hr)) {
-          IShellLinkW* pLink = nullptr;
-          hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pLink));
-          if (SUCCEEDED(hr)) {
+          // The Remote shows its own icon when the executable is found next to
+          // the visualizer.
+          std::wstring remoteExePath;
+          const bool hasRemoteExe = MilkwaveRemoteFindExecutable(remoteExePath);
+
+          const struct {
+            const wchar_t* title;
+            const wchar_t* argumentPrefix;
+            const wchar_t* iconPath;
+          } jumpListTasks[] = {
+              {L"Toggle Desktop Mode", kDesktopModeJumpListArgument, exePath},
+              {L"Open Milkwave Remote", kOpenRemoteJumpListArgument, hasRemoteExe ? remoteExePath.c_str() : exePath},
+          };
+
+          for (const auto& jumpListTask : jumpListTasks) {
+            IShellLinkW* pLink = nullptr;
+            hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pLink));
+            if (FAILED(hr)) {
+              break;
+            }
+
             wchar_t arguments[64];
-            swprintf_s(arguments, L"%ls%u", kDesktopModeJumpListArgument, GetCurrentProcessId());
+            swprintf_s(arguments, L"%ls%u", jumpListTask.argumentPrefix, GetCurrentProcessId());
             pLink->SetPath(exePath);
             pLink->SetArguments(arguments);
-            pLink->SetIconLocation(exePath, 0);
+            pLink->SetIconLocation(jumpListTask.iconPath, 0);
 
             IPropertyStore* pProperties = nullptr;
             if (SUCCEEDED(pLink->QueryInterface(IID_PPV_ARGS(&pProperties)))) {
               PROPVARIANT title;
-              if (SUCCEEDED(InitPropVariantFromString(L"Toggle Desktop Mode", &title))) {
+              if (SUCCEEDED(InitPropVariantFromString(jumpListTask.title, &title))) {
                 HRESULT hrSetValue = pProperties->SetValue(PKEY_Title, title);
                 if (FAILED(hrSetValue)) {
                   wchar_t message[128];
-                  swprintf_s(message, L"Desktop Mode: PKEY_Title SetValue failed: 0x%08X", hrSetValue);
+                  swprintf_s(message, L"Taskbar: PKEY_Title SetValue failed: 0x%08X", hrSetValue);
                   milkwave.LogInfo(message);
                 }
                 PropVariantClear(&title);
@@ -951,14 +1356,18 @@ static void BuildDesktopModeJumpList() {
               HRESULT hrCommit = pProperties->Commit();
               if (FAILED(hrCommit)) {
                 wchar_t message[128];
-                swprintf_s(message, L"Desktop Mode: property store Commit failed: 0x%08X", hrCommit);
+                swprintf_s(message, L"Taskbar: property store Commit failed: 0x%08X", hrCommit);
                 milkwave.LogInfo(message);
               }
               pProperties->Release();
             }
             hr = pTasks->AddObject(pLink);
             pLink->Release();
+            if (FAILED(hr)) {
+              break;
+            }
           }
+
           if (SUCCEEDED(hr)) {
             IObjectArray* pTaskArray = nullptr;
             if (SUCCEEDED(pTasks->QueryInterface(IID_PPV_ARGS(&pTaskArray)))) {
@@ -980,7 +1389,7 @@ static void BuildDesktopModeJumpList() {
   }
 
   if (FAILED(hr)) {
-    milkwave.LogInfo(L"Desktop Mode: taskbar jump list task could not be registered");
+    milkwave.LogInfo(L"Taskbar: jump list tasks could not be registered");
   }
   if (comInitializedHere) {
     CoUninitialize();
@@ -1080,6 +1489,7 @@ static void ToggleDesktopMode(HWND hWnd) {
 
       // The render window is back in the taskbar, so the controller can go.
       DestroyDesktopControllerWindow();
+      AddTaskbarThumbnailButtons(hWnd);
 
       if (g_plugin.m_bAlwaysOnTop) {
         g_plugin.ToggleAlwaysOnTop(hWnd);
@@ -1159,6 +1569,14 @@ HRESULT GetDefaultAudioDeviceName(IMMDevice** ppMMDevice, std::wstring* m_szAudi
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   static bool rightMouseButtonHeld = false;  // Track the state of the right mouse button
 
+  if (taskbarButtonCreatedMessage != 0 && uMsg == taskbarButtonCreatedMessage) {
+    AddTaskbarThumbnailButtons(hWnd);
+    return 0;
+  }
+  if (uMsg == WM_COMMAND && HIWORD(wParam) == THBN_CLICKED && HandleTaskbarThumbnailButton(LOWORD(wParam))) {
+    return 0;
+  }
+
   switch (uMsg) {
     case WM_CLOSE: {
       if (g_plugin.m_bDesktopMode) {
@@ -1174,6 +1592,7 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     case WM_DESTROY: {
       DestroyDesktopControllerWindow();
       UnregisterDesktopModeHotkey(hWnd);
+      ReleaseTaskbarThumbnailToolbar();
       PostQuitMessage(0);
       break;
     }
@@ -1632,6 +2051,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       ToggleDesktopMode(hWnd);
       return 0;
 
+    case WM_USER_OPEN_REMOTE:  // SIGNAL|OPEN_REMOTE
+      g_plugin.OpenMilkwaveRemote();
+      return 0;
+
     default:
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
   }
@@ -1727,6 +2150,9 @@ void RenderFrame() {
   g_plugin.PluginRender(
       (unsigned char*)pcmLeftOut,
       (unsigned char*)pcmRightOut);
+
+  UpdateTaskbarPresetLockButton();
+  UpdateTaskbarOpacityButtons();
 }
 
 unsigned __stdcall CreateWindowAndRun(void* data) {
@@ -1741,6 +2167,10 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   // Set Per Monitor awareness
   SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);  // older Windows versions: Entry Point Not Found Fix
   // SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
+
+  // Sent by Explorer whenever a taskbar button for one of our windows is
+  // created; the thumbnail toolbar buttons are added from its handler.
+  taskbarButtonCreatedMessage = RegisterWindowMessageW(L"TaskbarButtonCreated");
 
   // Register the windows class
   WNDCLASSW wndClass;
@@ -1862,6 +2292,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     return 0;
   }
 
+  renderWindow = hwnd;
+
   if (!icon) {
     icon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_PLUGIN_ICON));
   }
@@ -1931,8 +2363,8 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   // Use WM_USER as signal base (Milkwave uses WM_USER+N, not WM_APP+N)
   g_pipeServer.Start(hwnd, WM_USER_PIPE_IPC_MESSAGE, WM_USER);
 
-  // Right-click on the taskbar button -> "Toggle Desktop Mode"
-  BuildDesktopModeJumpList();
+  // Right-click on the taskbar button -> "Toggle Desktop Mode" / "Open Milkwave Remote"
+  BuildTaskbarJumpList();
 
   // Start TCP network server if enabled
   if (g_plugin.m_TcpEnabled) {
@@ -2517,35 +2949,46 @@ void SeTranslatorFunction(unsigned int code, _EXCEPTION_POINTERS* ep) {
   }
 }
 
-// A click on the taskbar's "Toggle Desktop Mode" task starts a second process
-// with "--toggle-desktop-mode=<pid>". Ask the running instance to toggle
-// through its pipe and exit without starting another visualizer.
-static bool ForwardDesktopModeToggle(LPCSTR cmdLine) {
+// A click on a taskbar jump list task starts a second process with
+// "--<action>=<pid>". Ask the running instance to perform the action through
+// its pipe and exit without starting another visualizer. The arguments must
+// match kDesktopModeJumpListArgument / kOpenRemoteJumpListArgument.
+static bool ForwardJumpListTask(LPCSTR cmdLine) {
   if (cmdLine == nullptr) {
     return false;
   }
-  const char* marker = strstr(cmdLine, "--toggle-desktop-mode=");
-  if (marker == nullptr) {
-    return false;
-  }
-  marker += strlen("--toggle-desktop-mode=");
-  DWORD targetPid = (DWORD)strtoul(marker, nullptr, 10);
-  if (targetPid != 0) {
-    wchar_t pipeName[64];
-    swprintf_s(pipeName, L"\\\\.\\pipe\\Milkwave_%u", targetPid);
-    HANDLE hPipe = CreateFileW(pipeName, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-    if (hPipe != INVALID_HANDLE_VALUE) {
-      const wchar_t message[] = L"SIGNAL|DESKTOP_MODE";
-      DWORD written = 0;
-      WriteFile(hPipe, message, (DWORD)(wcslen(message) * sizeof(wchar_t)), &written, nullptr);
-      CloseHandle(hPipe);
+
+  static const struct {
+    const char* argument;
+    const wchar_t* signal;
+  } jumpListTasks[] = {
+      {"--toggle-desktop-mode=", L"SIGNAL|DESKTOP_MODE"},
+      {"--open-remote=", L"SIGNAL|OPEN_REMOTE"},
+  };
+
+  for (const auto& jumpListTask : jumpListTasks) {
+    const char* marker = strstr(cmdLine, jumpListTask.argument);
+    if (marker == nullptr) {
+      continue;
     }
+    const DWORD targetPid = (DWORD)strtoul(marker + strlen(jumpListTask.argument), nullptr, 10);
+    if (targetPid != 0) {
+      wchar_t pipeName[64];
+      swprintf_s(pipeName, L"\\\\.\\pipe\\Milkwave_%u", targetPid);
+      HANDLE hPipe = CreateFileW(pipeName, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+      if (hPipe != INVALID_HANDLE_VALUE) {
+        DWORD written = 0;
+        WriteFile(hPipe, jumpListTask.signal, (DWORD)(wcslen(jumpListTask.signal) * sizeof(wchar_t)), &written, nullptr);
+        CloseHandle(hPipe);
+      }
+    }
+    return true;
   }
-  return true;
+  return false;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
-  if (ForwardDesktopModeToggle(szCmdLine)) {
+  if (ForwardJumpListTask(szCmdLine)) {
     return 0;
   }
 

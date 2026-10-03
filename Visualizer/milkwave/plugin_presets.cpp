@@ -44,6 +44,14 @@ void CPlugin::NextPreset(float fBlendTime)  // if not retracing our former steps
   LoadRandomPreset(fBlendTime);
 }
 
+// Toggles the "preset locked" state shared by the '~' key, the Remote's Preset
+// Lock button and the taskbar thumbnail lock button.
+void CPlugin::TogglePresetLock() {
+  m_bPresetLockedByUser = !m_bPresetLockedByUser;
+  AddNotification(m_bPresetLockedByUser ? L"Preset locked" : L"Preset unlocked");
+  SendSettingsInfoToMilkwaveRemote();
+}
+
 void CPlugin::LoadRandomPreset(float fBlendTime) {
   if (m_RemotePresetLink) {
     PostMessageToMilkwaveRemote(WM_USER_NEXT_PRESET);

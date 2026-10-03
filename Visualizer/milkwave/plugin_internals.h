@@ -38,6 +38,9 @@ extern CPlugin g_plugin;         // defined in main.cpp
 extern bool g_bDebugOutput;      // defined in support.cpp
 extern bool g_bDumpFileCleared;  // defined in support.cpp
 
+// Locates MilkwaveRemote.exe next to the visualizer (see plugin.cpp)
+bool MilkwaveRemoteFindExecutable(std::wstring& exePath);
+
 // Vertex declarations (defined in plugin.cpp)
 extern D3DVERTEXELEMENT9 g_MyVertDecl[];
 extern D3DVERTEXELEMENT9 g_WfVertDecl[];

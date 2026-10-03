@@ -2077,17 +2077,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
       case '`':
       case '~':
-        m_bPresetLockedByUser = !m_bPresetLockedByUser;
-        if (m_bPresetLockedByUser) {
-          wchar_t buf[1024];
-          swprintf(buf, 1024, L"Preset locked");
-          AddNotification(buf);
-        } else {
-          wchar_t buf[1024];
-          swprintf(buf, 1024, L"Preset unlocked");
-          AddNotification(buf);
-        }
-        SendSettingsInfoToMilkwaveRemote();
+        TogglePresetLock();
         return 0;
 
       case 'l':  // LOAD PRESET

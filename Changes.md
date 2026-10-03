@@ -2,6 +2,9 @@
 
 * Visualizer: Desktop Mode (Ctrl+F9) renders the visualizer behind the desktop icons, replacing the wallpaper
 * Visualizer: Desktop Mode keeps the visualizer in the taskbar; the taskbar right-click menu offers "Toggle Desktop Mode"
+* Visualizer: Taskbar thumbnail toolbar with buttons for the previous preset, the opacity (5% steps), the preset lock and the next preset
+  - The lock button shows the current state and toggles the preset lock (same as the `~` key)
+* Visualizer: Taskbar right-click menu also offers "Open Milkwave Remote" (starts it, or brings the running Remote to the front)
 * Visualizer: Borderless Fullscreen is no longer bound to a hotkey (still available as right-click function of Remote button 14)
 * Remote: Button 15 now defaults to Desktop Mode (Ctrl+F9) instead of Transparency
 * Remote: Preset change and info buttons with improved locking logic dependency

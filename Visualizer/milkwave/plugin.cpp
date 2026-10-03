@@ -2218,28 +2218,151 @@ bool CPlugin::OpenSender(unsigned int width, unsigned int height) {
 
 }  // end OpenSender
 
-void CPlugin::OpenMilkwaveRemote() {
-  HWND hwnd = FindWindowW(NULL, L"Milkwave Remote");
-  if (hwnd) {
-    // Bring the window to the front
-    SetForegroundWindow(hwnd);
-    ShowWindow(hwnd, SW_RESTORE);
-  } else {
-    // Start the program "MilkwaveRemote.exe"
-    // Ensure STARTUPINFOW is used for CreateProcessW
-    STARTUPINFOW si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-
-    if (!CreateProcessW(L"MilkwaveRemote.exe", NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-      g_plugin.AddError(L"Could not start Milkwave Remote", 3.0f, ERR_MISC, false);
-    } else {
-      g_plugin.AddNotification(L"Starting Milkwave Remote");
-      CloseHandle(pi.hProcess);
-      CloseHandle(pi.hThread);
+// Looks for MilkwaveRemote.exe next to the visualizer (the release folder is
+// the working directory, the executable folder is used when running from the
+// build output). Returns false when the executable cannot be found, in which
+// case the caller lets Windows search for the bare file name.
+bool MilkwaveRemoteFindExecutable(std::wstring& exePath) {
+  std::vector<std::wstring> candidates;
+  if (g_plugin.m_szBaseDir[0] != L'\0') {
+    std::wstring baseDir(g_plugin.m_szBaseDir);
+    if (!baseDir.empty() && baseDir.back() != L'\\') {
+      baseDir.push_back(L'\\');
     }
+    candidates.push_back(baseDir + L"MilkwaveRemote.exe");
+  }
+
+  wchar_t modulePath[MAX_PATH] = {0};
+  if (GetModuleFileNameW(nullptr, modulePath, MAX_PATH) != 0) {
+    std::wstring exeDir(modulePath);
+    const size_t separator = exeDir.find_last_of(L"\\/");
+    if (separator != std::wstring::npos) {
+      exeDir.resize(separator + 1);
+      candidates.push_back(exeDir + L"MilkwaveRemote.exe");
+    }
+  }
+
+  for (const auto& candidate : candidates) {
+    if (GetFileAttributesW(candidate.c_str()) != INVALID_FILE_ATTRIBUTES) {
+      exePath = candidate;
+      return true;
+    }
+  }
+  return false;
+}
+
+namespace {
+
+struct RemoteWindowSearch {
+  const wchar_t* executableName;
+  HWND window;
+};
+
+BOOL CALLBACK FindRemoteWindowProc(HWND hwnd, LPARAM lParam) {
+  RemoteWindowSearch* search = reinterpret_cast<RemoteWindowSearch*>(lParam);
+  if (GetWindow(hwnd, GW_OWNER) != nullptr || !IsWindowVisible(hwnd)) {
+    return TRUE;
+  }
+
+  DWORD processId = 0;
+  GetWindowThreadProcessId(hwnd, &processId);
+  if (processId == 0) {
+    return TRUE;
+  }
+
+  HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+  if (process == nullptr) {
+    return TRUE;
+  }
+  wchar_t imagePath[MAX_PATH] = {0};
+  DWORD imagePathLength = _countof(imagePath);
+  const BOOL gotPath = QueryFullProcessImageNameW(process, 0, imagePath, &imagePathLength);
+  CloseHandle(process);
+  if (!gotPath) {
+    return TRUE;
+  }
+
+  const wchar_t* fileName = wcsrchr(imagePath, L'\\');
+  fileName = fileName != nullptr ? fileName + 1 : imagePath;
+  if (_wcsicmp(fileName, search->executableName) == 0) {
+    search->window = hwnd;
+    return FALSE;
+  }
+  return TRUE;
+}
+
+// Finds the Remote's main window by title, with a fallback to its process name
+// in case the title was customized.
+HWND FindMilkwaveRemoteWindow() {
+  HWND hwnd = FindWindowW(nullptr, L"Milkwave Remote");
+  if (hwnd != nullptr && IsWindow(hwnd)) {
+    return hwnd;
+  }
+
+  RemoteWindowSearch search = {L"MilkwaveRemote.exe", nullptr};
+  EnumWindows(FindRemoteWindowProc, reinterpret_cast<LPARAM>(&search));
+  return search.window;
+}
+
+// SetForegroundWindow is ignored while another application owns the foreground,
+// so the input queues of both threads are attached for the call. If Windows
+// still refuses, a short topmost flash brings the window to the front.
+void ActivateWindow(HWND hwnd) {
+  if (IsIconic(hwnd)) {
+    ShowWindow(hwnd, SW_RESTORE);
+  }
+
+  const HWND foregroundWindow = GetForegroundWindow();
+  const DWORD foregroundThread = foregroundWindow != nullptr ? GetWindowThreadProcessId(foregroundWindow, nullptr) : 0;
+  const DWORD targetThread = GetWindowThreadProcessId(hwnd, nullptr);
+  bool attached = false;
+  if (foregroundThread != 0 && foregroundThread != targetThread) {
+    attached = AttachThreadInput(foregroundThread, targetThread, TRUE) != FALSE;
+  }
+
+  BringWindowToTop(hwnd);
+  SetForegroundWindow(hwnd);
+  SetFocus(hwnd);
+
+  if (attached) {
+    AttachThreadInput(foregroundThread, targetThread, FALSE);
+  }
+
+  if (GetForegroundWindow() != hwnd) {
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    SetForegroundWindow(hwnd);
+  }
+}
+
+}  // namespace
+
+void CPlugin::OpenMilkwaveRemote() {
+  const HWND remoteWindow = FindMilkwaveRemoteWindow();
+  if (remoteWindow != nullptr) {
+    ActivateWindow(remoteWindow);
+    return;
+  }
+
+  // Start the program "MilkwaveRemote.exe"
+  std::wstring exePath;
+  if (!MilkwaveRemoteFindExecutable(exePath)) {
+    exePath = L"MilkwaveRemote.exe";  // let CreateProcess search for it
+  }
+  std::wstring commandLine = L"\"" + exePath + L"\"";
+
+  STARTUPINFOW si;
+  PROCESS_INFORMATION pi;
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  ZeroMemory(&pi, sizeof(pi));
+
+  if (!CreateProcessW(exePath.c_str(), commandLine.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    g_plugin.AddError(L"Could not start Milkwave Remote", 3.0f, ERR_MISC, false);
+  } else {
+    g_plugin.AddNotification(L"Starting Milkwave Remote");
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
   }
 }
 

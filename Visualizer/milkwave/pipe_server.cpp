@@ -670,6 +670,7 @@ static const SignalEntry s_signalTable[] = {
     { L"WATERMARK",            161, false, 0 },
     { L"BORDERLESS_FS",        162, false, 0 },
     { L"DESKTOP_MODE",         169, false, 0 },  // Milkwave: render behind the desktop icons
+    { L"OPEN_REMOTE",          170, false, 0 },  // Milkwave: show (or start) Milkwave Remote
     // MDropDX12-only display signals (SHOW_COVER 110, STRETCH 163, MIRROR 164,
     // MIRROR_WM 165, MIRROR_INDEPENDENT 167, ALWAYS_ON_TOP 168) are omitted:
     // Milkwave's WndProc has no handler for those offsets.
