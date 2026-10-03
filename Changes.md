@@ -1,6 +1,8 @@
 ## v4.2 (unreleased)
 
 * Remote: Preset change and info buttons with improved locking logic dependency
+* Remote: Command button panel configurable via the [Buttons] section of _settings.ini_ (captions, commands and right-click commands with tooltips)
+* Remote: Command button functions assignable from a context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click, including a "Clear Function" entry) listing ready-made Visualizer functions
 * Settings: Invert preset output
 
 ## v4.1 (2026-09-10)

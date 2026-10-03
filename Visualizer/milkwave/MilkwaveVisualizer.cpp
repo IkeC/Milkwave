@@ -1583,6 +1583,12 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   }
   milkwave.LogInfo(L"CreateWindowAndRun: Message loop ended");
 
+  // Release the SMTC objects and uninitialize this thread's WinRT apartment
+  // before the render thread exits. Deferring this to the global destructor
+  // would release them at process exit, after the apartment is gone, and
+  // crash in winrt::impl::abi<...>::unconditional_release_ref().
+  milkwave.Shutdown();
+
   KillTimer(hwnd, IDT_TCP_POLL);
   g_tcpServer.Stop();
   g_pipeServer.Stop();

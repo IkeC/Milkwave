@@ -1986,7 +1986,6 @@ namespace MilkwaveRemote
       btnSpace.Size = new Size(118, 40);
       btnSpace.TabIndex = 0;
       btnSpace.Text = "Next Preset\r\n(Space)";
-      toolTip1.SetToolTip(btnSpace, "Ctrl+Space");
       btnSpace.UseVisualStyleBackColor = true;
       btnSpace.Click += btnSpace_Click;
       // 
@@ -2000,7 +1999,6 @@ namespace MilkwaveRemote
       btnBackspace.Size = new Size(118, 40);
       btnBackspace.TabIndex = 1;
       btnBackspace.Text = "Previous Preset\r\n(Backspace)";
-      toolTip1.SetToolTip(btnBackspace, "Shift+Ctrl+Space");
       btnBackspace.UseVisualStyleBackColor = true;
       btnBackspace.Click += btnBackspace_Click;
       // 
@@ -2014,10 +2012,8 @@ namespace MilkwaveRemote
       btnWatermark.Size = new Size(118, 40);
       btnWatermark.TabIndex = 22;
       btnWatermark.Text = "Watermark Mode \r\n(Ctrl+Shift+F9)";
-      toolTip1.SetToolTip(btnWatermark, "Right-click:\r\nSwitch to Desktop Mode instead (Ctrl+F9)");
       btnWatermark.UseVisualStyleBackColor = true;
       btnWatermark.Click += btnWatermark_Click;
-      btnWatermark.MouseDown += btnWatermark_MouseDown;
       // 
       // lblFactorFrame
       // 

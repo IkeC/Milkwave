@@ -26,6 +26,7 @@ Milkwave::~Milkwave() {
 
 void Milkwave::Init(wchar_t* exePath) {
   winrt::init_apartment();  // Initialize the WinRT runtime
+  winrtApartmentInitialized = true;
   start_time = std::chrono::steady_clock::now();
   timelineBaseTime = start_time;
   timelineClock.Reset();
@@ -47,6 +48,23 @@ void Milkwave::Init(wchar_t* exePath) {
 
 void Milkwave::SetLogDirectory(std::filesystem::path directory) {
   if (!directory.empty()) logDirectory = std::move(directory);
+}
+
+void Milkwave::Shutdown() {
+  // Release the SMTC objects while the calling thread's apartment is still
+  // initialized. If they are left to the global destructor, they are released
+  // at process exit after the render thread (and its apartment) is gone, which
+  // crashes inside winrt::impl::abi<...>::unconditional_release_ref().
+  smtcSession = nullptr;
+  smtcManager = nullptr;
+  if (winrtApartmentInitialized) {
+    winrtApartmentInitialized = false;
+    try {
+      winrt::uninit_apartment();
+    } catch (const winrt::hresult_error&) {
+      // The apartment is being torn down anyway; nothing reasonable to do here.
+    }
+  }
 }
 
 void Milkwave::SetLyricsAutoLoad(bool enabled) { m_bLyricsAutoLoad = enabled; }

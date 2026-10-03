@@ -67,6 +67,7 @@ class Milkwave {
 
   Milkwave();
   void Init(wchar_t* exePath);
+  void Shutdown();  // release WinRT resources before the owning thread's apartment is torn down
   void SetLogDirectory(std::filesystem::path directory);
   void LogInfo(const wchar_t* info);
   void LogInfo(std::wstring info);
@@ -108,6 +109,7 @@ class Milkwave {
   std::filesystem::path logDirectory;
   mutable std::mutex logMutex;
   bool stopLyricsWorker = false;
+  bool winrtApartmentInitialized = false;
   std::thread lyricsWorker;
 
   GlobalSystemMediaTransportControlsSessionManager smtcManager{nullptr};

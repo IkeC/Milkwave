@@ -130,7 +130,14 @@ namespace MilkwaveRemote {
 
     private PresetDeck presetDeck = new PresetDeck();
     private Button[] presetDeckButtons = Array.Empty<Button>();
+    private readonly CommandButtonConfig[] commandButtonConfigs = BuildDefaultCommandButtonConfigs();
     private readonly Dictionary<int, PendingThumbnail> pendingThumbnailAssignments = new();
+
+    private bool suppressCommandClick;         // swallows the Click that follows a function-assignment gesture
+    private Button? pendingAssignButton;       // command button pressed for function assignment
+    private bool pendingAssignRightClick;      // true when the pending gesture configures the right-click function
+    private ContextMenuStrip? commandFunctionMenu; // reusable function menu (see ShowCommandButtonAssignmentMenu)
+    private string? commandButtonSettingsPath; // settings.ini that persists button assignments
 
     private ShaderHelper ShaderHelper = new ShaderHelper();
     private MidiHelper MidiHelper;
@@ -245,6 +252,13 @@ namespace MilkwaveRemote {
       public DateTime RequestTime { get; set; }
     }
 
+    private sealed class CommandButtonConfig {
+      public string Caption = "";
+      public string Command = "";
+      public string RightClickCaption = "";
+      public string RightClickCommand = "";
+    }
+
     private void SetAllControlFontSizes(Control parent, float fontSize) {
       foreach (Control ctrl in parent.Controls) {
         ctrl.Font = new Font(ctrl.Font.FontFamily, fontSize, ctrl.Font.Style);
@@ -287,6 +301,8 @@ namespace MilkwaveRemote {
         if (button != null) {
           button.Tag = i + 1;
           button.MouseDown += PresetDeckButton_MouseDown;
+          button.MouseDown += CommandPanelButton_MouseDown;
+          button.MouseUp += CommandPanelButton_MouseUp;
           button.Resize += PresetDeckButton_Resize;
         }
       }
@@ -1079,13 +1095,18 @@ namespace MilkwaveRemote {
       txtShaderHLSL.Font = new Font(txtShaderHLSL.Font.FontFamily, 10f, txtShaderHLSL.Font.Style);
       txtShaderGLSL.Font = txtShaderHLSL.Font;
 
-      RemoteHelper = new RemoteHelper(Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), visualizerSettingsFile));
+      string visualizerSettingsPath = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), visualizerSettingsFile);
+      RemoteHelper = new RemoteHelper(visualizerSettingsPath);
+      commandButtonSettingsPath = visualizerSettingsPath;
 
       string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
       if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
         timeBetweenPresets = 60m;
       }
       numPresetChange.Value = Math.Clamp(timeBetweenPresets, numPresetChange.Minimum, numPresetChange.Maximum);
+
+      LoadButtonConfiguration(visualizerSettingsPath);
+      ApplyPanelMode(); // apply the configured command button captions
     }
 
     private void StartVisualizerIfNotFound(bool onlyIfNotFound) {
@@ -2835,30 +2856,15 @@ namespace MilkwaveRemote {
       SetStatusText($"Pressed {keyName}");
     }
 
-    private void btnF3_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F3, "F3");
-    }
+    private void btnF3_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF3);
 
-    private void btnF4_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F4, "F4");
-    }
+    private void btnF4_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF4);
 
-    private void btnF7_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F7, "F7");
-    }
+    private void btnF7_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF7);
 
-    private void btnSpace_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_SPACE, "Space");
-    }
+    private void btnSpace_Click(object sender, EventArgs e) => ExecuteCommandButton(btnSpace);
 
-    private void btnBackspace_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_BACKSPACE, "Backspace");
-    }
+    private void btnBackspace_Click(object sender, EventArgs e) => ExecuteCommandButton(btnBackspace);
 
     private void SendUnicodeChars(string inputString) {
       if (!CanSendPipeMessage) {
@@ -2870,42 +2876,321 @@ namespace MilkwaveRemote {
       SetStatusText($"Pressed {inputString.ToUpper()}");
     }
 
-    private void btnTilde_Click(object sender, EventArgs e) {
+    private void btnTilde_Click(object sender, EventArgs e) => ExecuteCommandButton(btnTilde);
+
+    private void btnDelete_Click(object sender, EventArgs e) => ExecuteCommandButton(btnDelete);
+
+    private void btnAltEnter_Click(object sender, EventArgs e) => ExecuteCommandButton(btnAltEnter);
+
+    private void btnN_Click(object sender, EventArgs e) => ExecuteCommandButton(btnN);
+
+    private void btnF2_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF2);
+
+    private void btnK_Click(object sender, EventArgs e) => ExecuteCommandButton(btnK);
+
+    private void btnF10_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF10);
+
+    private void ExecuteCommandButton(Button button) {
+      // Swallow the Click that belongs to a function-assignment gesture. Depending on
+      // event order it can arrive before the MouseUp that opens the menu, so the pending
+      // state set on MouseDown is checked as well (and must survive for MouseUp to use).
+      if (suppressCommandClick || pendingAssignButton == button) {
+        suppressCommandClick = false;
+        return;
+      }
       if (Settings.IsPresetMode) return;
-      SendUnicodeChars("~");
+      int index = Array.IndexOf(presetDeckButtons, button);
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+      ExecuteButtonCommand(config.Command, GetCommandButtonLabel(config));
     }
 
-    private void btnDelete_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_DELETE, "Delete");
+    private void CommandPanelButton_MouseDown(object? sender, MouseEventArgs e) {
+      pendingAssignButton = null;
+      pendingAssignRightClick = false;
+      suppressCommandClick = false;
+      if (Settings.IsPresetMode || sender is not Button button) return;
+
+      int index = Array.IndexOf(presetDeckButtons, button);
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+
+      bool ctrlHeld = (Control.ModifierKeys & Keys.Control) == Keys.Control;
+
+      // Middle-click, Ctrl+left-click (button function) or Ctrl+right-click (right-click
+      // function) arm the assignment menu; it opens on mouse-up so the release of the same
+      // click cannot activate one of its items.
+      if (e.Button == MouseButtons.Middle ||
+          (e.Button == MouseButtons.Left && ctrlHeld) ||
+          (e.Button == MouseButtons.Right && ctrlHeld)) {
+        pendingAssignButton = button;
+        pendingAssignRightClick = e.Button == MouseButtons.Right;
+        return;
+      }
+
+      if (e.Button != MouseButtons.Right) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+      if (string.IsNullOrWhiteSpace(config.RightClickCommand)) return;
+      string rightClickLabel = config.RightClickCaption.Length > 0 ? config.RightClickCaption : GetCommandButtonLabel(config);
+      ExecuteButtonCommand(config.RightClickCommand, rightClickLabel + " (right-click)");
     }
 
-    private void btnAltEnter_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
-      PipeSendSignal("FULLSCREEN");
-      SetStatusText("Pressed Fullscreen");
+    private void CommandPanelButton_MouseUp(object? sender, MouseEventArgs e) {
+      if (sender is not Button button || pendingAssignButton != button) return;
+      bool forRightClick = pendingAssignRightClick;
+      pendingAssignButton = null;
+      pendingAssignRightClick = false;
+      if (!button.ClientRectangle.Contains(e.Location)) return;
+      suppressCommandClick = true;
+      ShowCommandButtonAssignmentMenu(button, forRightClick);
     }
 
-    private void btnN_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_N, "N");
+    private void ShowCommandButtonAssignmentMenu(Button button, bool forRightClick) {
+      int index = Array.IndexOf(presetDeckButtons, button);
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+      string currentCommand = forRightClick ? config.RightClickCommand : config.Command;
+
+      List<string> categories = new List<string>();
+      foreach (CommandFunctionOption option in CommandFunctionCatalog) {
+        if (!categories.Contains(option.Category)) categories.Add(option.Category);
+      }
+
+      // Reused across invocations: disposing the drop-down in its own Closed event
+      // makes ToolStripManager throw when it later processes an activation change.
+      if (commandFunctionMenu == null) {
+        commandFunctionMenu = new ContextMenuStrip();
+      }
+      ContextMenuStrip menu = commandFunctionMenu;
+      menu.Items.Clear();
+
+      foreach (string category in categories) {
+        // Escape '&': ToolStripMenuItem treats it as an access-key marker.
+        ToolStripMenuItem categoryItem = new ToolStripMenuItem(category.Replace("&", "&&"));
+        bool categoryChecked = false;
+        foreach (CommandFunctionOption option in CommandFunctionCatalog) {
+          if (option.Category != category) continue;
+          ToolStripMenuItem item = new ToolStripMenuItem($"{option.Name} ({option.Shortcut})".Replace("&", "&&"));
+          bool isCurrent = string.Equals(currentCommand, option.Command, StringComparison.OrdinalIgnoreCase);
+          item.Checked = isCurrent;
+          categoryChecked |= isCurrent;
+          item.Click += (s, args) => AssignCommandFunctionToButton(index, option, forRightClick);
+          categoryItem.DropDownItems.Add(item);
+        }
+        categoryItem.CheckState = categoryChecked ? CheckState.Checked : CheckState.Unchecked;
+        menu.Items.Add(categoryItem);
+      }
+
+      if (forRightClick) {
+        menu.Items.Add(new ToolStripSeparator());
+        ToolStripMenuItem clearItem = new ToolStripMenuItem("Clear Function");
+        clearItem.Enabled = config.RightClickCommand.Length > 0;
+        clearItem.Click += (s, args) => ClearCommandFunctionFromButton(index);
+        menu.Items.Add(clearItem);
+      }
+
+      menu.Show(Cursor.Position);
+      SetStatusText(forRightClick
+        ? $"Choose a right-click function for button {index + 1}"
+        : $"Choose a function for button {index + 1}");
     }
 
-    private void btnF2_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F2, "F2");
+    private void AssignCommandFunctionToButton(int index, CommandFunctionOption option, bool forRightClick) {
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+
+      if (forRightClick) {
+        config.RightClickCaption = option.Name;
+        config.RightClickCommand = option.Command;
+        PersistButtonSetting(index, true);
+        RestoreCommandButtonAppearance(index);
+        SetStatusText($"Button {index + 1} right-click set to {option.Name}");
+        return;
+      }
+
+      config.Caption = $"{option.Name}\n({option.Shortcut})";
+      config.Command = option.Command;
+      PersistButtonSetting(index, false);
+      RestoreCommandButtonAppearance(index);
+      SetStatusText($"Button {index + 1} set to {option.Name}");
     }
 
-    private void btnK_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_K, "K");
+    private void ClearCommandFunctionFromButton(int index) {
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+
+      config.RightClickCaption = "";
+      config.RightClickCommand = "";
+      PersistButtonSetting(index, true);
+      RestoreCommandButtonAppearance(index);
+      SetStatusText($"Button {index + 1} right-click function cleared");
     }
 
-    private void btnF10_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F10, "F10");
+    private void PersistButtonSetting(int index, bool rightClick) {
+      if (RemoteHelper == null || commandButtonSettingsPath == null || !File.Exists(commandButtonSettingsPath)) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+      string number = (index + 1).ToString(CultureInfo.InvariantCulture);
+
+      if (rightClick) {
+        string value = config.RightClickCommand.Length > 0
+          ? $"{EscapeCaption(config.RightClickCaption)}|{config.RightClickCommand}"
+          : "none";
+        RemoteHelper.SetIniValue("Buttons", "Button" + number + "RightClick", value);
+      } else {
+        RemoteHelper.SetIniValue("Buttons", "Button" + number, $"{EscapeCaption(config.Caption)}|{config.Command}");
+      }
     }
+
+    private void ExecuteButtonCommand(string command, string statusLabel) {
+      if (string.IsNullOrWhiteSpace(command)) return;
+      if (!CanSendPipeMessage) {
+        SetStatusText(windowNotFound);
+        return;
+      }
+
+      if (command.StartsWith("SIGNAL|", StringComparison.OrdinalIgnoreCase)) {
+        PipeSendSignal(command.Substring(7));
+      } else {
+        PipeSend(command);
+      }
+      SetStatusText($"Pressed {statusLabel}");
+    }
+
+    private static string GetCommandButtonLabel(CommandButtonConfig config) {
+      int lineBreakIndex = config.Caption.IndexOf('\n');
+      string label = lineBreakIndex >= 0 ? config.Caption.Substring(0, lineBreakIndex) : config.Caption;
+      return label.Trim();
+    }
+
+    private static CommandButtonConfig[] BuildDefaultCommandButtonConfigs() {
+      return new[] {
+        new CommandButtonConfig { Caption = "Next Preset\n(Space)", Command = "SEND=0x20" },
+        new CommandButtonConfig { Caption = "Previous Preset\n(Backspace)", Command = "SEND=0x08" },
+        new CommandButtonConfig { Caption = "Sound Info\n(N)", Command = "SEND=0x4E" },
+        new CommandButtonConfig { Caption = "Song Info\n(B)", Command = "SEND=0x42" },
+        new CommandButtonConfig { Caption = "Preset Lock\n(~)", Command = "SEND=~" },
+        new CommandButtonConfig { Caption = "Borderless\n(F2)", Command = "SEND=0x71" },
+        new CommandButtonConfig { Caption = "Change FPS\n(F3)", Command = "SEND=0x72" },
+        new CommandButtonConfig { Caption = "Preset Info\n(F4)", Command = "SEND=0x73" },
+        new CommandButtonConfig { Caption = "Always On Top\n(F7)", Command = "SEND=0x76" },
+        new CommandButtonConfig { Caption = "Toggle Spout\n(F10)", Command = "SEND=0x79" },
+        new CommandButtonConfig { Caption = "Fullscreen\n(Alt+Enter)", Command = "SIGNAL|FULLSCREEN" },
+        new CommandButtonConfig { Caption = "Sprite/Msg Mode\n(K)", Command = "SEND=0x4B" },
+        new CommandButtonConfig { Caption = "Clear Sprite/Msg\n(Delete)", Command = "SEND=0x2E" },
+        new CommandButtonConfig { Caption = "Watermark Mode\n(Ctrl+Shift+F9)", Command = "SIGNAL|WATERMARK", RightClickCaption = "Borderless Fullscreen", RightClickCommand = "SIGNAL|BORDERLESS_FS" },
+        new CommandButtonConfig { Caption = "Transparency\n(F12)", Command = "SEND=0x7B" },
+      };
+    }
+
+    private sealed class CommandFunctionOption {
+      public string Category = "";
+      public string Name = "";
+      public string Shortcut = "";
+      public string Command = "";
+    }
+
+    // Functions offered when assigning a command to a button (middle-click or Ctrl+left-click).
+    private static readonly CommandFunctionOption[] CommandFunctionCatalog = {
+      new CommandFunctionOption { Category = "Window", Name = "Fullscreen", Shortcut = "Alt+Enter", Command = "SIGNAL|FULLSCREEN" },
+      new CommandFunctionOption { Category = "Window", Name = "Borderless", Shortcut = "F2", Command = "SEND=0x71" },
+      new CommandFunctionOption { Category = "Window", Name = "Borderless Fullscreen", Shortcut = "Ctrl+Shift+F9", Command = "SIGNAL|BORDERLESS_FS" },
+      new CommandFunctionOption { Category = "Window", Name = "Always On Top", Shortcut = "F7", Command = "SEND=0x76" },
+      new CommandFunctionOption { Category = "Window", Name = "Clickthrough", Shortcut = "F9", Command = "SEND=0x78" },
+      new CommandFunctionOption { Category = "Display", Name = "Watermark Mode", Shortcut = "Ctrl+Shift+F9", Command = "SIGNAL|WATERMARK" },
+      new CommandFunctionOption { Category = "Display", Name = "Transparency", Shortcut = "F12", Command = "SEND=0x7B" },
+      new CommandFunctionOption { Category = "Display", Name = "Change FPS", Shortcut = "F3", Command = "SEND=0x72" },
+      new CommandFunctionOption { Category = "Display", Name = "Preset Info", Shortcut = "F4", Command = "SEND=0x73" },
+      new CommandFunctionOption { Category = "Display", Name = "FPS Display", Shortcut = "F5", Command = "SEND=0x74" },
+      new CommandFunctionOption { Category = "Display", Name = "Rating Display", Shortcut = "F6", Command = "SEND=0x75" },
+      new CommandFunctionOption { Category = "Display", Name = "Hard Cut Mode", Shortcut = "F11", Command = "SEND=0x7A" },
+      new CommandFunctionOption { Category = "Display", Name = "Sound Info", Shortcut = "N", Command = "SEND=0x4E" },
+      new CommandFunctionOption { Category = "Presets", Name = "Next Preset", Shortcut = "Space", Command = "SEND=0x20" },
+      new CommandFunctionOption { Category = "Presets", Name = "Previous Preset", Shortcut = "Backspace", Command = "SEND=0x08" },
+      new CommandFunctionOption { Category = "Presets", Name = "Preset Lock", Shortcut = "~", Command = "SEND=~" },
+      new CommandFunctionOption { Category = "Presets", Name = "Random Order", Shortcut = "R", Command = "SEND=0x52" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Sprite/Msg Mode", Shortcut = "K", Command = "SEND=0x4B" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Sprite/Msg", Shortcut = "Delete", Command = "SEND=0x2E" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear all Sprites", Shortcut = "Ctrl+K", Command = "CLEARSPRITES" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Song Info", Shortcut = "B", Command = "SEND=0x42" },
+      new CommandFunctionOption { Category = "Output", Name = "Toggle Spout", Shortcut = "F10", Command = "SEND=0x79" },
+    };
+
+    private void LoadButtonConfiguration(string settingsPath) {
+      try {
+        bool canPersist = File.Exists(settingsPath);
+        for (int i = 0; i < commandButtonConfigs.Length; i++) {
+          string captionKey = "Button" + (i + 1).ToString(CultureInfo.InvariantCulture);
+          string rightClickKey = captionKey + "RightClick";
+          CommandButtonConfig config = commandButtonConfigs[i];
+
+          string value = RemoteHelper.GetIniValue("Buttons", captionKey, "");
+          if (string.IsNullOrWhiteSpace(value)) {
+            value = $"{EscapeCaption(config.Caption)}|{config.Command}";
+            if (canPersist) {
+              RemoteHelper.SetIniValue("Buttons", captionKey, value);
+            }
+          }
+          ParseButtonConfig(value, config);
+
+          string rightClickValue = RemoteHelper.GetIniValue("Buttons", rightClickKey, "");
+          if (string.IsNullOrWhiteSpace(rightClickValue)) {
+            if (config.RightClickCommand.Length > 0) {
+              rightClickValue = $"{EscapeCaption(config.RightClickCaption)}|{config.RightClickCommand}";
+              if (canPersist) {
+                RemoteHelper.SetIniValue("Buttons", rightClickKey, rightClickValue);
+              }
+            }
+          }
+          ParseRightClickConfig(rightClickValue, config);
+        }
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Load button configuration");
+      }
+    }
+
+    private static void ParseButtonConfig(string value, CommandButtonConfig config) {
+      int separatorIndex = value.IndexOf('|');
+      string caption = separatorIndex >= 0 ? value.Substring(0, separatorIndex) : value;
+      string command = separatorIndex >= 0 ? value.Substring(separatorIndex + 1) : "";
+
+      caption = UnescapeCaption(caption.Trim());
+      command = command.Trim();
+
+      if (caption.Length > 0) config.Caption = caption;
+      if (command.Length > 0) config.Command = command;
+    }
+
+    private static void ParseRightClickConfig(string value, CommandButtonConfig config) {
+      string trimmed = value.Trim();
+      if (trimmed.Length == 0 || trimmed.Equals("none", StringComparison.OrdinalIgnoreCase)) {
+        config.RightClickCommand = "";
+        config.RightClickCaption = "";
+        return;
+      }
+
+      // Values written before right-click captions were supported hold the command only.
+      if (trimmed.StartsWith("SEND=", StringComparison.OrdinalIgnoreCase) ||
+          trimmed.StartsWith("SIGNAL|", StringComparison.OrdinalIgnoreCase)) {
+        bool isDefaultCommand = trimmed.Equals(config.RightClickCommand, StringComparison.OrdinalIgnoreCase);
+        config.RightClickCommand = trimmed;
+        config.RightClickCaption = isDefaultCommand && config.RightClickCaption.Length > 0 ? config.RightClickCaption : trimmed;
+        return;
+      }
+
+      int separatorIndex = trimmed.IndexOf('|');
+      string caption = separatorIndex >= 0 ? trimmed.Substring(0, separatorIndex) : trimmed;
+      string command = separatorIndex >= 0 ? trimmed.Substring(separatorIndex + 1) : trimmed;
+
+      caption = UnescapeCaption(caption.Trim());
+      command = command.Trim();
+
+      config.RightClickCommand = command;
+      config.RightClickCaption = command.Length == 0 ? "" : (caption.Length > 0 ? caption : command);
+    }
+
+    private static string EscapeCaption(string caption) => caption.Replace("\n", "\\n");
+
+    private static string UnescapeCaption(string caption) =>
+      caption.Replace("\\r\\n", "\n").Replace("\\n", "\n");
 
     private void btn00_Click(object sender, EventArgs e) { SendUnicodeChars("00"); }
     private void btn11_Click(object sender, EventArgs e) { SendUnicodeChars("11"); }
@@ -3991,31 +4276,11 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnB_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_B, "B");
-    }
+    private void btnB_Click(object sender, EventArgs e) => ExecuteCommandButton(btnB);
 
-    private void btnTransparency_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F12, "F12");
-    }
+    private void btnTransparency_Click(object sender, EventArgs e) => ExecuteCommandButton(btnTransparency);
 
-    private void btnWatermark_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
-      PipeSendSignal("WATERMARK");
-      SetStatusText("Pressed Watermark Mode");
-    }
-
-    private void btnWatermark_MouseDown(object sender, MouseEventArgs e) {
-      if (Settings.IsPresetMode) return;
-      if (e.Button == MouseButtons.Right) {
-        if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
-        PipeSendSignal("BORDERLESS_FS");
-        SetStatusText("Pressed Borderless Fullscreen");
-      }
-    }
+    private void btnWatermark_Click(object sender, EventArgs e) => ExecuteCommandButton(btnWatermark);
 
     private void btnTagsSave_Click(object? sender, EventArgs? e) {
       SaveTags();
@@ -6694,29 +6959,26 @@ namespace MilkwaveRemote {
         btn.Image = null;
       }
 
-      // Restore original button text based on which button it is
-      if (btn == btnSpace) btn.Text = "Next Preset\r\n(Space)";
-      else if (btn == btnBackspace) btn.Text = "Previous Preset\r\n(Backspace)";
-      else if (btn == btnN) btn.Text = "Sound Info\r\n(N)";
-      else if (btn == btnB) btn.Text = "Song Info\r\n(B)";
-      else if (btn == btnTilde) btn.Text = "Preset Lock \r\n(~)";
-      else if (btn == btnF2) btn.Text = "Borderless \r\n(F2)";
-      else if (btn == btnF3) btn.Text = "Change FPS\r\n(F3)";
-      else if (btn == btnF4) btn.Text = "Preset Info\r\n(F4)";
-      else if (btn == btnF7) btn.Text = "Always On Top\r\n(F7)";
-      else if (btn == btnF10) btn.Text = "Toggle Spout\r\n(F10)";
-      else if (btn == btnAltEnter) btn.Text = "Fullscreen\r\n(Alt+Enter)";
-      else if (btn == btnK) btn.Text = "Sprite/Msg Mode\r\n(K)";
-      else if (btn == btnDelete) btn.Text = "Clear Sprite/Msg\r\n(Delete)";
-      else if (btn == btnWatermark) btn.Text = "Watermark Mode \r\n(Ctrl+Shift+F9)";
-      else if (btn == btnTransparency) btn.Text = "Transparency\r\n(F12)";
+      // Restore the configured caption and tooltip
+      ApplyCommandButtonAppearance(buttonArrayIndex, btn);
 
       // Reset button styling
       btn.Padding = new Padding(0);
       btn.TextAlign = ContentAlignment.MiddleCenter;
       btn.ImageAlign = ContentAlignment.MiddleCenter;
       btn.TextImageRelation = TextImageRelation.Overlay;
-      toolTip1.SetToolTip(btn, string.Empty);
+    }
+
+    private void ApplyCommandButtonAppearance(int buttonArrayIndex, Button btn) {
+      if (buttonArrayIndex < 0 || buttonArrayIndex >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[buttonArrayIndex];
+      btn.Text = config.Caption.Replace("\n", Environment.NewLine);
+      if (config.RightClickCommand.Length > 0) {
+        string rightClickCaption = config.RightClickCaption.Length > 0 ? config.RightClickCaption : config.RightClickCommand;
+        toolTip1.SetToolTip(btn, $"Right-Click: {rightClickCaption}");
+      } else {
+        toolTip1.SetToolTip(btn, string.Empty);
+      }
     }
 
     private void UpdatePresetDeckButtonAppearance(int buttonIndex) {
