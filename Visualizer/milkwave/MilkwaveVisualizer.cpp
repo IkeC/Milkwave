@@ -138,6 +138,10 @@
 #include <winsock2.h>  // Must precede windows.h for tcp_server.h
 #include <ws2tcpip.h>
 #include <windows.h>
+#include <commctrl.h>  // desktop icon list messages (LVM_*) for Desktop Mode
+#include <shobjidl.h>  // taskbar jump list tasks for Desktop Mode
+#include <propkey.h>
+#include <propvarutil.h>
 #include <process.h>
 #include <d3d9.h>
 #include <math.h>
@@ -146,6 +150,8 @@
 #include <ShellScalingApi.h>        // for dpi awareness
 #pragma comment(lib, "shcore.lib")  // for dpi awareness
 #pragma comment(lib, "version.lib")
+#pragma comment(lib, "shell32.lib")  // jump list / AppUserModelID
+#pragma comment(lib, "propsys.lib")  // PKEY_Title for jump list tasks
 // older Windows versions: Entry Point Not Found Fix
 
 #include "plugin.h"
@@ -153,6 +159,7 @@
 #include "tcp_server.h"
 #include "resource.h"
 #include "pluginshell.h"
+#include "plugin_internals.h"
 
 #include <mutex>
 #include <atomic>
@@ -206,6 +213,22 @@ static bool stretch = false;
 static bool borderless = false;
 static bool clickthrough = false;
 static RECT lastRect = {0};
+
+// Desktop Mode state
+static bool desktopModeHotkeyRegistered = false;
+static HWND desktopWorkerW = nullptr;
+static float desktopModePreviousOpacity = 1.0f;
+static bool desktopModePreviousClickthrough = false;
+static bool desktopModePreviousTranspaMode = false;
+
+// Desktop Mode keeps the application in the taskbar through a tiny invisible
+// top-level window, because the render window becomes a child of the WorkerW.
+static HWND desktopControllerWindow = nullptr;
+static HWND desktopControllerOwner = nullptr;
+static bool desktopControllerClassRegistered = false;
+static const wchar_t kDesktopControllerClass[] = L"MilkwaveDesktopController";
+static const wchar_t kMilkwaveAppUserModelId[] = L"IkeC.Milkwave.Visualizer";
+static const wchar_t kDesktopModeJumpListArgument[] = L"--toggle-desktop-mode=";
 
 static HMODULE module = nullptr;
 static std::atomic<HANDLE> threadRender = nullptr;
@@ -720,6 +743,369 @@ static void ToggleBorderlessWindow(HWND hwnd) {
   g_plugin.m_WindowBorderless = borderless;
 }
 
+// ===============================================
+// Desktop Mode: renders the visualizer as a wallpaper behind the desktop icons.
+// The window is re-parented into the Explorer "WorkerW" window that sits behind
+// the icon view (same approach as BeatDrop) and stretched across the entire
+// virtual screen.
+// ===============================================
+
+static BOOL CALLBACK FindDesktopWorkerWProc(HWND hwnd, LPARAM lParam) {
+  if (FindWindowExW(hwnd, NULL, L"SHELLDLL_DefView", NULL) == NULL) {
+    return TRUE;
+  }
+
+  // The wallpaper WorkerW sits directly behind the window that hosts the icons.
+  HWND* workerW = reinterpret_cast<HWND*>(lParam);
+  *workerW = FindWindowExW(NULL, hwnd, L"WorkerW", NULL);
+  if (*workerW == NULL) {
+    *workerW = FindWindowExW(hwnd, NULL, L"WorkerW", NULL);
+  }
+  return FALSE;
+}
+
+static BOOL CALLBACK FindShellDefViewProc(HWND hwnd, LPARAM lParam) {
+  HWND defView = FindWindowExW(hwnd, NULL, L"SHELLDLL_DefView", NULL);
+  if (defView != NULL) {
+    *reinterpret_cast<HWND*>(lParam) = defView;
+    return FALSE;
+  }
+  return TRUE;
+}
+
+static BOOL CALLBACK FindProgramManagerProc(HWND hwnd, LPARAM lParam) {
+  wchar_t className[32];
+  if (GetClassNameW(hwnd, className, _countof(className)) == 0) {
+    return TRUE;
+  }
+  if (wcscmp(className, L"Progman") != 0) {
+    return TRUE;
+  }
+  *reinterpret_cast<HWND*>(lParam) = hwnd;
+  return FALSE;
+}
+
+// FindWindow is not reliable in every host process, so fall back to enumerating.
+static HWND FindProgramManager() {
+  HWND progman = FindWindowW(L"Progman", NULL);
+  if (progman == NULL) {
+    EnumWindows(FindProgramManagerProc, reinterpret_cast<LPARAM>(&progman));
+  }
+  return progman;
+}
+
+// Forces the desktop icon list to repaint above the render window.
+static void RefreshDesktopIcons(HWND progman) {
+  HWND shellDefView = NULL;
+  if (progman != NULL) {
+    shellDefView = FindWindowExW(progman, NULL, L"SHELLDLL_DefView", NULL);
+  }
+  if (shellDefView == NULL) {
+    EnumWindows(FindShellDefViewProc, reinterpret_cast<LPARAM>(&shellDefView));
+  }
+  if (shellDefView == NULL) {
+    return;
+  }
+
+  HWND listView = FindWindowExW(shellDefView, NULL, L"SysListView32", NULL);
+  if (listView != NULL) {
+    LRESULT itemCount = SendMessageW(listView, LVM_GETITEMCOUNT, 0, 0);
+    if (itemCount > 0) {
+      PostMessageW(listView, LVM_REDRAWITEMS, 0, (LPARAM)(itemCount - 1));
+    }
+  }
+  InvalidateRect(shellDefView, NULL, TRUE);
+  UpdateWindow(shellDefView);
+}
+
+// Desktop Mode cannot be left by clicking the window, so Ctrl+F9 is registered
+// as a system-wide hotkey while the mode is active.
+static void RegisterDesktopModeHotkey(HWND hwnd) {
+  if (desktopModeHotkeyRegistered) {
+    return;
+  }
+  desktopModeHotkeyRegistered =
+      RegisterHotKey(hwnd, MW_HOTKEY_DESKTOP_MODE, MOD_CONTROL | MOD_NOREPEAT, VK_F9) != FALSE;
+  if (!desktopModeHotkeyRegistered) {
+    milkwave.LogInfo(L"Desktop Mode: RegisterHotKey(Ctrl+F9) failed; use the Remote to exit");
+  }
+}
+
+static void UnregisterDesktopModeHotkey(HWND hwnd) {
+  if (!desktopModeHotkeyRegistered) {
+    return;
+  }
+  UnregisterHotKey(hwnd, MW_HOTKEY_DESKTOP_MODE);
+  desktopModeHotkeyRegistered = false;
+}
+
+// ── Taskbar presence and taskbar right-click task ────────────────────────────
+
+static LRESULT CALLBACK DesktopControllerWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  switch (uMsg) {
+    case WM_CLOSE: {
+      // The taskbar's "Close window" must close the visualizer, not just the
+      // invisible controller window.
+      if (desktopControllerOwner != nullptr && IsWindow(desktopControllerOwner)) {
+        PostMessageW(desktopControllerOwner, WM_CLOSE, 0, 0);
+      } else {
+        DestroyWindow(hWnd);
+      }
+      return 0;
+    }
+    case WM_DESTROY:
+      desktopControllerWindow = nullptr;
+      return 0;
+    default:
+      return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+  }
+}
+
+// Creates the tiny invisible top-level window that keeps the taskbar button
+// while the render window is re-parented into the WorkerW.
+static void EnsureDesktopControllerWindow(HWND mainWindow) {
+  if (desktopControllerWindow != nullptr) {
+    return;
+  }
+
+  HINSTANCE instance = (HINSTANCE)GetWindowLongPtrW(mainWindow, GWLP_HINSTANCE);
+  if (!desktopControllerClassRegistered) {
+    WNDCLASSW wc = {0};
+    wc.lpfnWndProc = DesktopControllerWndProc;
+    wc.hInstance = instance;
+    wc.hIcon = icon != nullptr ? icon : LoadIconW(instance, MAKEINTRESOURCEW(IDI_PLUGIN_ICON));
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.lpszClassName = kDesktopControllerClass;
+    if (RegisterClassW(&wc) != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS) {
+      desktopControllerClassRegistered = true;
+    }
+  }
+  if (!desktopControllerClassRegistered) {
+    return;
+  }
+
+  wchar_t title[256] = L"Milkwave Visualizer";
+  GetWindowTextW(mainWindow, title, _countof(title));
+
+  desktopControllerOwner = mainWindow;
+  desktopControllerWindow = CreateWindowExW(
+      WS_EX_APPWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
+      kDesktopControllerClass, title, WS_POPUP,
+      0, 0, 1, 1, nullptr, nullptr, instance, nullptr);
+  if (desktopControllerWindow != nullptr) {
+    SetLayeredWindowAttributes(desktopControllerWindow, 0, 0, LWA_ALPHA);
+    ShowWindow(desktopControllerWindow, SW_SHOWNOACTIVATE);
+  }
+}
+
+static void DestroyDesktopControllerWindow() {
+  if (desktopControllerWindow != nullptr && IsWindow(desktopControllerWindow)) {
+    DestroyWindow(desktopControllerWindow);  // WM_DESTROY clears the handle
+  }
+  desktopControllerWindow = nullptr;
+  desktopControllerOwner = nullptr;
+}
+
+// Adds a "Toggle Desktop Mode" entry to the taskbar button's right-click menu
+// (jump list tasks). Clicking it starts this exe again with
+// "--toggle-desktop-mode=<pid>"; that instance forwards the toggle over the
+// pipe and exits, see ForwardDesktopModeToggle().
+static void BuildDesktopModeJumpList() {
+  HRESULT hrCom = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  const bool comInitializedHere = SUCCEEDED(hrCom);
+
+  wchar_t exePath[MAX_PATH] = {0};
+  HRESULT hr = E_FAIL;
+  if (GetModuleFileNameW(nullptr, exePath, MAX_PATH) != 0) {
+    ICustomDestinationList* pDestList = nullptr;
+    hr = CoCreateInstance(CLSID_DestinationList, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pDestList));
+    if (SUCCEEDED(hr)) {
+      UINT minSlots = 0;
+      IObjectArray* pRemoved = nullptr;
+      hr = pDestList->BeginList(&minSlots, IID_PPV_ARGS(&pRemoved));
+      if (SUCCEEDED(hr)) {
+        IObjectCollection* pTasks = nullptr;
+        hr = CoCreateInstance(CLSID_EnumerableObjectCollection, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pTasks));
+        if (SUCCEEDED(hr)) {
+          IShellLinkW* pLink = nullptr;
+          hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pLink));
+          if (SUCCEEDED(hr)) {
+            wchar_t arguments[64];
+            swprintf_s(arguments, L"%ls%u", kDesktopModeJumpListArgument, GetCurrentProcessId());
+            pLink->SetPath(exePath);
+            pLink->SetArguments(arguments);
+            pLink->SetIconLocation(exePath, 0);
+
+            IPropertyStore* pProperties = nullptr;
+            if (SUCCEEDED(pLink->QueryInterface(IID_PPV_ARGS(&pProperties)))) {
+              PROPVARIANT title;
+              if (SUCCEEDED(InitPropVariantFromString(L"Toggle Desktop Mode", &title))) {
+                HRESULT hrSetValue = pProperties->SetValue(PKEY_Title, title);
+                if (FAILED(hrSetValue)) {
+                  wchar_t message[128];
+                  swprintf_s(message, L"Desktop Mode: PKEY_Title SetValue failed: 0x%08X", hrSetValue);
+                  milkwave.LogInfo(message);
+                }
+                PropVariantClear(&title);
+              }
+              HRESULT hrCommit = pProperties->Commit();
+              if (FAILED(hrCommit)) {
+                wchar_t message[128];
+                swprintf_s(message, L"Desktop Mode: property store Commit failed: 0x%08X", hrCommit);
+                milkwave.LogInfo(message);
+              }
+              pProperties->Release();
+            }
+            hr = pTasks->AddObject(pLink);
+            pLink->Release();
+          }
+          if (SUCCEEDED(hr)) {
+            IObjectArray* pTaskArray = nullptr;
+            if (SUCCEEDED(pTasks->QueryInterface(IID_PPV_ARGS(&pTaskArray)))) {
+              hr = pDestList->AddUserTasks(pTaskArray);
+              pTaskArray->Release();
+            }
+          }
+          pTasks->Release();
+        }
+        if (SUCCEEDED(hr)) {
+          hr = pDestList->CommitList();
+        }
+      }
+      if (pRemoved != nullptr) {
+        pRemoved->Release();
+      }
+      pDestList->Release();
+    }
+  }
+
+  if (FAILED(hr)) {
+    milkwave.LogInfo(L"Desktop Mode: taskbar jump list task could not be registered");
+  }
+  if (comInitializedHere) {
+    CoUninitialize();
+  }
+}
+
+static void ToggleDesktopMode(HWND hWnd) {
+  try {
+    if (!g_plugin.m_bDesktopMode) {
+      // Desktop Mode replaces the wallpaper, so leave the exclusive display
+      // modes first and remember the current window and transparency state.
+      if (fullscreen) {
+        ToggleFullScreen(hWnd);
+      } else if (g_plugin.IsBorderlessFullscreen(hWnd)) {
+        ToggleBorderlessFullscreen(hWnd, false);
+      }
+      if (stretch) {
+        ToggleStretch(hWnd);
+      }
+
+      // Ask Explorer to (re-)create the WorkerW window behind the icons.
+      HWND progman = FindProgramManager();
+      if (progman != NULL) {
+        SendMessageTimeoutW(progman, 0x052C, 0xD, 0x1, SMTO_NORMAL, 1000, NULL);
+        SendMessageTimeoutW(progman, 0x052C, 0xD, 0x0, SMTO_NORMAL, 1000, NULL);
+        SendMessageTimeoutW(progman, 0x052C, 0x0, 0x0, SMTO_NORMAL, 1000, NULL);
+      }
+
+      desktopWorkerW = NULL;
+      EnumWindows(FindDesktopWorkerWProc, reinterpret_cast<LPARAM>(&desktopWorkerW));
+      if (desktopWorkerW == NULL) {
+        milkwave.LogInfo(L"Desktop Mode: WorkerW window not found");
+        g_plugin.AddError(L"Desktop Mode failed: desktop window not found", 5.0f, ERR_MISC, false);
+        return;
+      }
+
+      GetWindowRect(hWnd, &g_plugin.m_desktop_lastRect);
+      g_plugin.m_desktop_lastStyle = GetWindowLongPtrW(hWnd, GWL_STYLE);
+      g_plugin.m_desktop_lastStyleEx = GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
+      desktopModePreviousOpacity = g_plugin.fOpacity;
+      desktopModePreviousClickthrough = clickthrough;
+      desktopModePreviousTranspaMode = TranspaMode;
+
+      if (clickthrough) {
+        ToggleClickThrough(hWnd);
+      }
+      if (TranspaMode) {
+        TranspaMode = false;
+        ToggleTransparency(hWnd);
+      }
+      if (g_plugin.fOpacity != 1.0f) {
+        g_plugin.fOpacity = 1.0f;
+        g_plugin.SetOpacity(hWnd);
+      }
+
+      // Keep the application in the taskbar while the render window becomes a
+      // child of the WorkerW.
+      EnsureDesktopControllerWindow(hWnd);
+
+      SetWindowLongPtrW(hWnd, GWL_STYLE, WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS);
+      SetWindowLongPtrW(hWnd, GWL_EXSTYLE, WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_LAYERED);
+      SetLayeredWindowAttributes(hWnd, 0, 255, LWA_ALPHA);
+      SetParent(hWnd, desktopWorkerW);
+
+      const int x = GetSystemMetrics(SM_XVIRTUALSCREEN);
+      const int y = GetSystemMetrics(SM_YVIRTUALSCREEN);
+      const int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+      const int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+      POINT origin = {x, y};
+      ScreenToClient(desktopWorkerW, &origin);
+
+      g_plugin.SetVariableBackBuffer(width, height);
+      SafeResetDevice();
+      SetWindowPos(hWnd, HWND_TOP, origin.x, origin.y, width, height,
+                   SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+
+      RefreshDesktopIcons(progman);
+
+      g_plugin.m_bDesktopMode = true;
+      RegisterDesktopModeHotkey(hWnd);
+      g_plugin.AddNotification(L"Desktop Mode enabled (Ctrl+F9 to exit)");
+    } else {
+      UnregisterDesktopModeHotkey(hWnd);
+      SetParent(hWnd, NULL);
+
+      SetWindowLongPtrW(hWnd, GWL_STYLE, g_plugin.m_desktop_lastStyle);
+      SetWindowLongPtrW(hWnd, GWL_EXSTYLE, g_plugin.m_desktop_lastStyleEx);
+
+      const int width = g_plugin.m_desktop_lastRect.right - g_plugin.m_desktop_lastRect.left;
+      const int height = g_plugin.m_desktop_lastRect.bottom - g_plugin.m_desktop_lastRect.top;
+      g_plugin.SetVariableBackBuffer(width, height);
+      SafeResetDevice();
+      SetWindowPos(hWnd, HWND_TOP, g_plugin.m_desktop_lastRect.left, g_plugin.m_desktop_lastRect.top,
+                   width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
+      g_plugin.m_bDesktopMode = false;
+
+      // The render window is back in the taskbar, so the controller can go.
+      DestroyDesktopControllerWindow();
+
+      if (g_plugin.m_bAlwaysOnTop) {
+        g_plugin.ToggleAlwaysOnTop(hWnd);
+      }
+      if (desktopModePreviousClickthrough && !clickthrough) {
+        ToggleClickThrough(hWnd);
+      }
+      if (g_plugin.fOpacity != desktopModePreviousOpacity) {
+        g_plugin.fOpacity = desktopModePreviousOpacity;
+        g_plugin.SetOpacity(hWnd);
+      }
+      if (desktopModePreviousTranspaMode && !TranspaMode) {
+        TranspaMode = true;
+        ToggleTransparency(hWnd);
+      }
+
+      g_plugin.AddNotification(L"Desktop Mode disabled");
+
+      // Force the desktop to repaint its wallpaper.
+      SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, NULL, SPIF_SENDCHANGE);
+    }
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"ToggleDesktopMode", e, true);
+  }
+}
+
 HRESULT GetDefaultAudioDeviceName(IMMDevice** ppMMDevice, std::wstring* m_szAudioDeviceDisplayName) {
   HRESULT hr = S_OK;
   IMMDeviceEnumerator* pMMDeviceEnumerator;
@@ -775,6 +1161,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
   switch (uMsg) {
     case WM_CLOSE: {
+      if (g_plugin.m_bDesktopMode) {
+        ToggleDesktopMode(hWnd);
+      }
+      DestroyDesktopControllerWindow();
       g_plugin.SaveWindowSizeAndPosition(hWnd);
       DestroyWindow(hWnd);
       UnregisterClassW(L"Direct3DWindowClass", NULL);
@@ -782,6 +1172,8 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
 
     case WM_DESTROY: {
+      DestroyDesktopControllerWindow();
+      UnregisterDesktopModeHotkey(hWnd);
       PostQuitMessage(0);
       break;
     }
@@ -789,6 +1181,14 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     case WM_TIMER: {
       if (wParam == IDT_TCP_POLL) {
         g_tcpServer.Poll();
+        return 0;
+      }
+      break;
+    }
+
+    case WM_HOTKEY: {
+      if (wParam == MW_HOTKEY_DESKTOP_MODE) {
+        ToggleDesktopMode(hWnd);
         return 0;
       }
       break;
@@ -855,7 +1255,11 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
         if (isCtrlPressed) {
           bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-          ToggleBorderlessFullscreen(hWnd, isShiftPressed);
+          if (isShiftPressed) {
+            ToggleBorderlessFullscreen(hWnd, true);  // watermark mode
+          } else {
+            ToggleDesktopMode(hWnd);
+          }
         } else {
           ToggleClickThrough(hWnd);
           if (clickthrough) {
@@ -1224,6 +1628,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       ToggleBorderlessFullscreen(hWnd, false);
       return 0;
 
+    case WM_USER_DESKTOP_MODE:  // SIGNAL|DESKTOP_MODE
+      ToggleDesktopMode(hWnd);
+      return 0;
+
     default:
       return g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
   }
@@ -1522,6 +1930,9 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   // Start named pipe IPC server (replaces WM_COPYDATA)
   // Use WM_USER as signal base (Milkwave uses WM_USER+N, not WM_APP+N)
   g_pipeServer.Start(hwnd, WM_USER_PIPE_IPC_MESSAGE, WM_USER);
+
+  // Right-click on the taskbar button -> "Toggle Desktop Mode"
+  BuildDesktopModeJumpList();
 
   // Start TCP network server if enabled
   if (g_plugin.m_TcpEnabled) {
@@ -2106,7 +2517,42 @@ void SeTranslatorFunction(unsigned int code, _EXCEPTION_POINTERS* ep) {
   }
 }
 
+// A click on the taskbar's "Toggle Desktop Mode" task starts a second process
+// with "--toggle-desktop-mode=<pid>". Ask the running instance to toggle
+// through its pipe and exit without starting another visualizer.
+static bool ForwardDesktopModeToggle(LPCSTR cmdLine) {
+  if (cmdLine == nullptr) {
+    return false;
+  }
+  const char* marker = strstr(cmdLine, "--toggle-desktop-mode=");
+  if (marker == nullptr) {
+    return false;
+  }
+  marker += strlen("--toggle-desktop-mode=");
+  DWORD targetPid = (DWORD)strtoul(marker, nullptr, 10);
+  if (targetPid != 0) {
+    wchar_t pipeName[64];
+    swprintf_s(pipeName, L"\\\\.\\pipe\\Milkwave_%u", targetPid);
+    HANDLE hPipe = CreateFileW(pipeName, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+    if (hPipe != INVALID_HANDLE_VALUE) {
+      const wchar_t message[] = L"SIGNAL|DESKTOP_MODE";
+      DWORD written = 0;
+      WriteFile(hPipe, message, (DWORD)(wcslen(message) * sizeof(wchar_t)), &written, nullptr);
+      CloseHandle(hPipe);
+    }
+  }
+  return true;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
+  if (ForwardDesktopModeToggle(szCmdLine)) {
+    return 0;
+  }
+
+  // Stable application ID so the taskbar treats the render window, the Desktop
+  // Mode controller window and the jump list tasks as one application.
+  SetCurrentProcessExplicitAppUserModelID(kMilkwaveAppUserModelId);
+
   std::set_terminate(MilkwaveTerminateHandler);
   api_orig_hinstance = hInstance;
 

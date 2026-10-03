@@ -1,5 +1,9 @@
 ## v4.2 (unreleased)
 
+* Visualizer: Desktop Mode (Ctrl+F9) renders the visualizer behind the desktop icons, replacing the wallpaper
+* Visualizer: Desktop Mode keeps the visualizer in the taskbar; the taskbar right-click menu offers "Toggle Desktop Mode"
+* Visualizer: Borderless Fullscreen is no longer bound to a hotkey (still available as right-click function of Remote button 14)
+* Remote: Button 15 now defaults to Desktop Mode (Ctrl+F9) instead of Transparency
 * Remote: Preset change and info buttons with improved locking logic dependency
 * Remote: Command button panel configurable via the [Buttons] section of _settings.ini_ (captions, commands and right-click commands with tooltips)
 * Remote: Command button functions assignable from a context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click, including a "Clear Function" entry) listing ready-made Visualizer functions

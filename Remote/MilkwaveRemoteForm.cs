@@ -3007,7 +3007,7 @@ namespace MilkwaveRemote {
         return;
       }
 
-      config.Caption = $"{option.Name}\n({option.Shortcut})";
+      config.Caption = option.Shortcut.Length > 0 ? $"{option.Name}\n({option.Shortcut})" : option.Name;
       config.Command = option.Command;
       PersistButtonSetting(index, false);
       RestoreCommandButtonAppearance(index);
@@ -3077,7 +3077,7 @@ namespace MilkwaveRemote {
         new CommandButtonConfig { Caption = "Sprite/Msg Mode\n(K)", Command = "SEND=0x4B" },
         new CommandButtonConfig { Caption = "Clear Sprite/Msg\n(Delete)", Command = "SEND=0x2E" },
         new CommandButtonConfig { Caption = "Watermark Mode\n(Ctrl+Shift+F9)", Command = "SIGNAL|WATERMARK", RightClickCaption = "Borderless Fullscreen", RightClickCommand = "SIGNAL|BORDERLESS_FS" },
-        new CommandButtonConfig { Caption = "Transparency\n(F12)", Command = "SEND=0x7B" },
+        new CommandButtonConfig { Caption = "Desktop Mode\n(Ctrl+F9)", Command = "SIGNAL|DESKTOP_MODE" },
       };
     }
 
@@ -3092,7 +3092,8 @@ namespace MilkwaveRemote {
     private static readonly CommandFunctionOption[] CommandFunctionCatalog = {
       new CommandFunctionOption { Category = "Window", Name = "Fullscreen", Shortcut = "Alt+Enter", Command = "SIGNAL|FULLSCREEN" },
       new CommandFunctionOption { Category = "Window", Name = "Borderless", Shortcut = "F2", Command = "SEND=0x71" },
-      new CommandFunctionOption { Category = "Window", Name = "Borderless Fullscreen", Shortcut = "Ctrl+Shift+F9", Command = "SIGNAL|BORDERLESS_FS" },
+      new CommandFunctionOption { Category = "Window", Name = "Borderless Fullscreen", Shortcut = "", Command = "SIGNAL|BORDERLESS_FS" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode", Shortcut = "Ctrl+F9", Command = "SIGNAL|DESKTOP_MODE" },
       new CommandFunctionOption { Category = "Window", Name = "Always On Top", Shortcut = "F7", Command = "SEND=0x76" },
       new CommandFunctionOption { Category = "Window", Name = "Clickthrough", Shortcut = "F9", Command = "SEND=0x78" },
       new CommandFunctionOption { Category = "Display", Name = "Watermark Mode", Shortcut = "Ctrl+Shift+F9", Command = "SIGNAL|WATERMARK" },

@@ -426,6 +426,12 @@ class CPlugin : public CPluginShell {
   int m_WindowFixedWidth = 960;
   int m_WindowFixedHeight = 540;
 
+  // Desktop Mode (window re-parented behind the desktop icons)
+  bool m_bDesktopMode = false;
+  RECT m_desktop_lastRect = {0};
+  LONG_PTR m_desktop_lastStyle = 0;
+  LONG_PTR m_desktop_lastStyleEx = 0;
+
   // Preset mouse interaction controls
   bool m_bEnableMouseInteraction = true;
   float m_mouseX = 0.5;
@@ -671,6 +677,9 @@ class CPlugin : public CPluginShell {
 #define WM_USER_FULLSCREEN WM_USER + 160
 #define WM_USER_WATERMARK WM_USER + 161
 #define WM_USER_BORDERLESS_FS WM_USER + 162
+#define WM_USER_DESKTOP_MODE WM_USER + 169
+// System-wide hotkey registered while Desktop Mode is active (Ctrl+F9)
+#define MW_HOTKEY_DESKTOP_MODE 0xBD01
 #define WM_USER_PIPE_IPC_MESSAGE WM_USER + 200  // lParam = heap-allocated wchar_t* from pipe server
 
   FFT myfft;
