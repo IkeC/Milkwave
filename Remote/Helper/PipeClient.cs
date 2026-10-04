@@ -186,6 +186,7 @@ namespace MilkwaveRemote.Helper {
 
     private void ReadLoop(CancellationToken ct) {
       byte[] buffer = new byte[65536]; // 64KB buffer
+      var pending = new List<byte>(8192);
 
       try {
         while (!ct.IsCancellationRequested && _pipe != null && _pipe.IsConnected) {
@@ -203,14 +204,35 @@ namespace MilkwaveRemote.Helper {
           if (bytesRead == 0)
             break; // pipe closed
 
-          // Decode UTF-16 message (strip null terminator if present)
-          string message = Encoding.Unicode.GetString(buffer, 0, bytesRead).TrimEnd('\0');
-          if (!string.IsNullOrEmpty(message)) {
-            try {
-              MessageReceived?.Invoke(message);
-            } catch {
-              // Don't let handler exceptions kill the read loop
+          // Messages are UTF-16 and terminated by '\0', but a single read can return
+          // several messages or only part of one. Reassemble here: a partial message would
+          // otherwise reach the form with empty values (eg. a numeric field parsing '').
+          for (int i = 0; i < bytesRead; i++) {
+            pending.Add(buffer[i]);
+          }
+
+          int start = 0;
+          for (int i = 0; i + 1 < pending.Count; i += 2) {
+            if (pending[i] != 0 || pending[i + 1] != 0) {
+              continue;
             }
+            if (i > start) {
+              string message = Encoding.Unicode.GetString(pending.GetRange(start, i - start).ToArray());
+              if (!string.IsNullOrEmpty(message)) {
+                try {
+                  MessageReceived?.Invoke(message);
+                } catch {
+                  // Don't let handler exceptions kill the read loop
+                }
+              }
+            }
+            start = i + 2;
+          }
+
+          if (start > 0) {
+            pending.RemoveRange(0, start);
+          } else if (pending.Count > 4 * 1024 * 1024) {
+            pending.Clear(); // never received a terminator, drop the garbage
           }
         }
       } catch {

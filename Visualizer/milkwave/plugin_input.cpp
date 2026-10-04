@@ -36,14 +36,13 @@ void ToggleTransparency(HWND hwnd) {
   int width = rect.right - rect.left;
   int height = rect.bottom - rect.top;
 
-  LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-
-  // Enable the layered window attribute without affecting other styles
-  exStyle |= WS_EX_LAYERED;
-  SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
-
-  SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);  // Redraws the window to fix the transparency mode issue for Windows 7, 8 and 8.1.
   if (TranspaMode) {
+    // The colour key needs the layered style
+    LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+    exStyle |= WS_EX_LAYERED;
+    SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+
+    SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);  // Redraws the window to fix the transparency mode issue for Windows 7, 8 and 8.1.
     // Disable window transition animations while in transparent/color-key mode
     BOOL fDisable = TRUE;
     DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &fDisable, sizeof(fDisable));
@@ -54,7 +53,10 @@ void ToggleTransparency(HWND hwnd) {
     // Re-enable window transition animations when leaving transparent mode
     BOOL fDisable = FALSE;
     DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &fDisable, sizeof(fDisable));
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_ALPHA);
+    // Leaving the colour key applies the current opacity again, which also drops the
+    // layered style when the window does not need it any more (100% opacity, no
+    // click-through) - otherwise the window would stay blended with the desktop.
+    g_plugin.ApplyWindowOpacity(hwnd, g_plugin.fOpacity);
     DragAcceptFiles(hwnd, TRUE);
   }
 }
@@ -68,40 +70,7 @@ void CPlugin::SetOpacity(HWND hwnd) {
     g_plugin.m_WindowWatermarkModeOpacity = fOpacity;
   }
 
-  // Retrieve the current extended window style
-  LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-
-  // Check if the window is currently in clickthrough mode
-  bool isClickthrough = (exStyle & WS_EX_TRANSPARENT) != 0;
-
-  // Ensure the window is layered (required for transparency)
-  if (!(exStyle & WS_EX_LAYERED)) {
-    exStyle |= WS_EX_LAYERED;
-    SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
-  }
-
-  // Set the new opacity
-  BYTE alpha = static_cast<BYTE>(fOpacity * 255);  // Convert opacity (0.0 to 1.0) to alpha (0 to 255)
-  if (!SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)) {
-    DWORD error = GetLastError();
-    printf("Failed to set window opacity. Error: %lu\n", error);
-  }
-
-  // Modify the clickthrough state
-  if (isClickthrough) {
-    exStyle |= WS_EX_TRANSPARENT;
-  } else {
-    exStyle &= ~WS_EX_TRANSPARENT;
-  }
-
-  // Reapply the extended window styles
-  SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
-
-  // Reapply the alpha value after modifying the extended styles
-  if (!SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)) {
-    DWORD error = GetLastError();
-    printf("Failed to reapply window opacity. Error: %lu\n", error);
-  }
+  ApplyWindowOpacity(hwnd, fOpacity);
 
   int display = static_cast<int>(std::ceil(100 * fOpacity));
   wchar_t buf[1024];
@@ -109,6 +78,41 @@ void CPlugin::SetOpacity(HWND hwnd) {
   g_plugin.AddNotification(buf);
 
   SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
+}
+
+// True while the window still needs the layered style: an opacity below 100%, Transparency
+// Mode (colour key) or click-through. Without any of them the window is a plain opaque
+// window, which is also what makes leaving Desktop Mode/Watermark Mode look opaque again.
+static bool NeedsLayeredStyle(HWND hwnd, float opacity) {
+  // Desktop Mode always stays layered: the wallpaper showing through the preset is part
+  // of the look (and the mode switches the window to a WorkerW child).
+  if (opacity < 1.0f || TranspaMode || g_plugin.m_bDesktopMode) {
+    return true;
+  }
+
+  // Click-through only works on a layered window.
+  return (GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_TRANSPARENT) != 0;
+}
+
+void CPlugin::ApplyWindowOpacity(HWND hwnd, float opacity) {
+  const bool layered = (GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_LAYERED) != 0;
+  const bool needsLayered = NeedsLayeredStyle(hwnd, opacity);
+
+  if (needsLayered != layered) {
+    LONG_PTR exStyle = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+    exStyle = needsLayered ? (exStyle | WS_EX_LAYERED) : (exStyle & ~WS_EX_LAYERED);
+    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, exStyle);
+    // The style change only reaches DWM after the frame has been updated.
+    SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+  }
+
+  if (!needsLayered) {
+    return;
+  }
+
+  BYTE alpha = static_cast<BYTE>(opacity * 255);
+  SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA);
 }
 
 void ToggleWindowOpacity(HWND hwnd, bool bDown) {

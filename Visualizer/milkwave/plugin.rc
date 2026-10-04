@@ -91,7 +91,7 @@ BLOCK "StringFileInfo"
 BEGIN
 BLOCK "040904b0"
 BEGIN
-VALUE "CompanyName", "Milkwave Developers"
+VALUE "CompanyName", "IkeC"
 VALUE "FileDescription", "Milkwave Visualizer"
 VALUE "FileVersion", "4.2.0.0"
 VALUE "InternalName", "Milkwave"

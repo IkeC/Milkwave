@@ -194,6 +194,10 @@ _locale_t g_use_C_locale;
 char keyMappings[8];
 
 #define IDT_TCP_POLL 42
+// DWM only discards the window surface it composited for Desktop Mode when the window is
+// hidden and shown again in separate composition cycles, so the show is delayed by a timer.
+#define IDT_DESKTOP_MODE_RESHOW 43
+#define DESKTOP_MODE_RESHOW_DELAY_MS 120
 
 // SPOUT
 // ===============================================
@@ -219,7 +223,7 @@ static bool desktopModeHotkeyRegistered = false;
 static HWND desktopWorkerW = nullptr;
 static float desktopModePreviousOpacity = 1.0f;
 static bool desktopModePreviousClickthrough = false;
-static bool desktopModePreviousTranspaMode = false;
+static bool desktopModePreviousColorKey = false;  // Transparency Mode (colour key) was in effect
 
 static HWND desktopControllerWindow = nullptr;
 static HWND desktopControllerOwner = nullptr;
@@ -239,7 +243,10 @@ static const UINT kThumbButtonNextPreset = 5;
 static UINT taskbarButtonCreatedMessage = 0;
 static ITaskbarList3* taskbarList = nullptr;
 static HWND renderWindow = nullptr;  // main visualizer window, set once it exists
-static bool desktopModeOpacityPending = false;  // re-apply the Desktop Mode alpha on the next frame
+// A device reset or a re-parent leaves layered windows opaque, so the opacity of the
+// active mode is applied again on the next rendered frame (see ToggleDesktopMode and
+// SafeResetDevice).
+static bool opacityReapplyPending = false;
 // Duration of the pinned song info display (m_bShowSongInfo): large enough to never
 // expire while the app is running.
 static constexpr float kSongInfoPermanentSeconds = 1.0e9f;
@@ -381,17 +388,25 @@ void DeinitD3d() {
   }
 }
 
+// True while the window uses the colour key (Transparency Mode: black becomes
+// transparent) instead of an alpha value.
+static bool IsWindowColorKey(HWND hWnd) {
+  COLORREF colorKey = 0;
+  BYTE alpha = 255;
+  DWORD flags = 0;
+  return GetLayeredWindowAttributes(hWnd, &colorKey, &alpha, &flags) && (flags & LWA_COLORKEY) != 0;
+}
+
 // Safe D3D device Reset with error logging. Returns true on success.
 static bool SafeResetDevice() {
   if (!pD3DDevice) return false;
   HRESULT hr = pD3DDevice->Reset(&g_plugin.d3dPp);
   if (SUCCEEDED(hr)) {
-    // A reset leaves layered windows opaque, so the Desktop Mode opacity has to be
-    // applied again (see ToggleDesktopMode).
-    if (g_plugin.m_bDesktopMode && g_plugin.m_WindowDesktopModeOpacity < 1.0f && renderWindow != nullptr) {
-      SetLayeredWindowAttributes(
-          renderWindow, 0, static_cast<BYTE>(g_plugin.m_WindowDesktopModeOpacity * 255), LWA_ALPHA);
-      desktopModeOpacityPending = true;
+    // A reset leaves layered windows opaque, so the opacity of the active mode has to
+    // be applied again (Desktop Mode and the normal window both use fOpacity).
+    if (renderWindow != nullptr && IsWindow(renderWindow)) {
+      g_plugin.ApplyWindowOpacity(renderWindow, g_plugin.fOpacity);
+      opacityReapplyPending = true;
     }
     return true;
   }
@@ -456,28 +471,23 @@ void ToggleStretch(HWND hwnd) {
 
 static void ToggleClickThrough(HWND hWnd) {
   try {
-    // Retrieve the current alpha value
-    BYTE currentAlpha = 255;  // Default to fully opaque
-    DWORD flags = 0;
-    COLORREF colorKey = 0;
-    if (GetLayeredWindowAttributes(hWnd, &colorKey, &currentAlpha, &flags)) {
-      // Successfully retrieved the current alpha value
-    }
-
+    // Make the window click-through or normal, keeping the opacity that is set for the
+    // active mode. Reading the current attributes instead would re-apply a stale value,
+    // eg. the Desktop Mode opacity left behind by a mode switch.
+    LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
     if (clickthrough) {
-      // Make the window normal while retaining WS_EX_LAYERED
-      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
       style &= ~WS_EX_TRANSPARENT;  // Remove click-through
       SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
-      SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+      clickthrough = false;
+      // Click-through is the only reason for the layered style in this mode, so drop it
+      // again when the window does not need it any more.
+      g_plugin.ApplyWindowOpacity(hWnd, g_plugin.fOpacity);
     } else {
-      // Make the window click-through
-      LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
       style |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
       SetWindowLongPtr(hWnd, GWL_EXSTYLE, style);
-      SetLayeredWindowAttributes(hWnd, 0, currentAlpha, LWA_ALPHA);
+      clickthrough = true;
+      SetLayeredWindowAttributes(hWnd, 0, static_cast<BYTE>(g_plugin.fOpacity * 255), LWA_ALPHA);
     }
-    clickthrough = !clickthrough;
   } catch (const std::exception& e) {
     milkwave.LogException(L"ToggleClickThrough", e, true);
   }
@@ -1444,7 +1454,10 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       g_plugin.m_desktop_lastStyleEx = GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
       desktopModePreviousOpacity = g_plugin.fOpacity;
       desktopModePreviousClickthrough = clickthrough;
-      desktopModePreviousTranspaMode = TranspaMode;
+      // The TranspaMode flag can lag behind the window (changing the opacity switches the
+      // window back to alpha transparency), so the window state decides.
+      desktopModePreviousColorKey = IsWindowColorKey(hWnd);
+      TranspaMode = desktopModePreviousColorKey;
 
       if (clickthrough) {
         ToggleClickThrough(hWnd);
@@ -1461,6 +1474,8 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
 
       SetWindowLongPtrW(hWnd, GWL_STYLE, WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS);
       SetWindowLongPtrW(hWnd, GWL_EXSTYLE, WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_LAYERED);
+      // Set before the opacity is applied, so that it is stored as the Desktop Mode value.
+      g_plugin.m_bDesktopMode = true;
       SetParent(hWnd, desktopWorkerW);
 
       const int x = GetSystemMetrics(SM_XVIRTUALSCREEN);
@@ -1480,14 +1495,13 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       // takes effect after the value is changed again.
       if (g_plugin.m_WindowDesktopModeOpacity < 1.0f) {
         g_plugin.SetOpacity(hWnd);  // also updates the Remote and shows the percentage
-        desktopModeOpacityPending = true;
       } else {
-        SetLayeredWindowAttributes(hWnd, 0, 255, LWA_ALPHA);
+        g_plugin.ApplyWindowOpacity(hWnd, 1.0f);
       }
+      opacityReapplyPending = true;
 
       RefreshDesktopIcons(progman);
 
-      g_plugin.m_bDesktopMode = true;
       if (updatePersistedState) {
         g_plugin.m_WindowDesktopMode = true;
       }
@@ -1495,6 +1509,15 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       g_plugin.AddNotification(L"Desktop Mode enabled (Ctrl+F9 to exit)");
     } else {
       UnregisterDesktopModeHotkey(hWnd);
+      // Leave Desktop Mode before the device reset below, so that nothing applies the
+      // Desktop Mode alpha after the switch back, and restore the normal opacity first.
+      g_plugin.m_bDesktopMode = false;
+      if (updatePersistedState) {
+        g_plugin.m_WindowDesktopMode = false;
+      }
+      const bool opacityChanged = (g_plugin.fOpacity != desktopModePreviousOpacity);
+      g_plugin.fOpacity = desktopModePreviousOpacity;
+
       SetParent(hWnd, NULL);
 
       SetWindowLongPtrW(hWnd, GWL_STYLE, g_plugin.m_desktop_lastStyle);
@@ -1505,12 +1528,7 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       g_plugin.SetVariableBackBuffer(width, height);
       SafeResetDevice();
       SetWindowPos(hWnd, HWND_TOP, g_plugin.m_desktop_lastRect.left, g_plugin.m_desktop_lastRect.top,
-                   width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-
-      g_plugin.m_bDesktopMode = false;
-      if (updatePersistedState) {
-        g_plugin.m_WindowDesktopMode = false;
-      }
+                   width, height, SWP_FRAMECHANGED);
 
       // The render window is back in the taskbar, so the controller can go.
       DestroyDesktopControllerWindow();
@@ -1522,14 +1540,44 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       if (desktopModePreviousClickthrough && !clickthrough) {
         ToggleClickThrough(hWnd);
       }
-      if (g_plugin.fOpacity != desktopModePreviousOpacity) {
-        g_plugin.fOpacity = desktopModePreviousOpacity;
-        g_plugin.SetOpacity(hWnd);
+      // The Desktop Mode alpha must not survive the switch back, even when the normal
+      // opacity happens to have the same value. When the restored state does not need the
+      // layered style any more (100% opacity, no click-through, no colour key), the style
+      // is dropped, which is what makes the window opaque again instead of leaving it
+      // blended with the desktop.
+      g_plugin.ApplyWindowOpacity(hWnd, g_plugin.fOpacity);
+      if (opacityChanged) {
+        g_plugin.SetOpacity(hWnd);  // also updates the Remote and shows the percentage
       }
-      if (desktopModePreviousTranspaMode && !TranspaMode) {
+      // Transparency Mode (colour key: black becomes transparent) is only restored when
+      // the window really used it before Desktop Mode, or when it was switched on while
+      // in Desktop Mode. Otherwise the window keeps the alpha transparency that matches
+      // the opacity setting.
+      if (desktopModePreviousColorKey || TranspaMode) {
         TranspaMode = true;
         ToggleTransparency(hWnd);
       }
+
+      // The Desktop Mode alpha is baked into the window surface while the window is layered,
+      // and it survives everything that happened afterwards so far: hiding/showing, the
+      // device reset, style changes and further opacity changes - the window stayed
+      // translucent even when a higher opacity was set again. Dropping the layered style
+      // *before* the window is hidden makes Windows build the next surface without that
+      // alpha; the opacity (and with it the layered style for values below 100%) is applied
+      // again once the window is back, see IDT_DESKTOP_MODE_RESHOW.
+      LONG_PTR exStyle = GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
+      if ((exStyle & WS_EX_LAYERED) != 0) {
+        SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle & ~WS_EX_LAYERED);
+        SetWindowPos(hWnd, NULL, 0, 0, 0, 0,
+                     SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+      }
+      if (IsWindowVisible(hWnd)) {
+        ShowWindow(hWnd, SW_HIDE);
+      }
+      SetTimer(hWnd, IDT_DESKTOP_MODE_RESHOW, DESKTOP_MODE_RESHOW_DELAY_MS, NULL);
+      // Only now: while the window is hidden the render thread stalls on presenting to it,
+      // so this lands after the window has been shown again.
+      opacityReapplyPending = true;
 
       g_plugin.AddNotification(L"Desktop Mode disabled");
 
@@ -1627,6 +1675,27 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     case WM_TIMER: {
       if (wParam == IDT_TCP_POLL) {
         g_tcpServer.Poll();
+        return 0;
+      }
+      if (wParam == IDT_DESKTOP_MODE_RESHOW) {
+        KillTimer(hWnd, IDT_DESKTOP_MODE_RESHOW);
+        RECT rect;
+        if (!g_plugin.m_bDesktopMode && GetWindowRect(hWnd, &rect)) {
+          ShowWindow(hWnd, SW_SHOWNOACTIVATE);
+          // The window was hidden while frames were presented to it, so the swap chain has
+          // to be re-created. Same sequence as leaving full screen, which is known to make
+          // the window draw again after its surface was replaced. The back buffer size is
+          // already the client size the resize handler set, so it is left alone here.
+          SafeResetDevice();
+          SetWindowLongPtrW(hWnd, GWL_STYLE, g_plugin.m_desktop_lastStyle);
+          // Shown without the layered style: the Desktop Mode alpha must not be baked into
+          // the surface that is being built now. The opacity re-apply below brings the style
+          // back when the restored state needs it.
+          SetWindowLongPtrW(hWnd, GWL_EXSTYLE, g_plugin.m_desktop_lastStyleEx & ~WS_EX_LAYERED);
+          SetWindowPos(hWnd, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+                       SWP_FRAMECHANGED | SWP_DRAWFRAME | SWP_NOACTIVATE);
+          g_plugin.ApplyWindowOpacity(hWnd, g_plugin.fOpacity);
+        }
         return 0;
       }
       break;
@@ -1963,7 +2032,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     }
 
     case WM_SYSKEYDOWN: {
-      if (wParam == VK_F4) {  // SPOUT ??
+      // Alt+F4 closes the visualizer. Some keyboards report a plain F4 as a system key as
+      // well, so F4 without the Alt context bit is passed on instead of closing the window
+      // (the plugin then toggles the preset info display).
+      if (wParam == VK_F4 && (lParam & (1 << 29)) != 0) {
         PostQuitMessage(0);
       } else if (wParam == 'S' || wParam == 's') {
         ToggleStretch(hWnd);
@@ -2201,13 +2273,12 @@ void RenderFrame() {
       (unsigned char*)pcmLeftOut,
       (unsigned char*)pcmRightOut);
 
-  // Re-parenting the render window or resetting the D3D device can drop the
-  // layered alpha, so the Desktop Mode opacity is applied again once rendering
-  // is running (this is what makes the saved value survive a restart).
-  if (desktopModeOpacityPending) {
-    desktopModeOpacityPending = false;
-    if (g_plugin.m_bDesktopMode && renderWindow != nullptr && g_plugin.m_WindowDesktopModeOpacity < 1.0f) {
-      g_plugin.SetOpacity(renderWindow);
+  // A device reset or the re-parenting of the window drops the layered alpha, so the
+  // opacity of the active mode is applied again once rendering is running.
+  if (opacityReapplyPending) {
+    opacityReapplyPending = false;
+    if (renderWindow != nullptr && IsWindow(renderWindow)) {
+      g_plugin.ApplyWindowOpacity(renderWindow, g_plugin.fOpacity);
     }
   }
 
@@ -2770,8 +2841,9 @@ unsigned __stdcall DoSetup(void* param) {
       return -1;
     }
 
-    // Open precompile.txt
-    std::ifstream file("precompile.txt");
+    // Open precompile.txt (always next to the executable, see the shader cache)
+    fs::path precompilePath = fs::path(g_plugin.m_szBaseDir) / L"precompile.txt";
+    std::ifstream file(precompilePath.wstring().c_str());
     if (!file.is_open()) {
       milkwave.LogInfo(L"Failed to open precompile.txt");
       return -1;
@@ -2825,7 +2897,9 @@ unsigned __stdcall DoSetup(void* param) {
 
       // Check for wildcard
       if (!wLine.empty() && wLine.back() == L'*') {
-        std::wstring dirPath = wLine.substr(0, line.length() - 1);  // Remove '*'
+        // Relative directories are relative to the application directory (see PrecompilePresetShaders)
+        fs::path dirPath = wLine.substr(0, wLine.length() - 1);  // Remove '*'
+        if (dirPath.is_relative()) dirPath = fs::path(g_plugin.m_szBaseDir) / dirPath;
         if (std::filesystem::exists(dirPath)) {
           for (const auto& entry : std::filesystem::directory_iterator(dirPath)) {
             if (entry.is_regular_file()) {

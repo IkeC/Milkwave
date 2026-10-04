@@ -1036,6 +1036,9 @@ class CPlugin : public CPluginShell {
   virtual void MyRenderUI(int* upper_left_corner_y, int* upper_right_corner_y, int* lower_left_corner_y, int* lower_right_corner_y, int xL, int xR);
   void ToggleAlwaysOnTop(HWND hwnd);
   void SetOpacity(HWND hwnd);
+  // Applies an opacity to the window, adding or removing the layered style as needed so
+  // that a fully opaque window really is a plain (unlayered) window.
+  void ApplyWindowOpacity(HWND hwnd, float opacity);
   bool IsBorderlessFullscreen(HWND hWnd);
   int GetDesktopModeTaskbarHeight();  // taskbar covering the bottom of the window, in canvas pixels (0 outside Desktop Mode)
   virtual LRESULT MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);

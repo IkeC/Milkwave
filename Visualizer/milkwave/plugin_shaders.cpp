@@ -10,6 +10,7 @@
 #include "shell_defines.h"
 #include "wasabi.h"
 #include <cstdint>
+#include <filesystem>
 
 void VShaderInfo::Clear() {
   SafeRelease(ptr);
@@ -1129,19 +1130,33 @@ void CPlugin::GenCompPShaderText(char* szShaderText, float brightness, float ve_
   p += sprintf(p, "}%c", LF);
 }
 
+static std::string GetShaderCacheFileName(char* prefix, uint32_t shaderFlags, uint32_t checksum) {
+  std::ostringstream fileName;
+  fileName << prefix << "-" << std::hex << std::uppercase << shaderFlags << "-" << checksum << ".shader";
+  return fileName.str();
+}
+
+// The shader cache always lives in the application directory, next to the executable and
+// settings.ini - regardless of the working directory the app was launched from.
+static std::filesystem::path GetShaderCacheFilePath(const wchar_t* baseDir, const std::string& fileName) {
+  std::filesystem::path cacheDir = (baseDir != nullptr && baseDir[0] != L'\0') ? std::filesystem::path(baseDir) : std::filesystem::path(L".");
+  return cacheDir / L"cache" / fileName;
+}
+
 void CPlugin::SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t checksum, char* prefix) {
   if (!pShaderByteCode || !checksum) return;
 
+  std::filesystem::path filePath = GetShaderCacheFilePath(m_szBaseDir, GetShaderCacheFileName(prefix, m_dwShaderFlags, checksum));
+
   // Ensure the "cache" directory exists
-  const char* cacheDir = "cache";
-  if (_mkdir(cacheDir) != 0 && errno != EEXIST) {
-    std::cerr << "Failed to create or access cache directory: " << cacheDir << std::endl;
+  try {
+    std::filesystem::create_directories(filePath.parent_path());
+  } catch (const std::filesystem::filesystem_error& e) {
+    std::cerr << "Failed to create or access cache directory: " << e.what() << std::endl;
     return;
   }
-  std::ostringstream filePath;
-  filePath << cacheDir << "\\" << prefix << "-" << std::hex << std::uppercase << m_dwShaderFlags << "-" << checksum << ".shader";
 
-  std::ofstream outFile(filePath.str(), std::ios::binary);
+  std::ofstream outFile(filePath.wstring().c_str(), std::ios::binary);
   if (outFile.is_open()) {
     outFile.write(
         static_cast<const char*>(pShaderByteCode->GetBufferPointer()),
@@ -1154,10 +1169,9 @@ void CPlugin::SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t ch
 ID3DXBuffer* CPlugin::LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix) {
   ID3DXBuffer* pBuffer = nullptr;
 
-  std::ostringstream filePath;
-  filePath << "cache\\" << prefix << "-" << std::hex << std::uppercase << m_dwShaderFlags << "-" << checksum << ".shader";
+  std::filesystem::path filePath = GetShaderCacheFilePath(m_szBaseDir, GetShaderCacheFileName(prefix, m_dwShaderFlags, checksum));
 
-  std::ifstream inFile(filePath.str(), std::ios::binary | std::ios::ate);
+  std::ifstream inFile(filePath.wstring().c_str(), std::ios::binary | std::ios::ate);
   if (!inFile.is_open()) return nullptr;
 
   std::streamsize size = inFile.tellg();
