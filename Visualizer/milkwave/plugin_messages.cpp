@@ -641,6 +641,8 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.AddNotification(enabled ? L"Preset Invert enabled" : L"Preset Invert disabled");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
+  } else if (wcsncmp(sMessage, L"QUICKSAVE2", 10) == 0) {
+    g_plugin.SaveCurrentPresetToQuicksave(true);
   } else if (wcsncmp(sMessage, L"QUICKSAVE", 9) == 0) {
     g_plugin.SaveCurrentPresetToQuicksave(false);
   } else if (wcsncmp(sMessage, L"CONFIG", 6) == 0) {

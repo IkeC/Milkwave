@@ -2963,6 +2963,12 @@ namespace MilkwaveRemote {
       ContextMenuStrip menu = commandFunctionMenu;
       menu.Items.Clear();
 
+      // Header naming the gesture being configured; not selectable.
+      ToolStripMenuItem headerItem = new ToolStripMenuItem(forRightClick ? "Set Right Mouse Button Function" : "Set Left Mouse Button Function");
+      headerItem.Enabled = false;
+      menu.Items.Add(headerItem);
+      menu.Items.Add(new ToolStripSeparator());
+
       foreach (string category in categories) {
         // Escape '&': ToolStripMenuItem treats it as an access-key marker.
         ToolStripMenuItem categoryItem = new ToolStripMenuItem(category.Replace("&", "&&"));
@@ -3073,10 +3079,10 @@ namespace MilkwaveRemote {
         new CommandButtonConfig { Caption = "Preset Info\n(F4)", Command = "SEND=0x73" },
         new CommandButtonConfig { Caption = "Always On Top\n(F7)", Command = "SEND=0x76" },
         new CommandButtonConfig { Caption = "Toggle Spout\n(F10)", Command = "SEND=0x79" },
-        new CommandButtonConfig { Caption = "Fullscreen\n(Alt+Enter)", Command = "SIGNAL|FULLSCREEN" },
+        new CommandButtonConfig { Caption = "Fullscreen\n(Alt+Enter)", Command = "SIGNAL|FULLSCREEN", RightClickCaption = "Borderless Fullscreen", RightClickCommand = "SIGNAL|BORDERLESS_FS" },
         new CommandButtonConfig { Caption = "Sprite/Msg Mode\n(K)", Command = "SEND=0x4B" },
         new CommandButtonConfig { Caption = "Clear Sprite/Msg\n(Delete)", Command = "SEND=0x2E", RightClickCaption = "Clear all Sprites", RightClickCommand = "CLEARSPRITES" },
-        new CommandButtonConfig { Caption = "Watermark Mode\n(Ctrl+Shift+F9)", Command = "SIGNAL|WATERMARK", RightClickCaption = "Borderless Fullscreen", RightClickCommand = "SIGNAL|BORDERLESS_FS" },
+        new CommandButtonConfig { Caption = "Watermark Mode\n(Ctrl+Shift+F9)", Command = "SIGNAL|WATERMARK" },
         new CommandButtonConfig { Caption = "Desktop Mode\n(Ctrl+F9)", Command = "SIGNAL|DESKTOP_MODE" },
       };
     }
@@ -3090,34 +3096,96 @@ namespace MilkwaveRemote {
 
     // Functions offered when assigning a command to a button (middle-click or Ctrl+left-click).
     private static readonly CommandFunctionOption[] CommandFunctionCatalog = {
+      // Window
       new CommandFunctionOption { Category = "Window", Name = "Fullscreen", Shortcut = "Alt+Enter", Command = "SIGNAL|FULLSCREEN" },
-      new CommandFunctionOption { Category = "Window", Name = "Borderless", Shortcut = "F2", Command = "SEND=0x71" },
-      new CommandFunctionOption { Category = "Window", Name = "Borderless Fullscreen", Shortcut = "", Command = "SIGNAL|BORDERLESS_FS" },
+      new CommandFunctionOption { Category = "Window", Name = "Borderless Window", Shortcut = "F2", Command = "SEND=0x71" },
+      new CommandFunctionOption { Category = "Window", Name = "Borderless Fullscreen", Shortcut = "Ctrl+Alt+Enter", Command = "SIGNAL|BORDERLESS_FS" },
       new CommandFunctionOption { Category = "Window", Name = "Desktop Mode", Shortcut = "Ctrl+F9", Command = "SIGNAL|DESKTOP_MODE" },
+      new CommandFunctionOption { Category = "Window", Name = "Watermark Mode", Shortcut = "Ctrl+Shift+F9", Command = "SIGNAL|WATERMARK" },
       new CommandFunctionOption { Category = "Window", Name = "Always On Top", Shortcut = "F7", Command = "SEND=0x76" },
       new CommandFunctionOption { Category = "Window", Name = "Clickthrough", Shortcut = "F9", Command = "SEND=0x78" },
-      new CommandFunctionOption { Category = "Display", Name = "Watermark Mode", Shortcut = "Ctrl+Shift+F9", Command = "SIGNAL|WATERMARK" },
-      new CommandFunctionOption { Category = "Display", Name = "Transparency", Shortcut = "F12", Command = "SEND=0x7B" },
+      new CommandFunctionOption { Category = "Window", Name = "Open Milkwave Remote", Shortcut = "F8", Command = "SIGNAL|OPEN_REMOTE" },
+      new CommandFunctionOption { Category = "Window", Name = "Toggle Spout", Shortcut = "F10", Command = "SEND=0x79" },
+      // Display
+      new CommandFunctionOption { Category = "Display", Name = "Help", Shortcut = "F1", Command = "SEND=0x70" },
+      new CommandFunctionOption { Category = "Display", Name = "Transparency Mode", Shortcut = "F12", Command = "SEND=0x7B" },
       new CommandFunctionOption { Category = "Display", Name = "Change FPS", Shortcut = "F3", Command = "SEND=0x72" },
       new CommandFunctionOption { Category = "Display", Name = "Preset Info", Shortcut = "F4", Command = "SEND=0x73" },
       new CommandFunctionOption { Category = "Display", Name = "FPS Display", Shortcut = "F5", Command = "SEND=0x74" },
       new CommandFunctionOption { Category = "Display", Name = "Rating Display", Shortcut = "F6", Command = "SEND=0x75" },
       new CommandFunctionOption { Category = "Display", Name = "Hard Cut Mode", Shortcut = "F11", Command = "SEND=0x7A" },
-      new CommandFunctionOption { Category = "Display", Name = "Sound Info", Shortcut = "N", Command = "SEND=0x4E" },
+      new CommandFunctionOption { Category = "Display", Name = "Per-Frame Monitor", Shortcut = "N", Command = "SEND=0x4E" },
+      new CommandFunctionOption { Category = "Display", Name = "Save Screenshot", Shortcut = "Ctrl+X", Command = "CAPTURE" },
+      // Presets
       new CommandFunctionOption { Category = "Presets", Name = "Next Preset", Shortcut = "Space", Command = "SEND=0x20" },
+      new CommandFunctionOption { Category = "Presets", Name = "Hard Cut to Next Preset", Shortcut = "H", Command = "SEND=0x48" },
       new CommandFunctionOption { Category = "Presets", Name = "Previous Preset", Shortcut = "Backspace", Command = "SEND=0x08" },
       new CommandFunctionOption { Category = "Presets", Name = "Preset Lock", Shortcut = "~", Command = "SEND=~" },
       new CommandFunctionOption { Category = "Presets", Name = "Random Order", Shortcut = "R", Command = "SEND=0x52" },
+      new CommandFunctionOption { Category = "Presets", Name = "Quicksave", Shortcut = "Ctrl+S", Command = "QUICKSAVE" },
+      new CommandFunctionOption { Category = "Presets", Name = "Quicksave 2", Shortcut = "Ctrl+Shift+S", Command = "QUICKSAVE2" },
+      // Track
+      new CommandFunctionOption { Category = "Track", Name = "Previous Track", Shortcut = "Z", Command = "SEND=0x5A" },
+      new CommandFunctionOption { Category = "Track", Name = "Next Track", Shortcut = "V", Command = "SEND=0x56" },
+      new CommandFunctionOption { Category = "Track", Name = "Play/Pause", Shortcut = "X", Command = "SEND=0x58" },
+      new CommandFunctionOption { Category = "Track", Name = "Stop", Shortcut = "C", Command = "SEND=0x43" },
+      new CommandFunctionOption { Category = "Track", Name = "Track Info", Shortcut = "B", Command = "SEND=0x42" },
+      // Sprites & Messages
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Sprite/Msg Mode", Shortcut = "K", Command = "SEND=0x4B" },
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Sprite/Msg", Shortcut = "Delete", Command = "SEND=0x2E" },
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear all Sprites", Shortcut = "Ctrl+K", Command = "CLEARSPRITES" },
-      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Song Info", Shortcut = "B", Command = "SEND=0x42" },
-      new CommandFunctionOption { Category = "Output", Name = "Toggle Spout", Shortcut = "F10", Command = "SEND=0x79" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Messages/Song Titles", Shortcut = "Ctrl+T", Command = "CLEARTEXTS" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Reload Messages", Shortcut = "*", Command = "SEND=*" },
+      // Wave & Warp
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Echo Zoom +", Shortcut = "Q", Command = "SEND=Q" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Echo Zoom -", Shortcut = "q", Command = "SEND=q" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Mode +", Shortcut = "w", Command = "SEND=w" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Mode -", Shortcut = "W", Command = "SEND=W" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Alpha +", Shortcut = "E", Command = "SEND=E" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Alpha -", Shortcut = "e", Command = "SEND=e" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Warp Scale +", Shortcut = "U", Command = "SEND=U" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Warp Scale -", Shortcut = "u", Command = "SEND=u" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Zoom +", Shortcut = "i", Command = "SEND=i" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Zoom -", Shortcut = "I", Command = "SEND=I" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Warp Amount +", Shortcut = "O", Command = "SEND=O" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Warp Amount -", Shortcut = "o", Command = "SEND=o" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Video Echo Alpha +", Shortcut = "P", Command = "SEND=P" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Video Echo Alpha -", Shortcut = "p", Command = "SEND=p" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Gamma +", Shortcut = "G", Command = "SEND=G" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Gamma -", Shortcut = "g", Command = "SEND=g" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Scale +", Shortcut = "J", Command = "SEND=J" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Scale -", Shortcut = "j", Command = "SEND=j" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "X Offset +", Shortcut = "]", Command = "SEND=]" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "X Offset -", Shortcut = "[", Command = "SEND=[" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Y Offset +", Shortcut = "}", Command = "SEND=}" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Y Offset -", Shortcut = "{", Command = "SEND={" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Rotation +", Shortcut = "<", Command = "SEND=<" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Rotation -", Shortcut = ">", Command = "SEND=>" },
+      // Shader
+      new CommandFunctionOption { Category = "Shader", Name = "Random Mini-Mash-Up", Shortcut = "A", Command = "SEND=0x41" },
+      new CommandFunctionOption { Category = "Shader", Name = "Toggle Shader Locks", Shortcut = "D", Command = "SEND=0x44" },
+      new CommandFunctionOption { Category = "Shader", Name = "Toggle Echo Orientation", Shortcut = "F", Command = "SEND=0x46" },
+      new CommandFunctionOption { Category = "Shader", Name = "Randomize Warp Shader", Shortcut = "!", Command = "SEND=!" },
+      new CommandFunctionOption { Category = "Shader", Name = "Randomize Comp Shader", Shortcut = "@", Command = "SEND=@" },
     };
 
     private void LoadButtonConfiguration(string settingsPath) {
       try {
         bool canPersist = File.Exists(settingsPath);
+
+        // Button 11 took over the "Borderless Fullscreen" right-click default from button 14.
+        // Move a persisted old default along so existing settings get the new layout; anything
+        // else the user assigned to button 14 stays untouched.
+        if (canPersist) {
+          string legacyRightClick = RemoteHelper.GetIniValue("Buttons", "Button14RightClick", "").Trim();
+          bool isLegacyDefault = legacyRightClick.Equals("Borderless Fullscreen|SIGNAL|BORDERLESS_FS", StringComparison.OrdinalIgnoreCase) ||
+                                 legacyRightClick.Equals("SIGNAL|BORDERLESS_FS", StringComparison.OrdinalIgnoreCase);
+          if (isLegacyDefault && string.IsNullOrWhiteSpace(RemoteHelper.GetIniValue("Buttons", "Button11RightClick", ""))) {
+            RemoteHelper.SetIniValue("Buttons", "Button11RightClick", legacyRightClick);
+            RemoteHelper.SetIniValue("Buttons", "Button14RightClick", "none");
+          }
+        }
+
         for (int i = 0; i < commandButtonConfigs.Length; i++) {
           string captionKey = "Button" + (i + 1).ToString(CultureInfo.InvariantCulture);
           string rightClickKey = captionKey + "RightClick";

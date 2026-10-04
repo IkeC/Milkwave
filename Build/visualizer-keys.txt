@@ -1,6 +1,7 @@
 Visualizer Help Menu (F1) - Page 1
 
 ALT + ENTER             Toggle fullscreen (or double-click)
+CTRL + ALT + ENTER      Toggle borderless fullscreen
 ALT + S                 Toggle multiple monitor stretch
 SHIFT + UP / DOWN       Increase/decrease window opacity (or mousewheel)
                         

@@ -2040,7 +2040,12 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       } else if (wParam == 'S' || wParam == 's') {
         ToggleStretch(hWnd);
       } else if (wParam == VK_RETURN) {
-        ToggleFullScreen(hWnd);
+        // Ctrl+Alt+Enter toggles borderless fullscreen; Alt+Enter the exclusive fullscreen.
+        if (GetKeyState(VK_CONTROL) & 0x8000) {
+          ToggleBorderlessFullscreen(hWnd, false);
+        } else {
+          ToggleFullScreen(hWnd);
+        }
       } else {
         g_plugin.PluginShellWindowProc(hWnd, uMsg, wParam, lParam);
       }
