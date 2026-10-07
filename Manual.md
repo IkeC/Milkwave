@@ -237,6 +237,16 @@ Here are some common terms that cannot be converted automatically and need to be
 | `int ix = i & 1` (bitwise) | `int ix = i % 2` |
 | `int yx = y >> 1` (bitwise) | `int yx = y / 2` |
 | `if (i==0) return` (asymetric returns) | Put subsequent code in else branch: `if (i==0) {...} else {...} return` |
+| `mul(a, b, c)` (three arguments) | Nest the calls: `mul(mul(a, b), c)` |
+| `line(...)` (function name) | `line` is a reserved HLSL word - rename it (e.g. `lineSeg`) |
+| Heavy loops with many function calls | The legacy compiler unrolls them and can take minutes or hang. Start the loop with `for (int i = min(frame,0); ...)` to keep it rolled, or reduce the iteration count |
+| `texture(iChannel0, p)` inside a loop | Very slow to compile (gradient instruction in a loop). Replace it with procedural noise or a hash |
+| `float3 arr[N];` filled at runtime | The legacy compiler rejects arrays assigned in a function (`X3017`). Use a helper with `if`/`else if` chains returning the values instead |
+| `float3 col = vec3(0.7,...)*someGlobal;` (global) | Global initializers must be literals (`X3011`). Initialize with a literal or assign the value at the start of `shader_body` |
+| `Foo f = Foo(a, b);` (struct) | Struct constructors are rejected (`X3037`) - use field assignment; `static` struct globals are also rejected (`X3017`), so store the fields in separate globals |
+| `if (myFloat4 != float4(0,0,0,0))` | The legacy compiler wants a scalar condition (`X3019`). Compare the components individually |
+| `const float x = otherVar + 1.;` (local) | The initializer must be a literal (`X3011`) - drop `const` (or inline the value) |
+| `for`-loop with a dynamic start (`min(frame,0)`) in a *small* loop | Can make the compiler give up (`X3511: loop does not appear to terminate`). Only use the trick for large/heavy loops |
 
 # Milkwave Visualizer specifics
 

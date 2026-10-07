@@ -1,0 +1,101 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// rez - Structures / https://www.shadertoy.com/view/Ms2SDc
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV: adding helper functions
+comp_8=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_9=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_10=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_11=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_12=
+comp_13=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_14=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_15=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_16=
+comp_17=static const float PI=3.14159265358979323846;
+comp_18=static const float value=0.0;
+comp_19=
+comp_20=float rand(in float2 p,in float t)
+comp_21={
+comp_22=  return frac(sin(dot(p+mod_conv(t,1.0),float2(12.9898,78.2333)))*43758.5453);
+comp_23=}
+comp_24=
+comp_25=float2 rotate(float2 k,float t)
+comp_26={
+comp_27=  return float2(cos(t)*k.x-sin(t)*k.y,sin(t)*k.x+cos(t)*k.y);
+comp_28=}
+comp_29=
+comp_30=float scene1(float3 p)
+comp_31={
+comp_32=  float speed=time*0.5;
+comp_33=  float ground=dot(p,float3(0.0,1.0,0.0))+0.75;
+comp_34=  float t1=lenv(abs(mod_conv(p.xyz,2.0)-1.0))-1.35+0.05*cos(PI*p.x*4.0)+0.05*sin(PI*p.z*4.0);
+comp_35=  // structure
+comp_36=  float t3=lenv(max(abs(mod_conv(p.xyz,2.0)-1.0).xz-1.0,0.5))-0.075+0.1*cos(p.y*36.0);
+comp_37=  // structure slices
+comp_38=  float t5=lenv(abs(mod_conv(p.xyz,0.5))-0.25)-0.975;
+comp_39=  float bubble_w=0.8+0.2*cos(PI*p.z)+0.2*cos(PI*p.x);
+comp_40=  float bubble=lenv(mod_conv(p.xyz,0.125)-0.0625)-bubble_w;
+comp_41=  float hole_w=0.05;
+comp_42=  float hole=lenv(abs(mod_conv(p.xz,1.0)-0.5))-hole_w;
+comp_43=  float tube_p=2.0-0.25*sin(PI*p.z*0.5);
+comp_44=  float tube_v=PI*8.0;
+comp_45=  float tube_b=tube_p*0.02;
+comp_46=  float tube_w=tube_b+tube_b*cos(p.x*tube_v)*sin(p.y*tube_v)*cos(p.z*tube_v)+tube_b*sin(PI*p.z+speed*4.0);
+comp_47=  float tube=lenv(abs(mod_conv(p.xy,tube_p)-tube_p*0.5))-tube_w;
+comp_48=  return min(max(min(-t1,max(-hole-t5*0.375,ground+bubble)),t3+t5),tube);
+comp_49=}
+comp_50=
+comp_51=shader_body {
+comp_52=  float4 fragColor = 0;
+comp_53=  float2 fragCoord  = uv;
+comp_54=  // CONV: Center on screen, then try some aspect correction
+comp_55=  uv = (uv*2) - 1;
+comp_56=  uv *= aspect.xy;
+comp_57=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_58=  uv = float2(uv.x, -uv.y);
+comp_59=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_60=  uv += float2(0,0) + 0;
+comp_61=  uv *= float2(1,1) * 1;
+comp_62=
+comp_63=  float speed=time*0.5;
+comp_64=  float ground_x=1.5*cos(PI*speed*0.125);
+comp_65=  float ground_y=4.0-3.0*sin(PI*speed*0.125)+0.125*value;
+comp_66=  float ground_z=-1.0-speed;
+comp_67=  float2 position=float2(fragCoord.x, 1.0-fragCoord.y);
+comp_68=  float2 p=-1.0+2.0*position;
+comp_69=  float3 dir=normalize(float3(p*float2(1.625,1.0),0.75));
+comp_70=  // screen ratio (x,y) fov (z)
+comp_71=  dir.yz=rotate(dir.yz,PI*0.25*sin(PI*speed*0.125)-value*0.25);
+comp_72=  // rotation x
+comp_73=  dir.zx=rotate(dir.zx,PI*cos(-PI*speed*0.05));
+comp_74=  // rotation y
+comp_75=  dir.xy=rotate(dir.xy,PI*0.125*cos(PI*speed*0.125));
+comp_76=  // rotation z
+comp_77=  float3 ray=float3(ground_x,ground_y,ground_z);
+comp_78=  float t=0.0;
+comp_79=  const int ray_n=96;
+comp_80=  for (int i=min(frame,0);i<ray_n;i++)
+comp_81=  {
+comp_82=    float k=scene1(ray+dir*t);
+comp_83=    // CONV: replaced break with breaking condition
+comp_84=    if(abs(k)<0.005) i=ray_n;
+comp_85=    t+=k*0.5;
+comp_86=  }
+comp_87=
+comp_88=  float3 hit=ray+dir*t;
+comp_89=  float2 h=float2(-0.02,0.01);
+comp_90=  // light
+comp_91=  float3 n=normalize(float3(scene1(hit+h.xyy),scene1(hit+h.yxx),scene1(hit+h.yyx)));
+comp_92=  float c=(n.x+n.y+n.z)*0.1;
+comp_93=  float3 color=float3(c,c,c)-t*0.0625;
+comp_94=  // color*=0.6+0.4*rand(float2(t,t),time); // noise!
+comp_95=  fragColor=float4(float3(c+t*0.08,c+t*0.02,c*1.5-t*0.01)+color*color,1.0);
+comp_96=  ret = fragColor;
+comp_97=}

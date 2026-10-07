@@ -3,7 +3,7 @@ rem Create a release zip named Milkwave-Portable-<version>.zip using7-Zip.
 rem This script stages files into a temp folder (excluding unwanted dirs) and archives that folder.
 
 rem Resolve script and release directories
-set "VERSION=4.1"
+set "VERSION=4.2"
 
 set "SCRIPT_DIR=%~dp0"
 set "RELEASE_DIR=%SCRIPT_DIR%..\Release"

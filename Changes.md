@@ -1,29 +1,14 @@
 ## v4.2 (unreleased)
 
-* Visualizer: Desktop Mode (Ctrl+F9) renders the visualizer behind the desktop icons, replacing the wallpaper
-* Visualizer: Desktop Mode keeps the visualizer in the taskbar; the taskbar right-click menu offers "Toggle Desktop Mode"
+* 20 new Shader presets (in the `42` preset folder)
+* Visualizer: Improved Desktop Mode (Ctrl+F9)
+* Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"
 * Visualizer: Taskbar thumbnail toolbar with buttons for the previous preset, the opacity (5% steps), the preset lock and the next preset
-  - The lock button shows the current state and toggles the preset lock (same as the `~` key)
-* Visualizer: Taskbar right-click menu also offers "Open Milkwave Remote" (starts it, or brings the running Remote to the front)
-* Visualizer: Desktop Mode has its own window opacity (settings.ini: WindowDesktopModeOpacity, adjustable with the mouse wheel or the taskbar buttons)
-* Visualizer: Desktop Mode is restored on the next start when the Visualizer was closed in Desktop Mode (settings.ini: WindowDesktopMode)
-* Visualizer: Leaving Desktop Mode restores the normal window opacity reliably, also for opacities below 100%. Windows bakes the Desktop Mode alpha into the window surface while the window is layered, and that alpha survived hiding/showing, the device reset, style changes and further opacity changes - the visualizer stayed translucent (e.g. 0.5 * 0.98) instead of returning to the opacity it had before. The layered style is now dropped before the window is hidden and re-applied afterwards, so the surface is built again without the Desktop Mode alpha. The text margin of the top and bottom corner texts is restored as well, so the preset name and notifications stay the same distance from the window edge as before
-* Visualizer: F4 no longer closes the visualizer when Windows reports it as a system key without Alt being pressed; F4 toggles the preset info display as usual, Alt+F4 still closes the window
-* Visualizer: The shader cache (_cache_ folder) is always created next to the executable, not in the working directory the Visualizer was started from. Starting it with a different working directory (e.g. the repository root) created a stray _cache_ folder there and ignored the shaders precompiled into the application folder
-* Visualizer: _precompile.txt_ is looked up in the application directory as well, and relative preset paths in it are resolved from there, so shader precompilation works no matter which working directory the Visualizer was started from
-* Remote: Messages read from the pipe are reassembled before they are evaluated. A message that arrived split across two reads was passed on as a fragment, which handed empty text to numeric settings fields and raised "'The input string '' was not in a correct format'"
-* Visualizer: Clickthrough keeps the opacity of the active mode instead of re-applying a stale value, Transparency Mode (colour key) is only restored when the window really used it before Desktop Mode, and a window that needs no transparency (100% opacity, no Clickthrough, no Transparency Mode) is not kept as a layered window
-* Visualizer: In Desktop Mode the bottom screen texts (song info, FPS and similar) stay above the taskbar
-* Visualizer: 'B' toggles a permanently visible song info display (settings.ini: ShowSongInfo); the automatic display on track changes is unaffected. Switching the song info polling off (Ctrl+B) hides the pinned display as well, and the notification then reports that instead of "on track change only"
-* Visualizer: Borderless Fullscreen is bound to Ctrl+Alt+Enter again (it lost its Ctrl+F9 hotkey to Desktop Mode); it is also the right-click function of Remote button 11
-* Remote: Button 15 now defaults to Desktop Mode (Ctrl+F9) instead of Transparency
-* Remote: Button 13 (Clear Sprite/Msg) now defaults to "Clear all Sprites" (Ctrl+K) on right-click
+* Visualizer: Taskbar right-click menu also offers  (starts it, or brings the running Remote to the front)
 * Remote: Preset change and info buttons with improved locking logic dependency
-* Remote: Command button panel configurable via the [Buttons] section of _settings.ini_ (captions, commands and right-click commands with tooltips)
-* Remote: Command button functions assignable from a context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click, including a "Clear Function" entry). The menu covers the Visualizer shortcuts from the F1 help, grouped into Window, Display, Presets, Track, Sprites & Messages, Wave & Warp and Shader
-* Remote: Button 11 (Fullscreen) now defaults to "Borderless Fullscreen" (Ctrl+Alt+Enter) on right-click instead of Button 14
-* Lyrics: default font size is 40 now (settings.ini: LyricsFontSize)
+* Remote: Command button functions assignable from a context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click)
 * Settings: Invert preset output
+* Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 
 ## v4.1 (2026-09-10)
 

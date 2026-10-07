@@ -91,7 +91,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 #define MAX_FFT_SHADER_INPUT 8192      // maximum input samples for shader FFT (circular buffer limit)
 #define MAX_FFT_SHADER_BINS 4096       // maximum output frequency bins for shader FFT texture
 #define DEFAULT_FFT_SHADER_INPUT 2048  // default input samples (~46ms window at 44100 Hz, ~2.8 frames at 60fps)
-#define MIN_FFT_SHADER_INPUT 512       // minimum input samples (~12ms, responsive like original MilkDrop)
+#define MIN_FFT_SHADER_INPUT 256       // minimum input samples (~6ms window at 44100 Hz; below this the 0-250 Hz range has too few bins)
 typedef struct {
   float imm[3];       // bass, mids, treble (absolute)
   float imm_rel[3];   // bass, mids, treble (relative to song; 1=avg, 0.9~below, 1.1~above)

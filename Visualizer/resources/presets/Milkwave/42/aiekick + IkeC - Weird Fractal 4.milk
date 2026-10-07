@@ -1,0 +1,66 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Weird Fractal 4 by aiekick (Shadertoy MtsGzB) / https://www.shadertoy.com/view/MtsGzB
+comp_2=// CC BY-NC-SA 3.0
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV: adding helper functions
+comp_8=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_9=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_10=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_11=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_12=
+comp_13=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_14=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_15=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_16=
+comp_17=float3x3 getRotYMat(float a){return float3x3(cos(a),0.,sin(a),0.,1.,0.,-sin(a),0.,cos(a));}
+comp_18=
+comp_19=shader_body {
+comp_20=  float4 fragColor = 0;
+comp_21=  float2 fragCoord  = uv;
+comp_22=  // CONV: Center on screen, then try some aspect correction
+comp_23=  uv = (uv*2) - 1;
+comp_24=  uv *= aspect.xy;
+comp_25=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_26=  uv = float2(uv.x, -uv.y);
+comp_27=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_28=  uv += float2(0,0) + 0;
+comp_29=  uv *= float2(1,1) * 1;
+comp_30=
+comp_31=  float2 s = texsize.xy;
+comp_32=  float t = time*.2;
+comp_33=  float c = 0., d = 0., m = 0.;
+comp_34=  float2 pix = fragCoord.xy * texsize.xy;
+comp_35=  float3 p = float3((2.*pix - s)/s.x, 1.);
+comp_36=  float3 r = p - p;
+comp_37=  float3 q = r;
+comp_38=  // p*=getRotZMat(-t);
+comp_39=  p = mul(p, transpose(getRotYMat(-t)));
+comp_40=  q.zx += 10.+float2(sin(t),cos(t))*3.;
+comp_41=  for (float i=min(frame,1.); i>0.; i-=.01) {
+comp_42=    c=0.; d=0.; m=1.;
+comp_43=    for (int j = min(frame,0); j < 3 ; j++) {
+comp_44=      r = mod_conv(q*m+1., float3(2., 2., 2.)) - 1.;
+comp_45=      r = r*r; r = r*r; r = r*r;
+comp_46=      r = max(r, r.yzx);
+comp_47=      d = max(d, (.29 - lenv(r)*.6)/m) * .8;
+comp_48=      m *= 1.1;
+comp_49=    }
+comp_50=
+comp_51=    q += p*d;
+comp_52=
+comp_53=    c = i;
+comp_54=
+comp_55=    if (d < 1e-5) i = 0.;
+comp_56=  }
+comp_57=
+comp_58=  float k = dot(r,r+.15);
+comp_59=  fragColor.rgb = float3(1.,k,k/c)-.8;
+comp_60=
+comp_61=  ret = fragColor;
+comp_62=}

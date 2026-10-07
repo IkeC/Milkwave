@@ -1,0 +1,123 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// vamoss - Squares Background v2 / https://www.shadertoy.com/view/MdVXzw
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=float3 bgColor = float3(0.01, 0.16, 0.42);
+comp_8=float3 rectColor = float3(0.01, 0.26, 0.57);
+comp_9=
+comp_10=static const float noiseIntensity = 2.8;
+comp_11=static const float noiseDefinition = 0.6;
+comp_12=static const float2 glowPos = float2(-2., 0.);
+comp_13=
+comp_14=static const float total = 60.;
+comp_15=// number of rectangles
+comp_16=static const float minSize = 0.03;
+comp_17=// rectangle min size
+comp_18=static const float maxSize = 0.08-minSize;
+comp_19=// rectangle max size
+comp_20=static const float yDistribution = 0.5;
+comp_21=
+comp_22=float random(float2 co){
+comp_23=  return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
+comp_24=}
+comp_25=
+comp_26=float noise( in float2 p )
+comp_27={
+comp_28=  p*=noiseIntensity;
+comp_29=  float2 i = floor( p );
+comp_30=  float2 f = frac( p );
+comp_31=  float2 u = f*f*(3.0-2.0*f);
+comp_32=  return lerp( lerp( random( i + float2(0.0,0.0) ),
+comp_33=  random( i + float2(1.0,0.0) ), u.x),
+comp_34=  lerp( random( i + float2(0.0,1.0) ),
+comp_35=  random( i + float2(1.0,1.0) ), u.x), u.y);
+comp_36=}
+comp_37=
+comp_38=float fbm( in float2 uv_conv )
+comp_39={
+comp_40=  uv_conv *= 5.0;
+comp_41=  float2x2 m = float2x2( 1.6,  1.2, -1.2,  1.6 );
+comp_42=  float f  = 0.5000*noise( uv_conv ); uv_conv = mul(transpose(m), uv_conv);
+comp_43=  f += 0.2500*noise( uv_conv ); uv_conv = mul(transpose(m), uv_conv);
+comp_44=  f += 0.1250*noise( uv_conv ); uv_conv = mul(transpose(m), uv_conv);
+comp_45=  f += 0.0625*noise( uv_conv ); uv_conv = mul(transpose(m), uv_conv);
+comp_46=
+comp_47=  f = 0.5 + 0.5*f;
+comp_48=  return f;
+comp_49=}
+comp_50=
+comp_51=float3 bg(float2 uv_conv )
+comp_52={
+comp_53=  float velocity = time/1.6;
+comp_54=  float intensity = sin(uv_conv.x*3.+velocity*2.)*1.1+1.5;
+comp_55=  uv_conv.y -= 2.;
+comp_56=  float2 bp = uv_conv+glowPos;
+comp_57=  uv_conv *= noiseDefinition;
+comp_58=
+comp_59=  float rb = fbm(float2(uv_conv.x*.5-velocity*.03, uv_conv.y))*.1;
+comp_60=  uv_conv += rb;
+comp_61=
+comp_62=  float rz = fbm(uv_conv*.9+float2(velocity*.35, 0.0));
+comp_63=  rz *= dot(bp*intensity,bp)+1.2;
+comp_64=
+comp_65=  float3 col = bgColor/(sign(0.1-rz)*max(abs(0.1-rz), 1e-6));
+comp_66=  return sqrt(abs(col));
+comp_67=}
+comp_68=
+comp_69=float rectangle(float2 uv_conv,  float2 pos, float width, float height, float blur) {
+comp_70=
+comp_71=  pos = (float2(width, height) + .01)/2. - abs(uv_conv - pos);
+comp_72=  pos = smoothstep(0., max(blur, 1e-5) , pos);
+comp_73=  return pos.x * pos.y;
+comp_74=
+comp_75=}
+comp_76=
+comp_77=float2x2 rotate2d(float _angle){
+comp_78=  return float2x2(cos(_angle),-sin(_angle),
+comp_79=  sin(_angle),cos(_angle));
+comp_80=}
+comp_81=
+comp_82=shader_body {
+comp_83=  float4 fragColor = 0;
+comp_84=  float2 fragCoord  = uv;
+comp_85=  // CONV: Center on screen, then try some aspect correction
+comp_86=  uv = (uv*2) - 1;
+comp_87=  uv *= aspect.xy;
+comp_88=  // CONV: Adjust this to flip the output (Â±uv.x, Â±uv.y)
+comp_89=  uv = float2(uv.x, -uv.y);
+comp_90=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_91=  uv += float2(0,0) + 0;
+comp_92=  uv *= float2(1,1) * 1;
+comp_93=
+comp_94=  // float2 uv = fragCoord.xy / uv.xy * 2. - 1.;
+comp_95=  uv.x *= aspect.x/aspect.y;
+comp_96=
+comp_97=  // bg
+comp_98=  float3 color = bg(uv)*(2.-abs(uv.y*2.));
+comp_99=
+comp_100=  // rectangles
+comp_101=  float velX = -time/8.;
+comp_102=  float velY = time/10.;
+comp_103=  for(float i=0.; i<total; i++){
+comp_104=    float index = i/total;
+comp_105=    float rnd = random(float2(index, index));
+comp_106=    float3 pos = float3(0, 0., 0.);
+comp_107=    pos.x = frac(velX*rnd+index)*4.-2.0;
+comp_108=    pos.y = sin(index*rnd*1000.+velY) * yDistribution;
+comp_109=    pos.z = maxSize*rnd+minSize;
+comp_110=    float2 uvRot = uv - pos.xy + pos.z/2.;
+comp_111=    uvRot = mul(transpose(rotate2d( i+time/2. )), uvRot);
+comp_112=    uvRot += pos.xy+pos.z/2.;
+comp_113=    float rect = rectangle(uvRot, pos.xy, pos.z, pos.z, (maxSize+minSize-pos.z)/2.);
+comp_114=    color += rectColor * rect * pos.z/maxSize;
+comp_115=  }
+comp_116=
+comp_117=  fragColor = float4(color, 1.0);
+comp_118=  ret = float3(fragColor.x, fragColor.y, fragColor.z);
+comp_119=}

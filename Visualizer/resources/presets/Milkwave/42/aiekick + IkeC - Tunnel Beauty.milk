@@ -1,0 +1,155 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// aiekick - Tunnel Beauty / https://www.shadertoy.com/view/Mt3GW2
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_8=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_9=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_10=float lenv(float4 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_11=
+comp_12=float3x3 RotZ(float a){return float3x3(cos(a),-sin(a),0.,sin(a),cos(a),0.,0.,0.,1.);}
+comp_13=// get rotation matrix near z
+comp_14=
+comp_15=float3 path(float3 p)
+comp_16={
+comp_17=  p = mul(p, transpose(RotZ(p.z * 0.1)));
+comp_18=  p += sin(p.zxy * 0.5) * 0.5;
+comp_19=  p = mul(p, transpose(RotZ(p.z * 0.2)));
+comp_20=  return sin(p.zxy * 0.2) * 2.;
+comp_21=}
+comp_22=
+comp_23=float df(float3 p)
+comp_24={
+comp_25=  p += path(p);
+comp_26=  p = mul(p, transpose(RotZ(p.z * 0.1)));
+comp_27=  return 1.1 - cos(p.z*1.5) * 0.2 - max(abs(p.x),abs(p.y)) + lenv(p.xy)*0.2;
+comp_28=}
+comp_29=
+comp_30=float3 nor( float3 pos, float prec )
+comp_31={
+comp_32=  float3 eps = float3( prec, 0., 0. );
+comp_33=  float3 nor = float3(
+comp_34=  df(pos+eps.xyy) - df(pos-eps.xyy),
+comp_35=  df(pos+eps.yxy) - df(pos-eps.yxy),
+comp_36=  df(pos+eps.yyx) - df(pos-eps.yyx) );
+comp_37=  return normalize(nor);
+comp_38=}
+comp_39=
+comp_40=float3 blackbody(float Temp)
+comp_41={
+comp_42=  float3 col = float3(255., 255., 255.);
+comp_43=  col.x = 56100000. * pow(Temp,(-3. / 2.)) + 148.;
+comp_44=  col.y = 100.04 * log(Temp) - 623.6;
+comp_45=  if (Temp > 6500.) col.y = 35200000. * pow(Temp,(-3. / 2.)) + 184.;
+comp_46=  col.z = 194.18 * log(Temp) - 1448.6;
+comp_47=  col = clamp(col, 0., 255.)/255.;
+comp_48=  if (Temp < 1000.) col *= Temp/1000.;
+comp_49=  return col;
+comp_50=}
+comp_51=
+comp_52=float SubDensity(float3 surfPoint, float prec, float ms)
+comp_53={
+comp_54=  float3 n;
+comp_55=  float s = 0.;
+comp_56=  const int iter = 10;
+comp_57=  for (int i=min(frame,0);i<iter;i++)
+comp_58=  {
+comp_59=    n = nor(surfPoint,prec);
+comp_60=    surfPoint = surfPoint - n * ms;
+comp_61=    s += df(surfPoint);
+comp_62=  }
+comp_63=
+comp_64=  return 1.-s/(ms*float(iter));
+comp_65=  // s < 0. => inside df
+comp_66=}
+comp_67=
+comp_68=float SubDensity(float3 p, float s)
+comp_69={
+comp_70=  float3 n = nor(p,s);
+comp_71=  // precise normale at surf point
+comp_72=  return df(p - n * s);
+comp_73=  // ratio between df step and constant step
+comp_74=}
+comp_75=
+comp_76=shader_body {
+comp_77=  float4 fragColor = 0;
+comp_78=  float2 fragCoord  = uv;
+comp_79=  // CONV: Center on screen, then try some aspect correction
+comp_80=  uv = (uv*2) - 1;
+comp_81=  uv *= aspect.xy;
+comp_82=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_83=  uv = float2(uv.x, -uv.y);
+comp_84=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_85=  uv += float2(0,0) + 0;
+comp_86=  uv *= float2(1,1) * 1;
+comp_87=
+comp_88=  float2 g = fragCoord * texsize.xy;
+comp_89=  float2 si = texsize.xy;
+comp_90=
+comp_91=  uv = (g+g-si)/si.y;
+comp_92=
+comp_93=  float time_conv = time*1.2;
+comp_94=
+comp_95=  float3 ro = float3(0,0, time_conv*5.);
+comp_96=  ro -= path(ro);
+comp_97=
+comp_98=  float3 cv = ro + float3(0,0,4);
+comp_99=  // cam view
+comp_100=  cv -= path(cv);
+comp_101=
+comp_102=  float3 lp = ro;
+comp_103=  // light pos
+comp_104=
+comp_105=  float3 cu = normalize(float3(0,1,0));
+comp_106=  float3 z = normalize(cv-ro);
+comp_107=  float3 x = normalize(cross(cu,z));
+comp_108=  float3 y = cross(z,x);
+comp_109=  float3 rd = normalize(z + uv.x*x + uv.y*y);
+comp_110=
+comp_111=  float s = 1., d = 0.;
+comp_112=  for (int i=min(frame,0); i<30; i++)
+comp_113=  // 30 iterations yeah :)
+comp_114=  {
+comp_115=    // CONV: replaced break with breaking condition
+comp_116=    if (log(d/1e6)>0.)  i=30;
+comp_117=    // due to this special  i=30 condition
+comp_118=    d += df(ro+rd*d);
+comp_119=  }
+comp_120=
+comp_121=  float3 p = ro + rd * d;
+comp_122=  // surface point
+comp_123=  float3 ld = normalize(lp-p);
+comp_124=  // light dir
+comp_125=  float3 n = nor(p, 0.1);
+comp_126=  // normal at surface point
+comp_127=  float3 refl = reflect(rd,n);
+comp_128=  // reflected ray dir at surf point
+comp_129=  float diff = clamp( dot( n, ld ), 0.0, 1.0 );
+comp_130=  // diffuse
+comp_131=  float fre = pow( clamp( 1. + dot(n,rd),0.0,1.0), 4. );
+comp_132=  // fresnel
+comp_133=  float spe = pow(clamp( dot( refl, ld ), 0.0, 1.0 ),16.);
+comp_134=  // specular
+comp_135=  float3 col = float3(0.8,0.5,0.2);
+comp_136=  float sss = df(p - n*0.001)/0.01;
+comp_137=  // quick sss 0.001 of subsurface
+comp_138=
+comp_139=  float sb = SubDensity(p, 0.01, 0.1);
+comp_140=  // deep subdensity from 0.01 to 0.1 (10 iterations)
+comp_141=  float3 bb = blackbody(200. * sb);
+comp_142=  // blackbody color
+comp_143=  float sss2 = 0.8 - SubDensity(p, 3.);
+comp_144=  // one step sub density of df of 3 of subsurface
+comp_145=
+comp_146=  float3 a = (diff + fre + bb * sss2 * .8 + col * sss * .2) * 0.35 + spe;
+comp_147=  float3 b = col * sss;
+comp_148=
+comp_149=  fragColor.rgb = lerp(a, b, .8-exp(-0.01*d*d));
+comp_150=  ret = fragColor;
+comp_151=}

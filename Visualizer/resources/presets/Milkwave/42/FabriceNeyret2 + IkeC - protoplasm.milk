@@ -1,0 +1,140 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// protoplasm by FabriceNeyret2 (Shadertoy lllSWr) / https://www.shadertoy.com/view/lllSWr
+comp_2=// CC BY-NC-SA 3.0
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV: setting iChannel samplers to default noise texture
+comp_8=#define iChannel0 sampler_noise_lq
+comp_9=
+comp_10=// CONV: adding helper functions
+comp_11=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_12=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_13=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_14=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_15=
+comp_16=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_17=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_18=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_19=
+comp_20=#define T time
+comp_21=#define SQRT3_2  1.26
+comp_22=#define SQRT2_3  1.732
+comp_23=#define smin(a,b) (1./(1./(a)+1./(b)))
+comp_24=
+comp_25=float2 rot2(float2 v, float t) { float a = t*time, c2=cos(a), s2=sin(a); return mul(v, transpose(float2x2(c2,s2,-s2,c2))); }
+comp_26=
+comp_27=static const float3x3 m = float3x3( 0.00,  0.80,  0.60,
+comp_28=-0.80,  0.36, -0.48,
+comp_29=-0.60, -0.48,  0.64 );
+comp_30=
+comp_31=float hash( float n ) {
+comp_32=  return frac(sin(n)*43758.5453);
+comp_33=}
+comp_34=
+comp_35=float noise( in float3 x ) {
+comp_36=// in [0,1]
+comp_37=static float3 p = floor(x);
+comp_38=static float3 f = frac(x);
+comp_39=
+comp_40=f = f*f*(3.-2.*f);
+comp_41=
+comp_42=static float n = p.x + p.y*57. + 113.*p.z;
+comp_43=
+comp_44=static float res = lerp(lerp(lerp( hash(n+  0.), hash(n+  1.),f.x),
+comp_45=lerp( hash(n+ 57.), hash(n+ 58.),f.x),f.y),
+comp_46=lerp(lerp( hash(n+113.), hash(n+114.),f.x),
+comp_47=lerp( hash(n+170.), hash(n+171.),f.x),f.y),f.z);
+comp_48=return res;
+comp_49=}
+comp_50=
+comp_51=float fbm( float3 p ) {
+comp_52=// in [0,1]
+comp_53=static float f;
+comp_54=f  = 0.5000*noise( p ); p = mul(p, m)*2.02;
+comp_55=f += 0.2500*noise( p ); p = mul(p, m)*2.03;
+comp_56=f += 0.1250*noise( p ); p = mul(p, m)*2.01;
+comp_57=f += 0.0625*noise( p );
+comp_58=return f;
+comp_59=}
+comp_60=
+comp_61=#define snoise(x) (2.*noise(x)-1.)
+comp_62=
+comp_63=float sfbm( float3 p ) {
+comp_64=// in [-1,1]
+comp_65=static float f;
+comp_66=f  = 0.5000*snoise( p ); p = mul(p, m)*2.02;
+comp_67=f += 0.2500*snoise( p ); p = mul(p, m)*2.03;
+comp_68=f += 0.1250*snoise( p ); p = mul(p, m)*2.01;
+comp_69=f += 0.0625*snoise( p );
+comp_70=return f;
+comp_71=}
+comp_72=
+comp_73=#define sfbm3(p) float3(sfbm(p), sfbm(p-327.67), sfbm(p+327.67))
+comp_74=
+comp_75=static float4 bg = float4(0,.2,0,0);
+comp_76=
+comp_77=shader_body {
+comp_78=  float4 f = 0;
+comp_79=  float2 w  = uv;
+comp_80=  // CONV: Center on screen, then try some aspect correction
+comp_81=  uv = (uv*2) - 1;
+comp_82=  uv *= aspect.xy;
+comp_83=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_84=  uv = float2(uv.x, -uv.y);
+comp_85=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_86=  uv += float2(0,0) + 0;
+comp_87=  uv *= float2(1,1) * 1;
+comp_88=
+comp_89=  float4 p = float4(w.x * texsize.x / texsize.y, w.y, 0., 1. / texsize.y) - .5;
+comp_90=  float4 d = float4(0., 0., 0., 0.), c = float4(0., 0., 0., 0.);
+comp_91=  p.x-=.4;
+comp_92=  // init ray
+comp_93=  // (p.xz,.13); r(p.yz,.2); r(p.xy,.1);   // camera rotations
+comp_94=  d = p; p.z += 10.;
+comp_95=  // ray dir = ray0-float3(0, 0, 0)
+comp_96=  // p = -float4(0,.5,1,0)*T;
+comp_97=  f = bg;
+comp_98=  float x1,x2,x=1e9;
+comp_99=
+comp_100=  for (float i=min(frame,1.); i>0.; i-=.01)  {
+comp_101=    // CONV: replaced break with breaking condition
+comp_102=    if (f.x>=.99)  i=0.;
+comp_103=    // windows bug: miss it if at end ! thanks Dave_Hoskins
+comp_104=
+comp_105=    float4 u = .03*floor(p/float4(8,8,1,1)+3.5), t = p;
+comp_106=    t.xy = rot2(t.xy, u.x); t.xz = rot2(t.xz, u.y);
+comp_107=    // r(t.yz,1.);    // objects rotations
+comp_108=
+comp_109=    // x1 =lenv(t.xyz)-7.; // if you prefer the clean trim
+comp_110=    t.xyz += sfbm3(t.xyz/2.+float3(.5*T,0,0))*(.6+8.*(.5-.5*cos(T/16.)));
+comp_111=    float nzc = noise(t.xyz + float3(0., 0., 0.5*time));
+comp_112=c = 5.*float4(nzc, nzc, nzc, nzc);
+comp_113=
+comp_114=    x = abs(mod_conv(lenv(t.xyz),1.)-1./2.);
+comp_115=    x1 = lenv(t.xyz)-7.;
+comp_116=    x = max(x,x1);
+comp_117=    // CONV: replaced break with breaking condition
+comp_118=    if ((x1>.1) && (p.z<0.))  i=0.;
+comp_119=    // optimization
+comp_120=    // x = max(x,-abs(t.x)+.2);
+comp_121=    // x = max(x,-abs(t.y)+.2);
+comp_122=
+comp_123=    if(x<.01) {
+comp_124=    // hit !
+comp_125=    f += (1.-f)*.2*lerp(bg,c,i*i); x=.1;
+comp_126=    // CONV: replaced break with breaking condition
+comp_127=    // if (f.x>=.99)  i=0.; // compiler bug on windows -> moved to begin of loop
+comp_128=    }
+comp_129=    // color texture + black fog
+comp_130=
+comp_131=    p += d*x;
+comp_132=    // march ray
+comp_133=  }
+comp_134=
+comp_135=  ret = f.rgb;
+comp_136=}
