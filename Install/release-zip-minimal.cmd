@@ -31,7 +31,6 @@ echo Creating base archive (excluding all textures)...
  -xr!resources\presets\CreamOfTheCrop ^
  -xr!resources\presets\IkeC ^
  -xr!resources\presets\Incubo_ ^
- "-xr!resources\presets\Incubo_ Picks" ^
  -xr!resources\presets\Milkdrop2077 ^
  -xr!resources\presets\Milkwave\Shader\Conv\* ^
  -xr!resources\presets\Quicksave ^

@@ -152,9 +152,6 @@ Section "Additional Presets" SecPresets
   SetOutPath "$INSTDIR\resources\presets\Incubo_"
   File /r "${RELDIR}resources\presets\Incubo_\*.*"
 
-  SetOutPath "$INSTDIR\resources\presets\Incubo_ Picks"
-  File /r "${RELDIR}resources\presets\Incubo_ Picks\*.*"
-
   SetOutPath "$INSTDIR\resources\presets\Milkdrop2077"
   File /r "${RELDIR}resources\presets\Milkdrop2077\*.*"
   

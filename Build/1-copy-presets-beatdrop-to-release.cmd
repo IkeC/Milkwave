@@ -11,7 +11,6 @@ pause
 robocopy %SRCDIR% %DESTDIR%\BeatDrop /LEV:1
 robocopy "%SRCDIR%\Butterchurn Presets" "%DESTDIR%\Butterchurn"
 robocopy "%SRCDIR%\Incubo_'s Presets" "%DESTDIR%\Incubo_"
-robocopy "%SRCDIR%\Incubo_'s Picks" "%DESTDIR%\Incubo_ Picks"
 robocopy "%SRCDIR%\Milkdrop2077 Presets" "%DESTDIR%\Milkdrop2077"
 
 ::exclusions, often because preset is using big textures that would bloat the release
@@ -24,6 +23,10 @@ SET CMD=del /s /q
 %CMD% "*Altars Of Madness 2 (Cold Snap Edit)*"
 %CMD% "*Jian Simanjuntak - Particle Nights in Jakarta*"
 %CMD% "*Jetplane Military*"
+pause
+
+::exclusions, because preset is referencing textures that we don't ship
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0remove-presets-with-missing-textures.ps1" -PresetRoot "%~dp0..\Release\resources\presets" -TextureRoot "%~dp0..\Release\resources\textures" -Folder "BeatDrop,Butterchurn,Incubo_,Milkdrop2077"
 pause
 
 ::textures
