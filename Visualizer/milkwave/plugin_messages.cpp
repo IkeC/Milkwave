@@ -633,6 +633,16 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.AddNotification(enabled ? L"Song Info enabled" : L"Song Info disabled");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
+  } else if (wcsncmp(sMessage, L"PRESETINFO_ON_CHANGE", 20) == 0) {
+    // "PRESETINFO_ON_CHANGE=1/0" sets the state (Remote checkbox), the bare
+    // "PRESETINFO_ON_CHANGE" (command buttons / scripts) toggles it.
+    const bool enabled = (sMessage[20] == L'=') ? (sMessage[21] == L'1') : !g_plugin.m_bPresetInfoOnChange;
+    if (enabled != g_plugin.m_bPresetInfoOnChange) {
+      g_plugin.m_bPresetInfoOnChange = enabled;
+      WritePrivateProfileIntW(enabled, L"PresetInfoOnChange", g_plugin.GetConfigIniFile(), L"Milkwave");
+      g_plugin.AddNotification(enabled ? L"Preset info on change enabled" : L"Preset info on change disabled");
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
   } else if (wcsncmp(sMessage, L"INVERT_PRESET=", 14) == 0) {
     const bool enabled = (sMessage[14] == L'1');
     if (enabled != g_plugin.m_InvertPresetOutput) {
@@ -665,6 +675,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     g_plugin.AddError(L"This is the Artist", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
     if (!g_plugin.m_bShowPresetInfo) g_plugin.m_bShowPresetInfo = true;
     g_plugin.AddNotification(L"This is a notification");
+    // Preset info is now shown permanently - tell the Remote so it disables the
+    // "Preset" display toggle (it has no effect while the info never hides).
+    g_plugin.SendSettingsInfoToMilkwaveRemote();
   } else if (wcsncmp(sMessage, L"CLEARPRESET", 11) == 0) {
     ClearPreset();
   } else if (wcsncmp(sMessage, L"CLEARSPRITES", 12) == 0) {

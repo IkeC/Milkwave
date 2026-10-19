@@ -14,6 +14,8 @@ SHIFT + CTRL + S        Quicksave preset to /presets/Quicksave2 folder
 CTRL + D                Set current audio device to default
 SHIFT + CTRL + D        Display current audio device
 CTRL + M                Toggle interative mouse control
+CTRL + N                Show network server status
+CTRL + SHIFT + N        Toggle network server on/off
 CTRL + Q                Double quality factor (range 0.01 - 1.0)
 SHIFT + CTRL + Q        Half quality factor (pixellize)
 CTRL + H                Shift Hue

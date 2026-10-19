@@ -684,8 +684,18 @@ void CPlugin::OnFinishedLoadingPreset() {
   for (int mash = 0; mash < MASH_SLOTS; mash++)
     m_nMashPreset[mash] = m_nCurrentPreset;
 
+  // Show the preset info briefly on every preset change while it is not shown
+  // permanently (F4) - unless the feature is turned off (Ctrl+F4).
+  FlashPresetInfo();
+
   milkwave->LogInfo(L"Preset change: " + std::wstring(m_szCurrentPresetFile));
   SendPresetChangedInfoToMilkwaveRemote();
+}
+
+void CPlugin::FlashPresetInfo() {
+  if (m_bPresetInfoOnChange && !m_bShowPresetInfo) {
+    m_fShowPresetInfoUntilThisTime = GetTime() + m_PresetInfoOnChangeSeconds;
+  }
 }
 // IPC via Named Pipe
 // Outgoing messages are sent through g_pipeServer (pipe_server.h).

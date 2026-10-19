@@ -755,7 +755,12 @@ void CPlugin::MyRenderUI(
   //                                        and it should be visible over everything else (usually an error msg)
   {
     // a) preset name
-    if (m_bShowPresetInfo && !m_blackmode) {
+    // While a preset is loading, a running flash still holds the previous preset's timer,
+    // so the incoming name would pop up at full opacity and then vanish once the new flash
+    // restarts on completion. Only the permanent display (F4) shows the name during a load;
+    // the flash fades in once the load has finished.
+    const bool presetInfoFlashing = m_nLoadingPreset == 0 && GetTime() < m_fShowPresetInfoUntilThisTime;
+    if ((m_bShowPresetInfo || presetInfoFlashing) && !m_blackmode) {
       SelectFont(DECORATIVE_FONT);
       swprintf(
           buf,
@@ -764,6 +769,15 @@ void CPlugin::MyRenderUI(
           (m_nLoadingPreset != 0) ? m_pNewState->m_szDesc : m_pState->m_szDesc);
 
       DWORD alpha = 255;
+      if (!m_bShowPresetInfo && m_PresetInfoOnChangeSeconds > 0.0f) {
+        const float presetInfoStartTime = m_fShowPresetInfoUntilThisTime - m_PresetInfoOnChangeSeconds;
+        const float age_rel = (GetTime() - presetInfoStartTime) / m_PresetInfoOnChangeSeconds;
+        if (age_rel >= 0.0f && age_rel < 0.05f) {
+          alpha = static_cast<DWORD>(255 * (age_rel / 0.05f));
+        } else if (age_rel > 0.8f && age_rel <= 1.0f) {
+          alpha = static_cast<DWORD>(255 * ((1.0f - age_rel) / 0.2f));
+        }
+      }
       DWORD cr = m_fontinfo[DECORATIVE_FONT].R;
       DWORD cg = m_fontinfo[DECORATIVE_FONT].G;
       DWORD cb = m_fontinfo[DECORATIVE_FONT].B;

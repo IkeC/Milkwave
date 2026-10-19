@@ -647,7 +647,15 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         }
           return 0;  // we processed (or absorbed) the key
         case VK_F4:
-          m_bShowPresetInfo = !m_bShowPresetInfo;
+          if ((GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+            m_bPresetInfoOnChange = !m_bPresetInfoOnChange;
+            WritePrivateProfileIntW(m_bPresetInfoOnChange, L"PresetInfoOnChange", GetConfigIniFile(), L"Milkwave");
+            AddNotification(m_bPresetInfoOnChange ? L"Preset info on change enabled" : L"Preset info on change disabled");
+            SendSettingsInfoToMilkwaveRemote();
+          } else {
+            m_bShowPresetInfo = !m_bShowPresetInfo;
+            SendSettingsInfoToMilkwaveRemote();
+          }
           return 0;  // we processed (or absorbed) the key
         case VK_F5:
           m_bShowFPS = !m_bShowFPS;

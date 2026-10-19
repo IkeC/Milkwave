@@ -1,12 +1,14 @@
 ## v4.2 (unreleased)
 
-* 20 new Shader presets
+* 15 new audio-reactive Shader presets
 * Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 * Visualizer: Improved Desktop Mode (Ctrl+F9)
 * Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"
 * Visualizer: Taskbar thumbnail toolbar with buttons for the previous preset, the opacity (5% steps), the preset lock and the next preset
 * Remote: Bottom panel button functions assignable from context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click)
-* Remote Preset tab: Preset change and info buttons with improved locking logic dependency
+* Remote Preset tab: 
+  - Flash preset info on preset change with configurable duration (Ctrl+F4)
+  - Preset change and info buttons with improved locking logic dependency
 * Remote Settings tab: Invert preset output
 
 ## v4.1 (2026-09-10)

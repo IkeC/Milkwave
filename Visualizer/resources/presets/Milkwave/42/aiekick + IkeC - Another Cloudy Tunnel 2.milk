@@ -103,43 +103,58 @@ comp_98=  uv = float2(uv.x, -uv.y);
 comp_99=  // CONV: Adjust viewpoint (x,y individually or both)
 comp_100=  uv += float2(0,0) + 0;
 comp_101=  uv *= float2(1,1) * 1;
-comp_102=
-comp_103=  t = time*2.5;
-comp_104=  f = float4(0,0.15,0.32,1);
-comp_105=  float2 si = texsize.xy;
-comp_106=  float2 uvn = (2.*(g*texsize.xy) - si)/min(si.x, si.y);
-comp_107=  float3 ro = float3(0, 0, 0), p=ro;
-comp_108=  ro.y = sin(t*.2)*15.+15.;
-comp_109=  ro.x = sin(t*.5)*5.;
-comp_110=  ro.z = t*5.;
-comp_111=  float3 rd = cam(uvn, p, float3(0,1,0), p + float3(0,0,1));
-comp_112=  float s = 1., h = .15, td = 0., d=1.,dd=0., w;
-comp_113=  float var = 0.03;
-comp_114=  if (mouse.z>0.) var = 0.1*mouse.y;
-comp_115=  for (float i=min(frame,0);i<200.;i++)
-comp_116=  {
-comp_117=    // CONV: replaced break with breaking condition
-comp_118=    if(s<0.01||d>500.||td>.95) i=200.;
-comp_119=    s = map(p) * (s>0.001?var:.2);
-comp_120=    if (s < h)
-comp_121=    {
-comp_122=      w = (1.-td) * (h-s)*i/200.;
-comp_123=      f += w;
-comp_124=      td += w;
-comp_125=    }
-comp_126=
-comp_127=    dd += 0.012;
-comp_128=    td += 0.005;
-comp_129=    s = max(s, 0.05);
-comp_130=    d+=s;
-comp_131=    p = ro+rd*d;
-comp_132=  }
-comp_133=
-comp_134=  f.rgb = lerp( f.rgb, float3(0,0.15,0.52), 1.0 - exp( -0.001*d*d) )/max(dd, 0.000001);
-comp_135=  // fog
-comp_136=
-comp_137=  // vigneting from iq Shader Mike : https://www.shadertoy.com/view/MsXGWr
-comp_138=  float2 q = g;
-comp_139=  f.rgb *= 0.5 + 0.5*pow( 16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.25 );
-comp_140=  ret = f;
-comp_141=}
+comp_102=  // AUDIO: version 1 = slow (bass_smooth), 2 = fast (bass_att), >2 = off - see the remote's Version tooltip
+comp_103=  #ifdef bass_smooth
+comp_104=    float aRng = (int)vis_version == 1 ? 0.30 : 0.45;
+comp_105=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_106=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_107=  #else
+comp_108=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_109=  #endif
+comp_110=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_111=  float aBe  = aDev * 4.0;   // beat scale used by the colour reaction
+comp_112=  // AUDIO: only the horizontal view narrows/widens with the level (the vertical motion stays calm)
+comp_113=  g.x = 0.5 + (g.x - 0.5) * (1.0 - max(aDev, 0.0) * 0.6);   // zoom in only: keeps g inside [0..1]
+comp_114=
+comp_115=  t = time*2.5;
+comp_116=  f = float4(0,0.15,0.32,1);
+comp_117=  float2 si = texsize.xy;
+comp_118=  float2 uvn = (2.*(g*texsize.xy) - si)/min(si.x, si.y);
+comp_119=  float3 ro = float3(0, 0, 0), p=ro;
+comp_120=  ro.y = sin(t*.2)*15.+15.;
+comp_121=  ro.x = sin(t*.5)*5.;
+comp_122=  ro.z = t*5.;
+comp_123=  float3 rd = cam(uvn, p, float3(0,1,0), p + float3(0,0,1));
+comp_124=  float s = 1., h = .15, td = 0., d=1.,dd=0., w;
+comp_125=  float var = 0.03;
+comp_126=  if (mouse.z>0.) var = 0.1*mouse.y;
+comp_127=  for (float i=min(frame,0);i<200.;i++)
+comp_128=  {
+comp_129=    // CONV: replaced break with breaking condition
+comp_130=    if(s<0.01||d>500.||td>.95) i=200.;
+comp_131=    s = map(p) * (s>0.001?var:.2);
+comp_132=    if (s < h)
+comp_133=    {
+comp_134=      w = (1.-td) * (h-s)*i/200.;
+comp_135=      f += w;
+comp_136=      td += w;
+comp_137=    }
+comp_138=
+comp_139=    dd += 0.012;
+comp_140=    td += 0.005;
+comp_141=    s = max(s, 0.05);
+comp_142=    d+=s;
+comp_143=    p = ro+rd*d;
+comp_144=  }
+comp_145=
+comp_146=  f.rgb = lerp( f.rgb, float3(0,0.15,0.52), 1.0 - exp( -0.001*d*d) )/max(dd, 0.000001);
+comp_147=  // fog
+comp_148=
+comp_149=  // vigneting from iq Shader Mike : https://www.shadertoy.com/view/MsXGWr
+comp_150=  float2 q = g;
+comp_151=  f.rgb *= 0.5 + 0.5*pow( max(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.0), 0.25 );   // guarded: negative base gave NaN (black side bars)
+comp_152=  ret = f;
+comp_153=  // AUDIO: the fog cools down on beats
+comp_154=  ret = lerp(ret, ret * float3(0.88, 1.0, 1.14), saturate(aBe) * 0.35);
+comp_155=}
+comp_156=

@@ -94,30 +94,45 @@ comp_89=  uv = float2(uv.x, -uv.y);
 comp_90=  // CONV: Adjust viewpoint (x,y individually or both)
 comp_91=  uv += float2(0,0) + 0;
 comp_92=  uv *= float2(1,1) * 1;
-comp_93=
-comp_94=  // float2 uv = fragCoord.xy / uv.xy * 2. - 1.;
-comp_95=  uv.x *= aspect.x/aspect.y;
-comp_96=
-comp_97=  // bg
-comp_98=  float3 color = bg(uv)*(2.-abs(uv.y*2.));
-comp_99=
-comp_100=  // rectangles
-comp_101=  float velX = -time/8.;
-comp_102=  float velY = time/10.;
-comp_103=  for(float i=0.; i<total; i++){
-comp_104=    float index = i/total;
-comp_105=    float rnd = random(float2(index, index));
-comp_106=    float3 pos = float3(0, 0., 0.);
-comp_107=    pos.x = frac(velX*rnd+index)*4.-2.0;
-comp_108=    pos.y = sin(index*rnd*1000.+velY) * yDistribution;
-comp_109=    pos.z = maxSize*rnd+minSize;
-comp_110=    float2 uvRot = uv - pos.xy + pos.z/2.;
-comp_111=    uvRot = mul(transpose(rotate2d( i+time/2. )), uvRot);
-comp_112=    uvRot += pos.xy+pos.z/2.;
-comp_113=    float rect = rectangle(uvRot, pos.xy, pos.z, pos.z, (maxSize+minSize-pos.z)/2.);
-comp_114=    color += rectColor * rect * pos.z/maxSize;
-comp_115=  }
-comp_116=
-comp_117=  fragColor = float4(color, 1.0);
-comp_118=  ret = float3(fragColor.x, fragColor.y, fragColor.z);
-comp_119=}
+comp_93=  // AUDIO: version 1 = slow (bass_smooth), 2 = fast (bass_att), >2 = off - see the remote's Version tooltip
+comp_94=  #ifdef bass_smooth
+comp_95=    float aRng = (int)vis_version == 1 ? 0.30 : 0.45;
+comp_96=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_97=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_98=  #else
+comp_99=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_100=  #endif
+comp_101=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_102=  float aBe  = aDev * 4.0;   // beat scale used by the colour reaction
+comp_103=  // AUDIO: no camera move - the square sizes and the dust colour react instead
+comp_104=  float aSqSize = 1.0 + aDev * 0.35;   // squares grow with the level
+comp_105=
+comp_106=  // float2 uv = fragCoord.xy / uv.xy * 2. - 1.;
+comp_107=  // CONV: aspect correction is already done by the prologue (was applied twice)
+comp_108=
+comp_109=  // bg
+comp_110=  float3 color = bg(uv)*(2.-abs(uv.y*2.)) * lerp(float3(1.20,1.0,0.75), float3(0.75,1.0,1.30), saturate(aBe*0.5+0.5));
+comp_111=
+comp_112=  // rectangles
+comp_113=  float velX = -time/8.;
+comp_114=  float velY = time/10.;
+comp_115=  for(float i=0.; i<total; i++){
+comp_116=    float index = i/total;
+comp_117=    float rnd = random(float2(index, index));
+comp_118=    float3 pos = float3(0, 0., 0.);
+comp_119=    pos.x = frac(velX*rnd+index)*4.-2.0;
+comp_120=    pos.y = sin(index*rnd*1000.+velY) * yDistribution;
+comp_121=    pos.z = (maxSize*rnd+minSize) * aSqSize;
+comp_122=    float2 uvRot = uv - pos.xy + pos.z/2.;
+comp_123=    uvRot = mul(transpose(rotate2d( i+time/2. )), uvRot);
+comp_124=    uvRot += pos.xy+pos.z/2.;
+comp_125=    float rect = rectangle(uvRot, pos.xy, pos.z, pos.z, (maxSize+minSize-pos.z)/2.);
+comp_126=    color += rectColor * rect * pos.z/maxSize;
+comp_127=  }
+comp_128=
+comp_129=  fragColor = float4(color, 1.0);
+comp_130=  ret = float3(fragColor.x, fragColor.y, fragColor.z);
+comp_131=  // AUDIO: the dust colour reacts instead of rotating the whole palette
+comp_132=  ret = ret;   // dust tint is applied to the background above
+comp_133=}
+comp_134=

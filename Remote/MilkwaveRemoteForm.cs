@@ -184,6 +184,7 @@ namespace MilkwaveRemote {
       PresetChangeWithSong,
       PresetDisplayCover,
       PresetDisplayTrack,
+      PresetDisplayPreset,
       InvertPreset,
       Amplify,
       Wave,
@@ -1790,6 +1791,8 @@ namespace MilkwaveRemote {
                   chkPresetDisplayCover.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("SONGINFOPOLLING", StringComparison.OrdinalIgnoreCase)) {
                   chkPresetDisplayTrack.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("PRESETINFOONCHANGE", StringComparison.OrdinalIgnoreCase)) {
+                  chkPresetDisplayPreset.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("INVERTPRESET", StringComparison.OrdinalIgnoreCase)) {
                   chkInvert.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
@@ -2236,6 +2239,8 @@ namespace MilkwaveRemote {
               message = "DISPLAY_COVER=" + (chkPresetDisplayCover.Checked ? "1" : "0");
             } else if (type == MessageType.PresetDisplayTrack) {
               message = "SONGINFO_POLLING=" + (chkPresetDisplayTrack.Checked ? "1" : "0");
+            } else if (type == MessageType.PresetDisplayPreset) {
+              message = "PRESETINFO_ON_CHANGE=" + (chkPresetDisplayPreset.Checked ? "1" : "0");
             } else if (type == MessageType.InvertPreset) {
               message = "INVERT_PRESET=" + (chkInvert.Checked ? "1" : "0");
             } else if (type == MessageType.SpoutActive) {
@@ -2739,6 +2744,9 @@ namespace MilkwaveRemote {
           SendUnicodeChars("~");
         } else if (tokenUpper.Equals("PRESETINFO")) {
           SendPostMessage(VK_F4, "F4");
+        } else if (tokenUpper.Equals("PRESETINFOONCHANGE")) {
+          // Toggle the "show preset info on preset change" feature (Ctrl+F4)
+          if (CanSendPipeMessage) PipeSend("PRESETINFO_ON_CHANGE");
         } else if (tokenUpper.Equals("SONGINFO")) {
           SendPostMessage(VK_B, "B");
         } else if (tokenUpper.Equals("SOUNDINFO")) {
@@ -3111,6 +3119,7 @@ namespace MilkwaveRemote {
       new CommandFunctionOption { Category = "Display", Name = "Transparency Mode", Shortcut = "F12", Command = "SEND=0x7B" },
       new CommandFunctionOption { Category = "Display", Name = "Change FPS", Shortcut = "F3", Command = "SEND=0x72" },
       new CommandFunctionOption { Category = "Display", Name = "Preset Info", Shortcut = "F4", Command = "SEND=0x73" },
+      new CommandFunctionOption { Category = "Display", Name = "Preset Info on Change", Shortcut = "Ctrl+F4", Command = "PRESETINFO_ON_CHANGE" },
       new CommandFunctionOption { Category = "Display", Name = "FPS Display", Shortcut = "F5", Command = "SEND=0x74" },
       new CommandFunctionOption { Category = "Display", Name = "Rating Display", Shortcut = "F6", Command = "SEND=0x75" },
       new CommandFunctionOption { Category = "Display", Name = "Hard Cut Mode", Shortcut = "F11", Command = "SEND=0x7A" },
@@ -6513,8 +6522,21 @@ namespace MilkwaveRemote {
       }
     }
 
+    // Small border kept to the right of and below the preset tab content, similar to the margin the
+    // right-anchored buttons in the rows above it leave.
+    private const int PresetTabBorder = 10;
+
     private Size GetCalculatedOptionalTopPanelSize() {
-      int width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + cboPresets.Top * 4;
+      // The bottom row of the preset tab (the display options) is not right-anchored, so the window
+      // has to be wide enough to show it completely, with a small border on the right.
+      int contentRight = 0;
+      foreach (Control control in tabPreset.Controls) {
+        contentRight = Math.Max(contentRight, control.Right);
+      }
+
+      int tabInset = tabControl.Width - tabPreset.Width;
+      int windowFrame = Width - ClientSize.Width;
+      int width = contentRight + PresetTabBorder + tabInset + windowFrame;
       int height = cboFont5.Top + cboFont5.Height + cboPresets.Top;
       return new Size(width, height);
     }
@@ -6524,19 +6546,26 @@ namespace MilkwaveRemote {
     }
 
     private int GetDefaultTabPanelHeight() {
-      int tabContentHeight = 0;
+      // Height that makes the tab pages end just below their content, so that the bottom row of the
+      // preset tab has no unused space below it while all fixed controls stay fully visible.
+      return tabPreset.Top + GetTabContentBottom() + PresetTabBorder;
+    }
+
+    // Deepest point of the tab pages' fixed content. Controls that follow the tab page height
+    // (docked or bottom-anchored) are skipped, because they adapt to the panel instead of defining
+    // how tall it has to be.
+    private int GetTabContentBottom() {
+      int contentBottom = 0;
       foreach (TabPage tabPage in tabControl.TabPages) {
         foreach (Control control in tabPage.Controls) {
-          tabContentHeight = Math.Max(tabContentHeight, control.Bottom);
+          if (control.Dock == DockStyle.Fill || control.Dock == DockStyle.Bottom || (control.Anchor & AnchorStyles.Bottom) != 0) {
+            continue;
+          }
+          contentBottom = Math.Max(contentBottom, control.Bottom);
         }
       }
 
-      int tabChromeHeight = tabControl.Height - (tabControl.SelectedTab?.Height ?? tabControl.Height);
-      if (tabChromeHeight < 0) {
-        tabChromeHeight = 0;
-      }
-
-      return tabContentHeight + tabChromeHeight;
+      return contentBottom;
     }
 
     private void btnFontGlobalMinus_Click(object sender, EventArgs e) {
@@ -6800,6 +6829,11 @@ namespace MilkwaveRemote {
           : "Next Preset after this many seconds\r\nNote that fBlendTimeAuto and 0..fTimeBetweenPresetsRand are added to determine the actual duration (see settings.ini)";
       toolTip1.SetToolTip(numPresetChange, afterToolTip);
 
+      // "Preset" display on preset change (Ctrl+F4)
+      chkPresetDisplayPreset.Enabled = true;
+      toolTip1.SetToolTip(chkPresetDisplayPreset,
+        "Display preset info when the preset changes\r\n(same as pressing Ctrl+F4 in Visualizer)\r\nPress F4 in Visualizer to show preset info permanently");
+
       // State changed - drop any manually shown disabled-state tooltip so it cannot go
       // stale (no-op when nothing is shown).
       HideDisabledToolTip();
@@ -6847,6 +6881,11 @@ namespace MilkwaveRemote {
     private void chkPresetDisplayTrack_CheckedChanged(object sender, EventArgs e) {
       if (updatingSettingsParams) return;
       SendToMilkwaveVisualizer("", MessageType.PresetDisplayTrack);
+    }
+
+    private void chkPresetDisplayPreset_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.PresetDisplayPreset);
     }
 
     private void LoadPresetDeck() {

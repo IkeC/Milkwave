@@ -789,8 +789,17 @@ static void ToggleBorderlessWindow(HWND hwnd) {
 // Desktop Mode: renders the visualizer as a wallpaper behind the desktop icons.
 // The window is re-parented into the Explorer "WorkerW" window that sits behind
 // the icon view (same approach as BeatDrop) and stretched across the entire
-// virtual screen.
+// virtual screen. Recent Windows builds no longer create that WorkerW (the
+// 0x052C request is accepted but ignored), so the window that hosts the icons is
+// used as a fallback parent - the render window then becomes its last child and
+// stays behind the icons.
 // ===============================================
+
+// Set when the host found by FindDesktopWorkerWProc is the icon host itself rather
+// than a dedicated wallpaper WorkerW: such a host already has the icon view as a
+// child, so the render window has to go to the bottom of its z-order instead of the
+// top (a wallpaper WorkerW has no other children).
+static bool desktopHostIsDefViewHost = false;
 
 static BOOL CALLBACK FindDesktopWorkerWProc(HWND hwnd, LPARAM lParam) {
   if (FindWindowExW(hwnd, NULL, L"SHELLDLL_DefView", NULL) == NULL) {
@@ -798,10 +807,16 @@ static BOOL CALLBACK FindDesktopWorkerWProc(HWND hwnd, LPARAM lParam) {
   }
 
   // The wallpaper WorkerW sits directly behind the window that hosts the icons.
-  HWND* workerW = reinterpret_cast<HWND*>(lParam);
-  *workerW = FindWindowExW(NULL, hwnd, L"WorkerW", NULL);
-  if (*workerW == NULL) {
-    *workerW = FindWindowExW(hwnd, NULL, L"WorkerW", NULL);
+  HWND* host = reinterpret_cast<HWND*>(lParam);
+  *host = FindWindowExW(NULL, hwnd, L"WorkerW", NULL);
+  if (*host == NULL) {
+    *host = FindWindowExW(hwnd, NULL, L"WorkerW", NULL);
+  }
+  // Without a wallpaper WorkerW the icon host itself is the only place left that is
+  // still behind the desktop icons.
+  desktopHostIsDefViewHost = (*host == NULL);
+  if (desktopHostIsDefViewHost) {
+    *host = hwnd;
   }
   return FALSE;
 }
@@ -1442,12 +1457,16 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       }
 
       desktopWorkerW = NULL;
+      desktopHostIsDefViewHost = false;
       EnumWindows(FindDesktopWorkerWProc, reinterpret_cast<LPARAM>(&desktopWorkerW));
       if (desktopWorkerW == NULL) {
-        milkwave.LogInfo(L"Desktop Mode: WorkerW window not found");
+        milkwave.LogInfo(L"Desktop Mode: desktop icon host window not found");
         g_plugin.AddError(L"Desktop Mode failed: desktop window not found", 5.0f, ERR_MISC, false);
         return;
       }
+      milkwave.LogInfo(desktopHostIsDefViewHost
+                           ? L"Desktop Mode: using the desktop icon host (no wallpaper WorkerW)"
+                           : L"Desktop Mode: using the wallpaper WorkerW");
 
       GetWindowRect(hWnd, &g_plugin.m_desktop_lastRect);
       g_plugin.m_desktop_lastStyle = GetWindowLongPtrW(hWnd, GWL_STYLE);
@@ -1487,7 +1506,9 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
 
       g_plugin.SetVariableBackBuffer(width, height);
       SafeResetDevice();
-      SetWindowPos(hWnd, HWND_TOP, origin.x, origin.y, width, height,
+      // A wallpaper WorkerW has no other children, so the render window can go on top of
+      // it; inside the icon host it has to stay below the icon view.
+      SetWindowPos(hWnd, desktopHostIsDefViewHost ? HWND_BOTTOM : HWND_TOP, origin.x, origin.y, width, height,
                    SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 
       // Re-parenting and the device reset above leave the layered window opaque, so
@@ -2093,8 +2114,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         // Right + Middle
         g_plugin.OpenMilkwaveRemote();
       } else {
-        // Middle only
+        // Middle only: refresh the displayed track info/cover, and flash the preset
+        // info as well so the click also answers "which preset is this" (Ctrl+F4).
         milkwave.doPollExplicit = true;
+        g_plugin.FlashPresetInfo();
       }
       break;
 

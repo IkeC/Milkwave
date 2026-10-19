@@ -456,6 +456,10 @@ class CPlugin : public CPluginShell {
   bool m_bShowSongInfo = false;  // 'b' pins the song info to the screen (persisted)
   bool m_DisplayCover = true;
   bool m_DisplayCoverWhenPressingB = true;
+  // Show the preset info for PresetInfoOnChangeSeconds seconds on every preset
+  // change while it is not shown permanently (F4). Toggle with Ctrl+F4.
+  bool m_bPresetInfoOnChange = true;
+  float m_PresetInfoOnChangeSeconds = 6.5f;
   // Settings-tab "Invert": invert the preset output (composite) while leaving the
   // text overlays (song titles, messages, lyrics) un-inverted.
   bool m_InvertPresetOutput = false;
@@ -662,6 +666,10 @@ class CPlugin : public CPluginShell {
   void NextPreset(float fBlendTime);  // if not retracing our former steps, it will choose a random one.
   void TogglePresetLock();
   void OnFinishedLoadingPreset();
+  // Show the preset info for m_PresetInfoOnChangeSeconds seconds, the way a preset
+  // change does. Does nothing while the info is shown permanently (F4) or when the
+  // feature is turned off (Ctrl+F4).
+  void FlashPresetInfo();
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile);
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile, bool doForce);
   void PostMessageToMilkwaveRemote(UINT msg);
@@ -700,6 +708,7 @@ class CPlugin : public CPluginShell {
   bool m_bShowSongTime;
   bool m_bShowSongLen;
   float m_fShowRatingUntilThisTime;
+  float m_fShowPresetInfoUntilThisTime;  // preset info shows until this time after a preset change
 
 #define ERR_ALL 0
 #define ERR_INIT 1    // specifically, loading a preset
