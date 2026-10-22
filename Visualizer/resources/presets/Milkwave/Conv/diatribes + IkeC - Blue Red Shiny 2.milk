@@ -1,0 +1,110 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// diatribes - Blue Red Shiny 2 / https://www.shadertoy.com/view/7cjGRR
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_6=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_7=float lenv(float4 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_8=
+comp_9=#define T (sin(time*.6)*16.+time*1e2)
+comp_10=#define P(z) (float3(cos((z)*.011)*16.+cos((z) * .012)  *24., cos((z)*.01)*4., (z)))
+comp_11=#define N normalize
+comp_12=
+comp_13=// accumulated line lights, filled by map()
+comp_14=static float4 lights;
+comp_15=
+comp_16=float boxen(float3 p) {
+comp_17=  p = abs(frac(p/2e1)*2e1 - 1e1) - 1.;
+comp_18=  return min(p.x, min(p.y, p.z));
+comp_19=}
+comp_20=
+comp_21=float map(float3 p) {
+comp_22=  // tube radii breathe with the low end of the spectrum
+comp_23=  float rads = 1;
+comp_24=  #ifdef bass_smooth
+comp_25=    if ((int)vis_version == 1)      rads += 0.3*(smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
+comp_26=    else if ((int)vis_version == 2) rads += 0.5*(smoothstep(0, 2, bass_att) - 0.5)*vis_intensity + vis_shift;
+comp_27=    else                            rads += 0.0*vis_intensity + vis_shift;
+comp_28=  #else
+comp_29=    rads += 0.2*(smoothstep(0, 2, bass_att) - 0.5);
+comp_30=  #endif
+comp_31=
+comp_32=  float3 q = P(p.z);
+comp_33=  float m, g = q.y - p.y + 6.;
+comp_34=
+comp_35=  m = boxen(p);
+comp_36=
+comp_37=  p.xy -= q.xy;
+comp_38=
+comp_39=  // squiggly lines along z
+comp_40=  float red, blue;
+comp_41=  float e = min(red = lenv(p.xy - sin(p.z / 12. + float2(0, 1.3)) * 12.) - 1.*rads,
+comp_42=                blue = lenv(p.xy - sin(p.z / 16. + float2(0, .7)) * 16.) - 2.*rads);
+comp_43=
+comp_44=  lights += float4(1e1, 2, 1, 0) / (.1 + abs(red));
+comp_45=  lights += float4(1, 2, 1e1, 0) / (.1 + abs(blue)/1e1);
+comp_46=
+comp_47=  p = abs(p);
+comp_48=
+comp_49=  float tex = abs(lenv(sin(p*cos(p.yzx/3e1)*4.)/(p*4. + 1e-4)));
+comp_50=  float tun = min(32. - p.x - p.y, 24. - p.y);
+comp_51=
+comp_52=  float d = max(min(m, g), tun) - tex;
+comp_53=  return min(e, d);
+comp_54=}
+comp_55=
+comp_56=shader_body {
+comp_57=  float4 o = 0;
+comp_58=  float2 u = float2((uv.x - 0.5)*texsize.x/texsize.y, -(uv.y - 0.5));
+comp_59=  u.y -= .2;
+comp_60=
+comp_61=  int i;
+comp_62=  float s = 0., d = 0.05;
+comp_63=
+comp_64=  float3 p = P(T), ro = p;
+comp_65=  float3 Z = N(P(T + 2.) - p);
+comp_66=  float3 X = N(float3(Z.z, 0., -Z.x));
+comp_67=
+comp_68=  // rotated ray direction: vec3(R(a)*u, 1) * mat3(-X, cross(X,Z), Z)
+comp_69=  float a = sin(T*.005)*.4;
+comp_70=  float3 vv = float3(cos(a)*u.x + cos(a + 11.)*u.y, cos(a + 33.)*u.x + cos(a)*u.y, 1.);
+comp_71=  float3 D = N(float3(dot(vv, -X), dot(vv, cross(X, Z)), dot(vv, Z)));
+comp_72=
+comp_73=  lights = 0;
+comp_74=  for (i = 0; i < 100; i++) {
+comp_75=    p = ro + D * d;
+comp_76=    s = map(p) * .8;
+comp_77=    d += s;
+comp_78=    o += lights + 1./max(s, .01);
+comp_79=  }
+comp_80=
+comp_81=  // normal, tetrahedron technique
+comp_82=  float h = 0.005;
+comp_83=  float2 k = float2(1, -1);
+comp_84=  float3 n = N(k.xyy*map(p + k.xyy*h) +
+comp_85=               k.yyx*map(p + k.yyx*h) +
+comp_86=               k.yxy*map(p + k.yxy*h) +
+comp_87=               k.xxx*map(p + k.xxx*h));
+comp_88=
+comp_89=  o *= (.1 + max(dot(n, -D), 0.));
+comp_90=
+comp_91=  // reflection march
+comp_92=  float4 ref = 0;
+comp_93=  lights = 0;
+comp_94=  p += n*.05;
+comp_95=  D = reflect(D, n);
+comp_96=  for (i = 0; i < 50; i++) {
+comp_97=    s = map(p) * .8;
+comp_98=    ref += lights + 1./max(s, .01);
+comp_99=    p += D * s;
+comp_100=  }
+comp_101=
+comp_102=  o += o*ref;
+comp_103=  o = tanh(max(o, 0.) / 1e9 * exp(float4(1e1, 2, 1, 0)*d/5e2));
+comp_104=  ret = o;
+comp_105=}
+comp_106=

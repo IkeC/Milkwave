@@ -185,6 +185,12 @@ class CPluginShell {
   float m_fEQDecayGlobal = 0.7f;   // global FFT decay  (0..1), controlled by Remote
   float m_fEQBoostGlobal = 1.0f;   // global FFT boost  (0..9.99), controlled by Remote
 
+  // Test hook for preset audio-reactivity verification (named pipe: AUDIO_TEST=bass,mid,treb).
+  // Injects fixed relative band levels instead of the captured audio, so reactions can be
+  // checked silently and reproducibly. The FFT texture (get_fft) is not affected.
+  bool m_bAudioTestOverride = false;
+  float m_AudioTestBands[3] = { 1.0f, 1.0f, 1.0f };
+
   bool m_AutoHue = false;
   float m_AutoHueSeconds = 0.02f;
   float m_AutoHueTimeLastChange = 0.0f;

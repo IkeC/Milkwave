@@ -2177,6 +2177,17 @@ void CPlugin::DoCustomSoundAnalysis() {
     // swprintf(buffer, 256, L"[%i] %5.2f %5.2f %5.2f %5.2f\n", i, mysound.imm[i], mysound.imm_rel[i], mysound.avg_rel[i], mysound.smooth[i]);
     // OutputDebugStringW(buffer);
   }
+
+  // Test hook (named pipe AUDIO_TEST=): replace the analysed bands with fixed relative
+  // levels so preset reactions can be verified silently and reproducibly.
+  if (m_bAudioTestOverride) {
+    for (i = 0; i < 3; i++) {
+      const float v = m_AudioTestBands[i];
+      mysound.imm[i] = mysound.avg[i] = mysound.long_avg[i] = v;
+      mysound.imm_rel[i] = mysound.avg_rel[i] = mysound.smooth[i] = mysound.smooth_rel[i] = v;
+      mysound.recent[i].clear();
+    }
+  }
 }
 
 void CPlugin::GetSongTitle(wchar_t* szSongTitle, int nSize) {

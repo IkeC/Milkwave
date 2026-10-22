@@ -31,16 +31,16 @@ comp_26=  uv = float2(uv.x, -uv.y);
 comp_27=  // CONV: Adjust viewpoint (x,y individually or both)
 comp_28=  uv += float2(0,0) + 0;
 comp_29=  uv *= float2(1,1) * 1;
-comp_30=  // AUDIO: version 1 = slow (bass_smooth), 2 = fast (bass_att), >2 = off - see the remote's Version tooltip
+comp_30=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
 comp_31=  #ifdef bass_smooth
-comp_32=    float aRng = (int)vis_version == 1 ? 0.30 : 0.26;
+comp_32=    float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
 comp_33=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_34=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
 comp_35=  #else
 comp_36=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
 comp_37=  #endif
 comp_38=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
-comp_39=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 1.7 : 0.7;   // beat scale, colour reaction scale
+comp_39=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // beat scale, colour reaction scale
 comp_40=  // AUDIO: the corridor slides sideways with the level
 comp_41=  fragCoord.x += aDev * 0.15;
 comp_42=

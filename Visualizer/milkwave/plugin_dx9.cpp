@@ -1022,10 +1022,13 @@ int CPlugin::AllocateMyDX9Stuff() {
 
   if (!m_bInitialPresetSelected) {
     UpdatePresetList(true);  //...just does its initial burst!
-    if (m_bEnablePresetStartup && wcslen(m_szPresetStartup) > 0) {
-      LoadPreset(m_szPresetStartup, 0.0f);
+    // A .milk file opened from Explorer wins over the configured startup preset.
+    const bool bCommandLinePreset = (wcslen(m_szCommandLinePreset) > 0);
+    const wchar_t* szStartupPreset = bCommandLinePreset ? m_szCommandLinePreset : m_szPresetStartup;
+    if ((bCommandLinePreset || m_bEnablePresetStartup) && wcslen(szStartupPreset) > 0) {
+      LoadPreset(szStartupPreset, 0.0f);
 
-      std::wstring message(m_szPresetStartup);
+      std::wstring message(szStartupPreset);
       size_t pos = message.find_last_of(L"\\/");
       std::wstring sPath;
       std::wstring sFilename;

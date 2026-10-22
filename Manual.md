@@ -42,6 +42,12 @@ The "Display" toggles control what is shown when the track changes: "Track" disp
 
 The Remote keeps these toggles in sync with the Visualizer, so changing them on either side updates the other. Controls that have no effect in the current state are disabled - hover them to see a tooltip explaining why.
 
+### Opening preset files from Windows
+
+If you associate _.milk_ (or _.milk2_) files with Milkwave Visualizer in Windows, opening a preset file displays it: the installer offers this on its last page ("Associate .milk files", enabled by default), and you can also set it yourself via Explorer's "Open with". When the Visualizer is not running it starts with that preset, and when it is already running the preset is loaded in the running instance instead of opening a second window. That window is restored from the taskbar and brought to the front (if Windows lets the new process pass the activation on, otherwise the taskbar button flashes). The file is loaded as-is, so your preset folder (_settings.ini:szPresetDir_) stays unchanged and the next automatic preset change continues in your own library. In Desktop Mode there is no window to raise, so only the preset changes.
+
+If Windows still opens presets in another program, or keeps asking "How do you want to open this file?", pick Milkwave Visualizer once via "Open with" - Windows keeps a per-file-type choice that overrides the installer's association until it is refreshed.
+
 ## Tab "Message"
 
 Use "Send" to send the text after "Message" to display in the Visualizer window. Toggle "Preview" to see a "what you see is what you get" version of your text. If "Wrap" is checked, text will be wrapped to two lines if the text is longer than the number in the drop-down box. You can manually define a line break within your text by writing "//". Note that this feature is rather experimental and may clip your text sometimes depending on your used font face and size.

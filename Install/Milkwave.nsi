@@ -2,6 +2,7 @@
 ; NSIS installer script
 
 !include "MUI2.nsh"
+!include "LogicLib.nsh"
 
 !define MUI_ABORTWARNING
 
@@ -15,6 +16,10 @@
 !define RELDIR "..\Release\"
 
 !define REG_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Milkwave"
+
+; Per-user .milk association (RequestExecutionLevel user, so HKCU\Software\Classes)
+!define REG_ASSOC_PROGID "Milkwave.Preset"
+!define REG_ASSOC_EXT ".milk"
 
 Name "Milkwave ${VERSION}"
 OutFile "Milkwave-${VERSION}-Installer.exe"
@@ -30,8 +35,15 @@ RequestExecutionLevel user
 !define MUI_FINISHPAGE_RUN "$INSTDIR\MilkwaveRemote.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Run Milkwave now!"
 
-!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\README.txt"
-!define MUI_FINISHPAGE_SHOWREADME_TEXT "Show README.txt"
+; The MUI finish page has two checkbox slots. The README keeps its place as a link
+; below them, and its former checkbox slot asks for the .milk file association.
+; The box is ticked by default (MUI only clears it with *_NOTCHECKED).
+!define MUI_FINISHPAGE_SHOWREADME ""
+!define MUI_FINISHPAGE_SHOWREADME_TEXT "Associate .milk files with Milkwave Visualizer"
+!define MUI_FINISHPAGE_SHOWREADME_FUNCTION AssocMilkFiles
+
+!define MUI_FINISHPAGE_LINK "Show README.txt"
+!define MUI_FINISHPAGE_LINK_LOCATION "$INSTDIR\README.txt"
 
 ; Installer Pages
 !insertmacro MUI_PAGE_COMPONENTS
@@ -170,6 +182,33 @@ Section "Desktop shortcuts"
   CreateShortcut "$Desktop\Milkwave Visualizer.lnk" "$INSTDIR\MilkwaveVisualizer.exe"
 SectionEnd
 
+; Finish page: associate .milk files with the Visualizer (runs only when the
+; checkbox is ticked). The Visualizer receives the preset file as its first
+; argument and either loads it or forwards it to a running instance.
+Function AssocMilkFiles
+  WriteRegStr HKCU "Software\Classes\${REG_ASSOC_EXT}" "" "${REG_ASSOC_PROGID}"
+  WriteRegStr HKCU "Software\Classes\${REG_ASSOC_PROGID}" "" "Milkwave Visualizer Preset"
+  WriteRegStr HKCU "Software\Classes\${REG_ASSOC_PROGID}\DefaultIcon" "" "$INSTDIR\MilkwaveVisualizer.exe,0"
+  WriteRegStr HKCU "Software\Classes\${REG_ASSOC_PROGID}\shell\open\command" "" '"$INSTDIR\MilkwaveVisualizer.exe" "%1"'
+
+  ; "Open with" hand-picks the Applications\<exe> ProgID, which Windows builds
+  ; without command line arguments. Register it so the preset path is passed on
+  ; that route as well.
+  WriteRegStr HKCU "Software\Classes\Applications\MilkwaveVisualizer.exe" "FriendlyAppName" "Milkwave Visualizer"
+  WriteRegStr HKCU "Software\Classes\Applications\MilkwaveVisualizer.exe\DefaultIcon" "" "$INSTDIR\MilkwaveVisualizer.exe,0"
+  WriteRegStr HKCU "Software\Classes\Applications\MilkwaveVisualizer.exe\shell\open\command" "" '"$INSTDIR\MilkwaveVisualizer.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\Applications\MilkwaveVisualizer.exe\SupportedTypes" "${REG_ASSOC_EXT}" ""
+
+  ; A leftover per-extension choice wins over the classes mapping above and can
+  ; point at a handler that drops the file name, so clear it.
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\${REG_ASSOC_EXT}\UserChoice"
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\${REG_ASSOC_EXT}\UserChoiceLatest"
+
+  WriteRegStr HKCU "Software\Milkwave" "PresetAssociation" "${REG_ASSOC_PROGID}"
+  ; Tell Explorer about the new association instead of waiting for a logoff.
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0x1000, i 0, i 0)'
+FunctionEnd
+
 ; Uninstaller
 Section Uninstall
     
@@ -209,5 +248,23 @@ Section Uninstall
   
   DeleteRegKey HKCU "${REG_UNINST_KEY}"
   DeleteRegKey HKCU "Software\Milkwave"
-  
+
+  ; Drop the .milk association, but only while it still points at us - the user
+  ; may have re-associated .milk files with another visualizer since.
+  ReadRegStr $0 HKCU "Software\Classes\${REG_ASSOC_EXT}" ""
+  ${If} $0 == "${REG_ASSOC_PROGID}"
+    DeleteRegKey HKCU "Software\Classes\${REG_ASSOC_EXT}"
+  ${EndIf}
+  DeleteRegKey HKCU "Software\Classes\${REG_ASSOC_PROGID}"
+  ReadRegStr $1 HKCU "Software\Classes\Applications\MilkwaveVisualizer.exe\shell\open\command" ""
+  ${If} $1 == '"$INSTDIR\MilkwaveVisualizer.exe" "%1"'
+    DeleteRegKey HKCU "Software\Classes\Applications\MilkwaveVisualizer.exe"
+  ${EndIf}
+
+  ; Without the classes mapping the stale choice would pop up "How do you want
+  ; to open this file?" instead of falling back to another handler.
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\${REG_ASSOC_EXT}\UserChoice"
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\${REG_ASSOC_EXT}\UserChoiceLatest"
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0x1000, i 0, i 0)'
+
 SectionEnd

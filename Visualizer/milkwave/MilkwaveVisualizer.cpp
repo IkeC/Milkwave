@@ -140,6 +140,7 @@
 #include <windows.h>
 #include <commctrl.h>  // desktop icon list messages (LVM_*) for Desktop Mode
 #include <shobjidl.h>  // taskbar jump list tasks for Desktop Mode
+#include <shellapi.h>  // CommandLineToArgvW for the .milk file association
 #include <propkey.h>
 #include <propvarutil.h>
 #include <process.h>
@@ -3154,8 +3155,164 @@ static bool ForwardJumpListTask(LPCSTR cmdLine) {
   return false;
 }
 
+// A .milk file is passed as the first command line argument when Milkwave
+// Visualizer is associated with .milk files in Windows. Returns the absolute
+// path of the first existing .milk/.milk2 argument, or an empty string.
+static bool IsPresetFileArgument(const wchar_t* arg) {
+  const size_t len = wcslen(arg);
+  if (len >= 6 && _wcsicmp(arg + len - 6, L".milk2") == 0) {
+    return true;  // double preset
+  }
+  return len >= 5 && _wcsicmp(arg + len - 5, L".milk") == 0;
+}
+
+static std::wstring GetPresetFileFromCommandLine() {
+  int argc = 0;
+  LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+  if (argv == nullptr) {
+    return std::wstring();
+  }
+
+  std::wstring presetFile;
+  for (int i = 1; i < argc; i++) {
+    const wchar_t* arg = argv[i];
+    if (!IsPresetFileArgument(arg)) {
+      continue;
+    }
+    if (GetFileAttributesW(arg) == INVALID_FILE_ATTRIBUTES) {
+      continue;
+    }
+    wchar_t fullPath[MAX_PATH];
+    if (GetFullPathNameW(arg, MAX_PATH, fullPath, nullptr) == 0) {
+      continue;
+    }
+    presetFile = fullPath;
+    break;
+  }
+
+  LocalFree(argv);
+  return presetFile;
+}
+
+struct FindVisualizerContext {
+  DWORD excludePid;
+  DWORD foundPid;
+  HWND foundHwnd;
+  bool foundExactTitle;
+};
+
+static BOOL CALLBACK FindVisualizerWindowProc(HWND hwnd, LPARAM lParam) {
+  auto* ctx = reinterpret_cast<FindVisualizerContext*>(lParam);
+
+  wchar_t className[64];
+  if (GetClassNameW(hwnd, className, _countof(className)) == 0 ||
+      _wcsicmp(className, L"Direct3DWindowClass") != 0) {
+    return TRUE;
+  }
+
+  DWORD pid = 0;
+  GetWindowThreadProcessId(hwnd, &pid);
+  if (pid == 0 || pid == ctx->excludePid) {
+    return TRUE;
+  }
+
+  // Instances are titled "Milkwave Visualizer" or "Milkwave Visualizer <n>".
+  wchar_t title[128];
+  static const wchar_t kBaseTitle[] = L"Milkwave Visualizer";
+  if (GetWindowTextW(hwnd, title, _countof(title)) == 0 ||
+      wcsncmp(title, kBaseTitle, _countof(kBaseTitle) - 1) != 0) {
+    return TRUE;
+  }
+
+  const bool bExactTitle = (title[_countof(kBaseTitle) - 1] == L'\0');
+  if (ctx->foundPid == 0 || (bExactTitle && !ctx->foundExactTitle)) {
+    ctx->foundPid = pid;
+    ctx->foundHwnd = hwnd;
+    ctx->foundExactTitle = bExactTitle;
+  }
+  return ctx->foundExactTitle ? FALSE : TRUE;  // the first instance wins
+}
+
+static DWORD FindRunningVisualizerPid(HWND* pHwndOut = nullptr) {
+  FindVisualizerContext ctx{GetCurrentProcessId(), 0, nullptr, false};
+  EnumWindows(FindVisualizerWindowProc, reinterpret_cast<LPARAM>(&ctx));
+  if (pHwndOut != nullptr) {
+    *pHwndOut = ctx.foundHwnd;
+  }
+  return ctx.foundPid;
+}
+
+// Opening a preset file is a deliberate user action, so the running visualizer
+// should end up visible: restore it if minimized and raise it to the foreground.
+// The process Explorer launched still owns the foreground right at this point,
+// which is why this can work from a short-lived helper process.
+static void BringVisualizerToFront(HWND hwnd) {
+  if (hwnd == nullptr || !IsWindow(hwnd)) {
+    return;
+  }
+
+  if (IsIconic(hwnd)) {
+    ShowWindow(hwnd, SW_RESTORE);
+  } else {
+    ShowWindow(hwnd, SW_SHOW);
+  }
+
+  if (!SetForegroundWindow(hwnd)) {
+    // Windows can still refuse the activation (e.g. another app owns the
+    // foreground); nudge the user with a taskbar flash instead of failing.
+    FLASHWINFO flashInfo = {};
+    flashInfo.cbSize = sizeof(flashInfo);
+    flashInfo.hwnd = hwnd;
+    flashInfo.dwFlags = FLASHW_ALL | FLASHW_TIMERNOFG;
+    flashInfo.uCount = 3;
+    FlashWindowEx(&flashInfo);
+  }
+}
+
+// Opening a .milk file while a visualizer runs must not start a second instance:
+// send the file to the running one as a PRESET= pipe message and let this process
+// exit. Without a running instance the path is remembered so the engine loads it
+// instead of the configured startup preset (see m_szCommandLinePreset).
+// Returns true when the process should exit without starting a visualizer.
+static bool ForwardPresetFileToRunningInstance() {
+  const std::wstring presetFile = GetPresetFileFromCommandLine();
+  if (presetFile.empty()) {
+    return false;
+  }
+
+  HWND targetHwnd = nullptr;
+  const DWORD targetPid = FindRunningVisualizerPid(&targetHwnd);
+  if (targetPid != 0) {
+    wchar_t pipeName[64];
+    swprintf_s(pipeName, L"\\\\.\\pipe\\Milkwave_%u", targetPid);
+    HANDLE hPipe = CreateFileW(pipeName, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+    if (hPipe != INVALID_HANDLE_VALUE) {
+      const std::wstring message = L"PRESET=" + presetFile;
+      DWORD written = 0;
+      // UTF-16 including the terminating NUL, like the other pipe clients.
+      WriteFile(hPipe, message.c_str(), (DWORD)((message.size() + 1) * sizeof(wchar_t)), &written, nullptr);
+      CloseHandle(hPipe);
+      // Tell the shell the target may take the foreground even though we are the
+      // process that was granted it, then raise the visualizer ourselves.
+      AllowSetForegroundWindow(targetPid);
+      BringVisualizerToFront(targetHwnd);
+      OutputDebugStringW(L"Forwarded preset: ");
+      OutputDebugStringW(presetFile.c_str());
+      OutputDebugStringW(L"\n");
+      return true;
+    }
+  }
+
+  wcscpy_s(g_plugin.m_szCommandLinePreset, MAX_PATH, presetFile.c_str());
+  return false;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow) {
   if (ForwardJumpListTask(szCmdLine)) {
+    return 0;
+  }
+
+  if (ForwardPresetFileToRunningInstance()) {
     return 0;
   }
 

@@ -702,6 +702,28 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   } else if (wcsncmp(sMessage, L"VAR_VERSION=", 12) == 0) {
     std::wstring message(sMessage + 12);
     g_plugin.m_VisVersion = std::stof(message);
+  } else if (wcsncmp(sMessage, L"AUDIO_TEST=", 11) == 0) {
+    // Test hook: "AUDIO_TEST=bass,mid,treb" injects fixed relative band levels (1 = average,
+    // as the shader sees them) so preset audio reactions can be verified silently and
+    // reproducibly; "AUDIO_TEST=off" returns to the captured audio. One value is broadcast to
+    // all three bands. The FFT texture (get_fft) is not simulated.
+    std::wstring message(sMessage + 11);
+    float b = 1.0f, m = 1.0f, t = 1.0f;
+    const int got = swscanf_s(message.c_str(), L"%f,%f,%f", &b, &m, &t);
+    if (got < 1) {
+      g_plugin.m_bAudioTestOverride = false;
+    } else {
+      if (got < 2) m = b;
+      if (got < 3) t = m;
+      b = max(0.0f, min(4.0f, b));
+      m = max(0.0f, min(4.0f, m));
+      t = max(0.0f, min(4.0f, t));
+      g_plugin.m_AudioTestBands[0] = b;
+      g_plugin.m_AudioTestBands[1] = m;
+      g_plugin.m_AudioTestBands[2] = t;
+      g_plugin.m_bAudioTestOverride = true;
+      // No on-screen notification: captures must stay byte-identical between test values.
+    }
   } else if (wcsncmp(sMessage, L"COL_HUE=", 8) == 0) {
     std::wstring message(sMessage + 8);
     g_plugin.m_ColShiftHue = std::stof(message);

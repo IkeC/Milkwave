@@ -1,0 +1,220 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// TekF - Atmospheric Landscape / https://www.shadertoy.com/view/slVfD1
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV: adding helper functions
+comp_8=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_9=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_10=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_11=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_12=
+comp_13=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_14=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_15=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_16=float lenv(float4 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_17=
+comp_18=static float2 quasi2 = float2(.754877666247,.569840290998);
+comp_19=
+comp_20=float hash13(float3 p)
+comp_21={
+comp_22=  p = frac(p*0.1031);
+comp_23=  p += dot(p, p.yzx+33.33);
+comp_24=  return frac((p.x+p.y)*p.z);
+comp_25=}
+comp_26=
+comp_27=float Noise( float3 pos )
+comp_28={
+comp_29=  float3 i = floor(pos), f = frac(pos);
+comp_30=  f = f*f*(3.-2.*f);
+comp_31=  float n000=hash13(i+float3(0.,0.,0.)), n100=hash13(i+float3(1.,0.,0.));
+comp_32=  float n010=hash13(i+float3(0.,1.,0.)), n110=hash13(i+float3(1.,1.,0.));
+comp_33=  float n001=hash13(i+float3(0.,0.,1.)), n101=hash13(i+float3(1.,0.,1.));
+comp_34=  float n011=hash13(i+float3(0.,1.,1.)), n111=hash13(i+float3(1.,1.,1.));
+comp_35=  float nx00=lerp(n000,n100,f.x), nx10=lerp(n010,n110,f.x);
+comp_36=  float nx01=lerp(n001,n101,f.x), nx11=lerp(n011,n111,f.x);
+comp_37=  return lerp(lerp(nx00,nx10,f.y),lerp(nx01,nx11,f.y),f.z)*2.-1.;
+comp_38=}
+comp_39=
+comp_40=float GroundSDF( float3 pos, int octaves )
+comp_41={
+comp_42=  float f = 0.;
+comp_43=  float s = 1.4;
+comp_44=  float3 p = pos * s * .1;
+comp_45=  for (int i=min(frame,0); i < 6; i++ )
+comp_46=  {
+comp_47=    // CONV: replaced break with breaking condition
+comp_48=    if ( i >= octaves )  i = 6;
+comp_49=    f += abs(Noise(p))*s;
+comp_50=    p = float3(p.z*5.,p.xy*3.+p.yx*4.*float2(1,-1))*2./5.;
+comp_51=    s /= 2.;
+comp_52=  }
+comp_53=
+comp_54=  return (pos.y + f) * .8;
+comp_55=}
+comp_56=
+comp_57=float FogDensity( float3 pos, int octaves )
+comp_58={
+comp_59=  float f = 0.;
+comp_60=  float s = 1.;
+comp_61=  float3 p = pos * .7;
+comp_62=  p += time*float3(0,-.02,.02);
+comp_63=  for (int i=min(frame,0); i < 6; i++ )
+comp_64=  {
+comp_65=    // CONV: replaced break with breaking condition
+comp_66=    if ( i >= octaves )  i = 6;
+comp_67=    f += Noise(p)*s;
+comp_68=    p = float3(p.z*5.,p.xy*3.+p.yx*4.*float2(1,-1))*2./5.;
+comp_69=    s /= 1.7;
+comp_70=  }
+comp_71=
+comp_72=  f += smoothstep(.2,.0,abs(pos.y+1.))*.4;
+comp_73=  f += smoothstep(.4,.2,abs(pos.y-.3))*.7;
+comp_74=  f = smoothstep(.2,1.5,f);
+comp_75=  float g = GroundSDF(pos,2);
+comp_76=  f *= 1.-g/(abs(g)+.04);
+comp_77=  return f*1.;
+comp_78=}
+comp_79=
+comp_80=float AirDensity( float3 pos )
+comp_81={
+comp_82=  return exp2(-pos.y/5.-3.);
+comp_83=}
+comp_84=
+comp_85=float3 LinearToSRGB( float3 col )
+comp_86={
+comp_87=  return lerp( col*12.92, 1.055*pow(col,float3(1./2.4, 1./2.4, 1./2.4))-.055, step(float3(.0031308, .0031308, .0031308),col) );
+comp_88=}
+comp_89=
+comp_90=shader_body {
+comp_91=  float4 fragColour = 0;
+comp_92=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_93=  #ifdef bass_smooth
+comp_94=    float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
+comp_95=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_96=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_97=  #else
+comp_98=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_99=  #endif
+comp_100=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_101=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // beat scale, colour reaction scale
+comp_102=  // AUDIO: the camera eases in and out with the level (applied to the pixel coordinate)
+comp_103=  float2 fragPixel  = (uv - 0.5) * (1.0 + aDev * 0.30) * texsize.xy + texsize.xy * 0.5;   // CONV: Shadertoy fragCoord is in pixels
+comp_104=  fragPixel.y = texsize.y - fragPixel.y;   // CONV: ... with the origin in the bottom left corner
+comp_105=  // CONV: Center on screen, then try some aspect correction
+comp_106=  uv = (uv*2) - 1;
+comp_107=  uv *= aspect.xy;
+comp_108=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_109=  uv = float2(uv.x, -uv.y);
+comp_110=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_111=  uv += float2(0,0) + 0;
+comp_112=  uv *= float2(1,1) * 1;
+comp_113=
+comp_114=  float2 fragCoord = fragPixel;
+comp_115=
+comp_116=  float shTime = time*.2;
+comp_117=  float3 velocity = float3(1.0,0,0);
+comp_118=  float zoom = 1.;
+comp_119=  float3 camPos = float3(sin(shTime*.618)*.4,-.3+.1*sin(shTime),0) + shTime*velocity;
+comp_120=  float3 camLook = float3(-1,-.5,4) + (shTime-sin(shTime))*velocity;
+comp_121=
+comp_122=  // CONV: the original jitters per frame and relies on the temporal blend to average it out.
+comp_123=  // Without a readable previous frame that would be grain, so use a fixed per pixel dither.
+comp_124=  float2 jitter = float2(
+comp_125=    frac(dot(fragCoord,float2(.754877666242,.569840290998))),
+comp_126=    frac(dot(fragCoord,float2(.569840290998,.754877666242))*1.6180339887) );
+comp_127=  float3 ray = float3((fragCoord+jitter-texsize.xy*.5)/(texsize.x*zoom),1.);
+comp_128=  float3 camDir = normalize(camLook-camPos);
+comp_129=  float3 camRight = normalize(cross(float3(0,1,0),camDir));
+comp_130=  float3 camUp = cross(camDir,camRight);
+comp_131=
+comp_132=  ray = ray.x*camRight + ray.y*camUp + ray.z*camDir;
+comp_133=
+comp_134=  float focalDepth = 4.;
+comp_135=  float aperture = .003;
+comp_136=  camPos += ray*focalDepth;
+comp_137=  ray += ((jitter.y*2.-1.)*camRight + (jitter.x*2.-1.)*camUp)*aperture;
+comp_138=  camPos -= ray*focalDepth;
+comp_139=
+comp_140=  ray = normalize(ray);
+comp_141=
+comp_142=  float3 sunDir = normalize(float3(-3,2,1));
+comp_143=
+comp_144=  float3 pos = camPos;
+comp_145=  float3 absorption = float3(1, 1, 1);
+comp_146=  float3 emission = float3(0, 0, 0);
+comp_147=  float lastStride = 0.;
+comp_148=  float lastFogDensity = 0.;
+comp_149=  float lastAirDensity = 0.;
+comp_150=  for (int i=min(frame,0); i < 160; i++ )
+comp_151=  {
+comp_152=    float h = GroundSDF( pos, 6 );
+comp_153=
+comp_154=    float fogDensity = FogDensity(pos,6);
+comp_155=    float fogIntegral = lastStride*lerp(fogDensity,lastFogDensity,.5);
+comp_156=
+comp_157=    float airDensity = AirDensity(pos);
+comp_158=    float airIntegral = lastStride*lerp(airDensity,lastAirDensity,.5);
+comp_159=
+comp_160=    float3 fogAbsorptionDelta = pow( float3(0.1, 0.1, 0.1), float3(fogIntegral, fogIntegral, fogIntegral) );
+comp_161=    float3 fogEmissionDelta = (1.-pow( float3(0.1, 0.1, 0.1), float3(fogIntegral, fogIntegral, fogIntegral) ));
+comp_162=
+comp_163=    float shadowStep = .07;
+comp_164=    float shadow = (fogDensity - FogDensity(pos+sunDir*shadowStep,3))/shadowStep;
+comp_165=    fogEmissionDelta *= lerp(float3(.2,.27,.35)*.4,float3(1, 1, 1)*.6,smoothstep(-1.,1.,shadow));
+comp_166=
+comp_167=    float3 airAbsorptionDelta = pow( 1.-float3(.3,.48,.7), float3(airIntegral, airIntegral, airIntegral) );
+comp_168=    float3 airEmissionDelta = (1. - pow( 1.-float3(.4,.55,.7), float3(airIntegral, airIntegral, airIntegral) )) * float3(.6, .6, .6);
+comp_169=
+comp_170=    float3 absorptionDelta = fogAbsorptionDelta * airAbsorptionDelta;
+comp_171=    emission += (absorption*sqrt(absorptionDelta)) * (fogEmissionDelta + airEmissionDelta);
+comp_172=    absorption *= absorptionDelta;
+comp_173=
+comp_174=    lastFogDensity = fogDensity;
+comp_175=    lastAirDensity = airDensity;
+comp_176=
+comp_177=    h = min(h,.1);
+comp_178=    lastStride = h;
+comp_179=
+comp_180=    pos += h*ray;
+comp_181=    // CONV: replaced break with breaking condition
+comp_182=    if ( h < .001 )  i = 160;
+comp_183=  }
+comp_184=
+comp_185=  float2 d = float2(-1,1)*.02;
+comp_186=  float3 normal = normalize(
+comp_187=  GroundSDF( pos + d.xxx, 6 )*d.xxx +
+comp_188=  GroundSDF( pos + d.xyy, 6 )*d.xyy +
+comp_189=  GroundSDF( pos + d.yxy, 6 )*d.yxy +
+comp_190=  GroundSDF( pos + d.yyx, 6 )*d.yyx
+comp_191=  );
+comp_192=
+comp_193=  float aostep = .3;
+comp_194=  float ao = smoothstep(-.2,1.5,GroundSDF( pos + normal*aostep, 6 )/aostep);
+comp_195=
+comp_196=  fragColour.rgb = float3(.5, .5, .5)*ao + float3(.5, .5, .5)*max(dot(normal,sunDir),0.);
+comp_197=  fragColour.rgb *= .4*lerp( float3(.0,.2,.0), float3(.07,.1,0)+.3, smoothstep(.3,.9,ao) );
+comp_198=
+comp_199=  if ( GroundSDF( pos, 6 ) > .5 ) fragColour.rgb = float3(.14, .14, .14);
+comp_200=
+comp_201=  fragColour.rgb = fragColour.rgb*absorption + emission;
+comp_202=
+comp_203=  // CONV: the temporal blend of the original needs a readable previous frame; sampler_main maps to
+comp_204=  // the VS surface this comp pass renders into, so it reads black here. Use a static dither instead.
+comp_205=  // fragColour.rgb = lerp( tex2D(sampler_main, fragPixel/texsize.xy).rgb, fragColour.rgb, .3 );
+comp_206=
+comp_207=  fragColour.a = 1.;
+comp_208=
+comp_209=  // AUDIO: the light warms up on beats
+comp_210=  fragColour.rgb = lerp(fragColour.rgb, fragColour.rgb * float3(1.12, 1.0, 0.86), saturate(aBe) * 0.30 * aCol);
+comp_211=
+comp_212=  // CONV: pass 0 of the original shader (contrast stretch + linear -> sRGB)
+comp_213=  fragColour.rgb = smoothstep( float3(.1,.12,.16), float3(.95,.94,.92), fragColour.rgb );
+comp_214=  fragColour.rgb = LinearToSRGB( fragColour.rgb );
+comp_215=  ret = fragColour;
+comp_216=}

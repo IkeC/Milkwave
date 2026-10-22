@@ -1,6 +1,18 @@
 ## v4.2 (unreleased)
 
 * 15 new audio-reactive Shader presets
+* New preset: XT95 + IkeC - Walk Like an Egyptian (Shadertoy `msjGzw`), with audio-reactive sun and sky
+* New preset: OldEclipse + IkeC - Unimagined (Shadertoy `NflSD8`), with audio-reactive SDF morph and colour
+* New preset: z0rg + IkeC - Psychedelic tube (Shadertoy `sdcGRX`), with audio-reactive tube radius and dash width
+  - Adapted from a two-pass shader: the self-feedback pass is not portable to a comp shader and was dropped
+* Visualizer: new `AUDIO_TEST=bass,mid,treb` named-pipe command (values relative to the track average, `off` to release)
+  - Injects fixed audio band levels so preset audio reactivity can be verified silently and reproducibly
+* Visualizer: `.milk` file association support
+  - Opening a preset file starts the Visualizer on that preset
+  - If the Visualizer is already running, the preset is loaded in the running instance instead of starting a second one
+  - The running window is restored from the taskbar and brought to the front
+  - Works from a double-click, from "Open with" and from the installer's association option
+* Installer: "Associate .milk files with Milkwave Visualizer" option on the finish page (enabled by default, per-user association); the README opens from a link on the same page
 * Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 * Visualizer: Improved Desktop Mode (Ctrl+F9)
 * Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"

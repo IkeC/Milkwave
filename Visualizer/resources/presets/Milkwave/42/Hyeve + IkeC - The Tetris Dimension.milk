@@ -1,0 +1,199 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Hyeve - The Tetris Dimension / https://www.shadertoy.com/view/NtByzD
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV: adding helper functions
+comp_8=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_9=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_10=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_11=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_12=
+comp_13=// CONV2: trunc() helper (not available on ps_3_0)
+comp_14=float trunc_conv(float x) { return sign(x) * floor(abs(x)); }
+comp_15=float3 trunc_conv3(float3 x) { return sign(x) * floor(abs(x)); }
+comp_16=
+comp_17=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_18=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_19=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_20=float lenv(float4 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_21=
+comp_22=#define rot(a) float2x2(cos(a),sin(a),-sin(a),cos(a))
+comp_23=
+comp_24=static float2 uv_conv;
+comp_25=static float3 cp,cn,cr,ro,rd,ss,oc,cc,gl,vb;
+comp_26=static float4 fc;
+comp_27=static float tt,cd,sd,io,oa,td,tc;
+comp_28=static int es=0,ec;
+comp_29=
+comp_30=float bx(float3 p,float3 s){float3 q=abs(p)-s;return min(max(q.x,max(q.y,q.z)),0.)+lenv(max(q,0.));}
+comp_31=
+comp_32=float3 minoc(int num)
+comp_33={
+comp_34=  num=int(mod_conv(float(num),7.));
+comp_35=  float3 c=float3(0.7,0,0);
+comp_36=  if(num==1)c=float3(0,0.7,0);else if(num==2)c=float3(0.8,0.7,0.1);else if(num==3)c=float3(0.5,0.2,0.8);
+comp_37=  else if(num==4)c=float3(0.1,0.7,0.8);else if(num==5)c=float3(0,0.2,0.7);else if(num==6)c=float3(0.9,0.5,0);
+comp_38=    return c;
+comp_39=  }
+comp_40=
+comp_41=  float mino(int num, float3 p, float s)
+comp_42=  {
+comp_43=    num = int(mod_conv(float(num), 7.0));
+comp_44=    if (num < 0) num += 7;
+comp_45=    float sh = 2.0*float(num);float p2 = exp2(sh);
+comp_46=    float2 o2 = float2(fmod(floor( 5493.0/p2),4.0),fmod(floor(10903.0/p2),4.0))*1.0-2.0;
+comp_47=    float2 o3 = float2(fmod(floor(13482.0/p2),4.0),fmod(floor( 5719.0/p2),4.0))*1.0-2.0;
+comp_48=    float2 o4 = float2(fmod(floor( 5701.0/p2),4.0),fmod(floor(10664.0/p2),4.0))*0.5-0.5;
+comp_49=
+comp_50=    p.xy+=o4*s;float3 dp=p;float hs=s/2.;float d=bx(dp, float3(hs, hs, hs));
+comp_51=    dp.xy+=float2(1,0)*s;d=min(d,bx(dp,float3(hs, hs, hs)));dp=p;
+comp_52=    dp.xy+=o2*s;d=min(d,bx(dp,float3(hs, hs, hs)));dp=p;
+comp_53=    dp.xy+=o3*s;d=min(d,bx(dp,float3(hs, hs, hs)));dp=p;
+comp_54=    return d;
+comp_55=  }
+comp_56=
+comp_57=  float hash(float2 p)
+comp_58=  {
+comp_59=    p=frac(p)-cos(p);
+comp_60=    float2 q=tan(abs(p*37482.34)+p.yx*678324.);
+comp_61=    return frac(q.x+p.x*q.y-p.y);
+comp_62=  }
+comp_63=
+comp_64=  float mp(float3 p)
+comp_65=  {
+comp_66=    float3 pp=p;
+comp_67=    p.y+=tt;
+comp_68=    p.z-=20.;float yid=trunc_conv(p.y/16.+8.);
+comp_69=    p.y=mod_conv(p.y,16.)-8.;
+comp_70=    p.xz=mul(rot(tt*0.3+yid),p.xz);
+comp_71=    p.xy=mul(rot(tt*0.1),p.xy);
+comp_72=    int mn=int(tt+yid*2.);
+comp_73=    float mm=pow(mod_conv(tt,1.),5.);
+comp_74=    float ms=3.;
+comp_75=    float mno=mino(mn,p,ms)-0.05;
+comp_76=    mno=lerp(mno,mino(mn+1,p,ms)-0.05,mm);
+comp_77=    float3 mc=lerp(minoc(mn),minoc(mn+1),mm);
+comp_78=    if(mno>0.03)gl+=exp(-mno)*mc*1.4;
+comp_79=    p=pp;p.z+=tt*1.5;
+comp_80=    float3 cellID = trunc_conv3(p/2.+0.5);
+comp_81=    float3 id=float3(hash(cellID.xx+cellID.yz),hash(cellID.yz),hash(cellID.zy))*float3(1,0.6,1);
+comp_82=    if(lenv(id) < 1.15) id = float3(0., 0., 0.);
+comp_83=    else id = normalize(id);
+comp_84=    // CONV: isnan guard removed (legacy compiler)
+comp_85=    // this is a stupid fix but whatever
+comp_86=    p.yz=mod_conv(p.yz-1.,2.)-1.;
+comp_87=    p.x=abs(p.x)-28.;
+comp_88=    float wls = bx(p,float3(0.7, 0.7, 0.7))-0.05;
+comp_89=    if(sd>0.01) gl += exp(-wls*0.1) * id*0.5;
+comp_90=    sd=min(mno,wls);
+comp_91=    sd=abs(sd)-0.001;
+comp_92=    if(sd<0.001)
+comp_93=    {
+comp_94=      io=mno<wls?1.1:1.05;
+comp_95=      oc=mno<wls?mc:id;
+comp_96=      oa=lenv(id)<0.5?0.:0.1;
+comp_97=      ss=float3(1., 1., 1.);
+comp_98=      vb=float3(0., 0., 0.);
+comp_99=      ec=2;
+comp_100=    }
+comp_101=
+comp_102=    return sd;
+comp_103=  }
+comp_104=
+comp_105=  // CONV: replaced break with breaking condition
+comp_106=  void tr(){vb.x=0.;cd=0.;for(tc=1.;tc<128.;tc++){mp(ro+rd*cd);cd+=sd;td+=sd;if(sd<0.0001||cd>80.)tc=128.;}}
+comp_107=  // CONV: distance-only twin of mp() - inlining the full mp() 4x for the normal exploded the
+comp_108=// legacy compiler; this keeps the normals correct at a fraction of the compile time
+comp_109=float mpDist(float3 p) {
+comp_110=  float3 pp=p;
+comp_111=  p.y+=tt;
+comp_112=  p.z-=20.;float yid=trunc_conv(p.y/16.+8.);
+comp_113=  p.y=mod_conv(p.y,16.)-8.;
+comp_114=  p.xz=mul(rot(tt*0.3+yid),p.xz);
+comp_115=  p.xy=mul(rot(tt*0.1),p.xy);
+comp_116=  int mn=int(tt+yid*2.);
+comp_117=  float mm=pow(mod_conv(tt,1.),5.);
+comp_118=  float ms=3.;
+comp_119=  float mno=mino(mn,p,ms)-0.05;
+comp_120=  mno=lerp(mno,mino(mn+1,p,ms)-0.05,mm);
+comp_121=  p=pp;p.z+=tt*1.5;
+comp_122=  p.yz=mod_conv(p.yz-1.,2.)-1.;
+comp_123=  p.x=abs(p.x)-28.;
+comp_124=  float wls=bx(p,float3(0.7,0.7,0.7))-0.05;
+comp_125=  float sd=min(mno,wls);
+comp_126=  return abs(sd)-0.001;
+comp_127=}
+comp_128=void nm(){cn=normalize(float3(mpDist(cp)-mpDist(cp-float3(0.001,0,0)),mpDist(cp)-mpDist(cp-float3(0,0.001,0)),mpDist(cp)-mpDist(cp-float3(0,0,0.001))));}
+comp_129=
+comp_130=  void px()
+comp_131=  {
+comp_132=    cc=float3(0.,0.,0.)+lenv(pow(abs(rd+float3(0,0.5,0)),float3(3, 3, 3)))*float3(0.1,0.,0.2)+gl/tc;
+comp_133=    float3 l=float3(0.5,0.5,0.8);
+comp_134=    if(cd>80.){oa=1.;}
+comp_135=    else {
+comp_136=    float df=clamp(lenv(cn*l),0.,1.);
+comp_137=    float3 fr=pow(1.-df,3.)*lerp(cc,float3(0.4, 0.4, 0.4),0.5);
+comp_138=    float sp=(1.-lenv(cross(cr,cn*l)))*0.2;
+comp_139=    float ao=min(mpDist(cp+cn*0.3)-0.3,0.3)*0.5;
+comp_140=    cc=lerp((oc*(df+fr+ss)+fr+sp+ao+gl/tc),oc,vb.x);
+comp_141=    }
+comp_142=  }
+comp_143=
+comp_144=  void render(float2 frag, float2 res, float time_conv, out float4 col)
+comp_145=  {
+comp_146=
+comp_147=    uv_conv=float2(frag.x/res.x,frag.y/res.y);
+comp_148=    uv_conv-=0.5;uv_conv/=float2(res.y/res.x,1);
+comp_149=    ro=float3(0,0,-15);rd=normalize(float3(uv_conv,1));
+comp_150=    tt=mod_conv(time_conv, 100.);
+comp_151=
+comp_152=    for (int i=min(frame,0);i<4;i++)
+comp_153=    {
+comp_154=      tr();cp=ro+rd*cd;nm();ro=cp-cn*(io<0.?-0.01:0.01);
+comp_155=      cr=refract(rd,cn,fmod(float(i),2.0)<0.5?1./io:io);i=io<0.?i+1:i;
+comp_156=      if((lenv(cr)==0.&&es<=0)||io<0.){cr=reflect(rd,cn);es=(io<0.?es:ec);}
+comp_157=      if(fmod(float(max(es,0)),3.0)<0.5&&cd<128.)rd=cr;es--;
+comp_158=      if(vb.x>0.&&fmod(float(i),2.0)>0.5)oa=pow(clamp(cd/vb.y,0.,1.),vb.z);
+comp_159=      // CONV: replaced break with breaking condition
+comp_160=      px();fc=fc+float4(cc*oa,oa)*(1.-fc.a);if((fc.a>=1.||cd>80.))i=4;
+comp_161=    }
+comp_162=
+comp_163=    col = pow(fc/fc.a,float4(0.8, 0.8, 0.8, 0.8));
+comp_164=  }
+comp_165=
+comp_166=  shader_body {
+comp_167=    float4 fragColor = 0;
+comp_168=    float2 fragCoord  = uv;
+comp_169=    // CONV: Center on screen, then try some aspect correction
+comp_170=    uv = (uv*2) - 1;
+comp_171=    uv *= aspect.xy;
+comp_172=    // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_173=    uv = float2(uv.x, -uv.y);
+comp_174=    // CONV: Adjust viewpoint (x,y individually or both)
+comp_175=    uv += float2(0,0) + 0;
+comp_176=    uv *= float2(1,1) * 1;
+comp_177=    // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_178=    #ifdef bass_smooth
+comp_179=      float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
+comp_180=      float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_181=        : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_182=    #else
+comp_183=      float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_184=    #endif
+comp_185=    float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_186=    float aBe  = aDev * 4.0;   // beat scale used by the colour reaction
+comp_187=    // AUDIO: the tetromino grid eases in and out with the level
+comp_188=    fragCoord = (fragCoord - 0.5) * (1.0 - aDev * 0.4) + 0.5;
+comp_189=
+comp_190=    render(fragCoord.xy * texsize.xy, texsize.xy, time, fragColor);
+comp_191=    ret = fragColor;
+comp_192=    // AUDIO: the blocks rotate their colours with the level
+comp_193=    ret = lerp(ret, ret.zyx, aBe * 0.15);
+comp_194=  }
+comp_195=

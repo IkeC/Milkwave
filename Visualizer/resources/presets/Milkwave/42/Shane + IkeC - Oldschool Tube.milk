@@ -170,16 +170,16 @@ comp_165=  uv = float2(uv.x, -uv.y);
 comp_166=  // CONV: Adjust viewpoint (x,y individually or both)
 comp_167=  uv += float2(0,0) + 0;
 comp_168=  uv *= float2(1,1) * 1;
-comp_169=  // AUDIO: version 1 = slow (bass_smooth), 2 = fast (bass_att), >2 = off - see the remote's Version tooltip
+comp_169=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
 comp_170=  #ifdef bass_smooth
-comp_171=    float aRng = (int)vis_version == 1 ? 0.30 : 0.26;
+comp_171=    float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
 comp_172=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_173=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
 comp_174=  #else
 comp_175=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
 comp_176=  #endif
 comp_177=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
-comp_178=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 1.7 : 0.7;   // beat scale, colour reaction scale
+comp_178=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // beat scale, colour reaction scale
 comp_179=  // AUDIO: the camera eases along the tube with the level
 comp_180=  fragCoord = (fragCoord - 0.5) * (1.0 - aDev * 0.7) + 0.5;
 comp_181=

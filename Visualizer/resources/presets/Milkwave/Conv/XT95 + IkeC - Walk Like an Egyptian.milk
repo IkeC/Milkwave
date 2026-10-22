@@ -1,0 +1,310 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// XT95 - Walk Like an Egyptian / https://www.shadertoy.com/view/msjGzw
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_8=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_9=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_10=float lenv(float4 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_11=
+comp_12=#define PI 3.14159265
+comp_13=#define saturate(x) clamp(x,0.,1.)
+comp_14=
+comp_15=float lineSeg( in float2 p, in float2 a, in float2 b )
+comp_16={
+comp_17=  float2 pa = p-a, ba = b-a;
+comp_18=  float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+comp_19=  return lenv( pa - ba*h );
+comp_20=}
+comp_21=
+comp_22=float hash1( float2 p )
+comp_23={
+comp_24=  p  = 50.0*frac( p*0.3183099 );
+comp_25=  return frac( p.x*p.y*(p.x+p.y) );
+comp_26=}
+comp_27=
+comp_28=float noise( in float2 x )
+comp_29={
+comp_30=  float2 p = floor(x);
+comp_31=  float2 w = frac(x);
+comp_32=  #if 1
+comp_33=  float2 u = w*w*w*(w*(w*6.0-15.0)+10.0);
+comp_34=  #else
+comp_35=  float2 u = w*w*(3.0-2.0*w);
+comp_36=  #endif
+comp_37=
+comp_38=  float a = hash1(p+float2(0,0));
+comp_39=  float b = hash1(p+float2(1,0));
+comp_40=  float c = hash1(p+float2(0,1));
+comp_41=  float d = hash1(p+float2(1,1));
+comp_42=
+comp_43=  return -1.0+2.0*(a + (b-a)*u.x + (c-a)*u.y + (a - b - c + d)*u.x*u.y);
+comp_44=}
+comp_45=
+comp_46=static const float2x2 m2 = float2x2(  0.80,  0.60,
+comp_47=-0.60,  0.80 );
+comp_48=float fbm(float2 p) {
+comp_49=  float f = 1.9;
+comp_50=  float s = 0.55;
+comp_51=  float a = 0.0;
+comp_52=  float b = 0.5;
+comp_53=  for (int i=min(frame,0); i<4; i++ )
+comp_54=  {
+comp_55=    float n = noise(p);
+comp_56=    a += b*n;
+comp_57=    b *= s;
+comp_58=    p = f * mul(transpose(m2), p);
+comp_59=  }
+comp_60=
+comp_61=  return a;
+comp_62=}
+comp_63=
+comp_64=float hash1( float n )
+comp_65={
+comp_66=  return frac( n*17.0*frac( n*0.3183099 ) );
+comp_67=}
+comp_68=
+comp_69=float noise( in float3 x )
+comp_70={
+comp_71=  float3 p = floor(x);
+comp_72=  float3 w = frac(x);
+comp_73=
+comp_74=  #if 1
+comp_75=  float3 u = w*w*w*(w*(w*6.0-15.0)+10.0);
+comp_76=  #else
+comp_77=  float3 u = w*w*(3.0-2.0*w);
+comp_78=  #endif
+comp_79=
+comp_80=  float n = p.x + 317.0*p.y + 157.0*p.z;
+comp_81=
+comp_82=  float a = hash1(n+0.0);
+comp_83=  float b = hash1(n+1.0);
+comp_84=  float c = hash1(n+317.0);
+comp_85=  float d = hash1(n+318.0);
+comp_86=  float e = hash1(n+157.0);
+comp_87=  float f = hash1(n+158.0);
+comp_88=  float g = hash1(n+474.0);
+comp_89=  float h = hash1(n+475.0);
+comp_90=
+comp_91=  float k0 =   a;
+comp_92=  float k1 =   b - a;
+comp_93=  float k2 =   c - a;
+comp_94=  float k3 =   e - a;
+comp_95=  float k4 =   a - b - c + d;
+comp_96=  float k5 =   a - c - e + g;
+comp_97=  float k6 =   a - b - e + f;
+comp_98=  float k7 = - a + b + c - d + e - f - g + h;
+comp_99=
+comp_100=  return -1.0+2.0*(k0 + k1*u.x + k2*u.y + k3*u.z + k4*u.x*u.y + k5*u.y*u.z + k6*u.z*u.x + k7*u.x*u.y*u.z);
+comp_101=}
+comp_102=
+comp_103=static const float3x3 m3  = float3x3( 0.00,  0.80,  0.60,
+comp_104=-0.80,  0.36, -0.48,
+comp_105=-0.60, -0.48,  0.64 );
+comp_106=
+comp_107=float fbm(float3 p) {
+comp_108=  float f = 1.9;
+comp_109=  float s = 0.55;
+comp_110=  float a = 0.0;
+comp_111=  float b = 0.5;
+comp_112=  for (int i=min(frame,0); i<4; i++ )
+comp_113=  {
+comp_114=    float n = noise(p);
+comp_115=    a += b*n;
+comp_116=    b *= s;
+comp_117=    p = f * mul(transpose(m3), p);
+comp_118=  }
+comp_119=
+comp_120=  return a;
+comp_121=}
+comp_122=
+comp_123=#define sunpos float2(.5,.25)
+comp_124=
+comp_125=float clouds(float2 uv_conv) {
+comp_126=  uv_conv.x += time*.001;
+comp_127=  float d = fbm( float3(uv_conv*float2(4.,10.)*1.1+50., time*.01) );
+comp_128=  d += abs(cos(uv_conv.x*70.)*.5 + cos(uv_conv.x*160.)*.25)*0.07;
+comp_129=  d += uv_conv.y-1.;
+comp_130=  return d+.2;
+comp_131=}
+comp_132=
+comp_133=static float mwDev = 0.;   // audio level deviation for the sky/sun reaction
+comp_134=
+comp_135=float4 background(float2 uv_conv,  float2 p) {
+comp_136=  float4 col = float4(0., 0., 0., 1.);
+comp_137=
+comp_138=  col.rgb = pow( float3(.5, .5, .5), float3(5., 2.5*uv_conv.y, 2.*(uv_conv.y*-.1+1.)) );
+comp_139=
+comp_140=  float c = smoothstep(0.3,.32,clouds(uv_conv));
+comp_141=  float cs = smoothstep(0.3,.32, clouds(uv_conv - normalize(p-sunpos)*.015));
+comp_142=  col.rgb += float3(.5,.4,.3) * c * (1.-cs);
+comp_143=  col.rgb += float3(.5,.4,.3)*.75 * c * (cs);
+comp_144=
+comp_145=  col.rgb += float3(1., 1., 1.) * smoothstep(0.8,1., noise(float3(uv_conv*500., time*.1))) * (1.-c);
+comp_146=
+comp_147=  float d = distance(p, sunpos);
+comp_148=  col.rgb += float3(1., 1., 1.) * smoothstep(0.16 + mwDev * 0.02, .15 + mwDev * 0.02, d);   // AUDIO: the sun disc swells
+comp_149=  col.rgb += float3(1.,1.,.5) * pow(1./(1.+d), 8.) * (1. + mwDev * 1.2);                     // AUDIO: the halo brightens
+comp_150=
+comp_151=  return col;
+comp_152=}
+comp_153=
+comp_154=float4 pyramids(float2 p, float freq, float proba) {
+comp_155=  float4 col = float4(0., 0., 0., 0.);
+comp_156=
+comp_157=  float seed = floor(p.x*freq-.5);
+comp_158=  float h = frac(p.x*freq);
+comp_159=  float d = -p.y + abs(h-.5)/freq * step(proba,hash1(seed));
+comp_160=  float m = smoothstep(0.,0.01,d) ;
+comp_161=
+comp_162=  float ds = -p.y + saturate(h-.5)/freq * step(proba,hash1(seed));
+comp_163=  float ms = smoothstep(0.,0.01,ds) ;
+comp_164=
+comp_165=  col.rgb = float3(1.,.5,.0) * smoothstep(0.6,.5, fbm(p*float2(10.,100.)*freq));
+comp_166=  col.rgb = lerp(col.rgb, float3(1.,.5,.0)*.3, ms);
+comp_167=
+comp_168=  col.rgb *= smoothstep(0.,0.015, abs(d-0.005));
+comp_169=  // outline
+comp_170=
+comp_171=  col.rgb = saturate(col.rgb);
+comp_172=
+comp_173=  col.a = max(m, ms);
+comp_174=
+comp_175=  return col * col.a;
+comp_176=}
+comp_177=
+comp_178=float moutainsHeight(float2 p, float amp, float power) {
+comp_179=  float d = - pow(abs(sin(p.x*5.)*.5+ sin(p.x*2.+2.5)*.25 + sin(p.x*4.+2.)*.125), power) * amp;
+comp_180=  return d;
+comp_181=}
+comp_182=
+comp_183=float4 mountains(float2 p, float amp, float power) {
+comp_184=  float4 col = float4(0., 0., 0., 0.);
+comp_185=
+comp_186=  float h = -p.y + moutainsHeight(p,amp,power);
+comp_187=  float hs = -p.y +moutainsHeight(p + normalize(p-(sunpos*2.-1.))*.05,amp,power);
+comp_188=  float d = smoothstep(0.,0.01,h);
+comp_189=  float ds = smoothstep(0.,0.01,hs);
+comp_190=
+comp_191=  col = float4(1.,1., 1., 1.) * d;
+comp_192=  col.rgb *= float3(1.,.4,.2)*(smoothstep(0.,-1.,ds-d)*.75+.25);
+comp_193=  col.rgb *= smoothstep(0.,0.02,abs(h-.01));
+comp_194=  // outline
+comp_195=  col.rgb = saturate(col.rgb);
+comp_196=  return col * col.a;
+comp_197=}
+comp_198=
+comp_199=float4 cactus(float2 p, float freq) {
+comp_200=
+comp_201=  float4 col = float4(0., 0., 0., 0.);
+comp_202=
+comp_203=  float2 ip = floor(p*freq);
+comp_204=  float2 fp = frac(p*freq)-.5;
+comp_205=  float seed = hash1(ip.x);
+comp_206=  fp.y = p.y*2. + (seed)*.4;
+comp_207=
+comp_208=  if (hash1(ip.x+1000.) <= .3) {
+comp_209=
+comp_210=  float d = lineSeg(fp, float2(0.,-.3), float2(0.,.3));
+comp_211=
+comp_212=  if (hash1(ip.x+100.) > .5) {
+comp_213=    fp.x = -fp.x;
+comp_214=  }
+comp_215=
+comp_216=  if (seed > .25) {
+comp_217=    d = min(d, lineSeg(fp, float2(0.,0.), float2(0.3,.0))*1.8);
+comp_218=    d = min(d, lineSeg(fp, float2(0.3,0.015), float2(0.3,.2))*1.3);
+comp_219=  }
+comp_220=
+comp_221=  d = min(d, lineSeg(fp, float2(0.,-.15), float2(-0.3,-.15))*1.8);
+comp_222=  d = min(d, lineSeg(fp, float2(-0.3,-.14), float2(-0.3,.05))*1.3);
+comp_223=  d = d-p.y*.3 - fbm(p*300.+5.)*.005;
+comp_224=
+comp_225=  col = float4(float3(0.4,1.,0.)*.5 * (smoothstep(0.5,.6, fbm(p*float2(300.,5.)+5.)*.5+.5)*.25+.75), smoothstep(0.1,0.09,d));
+comp_226=
+comp_227=  col.rgb *= float3(1., 1., 1.) * smoothstep(0.007,0.012, abs(d-.098));
+comp_228=  // outline
+comp_229=  }
+comp_230=  return col * col.a;
+comp_231=}
+comp_232=
+comp_233=shader_body {
+comp_234=  float4 fragColor = 0;
+comp_235=  float2 fragCoord  = uv;
+comp_236=  // CONV: Center on screen, then try some aspect correction
+comp_237=  uv = (uv*2) - 1;
+comp_238=  uv *= aspect.xy;
+comp_239=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_240=  uv = float2(uv.x, -uv.y);
+comp_241=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_242=  uv += float2(0,0) + 0;
+comp_243=  uv *= float2(1,1) * 1;
+comp_244=
+comp_245=  float2 uv01 = float2(fragCoord.x, 1.0 - fragCoord.y);
+comp_246=  float2 fc = uv01 * texsize.xy;
+comp_247=  float2 p = (2.*fc - texsize.xy) / texsize.y;
+comp_248=  float2 pp = p;
+comp_249=
+comp_250=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_251=#ifdef bass_smooth
+comp_252=  float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
+comp_253=  float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_254=    : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_255=#else
+comp_256=  float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_257=#endif
+comp_258=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_259=  float aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // colour reaction scale
+comp_260=  mwDev = aDev;   // AUDIO: drives the sun reaction inside background()
+comp_261=
+comp_262=  // background
+comp_263=  float4 col = background(uv01, pp);
+comp_264=
+comp_265=  // layers
+comp_266=  #define LAYER_SPEED 0.05
+comp_267=  #define LAYER_COUNT 8
+comp_268=
+comp_269=  float4 L0, L1, L2, L3, L4, L5, L6, L7;
+comp_270=  p.x += time*LAYER_SPEED;    L0 = mountains(p*float2(.5,3.)-float2(0.,.3), .75, 1.2) * float4(float3(.25, .25, .25),1.);
+comp_271=  p.x += time*LAYER_SPEED;    L1 = pyramids(p-float2(0.,-.4), 1., .6);
+comp_272=  p.x += time*LAYER_SPEED;    L2 = pyramids(p-float2(0.,-.39), .5, .6);
+comp_273=  p.x += time*LAYER_SPEED;    L3 = mountains(p*float2(.25,2.25)-float2(10.,-0.5), 1., 1.2);
+comp_274=  p.x += time*LAYER_SPEED;    L4 = cactus(p*1.5-float2(0.,-.7),3.)*1.;
+comp_275=  p.x += time*LAYER_SPEED;    L5 = mountains(p*float2(.25,2.)-float2(0.,-0.6), 1., 1.2);
+comp_276=  p.x += time*LAYER_SPEED;    L6 = mountains(p*float2(.15,2.)-float2(1000.,-0.7), 1., 1.2);
+comp_277=  p.x += time*LAYER_SPEED;    L7 = cactus(p*.2-float2(0.,-.0),3.);
+comp_278=
+comp_279=  // merge layers with alpha premultiplied
+comp_280=  col.rgb = col.rgb * (1.-L0.a) + L0.rgb * (2./(pow(0.,2.5)+1.));
+comp_281=  col.rgb = col.rgb * (1.-L1.a) + L1.rgb * (2./(pow(1.,2.5)+1.));
+comp_282=  col.rgb = col.rgb * (1.-L2.a) + L2.rgb * (2./(pow(2.,2.5)+1.));
+comp_283=  col.rgb = col.rgb * (1.-L3.a) + L3.rgb * (2./(pow(3.,2.5)+1.));
+comp_284=  col.rgb = col.rgb * (1.-L4.a) + L4.rgb * (2./(pow(4.,2.5)+1.));
+comp_285=  col.rgb = col.rgb * (1.-L5.a) + L5.rgb * (2./(pow(5.,2.5)+1.));
+comp_286=  col.rgb = col.rgb * (1.-L6.a) + L6.rgb * (2./(pow(6.,2.5)+1.));
+comp_287=  col.rgb = col.rgb * (1.-L7.a) + L7.rgb * (2./(pow(7.,2.5)+1.));
+comp_288=
+comp_289=  // flare
+comp_290=  float d = distance(pp, sunpos);
+comp_291=  col.rgb += float3(1.,1.,.5) * pow(1./(1.+d), 3.)*.1;
+comp_292=
+comp_293=  // color grading
+comp_294=  col.rgb *= float3(1.0 + aDev * 0.12 * aCol, 1.0 + aDev * 0.02 * aCol, 1.0 - aDev * 0.10 * aCol);   // AUDIO: warmer sky when loud
+comp_295=  col.rgb = pow(col.rgb, float3(1.0,1.5,1.3));
+comp_296=
+comp_297=  // vignetting
+comp_298=  col.rgb *= pow( uv01.x*uv01.y*(1.-uv01.x)*(1.-uv01.y)*100., .1);
+comp_299=
+comp_300=  // gamma correction
+comp_301=  col.rgb = pow(col.rgb, float3(1./2.2, 1./2.2, 1./2.2));
+comp_302=
+comp_303=  // output to the screen
+comp_304=  fragColor = float4(col.rgb * smoothstep(0.,3., time),1.0);
+comp_305=  ret = fragColor;
+comp_306=}

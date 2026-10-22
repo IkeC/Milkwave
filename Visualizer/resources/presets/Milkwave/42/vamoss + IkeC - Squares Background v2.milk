@@ -94,9 +94,9 @@ comp_89=  uv = float2(uv.x, -uv.y);
 comp_90=  // CONV: Adjust viewpoint (x,y individually or both)
 comp_91=  uv += float2(0,0) + 0;
 comp_92=  uv *= float2(1,1) * 1;
-comp_93=  // AUDIO: version 1 = slow (bass_smooth), 2 = fast (bass_att), >2 = off - see the remote's Version tooltip
+comp_93=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
 comp_94=  #ifdef bass_smooth
-comp_95=    float aRng = (int)vis_version == 1 ? 0.30 : 0.45;
+comp_95=    float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
 comp_96=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_97=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
 comp_98=  #else
