@@ -104,6 +104,8 @@ void CPlugin::MyPreInitialize() {
     g_szHelp_W = 1;
   g_szHelp_Page2 = (wchar_t*)GetTextResource(IDR_TEXT2_PAGE2, 1);
   if (!g_szHelp_Page2) g_szHelp_Page2 = (wchar_t*)GetTextResource(IDR_TEXT1_PAGE2, 0);
+  g_szHelp_Page3 = (wchar_t*)GetTextResource(IDR_TEXT2_PAGE3, 1);
+  if (!g_szHelp_Page3) g_szHelp_Page3 = (wchar_t*)GetTextResource(IDR_TEXT1_PAGE3, 0);
 
   // CONFIG PANEL SETTINGS THAT WE'VE ADDED (TAB #2)
   m_bFirstRun = true;

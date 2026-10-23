@@ -1353,6 +1353,10 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           break;
         case 'V':
           if (m_UI_mode == UI_REGULAR) {
+            if (bCtrlHeldDown) {
+              CycleVisVersion();
+              return 0;
+            }
             AddError(L"Next", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
             keybd_event(VK_MEDIA_NEXT_TRACK, 0, 0, 0);
             keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_KEYUP, 0);
@@ -1431,7 +1435,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
             } else if (m_nNumericInputMode == NUMERIC_INPUT_MODE_SPRITE) {
               // kill newest sprite (regular DELETE key)
               // oldest sprite (SHIFT + DELETE),
-              // or all sprites (CTRL + SHIFT + DELETE).
+              // or all sprites (SHIFT + CTRL + DELETE).
 
               m_nNumericInputDigits = 0;
               m_nNumericInputNum = 0;
@@ -1738,6 +1742,34 @@ int CPlugin::SetSpoutFixedSize(bool toggleSwitch, bool showNotifications) {
 }
 
 //----------------------------------------------------------------------
+
+void CPlugin::ApplyVisVersion(float version, bool notifyRemote) {
+  m_VisVersion = version;
+
+  wchar_t buf[64];
+  const int rounded = (int)(version + 0.5f);
+  if (fabsf(version - (float)rounded) < 0.001f)
+    swprintf(buf, 64, L"Version %d", rounded);
+  else
+    swprintf(buf, 64, L"Version %.2f", version);
+  AddNotification(buf);
+
+  if (notifyRemote) {
+    wchar_t message[64];
+    swprintf(message, 64, L"VERSION=%d", rounded);
+    SendMessageToMilkwaveRemote(message, true);
+  }
+}
+
+void CPlugin::CycleVisVersion() {
+  const int current = (int)floorf(m_VisVersion);
+  int next = 1;
+  if (current == 1)
+    next = 2;
+  else if (current == 2)
+    next = 3;
+  ApplyVisVersion((float)next, true);
+}
 
 int CPlugin::HandleRegularKey(WPARAM wParam) {
   // here we handle all the normal keys for milkdrop-

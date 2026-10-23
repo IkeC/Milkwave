@@ -1,14 +1,14 @@
-Visualizer Help Menu (F1) - Page 1
+Visualizer Help Menu (F1) - Page 1/3
 
 ALT + ENTER             Toggle fullscreen (or double-click)
 CTRL + ALT + ENTER      Toggle borderless fullscreen
 ALT + S                 Toggle multiple monitor stretch
 SHIFT + UP / DOWN       Increase/decrease window opacity (or mousewheel)
-                        
+
 F1                      Show/hide help
 F2 / 2xR MOUSEBUTTON    Toggle borderless window (unless in fullscreen/stretch mode)
 CTRL + F2               Reset window
-CTRL + SHIFT + F2       Set window to fixed dimensions from config file
+SHIFT + CTRL + F2       Set window to fixed dimensions from config file
 F3                      Set fps to 30/60/90/120/144/240/360/Unlimited
 CTRL + F3               Display current fps setting
 F4                      Show/hide preset info
@@ -19,11 +19,14 @@ F7                      Always on top
 F8 / R+M MOUSEBUTTON    Open Milkwave Remote
 F9                      Toggle clickthrough mode
 CTRL + F9               Toggle desktop mode (renders behind the desktop icons)
-CTRL + SHIFT + F9       Toggle watermark mode (windowed clickthrough fullscreen)
-F10 / CTRL + Z          Enable/disable Spout output / Holding SHIFT: set fixed Spout resolution
+SHIFT + CTRL + F9       Toggle watermark mode (windowed clickthrough fullscreen)
+F10 / CTRL + Z          Enable/disable Spout output
+SHIFT + F10             Set fixed Spout resolution
 F11                     Hardcut mode: normal/based on music
 F12                     Transparency mode (removes the black background)
 CTRL + F12              Toggle black mode (no preset rendering)
+
+Visualizer Help Menu (F1) - Page 2/3
 
 LEFT ARROW / Z          previous track
 RIGHT ARROW / V         next track
@@ -38,24 +41,30 @@ CTRL + B                toggle track info polling
 CTRL + C                toggle cover display when track changes
 CTRL + X                save screenshot to /capture folder
 
-Visualizer Help Menu (F1) - Page 2
-
 SPACE / H               Soft / hard cut to next preset
 BACKSPACE               Go back to previous preset
 ` / ~                   [un]lock current preset
-R                       Toggle random/sequential preset order 
+R                       Toggle random/sequential preset order
 L                       Load specific preset
 M                       Show/hide preset-editing menu
 N                       Show per-frame monitor
 S                       Save new preset
+
 CTRL + S                Quicksave preset to /presets/Quicksave folder
 SHIFT + CTRL + S        Quicksave preset to /presets/Quicksave2 folder
+
+Visualizer Help Menu (F1) - Page 3/3
+
 CTRL + D                Set current audio device to default
 SHIFT + CTRL + D        Display current audio device
 CTRL + M                Toggle interative mouse control
+CTRL + N                Show network server status
+SHIFT + CTRL + N        Toggle network server on/off
 CTRL + Q                Double quality factor (range 0.01 - 1.0)
 SHIFT + CTRL + Q        Half quality factor (pixellize)
+CTRL + V                Cycle visual version 1/2/3
 CTRL + H                Shift Hue
+CTRL + L                Toggle Lyrics
 
 K                       Toggle sprite/message mode
 SHIFT + K               Enter sprite kill mode
@@ -67,12 +76,9 @@ SHIFT + CTRL + DEL      Clear all the sprites/messages
 CTRL + K                Kills all the sprites
 CTRL + T                Kills custom messages/song titles
 
-Q / q    Wave echo zoom +/-         [ / ]    X +/-
-W / w    Wave mode +/-              { / }    Y +/-
-E / e    Wave alpha +/-             < / >    Rotation +/-
-U / u    Wave warp scale +/-        A        Do random mini-mash-up   
-I / i    Wave zoom +/-              D        Toggle shader locks   
-O / o    Wave warp amount +/-       F        Tooggle echo orientation
-P / p    Video echo alpha +/-       !        Randomize warp shader
-G / g    Gamma adjustment +/-       @        Randomize comp shader   
-J / j    Wave scale +/-
+A   Do random mini-mash-up      Q / q   Wave echo zoom +/-      [ / ]   X +/-
+D   Toggle shader locks         P / p   Video echo alpha +/-    { / }   Y +/-
+F   Tooggle echo orientation    G / g   Gamma adjustment +/-    < / >   Rotation +/-
+!   Randomize warp shader       U / u   Wave warp scale +/-     W / w   Wave mode +/-
+@   Randomize comp shader       J / j   Wave scale +/-          E / e   Wave alpha +/-
+O / o   Wave warp amount +/-    I / i   Wave zoom +/-

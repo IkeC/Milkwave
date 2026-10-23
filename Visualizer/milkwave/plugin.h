@@ -1002,6 +1002,8 @@ class CPlugin : public CPluginShell {
   void SendPresetWaveInfoToMilkwaveRemote();
   void SendSettingsInfoToMilkwaveRemote();
   void SetWaveParamsFromMessage(std::wstring& message);
+  void ApplyVisVersion(float version, bool notifyRemote);
+  void CycleVisVersion();
   void ReadCustomMessages();
   void LaunchSongTitleAnim(int supertextIndex);
   void CaptureScreenshot();

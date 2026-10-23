@@ -1,44 +1,19 @@
 ## v4.2 (unreleased)
 
 * 18 new audio-reactive Shader presets
-* New preset: XT95 + IkeC - Walk Like an Egyptian (Shadertoy `msjGzw`), with audio-reactive sun and sky
-* New preset: OldEclipse + IkeC - Unimagined (Shadertoy `NflSD8`), with audio-reactive SDF morph and colour
-* New preset: z0rg + IkeC - Psychedelic tube (Shadertoy `sdcGRX`), with audio-reactive tube radius and dash width
-  - Adapted from a two-pass shader: the self-feedback pass is not portable to a comp shader and was dropped
-* New preset: Shane + IkeC - Mandelbrot Pattern Decoration (Shadertoy `ttscWn`), with audio-reactive decoration grid and layer colour
-* New preset: SnoopethDuckDuck + IkeC - Golden Electric Spiral (Shadertoy `csj3zt`), with audio-reactive tile size and filament brightness
-* New preset: diatribes + IkeC - Dark Transit (Shadertoy `WcdczB`, MIT), with audio-reactive tunnel radius and scale relief
-* Visualizer: uncompiled shader presets now compile in the background while the current preset keeps playing
-  - A "Compiling preset <name>" notification is shown if compilation takes longer than one second
-* Visualizer: new `AUDIO_TEST=bass,mid,treb[,notify][,wave]` named-pipe command (values relative to the track average, `off` to release)
-  - Injects fixed audio band levels so preset audio reactivity can be verified silently and reproducibly
-  - The optional `notify` flag shows the active levels in a Visualizer notification
-  - The optional `wave` flag synthesises a matching waveform and FFT spectrum for wave- and FFT-based presets; the Remote's Audio Test button enables both
+* Visualizer: Uncompiled shader presets now compile in the background while the current preset keeps playing
 * Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
-* New `audio-test.txt` with a commented, editable band sequence for checking preset reactions without music
-* Remote/Visualizer: new "Textborder" setting outlines all messages and notifications (default thickness 2); the outline color is configurable in the _Milkwave_ section of _settings.ini_ (_TextBorderColorR/G/B_, black by default)
-* Visualizer: default message, preset-name, menu and song-info font sizes increased by 5
-* Visualizer: long song-info artist/title/album lines are truncated with "..." instead of being cut off at the screen edge
-* Visualizer: at reduced Quality, messages, notifications, menus, song titles and lyrics stay sharp in a full-resolution screen overlay while the preset keeps its lower internal resolution
-  - Spout output and screenshots retain the reduced-resolution copy with text; text and lyrics burn-in remain part of the preset
-* Remote/Visualizer: lyrics styles default to "Text Outline" (thickness 3); 25%, 50%, 75% opacity and solid backgrounds use a minimum 8px side inset, and color and amount are configurable
-  - Moving lyrics Pos X/Pos Y also shifts Start X/Start Y by the same amount
-  - Double-clicking Pos resets both position and start values; double-clicking Start resets both start values
-  - Background boxes use symmetric vertical padding around the rendered text
-* Visualizer: `.milk` file association support
-  - Opening a preset file starts the Visualizer on that preset
-  - If the Visualizer is already running, the preset is loaded in the running instance instead of starting a second one
-  - The running window is restored from the taskbar and brought to the front
-  - Works from a double-click, from "Open with" and from the installer's association option
-* Installer: "Associate .milk files with Milkwave Visualizer" option on the finish page (enabled by default, per-user association); the README opens from a link on the same page
+* Remote/Visualizer: "Textborder" setting outlines all messages and notifications with configurable color
+* Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
+* Remote/Visualizer: Lyrics text outline and background box options with configurable color
+* Visualizer: `.milk` Windows file association support
 * Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 * Visualizer: Improved Desktop Mode (Ctrl+F9)
 * Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"
 * Visualizer: Taskbar thumbnail toolbar with buttons for the previous preset, the opacity (5% steps), the preset lock and the next preset
 * Remote: Bottom panel button functions assignable from context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click)
-* Remote Preset tab: 
-  - Flash preset info on preset change with configurable duration (Ctrl+F4)
-  - Preset change and info buttons with improved locking logic dependency
+* Visualizer: Flash preset info on preset change with configurable duration (Ctrl+F4)
+* Remote: Preset change and info buttons with improved locking logic dependency
 * Remote Settings tab: Invert preset output
 
 ## v4.1 (2026-09-10)

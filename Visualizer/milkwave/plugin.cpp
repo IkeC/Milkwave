@@ -1238,6 +1238,7 @@ void OnUserEditedCompShaders(LPARAM param1, LPARAM param2) {
 //   @ 640x480 and using the default help screen font.
 wchar_t* g_szHelp = 0;
 wchar_t* g_szHelp_Page2 = 0;
+wchar_t* g_szHelp_Page3 = 0;
 int g_szHelp_W = 0;
 
 // this is for integrating modern skins (with their Random button)

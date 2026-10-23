@@ -701,7 +701,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     g_plugin.m_VisShift = std::stof(message);
   } else if (wcsncmp(sMessage, L"VAR_VERSION=", 12) == 0) {
     std::wstring message(sMessage + 12);
-    g_plugin.m_VisVersion = std::stof(message);
+    const float version = std::stof(message);
+    if (fabsf(version - g_plugin.m_VisVersion) > 0.0001f)
+      g_plugin.ApplyVisVersion(version, false);
   } else if (wcsncmp(sMessage, L"AUDIO_TEST=", 11) == 0) {
     // Test hook: "AUDIO_TEST=bass,mid,treb[,notify][,wave]" injects fixed relative band
     // levels (1 = average, as the shader sees them) so preset audio reactions can be

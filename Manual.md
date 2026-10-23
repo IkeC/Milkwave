@@ -4,7 +4,7 @@ Welcome to the Milkwave manual! This document will help you get started with the
 
 In general, make sure to hover the mouse over all labels and buttons to see some inline help tooltips describing most of the features and displaying keyboard shortcuts.
 
-If you need help with the Visualizer itself, press F1 there to see the on-screen help pages. Also take a look at the documentation in the _resources/docs_ folder.
+If you need help with the Visualizer itself, press F1 there to cycle through the three on-screen help pages. The font is fitted automatically so every page stays fully visible in both windowed and fullscreen mode. Also take a look at the documentation in the _resources/docs_ folder.
 
 # Interface
 
@@ -287,7 +287,7 @@ float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 ```
 ## "vis_intensity", "vis_shift" and "vis_version" preset variables
 
-Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running. They can also be assigned to MIDI controls.
+Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running. They can also be assigned to MIDI controls. Press Ctrl+V in the Visualizer to cycle the version between 1, 2 and 3; the active version is shown as a notification, and Remote changes show the same notification.
 
 See the Shader presets included with Milkwave for examples that make use of these parameters.
 

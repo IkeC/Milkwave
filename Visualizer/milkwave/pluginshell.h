@@ -351,6 +351,7 @@ class CPluginShell {
   void OnUserResizeTextWindow();
   void PrepareFor2DDrawing_B(IDirect3DDevice9* pDevice, int w, int h);
   void RenderBuiltInTextMsgs();
+  void RenderHelpScreen();
   int GetCanvasMarginX();  // returns the # of pixels that exist on the canvas, on each side, that the user will never see.  Mainly here for windowed mode, where sometimes, up to 15 pixels get cropped at edges of the screen.
   int GetCanvasMarginY();  // returns the # of pixels that exist on the canvas, on each side, that the user will never see.  Mainly here for windowed mode, where sometimes, up to 15 pixels get cropped at edges of the screen.
  public:

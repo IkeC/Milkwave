@@ -168,6 +168,7 @@ typedef struct _SIMPLEVERTEX {
 
 extern wchar_t* g_szHelp;
 extern wchar_t* g_szHelp_Page2;
+extern wchar_t* g_szHelp_Page3;
 extern int g_szHelp_W;
 
 static void ScanHelpText(const void* text, bool wideText, int* outLineCount, int* outMaxLineLen) {
@@ -199,18 +200,29 @@ static void ScanHelpText(const void* text, bool wideText, int* outLineCount, int
   if (lineLen > *outMaxLineLen) *outMaxLineLen = lineLen;
 }
 
-static int ComputeAutoHelpFontSize(IDirect3DDevice9* pDevice, const td_fontinfo& fontInfo, int windowHeight) {
-  if (!pDevice || windowHeight <= 0)
+static int ComputeAutoHelpFontSize(IDirect3DDevice9* pDevice, const td_fontinfo& fontInfo,
+                                   int windowWidth, int windowHeight) {
+  if (!pDevice || windowWidth <= 0 || windowHeight <= 0)
     return HELPSCREEN_FONT_DEFAULT_SIZE;
 
-  int lines1 = 1, len1 = 1, lines2 = 1, len2 = 1;
+  int lines1 = 1, len1 = 1, lines2 = 1, len2 = 1, lines3 = 1, len3 = 1;
   ScanHelpText(g_szHelp, g_szHelp_W != 0, &lines1, &len1);
   ScanHelpText(g_szHelp_Page2, g_szHelp_W != 0, &lines2, &len2);
-  int maxLines = max(lines1, lines2);
+  ScanHelpText(g_szHelp_Page3, g_szHelp_W != 0, &lines3, &len3);
+  int maxLines = max(max(lines1, lines2), lines3);
   if (maxLines <= 0) maxLines = 1;
 
-  // Create a reference font at a known size to measure actual line height,
-  // then scale linearly.  This works because TrueType fonts scale linearly.
+  // The help screen is drawn inside a margin on all sides; reserve the same
+  // amount here so the auto-sized page can never overflow the window.
+  const int helpMargin = TEXT_MARGIN + PLAYLIST_INNER_MARGIN * 2;
+  const int availableWidth = max(1, windowWidth - helpMargin * 2);
+  const int availableHeight = max(1, windowHeight - helpMargin * 2);
+  const int fallback = max(6, min(availableHeight / maxLines,
+                                  (int)(availableWidth / max(1, max(max(len1, len2), len3)) / 0.62f)));
+
+  // Create a reference font at a known size to measure actual text extents,
+  // then scale linearly. TrueType fonts scale linearly, so this gives both the
+  // width and height limits needed for the largest page.
   const int REF_SIZE = 20;
   LPD3DXFONT refFont = NULL;
   HRESULT hr = D3DXCreateFontW(pDevice, REF_SIZE, 0,
@@ -218,20 +230,34 @@ static int ComputeAutoHelpFontSize(IDirect3DDevice9* pDevice, const td_fontinfo&
                                fontInfo.bAntiAliased ? ANTIALIASED_QUALITY : DEFAULT_QUALITY, DEFAULT_PITCH,
                                fontInfo.szFace, &refFont);
   if (FAILED(hr) || !refFont)
-    return max(6, windowHeight / maxLines);
+    return fallback;
 
-  RECT mr;
-  SetRect(&mr, 0, 0, 4096, 4096);
-  int refLineH = refFont->DrawTextW(NULL, L"Mg", -1, &mr, DT_CALCRECT, 0xFFFFFFFF);
+  int refWidth = 0;
+  int refHeight = 0;
+  auto measurePage = [&](const void* text) {
+    if (!text)
+      return;
+    RECT r = {0, 0, 4096, 4096};
+    if (g_szHelp_W)
+      refFont->DrawTextW(NULL, (const wchar_t*)text, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+    else
+      refFont->DrawTextA(NULL, (const char*)text, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+    refWidth = max(refWidth, (int)(r.right - r.left));
+    refHeight = max(refHeight, (int)(r.bottom - r.top));
+  };
+  measurePage(g_szHelp);
+  measurePage(g_szHelp_Page2);
+  measurePage(g_szHelp_Page3);
   SafeRelease(refFont);
 
-  if (refLineH <= 0)
-    return max(6, windowHeight / maxLines);
+  if (refWidth <= 0 || refHeight <= 0)
+    return fallback;
 
-  // targetLineH = windowHeight / maxLines
-  // fontSize = REF_SIZE * targetLineH / refLineH
-  float targetLineH = (float)windowHeight / (float)maxLines;
-  int fontSize = (int)(REF_SIZE * targetLineH / (float)refLineH);
+  // Fit both the widest line and the tallest page. Leave a small safety
+  // margin so GDI rounding cannot clip the last glyph or line.
+  float scale = min((float)availableWidth / (float)refWidth,
+                    (float)availableHeight / (float)refHeight);
+  int fontSize = (int)(REF_SIZE * scale * 0.98f);
   return max(6, fontSize);
 }
 
@@ -697,9 +723,13 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
 
   if (pDevice) {
     // Help text is rendered as a screen overlay at actual pixel resolution.
+    int windowWidth = m_vjd3d9_device ? m_nTextWndWidth : GetWidth();
     int windowHeight = m_vjd3d9_device ? m_nTextWndHeight : GetHeight();
-    if (IsSpoutActiveAndFixed()) windowHeight = nSpoutFixedHeight;
-    helpFontSize = ComputeAutoHelpFontSize(pDevice, m_fontinfo[HELPSCREEN_FONT], windowHeight);
+    if (IsSpoutActiveAndFixed()) {
+      windowWidth = nSpoutFixedWidth;
+      windowHeight = nSpoutFixedHeight;
+    }
+    helpFontSize = ComputeAutoHelpFontSize(pDevice, m_fontinfo[HELPSCREEN_FONT], windowWidth, windowHeight);
   }
 
   for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
@@ -1762,6 +1792,9 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     if (!m_vjd3d9_device)
       m_text.DrawNow();
 
+    if (!m_vjd3d9_device && m_show_help > 0)
+      RenderHelpScreen();
+
     if (m_bFullResTextOverlayActive && !m_vjd3d9_device && m_lpFullResOverlaySwapChain) {
       IDirect3DSurface9* pMainTarget = NULL;
       IDirect3DSurface9* pOverlayTarget = NULL;
@@ -1790,6 +1823,8 @@ void CPluginShell::DrawAndDisplay(int redraw) {
                    m_left_edge, m_right_edge);
         RenderPlaylist();
         m_text.DrawNowOverlay();
+        if (m_show_help > 0)
+          RenderHelpScreen();
         m_bRenderFullResText = false;
 
         if (pMainTarget) {
@@ -1816,6 +1851,9 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     PrepareFor2DDrawing_B(m_vjd3d9_device, m_nTextWndWidth, m_nTextWndHeight);
 
     m_text.DrawNow();
+
+    if (m_show_help > 0)
+      RenderHelpScreen();
 
     m_vjd3d9_device->EndScene();
   }
@@ -2267,45 +2305,52 @@ void CPluginShell::DrawDarkTranslucentBoxFullWindow() {
   m_lpDX->m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 }
 
+void CPluginShell::RenderHelpScreen() {
+  if (m_show_help <= 0)
+    return;
+
+  const void* helpText = NULL;
+  if (m_show_help == 1)
+    helpText = g_szHelp;
+  else if (m_show_help == 2)
+    helpText = g_szHelp_Page2;
+  else if (m_show_help == 3)
+    helpText = g_szHelp_Page3;
+  if (!helpText)
+    return;
+
+  const int width = m_vjd3d9_device ? m_nTextWndWidth : GetWidth();
+  const int height = m_vjd3d9_device ? m_nTextWndHeight : GetHeight();
+  if (width <= 0 || height <= 0)
+    return;
+
+  const int marginX = TEXT_MARGIN + (m_vjd3d9_device ? 0 : GetCanvasMarginX());
+  const int marginY = TEXT_MARGIN + (m_vjd3d9_device ? 0 : GetCanvasMarginY());
+  RECT r = {0, 0, 4096, 4096};
+  auto drawHelp = [&](DWORD flags) {
+    if (g_szHelp_W)
+      GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, (wchar_t*)helpText, -1, &r, flags, 0xFFFFFFFF);
+    else
+      GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)helpText, -1, &r, flags, 0xFFFFFFFF);
+  };
+  drawHelp(DT_CALCRECT);
+  const int textWidth = r.right - r.left;
+  const int textHeight = r.bottom - r.top;
+
+  DrawDarkTranslucentBoxFullWindow();
+
+  r.left = marginX;
+  r.top = marginY;
+  r.right = marginX + textWidth + PLAYLIST_INNER_MARGIN * 2;
+  r.bottom = marginY + textHeight + PLAYLIST_INNER_MARGIN * 2;
+
+  drawHelp(0);
+}
+
 void CPluginShell::RenderBuiltInTextMsgs() {
   int _show_press_f1_NOW = (m_show_press_f1_msg & (m_time < PRESS_F1_DUR));
   {
     RECT r;
-
-    if (m_show_help > 0) {
-      SetRect(&r, 0, 0, GetWidth(), GetHeight());
-      if (m_show_help == 1) {
-        if (!g_szHelp_W)
-          GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-        else
-          GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-      } else if (m_show_help == 2) {
-        if (!g_szHelp_W)
-          GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-        else
-          GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
-      }
-      DrawDarkTranslucentBoxFullWindow();
-
-      r.top += m_upper_left_corner_y;
-      r.left += m_left_edge;
-      r.right += m_left_edge + PLAYLIST_INNER_MARGIN * 2;
-      r.bottom += m_upper_left_corner_y + PLAYLIST_INNER_MARGIN * 2;
-
-      if (m_show_help == 1) {
-        if (!g_szHelp_W)
-          GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)g_szHelp, -1, &r, 0, 0xFFFFFFFF);
-        else
-          GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, g_szHelp, -1, &r, 0, 0xFFFFFFFF);
-      } else if (m_show_help == 2) {
-        if (!g_szHelp_W)
-          GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
-        else
-          GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
-      }
-      // ??
-      // m_upper_left_corner_y += r.bottom - r.top + PLAYLIST_INNER_MARGIN * 3;
-    }
 
     // render 'Press F1 for Help' message in lower-right corner:
     if (_show_press_f1_NOW) {
@@ -2739,6 +2784,8 @@ void CPluginShell::ToggleHelp() {
   } else if (m_show_help == 1) {
     m_show_help = 2;
   } else if (m_show_help == 2) {
+    m_show_help = 3;
+  } else if (m_show_help == 3) {
     m_show_help = 0;
   }
 }

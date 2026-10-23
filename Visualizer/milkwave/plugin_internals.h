@@ -58,6 +58,7 @@ extern CRITICAL_SECTION g_csRemoteMessage;
 // Help text (defined in plugin.cpp)
 extern wchar_t* g_szHelp;
 extern wchar_t* g_szHelp_Page2;
+extern wchar_t* g_szHelp_Page3;
 extern int g_szHelp_W;
 
 // LC2UC table (defined in plugin.cpp)
