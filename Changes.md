@@ -14,7 +14,10 @@
   - The optional `wave` flag synthesises a matching waveform and FFT spectrum for wave- and FFT-based presets; the Remote's Audio Test button enables both
 * Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
 * New `audio-test.txt` with a commented, editable band sequence for checking preset reactions without music
-* Remote/Visualizer: lyrics "Text Outline" and "Box Background" styles, with configurable color and amount
+* Remote/Visualizer: lyrics styles default to "Text Outline" (thickness 3); 25%, 50%, 75% opacity and solid backgrounds use a minimum 8px side inset, and color and amount are configurable
+  - Moving lyrics Pos X/Pos Y also shifts Start X/Start Y by the same amount
+  - Double-clicking Pos resets both position and start values; double-clicking Start resets both start values
+  - Background boxes use symmetric vertical padding around the rendered text
 * Visualizer: `.milk` file association support
   - Opening a preset file starts the Visualizer on that preset
   - If the Visualizer is already running, the preset is loaded in the running instance instead of starting a second one

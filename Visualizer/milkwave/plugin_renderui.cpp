@@ -409,17 +409,72 @@ void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, 
   }
   const int totalHeight = static_cast<int>(lines.size()) * lineHeight;
 
+  // Measure the actual glyph ink vertically so background boxes can apply the
+  // border symmetrically. Font line boxes include leading that varies by text.
+  int inkTop = 0;
+  int inkBottom = totalHeight;
+  if ((m_lyricsOutlineMode >= 2) && m_lyricsMeasureFontObject) {
+    HDC hdc = m_lyricsMeasureFontObject->GetDC();
+    if (hdc) {
+      TEXTMETRICW tm = {};
+      if (GetTextMetricsW(hdc, &tm)) {
+        MAT2 mat = {};
+        mat.eM11.value = 1;
+        mat.eM22.value = 1;
+        int minTop = 0;
+        int maxBottom = totalHeight;
+        bool haveInk = false;
+        for (std::size_t i = 0; i < lines.size(); ++i) {
+          const int lineOffset = static_cast<int>(i) * lineHeight;
+          for (wchar_t ch : lines[i]) {
+            if (ch <= L' ') continue;
+            GLYPHMETRICS gm = {};
+            if (GetGlyphOutlineW(hdc, static_cast<UINT>(ch), GGO_METRICS, &gm, 0, NULL, &mat) == GDI_ERROR ||
+                gm.gmBlackBoxY <= 0) {
+              continue;
+            }
+            const int top = tm.tmAscent - gm.gmptGlyphOrigin.y + lineOffset;
+            const int bottom = top + static_cast<int>(gm.gmBlackBoxY);
+            if (!haveInk || top < minTop) minTop = top;
+            if (!haveInk || bottom > maxBottom) maxBottom = bottom;
+            haveInk = true;
+          }
+        }
+        if (haveInk) {
+          inkTop = minTop;
+          inkBottom = maxBottom;
+        }
+      }
+    }
+  }
+
   int shadow = m_lyricsShadow;
   if (shadow < 0) shadow = 0;
   if (shadow > 16) shadow = 16;
   int outlineAmount = m_lyricsOutlineAmount;
   if (outlineAmount < 0) outlineAmount = 0;
   if (outlineAmount > 16) outlineAmount = 16;
-  const int effectPad =
-      (m_lyricsOutlineMode == 1 || m_lyricsOutlineMode == 2) ? outlineAmount : 0;
-  const int pad = 8 + (shadow > effectPad ? shadow : effectPad);  // antialiasing + effect bleed
-  const int neededW = maxLineWidth + 2 * pad;
-  const int neededH = totalHeight + 2 * pad;
+  // Keep a small side inset at low border values, but do not let high values
+  // grow the box horizontally beyond a uniform border.
+  const int boxHorizontalPad =
+      outlineAmount == 0 ? 0 : (outlineAmount < 8 ? 8 : outlineAmount);
+  const bool hasBackground = (m_lyricsOutlineMode >= 2);
+  int effectPadX = 0;
+  int effectPadY = 0;
+  if (m_lyricsOutlineMode == 1) {
+    effectPadX = outlineAmount;
+    effectPadY = outlineAmount;
+  } else if (hasBackground) {
+    effectPadX = boxHorizontalPad;
+    effectPadY = outlineAmount;
+  }
+  if (shadow > effectPadX) effectPadX = shadow;
+  if (shadow > effectPadY) effectPadY = shadow;
+  // Antialiasing + effect bleed.
+  const int padX = 8 + effectPadX;
+  const int padY = 8 + effectPadY;
+  const int neededW = maxLineWidth + 2 * padX;
+  const int neededH = totalHeight + 2 * padY;
   if (neededW <= 0 || neededH <= 0) return;
 
   // D3D9 render-target textures are power-of-two.
@@ -506,20 +561,25 @@ void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, 
     const int startY = (neededH - totalHeight) / 2;
     const int startX = (neededW - maxLineWidth) / 2;
     const DWORD drawFlags = DT_CENTER | DT_SINGLELINE | DT_NOCLIP;
-    const bool customBackdrop = (m_lyricsOutlineMode == 1 || m_lyricsOutlineMode == 2);
+    const bool customBackdrop = (m_lyricsOutlineMode != 0);
 
-    if (m_lyricsOutlineMode == 2) {
-      int boxLeft = startX - outlineAmount;
-      int boxTop = startY - outlineAmount;
-      int boxRight = startX + maxLineWidth + outlineAmount;
-      int boxBottom = startY + totalHeight + outlineAmount;
+    if (hasBackground) {
+      int boxLeft = startX - boxHorizontalPad;
+      int boxTop = startY + inkTop - outlineAmount;
+      int boxRight = startX + maxLineWidth + boxHorizontalPad;
+      int boxBottom = startY + inkBottom + outlineAmount;
       if (boxLeft < 0) boxLeft = 0;
       if (boxTop < 0) boxTop = 0;
       if (boxRight > neededW) boxRight = neededW;
       if (boxBottom > neededH) boxBottom = neededH;
       if (boxRight > boxLeft && boxBottom > boxTop) {
+        DWORD boxAlpha = 0xFF000000;  // solid
+        if (m_lyricsOutlineMode == 2) boxAlpha = 0x40000000;      // 25% opaque
+        else if (m_lyricsOutlineMode == 3) boxAlpha = 0x80000000; // 50% opaque
+        else if (m_lyricsOutlineMode == 4) boxAlpha = 0xBF000000; // 75% opaque
+        const DWORD boxColor = (outlineColor & 0x00FFFFFF) | boxAlpha;
         D3DRECT boxRect = {boxLeft, boxTop, boxRight, boxBottom};
-        lpDevice->Clear(1, &boxRect, D3DCLEAR_TARGET, outlineColor, 1.0f, 0);
+        lpDevice->Clear(1, &boxRect, D3DCLEAR_TARGET, boxColor, 1.0f, 0);
       }
     }
 

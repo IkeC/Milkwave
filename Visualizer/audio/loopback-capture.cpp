@@ -409,9 +409,9 @@ HRESULT LoopbackCapture(
           LOG(L"%s", L"Probably spurious glitch reported on first packet");
         }
         else if (0 != dwFlagsWithoutSilent) {
+          // Data-discontinuity/timestamp flags are normal around device changes and
+          // would otherwise fill the log with one line per occurrence.
           bErrorInAudioData = true;
-          LOG(L"IAudioCaptureClient::GetBuffer set flags to0x%08x on pass %u after %u frames", dwFlags, nPasses, *pnFrames);
-          if (pMilkwave) { try { wchar_t buf[256]; swprintf_s(buf, L"IAudioCaptureClient::GetBuffer set flags to0x%08x on pass %u after %u frames", dwFlags, nPasses, *pnFrames); pMilkwave->LogInfo(buf); } catch (...) {} }
           //return E_UNEXPECTED;
         }
 

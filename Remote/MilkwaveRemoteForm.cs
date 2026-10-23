@@ -40,6 +40,8 @@ namespace MilkwaveRemote {
     private int lyricsColorR = 255;
     private int lyricsColorG = 255;
     private int lyricsColorB = 255;
+    private decimal previousLyricsPosX;
+    private decimal previousLyricsPosY;
     private int lyricsOutlineColorR = 0;
     private int lyricsOutlineColorG = 0;
     private int lyricsOutlineColorB = 0;
@@ -969,6 +971,8 @@ namespace MilkwaveRemote {
       Program.LogToFile("### Milkwave Remote Starting ###");
       Program.LogToFile($"Application version: {version ?? "unknown"}");
       InitializeComponent();
+      previousLyricsPosX = numLyricsPosX.Value;
+      previousLyricsPosY = numLyricsPosY.Value;
 
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
       ShaderFilesFolder = Path.Combine(BaseDir, "resources\\shader\\");
@@ -6890,11 +6894,23 @@ namespace MilkwaveRemote {
     }
 
     private void numLyricsPosX_ValueChanged(object sender, EventArgs e) {
-      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsPosX);
+      decimal delta = numLyricsPosX.Value - previousLyricsPosX;
+      previousLyricsPosX = numLyricsPosX.Value;
+      if (updatingSettingsParams) return;
+      if (delta != 0) {
+        numLyricsStartX.Value = Math.Clamp(numLyricsStartX.Value + delta, numLyricsStartX.Minimum, numLyricsStartX.Maximum);
+      }
+      SendToMilkwaveVisualizer("", MessageType.LyricsPosX);
     }
 
     private void numLyricsPosY_ValueChanged(object sender, EventArgs e) {
-      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsPosY);
+      decimal delta = numLyricsPosY.Value - previousLyricsPosY;
+      previousLyricsPosY = numLyricsPosY.Value;
+      if (updatingSettingsParams) return;
+      if (delta != 0) {
+        numLyricsStartY.Value = Math.Clamp(numLyricsStartY.Value + delta, numLyricsStartY.Minimum, numLyricsStartY.Maximum);
+      }
+      SendToMilkwaveVisualizer("", MessageType.LyricsPosY);
     }
 
     private void numLyricsStartX_ValueChanged(object sender, EventArgs e) {
@@ -6942,10 +6958,24 @@ namespace MilkwaveRemote {
       numeric.Value = Math.Clamp(value, numeric.Minimum, numeric.Maximum);
     }
 
-    private void lblLyricsPosX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosX, 0.5m); }
-    private void lblLyricsPosY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosY, 0.5m); }
-    private void lblLyricsStartX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartX, 0.5m); }
-    private void lblLyricsStartY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartY, 0.52m); }
+    private void ResetLyricsStartDefaults() {
+      ResetLyricsNumeric(numLyricsStartX, 0.5m);
+      ResetLyricsNumeric(numLyricsStartY, 0.52m);
+    }
+
+    private void ResetLyricsPositionDefaults() {
+      ResetLyricsNumeric(numLyricsPosX, 0.5m);
+      ResetLyricsNumeric(numLyricsPosY, 0.5m);
+      ResetLyricsStartDefaults();
+    }
+
+    private void lblLyricsPosX_DoubleClick(object sender, EventArgs e) { ResetLyricsPositionDefaults(); }
+
+    private void lblLyricsPosY_DoubleClick(object sender, EventArgs e) { ResetLyricsPositionDefaults(); }
+
+    private void lblLyricsStartX_DoubleClick(object sender, EventArgs e) { ResetLyricsStartDefaults(); }
+
+    private void lblLyricsStartY_DoubleClick(object sender, EventArgs e) { ResetLyricsStartDefaults(); }
     private void lblLyricsZoom_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsZoom, 0.95m); }
     private void lblLyricsFade_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsFade, 0.15m); }
     private void lblLyricsWidth_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsWidth, 0.9m); }

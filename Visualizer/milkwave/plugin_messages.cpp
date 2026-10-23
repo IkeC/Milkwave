@@ -1058,7 +1058,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     try {
       int v = std::stoi(sMessage + 15);
       if (v < 0) v = 0;
-      if (v > 2) v = 2;
+      if (v > 5) v = 5;
       if (v != g_plugin.m_lyricsOutlineMode) {
         g_plugin.m_lyricsOutlineMode = v;
         WritePrivateProfileIntW(v, L"LyricsOutline", g_plugin.GetConfigIniFile(), L"Lyrics");

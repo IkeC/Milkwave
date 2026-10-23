@@ -521,7 +521,7 @@ void CPlugin::MyReadConfig() {
   m_lyricsShadow = GetPrivateProfileIntW(L"Lyrics", L"LyricsShadow", m_lyricsShadow, pIni);
   m_lyricsOutlineMode = GetPrivateProfileIntW(L"Lyrics", L"LyricsOutline", m_lyricsOutlineMode, pIni);
   if (m_lyricsOutlineMode < 0) m_lyricsOutlineMode = 0;
-  if (m_lyricsOutlineMode > 2) m_lyricsOutlineMode = 2;
+  if (m_lyricsOutlineMode > 5) m_lyricsOutlineMode = 5;
   m_lyricsOutlineAmount = GetPrivateProfileIntW(L"Lyrics", L"LyricsOutlineAmount", m_lyricsOutlineAmount, pIni);
   if (m_lyricsOutlineAmount < 0) m_lyricsOutlineAmount = 0;
   if (m_lyricsOutlineAmount > 16) m_lyricsOutlineAmount = 16;

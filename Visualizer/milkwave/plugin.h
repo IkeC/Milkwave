@@ -870,8 +870,8 @@ class CPlugin : public CPluginShell {
   int m_lyricsColorG = 255;
   int m_lyricsColorB = 255;
   int m_lyricsShadow = 2;
-  int m_lyricsOutlineMode = 0;       // 0=none, 1=text outline, 2=box background
-  int m_lyricsOutlineAmount = 2;     // outline thickness / box padding in pixels
+  int m_lyricsOutlineMode = 1;       // 0=none, 1=outline, 2/3/4=25/50/75% opacity background, 5=solid
+  int m_lyricsOutlineAmount = 3;     // outline thickness / box padding; background sides use at least 8px
   int m_lyricsOutlineColorR = 0;
   int m_lyricsOutlineColorG = 0;
   int m_lyricsOutlineColorB = 0;
