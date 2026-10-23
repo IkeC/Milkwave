@@ -248,6 +248,7 @@ namespace MilkwaveRemote {
       LyricsBurnType,
       LyricsTimeOffset,
       LyricsAutoScale,
+      TextBorder,
       CaptureScreenshot,
       VideoInput,
       SpoutInput,
@@ -1893,6 +1894,8 @@ namespace MilkwaveRemote {
                   SetLyricsNumeric(numLyricsBurnmode, value);
                 } else if (key.Equals("LYRICSAUTOSCALE", StringComparison.OrdinalIgnoreCase)) {
                   chkLyricsAutoScale.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("TEXTBORDER", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numSettingTextborder, value);
                 } else if (key.StartsWith("SHOWTAB", StringComparison.OrdinalIgnoreCase)) {
                   ApplyTabVisibility(key, value);
                 }
@@ -2258,6 +2261,8 @@ namespace MilkwaveRemote {
               message = "LYRICS_OFFSET=" + numLyricsTimeOffset.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.LyricsAutoScale) {
               message = "LYRICS_AUTOSCALE=" + (chkLyricsAutoScale.Checked ? "1" : "0");
+            } else if (type == MessageType.TextBorder) {
+              message = "TEXTBORDER=" + (int)numSettingTextborder.Value;
             } else if (type == MessageType.ColSaturation) {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
@@ -5533,6 +5538,11 @@ namespace MilkwaveRemote {
     private void numFFTBoost_ValueChanged(object sender, EventArgs e) {
       if (updatingSettingsParams) return;
       SendToMilkwaveVisualizer("", MessageType.EQBoost);
+    }
+
+    private void numSettingTextborder_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.TextBorder);
     }
 
     private void lblFactorTime_Click(object sender, EventArgs e) {

@@ -493,6 +493,18 @@ void CPlugin::MyReadConfig() {
   m_bPresetInfoOnChange = GetPrivateProfileBoolW(L"Milkwave", L"PresetInfoOnChange", m_bPresetInfoOnChange, pIni);
   m_PresetInfoOnChangeSeconds = GetPrivateProfileFloatW(L"Milkwave", L"PresetInfoOnChangeSeconds", m_PresetInfoOnChangeSeconds, pIni);
   m_HideNotificationsWhenRemoteActive = GetPrivateProfileBoolW(L"Milkwave", L"HideNotificationsWhenRemoteActive", m_HideNotificationsWhenRemoteActive, pIni);
+  m_textBorder = GetPrivateProfileIntW(L"Milkwave", L"TextBorder", m_textBorder, pIni);
+  if (m_textBorder < 0) m_textBorder = 0;
+  if (m_textBorder > 16) m_textBorder = 16;
+  m_textBorderColorR = GetPrivateProfileIntW(L"Milkwave", L"TextBorderColorR", m_textBorderColorR, pIni);
+  m_textBorderColorG = GetPrivateProfileIntW(L"Milkwave", L"TextBorderColorG", m_textBorderColorG, pIni);
+  m_textBorderColorB = GetPrivateProfileIntW(L"Milkwave", L"TextBorderColorB", m_textBorderColorB, pIni);
+  if (m_textBorderColorR < 0) m_textBorderColorR = 0;
+  if (m_textBorderColorR > 255) m_textBorderColorR = 255;
+  if (m_textBorderColorG < 0) m_textBorderColorG = 0;
+  if (m_textBorderColorG > 255) m_textBorderColorG = 255;
+  if (m_textBorderColorB < 0) m_textBorderColorB = 0;
+  if (m_textBorderColorB > 255) m_textBorderColorB = 255;
 
   m_ShowTabPreset = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabPreset", m_ShowTabPreset, pIni);
   m_ShowTabMessage = GetPrivateProfileBoolW(L"Milkwave", L"ShowTabMessage", m_ShowTabMessage, pIni);
@@ -721,6 +733,10 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_bPresetInfoOnChange, L"PresetInfoOnChange", pIni, L"Milkwave");
   WritePrivateProfileFloatW(m_PresetInfoOnChangeSeconds, L"PresetInfoOnChangeSeconds", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_textBorder, L"TextBorder", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_textBorderColorR, L"TextBorderColorR", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_textBorderColorG, L"TextBorderColorG", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_textBorderColorB, L"TextBorderColorB", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_InvertPresetOutput, L"InvertPresetOutput", pIni, L"Milkwave");
   // WritePrivateProfileIntW(m_DisplayCoverWhenPressingB, L"mDisplayCoverWhenPressingB", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ShowTabPreset, L"ShowTabPreset", pIni, L"Milkwave");

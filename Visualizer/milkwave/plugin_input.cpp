@@ -1695,6 +1695,7 @@ int CPlugin::ToggleSpout() {
 }
 
 int CPlugin::SetSpoutFixedSize(bool toggleSwitch, bool showNotifications) {
+  ResetFullResTextOverlay();
   bSpoutChanged = true;  // write config on exit
   if (toggleSwitch) {
     bSpoutFixedSize = !bSpoutFixedSize;

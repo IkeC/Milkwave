@@ -273,6 +273,7 @@ namespace MilkwaveRemote
       cboLyricsOutline = new ComboBox();
       pnlLyricsOutlineColor = new Panel();
       numLyricsOutlineAmount = new NumericUpDown();
+      label16 = new Label();
       btnSpace = new Button();
       btnBackspace = new Button();
       btnWatermark = new Button();
@@ -365,6 +366,7 @@ namespace MilkwaveRemote
       btnVideoInputScan = new Button();
       cboVideoInput = new ComboBox();
       tabSettings = new TabPage();
+      numSettingTextborder = new NumericUpDown();
       label12 = new Label();
       numFFTBoost = new NumericUpDown();
       numFFTDecay = new NumericUpDown();
@@ -458,8 +460,6 @@ namespace MilkwaveRemote
       panShadertoyLocal = new Panel();
       picShaderError = new PictureBox();
       splitContainerShader = new SplitContainer();
-      numSettingTextborder = new NumericUpDown();
-      label16 = new Label();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)numSize).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numBPM).BeginInit();
@@ -513,6 +513,7 @@ namespace MilkwaveRemote
       tabMessage.SuspendLayout();
       tabInOut.SuspendLayout();
       tabSettings.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)numSettingTextborder).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFFTBoost).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFFTDecay).BeginInit();
       ((System.ComponentModel.ISupportInitialize)numFFTAttack).BeginInit();
@@ -543,7 +544,6 @@ namespace MilkwaveRemote
       splitContainerShader.Panel1.SuspendLayout();
       splitContainerShader.Panel2.SuspendLayout();
       splitContainerShader.SuspendLayout();
-      ((System.ComponentModel.ISupportInitialize)numSettingTextborder).BeginInit();
       SuspendLayout();
       // 
       // statusStrip1
@@ -3540,6 +3540,16 @@ namespace MilkwaveRemote
       numLyricsOutlineAmount.Value = new decimal(new int[] { 3, 0, 0, 0 });
       numLyricsOutlineAmount.ValueChanged += numLyricsOutlineAmount_ValueChanged;
       // 
+      // label16
+      // 
+      label16.Location = new Point(416, 63);
+      label16.Name = "label16";
+      label16.Size = new Size(66, 23);
+      label16.TabIndex = 197;
+      label16.Text = "Textborder";
+      label16.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label16, "Outline thickness for all messages and notifications");
+      // 
       // btnSpace
       // 
       tableLayoutPanel1.SetColumnSpan(btnSpace, 2);
@@ -3636,9 +3646,9 @@ namespace MilkwaveRemote
       // lblMessageEditor
       // 
       lblMessageEditor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      lblMessageEditor.Location = new Point(276, 66);
+      lblMessageEditor.Location = new Point(283, 66);
       lblMessageEditor.Name = "lblMessageEditor";
-      lblMessageEditor.Size = new Size(51, 23);
+      lblMessageEditor.Size = new Size(44, 23);
       lblMessageEditor.TabIndex = 181;
       lblMessageEditor.Text = "Editor";
       lblMessageEditor.TextAlign = ContentAlignment.MiddleRight;
@@ -4812,6 +4822,18 @@ namespace MilkwaveRemote
       tabSettings.Size = new Size(615, 183);
       tabSettings.TabIndex = 4;
       tabSettings.Text = "Settings";
+      // 
+      // numSettingTextborder
+      // 
+      numSettingTextborder.Location = new Point(488, 65);
+      numSettingTextborder.Margin = new Padding(3, 2, 3, 2);
+      numSettingTextborder.Maximum = new decimal(new int[] { 16, 0, 0, 0 });
+      numSettingTextborder.Name = "numSettingTextborder";
+      numSettingTextborder.Size = new Size(56, 23);
+      numSettingTextborder.TabIndex = 196;
+      numSettingTextborder.TextAlign = HorizontalAlignment.Center;
+      numSettingTextborder.Value = new decimal(new int[] { 1, 0, 0, 0 });
+      numSettingTextborder.ValueChanged += numSettingTextborder_ValueChanged;
       // 
       // label12
       // 
@@ -6121,28 +6143,6 @@ namespace MilkwaveRemote
       splitContainerShader.SplitterDistance = 285;
       splitContainerShader.TabIndex = 31;
       // 
-      // numSettingTextborder
-      // 
-      numSettingTextborder.Location = new Point(488, 65);
-      numSettingTextborder.Margin = new Padding(3, 2, 3, 2);
-      numSettingTextborder.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
-      numSettingTextborder.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-      numSettingTextborder.Name = "numSettingTextborder";
-      numSettingTextborder.Size = new Size(56, 23);
-      numSettingTextborder.TabIndex = 196;
-      numSettingTextborder.TextAlign = HorizontalAlignment.Center;
-      numSettingTextborder.Value = new decimal(new int[] { 2, 0, 0, 0 });
-      // 
-      // label16
-      // 
-      label16.Location = new Point(416, 63);
-      label16.Name = "label16";
-      label16.Size = new Size(66, 23);
-      label16.TabIndex = 197;
-      label16.Text = "Textborder";
-      label16.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(label16, "Outline thickness for all messages and notifications");
-      // 
       // MilkwaveRemoteForm
       // 
       AutoScaleDimensions = new SizeF(96F, 96F);
@@ -6216,6 +6216,7 @@ namespace MilkwaveRemote
       tabMessage.PerformLayout();
       tabInOut.ResumeLayout(false);
       tabSettings.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)numSettingTextborder).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFFTBoost).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFFTDecay).EndInit();
       ((System.ComponentModel.ISupportInitialize)numFFTAttack).EndInit();
@@ -6252,7 +6253,6 @@ namespace MilkwaveRemote
       splitContainerShader.Panel2.PerformLayout();
       ((System.ComponentModel.ISupportInitialize)splitContainerShader).EndInit();
       splitContainerShader.ResumeLayout(false);
-      ((System.ComponentModel.ISupportInitialize)numSettingTextborder).EndInit();
       ResumeLayout(false);
       PerformLayout();
     }

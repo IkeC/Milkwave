@@ -1105,6 +1105,18 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       WritePrivateProfileIntW(enabled, L"LyricsAutoScale", g_plugin.GetConfigIniFile(), L"Lyrics");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
+  } else if (wcsncmp(sMessage, L"TEXTBORDER=", 11) == 0) {
+    try {
+      int v = std::stoi(sMessage + 11);
+      if (v < 0) v = 0;
+      if (v > 16) v = 16;
+      if (v != g_plugin.m_textBorder) {
+        g_plugin.m_textBorder = v;
+        WritePrivateProfileIntW(v, L"TextBorder", g_plugin.GetConfigIniFile(), L"Milkwave");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {
+    }
   } else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
     std::wstring message(sMessage + 17);
     size_t pos = message.find(L'x');

@@ -96,6 +96,8 @@ class CPluginShell {
   HWND GetPluginWindow();           // returns handle to the plugin window.  NOT persistent; can change!
   int GetWidth();                   // returns width of plugin window interior, in pixels.  Note: in windowed mode, this is a fudged, larger, aligned value, and on final display, it gets cropped.
   int GetHeight();                  // returns height of plugin window interior, in pixels. Note: in windowed mode, this is a fudged, larger, aligned value, and on final display, it gets cropped.
+  int GetBackBufferWidth() { return (m_lpDX && m_lpDX->m_backbuffer_width > 0) ? m_lpDX->m_backbuffer_width : GetWidth(); }
+  int GetBackBufferHeight() { return (m_lpDX && m_lpDX->m_backbuffer_height > 0) ? m_lpDX->m_backbuffer_height : GetHeight(); }
   int GetBitDepth();                // returns 8, 16, 24 (rare), or 32
   LPDIRECT3DDEVICE9EX GetDevice();  // returns a pointer to the DirectX 8 Device.  NOT persistent; can change!
   D3DCAPS9* GetCaps();              // returns a pointer to the D3DCAPS9 structer for the device.  NOT persistent; can change.
@@ -111,9 +113,13 @@ class CPluginShell {
   LPD3DXFONT GetItalicFont();
   int GetItalicFontHeight();
   int GetFontHeight(eFontIndex idx);  // returns the height of the font, in pixels; see shell_defines.h for the definition of the 'eFontIndex' enum.
+  bool IsFullResTextOverlayActive() const { return m_bFullResTextOverlayActive; }
+  void CopyBackBufferToFullResOverlay();
+  void ResetFullResTextOverlay();
   CTextManager m_text;
   LPD3DXFONT m_italic_font = NULL;
   int m_italic_font_height = 0;
+  bool m_bRenderFullResText = false;
 
   wchar_t m_szBaseDir[MAX_PATH];
 
@@ -161,6 +167,7 @@ class CPluginShell {
   virtual void CleanUpMyNonDx9Stuff() = 0;
   virtual int AllocateMyDX9Stuff() = 0;
   virtual void CleanUpMyDX9Stuff(int final_cleanup) = 0;
+  virtual void RenderFullResOverlayExtras(int width, int height) {}
   virtual void MyRenderFn(int redraw) = 0;
   virtual void MyRenderUI(int* upper_left_corner_y, int* upper_right_corner_y, int* lower_left_corner_y, int* lower_right_corner_y, int xL, int xR) = 0;
   virtual LRESULT MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam) = 0;
@@ -217,9 +224,22 @@ class CPluginShell {
   // FONTS
   IDirect3DTexture9* m_lpDDSText;
   LPD3DXFONT m_d3dx_font[NUM_BASIC_FONTS + NUM_EXTRA_FONTS];
+  LPD3DXFONT m_d3dx_font_full[NUM_BASIC_FONTS + NUM_EXTRA_FONTS] = {};
+  LPD3DXFONT m_italic_font_full = NULL;
+  int m_italic_font_height_full = 0;
   LPD3DXFONT m_d3dx_desktop_font;
   HFONT m_font[NUM_BASIC_FONTS + NUM_EXTRA_FONTS];
   HFONT m_font_desktop;
+
+  // Full-resolution presentation overlay used when render quality < 100%.
+  IDirect3DSwapChain9* m_lpFullResOverlaySwapChain = NULL;
+  int m_nFullResOverlayWidth = 0;
+  int m_nFullResOverlayHeight = 0;
+  bool m_bFullResTextOverlayActive = false;
+  bool m_bFullResOverlayCreationFailed = false;
+  void EnsureFullResTextOverlay();
+  void ReleaseFullResTextOverlay();
+  void PresentFullResTextOverlay();
 
   // PRIVATE CONFIG PANEL SETTINGS
   D3DMULTISAMPLE_TYPE m_multisample_fullscreen;

@@ -401,6 +401,7 @@ static bool IsWindowColorKey(HWND hWnd) {
 // Safe D3D device Reset with error logging. Returns true on success.
 static bool SafeResetDevice() {
   if (!pD3DDevice) return false;
+  g_plugin.ResetFullResTextOverlay();
   HRESULT hr = pD3DDevice->Reset(&g_plugin.d3dPp);
   if (SUCCEEDED(hr)) {
     // A reset leaves layered windows opaque, so the opacity of the active mode has to

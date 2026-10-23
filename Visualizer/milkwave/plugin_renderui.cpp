@@ -192,7 +192,25 @@ void CPlugin::WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3
   if (!current.empty()) outLines.push_back(current);
 }
 
-void CPlugin::RenderLyricsOverlay(bool burnIn) {
+void CPlugin::DrawActiveSongTitles(int width, int height) {
+  if (width <= 0 || height <= 0)
+    return;
+
+  for (int i = 0; i < NUM_SUPERTEXTS; i++) {
+    float fProgress = (GetTime() - m_supertexts[i].fStartTime) / m_supertexts[i].fDuration;
+    if (m_supertexts[i].fStartTime >= 0 &&
+        !m_supertexts[i].bRedrawSuperText && fProgress <= 1.0f) {
+      ShowSongTitleAnim(width, height, min(fProgress, 0.9999f), i);
+    }
+  }
+}
+
+void CPlugin::RenderFullResOverlayExtras(int width, int height) {
+  DrawActiveSongTitles(width, height);
+  RenderLyricsOverlay(false, width, height);
+}
+
+void CPlugin::RenderLyricsOverlay(bool burnIn, int targetWidth, int targetHeight) {
   // The burn-in pass (burnIn=true) bakes the lyrics into the visualizer
   // texture during RenderFrame; the normal pass (burnIn=false) draws the crisp
   // overlay onto the backbuffer. m_lyricsBurnType controls when/how the
@@ -229,10 +247,21 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
     m_lyricsClearedLineStartMs = -1;
   }
 
-  int canvasWidth = burnIn ? m_nTexSizeX : GetWidth();
-  int canvasHeight = burnIn ? m_nTexSizeY : GetHeight();
+  int canvasWidth = burnIn ? m_nTexSizeX : (targetWidth > 0 ? targetWidth : GetWidth());
+  int canvasHeight = burnIn ? m_nTexSizeY : (targetHeight > 0 ? targetHeight : GetHeight());
   if (canvasWidth <= 0 || canvasHeight <= 0)
     return;
+
+  // Lyrics are rasterized at full resolution; scale the quad down when the
+  // target is the reduced-quality backbuffer, and 1:1 on the overlay/preset.
+  const int logicalWidth = GetWidth();
+  const float drawResolutionScale = logicalWidth > 0 ? (float)canvasWidth / (float)logicalWidth : 1.0f;
+  // Auto Scale has always sized text relative to the reduced backbuffer.
+  // Compensate here so the full-resolution texture keeps the same on-screen
+  // size that the quality-scaled lyrics had before.
+  const float qualityScale = IsSpoutActiveAndFixed()
+                                 ? 1.0f
+                                 : clamp(GetEffectiveRenderQuality(GetWidth(), GetHeight()), 0.01f, 1.0f);
 
   float opacity = lyricState.opacity;
   if (opacity < 0.0f) opacity = 0.0f;
@@ -252,7 +281,7 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
   // Target (end-of-fade) font scale. The word wrap is laid out once at this
   // scale so the line breaks always match the fully-faded rendering.
   float targetScale = 1.0f;
-  const float sizePerScale = m_lyricsFontSize * m_fRenderQuality;
+  const float sizePerScale = (float)m_lyricsFontSize;
   const float scaleForSize = sizePerScale > 0.0f ? sizePerScale : 1.0f;
   // Auto Scale: size the font so ~(70 - LyricsFontSize) characters fit within
   // the LyricsMaxWidth area: a larger font-size value means fewer characters
@@ -273,7 +302,7 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
       const int sampleWidth = sampleRect.right - sampleRect.left;
       const float baseScale = m_lyricsCurrentFontScale >= 0.0f ? m_lyricsCurrentFontScale : 1.0f;
       if (sampleWidth > 0) {
-        const float desiredSize = scaleForSize * baseScale * ((float)maxWidthPixels / (float)sampleWidth);
+        const float desiredSize = scaleForSize * baseScale * ((float)maxWidthPixels / (float)sampleWidth) / qualityScale;
         int targetPixels = (int)(desiredSize + 0.5f);
         if (targetPixels < 8) targetPixels = 8;
         if (targetPixels > 256) targetPixels = 256;
@@ -362,7 +391,8 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
   if (bakeCurrentLine)
     DrawLyricsTextureQuad(m_lyricsTexture, m_lyricsTextureUseW, m_lyricsTextureUseH,
                           m_lyricsTextureSizeX, m_lyricsTextureSizeY,
-                          canvasWidth, canvasHeight, centerX, centerY, zoomScale, opacity);
+                          canvasWidth, canvasHeight, centerX, centerY, zoomScale, opacity,
+                          drawResolutionScale);
 
   // Burn the previous line into the texture: it fades out over
   // m_lyricsBurnTime seconds after the current line takes over. This is the
@@ -373,7 +403,8 @@ void CPlugin::RenderLyricsOverlay(bool burnIn) {
       const float burnOpacity = 1.0f - (float)(elapsed / m_lyricsBurnTime);
       DrawLyricsTextureQuad(m_lyricsBurnTexture, m_lyricsBurnTextureUseW, m_lyricsBurnTextureUseH,
                             m_lyricsBurnTextureSizeX, m_lyricsBurnTextureSizeY,
-                            canvasWidth, canvasHeight, centerX, centerY, zoomScale, burnOpacity);
+                            canvasWidth, canvasHeight, centerX, centerY, zoomScale, burnOpacity,
+                            drawResolutionScale);
     } else {
       m_burnLyricsPrevText.clear();
       m_burnLyricsPrevChangeTime = -1.0;
@@ -634,7 +665,7 @@ void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, 
 
 void CPlugin::DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, int texSizeX, int texSizeY,
                                     int canvasWidth, int canvasHeight, int centerX, int centerY,
-                                    float scale, float opacity) {
+                                    float scale, float opacity, float resolutionScale) {
   if (!tex || useW <= 0 || useH <= 0 || texSizeX <= 0 || texSizeY <= 0)
     return;
   LPDIRECT3DDEVICE9 lpDevice = GetDevice();
@@ -715,8 +746,9 @@ void CPlugin::DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, 
   // Quad geometry: useW/useH is the used sub-rect inside the pow2 texture; map
   // the UVs to it and size the quad to useW*scale x useH*scale pixels so the
   // text is 1:1 at scale==1.
-  const float halfW = useW * scale * 0.5f;
-  const float halfH = useH * scale * 0.5f;
+  if (resolutionScale <= 0.0f) resolutionScale = 1.0f;
+  const float halfW = useW * scale * resolutionScale * 0.5f;
+  const float halfH = useH * scale * resolutionScale * 0.5f;
   const float cx = centerX * 2.0f / canvasWidth - 1.0f;
   const float cy = centerY * 2.0f / canvasHeight - 1.0f;
   const float nxHalfW = halfW * 2.0f / canvasWidth;
@@ -798,9 +830,60 @@ int CPlugin::GetDesktopModeTaskbarHeight() {
     return 0;
   }
 
+  if (m_bRenderFullResText)
+    return taskbarHeight;
+
   // Text coordinates are scaled by the render quality.
   const float scale = GetEffectiveRenderQuality(GetWidth(), GetHeight());
   return static_cast<int>(taskbarHeight * scale + 0.5f);
+}
+
+std::wstring CPlugin::TruncateTextWithEllipsis(LPD3DXFONT font, const std::wstring& text, int maxWidth) const {
+  if (!font || text.empty() || maxWidth <= 0) {
+    return text;
+  }
+
+  // D3DX9 does not support DT_NOPREFIX; including it makes DrawText fail.
+  const DWORD measureFlags = DT_SINGLELINE | DT_CALCRECT;
+  auto measureWidth = [&](const std::wstring& value) {
+    // Use a wide rect so long titles are measured in full.
+    RECT r = {0, 0, 4096, 2048};
+    font->DrawTextW(NULL, value.c_str(), -1, &r, measureFlags, 0xFFFFFFFF);
+    return r.right - r.left;
+  };
+  auto isSpace = [](wchar_t c) { return c == L' ' || c == L'\t' || c == L'\r' || c == L'\n'; };
+
+  if (measureWidth(text) <= maxWidth) {
+    return text;
+  }
+
+  std::wstring visible = text;
+  while (!visible.empty() && isSpace(visible.back())) {
+    visible.pop_back();
+  }
+
+  const std::wstring ellipsis = L"...";
+  std::size_t low = 0;
+  std::size_t high = visible.size();
+  while (low < high) {
+    const std::size_t mid = (low + high + 1) / 2;
+    if (measureWidth(visible.substr(0, mid) + ellipsis) <= maxWidth) {
+      low = mid;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  // Do not split a UTF-16 surrogate pair.
+  if (low > 0 && visible[low - 1] >= 0xD800 && visible[low - 1] <= 0xDBFF) {
+    --low;
+  }
+
+  std::wstring result = visible.substr(0, low);
+  while (!result.empty() && isSpace(result.back())) {
+    result.pop_back();
+  }
+  return result + ellipsis;
 }
 
 void CPlugin::MyRenderUI(
@@ -810,6 +893,8 @@ void CPlugin::MyRenderUI(
     int* lower_right_corner_y,  // decrement me!
     int xL,
     int xR) {
+  m_text.SetOutline(m_textBorder, D3DCOLOR_ARGB(255, m_textBorderColorR, m_textBorderColorG, m_textBorderColorB));
+
   // draw text messages directly to the back buffer.
   // when you draw text into one of the four corners,
   //   draw the text at the current 'y' value for that corner
@@ -1806,7 +1891,16 @@ void CPlugin::MyRenderUI(
             int fontIndex = NUM_BASIC_FONTS + m_errors[i].category - ERR_MSG_BOTTOM_EXTRA_1;
             SelectFont(static_cast<eFontIndex>(fontIndex));
 
-            swprintf(buf, L"%s ", m_errors[i].msg.c_str());
+            int songInfoMaxWidth = xR - xL;
+            if (m_textBorder > 0) {
+              songInfoMaxWidth -= m_textBorder;
+            }
+            if (songInfoMaxWidth < 1) {
+              songInfoMaxWidth = 1;
+            }
+            std::wstring songInfoText = m_errors[i].msg + L" ";
+            songInfoText = TruncateTextWithEllipsis(pFont, songInfoText, songInfoMaxWidth);
+            wcsncpy_s(buf, _countof(buf), songInfoText.c_str(), _TRUNCATE);
 
             // 0..1
             float age_rel = (t - m_errors[i].birthTime) / (m_errors[i].expireTime - m_errors[i].birthTime);

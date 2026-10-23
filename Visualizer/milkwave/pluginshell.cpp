@@ -335,7 +335,7 @@ char* CPluginShell::GetConfigIniFileA() {
 }
 int CPluginShell::GetFontHeight(eFontIndex idx) {
   if (idx >= 0 && idx < NUM_BASIC_FONTS + NUM_EXTRA_FONTS) {
-    if (IsSpoutActiveAndFixed()) {
+    if (m_bRenderFullResText || IsSpoutActiveAndFixed()) {
       return (int)m_fontinfo[idx].nSize;
     } else {
       return (int)(m_fontinfo[idx].nSize * m_fRenderQuality);
@@ -375,14 +375,23 @@ D3DFORMAT CPluginShell::GetBackBufZFormat() {
 };
 LPD3DXFONT CPluginShell::GetFont(eFontIndex idx) {
   if (idx >= 0 && idx < NUM_BASIC_FONTS + NUM_EXTRA_FONTS) {
+    if (m_bRenderFullResText && m_d3dx_font_full[idx]) {
+      return m_d3dx_font_full[idx];
+    }
     return m_d3dx_font[idx];
   } else
     return NULL;
 };
 LPD3DXFONT CPluginShell::GetItalicFont() {
+  if (m_bRenderFullResText && m_italic_font_full) {
+    return m_italic_font_full;
+  }
   return m_italic_font;
 };
 int CPluginShell::GetItalicFontHeight() {
+  if (m_bRenderFullResText && m_italic_font_full) {
+    return m_italic_font_height_full;
+  }
   return m_italic_font_height;
 };
 char* CPluginShell::GetDriverFilename() {
@@ -733,6 +742,37 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
   SetRect(&italicRect, 0, 0, 1024, 1024);
   m_italic_font_height = m_italic_font->DrawText(NULL, "M", -1, &italicRect, DT_CALCRECT, 0xFFFFFFFF);
 
+  // Full-resolution fonts for the screen text overlay (draws on top of the
+  // low-resolution preset backbuffer without changing render quality).
+  for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
+    int fullSize = (i == HELPSCREEN_FONT) ? helpFontSize : m_fontinfo[i].nSize;
+    if (D3DXCreateFontW(pDevice, fullSize,
+                        (i == HELPSCREEN_FONT) ? 0 : fullSize * 4 / 10,
+                        m_fontinfo[i].bBold ? 900 : 400, 1,
+                        m_fontinfo[i].bItalic,
+                        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+                        m_fontinfo[i].bAntiAliased ? ANTIALIASED_QUALITY : DEFAULT_QUALITY,
+                        DEFAULT_PITCH, m_fontinfo[i].szFace,
+                        &m_d3dx_font_full[i]) != D3D_OK) {
+      m_d3dx_font_full[i] = NULL;
+    }
+  }
+
+  const int fullItalicSize = m_fontinfo[SIMPLE_FONT].nSize;
+  if (D3DXCreateFontW(pDevice, fullItalicSize, fullItalicSize * 4 / 10,
+                      m_fontinfo[SIMPLE_FONT].bBold ? 900 : 400, 1, TRUE,
+                      DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+                      m_fontinfo[SIMPLE_FONT].bAntiAliased ? ANTIALIASED_QUALITY : DEFAULT_QUALITY,
+                      DEFAULT_PITCH, m_fontinfo[SIMPLE_FONT].szFace, &m_italic_font_full) != D3D_OK) {
+    m_italic_font_full = NULL;
+  }
+  if (m_italic_font_full) {
+    RECT fullItalicRect;
+    SetRect(&fullItalicRect, 0, 0, 1024, 1024);
+    m_italic_font_height_full =
+        m_italic_font_full->DrawText(NULL, "M", -1, &fullItalicRect, DT_CALCRECT, 0xFFFFFFFF);
+  }
+
   // get actual font heights
   for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     RECT r;
@@ -747,8 +787,12 @@ int CPluginShell::AllocateFonts(IDirect3DDevice9* pDevice) {
 void CPluginShell::CleanUpFonts() {
   SafeRelease(m_italic_font);
   m_italic_font_height = 0;
-  for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
+  SafeRelease(m_italic_font_full);
+  m_italic_font_height_full = 0;
+  for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     SafeRelease(m_d3dx_font[i]);
+    SafeRelease(m_d3dx_font_full[i]);
+  }
 }
 
 void CPluginShell::AllocateTextSurface() {
@@ -795,6 +839,8 @@ int CPluginShell::AllocateDX9Stuff() {
 }
 
 void CPluginShell::CleanUpDX9Stuff(int final_cleanup) {
+  ResetFullResTextOverlay();
+
   // ALWAYS unbind the textures before releasing textures,
   // otherwise they might still have a hanging reference!
   if (m_lpDX && m_lpDX->m_lpDevice) {
@@ -803,8 +849,11 @@ void CPluginShell::CleanUpDX9Stuff(int final_cleanup) {
   }
 
   if (!m_vj_mode) {
-    for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
+    for (int i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
       SafeRelease(m_d3dx_font[i]);
+      SafeRelease(m_d3dx_font_full[i]);
+    }
+    SafeRelease(m_italic_font_full);
     SafeRelease(m_lpDDSText);
   }
 
@@ -1086,8 +1135,12 @@ int CPluginShell::PluginPreInitialize(HWND hWinampWnd, HINSTANCE hWinampInstance
 
   // PROTECTED STRUCTURES/POINTERS
   int i;
-  for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++)
+  for (i = 0; i < NUM_BASIC_FONTS + NUM_EXTRA_FONTS; i++) {
     m_d3dx_font[i] = NULL;
+    m_d3dx_font_full[i] = NULL;
+  }
+  m_italic_font_full = NULL;
+  m_italic_font_height_full = 0;
   m_d3dx_desktop_font = NULL;
   m_lpDDSText = NULL;
   ZeroMemory(&m_sound, sizeof(td_soundinfo));
@@ -1540,6 +1593,116 @@ int CPluginShell::PluginRender(unsigned char* pWaveL, unsigned char* pWaveR)  //
   return true;
 }
 
+void CPluginShell::ResetFullResTextOverlay() {
+  m_bRenderFullResText = false;
+  ReleaseFullResTextOverlay();
+  m_bFullResOverlayCreationFailed = false;
+}
+
+void CPluginShell::ReleaseFullResTextOverlay() {
+  if (m_lpFullResOverlaySwapChain) {
+    m_lpFullResOverlaySwapChain->Release();
+    m_lpFullResOverlaySwapChain = NULL;
+  }
+  m_nFullResOverlayWidth = 0;
+  m_nFullResOverlayHeight = 0;
+  m_bFullResTextOverlayActive = false;
+}
+
+void CPluginShell::EnsureFullResTextOverlay() {
+  const bool wanted = !m_vj_mode && !IsSpoutActiveAndFixed() &&
+                      GetEffectiveRenderQuality(GetWidth(), GetHeight()) < 0.999f;
+  if (!wanted) {
+    ReleaseFullResTextOverlay();
+    m_bFullResOverlayCreationFailed = false;
+    return;
+  }
+
+  const int width = m_lpDX->m_client_width;
+  const int height = m_lpDX->m_client_height;
+  if (width <= 0 || height <= 0 || !m_lpDX->m_lpDevice) {
+    m_bFullResTextOverlayActive = false;
+    return;
+  }
+
+  if (m_lpFullResOverlaySwapChain && width == m_nFullResOverlayWidth && height == m_nFullResOverlayHeight) {
+    m_bFullResTextOverlayActive = true;
+    return;
+  }
+
+  ReleaseFullResTextOverlay();
+  if (m_bFullResOverlayCreationFailed) {
+    return;
+  }
+
+  D3DSURFACE_DESC mainDesc = {};
+  IDirect3DSurface9* pMainBackBuffer = NULL;
+  if (SUCCEEDED(m_lpDX->m_lpDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pMainBackBuffer)) &&
+      pMainBackBuffer) {
+    pMainBackBuffer->GetDesc(&mainDesc);
+    pMainBackBuffer->Release();
+  }
+
+  D3DPRESENT_PARAMETERS pp = {};
+  pp.Windowed = TRUE;
+  pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+  pp.BackBufferFormat = (mainDesc.Format != D3DFMT_UNKNOWN) ? mainDesc.Format : GetBackBufFormat();
+  pp.BackBufferWidth = width;
+  pp.BackBufferHeight = height;
+  pp.BackBufferCount = 1;
+  pp.hDeviceWindow = m_lpDX->GetHwnd();
+  pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+  pp.MultiSampleType = D3DMULTISAMPLE_NONE;
+
+  if (FAILED(m_lpDX->m_lpDevice->CreateAdditionalSwapChain(&pp, &m_lpFullResOverlaySwapChain))) {
+    m_lpFullResOverlaySwapChain = NULL;
+    m_bFullResOverlayCreationFailed = true;
+    m_bFullResTextOverlayActive = false;
+    return;
+  }
+
+  m_nFullResOverlayWidth = width;
+  m_nFullResOverlayHeight = height;
+  m_bFullResTextOverlayActive = true;
+}
+
+void CPluginShell::CopyBackBufferToFullResOverlay() {
+  if (!m_bFullResTextOverlayActive || !m_lpFullResOverlaySwapChain || !m_lpDX || !m_lpDX->m_lpDevice) {
+    return;
+  }
+
+  IDirect3DSurface9* pSource = NULL;
+  IDirect3DSurface9* pDest = NULL;
+  if (SUCCEEDED(m_lpDX->m_lpDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pSource)) &&
+      SUCCEEDED(m_lpFullResOverlaySwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pDest))) {
+    // Use point sampling so the reduced-quality backbuffer keeps its sharp,
+    // pixelated look when it is expanded to the full-resolution screen overlay.
+    m_lpDX->m_lpDevice->StretchRect(pSource, NULL, pDest, NULL, D3DTEXF_POINT);
+  }
+  if (pDest) pDest->Release();
+  if (pSource) pSource->Release();
+}
+
+void CPluginShell::PresentFullResTextOverlay() {
+  if (!m_bFullResTextOverlayActive || !m_lpFullResOverlaySwapChain || !m_lpDX) {
+    return;
+  }
+
+  if (m_lpDX->m_client_width != m_lpDX->m_REAL_client_width ||
+      m_lpDX->m_client_height != m_lpDX->m_REAL_client_height) {
+    const int real_w = m_lpDX->m_REAL_client_width;
+    const int real_h = m_lpDX->m_REAL_client_height;
+    const int extra_w = m_lpDX->m_client_width - real_w;
+    const int extra_h = m_lpDX->m_client_height - real_h;
+    RECT src, dst;
+    SetRect(&src, extra_w / 2, extra_h / 2, extra_w / 2 + real_w, extra_h / 2 + real_h);
+    SetRect(&dst, 0, 0, real_w, real_h);
+    m_lpFullResOverlaySwapChain->Present(&src, &dst, NULL, NULL, 0);
+  } else {
+    m_lpFullResOverlaySwapChain->Present(NULL, NULL, NULL, NULL, 0);
+  }
+}
+
 void CPluginShell::DrawAndDisplay(int redraw) {
   int cx = m_vjd3d9_device ? m_nTextWndWidth : m_lpDX->m_client_width;
   int cy = m_vjd3d9_device ? m_nTextWndHeight : m_lpDX->m_client_height;
@@ -1581,6 +1744,8 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     m_left_edge = m_right_edge = -99999;
   }
 
+  EnsureFullResTextOverlay();
+
   if (D3D_OK == m_lpDX->m_lpDevice->BeginScene()) {
     MyRenderFn(redraw);
 
@@ -1596,6 +1761,44 @@ void CPluginShell::DrawAndDisplay(int redraw) {
 
     if (!m_vjd3d9_device)
       m_text.DrawNow();
+
+    if (m_bFullResTextOverlayActive && !m_vjd3d9_device && m_lpFullResOverlaySwapChain) {
+      IDirect3DSurface9* pMainTarget = NULL;
+      IDirect3DSurface9* pOverlayTarget = NULL;
+      if (SUCCEEDED(m_lpDX->m_lpDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pMainTarget)) &&
+          SUCCEEDED(m_lpFullResOverlaySwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pOverlayTarget)) &&
+          SUCCEEDED(m_lpDX->m_lpDevice->SetRenderTarget(0, pOverlayTarget))) {
+        const int fullLeft = TEXT_MARGIN + GetCanvasMarginX();
+        const int fullRight = GetWidth() - TEXT_MARGIN - GetCanvasMarginX();
+        const int fullTop = TEXT_MARGIN + GetCanvasMarginY();
+        const int fullBottom = GetHeight() - TEXT_MARGIN - GetCanvasMarginY();
+
+        m_upper_left_corner_y = fullTop;
+        m_upper_right_corner_y = fullTop;
+        m_lower_left_corner_y = fullBottom;
+        m_lower_right_corner_y = fullBottom;
+        m_left_edge = fullLeft;
+        m_right_edge = fullRight;
+
+        PrepareFor2DDrawing_B(GetDevice(), GetWidth(), GetHeight());
+
+        m_bRenderFullResText = true;
+        RenderFullResOverlayExtras(GetWidth(), GetHeight());
+        RenderBuiltInTextMsgs();
+        MyRenderUI(&m_upper_left_corner_y, &m_upper_right_corner_y,
+                   &m_lower_left_corner_y, &m_lower_right_corner_y,
+                   m_left_edge, m_right_edge);
+        RenderPlaylist();
+        m_text.DrawNowOverlay();
+        m_bRenderFullResText = false;
+
+        if (pMainTarget) {
+          m_lpDX->m_lpDevice->SetRenderTarget(0, pMainTarget);
+        }
+      }
+      if (pOverlayTarget) pOverlayTarget->Release();
+      if (pMainTarget) pMainTarget->Release();
+    }
 
     m_lpDX->m_lpDevice->EndScene();
   }
@@ -1617,7 +1820,9 @@ void CPluginShell::DrawAndDisplay(int redraw) {
     m_vjd3d9_device->EndScene();
   }
 
-  if (m_lpDX->m_client_width != m_lpDX->m_REAL_client_width || m_lpDX->m_client_height != m_lpDX->m_REAL_client_height) {
+  if (m_bFullResTextOverlayActive) {
+    PresentFullResTextOverlay();
+  } else if (m_lpDX->m_client_width != m_lpDX->m_REAL_client_width || m_lpDX->m_client_height != m_lpDX->m_REAL_client_height) {
     int real_w = m_lpDX->m_REAL_client_width;  // real client size, in pixels
     int real_h = m_lpDX->m_REAL_client_height;
     int fat_w = m_lpDX->m_client_width;  // oversized VS canvas size, in pixels
@@ -2071,14 +2276,14 @@ void CPluginShell::RenderBuiltInTextMsgs() {
       SetRect(&r, 0, 0, GetWidth(), GetHeight());
       if (m_show_help == 1) {
         if (!g_szHelp_W)
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+          GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
         else
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+          GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, g_szHelp, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
       } else if (m_show_help == 2) {
         if (!g_szHelp_W)
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+          GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
         else
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
+          GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, g_szHelp_Page2, -1, &r, DT_CALCRECT, 0xFFFFFFFF);
       }
       DrawDarkTranslucentBoxFullWindow();
 
@@ -2089,14 +2294,14 @@ void CPluginShell::RenderBuiltInTextMsgs() {
 
       if (m_show_help == 1) {
         if (!g_szHelp_W)
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp, -1, &r, 0, 0xFFFFFFFF);
+          GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)g_szHelp, -1, &r, 0, 0xFFFFFFFF);
         else
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp, -1, &r, 0, 0xFFFFFFFF);
+          GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, g_szHelp, -1, &r, 0, 0xFFFFFFFF);
       } else if (m_show_help == 2) {
         if (!g_szHelp_W)
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
+          GetFont(HELPSCREEN_FONT)->DrawTextA(NULL, (char*)g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
         else
-          m_d3dx_font[HELPSCREEN_FONT]->DrawTextW(NULL, g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
+          GetFont(HELPSCREEN_FONT)->DrawTextW(NULL, g_szHelp_Page2, -1, &r, 0, 0xFFFFFFFF);
       }
       // ??
       // m_upper_left_corner_y += r.bottom - r.top + PLAYLIST_INNER_MARGIN * 3;
@@ -2127,7 +2332,7 @@ void CPluginShell::RenderBuiltInTextMsgs() {
       DWORD cb = m_fontinfo[DECORATIVE_FONT].B;
       DWORD color = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
 
-      m_lower_right_corner_y -= m_d3dx_font[DECORATIVE_FONT]->DrawTextW(NULL, wasabiApiLangString(IDS_PRESS_F1_MSG), -1, &r, DT_RIGHT, color);
+      m_lower_right_corner_y -= GetFont(DECORATIVE_FONT)->DrawTextW(NULL, wasabiApiLangString(IDS_PRESS_F1_MSG), -1, &r, DT_RIGHT, color);
     }
   }
 }
@@ -2200,7 +2405,7 @@ void CPluginShell::RenderPlaylist() {
             // sprintf(m_playlist[i], "%d. %s ", j+1, buf);  // leave an extra space @ end, so italicized fonts don't get clipped
 
             SetRect(&r, 0, 0, max_w, 1024);
-            m_d3dx_font[PLAYLIST_FONT]->DrawTextW(NULL, m_playlist[i], -1, &r, dwFlags | DT_CALCRECT, 0xFFFFFFFF);
+            GetFont(PLAYLIST_FONT)->DrawTextW(NULL, m_playlist[i], -1, &r, dwFlags | DT_CALCRECT, 0xFFFFFFFF);
             int w = r.right - r.left;
             if (w > 0)
               m_playlist_width_pixels = max(m_playlist_width_pixels, w);
@@ -2226,7 +2431,7 @@ void CPluginShell::RenderPlaylist() {
       r.bottom = m_upper_left_corner_y + (end - start) * GetFontHeight(PLAYLIST_FONT) + PLAYLIST_INNER_MARGIN * 2;
       DrawDarkTranslucentBox(&r);
 
-      // m_d3dx_font[PLAYLIST_FONT]->Begin();
+      // GetFont(PLAYLIST_FONT)->Begin();
 
       // draw playlist text
       int y = m_upper_left_corner_y + PLAYLIST_INNER_MARGIN;
@@ -2238,10 +2443,10 @@ void CPluginShell::RenderPlaylist() {
         else
           color = (i == m_playlist_pos) ? (i == now_playing ? PLAYLIST_COLOR_BOTH : PLAYLIST_COLOR_HILITE_TRACK) : (i == now_playing ? PLAYLIST_COLOR_PLAYING_TRACK : PLAYLIST_COLOR_NORMAL);
 
-        y += m_d3dx_font[PLAYLIST_FONT]->DrawTextW(NULL, m_playlist[i - start], -1, &r, dwFlags, color);
+        y += GetFont(PLAYLIST_FONT)->DrawTextW(NULL, m_playlist[i - start], -1, &r, dwFlags, color);
       }
 
-      // m_d3dx_font[PLAYLIST_FONT]->End();
+      // GetFont(PLAYLIST_FONT)->End();
     }
   }
 }
@@ -2834,6 +3039,10 @@ void CPluginShell::ResetBufferAndFonts() {
 
   SetVariableBackBuffer(m_lpDX->m_client_width, m_lpDX->m_client_height);
   UpdateBackBufferTracking(d3dPp.BackBufferWidth, d3dPp.BackBufferHeight);
+
+  // A device Reset invalidates additional swap-chain back buffers, so the
+  // full-resolution text overlay must be recreated afterwards.
+  ResetFullResTextOverlay();
 
   LPDIRECT3DDEVICE9EX pDevice = GetDevice();
   if (pDevice) {

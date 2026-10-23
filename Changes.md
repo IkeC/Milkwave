@@ -16,6 +16,11 @@
   - The optional `wave` flag synthesises a matching waveform and FFT spectrum for wave- and FFT-based presets; the Remote's Audio Test button enables both
 * Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
 * New `audio-test.txt` with a commented, editable band sequence for checking preset reactions without music
+* Remote/Visualizer: new "Textborder" setting outlines all messages and notifications (default thickness 2); the outline color is configurable in the _Milkwave_ section of _settings.ini_ (_TextBorderColorR/G/B_, black by default)
+* Visualizer: default message, preset-name, menu and song-info font sizes increased by 5
+* Visualizer: long song-info artist/title/album lines are truncated with "..." instead of being cut off at the screen edge
+* Visualizer: at reduced Quality, messages, notifications, menus, song titles and lyrics stay sharp in a full-resolution screen overlay while the preset keeps its lower internal resolution
+  - Spout output and screenshots retain the reduced-resolution copy with text; text and lyrics burn-in remain part of the preset
 * Remote/Visualizer: lyrics styles default to "Text Outline" (thickness 3); 25%, 50%, 75% opacity and solid backgrounds use a minimum 8px side inset, and color and amount are configurable
   - Moving lyrics Pos X/Pos Y also shifts Start X/Start Y by the same amount
   - Double-clicking Pos resets both position and start values; double-clicking Start resets both start values

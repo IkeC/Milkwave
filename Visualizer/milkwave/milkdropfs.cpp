@@ -834,6 +834,7 @@ void CPlugin::RenderFrame(int bRedraw) {
     if (lpDevice) {
       // Clear the screen to black
       lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+      CopyBackBufferToFullResOverlay();
       lpDevice->Present(NULL, NULL, NULL, NULL);  // Present the black screen
     }
   } else {
@@ -1204,19 +1205,6 @@ void CPlugin::RenderFrame(int bRedraw) {
     if (m_InvertPresetOutput)
       InvertBackBuffer();
 
-    for (int i = 0; i < NUM_SUPERTEXTS; i++) {
-      float fProgress = (GetTime() - m_supertexts[i].fStartTime) / m_supertexts[i].fDuration;
-      // finally, render song title animation to back buffer
-      if (m_supertexts[i].fStartTime >= 0 &&
-          !m_supertexts[i].bRedrawSuperText && fProgress <= 1.0f) {
-        ShowSongTitleAnim(GetWidth(), GetHeight(),
-                          min(fProgress, 0.9999f),
-                          i);
-        // TODO accentuate
-        // if (fProgress >= 1.5f)
-        //   m_supertexts[i].fStartTime = -1.0f;	// 'off' state
-      }
-    }
   }
 
   // Update video capture texture if enabled
@@ -1228,6 +1216,25 @@ void CPlugin::RenderFrame(int bRedraw) {
   }
 
   DrawUserSprites();
+
+  // =========================================================
+  //
+  // INPUT MIXING - Composite video or Spout input onto backbuffer
+  //
+  if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && m_bInputMixOnTop) {
+    CompositeInputMixing(false);  // Render as overlay (transparent)
+  }
+  // =========================================================
+
+  // The full-resolution screen overlay must start from a clean preset frame:
+  // copy it before the live titles/lyrics are drawn into the low-res
+  // backbuffer.  Burn-in effects are already part of the preset render above.
+  CopyBackBufferToFullResOverlay();
+
+  // Draw the low-res title/lyrics copies for Spout and captures.  The sharp
+  // screen copies are rendered separately into the overlay in DrawAndDisplay.
+  DrawActiveSongTitles(GetBackBufferWidth(), GetBackBufferHeight());
+  RenderLyricsOverlay(false, GetBackBufferWidth(), GetBackBufferHeight());
 
   // flip buffers
   IDirect3DTexture9* pTemp = m_lpVS[0];
@@ -1250,21 +1257,6 @@ void CPlugin::RenderFrame(int bRedraw) {
   }
   fOldTime = fNewTime;
   */
-
-  // =========================================================
-  //
-  // INPUT MIXING - Composite video or Spout input onto backbuffer
-  //
-  if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && m_bInputMixOnTop) {
-    CompositeInputMixing(false);  // Render as overlay (transparent)
-  }
-  // =========================================================
-
-  // =========================================================
-  // LYRICS overlay - drawn onto the backbuffer here so the lyrics appear in
-  // both the on-screen output AND the Spout sender (which grabs the
-  // backbuffer just below).
-  RenderLyricsOverlay(false);
 
   // =========================================================
   //

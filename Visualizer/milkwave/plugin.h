@@ -858,6 +858,10 @@ class CPlugin : public CPluginShell {
   int m_nSpoutInputHeight;
 
   int m_nFramesSinceResize;
+  int m_textBorder = 2;  // outline thickness for messages and notifications (0 = off)
+  int m_textBorderColorR = 0;
+  int m_textBorderColorG = 0;
+  int m_textBorderColorB = 0;
   bool m_lyricsDisplayEnabled = true;
   bool m_bLyricsAutoLoad = true;
   bool m_lyricsAutoScale = true;  // auto-fit font so ~LyricsFontSize chars fit per line in the max-width area (on by default)
@@ -911,6 +915,7 @@ class CPlugin : public CPluginShell {
   void InvalidateLyricsWrapCache();
   void WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3DXFONT measureFont,
                       std::vector<std::wstring>& outLines) const;
+  std::wstring TruncateTextWithEllipsis(LPD3DXFONT font, const std::wstring& text, int maxWidth) const;
 
   // Message-style lyrics rendering: the wrapped text is drawn ONCE at the
   // target scale into an offscreen texture and then GPU-scaled each frame, so
@@ -938,7 +943,7 @@ class CPlugin : public CPluginShell {
                                  int wrapWidthPixels, float targetScale);
   void DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, int texSizeX, int texSizeY,
                              int canvasWidth, int canvasHeight, int centerX, int centerY,
-                             float scale, float opacity);
+                             float scale, float opacity, float resolutionScale = 1.0f);
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.
@@ -1039,7 +1044,9 @@ class CPlugin : public CPluginShell {
   int GetNextFreeSupertextIndex();
   void DoCustomSoundAnalysis();
   void DrawMotionVectors();
-  void RenderLyricsOverlay(bool burnIn);
+  void RenderLyricsOverlay(bool burnIn, int targetWidth = -1, int targetHeight = -1);
+  void RenderFullResOverlayExtras(int width, int height) override;
+  void DrawActiveSongTitles(int width, int height);
 
   bool LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly, bool bSkipIfCached = false);
   void UvToMathSpace(float u, float v, float* rad, float* ang);

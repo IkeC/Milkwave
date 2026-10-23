@@ -71,10 +71,17 @@ class CTextManager {
   };
   void DrawBox(LPRECT pRect, DWORD boxColor);
   void DrawDarkBox(LPRECT pRect) { DrawBox(pRect, 0xFF000000); }
+  void SetOutline(int amount, DWORD color) {
+    m_nOutline = amount;
+    m_dwOutlineColor = color;
+  }
   void DrawNow();
+  void DrawNowOverlay();
   void ClearAll();  // automatically called @ end of DrawNow()
 
  protected:
+  void DrawOutlineCopies(const td_string& text);
+
   LPDIRECT3DDEVICE9 m_lpDevice;
   IDirect3DTexture9* m_lpTextSurface;
   int m_blit_additively;
@@ -83,6 +90,9 @@ class CTextManager {
   td_string m_msg[2][MAX_MSGS];
   wchar_t* m_next_msg_start_ptr;
   int m_b;
+
+  int m_nOutline = 0;
+  DWORD m_dwOutlineColor = 0xFF000000;
 };
 
 #endif

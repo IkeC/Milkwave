@@ -1355,7 +1355,7 @@ void CPlugin::RecreateLyricsFont(float scale) {
   // Round (not truncate) so a scale passed in as targetSize/sizePerScale maps
   // back to exactly targetSize — prevents off-by-one drift in the recreation
   // hysteresis used by the lyrics render loop.
-  int lyricsFontSize = (int)(m_lyricsFontSize * scale * m_fRenderQuality + 0.5f);
+  int lyricsFontSize = (int)(m_lyricsFontSize * scale + 0.5f);
   if (lyricsFontSize < 8) lyricsFontSize = 8;
   if (lyricsFontSize > 256) lyricsFontSize = 256;
   const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
@@ -1373,7 +1373,7 @@ void CPlugin::RecreateLyricsMeasureFont(float targetScale) {
   if (targetScale < 0.1f) targetScale = 0.1f;
   if (targetScale > 10.0f) targetScale = 10.0f;
   m_lyricsMeasureFontScale = targetScale;
-  int lyricsFontSize = (int)(m_lyricsFontSize * targetScale * m_fRenderQuality + 0.5f);
+  int lyricsFontSize = (int)(m_lyricsFontSize * targetScale + 0.5f);
   if (lyricsFontSize < 8) lyricsFontSize = 8;
   if (lyricsFontSize > 256) lyricsFontSize = 256;
   const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
