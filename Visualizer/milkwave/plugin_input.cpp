@@ -654,6 +654,10 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
             SendSettingsInfoToMilkwaveRemote();
           } else {
             m_bShowPresetInfo = !m_bShowPresetInfo;
+            // Persist right away (like Ctrl+F4) so that reloading the config from the
+            // Remote (e.g. the Fonts tab's Save button) keeps the F4 state the user chose
+            // instead of restoring the value from the previous session.
+            WritePrivateProfileIntW(m_bShowPresetInfo, L"bShowPresetInfo", GetConfigIniFile(), L"Settings");
             SendSettingsInfoToMilkwaveRemote();
           }
           return 0;  // we processed (or absorbed) the key

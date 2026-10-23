@@ -5087,7 +5087,7 @@ namespace MilkwaveRemote {
         // Notify
         string fontFace1 = RemoteHelper.GetIniValueFonts("FontFace1", "Bahnschrift");
         cboFont1.SelectedItem = fontFace1;
-        string fontSize1 = RemoteHelper.GetIniValueFonts("FontSize1", "20");
+        string fontSize1 = RemoteHelper.GetIniValueFonts("FontSize1", "25");
         numFont1.Value = int.Parse(fontSize1);
 
         string fontBold1 = RemoteHelper.GetIniValueFonts("FontBold1", "0");
@@ -5108,7 +5108,7 @@ namespace MilkwaveRemote {
         // Preset
         string fontFace2 = RemoteHelper.GetIniValueFonts("FontFace2", "Bahnschrift");
         cboFont2.SelectedItem = fontFace2;
-        string fontSize2 = RemoteHelper.GetIniValueFonts("FontSize2", "25");
+        string fontSize2 = RemoteHelper.GetIniValueFonts("FontSize2", "30");
         numFont2.Value = int.Parse(fontSize2);
 
         string fontBold2 = RemoteHelper.GetIniValueFonts("FontBold2", "0");
@@ -5129,7 +5129,7 @@ namespace MilkwaveRemote {
         // Menu: Ini-Index is 4
         string fontFaceMenu = RemoteHelper.GetIniValueFonts("FontFace4", "Bahnschrift");
         cboFontMenu.SelectedItem = fontFaceMenu;
-        string fontSizeMenu = RemoteHelper.GetIniValueFonts("FontSize4", "25");
+        string fontSizeMenu = RemoteHelper.GetIniValueFonts("FontSize4", "30");
         numFontMenu.Value = int.Parse(fontSizeMenu);
 
         string fontBoldMenu = RemoteHelper.GetIniValueFonts("FontBold4", "0");
@@ -5150,7 +5150,7 @@ namespace MilkwaveRemote {
         // Artist: Ini-Index is 5!
         string fontFace3 = RemoteHelper.GetIniValueFonts("FontFace5", "Bahnschrift");
         cboFont3.SelectedItem = fontFace3;
-        string fontSize3 = RemoteHelper.GetIniValueFonts("FontSize5", "30");
+        string fontSize3 = RemoteHelper.GetIniValueFonts("FontSize5", "35");
         numFont3.Value = int.Parse(fontSize3);
 
         string fontBold3 = RemoteHelper.GetIniValueFonts("FontBold5", "0");
@@ -5171,7 +5171,7 @@ namespace MilkwaveRemote {
         // Title: Ini-Index is 6!
         string fontFace4 = RemoteHelper.GetIniValueFonts("FontFace6", "Bahnschrift");
         cboFont4.SelectedItem = fontFace4;
-        string fontSize4 = RemoteHelper.GetIniValueFonts("FontSize6", "40");
+        string fontSize4 = RemoteHelper.GetIniValueFonts("FontSize6", "45");
         numFont4.Value = int.Parse(fontSize4);
 
         string fontBold4 = RemoteHelper.GetIniValueFonts("FontBold6", "1");
@@ -5192,7 +5192,7 @@ namespace MilkwaveRemote {
         // Album: Ini-Index is 7!
         string fontFace5 = RemoteHelper.GetIniValueFonts("FontFace7", "Bahnschrift");
         cboFont5.SelectedItem = fontFace5;
-        string fontSize5 = RemoteHelper.GetIniValueFonts("FontSize7", "25");
+        string fontSize5 = RemoteHelper.GetIniValueFonts("FontSize7", "30");
         numFont5.Value = int.Parse(fontSize5);
 
         string fontBold5 = RemoteHelper.GetIniValueFonts("FontBold7", "0");
@@ -5309,7 +5309,7 @@ namespace MilkwaveRemote {
 
     private void lblFont1_DoubleClick(object sender, EventArgs e) {
       cboFont1.SelectedItem = "Bahnschrift";
-      numFont1.Value = 20;
+      numFont1.Value = 25;
       chkFontBold1.Checked = false;
       chkFontItalic1.Checked = false;
       chkFontAA1.Checked = false;
@@ -5318,7 +5318,7 @@ namespace MilkwaveRemote {
 
     private void lblFont2_DoubleClick(object sender, EventArgs e) {
       cboFont2.SelectedItem = "Bahnschrift";
-      numFont2.Value = 25;
+      numFont2.Value = 30;
       chkFontBold2.Checked = false;
       chkFontItalic2.Checked = false;
       chkFontAA2.Checked = true;
@@ -5327,7 +5327,7 @@ namespace MilkwaveRemote {
 
     private void lblMenu_DoubleClick(object sender, EventArgs e) {
       cboFontMenu.SelectedItem = "Bahnschrift";
-      numFontMenu.Value = 25;
+      numFontMenu.Value = 30;
       chkMenuBold.Checked = false;
       chkMenuItalic.Checked = false;
       chkMenuAA.Checked = true;
@@ -5336,7 +5336,7 @@ namespace MilkwaveRemote {
 
     private void lblFont3_DoubleClick(object sender, EventArgs e) {
       cboFont3.SelectedItem = "Bahnschrift";
-      numFont3.Value = 30;
+      numFont3.Value = 35;
       chkFontBold3.Checked = false;
       chkFontItalic3.Checked = false;
       chkFontAA3.Checked = true;
@@ -5345,7 +5345,7 @@ namespace MilkwaveRemote {
 
     private void lblFont4_DoubleClick(object sender, EventArgs e) {
       cboFont4.SelectedItem = "Bahnschrift";
-      numFont4.Value = 40;
+      numFont4.Value = 45;
       chkFontBold4.Checked = true;
       chkFontItalic4.Checked = false;
       chkFontAA4.Checked = true;
@@ -5354,7 +5354,7 @@ namespace MilkwaveRemote {
 
     private void lblFont5_DoubleClick(object sender, EventArgs e) {
       cboFont5.SelectedItem = "Bahnschrift";
-      numFont5.Value = 25;
+      numFont5.Value = 30;
       chkFontBold5.Checked = false;
       chkFontItalic5.Checked = false;
       chkFontAA5.Checked = true;

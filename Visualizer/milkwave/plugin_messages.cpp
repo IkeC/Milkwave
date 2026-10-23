@@ -673,11 +673,14 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     g_plugin.AddError(L"Finally the Album", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_3, false);
     g_plugin.AddError(L"Here goes the Title", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_2, false);
     g_plugin.AddError(L"This is the Artist", g_plugin.m_SongInfoDisplaySeconds, ERR_MSG_BOTTOM_EXTRA_1, false);
-    if (!g_plugin.m_bShowPresetInfo) g_plugin.m_bShowPresetInfo = true;
+    // Only preview the preset name for a moment, the way a preset change does. Pinning it
+    // permanently would override the user's F4 state (the Remote's Fonts tab save/test
+    // used to leave the name on screen even when it had been switched off).
+    if (!g_plugin.m_bShowPresetInfo) {
+      const float previewSeconds = (g_plugin.m_PresetInfoOnChangeSeconds > 0.0f) ? g_plugin.m_PresetInfoOnChangeSeconds : 6.5f;
+      g_plugin.m_fShowPresetInfoUntilThisTime = GetTime() + previewSeconds;
+    }
     g_plugin.AddNotification(L"This is a notification");
-    // Preset info is now shown permanently - tell the Remote so it disables the
-    // "Preset" display toggle (it has no effect while the info never hides).
-    g_plugin.SendSettingsInfoToMilkwaveRemote();
   } else if (wcsncmp(sMessage, L"CLEARPRESET", 11) == 0) {
     ClearPreset();
   } else if (wcsncmp(sMessage, L"CLEARSPRITES", 12) == 0) {
