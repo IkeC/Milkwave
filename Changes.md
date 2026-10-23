@@ -1,19 +1,19 @@
 ## v4.2 (unreleased)
 
 * 18 new audio-reactive Shader presets
-* Visualizer: Uncompiled shader presets now compile in the background while the current preset keeps playing
-* Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
-* Remote/Visualizer: "Textborder" setting outlines all messages and notifications with configurable color
-* Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
-* Remote/Visualizer: Lyrics text outline and background box options with configurable color
-* Visualizer: `.milk` Windows file association support
 * Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 * Visualizer: Improved Desktop Mode (Ctrl+F9)
 * Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"
 * Visualizer: Taskbar thumbnail toolbar with buttons for the previous preset, the opacity (5% steps), the preset lock and the next preset
 * Remote: Bottom panel button functions assignable from context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click)
 * Visualizer: Flash preset info on preset change with configurable duration (Ctrl+F4)
+* Remote/Visualizer: Lyrics text outline and background box options with configurable color
+* Visualizer: `.milk` Windows file association support
 * Remote: Preset change and info buttons with improved locking logic dependency
+* Visualizer: Uncompiled shader presets now compile in the background while the current preset keeps playing
+* Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
+* Remote/Visualizer: "Textborder" setting outlines all messages and notifications with configurable color
+* Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
 * Remote Settings tab: Invert preset output
 
 ## v4.1 (2026-09-10)

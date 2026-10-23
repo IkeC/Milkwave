@@ -206,6 +206,9 @@ static int nBeatDrops = 0;                       // Number of BeatDrop instances
 BOOL CALLBACK GetWindowNames(HWND h, LPARAM l);  // Window enumerator callback
 // ===============================================
 
+// TCP network server startup (defined further down, used by CreateWindowAndRun)
+static bool StartNetworkServer(HWND hwnd);
+
 // SPOUT - DX9EX
 static IDirect3D9Ex* pD3D9 = nullptr;
 static IDirect3DDevice9Ex* pD3DDevice = nullptr;
@@ -1189,7 +1192,7 @@ static void UpdateTaskbarOpacityButtons() {
 
 // Unlike the Shift+mouse wheel shortcut, which uses finer steps near full
 // transparency, the buttons always step by 5%, down to 5%.
-static void ChangeWindowOpacityByStep(bool increase) {
+void ChangeWindowOpacityByStep(bool increase) {
   if (renderWindow == nullptr || !IsWindow(renderWindow)) {
     return;
   }
@@ -1662,6 +1665,28 @@ HRESULT GetDefaultAudioDeviceName(IMMDevice** ppMMDevice, std::wstring* m_szAudi
   return S_OK;
 }
 
+// Ctrl+D and the Remote's "Set Default Audio Device" button function.
+void SetDefaultAudioDevice() {
+  wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
+  g_plugin.m_nAudioDevicePreviousType = g_plugin.m_nAudioDeviceActiveType;
+
+  IMMDevice* m_pMMDevice;
+  std::wstring sAudioDeviceDisplayName;
+  GetDefaultAudioDeviceName(&m_pMMDevice, &sAudioDeviceDisplayName);
+  wcscpy(g_plugin.m_szAudioDevice, sAudioDeviceDisplayName.c_str());
+
+  g_plugin.SetAudioDeviceDisplayName(sAudioDeviceDisplayName.c_str(), true);
+
+  // Restart audio
+  g_plugin.m_nAudioDeviceRequestType = 2;
+  g_plugin.m_nAudioLoopState = 1;
+}
+
+// Ctrl+Shift+D and the Remote's "Show Audio Device" button function.
+void ShowAudioDeviceName() {
+  g_plugin.AddNotification(g_plugin.m_szAudioDeviceDisplayName);
+}
+
 LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   static bool rightMouseButtonHeld = false;  // Track the state of the right mouse button
 
@@ -1870,23 +1895,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         }
       } else if (wParam == VK_D) {
         if (GetKeyState(VK_CONTROL) & 0x8000) {  // Check if Ctrl is pressed
-          bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-          if (isShiftPressed) {
-            g_plugin.AddNotification(g_plugin.m_szAudioDeviceDisplayName);
+          if (GetKeyState(VK_SHIFT) & 0x8000) {
+            ShowAudioDeviceName();  // Ctrl+Shift+D
           } else {
-            wcscpy_s(g_plugin.m_szAudioDevicePrevious, g_plugin.m_szAudioDevice);
-            g_plugin.m_nAudioDevicePreviousType = g_plugin.m_nAudioDeviceActiveType;
-
-            IMMDevice* m_pMMDevice;
-            std::wstring sAudioDeviceDisplayName;
-            GetDefaultAudioDeviceName(&m_pMMDevice, &sAudioDeviceDisplayName);
-            wcscpy(g_plugin.m_szAudioDevice, sAudioDeviceDisplayName.c_str());
-
-            g_plugin.SetAudioDeviceDisplayName(sAudioDeviceDisplayName.c_str(), true);
-
-            // Restart audio
-            g_plugin.m_nAudioDeviceRequestType = 2;
-            g_plugin.m_nAudioLoopState = 1;
+            SetDefaultAudioDevice();  // Ctrl+D
           }
         }
         return 0;
@@ -1901,68 +1913,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         }
       } else if (wParam == VK_N) {
         if (GetKeyState(VK_CONTROL) & 0x8000) {  // Ctrl+N: network server info
-          bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-          if (isShiftPressed) {
-            // Ctrl+Shift+N: toggle server on/off and persist
-            if (g_tcpServer.IsRunning()) {
-              g_tcpServer.Stop();
-              g_plugin.m_TcpEnabled = false;
-              g_plugin.AddNotification(L"Network Server stopped");
-            } else {
-              std::string pin;
-              if (g_plugin.m_szTcpPIN[0] != L'\0') {
-                int size = WideCharToMultiByte(CP_UTF8, 0, g_plugin.m_szTcpPIN, -1, nullptr, 0, nullptr, nullptr);
-                if (size > 0) {
-                  pin.resize(size - 1);
-                  WideCharToMultiByte(CP_UTF8, 0, g_plugin.m_szTcpPIN, -1, &pin[0], size, nullptr, nullptr);
-                }
-              }
-              if (g_tcpServer.Start(g_plugin.m_TcpPort, pin,
-                                    [hWnd](TcpClientConnection& client, const std::wstring& msg) {
-                                      g_respondingTcpClient = &client;
-                                      wchar_t* copy = (wchar_t*)malloc((msg.size() + 1) * sizeof(wchar_t));
-                                      if (copy) {
-                                        wcscpy_s(copy, msg.size() + 1, msg.c_str());
-                                        PostMessageW(hWnd, WM_USER_PIPE_IPC_MESSAGE, 1, (LPARAM)copy);
-                                      }
-                                    })) {
-                g_plugin.m_TcpEnabled = true;
-                wchar_t buf[256];
-                swprintf_s(buf, L"Network Server started on port %d", g_plugin.m_TcpPort);
-                g_plugin.AddNotification(buf);
-              } else {
-                g_plugin.AddNotification(L"Network Server failed to start");
-              }
-            }
-            // Persist TcpEnabled to settings.ini
-            WritePrivateProfileStringW(L"Network", L"TcpEnabled",
-                                       g_plugin.m_TcpEnabled ? L"1" : L"0",
-                                       g_plugin.GetConfigIniFile());
+          if (GetKeyState(VK_SHIFT) & 0x8000) {
+            ToggleNetworkServer(hWnd);  // Ctrl+Shift+N: toggle server on/off and persist
           } else {
-            // Ctrl+N: show network status
-            bool running = g_tcpServer.IsRunning();
-            auto clients = g_tcpServer.GetConnectedClients();
-            wchar_t buf[1024];
-            if (running) {
-              std::wstring clientList;
-              for (const auto& c : clients) {
-                int nameSize = MultiByteToWideChar(CP_UTF8, 0, c.deviceName.data(), (int)c.deviceName.size(), nullptr, 0);
-                std::wstring wName(nameSize, 0);
-                MultiByteToWideChar(CP_UTF8, 0, c.deviceName.data(), (int)c.deviceName.size(), &wName[0], nameSize);
-                if (!clientList.empty()) clientList += L", ";
-                clientList += wName;
-              }
-              if (clients.empty()) {
-                swprintf_s(buf, L"Network Server: ON (port %d)\nNo clients connected  [CTRL+SHIFT+N to stop]",
-                           g_tcpServer.GetPort());
-              } else {
-                swprintf_s(buf, L"Network Server: ON (port %d)\n%d client(s): %s  [CTRL+SHIFT+N to stop]",
-                           g_tcpServer.GetPort(), (int)clients.size(), clientList.c_str());
-              }
-            } else {
-              swprintf_s(buf, L"Network Server: OFF  [CTRL+SHIFT+N to start]");
-            }
-            g_plugin.AddError(buf, 8.0f, ERR_NOTIFY, false);
+            ShowNetworkServerStatus();  // Ctrl+N: show network status
           }
           return 0;
         }
@@ -2534,27 +2488,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   // Start TCP network server if enabled
   if (g_plugin.m_TcpEnabled) {
-    // Determine PIN: clear-text TcpPIN takes precedence, otherwise use PinHash
-    std::string pin;
-    if (g_plugin.m_szTcpPIN[0] != L'\0') {
-      // Convert wide PIN to UTF-8
-      int size = WideCharToMultiByte(CP_UTF8, 0, g_plugin.m_szTcpPIN, -1, nullptr, 0, nullptr, nullptr);
-      if (size > 0) {
-        pin.resize(size - 1);
-        WideCharToMultiByte(CP_UTF8, 0, g_plugin.m_szTcpPIN, -1, &pin[0], size, nullptr, nullptr);
-      }
-    }
-    // Note: PinHash support is reserved for future use
-
-    if (g_tcpServer.Start(g_plugin.m_TcpPort, pin,
-                          [hwnd](TcpClientConnection& client, const std::wstring& msg) {
-                            g_respondingTcpClient = &client;
-                            wchar_t* copy = (wchar_t*)malloc((msg.size() + 1) * sizeof(wchar_t));
-                            if (copy) {
-                              wcscpy_s(copy, msg.size() + 1, msg.c_str());
-                              PostMessageW(hwnd, WM_USER_PIPE_IPC_MESSAGE, 1, (LPARAM)copy);
-                            }
-                          })) {
+    if (StartNetworkServer(hwnd)) {
       milkwave.LogInfo(L"CreateWindowAndRun: TCP server started on port " + std::to_wstring(g_plugin.m_TcpPort));
     } else {
       milkwave.LogInfo(L"CreateWindowAndRun: TCP server failed to start");
@@ -3232,6 +3166,73 @@ static BOOL CALLBACK FindVisualizerWindowProc(HWND hwnd, LPARAM lParam) {
     ctx->foundExactTitle = bExactTitle;
   }
   return ctx->foundExactTitle ? FALSE : TRUE;  // the first instance wins
+}
+
+// ─── TCP network server (Ctrl+Shift+N / Ctrl+N and Remote command buttons) ─────
+static bool StartNetworkServer(HWND hwnd) {
+  // Determine PIN: clear-text TcpPIN takes precedence, otherwise use PinHash
+  std::string pin;
+  if (g_plugin.m_szTcpPIN[0] != L'\0') {
+    int size = WideCharToMultiByte(CP_UTF8, 0, g_plugin.m_szTcpPIN, -1, nullptr, 0, nullptr, nullptr);
+    if (size > 0) {
+      pin.resize(size - 1);
+      WideCharToMultiByte(CP_UTF8, 0, g_plugin.m_szTcpPIN, -1, &pin[0], size, nullptr, nullptr);
+    }
+  }
+  return g_tcpServer.Start(g_plugin.m_TcpPort, pin,
+                           [hwnd](TcpClientConnection& client, const std::wstring& msg) {
+                             g_respondingTcpClient = &client;
+                             wchar_t* copy = (wchar_t*)malloc((msg.size() + 1) * sizeof(wchar_t));
+                             if (copy) {
+                               wcscpy_s(copy, msg.size() + 1, msg.c_str());
+                               PostMessageW(hwnd, WM_USER_PIPE_IPC_MESSAGE, 1, (LPARAM)copy);
+                             }
+                           });
+}
+
+// Ctrl+Shift+N and the Remote's "Toggle Network Server" button function.
+void ToggleNetworkServer(HWND hwnd) {
+  if (g_tcpServer.IsRunning()) {
+    g_tcpServer.Stop();
+    g_plugin.m_TcpEnabled = false;
+    g_plugin.AddNotification(L"Network Server stopped");
+  } else if (StartNetworkServer(hwnd)) {
+    g_plugin.m_TcpEnabled = true;
+    wchar_t buf[256];
+    swprintf_s(buf, L"Network Server started on port %d", g_plugin.m_TcpPort);
+    g_plugin.AddNotification(buf);
+  } else {
+    g_plugin.AddNotification(L"Network Server failed to start");
+  }
+  // Persist TcpEnabled to settings.ini
+  WritePrivateProfileStringW(L"Network", L"TcpEnabled", g_plugin.m_TcpEnabled ? L"1" : L"0", g_plugin.GetConfigIniFile());
+}
+
+// Ctrl+N and the Remote's "Network Server Status" button function.
+void ShowNetworkServerStatus() {
+  const bool running = g_tcpServer.IsRunning();
+  auto clients = g_tcpServer.GetConnectedClients();
+  wchar_t buf[1024];
+  if (running) {
+    std::wstring clientList;
+    for (const auto& c : clients) {
+      int nameSize = MultiByteToWideChar(CP_UTF8, 0, c.deviceName.data(), (int)c.deviceName.size(), nullptr, 0);
+      std::wstring wName(nameSize, 0);
+      MultiByteToWideChar(CP_UTF8, 0, c.deviceName.data(), (int)c.deviceName.size(), &wName[0], nameSize);
+      if (!clientList.empty()) clientList += L", ";
+      clientList += wName;
+    }
+    if (clients.empty()) {
+      swprintf_s(buf, L"Network Server: ON (port %d)\nNo clients connected  [CTRL+SHIFT+N to stop]",
+                 g_tcpServer.GetPort());
+    } else {
+      swprintf_s(buf, L"Network Server: ON (port %d)\n%d client(s): %s  [CTRL+SHIFT+N to stop]",
+                 g_tcpServer.GetPort(), (int)clients.size(), clientList.c_str());
+    }
+  } else {
+    swprintf_s(buf, L"Network Server: OFF  [CTRL+SHIFT+N to start]");
+  }
+  g_plugin.AddError(buf, 8.0f, ERR_NOTIFY, false);
 }
 
 static DWORD FindRunningVisualizerPid(HWND* pHwndOut = nullptr) {

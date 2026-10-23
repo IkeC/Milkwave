@@ -38,6 +38,25 @@ extern CPlugin g_plugin;         // defined in main.cpp
 extern bool g_bDebugOutput;      // defined in support.cpp
 extern bool g_bDumpFileCleared;  // defined in support.cpp
 
+// =====================================================================
+// TCP network server control (defined in MilkwaveVisualizer.cpp)
+// Used by the Ctrl+Shift+N / Ctrl+N hotkeys and by the Remote's
+// "NETWORK_SERVER" / "NETWORK_SERVER_STATUS" button commands.
+// =====================================================================
+void ToggleNetworkServer(HWND hwnd);
+void ShowNetworkServerStatus();
+
+// =====================================================================
+// Window helpers (defined in MilkwaveVisualizer.cpp, called from
+// plugin_messages.cpp for the corresponding Remote button commands).
+// =====================================================================
+void ToggleStretch(HWND hwnd);
+void ResetWindow(HWND hwnd);
+void SetWindowFixedDimensions(HWND hwnd);
+void ChangeWindowOpacityByStep(bool increase);
+void SetDefaultAudioDevice();
+void ShowAudioDeviceName();
+
 // Locates MilkwaveRemote.exe next to the visualizer (see plugin.cpp)
 bool MilkwaveRemoteFindExecutable(std::wstring& exePath);
 

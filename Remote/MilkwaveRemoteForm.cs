@@ -3025,7 +3025,8 @@ namespace MilkwaveRemote {
         bool categoryChecked = false;
         foreach (CommandFunctionOption option in CommandFunctionCatalog) {
           if (option.Category != category) continue;
-          ToolStripMenuItem item = new ToolStripMenuItem($"{option.Name} ({option.Shortcut})".Replace("&", "&&"));
+          string itemText = option.Shortcut.Length > 0 ? $"{option.Name} ({option.Shortcut})" : option.Name;
+          ToolStripMenuItem item = new ToolStripMenuItem(itemText.Replace("&", "&&"));
           bool isCurrent = string.Equals(currentCommand, option.Command, StringComparison.OrdinalIgnoreCase);
           item.Checked = isCurrent;
           categoryChecked |= isCurrent;
@@ -3156,12 +3157,29 @@ namespace MilkwaveRemote {
       new CommandFunctionOption { Category = "Window", Name = "Clickthrough", Shortcut = "F9", Command = "SEND=0x78" },
       new CommandFunctionOption { Category = "Window", Name = "Open Milkwave Remote", Shortcut = "F8", Command = "SIGNAL|OPEN_REMOTE" },
       new CommandFunctionOption { Category = "Window", Name = "Toggle Spout", Shortcut = "F10", Command = "SEND=0x79" },
+      new CommandFunctionOption { Category = "Window", Name = "Fixed Spout Resolution", Shortcut = "Shift+F10", Command = "SPOUT_FIXEDSIZE" },
+      new CommandFunctionOption { Category = "Window", Name = "Toggle Network Server", Shortcut = "Ctrl+Shift+N", Command = "NETWORK_SERVER" },
+      new CommandFunctionOption { Category = "Window", Name = "Network Server Status", Shortcut = "Ctrl+N", Command = "NETWORK_SERVER_STATUS" },
+      new CommandFunctionOption { Category = "Window", Name = "Stretch All Monitors", Shortcut = "Alt+S", Command = "STRETCH_MONITORS" },
+      new CommandFunctionOption { Category = "Window", Name = "Reset Window", Shortcut = "Ctrl+F2", Command = "WINDOW_RESET" },
+      new CommandFunctionOption { Category = "Window", Name = "Fixed Window Size", Shortcut = "Shift+Ctrl+F2", Command = "WINDOW_FIXED_SIZE" },
+      new CommandFunctionOption { Category = "Window", Name = "Opacity +5%", Shortcut = "Shift+Wheel Up", Command = "OPACITY_UP" },
+      new CommandFunctionOption { Category = "Window", Name = "Opacity -5%", Shortcut = "Shift+Wheel Down", Command = "OPACITY_DOWN" },
       // Display
       new CommandFunctionOption { Category = "Display", Name = "Help", Shortcut = "F1", Command = "SEND=0x70" },
       new CommandFunctionOption { Category = "Display", Name = "Transparency Mode", Shortcut = "F12", Command = "SEND=0x7B" },
       new CommandFunctionOption { Category = "Display", Name = "Change FPS", Shortcut = "F3", Command = "SEND=0x72" },
       new CommandFunctionOption { Category = "Display", Name = "Preset Info", Shortcut = "F4", Command = "SEND=0x73" },
       new CommandFunctionOption { Category = "Display", Name = "Preset Info on Change", Shortcut = "Ctrl+F4", Command = "PRESETINFO_ON_CHANGE" },
+      new CommandFunctionOption { Category = "Display", Name = "Visual Version", Shortcut = "Ctrl+V", Command = "CYCLE_VERSION" },
+      new CommandFunctionOption { Category = "Display", Name = "Invert Preset Output", Shortcut = "", Command = "INVERT_PRESET" },
+      new CommandFunctionOption { Category = "Display", Name = "Show FPS Setting", Shortcut = "Ctrl+F3", Command = "SHOW_FPS_SETTING" },
+      new CommandFunctionOption { Category = "Display", Name = "Black Mode", Shortcut = "Ctrl+F12", Command = "BLACKMODE" },
+      new CommandFunctionOption { Category = "Display", Name = "Double Quality", Shortcut = "Ctrl+Q", Command = "QUALITY_DOUBLE" },
+      new CommandFunctionOption { Category = "Display", Name = "Half Quality", Shortcut = "Shift+Ctrl+Q", Command = "QUALITY_HALF" },
+      new CommandFunctionOption { Category = "Display", Name = "Hue Shift +", Shortcut = "Ctrl+H", Command = "HUE_SHIFT_UP" },
+      new CommandFunctionOption { Category = "Display", Name = "Hue Shift -", Shortcut = "Shift+Ctrl+H", Command = "HUE_SHIFT_DOWN" },
+      new CommandFunctionOption { Category = "Display", Name = "Mouse Interaction", Shortcut = "Ctrl+M", Command = "MOUSE_INTERACTION" },
       new CommandFunctionOption { Category = "Display", Name = "FPS Display", Shortcut = "F5", Command = "SEND=0x74" },
       new CommandFunctionOption { Category = "Display", Name = "Rating Display", Shortcut = "F6", Command = "SEND=0x75" },
       new CommandFunctionOption { Category = "Display", Name = "Hard Cut Mode", Shortcut = "F11", Command = "SEND=0x7A" },
@@ -3175,18 +3193,28 @@ namespace MilkwaveRemote {
       new CommandFunctionOption { Category = "Presets", Name = "Random Order", Shortcut = "R", Command = "SEND=0x52" },
       new CommandFunctionOption { Category = "Presets", Name = "Quicksave", Shortcut = "Ctrl+S", Command = "QUICKSAVE" },
       new CommandFunctionOption { Category = "Presets", Name = "Quicksave 2", Shortcut = "Ctrl+Shift+S", Command = "QUICKSAVE2" },
+      new CommandFunctionOption { Category = "Presets", Name = "Preset Change with Song", Shortcut = "Ctrl+A", Command = "PRESET_CHANGE_WITH_SONG" },
       // Track
       new CommandFunctionOption { Category = "Track", Name = "Previous Track", Shortcut = "Z", Command = "SEND=0x5A" },
       new CommandFunctionOption { Category = "Track", Name = "Next Track", Shortcut = "V", Command = "SEND=0x56" },
       new CommandFunctionOption { Category = "Track", Name = "Play/Pause", Shortcut = "X", Command = "SEND=0x58" },
       new CommandFunctionOption { Category = "Track", Name = "Stop", Shortcut = "C", Command = "SEND=0x43" },
       new CommandFunctionOption { Category = "Track", Name = "Track Info", Shortcut = "B", Command = "SEND=0x42" },
+      new CommandFunctionOption { Category = "Track", Name = "Song Info Polling", Shortcut = "Ctrl+B", Command = "SONGINFO_POLLING" },
+      new CommandFunctionOption { Category = "Track", Name = "Cover Display", Shortcut = "Ctrl+C", Command = "DISPLAY_COVER" },
+      new CommandFunctionOption { Category = "Track", Name = "Set Default Audio Device", Shortcut = "Ctrl+D", Command = "AUDIO_DEVICE_DEFAULT" },
+      new CommandFunctionOption { Category = "Track", Name = "Show Audio Device", Shortcut = "Shift+Ctrl+D", Command = "AUDIO_DEVICE_INFO" },
+      // Lyrics
+      new CommandFunctionOption { Category = "Lyrics", Name = "Toggle Lyrics", Shortcut = "Ctrl+L", Command = "LYRICS_ACTIVE" },
       // Sprites & Messages
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Sprite/Msg Mode", Shortcut = "K", Command = "SEND=0x4B" },
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Sprite/Msg", Shortcut = "Delete", Command = "SEND=0x2E" },
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear all Sprites", Shortcut = "Ctrl+K", Command = "CLEARSPRITES" },
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Messages/Song Titles", Shortcut = "Ctrl+T", Command = "CLEARTEXTS" },
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Reload Messages", Shortcut = "*", Command = "SEND=*" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Sprite Kill Mode", Shortcut = "Shift+K", Command = "SPRITE_KILL_MODE" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Oldest Sprite", Shortcut = "Shift+Del", Command = "CLEAR_OLDEST_SPRITE" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Delete All Sprites", Shortcut = "Shift+Ctrl+Del", Command = "CLEAR_ALL_SPRITES_MESSAGES" },
       // Wave & Warp
       new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Echo Zoom +", Shortcut = "Q", Command = "SEND=Q" },
       new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Echo Zoom -", Shortcut = "q", Command = "SEND=q" },

@@ -595,8 +595,10 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
   } else if (wcsncmp(sMessage, L"LINK=", 5) == 0) {
     std::wstring message(sMessage + 5);
     m_RemotePresetLink = std::stoi(message);
-  } else if (wcsncmp(sMessage, L"PRESET_CHANGE_WITH_SONG=", 24) == 0) {
-    const bool enabled = (sMessage[24] == L'1');
+  } else if (wcsncmp(sMessage, L"PRESET_CHANGE_WITH_SONG", 23) == 0) {
+    // "PRESET_CHANGE_WITH_SONG=1/0" sets the state (Remote checkbox), the bare
+    // "PRESET_CHANGE_WITH_SONG" (command buttons / scripts) toggles it like Ctrl+A.
+    const bool enabled = (sMessage[23] == L'=') ? (sMessage[24] == L'1') : !g_plugin.m_ChangePresetWithSong;
     if (enabled != g_plugin.m_ChangePresetWithSong) {
       g_plugin.m_ChangePresetWithSong = enabled;
       WritePrivateProfileIntW(enabled, L"ChangePresetWithSong", g_plugin.GetConfigIniFile(), L"Milkwave");
@@ -606,8 +608,10 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.m_fNextPresetTime = -1.0f;
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
-  } else if (wcsncmp(sMessage, L"DISPLAY_COVER=", 14) == 0) {
-    const bool enabled = (sMessage[14] == L'1');
+  } else if (wcsncmp(sMessage, L"DISPLAY_COVER", 13) == 0) {
+    // "DISPLAY_COVER=1/0" sets the state (Remote checkbox), the bare
+    // "DISPLAY_COVER" (command buttons / scripts) toggles it like Ctrl+C.
+    const bool enabled = (sMessage[13] == L'=') ? (sMessage[14] == L'1') : !g_plugin.m_DisplayCover;
     if (enabled != g_plugin.m_DisplayCover) {
       g_plugin.m_DisplayCover = enabled;
       ::milkwave.doSaveCover = enabled;
@@ -615,8 +619,10 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.AddNotification(enabled ? L"Cover Display enabled" : L"Cover Display disabled");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
-  } else if (wcsncmp(sMessage, L"SONGINFO_POLLING=", 17) == 0) {
-    const bool enabled = (sMessage[17] == L'1');
+  } else if (wcsncmp(sMessage, L"SONGINFO_POLLING", 16) == 0) {
+    // "SONGINFO_POLLING=1/0" sets the state (Remote checkbox), the bare
+    // "SONGINFO_POLLING" (command buttons / scripts) toggles it like Ctrl+B.
+    const bool enabled = (sMessage[16] == L'=') ? (sMessage[17] == L'1') : !g_plugin.m_SongInfoPollingEnabled;
     if (enabled != g_plugin.m_SongInfoPollingEnabled) {
       g_plugin.m_SongInfoPollingEnabled = enabled;
       ::milkwave.doPoll = enabled;
@@ -643,8 +649,19 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.AddNotification(enabled ? L"Preset info on change enabled" : L"Preset info on change disabled");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
-  } else if (wcsncmp(sMessage, L"INVERT_PRESET=", 14) == 0) {
-    const bool enabled = (sMessage[14] == L'1');
+  } else if (wcsncmp(sMessage, L"CYCLE_VERSION", 13) == 0) {
+    // Cycle the visual version 1 -> 2 -> 3 (same as Ctrl+V in the Visualizer)
+    g_plugin.CycleVisVersion();
+  } else if (wcsncmp(sMessage, L"NETWORK_SERVER_STATUS", 21) == 0) {
+    // Show the network server state and its clients (same as Ctrl+N)
+    ShowNetworkServerStatus();
+  } else if (wcsncmp(sMessage, L"NETWORK_SERVER", 14) == 0) {
+    // Start/stop the TCP network server (same as Ctrl+Shift+N)
+    ToggleNetworkServer(GetPluginWindow());
+  } else if (wcsncmp(sMessage, L"INVERT_PRESET", 13) == 0) {
+    // "INVERT_PRESET=1/0" sets the state (Remote checkbox), the bare
+    // "INVERT_PRESET" (command buttons / scripts) toggles it.
+    const bool enabled = (sMessage[13] == L'=') ? (sMessage[14] == L'1') : !g_plugin.m_InvertPresetOutput;
     if (enabled != g_plugin.m_InvertPresetOutput) {
       g_plugin.m_InvertPresetOutput = enabled;
       WritePrivateProfileIntW(enabled, L"InvertPresetOutput", g_plugin.GetConfigIniFile(), L"Milkwave");
@@ -817,13 +834,17 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     if ((status == L'0' && bSpoutOut) || (status == L'1' && !bSpoutOut)) {
       ToggleSpout();
     }
-  } else if (wcsncmp(sMessage, L"SPOUT_FIXEDSIZE=", 16) == 0) {
-    wchar_t status = sMessage[16];
+  } else if (wcsncmp(sMessage, L"SPOUT_FIXEDSIZE", 15) == 0) {
+    // "SPOUT_FIXEDSIZE=1/0" sets the state (Remote checkbox), the bare
+    // "SPOUT_FIXEDSIZE" (command buttons / scripts) toggles it like Shift+F10.
+    const wchar_t status = (sMessage[15] == L'=') ? sMessage[16] : (bSpoutFixedSize ? L'0' : L'1');
     if ((status == L'0' && bSpoutFixedSize) || (status == L'1' && !bSpoutFixedSize)) {
       SetSpoutFixedSize(true, true);
     }
-  } else if (wcsncmp(sMessage, L"LYRICS_ACTIVE=", 14) == 0) {
-    const bool enabled = (sMessage[14] == L'1');
+  } else if (wcsncmp(sMessage, L"LYRICS_ACTIVE", 13) == 0) {
+    // "LYRICS_ACTIVE=1/0" sets the state (Remote checkbox), the bare
+    // "LYRICS_ACTIVE" (command buttons / scripts) toggles it like Ctrl+L.
+    const bool enabled = (sMessage[13] == L'=') ? (sMessage[14] == L'1') : !g_plugin.m_lyricsDisplayEnabled;
     if (enabled != g_plugin.m_lyricsDisplayEnabled) {
       g_plugin.m_lyricsDisplayEnabled = enabled;
       WritePrivateProfileStringW(L"Lyrics", L"LyricsEnabled", enabled ? L"1" : L"0", g_plugin.GetConfigIniFile());
@@ -1141,6 +1162,84 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     milkwave->LogInfo(L"PRECOMPILE_CACHE message received");
     extern void StartSetupThread(bool manualTrigger);
     StartSetupThread(true);
+    // ─── Commands that mirror Visualizer shortcuts not sent as plain keystrokes ───
+  } else if (wcsncmp(sMessage, L"STRETCH_MONITORS", 16) == 0) {
+    ToggleStretch(GetPluginWindow());  // Alt+S
+  } else if (wcsncmp(sMessage, L"WINDOW_RESET", 12) == 0) {
+    ResetWindow(GetPluginWindow());  // Ctrl+F2
+  } else if (wcsncmp(sMessage, L"WINDOW_FIXED_SIZE", 17) == 0) {
+    SetWindowFixedDimensions(GetPluginWindow());  // Shift+Ctrl+F2
+  } else if (wcsncmp(sMessage, L"OPACITY_UP", 10) == 0) {
+    ChangeWindowOpacityByStep(true);  // Shift+Mousewheel Up
+  } else if (wcsncmp(sMessage, L"OPACITY_DOWN", 12) == 0) {
+    ChangeWindowOpacityByStep(false);  // Shift+Mousewheel Down
+  } else if (wcsncmp(sMessage, L"SHOW_FPS_SETTING", 16) == 0) {
+    wchar_t buf[64];
+    if (m_max_fps_fs == 0)
+      lstrcpyW(buf, L"Unlimited fps");
+    else
+      swprintf_s(buf, 64, L"%d fps", m_max_fps_fs);
+    g_plugin.AddNotification(buf);  // Ctrl+F3
+  } else if (wcsncmp(sMessage, L"BLACKMODE", 9) == 0) {
+    m_blackmode = !m_blackmode;  // Ctrl+F12
+    AddNotification(m_blackmode ? L"Black Mode enabled" : L"Black Mode disabled");
+  } else if (wcsncmp(sMessage, L"QUALITY_DOUBLE", 14) == 0) {
+    const float newQuality = clamp(m_fRenderQuality * 2.0f, 0.01f, 1.0f);  // Ctrl+Q
+    if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
+      m_fRenderQuality = newQuality;
+      ResetBufferAndFonts();
+      SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"QUALITY_HALF", 12) == 0) {
+    const float newQuality = clamp(m_fRenderQuality * 0.5f, 0.01f, 1.0f);  // Shift+Ctrl+Q
+    if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
+      m_fRenderQuality = newQuality;
+      ResetBufferAndFonts();
+      SendSettingsInfoToMilkwaveRemote();
+    }
+  } else if (wcsncmp(sMessage, L"HUE_SHIFT_UP", 12) == 0) {
+    m_ColShiftHue += 0.02f;  // Ctrl+H
+    if (m_ColShiftHue >= 1.0f) m_ColShiftHue = -1.0f;
+    SendSettingsInfoToMilkwaveRemote();
+  } else if (wcsncmp(sMessage, L"HUE_SHIFT_DOWN", 14) == 0) {
+    m_ColShiftHue -= 0.02f;  // Shift+Ctrl+H
+    if (m_ColShiftHue <= -1.0f) m_ColShiftHue = 1.0f;
+    SendSettingsInfoToMilkwaveRemote();
+  } else if (wcsncmp(sMessage, L"MOUSE_INTERACTION", 17) == 0) {
+    m_bEnableMouseInteraction = !m_bEnableMouseInteraction;  // Ctrl+M
+    AddNotification(m_bEnableMouseInteraction ? L"Mouse interaction enabled" : L"Mouse interaction disabled");
+  } else if (wcsncmp(sMessage, L"AUDIO_DEVICE_DEFAULT", 20) == 0) {
+    SetDefaultAudioDevice();  // Ctrl+D
+  } else if (wcsncmp(sMessage, L"AUDIO_DEVICE_INFO", 17) == 0) {
+    ShowAudioDeviceName();  // Shift+Ctrl+D
+  } else if (wcsncmp(sMessage, L"SPRITE_KILL_MODE", 16) == 0) {
+    m_nNumericInputMode = NUMERIC_INPUT_MODE_SPRITE_KILL;  // Shift+K
+    SendMessageToMilkwaveRemote(L"STATUS=Sprite Mode set");
+    PostMessageToMilkwaveRemote(WM_USER_SPRITE_MODE);
+    m_nNumericInputNum = 0;
+    m_nNumericInputDigits = 0;
+  } else if (wcsncmp(sMessage, L"CLEAR_OLDEST_SPRITE", 19) == 0) {
+    // Shift+Delete: remove the sprite that was started first
+    m_nNumericInputNum = 0;
+    m_nNumericInputDigits = 0;
+    int oldest = -1;
+    int oldestFrame = 0;
+    for (int x = 0; x < NUM_TEX; x++) {
+      if (m_texmgr.m_tex[x].pSurface) {
+        if (oldest == -1 || m_texmgr.m_tex[x].nStartFrame < oldestFrame) {
+          oldest = x;
+          oldestFrame = m_texmgr.m_tex[x].nStartFrame;
+        }
+      }
+    }
+    if (oldest != -1)
+      m_texmgr.KillTex(oldest);
+  } else if (wcsncmp(sMessage, L"CLEAR_ALL_SPRITES_MESSAGES", 26) == 0) {
+    // Shift+Ctrl+Delete: remove every sprite
+    m_nNumericInputNum = 0;
+    m_nNumericInputDigits = 0;
+    for (int x = 0; x < NUM_TEX; x++)
+      m_texmgr.KillTex(x);
   } else if (wcsncmp(sMessage, L"SEND=", 5) == 0) {
     // Keystroke sent via pipe
     std::wstring val(sMessage + 5);
