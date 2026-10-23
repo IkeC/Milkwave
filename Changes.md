@@ -1,12 +1,20 @@
 ## v4.2 (unreleased)
 
-* 15 new audio-reactive Shader presets
+* 18 new audio-reactive Shader presets
 * New preset: XT95 + IkeC - Walk Like an Egyptian (Shadertoy `msjGzw`), with audio-reactive sun and sky
 * New preset: OldEclipse + IkeC - Unimagined (Shadertoy `NflSD8`), with audio-reactive SDF morph and colour
 * New preset: z0rg + IkeC - Psychedelic tube (Shadertoy `sdcGRX`), with audio-reactive tube radius and dash width
   - Adapted from a two-pass shader: the self-feedback pass is not portable to a comp shader and was dropped
-* Visualizer: new `AUDIO_TEST=bass,mid,treb` named-pipe command (values relative to the track average, `off` to release)
+* New preset: Shane + IkeC - Mandelbrot Pattern Decoration (Shadertoy `ttscWn`), with audio-reactive decoration grid and layer colour
+* New preset: SnoopethDuckDuck + IkeC - Golden Electric Spiral (Shadertoy `csj3zt`), with audio-reactive tile size and filament brightness
+* New preset: diatribes + IkeC - Dark Transit (Shadertoy `WcdczB`, MIT), with audio-reactive tunnel radius and scale relief
+* Visualizer: new `AUDIO_TEST=bass,mid,treb[,notify][,wave]` named-pipe command (values relative to the track average, `off` to release)
   - Injects fixed audio band levels so preset audio reactivity can be verified silently and reproducibly
+  - The optional `notify` flag shows the active levels in a Visualizer notification
+  - The optional `wave` flag synthesises a matching waveform and FFT spectrum for wave- and FFT-based presets; the Remote's Audio Test button enables both
+* Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
+* New `audio-test.txt` with a commented, editable band sequence for checking preset reactions without music
+* Remote/Visualizer: lyrics "Text Outline" and "Box Background" styles, with configurable color and amount
 * Visualizer: `.milk` file association support
   - Opening a preset file starts the Visualizer on that preset
   - If the Visualizer is already running, the preset is loaded in the running instance instead of starting a second one

@@ -870,6 +870,11 @@ class CPlugin : public CPluginShell {
   int m_lyricsColorG = 255;
   int m_lyricsColorB = 255;
   int m_lyricsShadow = 2;
+  int m_lyricsOutlineMode = 0;       // 0=none, 1=text outline, 2=box background
+  int m_lyricsOutlineAmount = 2;     // outline thickness / box padding in pixels
+  int m_lyricsOutlineColorR = 0;
+  int m_lyricsOutlineColorG = 0;
+  int m_lyricsOutlineColorB = 0;
   std::int64_t m_lyricsOffsetMs = 0;
   float m_lyricsFade = 0.15f;  // fade in/out time in seconds
   wchar_t m_lyricsApiUrl[512] = L"https://lrclib.net/api";

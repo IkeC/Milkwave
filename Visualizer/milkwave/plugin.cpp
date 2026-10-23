@@ -1418,7 +1418,7 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
   m_lastSentLyricsLine = lyricsLine;
   m_lastSentLyricsFile = lyricsFile;
 
-  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0") + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0") + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth) + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight) + L"|QUALITY=" + std::to_wstring(m_fRenderQuality) + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0") + L"|HUE=" + std::to_wstring(m_ColShiftHue) + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0") + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1") + L"|CHANGEWITHSONG=" + std::wstring(m_ChangePresetWithSong ? L"1" : L"0") + L"|DISPLAYCOVER=" + std::wstring(m_DisplayCover ? L"1" : L"0") + L"|SONGINFOPOLLING=" + std::wstring(m_SongInfoPollingEnabled ? L"1" : L"0") + L"|PRESETINFOONCHANGE=" + std::wstring(m_bPresetInfoOnChange ? L"1" : L"0") + L"|PRESETINFO=" + std::wstring(m_bShowPresetInfo ? L"1" : L"0") + L"|INVERTPRESET=" + std::wstring(m_InvertPresetOutput ? L"1" : L"0") + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0") + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0") + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f)) + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f)) + L"|EQATTACK=" + std::to_wstring(m_fEQAttackGlobal) + L"|EQDECAY=" + std::to_wstring(m_fEQDecayGlobal) + L"|EQBOOST=" + std::to_wstring(m_fEQBoostGlobal) + L"|LYRICSACTIVE=" + std::wstring(m_lyricsDisplayEnabled ? L"1" : L"0") + L"|LYRICSAUTO=" + std::wstring(m_bLyricsAutoLoad ? L"1" : L"0") + L"|LYRICSSTATUS=" + lyricsStatus + L"|LYRICSLINE=" + lyricsLine + L"|LYRICSFILE=" + lyricsFile + L"|LYRICSFONT=" + lyricsFont + L"|LYRICSFONTSIZE=" + std::to_wstring(m_lyricsFontSize) + L"|LYRICSFONTBOLD=" + std::wstring(m_lyricsFontBold ? L"1" : L"0") + L"|LYRICSFONTITALIC=" + std::wstring(m_lyricsFontItalic ? L"1" : L"0") + L"|LYRICSFONTAA=" + std::wstring(m_lyricsFontAA ? L"1" : L"0") + L"|LYRICSCOLORR=" + std::to_wstring(m_lyricsColorR) + L"|LYRICSCOLORG=" + std::to_wstring(m_lyricsColorG) + L"|LYRICSCOLORB=" + std::to_wstring(m_lyricsColorB) + L"|LYRICSPOSX=" + std::to_wstring(m_lyricsPositionX) + L"|LYRICSPOSY=" + std::to_wstring(m_lyricsPositionY) + L"|LYRICSSTARTX=" + std::to_wstring(m_lyricsStartX) + L"|LYRICSSTARTY=" + std::to_wstring(m_lyricsStartY) + L"|LYRICSZOOM=" + std::to_wstring(m_lyricsZoom) + L"|LYRICSFADE=" + std::to_wstring(m_lyricsFade) + L"|LYRICSOFFSET=" + std::to_wstring((float)m_lyricsOffsetMs / 1000.0f) + L"|LYRICSWIDTH=" + std::to_wstring(m_lyricsMaxWidth) + L"|LYRICSBURN=" + std::to_wstring(m_lyricsBurnTime) + L"|LYRICSBURNTYPE=" + std::to_wstring(m_lyricsBurnType) + L"|LYRICSSHADOW=" + std::to_wstring(m_lyricsShadow) + L"|LYRICSAUTOSCALE=" + std::wstring(m_lyricsAutoScale ? L"1" : L"0") + L"|SHOWTABPRESET=" + std::wstring(m_ShowTabPreset ? L"1" : L"0") + L"|SHOWTABMESSAGE=" + std::wstring(m_ShowTabMessage ? L"1" : L"0") + L"|SHOWTABINOUT=" + std::wstring(m_ShowTabInOut ? L"1" : L"0") + L"|SHOWTABSETTINGS=" + std::wstring(m_ShowTabSettings ? L"1" : L"0") + L"|SHOWTABLYRICS=" + std::wstring(m_ShowTabLyrics ? L"1" : L"0") + L"|SHOWTABFONTS=" + std::wstring(m_ShowTabFonts ? L"1" : L"0") + L"|SHOWTABMIDI=" + std::wstring(m_ShowTabMidi ? L"1" : L"0") + L"|SHOWTABWAVE=" + std::wstring(m_ShowTabWave ? L"1" : L"0") + L"|SHOWTABSHADER=" + std::wstring(m_ShowTabShader ? L"1" : L"0");
+  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0") + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0") + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth) + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight) + L"|QUALITY=" + std::to_wstring(m_fRenderQuality) + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0") + L"|HUE=" + std::to_wstring(m_ColShiftHue) + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0") + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1") + L"|CHANGEWITHSONG=" + std::wstring(m_ChangePresetWithSong ? L"1" : L"0") + L"|DISPLAYCOVER=" + std::wstring(m_DisplayCover ? L"1" : L"0") + L"|SONGINFOPOLLING=" + std::wstring(m_SongInfoPollingEnabled ? L"1" : L"0") + L"|PRESETINFOONCHANGE=" + std::wstring(m_bPresetInfoOnChange ? L"1" : L"0") + L"|PRESETINFO=" + std::wstring(m_bShowPresetInfo ? L"1" : L"0") + L"|INVERTPRESET=" + std::wstring(m_InvertPresetOutput ? L"1" : L"0") + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0") + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0") + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f)) + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f)) + L"|EQATTACK=" + std::to_wstring(m_fEQAttackGlobal) + L"|EQDECAY=" + std::to_wstring(m_fEQDecayGlobal) + L"|EQBOOST=" + std::to_wstring(m_fEQBoostGlobal) + L"|LYRICSACTIVE=" + std::wstring(m_lyricsDisplayEnabled ? L"1" : L"0") + L"|LYRICSAUTO=" + std::wstring(m_bLyricsAutoLoad ? L"1" : L"0") + L"|LYRICSSTATUS=" + lyricsStatus + L"|LYRICSLINE=" + lyricsLine + L"|LYRICSFILE=" + lyricsFile + L"|LYRICSFONT=" + lyricsFont + L"|LYRICSFONTSIZE=" + std::to_wstring(m_lyricsFontSize) + L"|LYRICSFONTBOLD=" + std::wstring(m_lyricsFontBold ? L"1" : L"0") + L"|LYRICSFONTITALIC=" + std::wstring(m_lyricsFontItalic ? L"1" : L"0") + L"|LYRICSFONTAA=" + std::wstring(m_lyricsFontAA ? L"1" : L"0") + L"|LYRICSCOLORR=" + std::to_wstring(m_lyricsColorR) + L"|LYRICSCOLORG=" + std::to_wstring(m_lyricsColorG) + L"|LYRICSCOLORB=" + std::to_wstring(m_lyricsColorB) + L"|LYRICSPOSX=" + std::to_wstring(m_lyricsPositionX) + L"|LYRICSPOSY=" + std::to_wstring(m_lyricsPositionY) + L"|LYRICSSTARTX=" + std::to_wstring(m_lyricsStartX) + L"|LYRICSSTARTY=" + std::to_wstring(m_lyricsStartY) + L"|LYRICSZOOM=" + std::to_wstring(m_lyricsZoom) + L"|LYRICSFADE=" + std::to_wstring(m_lyricsFade) + L"|LYRICSOFFSET=" + std::to_wstring((float)m_lyricsOffsetMs / 1000.0f) + L"|LYRICSWIDTH=" + std::to_wstring(m_lyricsMaxWidth) + L"|LYRICSBURN=" + std::to_wstring(m_lyricsBurnTime) + L"|LYRICSBURNTYPE=" + std::to_wstring(m_lyricsBurnType) + L"|LYRICSSHADOW=" + std::to_wstring(m_lyricsShadow) + L"|LYRICSOUTLINE=" + std::to_wstring(m_lyricsOutlineMode) + L"|LYRICSOUTLINEAMOUNT=" + std::to_wstring(m_lyricsOutlineAmount) + L"|LYRICSOUTLINECOLORR=" + std::to_wstring(m_lyricsOutlineColorR) + L"|LYRICSOUTLINECOLORG=" + std::to_wstring(m_lyricsOutlineColorG) + L"|LYRICSOUTLINECOLORB=" + std::to_wstring(m_lyricsOutlineColorB) + L"|LYRICSAUTOSCALE=" + std::wstring(m_lyricsAutoScale ? L"1" : L"0") + L"|SHOWTABPRESET=" + std::wstring(m_ShowTabPreset ? L"1" : L"0") + L"|SHOWTABMESSAGE=" + std::wstring(m_ShowTabMessage ? L"1" : L"0") + L"|SHOWTABINOUT=" + std::wstring(m_ShowTabInOut ? L"1" : L"0") + L"|SHOWTABSETTINGS=" + std::wstring(m_ShowTabSettings ? L"1" : L"0") + L"|SHOWTABLYRICS=" + std::wstring(m_ShowTabLyrics ? L"1" : L"0") + L"|SHOWTABFONTS=" + std::wstring(m_ShowTabFonts ? L"1" : L"0") + L"|SHOWTABMIDI=" + std::wstring(m_ShowTabMidi ? L"1" : L"0") + L"|SHOWTABWAVE=" + std::wstring(m_ShowTabWave ? L"1" : L"0") + L"|SHOWTABSHADER=" + std::wstring(m_ShowTabShader ? L"1" : L"0");
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 
@@ -2022,7 +2022,30 @@ void CPlugin::DoCustomSoundAnalysis() {
     // Applying sqrt(fi/refBin) gives +3 dB/octave slope so that a 1/f spectrum
     // (pink noise, typical of music) displays as a flat EQ response.
     const float kPinkRefBin = 1000.0f * (float)m_nFFTShaderBins / 22050.0f;
+    // Interactive audio test: replace get_fft()/get_fft_peak() with a band-shaped
+    // spectrum so FFT-driven presets react without real music. Plain AUDIO_TEST
+    // (used by the capture harness) keeps the analysed spectrum untouched.
+    const bool synthFft = m_bAudioTestOverride && m_bAudioTestWave;
+    const float synthBass = m_AudioTestBands[0];
+    const float synthMid = m_AudioTestBands[1];
+    const float synthTreb = m_AudioTestBands[2];
+    // Linear texture magnitude. get_fft() applies sqrt(), so 0.10 gives about
+    // 0.32 for an average (1.0) band level - roughly the bar height of normal
+    // music at the same FFT settings; avoid the old full-scale 0.75.
+    const float kSynthFftGain = 0.10f;
     for (int fi = 0; fi < m_nFFTShaderBins; fi++) {
+      if (synthFft) {
+        const float pos = (m_nFFTShaderBins > 1) ? (float)fi / (float)(m_nFFTShaderBins - 1) : 0.0f;
+        // 30-250 Hz, 250-4000 Hz and 4-20 kHz, with short cross-fades at the edges.
+        const float bassEnv = clamp((0.020f - pos) / 0.010f, 0.0f, 1.0f);
+        const float trebEnv = clamp((pos - 0.150f) / 0.070f, 0.0f, 1.0f);
+        const float midEnv = (1.0f - bassEnv) * (1.0f - trebEnv);
+        const float level = synthBass * bassEnv + synthMid * midEnv + synthTreb * trebEnv;
+        m_fFFTSmoothed[fi] = clamp(level * kSynthFftGain, 0.0f, 1.0f);
+        m_fFFTPeak[fi] = m_fFFTSmoothed[fi];
+        m_nFFTPeakHold[fi] = 0;
+        continue;
+      }
       float mono = (fShaderSpecLeft[fi] + fShaderSpecRight[fi]) * 0.5f;
       // Store linear magnitude in texture; sqrt() is applied in the shader.
       mono = mono * kScaleFactor;
@@ -2186,6 +2209,35 @@ void CPlugin::DoCustomSoundAnalysis() {
       mysound.imm[i] = mysound.avg[i] = mysound.long_avg[i] = v;
       mysound.imm_rel[i] = mysound.avg_rel[i] = mysound.smooth[i] = mysound.smooth_rel[i] = v;
       mysound.recent[i].clear();
+    }
+
+    // Wave-based presets draw the captured waveform, not the band uniforms. When the
+    // interactive test asks for it, substitute a deterministic band-weighted waveform
+    // so those presets react too. The plain AUDIO_TEST form used by the capture harness
+    // leaves the waveform alone, keeping shader captures byte-identical.
+    if (m_bAudioTestWave) {
+      const float b = m_AudioTestBands[0];
+      const float m = m_AudioTestBands[1];
+      const float t = m_AudioTestBands[2];
+      const float tm = (float)GetTime();
+      for (int s = 0; s < 576; s++) {
+        const float x = (float)s / 575.0f;
+        const float base = x * 6.2831853f;
+        const float lowL = sinf(base * 3.0f + tm * 1.9f);
+        const float midL = sinf(base * 9.0f + tm * 2.7f);
+        const float highL = sinf(base * 23.0f + tm * 3.7f);
+        const float lowR = sinf(base * 3.0f + tm * 1.9f + 0.35f);
+        const float midR = sinf(base * 9.0f + tm * 2.7f + 0.35f);
+        const float highR = sinf(base * 23.0f + tm * 3.7f + 0.70f);
+        float sampleL = (lowL * b * 0.55f + midL * m * 0.30f + highL * t * 0.15f) * 70.0f;
+        float sampleR = (lowR * b * 0.55f + midR * m * 0.30f + highR * t * 0.15f) * 70.0f;
+        sampleL = 127.0f * tanhf(sampleL / 127.0f);
+        sampleR = 127.0f * tanhf(sampleR / 127.0f);
+        mysound.fWave[0][s] = sampleL;
+        mysound.fWave[1][s] = sampleR;
+        m_sound.fWaveform[0][s] = sampleL;
+        m_sound.fWaveform[1][s] = sampleR;
+      }
     }
   }
 }

@@ -412,7 +412,12 @@ void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, 
   int shadow = m_lyricsShadow;
   if (shadow < 0) shadow = 0;
   if (shadow > 16) shadow = 16;
-  const int pad = 8 + shadow;  // antialiasing + shadow bleed so nothing clips
+  int outlineAmount = m_lyricsOutlineAmount;
+  if (outlineAmount < 0) outlineAmount = 0;
+  if (outlineAmount > 16) outlineAmount = 16;
+  const int effectPad =
+      (m_lyricsOutlineMode == 1 || m_lyricsOutlineMode == 2) ? outlineAmount : 0;
+  const int pad = 8 + (shadow > effectPad ? shadow : effectPad);  // antialiasing + effect bleed
   const int neededW = maxLineWidth + 2 * pad;
   const int neededH = totalHeight + 2 * pad;
   if (neededW <= 0 || neededH <= 0) return;
@@ -485,6 +490,13 @@ void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, 
     int colorB = m_lyricsColorB < 0 ? 0 : m_lyricsColorB > 255 ? 255
                                                                : m_lyricsColorB;
     const DWORD textColor = 0xFF000000 | ((DWORD)colorR << 16) | ((DWORD)colorG << 8) | (DWORD)colorB;
+    int outlineR = m_lyricsOutlineColorR < 0 ? 0 : m_lyricsOutlineColorR > 255 ? 255
+                                                                               : m_lyricsOutlineColorR;
+    int outlineG = m_lyricsOutlineColorG < 0 ? 0 : m_lyricsOutlineColorG > 255 ? 255
+                                                                               : m_lyricsOutlineColorG;
+    int outlineB = m_lyricsOutlineColorB < 0 ? 0 : m_lyricsOutlineColorB > 255 ? 255
+                                                                               : m_lyricsOutlineColorB;
+    const DWORD outlineColor = 0xFF000000 | ((DWORD)outlineR << 16) | ((DWORD)outlineG << 8) | (DWORD)outlineB;
 
     // Block is vertically centered within the USED area [0, neededH] and each
     // line horizontally centered within [0, neededW]. Centering inside the
@@ -492,11 +504,41 @@ void CPlugin::RenderLyricsTextToTexture(LPDIRECT3DTEXTURE9& tex, int& texSizeX, 
     // range [0,useW]x[0,useH] that the draw quad samples, clipping the right
     // (and bottom) of the text.
     const int startY = (neededH - totalHeight) / 2;
+    const int startX = (neededW - maxLineWidth) / 2;
     const DWORD drawFlags = DT_CENTER | DT_SINGLELINE | DT_NOCLIP;
+    const bool customBackdrop = (m_lyricsOutlineMode == 1 || m_lyricsOutlineMode == 2);
+
+    if (m_lyricsOutlineMode == 2) {
+      int boxLeft = startX - outlineAmount;
+      int boxTop = startY - outlineAmount;
+      int boxRight = startX + maxLineWidth + outlineAmount;
+      int boxBottom = startY + totalHeight + outlineAmount;
+      if (boxLeft < 0) boxLeft = 0;
+      if (boxTop < 0) boxTop = 0;
+      if (boxRight > neededW) boxRight = neededW;
+      if (boxBottom > neededH) boxBottom = neededH;
+      if (boxRight > boxLeft && boxBottom > boxTop) {
+        D3DRECT boxRect = {boxLeft, boxTop, boxRight, boxBottom};
+        lpDevice->Clear(1, &boxRect, D3DCLEAR_TARGET, outlineColor, 1.0f, 0);
+      }
+    }
+
     for (std::size_t i = 0; i < lines.size(); ++i) {
       RECT lineTextRect = {0, startY + static_cast<int>(i) * lineHeight, neededW,
                            startY + static_cast<int>(i + 1) * lineHeight};
-      if (shadow > 0) {
+      if (m_lyricsOutlineMode == 1 && outlineAmount > 0) {
+        // A filled disc of offset copies gives a rounded outline; the text
+        // itself is drawn on top afterwards.
+        for (int dy = -outlineAmount; dy <= outlineAmount; ++dy) {
+          for (int dx = -outlineAmount; dx <= outlineAmount; ++dx) {
+            if (dx * dx + dy * dy > outlineAmount * outlineAmount) continue;
+            RECT outlineRect = lineTextRect;
+            OffsetRect(&outlineRect, dx, dy);
+            m_lyricsMeasureFontObject->DrawTextW(NULL, lines[i].data(), -1, &outlineRect, drawFlags,
+                                                 outlineColor);
+          }
+        }
+      } else if (!customBackdrop && shadow > 0) {
         RECT shadowRect = lineTextRect;
         OffsetRect(&shadowRect, shadow, shadow);
         m_lyricsMeasureFontObject->DrawTextW(NULL, lines[i].data(), -1, &shadowRect, drawFlags, 0xFF000000);

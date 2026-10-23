@@ -1,0 +1,139 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Shane - Mandelbrot Pattern Decoration / https://www.shadertoy.com/view/ttscWn
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=// CONV: adding helper functions
+comp_6=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_7=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_8=
+comp_9=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_10=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_11=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_12=
+comp_13=shader_body {
+comp_14=  float2 fragCoord = float2(uv.x*texsize.x, (1.-uv.y)*texsize.y);
+comp_15=  float3 col = 0;
+comp_16=
+comp_17=  // decoration grid: cells per unit, breathes with the high end
+comp_18=  float gsz = 8.;
+comp_19=  #ifdef bass_smooth
+comp_20=    if ((int)vis_version == 1)      gsz *= 1. + 0.30*(smoothstep(0, 2, treb_smooth) - 0.5)*vis_intensity + vis_shift;
+comp_21=    else if ((int)vis_version == 2) gsz *= 1. + 0.50*(smoothstep(0, 2, treb_att) - 0.5)*vis_intensity + vis_shift;
+comp_22=    else                            gsz *= 1. + 0.0*vis_intensity + vis_shift;
+comp_23=  #else
+comp_24=    gsz *= 1. + 0.20*(smoothstep(0, 2, treb_att) - 0.5);
+comp_25=  #endif
+comp_26=
+comp_27=  // layer colour gain, lifts with the low end
+comp_28=  float cgain = 1.;
+comp_29=  #ifdef bass_smooth
+comp_30=    if ((int)vis_version == 1)      cgain += 0.12*(smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
+comp_31=    else if ((int)vis_version == 2) cgain += 0.20*(smoothstep(0, 2, bass_att) - 0.5)*vis_intensity + vis_shift;
+comp_32=    else                            cgain += 0.0*vis_intensity + vis_shift;
+comp_33=  #else
+comp_34=    cgain += 0.10*(smoothstep(0, 2, bass_att) - 0.5);
+comp_35=  #endif
+comp_36=
+comp_37=  #define AA 2
+comp_38=  for (int j = 0; j < AA; j++) {
+comp_39=    for (int i = 0; i < AA; i++) {
+comp_40=
+comp_41=      // Offset centered coordinate, standard AA
+comp_42=      float2 p = (fragCoord + float2(i, j)/float(AA) - texsize.xy*.5)/texsize.y;
+comp_43=
+comp_44=      // time, rotating back and forth
+comp_45=      float ttm = cos(sin(time/8.))*6.2831;
+comp_46=
+comp_47=      // rotate and translate the canvas
+comp_48=      p = mul(p, transpose(float2x2(cos(ttm), sin(ttm), -sin(ttm), cos(ttm))));
+comp_49=      p -= float2(cos(time/2.)/2., sin(time/3.)/5.);
+comp_50=
+comp_51=      // jump off point and zoom
+comp_52=      float zm = (200. + sin(time/7.)*50.);
+comp_53=      float2 cc = float2(-.57735 + .004, .57735) + p/zm;
+comp_54=
+comp_55=      float2 z = 0, dz = 0;
+comp_56=      int iter = 128;
+comp_57=      int ik = iter;   // bail out value
+comp_58=      float3 fog = 0;
+comp_59=
+comp_60=      for (int k = 0; k < iter; k++) {
+comp_61=        // derivative z' = 2*z*z' + 1, position z = z*z + c (complex, written out)
+comp_62=        dz = float2(z.x*dz.x - z.y*dz.y, z.x*dz.y + z.y*dz.x)*2. + float2(1, 0);
+comp_63=        z = float2(z.x*z.x - z.y*z.y, 2.*z.x*z.y) + cc;
+comp_64=
+comp_65=        // out of bounds: record the break number and leave the loop
+comp_66=        if (dot(z, z) > 1./.005) {
+comp_67=          ik = k;
+comp_68=          k = iter;      // ps_3_0 has no break
+comp_69=        }
+comp_70=      }
+comp_71=
+comp_72=      float ln = step(0., lenv(z)/15.5 - 1.);
+comp_73=
+comp_74=      // distance shading, smooth colouring via log
+comp_75=      float d = sqrt(1./max(lenv(dz), .0001))*log(dot(z, z));
+comp_76=      d = clamp(d*50., 0., 1.);
+comp_77=
+comp_78=      // flag successive layers
+comp_79=      float dir = mod_conv(float(ik), 2.) < .5 ? -1. : 1.;
+comp_80=
+comp_81=      float sh = (float(iter - ik))/float(iter);
+comp_82=      float2 tuv = z/320.;
+comp_83=
+comp_84=      // rotate the repeat coordinates for parallax
+comp_85=      float tm = (-ttm*sh*sh*16.);
+comp_86=      tuv = mul(tuv, transpose(float2x2(cos(tm), sin(tm), -sin(tm), cos(tm))));
+comp_87=      tuv = abs(mod_conv(tuv, 1./gsz) - 1./(2.*gsz));
+comp_88=
+comp_89=      // grid of circles plus grid boundaries
+comp_90=      float pat = smoothstep(0., 1./lenv(dz), lenv(tuv) - 1./(4.*gsz));
+comp_91=      pat = min(pat, smoothstep(0., 1./lenv(dz), abs(max(tuv.x, tuv.y) - 1./(2.*gsz)) - .04/(2.*gsz)));
+comp_92=
+comp_93=      // layer colour from the shaded distance
+comp_94=      float3 lCol = pow(min(float3(1.5, 1, 1)*min(d*.85, .96), 1.), float3(1, 3, 16))*1.15;
+comp_95=      lCol = dir < .0 ? lCol*min(pat, ln) : (sqrt(lCol)*.5 + .7)*max(1. - pat, 1. - ln);
+comp_96=      lCol *= cgain;
+comp_97=
+comp_98=      // fake reflection for the highlights
+comp_99=      float3 rd = normalize(float3(p, 1.));
+comp_100=      rd = reflect(rd, float3(0, 0, -1));
+comp_101=      float diff = clamp(dot(z*.5 + .5, rd.xy), 0., 1.)*d;
+comp_102=
+comp_103=      // offset reflective pattern
+comp_104=      tuv = z/200.;
+comp_105=      tm = -tm/1.5 + .5;
+comp_106=      tuv = mul(tuv, transpose(float2x2(cos(tm), sin(tm), -sin(tm), cos(tm))));
+comp_107=      tuv = abs(mod_conv(tuv, 1./gsz) - 1./(2.*gsz));
+comp_108=      pat = smoothstep(0., 1./lenv(dz), lenv(tuv) - 1./(4.*gsz));
+comp_109=      pat = min(pat, smoothstep(0., 1./lenv(dz), abs(max(tuv.x, tuv.y) - 1./(2.*gsz)) - .04/(2.*gsz)));
+comp_110=
+comp_111=      // add the gloss
+comp_112=      lCol += lerp(lCol, float3(1, 1, 1)*ln, .5)*diff*diff*.5*(pat*.6 + .6);
+comp_113=
+comp_114=      // swizzle the colour on every sixth layer
+comp_115=      if (mod_conv(float(ik), 6.) < .5) lCol = lCol.yxz;
+comp_116=      lCol = lerp(lCol.xzy, lCol, d/1.2);
+comp_117=
+comp_118=      // dark fringes on the layers for depth
+comp_119=      lCol = lerp(lCol, float3(0, 0, 0), (1. - step(0., -(lenv(z)*.05*float(ik)/float(iter) - 1.)))*.95);
+comp_120=
+comp_121=      // fog
+comp_122=      lCol = lerp(fog, lCol, sh*d);
+comp_123=
+comp_124=      col += min(lCol, 1.);
+comp_125=    }
+comp_126=  }
+comp_127=
+comp_128=  col /= float(AA*AA);
+comp_129=
+comp_130=  // subtle vignette
+comp_131=  col *= pow(16.*(1. - uv.x)*(1. - uv.y)*uv.x*uv.y, 1./8.)*1.15;
+comp_132=
+comp_133=  ret = float4(sqrt(max(col, 0.)), 1.0);
+comp_134=}
+comp_135=

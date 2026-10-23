@@ -62,6 +62,7 @@
   - Change internal time, FPS and frame counters to slow down or speed up some presets
   - Adjust "Intensity", "Shift" and "Version" live for supported presets (eg. Milkwaves shader presets)
   - Shift color output (Hue, Saturation, Brightness) live for all presets
+  - Test preset audio reactions with simulated levels from audio-test.txt
   - Control Spout output behaviour
   - Adjust render quality to improve performance and/or pixellize output
   - Quick access to configuration files

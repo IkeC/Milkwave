@@ -138,9 +138,13 @@ For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolut
 
 With FFT you may control equalizer attack and decay values for presets supporting FFT functions *get_fft(pos)* and *get_fft_hz(freq)*, such as _IkeC - Equalizer.milk_ from the _Milkwave_ presets folder. *get_fft_peak_hz(freq)* is exclusive to Milkwave.
 
+The "Test" button next to "Audio" plays the simulated band sequence from _audio-test.txt_ instead of the captured audio. Each line of the file contains a hold time and relative bass, mid and treble levels (1.0 = track average); lines starting with # are comments. The Visualizer shows the active values in a notification and synthesises a matching waveform and FFT spectrum, so shader, wave-based and FFT-based presets react. Click "Stop" to return to live audio. This is useful for checking whether a preset reacts as intended without playing music, and it is the interactive counterpart to the preset-conversion audio checks.
+
 ## Tab "Lyrics"
 
 The Lyrics tab controls the synchronized lyrics overlay that the Visualizer draws on top of the visual output, and that is also included in the Spout sender. When "Auto" is active, Milkwave looks up the lyrics for the currently playing track automatically (eg. from [LRCLIB](https://lrclib.net)) and caches them locally; otherwise you can load a lyrics file manually.
+
+The "Outline/Background" selector styles the lyrics text: "No Outline/Background" keeps the current look, "Text Outline" draws an outline around the text, and "Box Background" draws a filled box behind it. The color panel sets the outline/box color, and the amount field controls the outline thickness or box padding (0 means the box ends exactly at the text). The values are stored in _settings.ini_ as _LyricsOutline_, _LyricsOutlineAmount_ and _LyricsOutlineColorR/G/B_.
 
 The "Status" field shows the current lyrics state ("Lyrics off", "Lyrics loading", "Lyrics loaded", "Lyrics missing timestamps" or "Lyrics unavailable"). "Active" turns the lyrics overlay on or off (settings.ini:LyricsEnabled), and "Auto" toggles the automatic lookup of lyrics for the current track (settings.ini:LyricsAutoLoad).
 

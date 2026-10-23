@@ -28,6 +28,11 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
   (set code → 60 s check → load → wait → capture → stats, the fast edit/render loop),
   `audio-verify.ps1` (silent, reproducible audio-reactivity check via the `AUDIO_TEST` pipe hook)
   and `audio-sim.ps1` (audible deterministic WAV, only for presets that read `get_fft`).
+- `Build\audio-test.txt`: the commented band sequence played by the Remote's
+  Settings → Audio → Test button. It is the human-readable counterpart to
+  `audio-verify.ps1 -Bands`: use it for a quick manual reaction check, then confirm with the
+  reproducible harness. The Visualizer shows the active values and synthesises a matching
+  waveform and FFT spectrum, so shader, wave-based and FFT-based presets react.
 - If the toolchain is missing, convert in-app instead (Remote → tab "Shader",
   see `Manual.md` → "Tab Shader"), then save the result with `QUICKSAVE`. The fix rules below
   still apply.
@@ -120,7 +125,14 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
      factor; version 1 must not be stronger than version 2.
    - If the shader has no parameter that can carry a reaction, ship it without one instead of
      inventing a global zoom pulse.
-   - Verify with the **silent, reproducible harness** — never live music:
+   - For a quick manual check, press Settings → Audio → Test in the Remote. It plays
+     `Build\audio-test.txt` (average, one band at a time, quiet, loud, silence); the
+     Visualizer shows the active levels and also synthesises a waveform and FFT spectrum,
+     so wave- and FFT-based presets respond even without band expressions. Click **Stop**
+     to restore live audio.
+     The file's columns are the same `bass,mid,treble` values accepted by
+     `audio-verify.ps1 -Bands`.
+   - Confirm with the **silent, reproducible harness** — never live music:
      ```powershell
      powershell -File C:\Source\Milkwave\.local\shader-tools\audio-verify.ps1 `
        -Preset "<abs path>" -Version 1 -Bands '0,1,1;2,1,1'
@@ -187,4 +199,4 @@ enforced silently by the discovery layer.
 
 * Always keep all .milk versions (increment the filename with a number) while iterating/working on a shader - the user might like an earlier version better than the final one. If you are not sure, keep it. The user can always delete it later.
 * Write findings/problem solutions back to this file to speed up the process for future conversions.
-* If you open browser tabs, close them when done/read to save resources.
+* If you open browser tabs, close them as soon as all required data is loaded to save resources.

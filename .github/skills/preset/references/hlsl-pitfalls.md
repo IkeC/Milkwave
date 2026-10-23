@@ -61,6 +61,18 @@ repeat across shaders; work this list top to bottom before debugging logic.
 - Component-wise compound assignments survive the conversion: `v.xy *= v.z;` → `v.xy = v.xy * v.z;`.
 - The same matrix line can be emitted twice; a duplicated rotation moves the camera away from the
   subject. Delete the duplicate.
+- **`matN(name, …) * vec` is left as `*`** and fails with `X3020: type mismatch` — the rewrite only
+  covers `v * M` and inline literals. Complex products are cheapest written out by hand:
+  `z = mat2(z, -z.y, z.x)*z + cc;` → `z = float2(z.x*z.x - z.y*z.y, 2.*z.x*z.y) + cc;`
+  (`Mandelbrot Pattern Decoration`; the author's own comment carried the expanded form).
+- Loop counters are emitted as `for (int k=min(frame,0); …)` (a trick to keep the loop un-unrolled);
+  restore `int k = 0` for readability — behaviour is the same at `frame >= 0`.
+- **`iResolution.y` outside the coordinate setup is rewritten to `uv.y`**, which is the 0..1 texture
+  coordinate, not the height in pixels: `float k = 5./iResolution.y;` became `5./uv.y`
+  (`Golden Electric Spiral`) and made the edge width depend on the pixel position. Restore
+  `texsize.y`.
+- `cosh` / `sinh` / `tanh` are built into the ps_3_0 compiler — no hand-written `(exp(x)+exp(-x))/2`
+  needed.
 - Corner-case GLSL that needs manual rewriting: struct constructors, array literals, multiple
   returns, ternary side effects, and overloads that still reference `gl_FragCoord`.
 
@@ -135,6 +147,7 @@ These all compile with `flags=0x0` and fail with the engine's `flags=0x10000`:
 | early `return` inside a loop body | `X3500: asymetric returns from if statements` | single `return outv;` after the loop, result kept in a local |
 | `if (a.x < b.x) return a; return b;` in a helper | same `X3500` risk | `return a.x < b.x ? a : b;` |
 | `float rad = …;` (any local named like a wrapper macro) | `X3000: syntax error: unexpected token '.'` | rename (`trad`, `radv`, …) |
+| early `return` from the GLSL `mainImage` body (e.g. cinema-bar clip) | shader_body cannot return — the wrapper appends the output line | put the work in `if (inside) { … }` and leave the colour black outside (`Dark Transit`) |
 
 Note the two warnings that mean the same thing in disguise: `X3083: Truncating N-vector to size 1`
 on a helper like `float mod_conv(float2 x, float2 y)` — declare the vector return type

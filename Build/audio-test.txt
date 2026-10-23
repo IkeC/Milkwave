@@ -1,0 +1,36 @@
+# audio-test.txt - simulated audio levels for Milkwave
+#
+# Click "Test" on the Remote's Settings tab to play this sequence through the
+# Visualizer. The Visualizer shows the current values in a notification and
+# synthesises a matching waveform and FFT spectrum, so shader, wave-based and
+# FFT-based presets react. Click "Stop" (the same button) to return to live audio.
+#
+# One line = one step:
+#   <hold-seconds> <bass> <mid> <treble> [label]
+#
+#   hold-seconds      How long this setting stays active (0.1 .. 60 seconds).
+#   bass/mid/treble   Relative level: 1.0 = the track's average.
+#                     0.0 = silence, 0.5 = half average, 2.0 = twice average.
+#                     Values are clamped to 0.0 .. 4.0. The simulated spectrum
+#                     is scaled to look like normal music, not full-scale bars.
+#   label             Optional free text after the fourth number. The parser
+#                     ignores it; the Remote shows it in the status bar.
+#
+# Lines starting with # and blank lines are ignored, so you can edit freely.
+# The sequence repeats until you press Stop. The file is read again each time
+# you start a test, so changes take effect without restarting the Remote.
+#
+# Preset conversion check: version 1 (calm) and version 2 (snappy) presets
+# should visibly change between the settings, while a version 3 (static)
+# preset itself must not. Ignore the notification text when judging that:
+# audio-verify.ps1 sends the same bands silently and compares exact frames.
+# Its -Bands argument takes the same values: -Bands "b,m,t;b,m,t".
+#
+# hold  bass  mid  treble   what it checks
+2.0     1.0   1.0   1.0      average - neutral baseline
+2.0     2.0   1.0   1.0      bass boost - low-end reaction
+2.0     1.0   2.0   1.0      mid boost - mid-range reaction
+2.0     1.0   1.0   2.0      treble boost - high-end reaction
+2.0     0.25  0.25  0.25     quiet - base look must stay visible
+2.0     3.0   3.0   3.0      loud - watch for clipping / black cores
+2.0     0.0   0.0   0.0      silence - base look must stay visible

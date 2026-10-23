@@ -183,11 +183,22 @@ what else is playing and on the playback position, so consecutive runs are not c
 
 | Mechanism | What it does |
 | --- | --- |
-| `AUDIO_TEST=bass,mid,treb` (named pipe) | Engine test hook: replaces the analysed bands with fixed **relative** levels (`1.0` = track average) before they reach the shader. Silent — nothing is played. `AUDIO_TEST=off` releases it. One value broadcasts to all three bands. |
+| `AUDIO_TEST=bass,mid,treb[,notify][,wave]` (named pipe) | Engine test hook: replaces the analysed bands with fixed **relative** levels (`1.0` = track average) before they reach the shader. Silent — nothing is played. `AUDIO_TEST=off` releases it. One value broadcasts to all three bands. The optional `notify` flag shows the active levels as a notification; `wave` also synthesises waveform samples and a band-shaped `get_fft()` spectrum for wave/FFT presets. Omit both for byte-identical shader capture comparisons. |
+| `Build\audio-test.txt` | Human-readable `hold-seconds bass mid treble [label]` sequence played by the Remote's Settings → Audio → Test button. The button sends `AUDIO_TEST=…,1,1` (notification + waveform/FFT) and `AUDIO_TEST=off` on Stop. |
 | `VAR_TIME=0` | Multiplies the engine clock by 0, so the shader's `time` is frozen. |
 | `VAR_FRAME=0` | Stops the frame counter (only helps shaders that use `frame`; the counter cannot be reset to 0). |
 | `HUE_AUTO=0`, `COL_HUE=0` | Stops the automatic hue drift and any colour shift, which otherwise repaints every frame. |
 | `audio-verify.ps1` | Wraps all of the above: load → settle → inject → capture → report means/spread/MD5. |
+
+### Interactive check with `audio-test.txt`
+
+Load the candidate preset, then press **Settings → Audio → Test** in the Remote. The Visualizer
+shows the active values in a notification; press **Stop** to restore live audio. This is the
+fast way to see whether a preset responds at all and which band drives it. It also synthesises
+a waveform and a band-shaped `get_fft()` spectrum, so wave- and FFT-based presets respond even
+though they have no band expressions. It is not the acceptance gate: the button sends
+`AUDIO_TEST=…,1,1`, so the changing notification, waveform and FFT would break byte-identical
+captures. Use plain `AUDIO_TEST=` through `audio-verify.ps1` for the recorded v1/v2/v3 result.
 
 ### Why the clock is zeroed *before* the preset is loaded
 
@@ -216,9 +227,11 @@ wrong: the capture shows the *previous* preset, or a blend of both.
 
 ### Limits of the injection
 
-- `get_fft()` / `sampler_fft` reads the FFT **texture**, which is not synthesised: a preset that
-  samples the spectrum directly is still silent-static under `AUDIO_TEST`. Either port those
-  terms to `bass`/`mid`/`treb` bands (preferred, they are version-guardable) or use the audible
+- `get_fft()` / `sampler_fft` reads the FFT **texture**, which plain `AUDIO_TEST` (the
+  `audio-verify.ps1` path) does not synthesise: a preset that samples the spectrum directly is
+  still silent-static there. The interactive Test button's `wave` flag does synthesise a
+  band-shaped spectrum for manual checks, but a recorded gate still needs either a port of those
+  terms to `bass`/`mid`/`treb` bands (preferred, they are version-guardable) or the audible
   fallback below. Keep `get_fft` out of the *base* look regardless — version 3 must stay static.
 - The injected values skip the engine's smoothing, so v1 (`*_smooth` inputs) and v2 (`*_att`
   inputs) receive the same step. That is what makes the comparison exactly reproducible; the
@@ -252,6 +265,8 @@ endpoint also mutes the analysis.
   Capture within ~3 s of a `PRESET=` load, otherwise you capture the *next* preset (or a black
   blend frame) and misdiagnose it as a broken preset.
 - Notifications (`AddError` banners) are drawn into the capture and use the engine clock, so a
-  frozen clock makes them permanent. That is why `AUDIO_TEST=` prints nothing; any handler that
-  shows a banner will break byte-identical comparisons.
+  frozen clock makes them permanent. That is why plain `AUDIO_TEST=bass,mid,treb` prints
+  nothing; any handler that shows a banner will break byte-identical comparisons. The Remote's
+  Test button deliberately sends the optional `,1`/`notify` flag, so use plain `AUDIO_TEST=`
+  for captures and `audio-test.txt` only for the interactive check.
 - Wait for the compile before capturing: heavy presets need 30 s or more to appear.

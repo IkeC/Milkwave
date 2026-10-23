@@ -703,15 +703,25 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     std::wstring message(sMessage + 12);
     g_plugin.m_VisVersion = std::stof(message);
   } else if (wcsncmp(sMessage, L"AUDIO_TEST=", 11) == 0) {
-    // Test hook: "AUDIO_TEST=bass,mid,treb" injects fixed relative band levels (1 = average,
-    // as the shader sees them) so preset audio reactions can be verified silently and
-    // reproducibly; "AUDIO_TEST=off" returns to the captured audio. One value is broadcast to
-    // all three bands. The FFT texture (get_fft) is not simulated.
+    // Test hook: "AUDIO_TEST=bass,mid,treb[,notify][,wave]" injects fixed relative band
+    // levels (1 = average, as the shader sees them) so preset audio reactions can be
+    // verified silently and reproducibly; "AUDIO_TEST=off" returns to the captured audio.
+    // One value is broadcast to all three bands. The optional notify flag (or the word
+    // "notify") shows the current levels as a notification. The optional wave flag (or
+    // the word "wave") also synthesises waveform samples and a band-shaped get_fft()
+    // spectrum for wave- and FFT-based presets; the Remote's Audio Test button enables
+    // both, while the automated capture harness uses plain values so its frames stay
+    // byte-identical.
     std::wstring message(sMessage + 11);
-    float b = 1.0f, m = 1.0f, t = 1.0f;
-    const int got = swscanf_s(message.c_str(), L"%f,%f,%f", &b, &m, &t);
+    float b = 1.0f, m = 1.0f, t = 1.0f, notify = 0.0f, wave = 0.0f;
+    const int got = swscanf_s(message.c_str(), L"%f,%f,%f,%f,%f", &b, &m, &t, &notify, &wave);
     if (got < 1) {
+      const bool wasNotifying = g_plugin.m_bAudioTestNotify;
       g_plugin.m_bAudioTestOverride = false;
+      g_plugin.m_bAudioTestNotify = false;
+      g_plugin.m_bAudioTestWave = false;
+      if (wasNotifying)
+        g_plugin.AddNotification(L"Audio test: off - live audio", 2.5f);
     } else {
       if (got < 2) m = b;
       if (got < 3) t = m;
@@ -722,7 +732,15 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.m_AudioTestBands[1] = m;
       g_plugin.m_AudioTestBands[2] = t;
       g_plugin.m_bAudioTestOverride = true;
-      // No on-screen notification: captures must stay byte-identical between test values.
+      g_plugin.m_bAudioTestNotify = (got >= 4 && notify > 0.0f) ||
+        message.find(L"notify") != std::wstring::npos;
+      g_plugin.m_bAudioTestWave = (got >= 5 && wave > 0.0f) ||
+        message.find(L"wave") != std::wstring::npos;
+      if (g_plugin.m_bAudioTestNotify) {
+        wchar_t buf[128];
+        swprintf_s(buf, 128, L"Audio test: bass %.2f  mid %.2f  treble %.2f", b, m, t);
+        g_plugin.AddNotification(buf, 2.5f);
+      }
     }
   } else if (wcsncmp(sMessage, L"COL_HUE=", 8) == 0) {
     std::wstring message(sMessage + 8);
@@ -896,6 +914,7 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
         WritePrivateProfileIntW(r, L"LyricsColorR", g_plugin.GetConfigIniFile(), L"Lyrics");
         WritePrivateProfileIntW(g, L"LyricsColorG", g_plugin.GetConfigIniFile(), L"Lyrics");
         WritePrivateProfileIntW(b, L"LyricsColorB", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.InvalidateLyricsWrapCache();
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
     }
@@ -1030,9 +1049,54 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       if (v != g_plugin.m_lyricsShadow) {
         g_plugin.m_lyricsShadow = v;
         WritePrivateProfileIntW(v, L"LyricsShadow", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.InvalidateLyricsWrapCache();
         g_plugin.SendSettingsInfoToMilkwaveRemote();
       }
     } catch (...) {
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_OUTLINE=", 15) == 0) {
+    try {
+      int v = std::stoi(sMessage + 15);
+      if (v < 0) v = 0;
+      if (v > 2) v = 2;
+      if (v != g_plugin.m_lyricsOutlineMode) {
+        g_plugin.m_lyricsOutlineMode = v;
+        WritePrivateProfileIntW(v, L"LyricsOutline", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.InvalidateLyricsWrapCache();
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_OUTLINE_AMOUNT=", 22) == 0) {
+    try {
+      int v = std::stoi(sMessage + 22);
+      if (v < 0) v = 0;
+      if (v > 16) v = 16;
+      if (v != g_plugin.m_lyricsOutlineAmount) {
+        g_plugin.m_lyricsOutlineAmount = v;
+        WritePrivateProfileIntW(v, L"LyricsOutlineAmount", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.InvalidateLyricsWrapCache();
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    } catch (...) {
+    }
+  } else if (wcsncmp(sMessage, L"LYRICS_OUTLINE_COLOR=", 21) == 0) {
+    int r = 0, g = 0, b = 0;
+    if (swscanf_s(sMessage + 21, L"%d,%d,%d", &r, &g, &b) == 3) {
+      r = r < 0 ? 0 : r > 255 ? 255 : r;
+      g = g < 0 ? 0 : g > 255 ? 255 : g;
+      b = b < 0 ? 0 : b > 255 ? 255 : b;
+      if (r != g_plugin.m_lyricsOutlineColorR || g != g_plugin.m_lyricsOutlineColorG ||
+          b != g_plugin.m_lyricsOutlineColorB) {
+        g_plugin.m_lyricsOutlineColorR = r;
+        g_plugin.m_lyricsOutlineColorG = g;
+        g_plugin.m_lyricsOutlineColorB = b;
+        WritePrivateProfileIntW(r, L"LyricsOutlineColorR", g_plugin.GetConfigIniFile(), L"Lyrics");
+        WritePrivateProfileIntW(g, L"LyricsOutlineColorG", g_plugin.GetConfigIniFile(), L"Lyrics");
+        WritePrivateProfileIntW(b, L"LyricsOutlineColorB", g_plugin.GetConfigIniFile(), L"Lyrics");
+        g_plugin.InvalidateLyricsWrapCache();
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
     }
   } else if (wcsncmp(sMessage, L"LYRICS_AUTOSCALE=", 17) == 0) {
     const bool enabled = (sMessage[17] == L'1');

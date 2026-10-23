@@ -305,6 +305,6 @@ comp_300=  // gamma correction
 comp_301=  col.rgb = pow(col.rgb, float3(1./2.2, 1./2.2, 1./2.2));
 comp_302=
 comp_303=  // output to the screen
-comp_304=  fragColor = float4(col.rgb * smoothstep(0.,3., time),1.0);
+comp_304=  fragColor = float4(col.rgb,1.0);
 comp_305=  ret = fragColor;
 comp_306=}

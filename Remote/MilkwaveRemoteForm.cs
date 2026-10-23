@@ -22,6 +22,9 @@ namespace MilkwaveRemote {
     private System.Windows.Forms.Timer monitorTimer;
     private System.Windows.Forms.Timer spoutRefreshTimer;
     private System.Windows.Forms.Timer controllerTimer;
+    private System.Windows.Forms.Timer audioTestTimer;
+    private List<(double Seconds, float Bass, float Mid, float Treble, string Label)> audioTestSteps = new();
+    private int audioTestIndex = -1;
 
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
@@ -37,6 +40,9 @@ namespace MilkwaveRemote {
     private int lyricsColorR = 255;
     private int lyricsColorG = 255;
     private int lyricsColorB = 255;
+    private int lyricsOutlineColorR = 0;
+    private int lyricsOutlineColorG = 0;
+    private int lyricsOutlineColorB = 0;
     private uint lastControllerButtons = 0;
     private Dictionary<int, string> controllerConfig = new();
 
@@ -104,6 +110,7 @@ namespace MilkwaveRemote {
     private string milkwaveControllerFile = "controller-remote.json";
     private string milkwaveNetworkRemoteFile = "network-remote.json";
     private string milkwaveMessagesEditorFile = "messages-editor.html";
+    private string audioTestFileName = "audio-test.txt";
 
     private string visualizerSpritesFile = "sprites.ini";
     private string visualizerMessagesFile = "messages.ini";
@@ -225,6 +232,9 @@ namespace MilkwaveRemote {
       LyricsFontItalic,
       LyricsFontAA,
       LyricsColor,
+      LyricsOutline,
+      LyricsOutlineAmount,
+      LyricsOutlineColor,
       LyricsPosX,
       LyricsPosY,
       LyricsStartX,
@@ -1588,6 +1598,8 @@ namespace MilkwaveRemote {
         return;
       }
 
+      StopAudioTest(false);
+
       int closedPid = (_activeClient is PipeClient pc) ? pc.ConnectedPid : 0;
       bool wasSelected = closedPid != 0 &&
                          cboVisualizerInstance.SelectedIndex >= 0 &&
@@ -1840,6 +1852,21 @@ namespace MilkwaveRemote {
                 } else if (key.Equals("LYRICSCOLORB", StringComparison.OrdinalIgnoreCase)) {
                   lyricsColorB = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ? Math.Clamp(b, 0, 255) : 255;
                   ApplyLyricsColor();
+                } else if (key.Equals("LYRICSOUTLINE", StringComparison.OrdinalIgnoreCase)) {
+                  if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int outlineMode)) {
+                    cboLyricsOutline.SelectedIndex = Math.Clamp(outlineMode, 0, cboLyricsOutline.Items.Count - 1);
+                  }
+                } else if (key.Equals("LYRICSOUTLINEAMOUNT", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsOutlineAmount, value);
+                } else if (key.Equals("LYRICSOUTLINECOLORR", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsOutlineColorR = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int outlineR) ? Math.Clamp(outlineR, 0, 255) : 0;
+                  ApplyLyricsOutlineColor();
+                } else if (key.Equals("LYRICSOUTLINECOLORG", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsOutlineColorG = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int outlineG) ? Math.Clamp(outlineG, 0, 255) : 0;
+                  ApplyLyricsOutlineColor();
+                } else if (key.Equals("LYRICSOUTLINECOLORB", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsOutlineColorB = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int outlineB) ? Math.Clamp(outlineB, 0, 255) : 0;
+                  ApplyLyricsOutlineColor();
                 } else if (key.Equals("LYRICSPOSX", StringComparison.OrdinalIgnoreCase)) {
                   SetLyricsNumeric(numLyricsPosX, value);
                 } else if (key.Equals("LYRICSPOSY", StringComparison.OrdinalIgnoreCase)) {
@@ -2199,6 +2226,12 @@ namespace MilkwaveRemote {
               message = "LYRICS_FONTAA=" + (chkLyricsFontAA.Checked ? "1" : "0");
             } else if (type == MessageType.LyricsColor) {
               message = "LYRICS_COLOR=" + pnlLyricsColor.BackColor.R + "," + pnlLyricsColor.BackColor.G + "," + pnlLyricsColor.BackColor.B;
+            } else if (type == MessageType.LyricsOutline) {
+              message = "LYRICS_OUTLINE=" + cboLyricsOutline.SelectedIndex;
+            } else if (type == MessageType.LyricsOutlineAmount) {
+              message = "LYRICS_OUTLINE_AMOUNT=" + (int)numLyricsOutlineAmount.Value;
+            } else if (type == MessageType.LyricsOutlineColor) {
+              message = "LYRICS_OUTLINE_COLOR=" + pnlLyricsOutlineColor.BackColor.R + "," + pnlLyricsOutlineColor.BackColor.G + "," + pnlLyricsOutlineColor.BackColor.B;
             } else if (type == MessageType.LyricsPosX) {
               message = "LYRICS_POSX=" + numLyricsPosX.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.LyricsPosY) {
@@ -3527,6 +3560,7 @@ namespace MilkwaveRemote {
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
       try {
 
+        StopAudioTest(true);
         DisposeSpriteButtonImages();
         SetAndSaveSettings();
         if (Settings.MidiEnabled) {
@@ -4341,6 +4375,145 @@ namespace MilkwaveRemote {
     private void lblAudioDevice_DoubleClick(object sender, EventArgs e) {
       RemoteHelper.ReloadAudioDevices(cboAudioDevice);
       SetStatusText($"Audio device list reloaded");
+    }
+
+    /// <summary>
+    /// Plays the simulated band sequence from audio-test.txt through the Visualizer.
+    /// Clicking while a sequence is running stops it and restores live audio.
+    /// </summary>
+    private void btnAudioTest_Click(object? sender, EventArgs e) {
+      if (audioTestTimer != null) {
+        StopAudioTest(true);
+        return;
+      }
+      if (!CanSendPipeMessage) {
+        SetStatusText(windowNotFound);
+        return;
+      }
+
+      string path = Path.Combine(BaseDir, audioTestFileName);
+      if (!File.Exists(path)) {
+        MessageBox.Show(this,
+          $"Could not find {audioTestFileName} in:{Environment.NewLine}{BaseDir}" +
+          Environment.NewLine + Environment.NewLine +
+          "The simulated audio sequence is shipped with Milkwave. Reinstall or recreate the file.",
+          "Audio Test", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+      }
+
+      List<(double Seconds, float Bass, float Mid, float Treble, string Label)> steps;
+      List<string> invalidLines;
+      try {
+        steps = ParseAudioTestFile(path, out invalidLines);
+      } catch (Exception ex) {
+        MessageBox.Show(this, $"Could not read {path}:{Environment.NewLine}{ex.Message}",
+          "Audio Test", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+      }
+
+      if (steps.Count == 0) {
+        MessageBox.Show(this,
+          $"No usable steps found in {path}.{Environment.NewLine}{Environment.NewLine}" +
+          "Each data line needs: <hold-seconds> <bass> <mid> <treble> [label]",
+          "Audio Test", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+      }
+
+      if (invalidLines.Count > 0) {
+        string details = string.Join(Environment.NewLine, invalidLines.Take(8));
+        if (invalidLines.Count > 8) details += Environment.NewLine + "...";
+        MessageBox.Show(this,
+          $"Skipped {invalidLines.Count} invalid line(s) in {audioTestFileName}:{Environment.NewLine}{Environment.NewLine}{details}",
+          "Audio Test", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+      }
+
+      audioTestSteps = steps;
+      audioTestIndex = -1;
+      audioTestTimer = new System.Windows.Forms.Timer();
+      audioTestTimer.Tick += AudioTestTimer_Tick;
+      if (!SendAudioTestStep(0)) return;
+      audioTestTimer.Start();
+    }
+
+    private void AudioTestTimer_Tick(object? sender, EventArgs e) {
+      if (audioTestSteps.Count == 0) {
+        StopAudioTest(true);
+        return;
+      }
+      SendAudioTestStep((audioTestIndex + 1) % audioTestSteps.Count);
+    }
+
+    private bool SendAudioTestStep(int index) {
+      if (index < 0 || index >= audioTestSteps.Count || audioTestTimer == null) return false;
+
+      var step = audioTestSteps[index];
+      string bands = step.Bass.ToString("0.###", CultureInfo.InvariantCulture) + "," +
+                     step.Mid.ToString("0.###", CultureInfo.InvariantCulture) + "," +
+                     step.Treble.ToString("0.###", CultureInfo.InvariantCulture);
+      // The trailing ",1,1" enables the notification and the synthetic waveform used by
+      // wave-based presets. The automated capture harness omits both, so its shader
+      // frames stay byte-identical between band settings.
+      if (!PipeSend($"AUDIO_TEST={bands},1,1")) {
+        StopAudioTest(false);
+        SetStatusText("Audio test stopped: visualizer not reachable");
+        return false;
+      }
+
+      audioTestIndex = index;
+      audioTestTimer.Interval = (int)Math.Round(Math.Clamp(step.Seconds, 0.1, 60.0) * 1000.0);
+      btnAudioTest.Text = "Stop";
+      string label = string.IsNullOrEmpty(step.Label) ? "" : $" ({step.Label})";
+      SetStatusText($"Audio test {index + 1}/{audioTestSteps.Count}: " +
+        $"bass {step.Bass:0.##}, mid {step.Mid:0.##}, treble {step.Treble:0.##}{label}");
+      return true;
+    }
+
+    private void StopAudioTest(bool releaseAudio) {
+      bool wasRunning = audioTestTimer != null;
+      if (audioTestTimer != null) {
+        audioTestTimer.Stop();
+        audioTestTimer.Tick -= AudioTestTimer_Tick;
+        audioTestTimer.Dispose();
+        audioTestTimer = null;
+      }
+      if (releaseAudio && wasRunning) {
+        if (CanSendPipeMessage) PipeSend("AUDIO_TEST=off");
+        SetStatusText("Audio test stopped - live audio restored");
+      }
+      audioTestSteps.Clear();
+      audioTestIndex = -1;
+      btnAudioTest.Text = "Test";
+    }
+
+    private List<(double Seconds, float Bass, float Mid, float Treble, string Label)> ParseAudioTestFile(
+      string path, out List<string> invalidLines) {
+      var steps = new List<(double Seconds, float Bass, float Mid, float Treble, string Label)>();
+      invalidLines = new List<string>();
+      int lineNumber = 0;
+
+      foreach (string rawLine in File.ReadLines(path)) {
+        lineNumber++;
+        string line = rawLine.Trim();
+        if (line.Length == 0 || line.StartsWith("#")) continue;
+
+        string[] parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 4 ||
+            !double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds) ||
+            !float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float bass) ||
+            !float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float mid) ||
+            !float.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float treble) ||
+            !double.IsFinite(seconds) || seconds <= 0 ||
+            !float.IsFinite(bass) || !float.IsFinite(mid) || !float.IsFinite(treble)) {
+          invalidLines.Add($"{lineNumber}: {rawLine.Trim()}");
+          continue;
+        }
+
+        string label = parts.Length > 4 ? string.Join(" ", parts.Skip(4)) : "";
+        steps.Add((Math.Clamp(seconds, 0.1, 60.0),
+          Math.Clamp(bass, 0f, 4f), Math.Clamp(mid, 0f, 4f), Math.Clamp(treble, 0f, 4f), label));
+      }
+
+      return steps;
     }
 
     private void btnSendFile_Click(object? sender, EventArgs e) {
@@ -6649,6 +6822,33 @@ namespace MilkwaveRemote {
         lyricsColorB = colorDialogLyrics.Color.B;
         ApplyLyricsColor();
         SendToMilkwaveVisualizer("", MessageType.LyricsColor);
+      }
+    }
+
+    private void ApplyLyricsOutlineColor() {
+      pnlLyricsOutlineColor.BackColor = Color.FromArgb(lyricsOutlineColorR, lyricsOutlineColorG, lyricsOutlineColorB);
+    }
+
+    private void pnlLyricsOutlineColor_Click(object sender, EventArgs e) {
+      colorDialogLyrics.Color = pnlLyricsOutlineColor.BackColor;
+      if (colorDialogLyrics.ShowDialog() == DialogResult.OK) {
+        lyricsOutlineColorR = colorDialogLyrics.Color.R;
+        lyricsOutlineColorG = colorDialogLyrics.Color.G;
+        lyricsOutlineColorB = colorDialogLyrics.Color.B;
+        ApplyLyricsOutlineColor();
+        SendToMilkwaveVisualizer("", MessageType.LyricsOutlineColor);
+      }
+    }
+
+    private void cboLyricsOutline_SelectedIndexChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsOutline);
+      }
+    }
+
+    private void numLyricsOutlineAmount_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsOutlineAmount);
       }
     }
 

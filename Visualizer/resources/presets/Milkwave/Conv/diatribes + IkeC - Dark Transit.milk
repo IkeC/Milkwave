@@ -1,0 +1,74 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// diatribes - Dark Transit / https://www.shadertoy.com/view/WcdczB
+comp_2=// License: MIT (see the shader header)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_6=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_7=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_8=
+comp_9=#define T (time*4. + 5. + 5.*sin(time*.3))
+comp_10=#define P(z) float3(12.*cos((z)*.1), 12.*cos((z)*.12), (z))
+comp_11=#define A(F, H, K) abs(dot(sin(F*p*K), H + p - p)) / K
+comp_12=
+comp_13=shader_body {
+comp_14=  float2 u = float2((uv.x - 0.5)*texsize.x/texsize.y, (0.5 - uv.y));
+comp_15=
+comp_16=  // tunnel radius opens with the low end
+comp_17=  float rbase = 4.;
+comp_18=  #ifdef bass_smooth
+comp_19=    if ((int)vis_version == 1)      rbase += 0.40*(smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
+comp_20=    else if ((int)vis_version == 2) rbase += 0.60*(smoothstep(0, 2, bass_att) - 0.5)*vis_intensity + vis_shift;
+comp_21=    else                            rbase += 0.0*vis_intensity + vis_shift;
+comp_22=  #else
+comp_23=    rbase += 0.30*(smoothstep(0, 2, bass_att) - 0.5);
+comp_24=  #endif
+comp_25=
+comp_26=  // scale relief deepens with the high end
+comp_27=  float scoop = 0.25;
+comp_28=  #ifdef bass_smooth
+comp_29=    if ((int)vis_version == 1)      scoop += 0.08*(smoothstep(0, 2, treb_smooth) - 0.5)*vis_intensity + vis_shift;
+comp_30=    else if ((int)vis_version == 2) scoop += 0.12*(smoothstep(0, 2, treb_att) - 0.5)*vis_intensity + vis_shift;
+comp_31=    else                            scoop += 0.0*vis_intensity + vis_shift;
+comp_32=  #else
+comp_33=    scoop += 0.06*(smoothstep(0, 2, treb_att) - 0.5);
+comp_34=  #endif
+comp_35=
+comp_36=  float4 o = 0;
+comp_37=
+comp_38=  float t, s, e, d = 0.;
+comp_39=  float3 c = 0;
+comp_40=
+comp_41=  float3 p = P(T);
+comp_42=  float3 Z = normalize(P(T + 4.) - p);
+comp_43=  float3 X = normalize(float3(Z.z, 0., -Z.x));
+comp_44=  float3 vv = float3(u, 1.);
+comp_45=  float3 D = float3(dot(vv, -X), dot(vv, cross(X, Z)), dot(vv, Z));
+comp_46=
+comp_47=  for (int i = 0; i < 28 && d < 3e1; i++) {
+comp_48=    p += D*s;
+comp_49=
+comp_50=    X = P(p.z);
+comp_51=    t = sin(time);
+comp_52=
+comp_53=    // orb: sphere with xyz offset by t
+comp_54=    e = lenv(p - float3(X.x + t, X.y + t*2., 6. + T + t*2.)) - .01;
+comp_55=
+comp_56=    // tunnel with modulating radius, plus two noise octaves
+comp_57=    s = cos(p.z*.6)*2. + rbase
+comp_58=      - min(lenv(p.xy - X.x - 6.), lenv((p - X).xy))
+comp_59=      + A(4., scoop, .1)
+comp_60=      + A(T + 8., .22, 2.);
+comp_61=
+comp_62=    d += s = min(e, .01 + .3*abs(s));
+comp_63=
+comp_64=    c += 1./s + 1e1*float3(1, 2, 5)/max(e, .6);
+comp_65=  }
+comp_66=
+comp_67=  o.rgb = c*c/1e6;
+comp_68=
+comp_69=  ret = float4(o.rgb, 1.);
+comp_70=}

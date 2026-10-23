@@ -66,6 +66,7 @@ Section "Milkwave" SecMilkwave
     
   CopyFiles $INSTDIR\*.ini $INSTDIR\backup
   CopyFiles $INSTDIR\script-default.txt $INSTDIR\backup
+  CopyFiles $INSTDIR\audio-test.txt $INSTDIR\backup
   CopyFiles $INSTDIR\*.json $INSTDIR\backup
   
   SetOverwrite try
@@ -111,6 +112,7 @@ Section "Milkwave" SecMilkwave
 
   SetOverwrite off
   File "${RELDIR}script-default.txt"
+  File "${RELDIR}audio-test.txt"
   File "${RELDIR}midi-default.txt"
   File "${RELDIR}settings-remote.json"
   File "${RELDIR}tags-remote.json"
@@ -227,6 +229,7 @@ Section Uninstall
   Delete "$INSTDIR\NAudio.Wasapi.dll"
   Delete "$INSTDIR\README.txt"
   Delete "$INSTDIR\script-default.txt"
+  Delete "$INSTDIR\audio-test.txt"
   Delete "$INSTDIR\midi-default.txt"
   Delete "$INSTDIR\settings-remote.json"
   Delete "$INSTDIR\tags-remote.json"
