@@ -8,6 +8,8 @@
 * New preset: Shane + IkeC - Mandelbrot Pattern Decoration (Shadertoy `ttscWn`), with audio-reactive decoration grid and layer colour
 * New preset: SnoopethDuckDuck + IkeC - Golden Electric Spiral (Shadertoy `csj3zt`), with audio-reactive tile size and filament brightness
 * New preset: diatribes + IkeC - Dark Transit (Shadertoy `WcdczB`, MIT), with audio-reactive tunnel radius and scale relief
+* Visualizer: uncompiled shader presets now compile in the background while the current preset keeps playing
+  - A "Compiling preset <name>" notification is shown if compilation takes longer than one second
 * Visualizer: new `AUDIO_TEST=bass,mid,treb[,notify][,wave]` named-pipe command (values relative to the track average, `off` to release)
   - Injects fixed audio band levels so preset audio reactivity can be verified silently and reproducibly
   - The optional `notify` flag shows the active levels in a Visualizer notification

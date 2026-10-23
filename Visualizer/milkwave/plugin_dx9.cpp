@@ -1425,8 +1425,10 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   //  then if we were blending 2 presets, jump fully to the new preset.
   // Otherwise the old preset wouldn't get all reloaded, and it app would crash
   //  when trying to use its stuff.
+  StopPendingPresetCompile(m_nPresetCompileStatus == 1);
   if (m_nLoadingPreset != 0) {
     // finish up the pre-load & start the official blend
+    LoadShaders(&m_NewShaders, m_pNewState, false, false);
     m_nLoadingPreset = 8;
     LoadPresetTick();
   }

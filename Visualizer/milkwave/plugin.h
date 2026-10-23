@@ -527,9 +527,11 @@ class CPlugin : public CPluginShell {
 #define SHADER_BLUR 2
 #define SHADER_OTHER 3
   bool LoadShaderFromMemory(const char* szShaderText, char* szFn, char* szProfile,
-                            LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly);
+                            LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors,
+                            bool compileOnly, bool skipIfCached = false);
   bool RecompileVShader(const char* szShadersText, VShaderInfo* si, int shaderType, bool bHardErrors, bool bCompileOnly);
-  bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion, bool bCompileOnly);
+  bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion,
+                        bool bCompileOnly, bool bSkipIfCached = false);
   bool EvictSomeTexture();
   typedef std::vector<TexInfo> TexInfoList;
   TexInfoList m_textures;
@@ -563,6 +565,11 @@ class CPlugin : public CPluginShell {
   int m_nLoadingPreset;
   wchar_t m_szLoadingPreset[MAX_PATH];
   float m_fLoadingPresetBlendTime;
+  HANDLE m_hPresetCompileThread = NULL;
+  volatile LONG m_nPresetCompileStatus = 0;  // 0=idle, 1=running, 2=done
+  ULONGLONG m_nPresetCompileStartTick = 0;
+  bool m_bPresetCompileNotificationShown = false;
+  std::wstring m_sPresetCompilePath;
   int m_nPresetsLoadedTotal;              // important for texture eviction age-tracking...
   CState m_state_DO_NOT_USE[4];           // do not use; use pState, pOldState, pNewState, pMilk2OldState instead.
   CState* m_pMilk2OldState;               // 4th CState for .milk2 preset 1 (blend-from state)
@@ -720,6 +727,7 @@ class CPlugin : public CPluginShell {
 #define ERR_MSG_BOTTOM_EXTRA_1 6
 #define ERR_MSG_BOTTOM_EXTRA_2 7
 #define ERR_MSG_BOTTOM_EXTRA_3 8
+#define ERR_PRESET_COMPILING 9
 
   ErrorMsgList m_errors;
   void AddNotification(wchar_t* szMsg);
@@ -952,7 +960,11 @@ class CPlugin : public CPluginShell {
   void DrawTooltip(wchar_t* str, int xR, int yB);
   void RandomizeBlendPattern();
   void GenPlasma(int x0, int x1, int y0, int y1, float dt);
-  void CompilePresetShadersToFile(wchar_t* m_szCurrentPresetFile);
+  void CompilePresetShadersToFile(wchar_t* m_szCurrentPresetFile, bool bSkipIfCached = false);
+  void StartPendingPresetCompile();
+  void StopPendingPresetCompile(bool wait);
+  static unsigned __stdcall PendingPresetCompileThreadProc(void* param);
+  void CompilePendingPresetShaders();
   void ClearPreset();
   void RemoveAngleBrackets(wchar_t* str);
   void LoadPerFrameEvallibVars(CState* pState);
@@ -1029,7 +1041,7 @@ class CPlugin : public CPluginShell {
   void DrawMotionVectors();
   void RenderLyricsOverlay(bool burnIn);
 
-  bool LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly);
+  bool LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly, bool bSkipIfCached = false);
   void UvToMathSpace(float u, float v, float* rad, float* ang);
   void ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CState* pState);
   void RestoreShaderParams();

@@ -11,6 +11,7 @@
 #include "wasabi.h"
 #include <cstdint>
 #include <filesystem>
+#include <mutex>
 
 void VShaderInfo::Clear() {
   SafeRelease(ptr);
@@ -669,7 +670,8 @@ bool CPlugin::RecompileVShader(const char* szShadersText, VShaderInfo* si, int s
   return true;
 }
 
-bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion, bool bCompileOnly) {
+bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion,
+                               bool bCompileOnly, bool bSkipIfCached) {
   assert(m_nMaxPSVersion > 0);
 
   SafeRelease(si->ptr);
@@ -705,7 +707,8 @@ bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int s
       break;
   }
 
-  if (!LoadShaderFromMemory(szShadersText, "PS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly))
+  if (!LoadShaderFromMemory(szShadersText, "PS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly,
+                            bSkipIfCached))
     return false;
 
   if (!bCompileOnly) {
@@ -716,13 +719,14 @@ bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int s
   return true;
 }
 
-bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly) {
+bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly, bool bSkipIfCached) {
   if (m_nMaxPSVersion <= 0)
     return true;
 
   // load one of the pixel shaders
   if (!sh->warp.ptr && pState->m_nWarpPSVersion > 0) {
-    bool bOK = RecompilePShader(pState->m_szWarpShadersText, &sh->warp, SHADER_WARP, false, pState->m_nWarpPSVersion, bCompileOnly);
+    bool bOK = RecompilePShader(pState->m_szWarpShadersText, &sh->warp, SHADER_WARP, false, pState->m_nWarpPSVersion,
+                                bCompileOnly, bSkipIfCached);
     if (!bOK) {
       // switch to fallback shader
       m_fallbackShaders_ps.warp.ptr->AddRef();
@@ -737,7 +741,8 @@ bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bComp
   }
 
   if (!sh->comp.ptr && pState->m_nCompPSVersion > 0) {
-    bool bOK = RecompilePShader(pState->m_szCompShadersText, &sh->comp, SHADER_COMP, false, pState->m_nCompPSVersion, bCompileOnly);
+    bool bOK = RecompilePShader(pState->m_szCompShadersText, &sh->comp, SHADER_COMP, false, pState->m_nCompPSVersion,
+                                bCompileOnly, bSkipIfCached);
     if (!bOK) {
       // switch to fallback shader
       m_fallbackShaders_ps.comp.ptr->AddRef();
@@ -752,7 +757,8 @@ bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bComp
 }
 
 bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, char* szProfile,
-                                   LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly) {
+                                   LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors,
+                                   bool compileOnly, bool skipIfCached) {
   const char szWarpDefines[] =
       "#define rad _rad_ang.x\n"
       "#define ang _rad_ang.y\n"
@@ -940,15 +946,21 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
     pShaderByteCode = LoadShaderBytecodeFromFile(checksum, &szProfile[0]);
   }
 
-  if (pShaderByteCode != NULL && !compileOnly) {
-    // restore ConstTable from cached bytecode
-    HRESULT hr = D3DXGetShaderConstantTable(
-        (DWORD*)pShaderByteCode->GetBufferPointer(),
-        ppConstTable);
-    if (SUCCEEDED(hr)) {
+  if (pShaderByteCode != NULL) {
+    if (!compileOnly) {
+      // restore ConstTable from cached bytecode
+      HRESULT hr = D3DXGetShaderConstantTable(
+          (DWORD*)pShaderByteCode->GetBufferPointer(),
+          ppConstTable);
+      if (SUCCEEDED(hr)) {
+        bLoadedFromCache = true;
+      } else {
+        SafeRelease(pShaderByteCode);  // invalid cached bytecode, fall through to compile
+      }
+    } else if (skipIfCached) {
       bLoadedFromCache = true;
     } else {
-      SafeRelease(pShaderByteCode);  // invalid cached bytecode, fall through to compile
+      SafeRelease(pShaderByteCode);  // compile-only explicitly ignores stale cache
     }
   }
 
@@ -1053,14 +1065,19 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
 
 //----------------------------------------------------------------------
 
-void CPlugin::CompilePresetShadersToFile(wchar_t* sPresetFile) {
+void CPlugin::CompilePresetShadersToFile(wchar_t* sPresetFile, bool bSkipIfCached) {
+  // The startup precompiler and the on-demand preset compiler can both run.
+  // Serialize them because shader compilation uses shared error/notification state.
+  static std::mutex compileMutex;
+  std::lock_guard<std::mutex> lock(compileMutex);
+
   CState* pState = new CState();
   PShaderSet pShaders;
   RemoveAngleBrackets(sPresetFile);
 
   DWORD ApplyFlags = STATE_ALL;
   pState->Import(sPresetFile, GetTime(), NULL, ApplyFlags);
-  LoadShaders(&pShaders, pState, false, true);
+  LoadShaders(&pShaders, pState, false, true, bSkipIfCached);
   delete pState;
   pState = NULL;
 }

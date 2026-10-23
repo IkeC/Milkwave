@@ -481,6 +481,61 @@ bool CPlugin::ParseMilk2File(const wchar_t* szPath,
   return true;
 }
 
+unsigned __stdcall CPlugin::PendingPresetCompileThreadProc(void* param) {
+  static_cast<CPlugin*>(param)->CompilePendingPresetShaders();
+  return 0;
+}
+
+void CPlugin::CompilePendingPresetShaders() {
+  wchar_t szFile[MAX_PATH * 2];
+  lstrcpynW(szFile, m_sPresetCompilePath.c_str(), MAX_PATH * 2);
+  const ULONGLONG startTick = GetTickCount64();
+  try {
+    CompilePresetShadersToFile(szFile, true);
+  } catch (...) {
+    // The render thread will fall back to its normal shader handling.
+  }
+  const ULONGLONG elapsedMs = GetTickCount64() - startTick;
+  if (elapsedMs >= 100) {
+    wchar_t buf[512];
+    swprintf_s(buf, L"Preset shader compile took %llums: %s", elapsedMs, szFile);
+    milkwave->LogInfo(buf);
+  }
+  InterlockedExchange(&m_nPresetCompileStatus, 2);
+}
+
+void CPlugin::StartPendingPresetCompile() {
+  StopPendingPresetCompile(true);
+
+  m_sPresetCompilePath = m_szLoadingPreset;
+  m_nPresetCompileStartTick = GetTickCount64();
+  m_bPresetCompileNotificationShown = false;
+  InterlockedExchange(&m_nPresetCompileStatus, 1);
+
+  unsigned threadId = 0;
+  m_hPresetCompileThread = (HANDLE)_beginthreadex(
+      NULL, 0, &CPlugin::PendingPresetCompileThreadProc, this, 0, &threadId);
+  if (m_hPresetCompileThread) {
+    SetThreadPriority(m_hPresetCompileThread, THREAD_PRIORITY_BELOW_NORMAL);
+  } else {
+    milkwave->LogInfo(L"Preset shader compile thread creation failed");
+    InterlockedExchange(&m_nPresetCompileStatus, 2);
+  }
+}
+
+void CPlugin::StopPendingPresetCompile(bool wait) {
+  if (m_hPresetCompileThread) {
+    DWORD result = WaitForSingleObject(m_hPresetCompileThread, wait ? INFINITE : 0);
+    if (result != WAIT_OBJECT_0)
+      return;  // still compiling; leave the status/notification intact
+    CloseHandle(m_hPresetCompileThread);
+    m_hPresetCompileThread = NULL;
+  }
+  InterlockedExchange(&m_nPresetCompileStatus, 0);
+  m_bPresetCompileNotificationShown = false;
+  ClearErrors(ERR_PRESET_COMPILING);
+}
+
 void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
   // clear old error msg...
   if (m_nFramesSinceResize > 4)
@@ -515,6 +570,12 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
     m_fNextPresetTime = -1.0f;  // flags UpdateTime() to recompute this
     return;
   }
+
+  // Do not start a second load while a background shader build is still running;
+  // the current preset keeps rendering and the compile notification stays visible.
+  if (m_nPresetCompileStatus == 1)
+    return;
+  StopPendingPresetCompile(false);
 
   if (!m_bSequentialPresetOrder) {
     // save preset in the history.  keep in mind - maybe we are searching back through it already!
@@ -621,57 +682,37 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
     return;
   }
 
-  if (fBlendTime == 0) {
-    // do it all NOW!
-    if (szPresetFilename != m_szCurrentPresetFile)  //[sic]
-      lstrcpyW(m_szCurrentPresetFile, szPresetFilename);
+  // Set up the load. Shader presets compile their bytecode on a background
+  // thread so the current preset can keep rendering while that happens.
+  SafeRelease(m_NewShaders.comp.ptr);
+  SafeRelease(m_NewShaders.warp.ptr);
+  SafeRelease(m_NewShaders.comp.CT);
+  SafeRelease(m_NewShaders.warp.CT);
+  ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
 
-    CState* temp = m_pState;
-    m_pState = m_pOldState;
-    m_pOldState = temp;
+  DWORD ApplyFlags = STATE_ALL;
+  ApplyFlags ^= (m_bWarpShaderLock ? STATE_WARP : 0);
+  ApplyFlags ^= (m_bCompShaderLock ? STATE_COMP : 0);
 
-    DWORD ApplyFlags = STATE_ALL;
-    ApplyFlags ^= (m_bWarpShaderLock ? STATE_WARP : 0);
-    ApplyFlags ^= (m_bCompShaderLock ? STATE_COMP : 0);
+  m_pNewState->Import(szPresetFilename, GetTime(), m_pOldState, ApplyFlags);
 
-    m_pState->Import(m_szCurrentPresetFile, GetTime(), m_pOldState, ApplyFlags);
+  m_fLoadingPresetBlendTime = fBlendTime;
+  lstrcpyW(m_szLoadingPreset, szPresetFilename);
+  NumTotalPresetsLoaded++;
 
-    if (fBlendTime >= 0.001f) {
-      RandomizeBlendPattern();
-      m_pState->StartBlendFrom(m_pOldState, GetTime(), fBlendTime);
-    }
-
-    m_fPresetStartTime = GetTime();
-    m_fNextPresetTime = -1.0f;  // flags UpdateTime() to recompute this
-
-    // release stuff from m_OldShaders, then move m_shaders to m_OldShaders, then load the new shaders.
-    SafeRelease(m_OldShaders.comp.ptr);
-    SafeRelease(m_OldShaders.warp.ptr);
-    SafeRelease(m_OldShaders.comp.CT);
-    SafeRelease(m_OldShaders.warp.CT);
-    m_OldShaders = m_shaders;
-    ZeroMemory(&m_shaders, sizeof(PShaderSet));
-
-    LoadShaders(&m_shaders, m_pState, false, false);
-    NumTotalPresetsLoaded++;
-    OnFinishedLoadingPreset();
+  const bool hasPresetShaders =
+      (m_pNewState->m_nWarpPSVersion > 0 || m_pNewState->m_nCompPSVersion > 0);
+  if (m_ShaderCaching && m_nMaxPSVersion > 0 && hasPresetShaders) {
+    m_nLoadingPreset = 1;  // LoadPresetTick() waits for the compile to finish
+    StartPendingPresetCompile();
+  } else if (fBlendTime == 0) {
+    // No background compile: load shaders now (if caching is disabled) and apply immediately.
+    if (hasPresetShaders && m_nMaxPSVersion > 0)
+      LoadShaders(&m_NewShaders, m_pNewState, false, false);
+    m_nLoadingPreset = 8;
+    LoadPresetTick();
   } else {
-    // set ourselves up to load the preset (and esp. compile shaders) a little bit at a time
-    SafeRelease(m_NewShaders.comp.ptr);
-    SafeRelease(m_NewShaders.warp.ptr);
-    ZeroMemory(&m_NewShaders, sizeof(PShaderSet));
-
-    DWORD ApplyFlags = STATE_ALL;
-    ApplyFlags ^= (m_bWarpShaderLock ? STATE_WARP : 0);
-    ApplyFlags ^= (m_bCompShaderLock ? STATE_COMP : 0);
-
-    m_pNewState->Import(szPresetFilename, GetTime(), m_pOldState, ApplyFlags);
-
-    m_nLoadingPreset = 1;  // this will cause LoadPresetTick() to get called over the next few frames...
-
-    m_fLoadingPresetBlendTime = fBlendTime;
-    lstrcpyW(m_szLoadingPreset, szPresetFilename);
-    NumTotalPresetsLoaded++;
+    m_nLoadingPreset = 1;
   }
 }
 
@@ -752,11 +793,28 @@ void CPlugin::PostMessageToMilkwaveRemote(UINT msg) {
 }
 
 void CPlugin::LoadPresetTick() {
+  if (m_nLoadingPreset == 1 && m_nPresetCompileStatus == 1) {
+    // Keep rendering the current preset while the incoming shaders compile.
+    if (!m_bPresetCompileNotificationShown && GetTickCount64() - m_nPresetCompileStartTick >= 1000) {
+      wchar_t msg[512];
+      swprintf_s(msg, L"Compiling preset %s", m_pNewState->m_szDesc);
+      ClearErrors(ERR_PRESET_COMPILING);
+      AddError(msg, 3600.0f, ERR_PRESET_COMPILING, true);
+      m_bPresetCompileNotificationShown = true;
+    }
+    return;
+  }
+  if (m_nLoadingPreset == 1 && m_nPresetCompileStatus == 2) {
+    StopPendingPresetCompile(false);
+  }
+
   if (m_nLoadingPreset == 2 || m_nLoadingPreset == 5) {
     // just loads one shader (warp or comp) then returns.
     LoadShaders(&m_NewShaders, m_pNewState, true, false);
   } else if (m_nLoadingPreset == 8) {
     // finished loading the shaders - apply the preset!
+    StopPendingPresetCompile(m_nPresetCompileStatus == 1);
+    ClearErrors(ERR_PRESET_COMPILING);
     lstrcpyW(m_szCurrentPresetFile, m_szLoadingPreset);
     m_szLoadingPreset[0] = 0;
 
@@ -798,12 +856,12 @@ void CPlugin::LoadPresetTick() {
       srand((unsigned int)GetTickCount());  // restore randomness for normal operation
       m_nMixType = savedMixType;
       // Note: m_fMilk2BlendDirection stays set so resize can regenerate the same pattern
-    } else {
+    } else if (m_fLoadingPresetBlendTime >= 0.001f) {
       RandomizeBlendPattern();
     }
 
-    // if (fBlendTime >= 0.001f)
-    m_pState->StartBlendFrom(m_pOldState, GetTime(), m_fLoadingPresetBlendTime);
+    if (m_fLoadingPresetBlendTime >= 0.001f)
+      m_pState->StartBlendFrom(m_pOldState, GetTime(), m_fLoadingPresetBlendTime);
 
     // .milk2: activate permanent blend â€” pin progress immediately at target value (no animation)
     if (m_bLoadingMilk2) {

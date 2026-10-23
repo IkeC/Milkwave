@@ -216,6 +216,11 @@ void CPlugin::MyPreInitialize() {
   m_fPresetStartTime = 0.0f;
   m_fNextPresetTime = -1.0f;  // negative value means no time set (...it will be auto-set on first call to UpdateTime)
   m_nLoadingPreset = 0;
+  m_hPresetCompileThread = NULL;
+  m_nPresetCompileStatus = 0;
+  m_nPresetCompileStartTick = 0;
+  m_bPresetCompileNotificationShown = false;
+  m_sPresetCompilePath.clear();
   m_nPresetsLoadedTotal = 0;
   m_fSnapPoint = 0.5f;
   m_pState = &m_state_DO_NOT_USE[0];
