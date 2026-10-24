@@ -45,6 +45,9 @@ namespace MilkwaveRemote {
     private int lyricsOutlineColorR = 0;
     private int lyricsOutlineColorG = 0;
     private int lyricsOutlineColorB = 0;
+    private int textBorderColorR = 0;  // outline color for messages/notifications (TextBorderColorR/G/B)
+    private int textBorderColorG = 0;
+    private int textBorderColorB = 0;
     private uint lastControllerButtons = 0;
     private Dictionary<int, string> controllerConfig = new();
 
@@ -249,6 +252,7 @@ namespace MilkwaveRemote {
       LyricsTimeOffset,
       LyricsAutoScale,
       TextBorder,
+      TextBorderColor,
       CaptureScreenshot,
       VideoInput,
       SpoutInput,
@@ -1896,6 +1900,15 @@ namespace MilkwaveRemote {
                   chkLyricsAutoScale.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("TEXTBORDER", StringComparison.OrdinalIgnoreCase)) {
                   SetLyricsNumeric(numSettingTextborder, value);
+                } else if (key.Equals("TEXTBORDERCOLORR", StringComparison.OrdinalIgnoreCase)) {
+                  textBorderColorR = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int borderR) ? Math.Clamp(borderR, 0, 255) : 0;
+                  ApplyTextBorderColor();
+                } else if (key.Equals("TEXTBORDERCOLORG", StringComparison.OrdinalIgnoreCase)) {
+                  textBorderColorG = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int borderG) ? Math.Clamp(borderG, 0, 255) : 0;
+                  ApplyTextBorderColor();
+                } else if (key.Equals("TEXTBORDERCOLORB", StringComparison.OrdinalIgnoreCase)) {
+                  textBorderColorB = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int borderB) ? Math.Clamp(borderB, 0, 255) : 0;
+                  ApplyTextBorderColor();
                 } else if (key.StartsWith("SHOWTAB", StringComparison.OrdinalIgnoreCase)) {
                   ApplyTabVisibility(key, value);
                 }
@@ -2263,6 +2276,8 @@ namespace MilkwaveRemote {
               message = "LYRICS_AUTOSCALE=" + (chkLyricsAutoScale.Checked ? "1" : "0");
             } else if (type == MessageType.TextBorder) {
               message = "TEXTBORDER=" + (int)numSettingTextborder.Value;
+            } else if (type == MessageType.TextBorderColor) {
+              message = "TEXTBORDER_COLOR=" + pnlSettingTextborder.BackColor.R + "," + pnlSettingTextborder.BackColor.G + "," + pnlSettingTextborder.BackColor.B;
             } else if (type == MessageType.ColSaturation) {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
@@ -6879,6 +6894,23 @@ namespace MilkwaveRemote {
         lyricsOutlineColorB = colorDialogLyrics.Color.B;
         ApplyLyricsOutlineColor();
         SendToMilkwaveVisualizer("", MessageType.LyricsOutlineColor);
+      }
+    }
+
+    private void ApplyTextBorderColor() {
+      pnlSettingTextborder.BackColor = Color.FromArgb(textBorderColorR, textBorderColorG, textBorderColorB);
+    }
+
+    private void pnlSettingTextborder_Click(object sender, EventArgs e) {
+      using ColorDialog dlg = new ColorDialog();
+      dlg.FullOpen = true;
+      dlg.Color = pnlSettingTextborder.BackColor;
+      if (dlg.ShowDialog(this) == DialogResult.OK) {
+        textBorderColorR = dlg.Color.R;
+        textBorderColorG = dlg.Color.G;
+        textBorderColorB = dlg.Color.B;
+        ApplyTextBorderColor();
+        SendToMilkwaveVisualizer("", MessageType.TextBorderColor);
       }
     }
 

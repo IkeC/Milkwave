@@ -274,6 +274,7 @@ namespace MilkwaveRemote
       pnlLyricsOutlineColor = new Panel();
       numLyricsOutlineAmount = new NumericUpDown();
       label16 = new Label();
+      pnlSettingTextborder = new Panel();
       btnSpace = new Button();
       btnBackspace = new Button();
       btnWatermark = new Button();
@@ -3550,6 +3551,17 @@ namespace MilkwaveRemote
       label16.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label16, "Outline thickness for all messages and notifications");
       // 
+      // pnlSettingTextborder
+      // 
+      pnlSettingTextborder.BackColor = Color.Black;
+      pnlSettingTextborder.BorderStyle = BorderStyle.FixedSingle;
+      pnlSettingTextborder.Location = new Point(550, 65);
+      pnlSettingTextborder.Name = "pnlSettingTextborder";
+      pnlSettingTextborder.Size = new Size(30, 23);
+      pnlSettingTextborder.TabIndex = 225;
+      toolTip1.SetToolTip(pnlSettingTextborder, "Outline color for messages and notifications (settings.ini: TextBorderColorR/G/B)");
+      pnlSettingTextborder.Click += pnlSettingTextborder_Click;
+      // 
       // btnSpace
       // 
       tableLayoutPanel1.SetColumnSpan(btnSpace, 2);
@@ -4776,6 +4788,7 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(pnlSettingTextborder);
       tabSettings.Controls.Add(numSettingTextborder);
       tabSettings.Controls.Add(label16);
       tabSettings.Controls.Add(btnAudioTest);
@@ -6694,5 +6707,6 @@ namespace MilkwaveRemote
     private NumericUpDown numLyricsOutlineAmount;
     private NumericUpDown numSettingTextborder;
     private Label label16;
+    private Panel pnlSettingTextborder;
   }
 }

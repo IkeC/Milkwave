@@ -1131,6 +1131,25 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       WritePrivateProfileIntW(enabled, L"LyricsAutoScale", g_plugin.GetConfigIniFile(), L"Lyrics");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
+  } else if (wcsncmp(sMessage, L"TEXTBORDER_COLOR=", 17) == 0) {
+    // "TEXTBORDER_COLOR=r,g,b" sets the outline color of all messages and notifications
+    // (Remote Settings tab: the color panel next to "Textborder").
+    int r = 0, g = 0, b = 0;
+    if (swscanf_s(sMessage + 17, L"%d,%d,%d", &r, &g, &b) == 3) {
+      r = r < 0 ? 0 : r > 255 ? 255 : r;
+      g = g < 0 ? 0 : g > 255 ? 255 : g;
+      b = b < 0 ? 0 : b > 255 ? 255 : b;
+      if (r != g_plugin.m_textBorderColorR || g != g_plugin.m_textBorderColorG ||
+          b != g_plugin.m_textBorderColorB) {
+        g_plugin.m_textBorderColorR = r;
+        g_plugin.m_textBorderColorG = g;
+        g_plugin.m_textBorderColorB = b;
+        WritePrivateProfileIntW(r, L"TextBorderColorR", g_plugin.GetConfigIniFile(), L"Milkwave");
+        WritePrivateProfileIntW(g, L"TextBorderColorG", g_plugin.GetConfigIniFile(), L"Milkwave");
+        WritePrivateProfileIntW(b, L"TextBorderColorB", g_plugin.GetConfigIniFile(), L"Milkwave");
+        g_plugin.SendSettingsInfoToMilkwaveRemote();
+      }
+    }
   } else if (wcsncmp(sMessage, L"TEXTBORDER=", 11) == 0) {
     try {
       int v = std::stoi(sMessage + 11);
