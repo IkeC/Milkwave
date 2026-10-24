@@ -102,11 +102,14 @@ Amplitudes actually used for the reactive (version 2) branch: `0.1 .. 0.5` for a
 `Acidic`). Start around `0.2` of the parameter's natural range for a shape/colour term and
 `0.05 .. 0.1` for a zoom factor. Version 1 must not be stronger than version 2.
 
-**Version 2 is the usual overshoot.** Presets built with `aRng = 0.45` read as a jump instead
-of an accent — a full hue rotation on every beat turns the whole scene neon. Keep the reactive
-branch at most about `1.3 .. 1.4x` the calm range (`aRng` `0.26` : `0.34`), cap colour/hue
-swings at about `1.5 rad` (~85°), and prefer `1.2 .. 1.3x` for camera/zoom terms. Milder v2 is
-safer: the user can raise `vis_intensity`, but an over-driven v2 cannot be dialled back.
+**Version 1 is the usual under-shoot.** The `*_smooth` bands are averaged, so the same numeric
+amplitude produces far less visible motion than in v2; presets built with `aRng = 0.26` for v1
+read as almost static. Start v1 at the v2 range (`aRng` `0.34`) and make sure the gate shows a v1
+spread of at least ~`0.7x` v2's. **Version 2 is then the overshoot**: `aRng = 0.45` reads as a
+jump instead of an accent — a full hue rotation on every beat turns the whole scene neon. Keep
+the reactive branch at most about `1.3 .. 1.4x` the calm range (`aRng` `0.34` : `0.34 .. 0.40`),
+cap colour/hue swings at about `1.5 rad` (~85°), and prefer `1.2 .. 1.3x` for camera/zoom terms.
+Milder v2 is safer: the user can raise `vis_intensity`, but an over-driven v2 cannot be dialled back.
 
 Do not add or remove geometry, toggle objects, or change the composition; and never make the
 *base* look depend on the audio level (silence must still show the full preset).
@@ -123,7 +126,7 @@ sync:
 ```hlsl
 // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
 #ifdef bass_smooth
-  float aRng = (int)vis_version == 1 ? 0.26 : 0.34;
+  float aRng = (int)vis_version == 1 ? 0.34 : 0.38;
   float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
     : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
 #else
@@ -138,8 +141,11 @@ ret = lerp(ret, ret.zyx, saturate(aBe) * 0.18 * aCol);        // AUDIO: colour, 
 
 - `aDev` is signed and zero at the average, so the preset's base look never depends on the
   audio level, and `vis_intensity`/`vis_shift` reach both reaction points through it.
-- `aRng` is the version role: `0.26` = calm for version 1, `0.34` = reactive for version 2
-  (the older `0.45` reads too strong). Never give version 1 the bigger range.
+- `aRng` is the version role: `0.34` = calm for version 1, `0.34 .. 0.40` = reactive for
+  version 2 (the older `0.45` reads too strong, and `0.26` leaves v1 almost static — the smooth
+  bands are averaged, so they move much less than the reactive ones). Never give version 1 the
+  bigger range for the same reaction point, but do not starve it either: below ~`0.30` a v1
+  reaction is usually invisible at playback.
 - `aCol` scales only the colour term (`0.7` calm, `1.1` reactive); `aBe` saturates at peaks, so
   `saturate(aBe)` keeps the tint bounded.
 - `aDev`/`aBe`/`aCol` are declared **outside** the `#ifdef`; only `aFac` lives inside, so the

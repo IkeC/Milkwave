@@ -51,6 +51,13 @@
         "top"
       ]
     },
+    "21 - ikec - equalizer": {
+      "PresetPath": "Milkwave\\21 - IkeC - Equalizer.milk",
+      "Tags": [
+        "31-band",
+        "eq"
+      ]
+    },
     "4rknova \u002B ikec - the blob": {
       "PresetPath": "Milkwave\\Shader\\4rknova \u002B IkeC - The Blob.milk",
       "Tags": [
@@ -106,6 +113,13 @@
         "disturbing"
       ]
     },
+    "adob \u002B ikec - waves remix": {
+      "PresetPath": "Milkwave\\Shader\\ADOB \u002B IkeC - Waves Remix.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
     "agssad sfw some gibeers": {
       "PresetPath": "Incubo_\\agssad sfw some gibeers.milk",
       "Tags": [
@@ -120,10 +134,31 @@
         "vibrant"
       ]
     },
+    "aiekick \u002B ikec - another cloudy tunnel 2": {
+      "PresetPath": "Milkwave\\Shader\\aiekick \u002B IkeC - Another Cloudy Tunnel 2.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
+    "aiekick \u002B ikec - fur space 3": {
+      "PresetPath": "Milkwave\\Shader\\aiekick \u002B IkeC - Fur Space 3.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
     "aiekick \u002B ikec - hexagold": {
       "PresetPath": "Milkwave\\Shader\\aiekick \u002B IkeC - HexaGold.milk",
       "Tags": [
         "expensive",
+        "shader"
+      ]
+    },
+    "aiekick \u002B ikec - tunnel beauty": {
+      "PresetPath": "Milkwave\\Shader\\aiekick \u002B IkeC - Tunnel Beauty.milk",
+      "Tags": [
+        "42",
         "shader"
       ]
     },
@@ -556,10 +591,30 @@
         "shader"
       ]
     },
+    "del \u002B ikec - glooper": {
+      "PresetPath": "Milkwave\\Shader\\Del \u002B IkeC - glooper.milk",
+      "Tags": [
+        "calm"
+      ]
+    },
     "diatribes \u002B ikec - a basic thing": {
       "PresetPath": "Milkwave\\Shader\\diatribes \u002B IkeC - a basic thing.milk",
       "Tags": [
         "expensive",
+        "shader"
+      ]
+    },
+    "diatribes \u002B ikec - blue red shiny 2": {
+      "PresetPath": "Milkwave\\Shader\\diatribes \u002B IkeC - Blue Red Shiny 2.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
+    "diatribes \u002B ikec - dark transit": {
+      "PresetPath": "Milkwave\\Shader\\diatribes \u002B IkeC - Dark Transit.milk",
+      "Tags": [
+        "42",
         "shader"
       ]
     },
@@ -705,6 +760,20 @@
       "PresetPath": "Milkwave\\Shader\\etrujillo \u002B IkeC - Glassy with odd rotation.milk",
       "Tags": [
         "expensive",
+        "shader"
+      ]
+    },
+    "fabriceneyret2 \u002B ikec - protoplasm": {
+      "PresetPath": "Milkwave\\Shader\\FabriceNeyret2 \u002B IkeC - protoplasm.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
+    "finalman \u002B ikec - wormhood": {
+      "PresetPath": "Milkwave\\Shader\\finalman \u002B IkeC - Wormhood.milk",
+      "Tags": [
+        "42",
         "shader"
       ]
     },
@@ -1248,6 +1317,13 @@
         "dark"
       ]
     },
+    "hughsk \u002B ikec - 2015-12-12": {
+      "PresetPath": "Milkwave\\Shader\\hughsk \u002B IkeC - 2015-12-12.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
     "illusion \u0026 rovastar - clouded bottle": {
       "PresetPath": "Milkwave\\Illusion \u0026 Rovastar - Clouded Bottle.milk",
       "Tags": [
@@ -1272,6 +1348,20 @@
       "PresetPath": "Milkwave\\Shader\\Kali \u002B IkeC - Fractal Land.milk",
       "Tags": [
         "expensive",
+        "shader"
+      ]
+    },
+    "kali \u002B ikec - full spectrum cyber": {
+      "PresetPath": "Milkwave\\Shader\\Kali \u002B IkeC - Full Spectrum Cyber.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
+    "kali \u002B ikec - generators": {
+      "PresetPath": "Milkwave\\Shader\\Kali \u002B IkeC - Generators.milk",
+      "Tags": [
+        "42",
         "shader"
       ]
     },
@@ -1693,6 +1783,13 @@
         "shader"
       ]
     },
+    "oldeclipse \u002B ikec - unimagined": {
+      "PresetPath": "Milkwave\\Shader\\OldEclipse \u002B IkeC - Unimagined.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
     "orb - dark omen": {
       "PresetPath": "Milkwave\\ORB - Dark Omen.milk",
       "Tags": [
@@ -1788,6 +1885,13 @@
       "Tags": [
         "retro",
         "simple"
+      ]
+    },
+    "rez \u002B ikec - structures": {
+      "PresetPath": "Milkwave\\Shader\\rez \u002B IkeC - Structures.milk",
+      "Tags": [
+        "42",
+        "shader"
       ]
     },
     "rovastar \u002B loadus \u002B geiss - fractaldrop (triple mix)": {
@@ -2245,6 +2349,20 @@
         "calm"
       ]
     },
+    "shane \u002B ikec - mandelbrot pattern decoration": {
+      "PresetPath": "Milkwave\\Shader\\Shane \u002B IkeC - Mandelbrot Pattern Decoration.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
+    "shane \u002B ikec - oldschool tube": {
+      "PresetPath": "Milkwave\\Shader\\Shane \u002B IkeC - Oldschool Tube.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
     "shane \u002B ikec - raymarched hexagonal truchet": {
       "PresetPath": "Milkwave\\Shader\\Shane \u002B IkeC - Raymarched Hexagonal Truchet.milk",
       "Tags": [
@@ -2317,6 +2435,19 @@
       "Tags": [
         "simple",
         "watermark"
+      ]
+    },
+    "smoothstep -  horizon kiss": {
+      "PresetPath": "Milkwave\\Basic\\smoothstep -  horizon kiss.milk",
+      "Tags": [
+        "lyrics"
+      ]
+    },
+    "snoopethduckduck \u002B ikec - golden electric spiral": {
+      "PresetPath": "Milkwave\\Shader\\SnoopethDuckDuck \u002B IkeC - Golden Electric Spiral.milk",
+      "Tags": [
+        "42",
+        "shader"
       ]
     },
     "stahlregen \u0026 fishbrain \u002B flexi \u002B geiss - the machine that conquered the aether": {
@@ -2430,6 +2561,13 @@
       "Tags": [
         "colorful",
         "complex"
+      ]
+    },
+    "tdm \u002B ikec - seascape": {
+      "PresetPath": "Milkwave\\Shader\\TDM \u002B IkeC - Seascape.milk",
+      "Tags": [
+        "42",
+        "shader"
       ]
     },
     "tonymilkdrop - leonardo da vinci\u0027s balloon [flexi - merry-go-round \u002B techstyle]": {
@@ -2577,6 +2715,20 @@
         "shader"
       ]
     },
+    "xt95 \u002B ikec - walk like an egyptian": {
+      "PresetPath": "Milkwave\\Shader\\XT95 \u002B IkeC - Walk Like an Egyptian.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
+    "yasuo \u002B ikec - graphic design experiment 17": {
+      "PresetPath": "Milkwave\\Shader\\yasuo \u002B IkeC - Graphic Design Experiment 17.milk",
+      "Tags": [
+        "42",
+        "shader"
+      ]
+    },
     "yin \u002B se7enslasher - 382 - magic ride (wavy) (absolutely destroyed by pressing a)": {
       "PresetPath": "Incubo_\\yin \u002B Se7enSlasher - 382 - Magic ride (wavy) (absolutely destroyed by pressing A).milk",
       "Tags": [
@@ -2679,6 +2831,13 @@
       "PresetPath": "Milkdrop2077\\yufengjie - MilkDrop2077 - bumpy sphere.milk",
       "Tags": [
         "expensive",
+        "shader"
+      ]
+    },
+    "z0rg \u002B ikec - psychedelic tube": {
+      "PresetPath": "Milkwave\\Shader\\z0rg \u002B IkeC - Psychedelic tube.milk",
+      "Tags": [
+        "42",
         "shader"
       ]
     },

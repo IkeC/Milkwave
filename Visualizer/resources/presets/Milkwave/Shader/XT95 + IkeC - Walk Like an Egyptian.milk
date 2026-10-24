@@ -149,8 +149,8 @@ comp_144=
 comp_145=  col.rgb += float3(1., 1., 1.) * smoothstep(0.8,1., noise(float3(uv_conv*500., time*.1))) * (1.-c);
 comp_146=
 comp_147=  float d = distance(p, sunpos);
-comp_148=  col.rgb += float3(1., 1., 1.) * smoothstep(0.16 + mwDev * 0.02, .15 + mwDev * 0.02, d);   // AUDIO: the sun disc swells
-comp_149=  col.rgb += float3(1.,1.,.5) * pow(1./(1.+d), 8.) * (1. + mwDev * 1.2);                     // AUDIO: the halo brightens
+comp_148=  col.rgb += float3(1., 1., 1.) * smoothstep(0.16 + mwDev * 0.05, .15 + mwDev * 0.05, d);   // AUDIO: the sun disc swells
+comp_149=  col.rgb += float3(1.,1.,.5) * pow(1./(1.+d), 8.) * (1. + mwDev * 2.4);                     // AUDIO: the halo brightens
 comp_150=
 comp_151=  return col;
 comp_152=}
@@ -253,58 +253,75 @@ comp_248=  float2 pp = p;
 comp_249=
 comp_250=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
 comp_251=#ifdef bass_smooth
-comp_252=  float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
+comp_252=  float aRng = (int)vis_version == 1 ? 0.42 : 0.45;
 comp_253=  float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_254=    : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
 comp_255=#else
 comp_256=  float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
 comp_257=#endif
 comp_258=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
-comp_259=  float aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // colour reaction scale
-comp_260=  mwDev = aDev;   // AUDIO: drives the sun reaction inside background()
+comp_259=  float aCol = (int)vis_version == 1 ? 1.0 : 1.3;   // colour reaction scale
+comp_260=  mwDev = aDev * ((int)vis_version == 1 ? 2.2 : 1.0);   // AUDIO: v1 uses the calm band, so it gets a bigger push
 comp_261=
-comp_262=  // background
-comp_263=  float4 col = background(uv01, pp);
-comp_264=
-comp_265=  // layers
-comp_266=  #define LAYER_SPEED 0.05
-comp_267=  #define LAYER_COUNT 8
+comp_262=  // MOUSE: holding the button pans the landscape under a fixed sun - pointer X slides it sideways,
+comp_263=  // pointer Y lifts the view. Both offsets are zero while the button is up, so the frame is unchanged.
+comp_264=  float2 mMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_265=  float mPanX = mMouse.x * 1.2;    // +-0.6 scene units
+comp_266=  float mPanY = mMouse.y * 0.6;    // +-0.3 scene units
+comp_267=  p += float2(mPanX, mPanY);
 comp_268=
-comp_269=  float4 L0, L1, L2, L3, L4, L5, L6, L7;
-comp_270=  p.x += time*LAYER_SPEED;    L0 = mountains(p*float2(.5,3.)-float2(0.,.3), .75, 1.2) * float4(float3(.25, .25, .25),1.);
-comp_271=  p.x += time*LAYER_SPEED;    L1 = pyramids(p-float2(0.,-.4), 1., .6);
-comp_272=  p.x += time*LAYER_SPEED;    L2 = pyramids(p-float2(0.,-.39), .5, .6);
-comp_273=  p.x += time*LAYER_SPEED;    L3 = mountains(p*float2(.25,2.25)-float2(10.,-0.5), 1., 1.2);
-comp_274=  p.x += time*LAYER_SPEED;    L4 = cactus(p*1.5-float2(0.,-.7),3.)*1.;
-comp_275=  p.x += time*LAYER_SPEED;    L5 = mountains(p*float2(.25,2.)-float2(0.,-0.6), 1., 1.2);
-comp_276=  p.x += time*LAYER_SPEED;    L6 = mountains(p*float2(.15,2.)-float2(1000.,-0.7), 1., 1.2);
-comp_277=  p.x += time*LAYER_SPEED;    L7 = cactus(p*.2-float2(0.,-.0),3.);
-comp_278=
-comp_279=  // merge layers with alpha premultiplied
-comp_280=  col.rgb = col.rgb * (1.-L0.a) + L0.rgb * (2./(pow(0.,2.5)+1.));
-comp_281=  col.rgb = col.rgb * (1.-L1.a) + L1.rgb * (2./(pow(1.,2.5)+1.));
-comp_282=  col.rgb = col.rgb * (1.-L2.a) + L2.rgb * (2./(pow(2.,2.5)+1.));
-comp_283=  col.rgb = col.rgb * (1.-L3.a) + L3.rgb * (2./(pow(3.,2.5)+1.));
-comp_284=  col.rgb = col.rgb * (1.-L4.a) + L4.rgb * (2./(pow(4.,2.5)+1.));
-comp_285=  col.rgb = col.rgb * (1.-L5.a) + L5.rgb * (2./(pow(5.,2.5)+1.));
-comp_286=  col.rgb = col.rgb * (1.-L6.a) + L6.rgb * (2./(pow(6.,2.5)+1.));
-comp_287=  col.rgb = col.rgb * (1.-L7.a) + L7.rgb * (2./(pow(7.,2.5)+1.));
-comp_288=
-comp_289=  // flare
-comp_290=  float d = distance(pp, sunpos);
-comp_291=  col.rgb += float3(1.,1.,.5) * pow(1./(1.+d), 3.)*.1;
-comp_292=
-comp_293=  // color grading
-comp_294=  col.rgb *= float3(1.0 + aDev * 0.12 * aCol, 1.0 + aDev * 0.02 * aCol, 1.0 - aDev * 0.10 * aCol);   // AUDIO: warmer sky when loud
-comp_295=  col.rgb = pow(col.rgb, float3(1.0,1.5,1.3));
-comp_296=
-comp_297=  // vignetting
-comp_298=  col.rgb *= pow( uv01.x*uv01.y*(1.-uv01.x)*(1.-uv01.y)*100., .1);
-comp_299=
-comp_300=  // gamma correction
-comp_301=  col.rgb = pow(col.rgb, float3(1./2.2, 1./2.2, 1./2.2));
-comp_302=
-comp_303=  // output to the screen
-comp_304=  fragColor = float4(col.rgb,1.0);
-comp_305=  ret = fragColor;
-comp_306=}
+comp_269=  // AUDIO: the level also nudges the camera, but only as far as mouse.x/y 0.47..0.53 would reach
+comp_270=  // (mMouse +-0.03 -> mPanX +-0.036, mPanY +-0.018), so the framing barely breathes
+comp_271=  float aCam = clamp(aDev * 4.0, -1.0, 1.0) * ((int)vis_version == 2 ? 0.014 : 0.036);   // v2 barely moves
+comp_272=  p += float2(aCam, aCam * 0.5);
+comp_273=
+comp_274=  // background
+comp_275=  float4 col = background(uv01, pp);
+comp_276=
+comp_277=  // layers
+comp_278=  #define LAYER_SPEED 0.05
+comp_279=  #define LAYER_COUNT 8
+comp_280=
+comp_281=  float4 L0, L1, L2, L3, L4, L5, L6, L7;
+comp_282=  p.x += time*LAYER_SPEED;    L0 = mountains(p*float2(.5,3.)-float2(0.,.3), .75, 1.2) * float4(float3(.25, .25, .25),1.);
+comp_283=  p.x += time*LAYER_SPEED;    L1 = pyramids(p-float2(0.,-.4), 1., .6);
+comp_284=  p.x += time*LAYER_SPEED;    L2 = pyramids(p-float2(0.,-.39), .5, .6);
+comp_285=  p.x += time*LAYER_SPEED;    L3 = mountains(p*float2(.25,2.25)-float2(10.,-0.5), 1., 1.2);
+comp_286=  p.x += time*LAYER_SPEED;    L4 = cactus(p*1.5-float2(0.,-.7),3.)*1.;
+comp_287=  p.x += time*LAYER_SPEED;    L5 = mountains(p*float2(.25,2.)-float2(0.,-0.6), 1., 1.2);
+comp_288=  p.x += time*LAYER_SPEED;    L6 = mountains(p*float2(.15,2.)-float2(1000.,-0.7), 1., 1.2);
+comp_289=  p.x += time*LAYER_SPEED;    L7 = cactus(p*.2-float2(0.,-.0),3.);
+comp_290=
+comp_291=  // AUDIO: a brighter sun also lights the landscape a little (the sky does its own thing)
+comp_292=  float sunLift = 1.0 + mwDev * 0.25;
+comp_293=  L0.rgb *= sunLift; L1.rgb *= sunLift; L2.rgb *= sunLift; L3.rgb *= sunLift;
+comp_294=  L4.rgb *= sunLift; L5.rgb *= sunLift; L6.rgb *= sunLift; L7.rgb *= sunLift;
+comp_295=
+comp_296=  // merge layers with alpha premultiplied
+comp_297=  col.rgb = col.rgb * (1.-L0.a) + L0.rgb * (2./(pow(0.,2.5)+1.));
+comp_298=  col.rgb = col.rgb * (1.-L1.a) + L1.rgb * (2./(pow(1.,2.5)+1.));
+comp_299=  col.rgb = col.rgb * (1.-L2.a) + L2.rgb * (2./(pow(2.,2.5)+1.));
+comp_300=  col.rgb = col.rgb * (1.-L3.a) + L3.rgb * (2./(pow(3.,2.5)+1.));
+comp_301=  col.rgb = col.rgb * (1.-L4.a) + L4.rgb * (2./(pow(4.,2.5)+1.));
+comp_302=  col.rgb = col.rgb * (1.-L5.a) + L5.rgb * (2./(pow(5.,2.5)+1.));
+comp_303=  col.rgb = col.rgb * (1.-L6.a) + L6.rgb * (2./(pow(6.,2.5)+1.));
+comp_304=  col.rgb = col.rgb * (1.-L7.a) + L7.rgb * (2./(pow(7.,2.5)+1.));
+comp_305=
+comp_306=  // flare
+comp_307=  float d = distance(pp, sunpos);
+comp_308=  col.rgb += float3(1.,1.,.5) * pow(1./(1.+d), 3.)*.1;
+comp_309=
+comp_310=  // color grading
+comp_311=  col.rgb *= float3(1.0 + mwDev * 0.18 * aCol, 1.0 + mwDev * 0.04 * aCol, 1.0 - mwDev * 0.14 * aCol);   // AUDIO: warmer sky when loud
+comp_312=  col.rgb = pow(col.rgb, float3(1.0,1.5,1.3));
+comp_313=
+comp_314=  // vignetting
+comp_315=  col.rgb *= pow( uv01.x*uv01.y*(1.-uv01.x)*(1.-uv01.y)*100., .1);
+comp_316=
+comp_317=  // gamma correction
+comp_318=  col.rgb = pow(col.rgb, float3(1./2.2, 1./2.2, 1./2.2));
+comp_319=
+comp_320=  // output to the screen
+comp_321=  fragColor = float4(col.rgb,1.0);
+comp_322=  ret = fragColor;
+comp_323=}

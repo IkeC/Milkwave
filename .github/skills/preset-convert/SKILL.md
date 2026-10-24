@@ -122,10 +122,12 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
    - Put the block next to the value it feeds (inside the function that owns the parameter, as
      `CineShader Lava`, `kishimisu`, `Breeze` do), not floating at the end of the shader.
    - Amplitude: about `0.1 .. 0.5` of a normalised `0..1` parameter, `0.05 .. 0.1` for a zoom
-     factor; version 1 must not be stronger than version 2. **Version 2 is the usual
-     overshoot**: keep it an accent, at most ~`1.3 .. 1.4x` the calm range (house style `aRng`
-     `0.26` for v1 and `0.34` for v2 — not `0.45`), and cap colour/hue swings at about
-     `1.5 rad` (~85°). When in doubt ship it milder; the user can still raise vis_intensity.
+     factor. **Version 1 is the usual under-shoot**: `*_smooth` bands move far less than the
+     numbers suggest, so a v1 built at `aRng 0.26` reads as almost nothing next to v2. Start v1
+     at the v2 range (house style `aRng` `0.34`, and `0.34 .. 0.40` for v2 — not `0.45`) and
+     check the gate: v1's spread must reach at least ~`0.7x` v2's, if it is below half, raise the
+     coefficient. **Version 2 is then the overshoot instead**: keep it an accent, never above
+     about `1.3 .. 1.4x` the calm range, and cap colour/hue swings at about `1.5 rad` (~85°).
    - If the shader has no parameter that can carry a reaction, ship it without one instead of
      inventing a global zoom pulse.
    - For a quick manual check, press Settings → Audio → Test in the Remote. It plays
@@ -165,13 +167,15 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
      `chronos + IkeC - Astral Jelly Journey` (viewport angle from `mouse.xy`),
      `hughsk + IkeC - 2015-12-12` (camera rotation), `Apollonian Structure` (view offset).
    - Multiply the reaction with `saturate(mouse.z)` so the frame without a pressed button is
-     *exactly* unchanged, and keep the amount small: about `±0.1 .. ±0.2 rad` for a tilt,
-     `±0.1 .. ±0.5` of the existing angle for a camera reaction.
+     *exactly* unchanged. Do **not** make it subtle - small angles read as tame: use about
+     `±0.2 .. ±0.25 rad` for a `uv` tilt and `0.8 .. 1.3 rad` yaw / `0.4 .. 0.75 rad` pitch for a
+     camera turn (`mouse.x/y` only spans `0..1`, so the pointer reaches half the range except at
+     the very screen edges).
    - 2D tilt: rotate `uv` around the centre, branch-free. `sin(0) = 0` and `cos(0) = 1`, so the
      untouched frame stays byte-identical:
      ```hlsl
      // CONV: holding the mouse button tilts the scene slightly, pointer X sets the angle
-     float aTilt = (mouse.x - 0.5) * 0.3 * saturate(mouse.z);
+     float aTilt = (mouse.x - 0.5) * 0.5 * saturate(mouse.z);
      float aTiltS = sin(aTilt), aTiltC = cos(aTilt);
      uv = float2(uv.x * aTiltC - uv.y * aTiltS, uv.x * aTiltS + uv.y * aTiltC);
      ```
@@ -196,7 +200,8 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
      ```
      Expected: `press-left` ≠ `press-right` (the pointer steers the effect) and `released` =
      `baseline` (same MD5). Always restore the window's topmost state and the pointer position
-     afterwards.
+     afterwards, and leave `HUE_AUTO=0` (auto hue **off**) - never send `HUE_AUTO=1` to restore
+     it; the user expects auto-hue off after preset work.
 8. **Deliver.** Copy the preset (BOM-free) to both folders above, keep the attribution header.
 
 ## Hard rules

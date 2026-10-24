@@ -1,0 +1,73 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// SnoopethDuckDuck - Golden Electric Spiral / https://www.shadertoy.com/view/csj3zt
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_6=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_7=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_8=
+comp_9=// AUDIO: rotate a colour around the grey axis (0 = unchanged)
+comp_10=float3 hueRotate(float3 c, float a)
+comp_11={
+comp_12=  float3 k = float3(0.57735027, 0.57735027, 0.57735027);
+comp_13=  float ca = cos(a), sa = sin(a);
+comp_14=  return c * ca + cross(k, c) * sa + k * dot(k, c) * (1.0 - ca);
+comp_15=}
+comp_16=
+comp_17=shader_body {
+comp_18=  float2 u = float2((uv.x - 0.5)*texsize.x/texsize.y, -(uv.y - 0.5));
+comp_19=
+comp_20=  // MOUSE: holding the button turns the spiral - pointer X rotates it, pointer Y pans the centre.
+comp_21=  // Both transforms are exact identities while the button is up, so the un-pressed frame is unchanged.
+comp_22=  float2 mMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_23=  float mAng    = mMouse.x * 0.6;                                   // +-0.3 rad
+comp_24=  float2 mShift = float2(mMouse.y * 0.35, -mMouse.y * 0.20);        // pan in screen units
+comp_25=  u = mul(u, transpose(float2x2(cos(mAng), sin(mAng), -sin(mAng), cos(mAng))));
+comp_26=  u += mShift;
+comp_27=
+comp_28=  float a = atan2(u.y, u.x);
+comp_29=  float2 p = cos(a + time)*float2(cos(0.5*time), sin(0.3*time));
+comp_30=
+comp_31=  float d1 = lenv(u - p);
+comp_32=  float d2 = lenv(u);
+comp_33=
+comp_34=  float2 uv2 = 2.*cos(log(lenv(u))*0.25 - 0.5*time + log(float2(d1, d2)/(d1 + d2)));
+comp_35=
+comp_36=  // square tiles: static, no audio reaction here (the rays carry it)
+comp_37=  float tiles = 4.;
+comp_38=
+comp_39=  float2 fpos = frac(tiles*uv2) - 0.5;
+comp_40=  float d = max(abs(fpos.x), abs(fpos.y));
+comp_41=  float k = 5./texsize.y;
+comp_42=  float s = smoothstep(-k, k, 0.25 - d);
+comp_43=  float3 col = float3(s, 0.5*s, 0.1 - 0.1*s);
+comp_44=  col += 1./cosh(-2.5*(lenv(u - p) + lenv(u)))*float3(1, 0.5, 0.1);
+comp_45=
+comp_46=  // electric filaments (the blue rays): only these react - brightness, thickness and colour
+comp_47=  float fil = 1.;      // ray brightness
+comp_48=  float rayW = 9.;     // ray-width exponent: smaller = fatter rays
+comp_49=  float rayHue = 0.;   // colour rotation, rays only
+comp_50=  #ifdef bass_smooth
+comp_51=    float mB;
+comp_52=    if ((int)vis_version == 1)      mB = (smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
+comp_53=    else if ((int)vis_version == 2) mB = (smoothstep(0, 2, bass_att)    - 0.5)*vis_intensity + vis_shift;
+comp_54=    else                            mB = 0.0*vis_intensity + vis_shift;
+comp_55=  #else
+comp_56=    float mB = (smoothstep(0, 2, bass_att) - 0.5);
+comp_57=  #endif
+comp_58=  fil    += mB * ((int)vis_version == 2 ? 0.85 : 0.55);
+comp_59=  rayW   *= 1. - mB * ((int)vis_version == 2 ? 0.45 : 0.30);
+comp_60=  rayHue  = saturate(mB) * ((int)vis_version == 2 ? 1.30 : 1.10);
+comp_61=
+comp_62=  float c = cos(10.*lenv(uv2) + 4.*time);
+comp_63=  col += fil*(0.5 + 0.5*c)*hueRotate(float3(0.5, 1, 1), rayHue) *
+comp_64=         exp(-rayW*abs(cos(9.*a + time)*u.x
+comp_65=                   + sin(9.*a + time)*u.y
+comp_66=                   + 0.1*c));
+comp_67=
+comp_68=  ret = float4(col, 1.0);
+comp_69=}

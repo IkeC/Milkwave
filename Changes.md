@@ -1,6 +1,6 @@
 ## v4.2 (unreleased)
 
-* 20 new audio-reactive Shader presets, each with two versions and mouse support
+* 20 new audio-reactive Shader presets, each with two versions and mouse support, tagged with "42"
 * Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 * Visualizer: Improved Desktop Mode (Ctrl+F9)
 * Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"

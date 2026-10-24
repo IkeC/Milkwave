@@ -73,20 +73,35 @@ Edit the tracked copy, then copy it over the live one; both must end up byte-ide
    ```
    Repeat with `-Version 2` and `-Version 3`. Expected: v1/v2 differ per band setting, v2's
    spread is only *slightly* larger than v1's, v3 gives one MD5 for every setting. Record the
-   numbers — they are the before/after evidence.
+   numbers — they are the before/after evidence. Use `-LoadWaitSeconds 16`: a shorter wait can
+   still catch the pre-load transition and report a bogus spread (a v1 term once measured 0.15
+   when the real value was 2.23, and v3 looked like it was reacting). If a number does not move
+   after a coefficient change, re-measure before editing again.
 7. **Verify the mouse gates** if the reaction uses `mouse`: freeze (`VAR_TIME=0`,
    `AUDIO_TEST=1,1,1`, `HUE_AUTO=0`, `COL_HUE=0`), make the window topmost, then send
    `WM_RBUTTONDOWN`/`WM_RBUTTONUP` (0x0204/0x0205) with `SendMessage`, **not** `mouse_event`.
    Expected: `released` = `baseline` (same MD5) and two different pointer positions give
-   different frames. Restore topmost, the clock and the pointer afterwards.
+   different frames. Heavy raymarchers (128-iteration Mandelbrot, AA loops) need **1.2 s+ after
+   `CAPTURE` before reading the newest PNG** — a 900 ms wait reads the *previous* frame and fakes
+   `left != right: False` / `released == baseline: False`. If both fail at once, suspect timing
+   first, then add a temporary 4x-amplified coefficient to prove the uniform arrives.
+   Restore topmost, the clock and the pointer afterwards, and finish with
+   `HUE_AUTO=0` — auto-hue must be **off** when the session ends (never send `HUE_AUTO=1` to
+   "restore" it; the user expects it off after preset work).
 8. **Deploy and report**: copy the file to the live folder, confirm equal hashes, then report the
    measured before/after table plus anything you deliberately left alone.
 
 ## Calibration defaults (the fixes that keep coming up)
 
-- **"v2 is too extreme"** — the usual overshoot. `aRng` goes from `0.45` to `0.34` (keep v1 at
-  `0.26`), colour scales go down by roughly 20 %, and hue/colour swings are capped at about
-  `1.5 rad` (~85°). v2 should read as an accent, not a jump.
+- **"v2 is too extreme"** — the usual overshoot. `aRng` goes from `0.45` to `0.34` (leave v1 at
+  `0.34`, not `0.26`), colour scales go down by roughly 20 %, and hue/colour swings are capped at
+  about `1.5 rad` (~85°). v2 should read as an accent, not a jump.
+- **"v1 is too subtle"** — the most frequent complaint on this project, and usually the preset's
+  fault, not the user's: `*_smooth` bands are averaged, so the same numeric amplitude moves far
+  less than in v2. Do **not** start v1 at `aRng 0.26` — that reads as almost static in music.
+  Start at `0.34` and check the gate: v1's spread should be at least ~`0.7x` v2's, and if it is
+  below half, raise the coefficient until it is not (on `Blue Red Shiny 2` the tube-radius v1
+  term needed `1.0` against v2's `0.5`). Only then consider raising `vis_intensity` for the user.
 - **"reaction is invisible"** — wrong `smoothstep` argument order (`smoothstep(0,2,x)`), an `_att`
   band in the v1 branch, the block outside `shader_body`, or `vis_intensity` applied twice.
 - **"make it hue towards <colour>"** — rotate around the grey axis instead of scaling channels
@@ -103,6 +118,11 @@ Edit the tracked copy, then copy it over the live one; both must end up byte-ide
   below about `1.5 rad` (~85°); `hueRotate(c, 0)` is exactly `c`.
 - **"add mouse support"** — camera yaw/pitch or a `uv` tilt, gated by `saturate(mouse.z)`; no
   re-normalize after the rotation, otherwise the un-pressed frame is no longer bit-identical.
+- **"mouse is too tame"** — the recurring default. `mouse.x/y` only spans `0..1`, so a factor of
+  `0.3` means barely `±0.15 rad` at the pointer's usual range. House values in `Milkwave\42`:
+  `uv` tilt `0.5`, camera yaw `0.7 .. 1.3`, pitch `0.45 .. 0.75`. To fix an existing preset raise
+  its constants by about `1.7x` (keep the `saturate(mouse.z)` gate and the no-re-normalize rule),
+  then re-run the mouse gate (`released` must still equal `baseline`).
 - **"still reacts at version 3"** — a second audio block without the `> 2` branch, or an audio
   term used outside the guard.
 
@@ -115,3 +135,6 @@ Edit the tracked copy, then copy it over the live one; both must end up byte-ide
 - A big reaction change is not a licence to change the composition; compare a capture before and
   after with `render-test.ps1` + `stats.ps1`.
 - After 5 failed attempts on the same symptom, stop and report what was tried.
+- Leave the Visualizer in a clean state: `HUE_AUTO=0`, `VAR_TIME=1`, `VAR_FRAME=1`,
+  `AUDIO_TEST=off`, `VAR_VERSION=1`, window topmost state and pointer position restored.
+  Auto-hue left on is the most common leftover.

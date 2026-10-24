@@ -1,0 +1,334 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Shane - Oldschool Tube / https://www.shadertoy.com/view/Mly3WV
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV: setting iChannel samplers to default noise texture
+comp_8=#define iChannel0 sampler_noise_lq
+comp_9=
+comp_10=// CONV: adding helper functions
+comp_11=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_12=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_13=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_14=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_15=
+comp_16=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_17=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_18=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_19=
+comp_20=// AUDIO: rotate a colour around the grey axis (0 = unchanged)
+comp_21=float3 hueRotate(float3 c, float a)
+comp_22={
+comp_23=  float3 k = float3(0.57735027, 0.57735027, 0.57735027);
+comp_24=  float ca = cos(a), sa = sin(a);
+comp_25=  return c * ca + cross(k, c) * sa + k * dot(k, c) * (1.0 - ca);
+comp_26=}
+comp_27=
+comp_28=#define CCOLOR 0
+comp_29=
+comp_30=float2x2 rot( float th ){ float2 a = sin(float2(1.5707963, 0) + th); return float2x2(a.x, a.y, -a.y, a.x); }
+comp_31=
+comp_32=float n3D(float3 p){
+comp_33=
+comp_34=  const float3 s = float3(7, 157, 113);
+comp_35=  float3 ip = floor(p); p -= ip;
+comp_36=  float4 h = float4(0., s.yz, s.y + s.z) + dot(ip, s);
+comp_37=  p = p*p*(3. - 2.*p);
+comp_38=  // p *= p*p*(p*(p * 6. - 15.) + 10.);
+comp_39=  h = lerp(frac(sin(h)*43758.5453), frac(sin(h + s.x)*43758.5453), p.x);
+comp_40=  h.xy = lerp(h.xz, h.yw, p.y);
+comp_41=  return lerp(h.x, h.y, p.z);
+comp_42=  // Range: [0, 1].
+comp_43=}
+comp_44=
+comp_45=float2 hash22(float2 p, float w) {
+comp_46=
+comp_47=  p = mod_conv(p, w);
+comp_48=  float n = sin(dot(p, float2(41, 289)));
+comp_49=  return frac(float2(262144, 32768)*n)*.9 + .1;
+comp_50=
+comp_51=}
+comp_52=
+comp_53=static float vx;
+comp_54=float Voronoi(in float2 p, float w){
+comp_55=
+comp_56=  float2 g = floor(p), o; p -= g;
+comp_57=
+comp_58=  float3 d = float3(1.4142, 1.4142, 1.4142);
+comp_59=  // 1.4, etc. "d.z" holds the distance comparison value.
+comp_60=
+comp_61=  for(int y=-1; y<=1; y++){
+comp_62=    for(int x=-1; x<=1; x++){
+comp_63=
+comp_64=      o = float2(x, y);
+comp_65=      o += hash22(g + o, w) - p;
+comp_66=
+comp_67=      d.z = lenv(o);
+comp_68=      // (dot(o, o));
+comp_69=
+comp_70=      d.y = max(d.x, min(d.y, d.z));
+comp_71=      d.x = min(d.x, d.z);
+comp_72=
+comp_73=    }
+comp_74=
+comp_75=  }
+comp_76=
+comp_77=  d/=1.4142;
+comp_78=
+comp_79=  vx = d.x;
+comp_80=
+comp_81=  d = smoothstep(0., 1., d);
+comp_82=
+comp_83=  return max(d.y/1.333 - d.x, 0.)*1.333;
+comp_84=
+comp_85=}
+comp_86=
+comp_87=static float objID;
+comp_88=
+comp_89=float bumpFunction(in float3 p){
+comp_90=
+comp_91=  float2 uv_conv = float2(atan2(p.y, p.x)/6.2831853, p.z/8.);
+comp_92=
+comp_93=  float c = Voronoi(uv_conv*16., 16.);
+comp_94=
+comp_95=  objID = 0.;
+comp_96=
+comp_97=  if(c<.15) { c = abs(max(c, 0.01) - .3), objID = 1.; }
+comp_98=
+comp_99=  return c;
+comp_100=
+comp_101=}
+comp_102=
+comp_103=float3 doBumpMap(in float3 p, in float3 n, float bumpfactor, inout float edge){
+comp_104=
+comp_105=  float2 e = float2(2.5/texsize.y, 0);
+comp_106=
+comp_107=  float f = bumpFunction(p);
+comp_108=
+comp_109=  float fx = bumpFunction(p - e.xyy);
+comp_110=  // Same for the nearby sample in the X-direction.
+comp_111=  float fy = bumpFunction(p - e.yxy);
+comp_112=  // Same for the nearby sample in the Y-direction.
+comp_113=  float fz = bumpFunction(p - e.yyx);
+comp_114=  // Same for the nearby sample in the Y-direction.
+comp_115=
+comp_116=  float fx2 = bumpFunction(p + e.xyy);
+comp_117=  // Same for the nearby sample in the X-direction.
+comp_118=  float fy2 = bumpFunction(p + e.yxy);
+comp_119=  // Same for the nearby sample in the Y-direction.
+comp_120=  float fz2 = bumpFunction(p + e.yyx);
+comp_121=  // Same for the nearby sample in the Y-direction.
+comp_122=
+comp_123=  float3 grad = (float3(fx - fx2, fy - fy2, fz - fz2))/e.x/2.;
+comp_124=
+comp_125=  edge = abs(fx + fy + fz + fx2 + fy2 + fz2 - 6.*f);
+comp_126=  edge = smoothstep(0., 1., edge/e.x);
+comp_127=
+comp_128=  grad -= n*dot(n, grad);
+comp_129=
+comp_130=  return normalize( n + grad*bumpfactor );
+comp_131=
+comp_132=}
+comp_133=
+comp_134=float bumpFunction2(in float3 p){
+comp_135=
+comp_136=  float c = n3D(p*16.);
+comp_137=  // Noise value.
+comp_138=
+comp_139=  c = frac(c*4.);
+comp_140=  // Producing some repeat noise contour rings... Bad description. :)
+comp_141=
+comp_142=  return min(c, c*(1. - c)*4.);
+comp_143=  // Smooth "fract." It's an old trick.
+comp_144=
+comp_145=}
+comp_146=
+comp_147=float3 doBumpMap(in float3 p, in float3 n, float bumpfactor){
+comp_148=
+comp_149=  float2 e = float2(2.5/texsize.y, 0);
+comp_150=  float f = bumpFunction2(p);
+comp_151=
+comp_152=  float fx = bumpFunction2(p - e.xyy);
+comp_153=  // Same for the nearby sample in the X-direction.
+comp_154=  float fy = bumpFunction2(p - e.yxy);
+comp_155=  // Same for the nearby sample in the Y-direction.
+comp_156=  float fz = bumpFunction2(p - e.yyx);
+comp_157=  // Same for the nearby sample in the Y-direction.
+comp_158=
+comp_159=  float3 grad = (float3(fx, fy, fz )-f)/e.x;
+comp_160=
+comp_161=  grad -= n*dot(n, grad);
+comp_162=
+comp_163=  return normalize( n + grad*bumpfactor );
+comp_164=}
+comp_165=
+comp_166=shader_body {
+comp_167=  float4 fragColor = 0;
+comp_168=  float2 fragCoord  = uv;
+comp_169=  // CONV: Center on screen, then try some aspect correction
+comp_170=  uv = (uv*2) - 1;
+comp_171=  uv *= aspect.xy;
+comp_172=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_173=  uv = float2(uv.x, -uv.y);
+comp_174=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_175=  uv += float2(0,0) + 0;
+comp_176=  uv *= float2(1,1) * 1;
+comp_177=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_178=  #ifdef bass_smooth
+comp_179=    float aRng = (int)vis_version == 1 ? 0.34 : 0.42;
+comp_180=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_181=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_182=  #else
+comp_183=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_184=  #endif
+comp_185=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_186=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // beat scale, colour reaction scale
+comp_187=  // AUDIO: the reaction lives in the glowing lights, not in the camera - glow gain and glow hue
+comp_188=  float aGlow = 1.0 + aDev * ((int)vis_version == 1 ? 2.4 : 1.6);
+comp_189=  float aHue  = saturate(aDev * 2.5) * 1.4;   // up to ~80 deg, glow elements only
+comp_190=
+comp_191=  // Unit direction ray. Coyote's elegant version. So obvious, yet it never occurred
+comp_192=  // to me... or most others, it seems. :)
+comp_193=  float2 fpxy = fragCoord*texsize.xy;
+comp_194=  float3 rd = normalize(float3(fpxy - texsize.xy*0.5, texsize.y));
+comp_195=
+comp_196=  rd.xy = mul(rot(time*0.25), rd.xy);
+comp_197=  // Look around, just to show it's a 3D effect.
+comp_198=  rd.xz = mul(rot(time*0.125), rd.xz);
+comp_199=
+comp_200=  // MOUSE: holding the button looks around the tube - pointer X yaws, pointer Y pitches.
+comp_201=  // Both angles are zero while the button is up, so the un-pressed frame is unchanged.
+comp_202=  float2 mMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_203=  float mYaw   = mMouse.x * 1.1;    // +-0.55 rad
+comp_204=  float mPitch = mMouse.y * 0.6;    // +-0.3 rad
+comp_205=  rd.xz = mul(rot(mYaw), rd.xz);
+comp_206=  rd.yz = mul(rot(mPitch), rd.yz);
+comp_207=
+comp_208=  // Ray origin.
+comp_209=  float3 ro = float3(0.0, 0.0, time);
+comp_210=
+comp_211=  // Screen color. Initialized to black.
+comp_212=  float3 col = float3(0, 0, 0);
+comp_213=
+comp_214=  const float crad = 1.;
+comp_215=  // Initial cylinder radius.
+comp_216=
+comp_217=  // Distance fromt the ray origin to the cylinder layer surface point. It's a cut down
+comp_218=  // version of a traced cylinder with its center fixed to the Z axis.
+comp_219=  float sDist = crad/max( lenv(rd.xy), 0.001 );
+comp_220=
+comp_221=  // Surface position.
+comp_222=  float3 sp = ro + rd*sDist;
+comp_223=
+comp_224=  // Surface normal.
+comp_225=  float3 sn = normalize(float3(-sp.xy, 0.));
+comp_226=  // Cylinder normal.
+comp_227=
+comp_228=  // Bumpmapping (the Voronoi part) with some edge calculations included.
+comp_229=  float edge = 0.;
+comp_230=  sn = doBumpMap( sp, sn, .75, edge);
+comp_231=
+comp_232=  // The object ID is calculated in the bump function. We save it here. Zero is the
+comp_233=  // bulbous portion that gets lit up and one is the webbing.
+comp_234=  float svObjID = objID;
+comp_235=
+comp_236=  // Secondary bump pattern on the webbing. Done separately, so as not to interfere
+comp_237=  // with the edge calculations.
+comp_238=  if(svObjID>.5) sn = doBumpMap( sp, sn, .003);
+comp_239=
+comp_240=  // Some rough noise sprinkles. Note that a 3D noise function is being used. You could
+comp_241=  // also cylindrically map a 2D noise function, but I thought this was less hassle.
+comp_242=  float3 tex = float3(1, 1, 1)*n3D(frac(sp)*192.);
+comp_243=  float3 objCol = smoothstep(.1, .9, tex)*.8 + 1.;
+comp_244=
+comp_245=  if(svObjID<.5) objCol *= float3(.45, .425, .5);
+comp_246=  // The bulbs. Using a slightly darker tone.
+comp_247=  else objCol *= float3(.68, .64, .75);
+comp_248=  // The Voroni web portion.
+comp_249=
+comp_250=  #if CCOLOR == 1
+comp_251=  // Gold color scheme.
+comp_252=  if(svObjID>.5) objCol *= float3(1.4, .8, .3);
+comp_253=  else objCol *= float3(.5, 2., 5).zyx;
+comp_254=  #elif CCOLOR == 2
+comp_255=  // Egyptian look - gold and turquoise... or lapis lazuli,
+comp_256=  // for the purists... Yeah, it needs work. :)
+comp_257=  if(svObjID>.5) objCol *= float3(1, .8, .2)*1.35;
+comp_258=  else objCol *= float3(.1, 2.5, 5);
+comp_259=
+comp_260=  #endif
+comp_261=
+comp_262=  // Lighting.
+comp_263=  // 
+comp_264=  // The light. Placed near the ray origin, camera, etc. We're looking down both ends of
+comp_265=  // the tunnel, so it helps to keep the light near the camera. A better alternative is to
+comp_266=  // have two lights on either side, but I'm trying to keep it simple.
+comp_267=  float3 lp = ro + float3(0, .5, 0);
+comp_268=  float3 ld = lp - sp;
+comp_269=  // Light direction.
+comp_270=  float dist = max(lenv(ld), 0.001);
+comp_271=  // Distance from light to the surface.
+comp_272=  ld /= dist;
+comp_273=  // Use the distance to normalize "ld."
+comp_274=
+comp_275=  // Light attenuation, based on the distance above.
+comp_276=  float atten = 1.5/(1. + dist*.05 + dist*dist*0.075);
+comp_277=
+comp_278=  // Use the bump texture to darken the crevices. Comment it out to see its effect.
+comp_279=  atten *= bumpFunction(sp)*.9 + .1;
+comp_280=  // getGrey(texCol(iChannel0, sp))*.5 + .5;
+comp_281=
+comp_282=  float diff = max(dot(ld, sn), 0.);
+comp_283=  // Diffuse light value.
+comp_284=  diff = pow(diff, 8.)*0.66 + pow(diff, 16.)*0.34;
+comp_285=  // Ramping it up.
+comp_286=
+comp_287=  float spec = pow(max(dot(reflect(ld, sn), rd), 0.), 8.);
+comp_288=  // Specular light value.
+comp_289=
+comp_290=  // ///
+comp_291=  // The blinking light section. All of it is made up.
+comp_292=  // Basically, we're adding a unit refracted vector to the hit position, then passing it
+comp_293=  // into a cylindrically mapped Voronoi function, smoothing, then colorizing.
+comp_294=  float3 ref = sp + refract(rd, sn, 1./1.6);
+comp_295=  float2 tuv = float2(atan2(ref.y, ref.x)/6.2832, ref.z/8.);
+comp_296=  float c2 = Voronoi(tuv*4. - float2(1, .5)*time, 4.);
+comp_297=  c2 = smoothstep(0.8, 1., 1.-vx);
+comp_298=
+comp_299=  // Fiery coloring.
+comp_300=  float3 elec = (objCol*.7 + .3)*pow(min(float3(1.5, 1, 1)*c2, 1.), float3(1,  3, 8));
+comp_301=  // AUDIO: the glowing lights are what reacts - they brighten and shift colour with the level
+comp_302=  elec = hueRotate(elec, aHue) * aGlow;
+comp_303=
+comp_304=  if (svObjID<.5) objCol += elec*8.;
+comp_305=  // Add a lot of the color to the bulbs.
+comp_306=  else objCol += elec*2.;
+comp_307=  // Add a little to the webbing.
+comp_308=  // ////////
+comp_309=
+comp_310=  // Using the values above to produce the layer color.
+comp_311=  col += (objCol*(diff*float3(1, .97, .92)*2. + 0.25) + float3(1, .6, .2)*spec*2.)*atten;;
+comp_312=
+comp_313=  // Adding some fake reflection to the walls.
+comp_314=  ref = reflect(rd, sn);
+comp_315=  float rc = n3D(ref*2.);
+comp_316=  col += col*smoothstep(.3, 1., rc)*4.*atten;
+comp_317=
+comp_318=  // Darkening the edges. Without it, the scene would lose its mild cartoony look.
+comp_319=  col *= 1. - edge*.7;
+comp_320=
+comp_321=  // col = lerp(col, float3(2, 1.5, 1).zyx, 1. - exp(-.002*sDist*sDist)); // Blue fog.
+comp_322=  col = lerp(col, float3(0, 0, 0), 1. - exp(-.002*sDist*sDist));
+comp_323=  // Extra fog.
+comp_324=
+comp_325=  // Rough gamma correction.
+comp_326=  fragColor = float4(sqrt(clamp(col, 0., 1.)), 1.);
+comp_327=  ret = fragColor;
+comp_328=  // AUDIO: the metal lights rotate colour with the level
+comp_329=  ret = lerp(float3(lum(ret), lum(ret), lum(ret)), ret, 1.30); ret = lerp(ret, ret.zyx, aBe * 0.18 * aCol);
+comp_330=}

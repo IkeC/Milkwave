@@ -1,0 +1,124 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// diatribes - Blue Red Shiny 2 / https://www.shadertoy.com/view/7cjGRR
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_6=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_7=float lenv(float4 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_8=
+comp_9=#define T (sin(time*.6)*16.+time*1e2)
+comp_10=#define P(z) (float3(cos((z)*.011)*16.+cos((z) * .012)  *24., cos((z)*.01)*4., (z)))
+comp_11=#define N normalize
+comp_12=
+comp_13=// accumulated line lights, filled by map()
+comp_14=static float4 lights;
+comp_15=
+comp_16=float boxen(float3 p) {
+comp_17=  p = abs(frac(p/2e1)*2e1 - 1e1) - 1.;
+comp_18=  return min(p.x, min(p.y, p.z));
+comp_19=}
+comp_20=
+comp_21=float map(float3 p) {
+comp_22=  // tube radii breathe with the low end of the spectrum
+comp_23=  float rads = 1;
+comp_24=  #ifdef bass_smooth
+comp_25=    if ((int)vis_version == 1)      rads += 1.0*(smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
+comp_26=    else if ((int)vis_version == 2) rads += 0.5*(smoothstep(0, 2, bass_att) - 0.5)*vis_intensity + vis_shift;
+comp_27=    else                            rads += 0.0*vis_intensity + vis_shift;
+comp_28=  #else
+comp_29=    rads += 0.2*(smoothstep(0, 2, bass_att) - 0.5);
+comp_30=  #endif
+comp_31=
+comp_32=  float3 q = P(p.z);
+comp_33=  float m, g = q.y - p.y + 6.;
+comp_34=
+comp_35=  m = boxen(p);
+comp_36=
+comp_37=  p.xy -= q.xy;
+comp_38=
+comp_39=  // squiggly lines along z
+comp_40=  float red, blue;
+comp_41=  float e = min(red = lenv(p.xy - sin(p.z / 12. + float2(0, 1.3)) * 12.) - 1.*rads,
+comp_42=                blue = lenv(p.xy - sin(p.z / 16. + float2(0, .7)) * 16.) - 2.*rads);
+comp_43=
+comp_44=  // CONV: neutral fill in both light terms - a coloured constant is what survives once the
+comp_45=  // tube lights fade, which made distant spirals drift green (then dark blue)
+comp_46=  lights += float4(1e1, 1, 1, 0) / (.1 + abs(red));
+comp_47=  lights += float4(1, 1, 1e1, 0) / (.1 + abs(blue)/1e1);
+comp_48=
+comp_49=  p = abs(p);
+comp_50=
+comp_51=  float tex = abs(lenv(sin(p*cos(p.yzx/3e1)*4.)/(p*4. + 1e-4)));
+comp_52=  float tun = min(32. - p.x - p.y, 24. - p.y);
+comp_53=
+comp_54=  float d = max(min(m, g), tun) - tex;
+comp_55=  return min(e, d);
+comp_56=}
+comp_57=
+comp_58=shader_body {
+comp_59=  float4 o = 0;
+comp_60=  float2 u = float2((uv.x - 0.5)*texsize.x/texsize.y, -(uv.y - 0.5));
+comp_61=  u.y -= .2;
+comp_62=
+comp_63=  int i;
+comp_64=  float s = 0., d = 0.05;
+comp_65=
+comp_66=  float3 p = P(T), ro = p;
+comp_67=  float3 Z = N(P(T + 2.) - p);
+comp_68=  float3 X = N(float3(Z.z, 0., -Z.x));
+comp_69=
+comp_70=  // rotated ray direction: vec3(R(a)*u, 1) * mat3(-X, cross(X,Z), Z)
+comp_71=  float a = sin(T*.005)*.4;
+comp_72=  float3 vv = float3(cos(a)*u.x + cos(a + 11.)*u.y, cos(a + 33.)*u.x + cos(a)*u.y, 1.);
+comp_73=  float3 D = N(float3(dot(vv, -X), dot(vv, cross(X, Z)), dot(vv, Z)));
+comp_74=  // MOUSE: holding the mouse button looks around - pointer X steers yaw, pointer Y steers pitch.
+comp_75=  // Independent of the audio versions; saturate(mouse.z) keeps the un-pressed frame identical.
+comp_76=  float mMx = (mouse.x - 0.5) * saturate(mouse.z);
+comp_77=  float mMy = (mouse.y - 0.5) * saturate(mouse.z);
+comp_78=  float mYaw = mMx * 0.85, mPitch = mMy * 0.5;
+comp_79=  float mCy = cos(mYaw), mSy = sin(mYaw);
+comp_80=  D.xz = mul(transpose(float2x2(mCy, mSy, -mSy, mCy)), D.xz);
+comp_81=  float mCp = cos(mPitch), mSp = sin(mPitch);
+comp_82=  D.yz = mul(transpose(float2x2(mCp, mSp, -mSp, mCp)), D.yz);
+comp_83=
+comp_84=  lights = 0;
+comp_85=  for (i = 0; i < 100; i++) {
+comp_86=    p = ro + D * d;
+comp_87=    s = map(p) * .8;
+comp_88=    d += s;
+comp_89=    o += lights + 1./max(s, .01);
+comp_90=  }
+comp_91=
+comp_92=  // normal, tetrahedron technique
+comp_93=  float h = 0.005;
+comp_94=  float2 k = float2(1, -1);
+comp_95=  float3 n = N(k.xyy*map(p + k.xyy*h) +
+comp_96=               k.yyx*map(p + k.yyx*h) +
+comp_97=               k.yxy*map(p + k.yxy*h) +
+comp_98=               k.xxx*map(p + k.xxx*h));
+comp_99=
+comp_100=  o *= (.1 + max(dot(n, -D), 0.));
+comp_101=
+comp_102=  // reflection march
+comp_103=  float4 ref = 0;
+comp_104=  lights = 0;
+comp_105=  p += n*.05;
+comp_106=  D = reflect(D, n);
+comp_107=  for (i = 0; i < 50; i++) {
+comp_108=    s = map(p) * .8;
+comp_109=    ref += lights + 1./max(s, .01);
+comp_110=    p += D * s;
+comp_111=  }
+comp_112=
+comp_113=  o += o*ref;
+comp_114=  // CONV: hue-preserving tone map. The old per-channel boost exp(float4(1e1,2,1,0)*d/5e2)
+comp_115=  // scaled red, green and blue differently, so the colour of a spiral changed with distance;
+comp_116=  // one shared boost only changes brightness (and fades to white), tanh keeps it in range.
+comp_117=  o = tanh(max(o, 0.) / 1e9 * exp(2.0 * d / 5e2));
+comp_118=  ret = o;
+comp_119=}
+comp_120=

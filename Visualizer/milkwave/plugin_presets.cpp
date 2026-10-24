@@ -820,7 +820,7 @@ void CPlugin::LoadPresetTick() {
     // Keep rendering the current preset while the incoming shaders compile.
     if (!m_bPresetCompileNotificationShown && GetTickCount64() - m_nPresetCompileStartTick >= 1000) {
       wchar_t msg[512];
-      swprintf_s(msg, L"Compiling preset %s", m_pNewState->m_szDesc);
+      swprintf_s(msg, L"Compiling %s", m_pNewState->m_szDesc);
       ClearErrors(ERR_PRESET_COMPILING);
       AddError(msg, 3600.0f, ERR_PRESET_COMPILING, true);
       m_bPresetCompileNotificationShown = true;

@@ -23,6 +23,8 @@ namespace MilkwaveRemote {
     private System.Windows.Forms.Timer spoutRefreshTimer;
     private System.Windows.Forms.Timer controllerTimer;
     private System.Windows.Forms.Timer audioTestTimer;
+    private System.Windows.Forms.Timer autoScanTimer;   // re-scans for a visualizer while not connected
+    private bool autoScanInProgress = false;
     private List<(double Seconds, float Bass, float Mid, float Treble, string Label)> audioTestSteps = new();
     private int audioTestIndex = -1;
 
@@ -1078,6 +1080,12 @@ namespace MilkwaveRemote {
       controllerTimer.Tick += ControllerTimer_Tick;
       controllerTimer.Interval = 50; // 20Hz polling
 
+      // While nothing is connected the Remote looks for a Visualizer every 2 seconds,
+      // so one that is started after the Remote is picked up automatically.
+      autoScanTimer = new System.Windows.Forms.Timer();
+      autoScanTimer.Interval = 2000;
+      autoScanTimer.Tick += AutoScanTimer_Tick;
+
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
 
       // Create the window handle BEFORE connecting. The visualizer replies to our STATE
@@ -1116,6 +1124,7 @@ namespace MilkwaveRemote {
 #else
       StartVisualizerIfNotFound(true);
 #endif
+      EnsureAutoScanTimerState();
 
       ofd = new OpenFileDialog();
       ofd.Filter = "MilkDrop Presets|*.milk;*.milk2|All files (*.*)|*.*";
@@ -1317,6 +1326,8 @@ namespace MilkwaveRemote {
       _activeClient.MessageReceived -= OnPipeMessageReceived;
       _activeClient.Dispose();
       _activeClient = null;
+      // Without a client the 2 s re-scan must run again (a successful attach stops it).
+      EnsureAutoScanTimerState();
     }
 
     private void ScanAndPopulateVisualizers() {
@@ -1344,6 +1355,55 @@ namespace MilkwaveRemote {
       cboVisualizerInstance.Enabled = anyEntries;
       cboVisualizerInstance.SelectedIndex = 0;
       cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
+    }
+
+    /// <summary>
+    /// Starts the 2 s re-scan while nothing is connected and stops it once a client is attached.
+    /// </summary>
+    private void EnsureAutoScanTimerState() {
+      if (autoScanTimer == null)
+        return;
+
+      if (_activeClient != null) {
+        if (autoScanTimer.Enabled)
+          autoScanTimer.Stop();
+      } else if (!autoScanTimer.Enabled) {
+        autoScanTimer.Start();
+      }
+    }
+
+    /// <summary>
+    /// Runs every 2 s while the Remote shows "Not connected to a visualizer": discovers local
+    /// instances and network targets again and connects to the first one it finds.
+    /// </summary>
+    private void AutoScanTimer_Tick(object? sender, EventArgs e) {
+      if (_activeClient != null) {
+        autoScanTimer.Stop();
+        return;
+      }
+      if (autoScanInProgress || SendingMessage || IsDisposed)
+        return;
+
+      autoScanInProgress = true;
+      try {
+        var instances = PipeClient.DiscoverVisualizers();
+        if (instances.Count > 0) {
+          ScanAndPopulateVisualizers();
+          ConnectToInstance(instances[0]);
+          EnsureAutoScanTimerState();
+          return;
+        }
+
+        // No local instance: fall back to the configured network targets (if any).
+        if (_activeNetworkTargets.Count > 0) {
+          ConnectToNetworkTarget(_activeNetworkTargets[0]);
+          EnsureAutoScanTimerState();
+        }
+      } catch (Exception ex) {
+        Debug.WriteLine($"Auto-scan for visualizers failed: {ex.Message}");
+      } finally {
+        autoScanInProgress = false;
+      }
     }
 
     private void btnVisualizerScan_Click(object? sender, EventArgs e) {
@@ -1477,6 +1537,7 @@ namespace MilkwaveRemote {
       pipeClient.MessageReceived += OnPipeMessageReceived;
       pipeClient.Disconnected += OnPipeDisconnected;
       _activeClient = pipeClient;
+      EnsureAutoScanTimerState();
 
       if (pipeClient.Connect(target.pid)) {
         SetStatusText($"Connected to {target.name} (PID: {target.pid})");
@@ -1554,8 +1615,7 @@ namespace MilkwaveRemote {
       };
       _activeClient = client;
       SetStatusText($"Connecting to {target.Name}...");
-      _ = client.ConnectAsync(target.Host, target.Port, target.Pin, target.DeviceId, target.DeviceName);
-    }
+      _ = client.ConnectAsync(target.Host, target.Port, target.Pin, target.DeviceId, target.DeviceName);    }
 
     private void LaunchAndConnectVisualizer() {
       bool isDX12 = IsSelectedVisualizerDX12();
@@ -1634,6 +1694,7 @@ namespace MilkwaveRemote {
       }
 
       ScanAndPopulateVisualizers();
+      EnsureAutoScanTimerState();
 
       if (_discoveredInstances.Count == 0) {
         SetStatusText("Visualizer closed, no instances remaining");
@@ -1775,6 +1836,20 @@ namespace MilkwaveRemote {
               numOpacity.ValueChanged -= numOpacity_ValueChanged;
               numOpacity.Value = parsedOpacity;
               numOpacity.ValueChanged += numOpacity_ValueChanged;
+            }
+          }
+        } else if (message.StartsWith("VERSION=")) {
+          // The Visualizer sends this whenever the audio-reaction version is cycled there
+          // (Ctrl+V in the Visualizer window or the CYCLE_VERSION command), so the Remote's
+          // version field follows along instead of going stale.
+          string version = message.Substring(message.IndexOf("=") + 1);
+          if (int.TryParse(version, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedVersion)) {
+            int clampedVersion = Math.Clamp(parsedVersion, (int)numVisVersion.Minimum, (int)numVisVersion.Maximum);
+            if ((int)numVisVersion.Value != clampedVersion) {
+              // do not echo the change straight back as VAR_VERSION
+              numVisVersion.ValueChanged -= numVisVersion_ValueChanged;
+              numVisVersion.Value = clampedVersion;
+              numVisVersion.ValueChanged += numVisVersion_ValueChanged;
             }
           }
         } else if (message.StartsWith("DEVICE=")) {

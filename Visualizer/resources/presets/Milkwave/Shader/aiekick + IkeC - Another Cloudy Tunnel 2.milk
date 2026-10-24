@@ -1,0 +1,176 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Another Cloudy Tunnel 2 by aiekick (Shadertoy XlSSzV) / https://www.shadertoy.com/view/XlSSzV
+comp_2=// CC BY-NC-SA 3.0
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_8=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_9=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_10=
+comp_11=// AUDIO: rotate a colour around the grey axis (a hue shift that keeps the brightness)
+comp_12=float3 hueRotate(float3 c, float a)
+comp_13={
+comp_14=  float3 k = float3(0.57735027, 0.57735027, 0.57735027);
+comp_15=  float ca = cos(a), sa = sin(a);
+comp_16=  return c * ca + cross(k, c) * sa + k * dot(k, c) * (1.0 - ca);
+comp_17=}
+comp_18=
+comp_19=// CONV: setting iChannel samplers to default noise texture
+comp_20=#define iChannel0 sampler_noise_lq
+comp_21=
+comp_22=static float t;
+comp_23=
+comp_24=float cosPath(float3 p, float3 dec){return dec.x * cos(p.z * dec.y + dec.z);}
+comp_25=float sinPath(float3 p, float3 dec){return dec.x * sin(p.z * dec.y + dec.z);}
+comp_26=
+comp_27=float2 getCylinder(float3 p, float2 pos, float r, float3 c, float3 s)
+comp_28={
+comp_29=  return p.xy - pos - float2(cosPath(p, c), sinPath(p, s));
+comp_30=}
+comp_31=
+comp_32=float hash13c(float3 p)
+comp_33={
+comp_34=  p = frac(p * 0.3183099 + float3(0.1, 0.2, 0.3));
+comp_35=  p *= 17.0;
+comp_36=  return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
+comp_37=}
+comp_38=
+comp_39=float pn( in float3 x )
+comp_40={
+comp_41=  float3 p = floor(x);
+comp_42=  float3 f = frac(x);
+comp_43=  f = f*f*(3.0-2.0*f);
+comp_44=  float n000 = hash13c(p);
+comp_45=  float n100 = hash13c(p + float3(1., 0., 0.));
+comp_46=  float n010 = hash13c(p + float3(0., 1., 0.));
+comp_47=  float n110 = hash13c(p + float3(1., 1., 0.));
+comp_48=  float n001 = hash13c(p + float3(0., 0., 1.));
+comp_49=  float n101 = hash13c(p + float3(1., 0., 1.));
+comp_50=  float n011 = hash13c(p + float3(0., 1., 1.));
+comp_51=  float n111 = hash13c(p + float3(1., 1., 1.));
+comp_52=  float nx00 = lerp(n000, n100, f.x);
+comp_53=  float nx10 = lerp(n010, n110, f.x);
+comp_54=  float nx01 = lerp(n001, n101, f.x);
+comp_55=  float nx11 = lerp(n011, n111, f.x);
+comp_56=  float nxy0 = lerp(nx00, nx10, f.y);
+comp_57=  float nxy1 = lerp(nx01, nx11, f.y);
+comp_58=  return -1.0 + 2.4 * lerp(nxy0, nxy1, f.z);
+comp_59=}
+comp_60=
+comp_61=float fpn(float3 p)
+comp_62={
+comp_63=  p += t*5.;
+comp_64=  return pn(p*0.02)*1.98 + pn(p*0.02)*0.62 + pn(p*0.09)*0.39;
+comp_65=}
+comp_66=
+comp_67=float map(float3 p)
+comp_68={
+comp_69=  float pnNoise = fpn(p*13.)*.8;
+comp_70=  float path = sinPath(p ,float3(6.2, .33, 0.));
+comp_71=  float bottom = p.y + pnNoise;
+comp_72=  float cyl = 0.;float2 vecOld;
+comp_73=  for (float i=min(frame,0);i<6.;i++)
+comp_74=  {
+comp_75=    float x = 1. * i;
+comp_76=    float y	= .88 + 0.0102*i;
+comp_77=    float z	 = -0.02 -0.16*i;
+comp_78=    float r = 4.4 + 2.45 * i;
+comp_79=    float2 vec = getCylinder(p, float2(path, 3.7 * i), r , float3(x,y,z), float3(z,x,y));
+comp_80=    cyl = r - min(lenv(vec), lenv(vecOld));
+comp_81=    vecOld = vec;
+comp_82=  }
+comp_83=
+comp_84=  cyl += pnNoise;
+comp_85=  cyl = min(cyl, bottom);
+comp_86=  return cyl;
+comp_87=}
+comp_88=
+comp_89=float3 cam(float2 uv_conv,  float3 ro, float3 cu, float3 cv)
+comp_90={
+comp_91=  float3 rov = normalize(cv-ro);
+comp_92=  float3 u =  normalize(cross(cu, rov));
+comp_93=  float3 v =  normalize(cross(rov, u));
+comp_94=  float fov = 3.;
+comp_95=  float3 rd = normalize(rov + fov*u*uv_conv.x + fov*v*uv_conv.y);
+comp_96=  return rd;
+comp_97=}
+comp_98=
+comp_99=shader_body {
+comp_100=  float4 f = 0;
+comp_101=  float2 g  = uv;
+comp_102=  // CONV: Center on screen, then try some aspect correction
+comp_103=  uv = (uv*2) - 1;
+comp_104=  uv *= aspect.xy;
+comp_105=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_106=  uv = float2(uv.x, -uv.y);
+comp_107=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_108=  uv += float2(0,0) + 0;
+comp_109=  uv *= float2(1,1) * 1;
+comp_110=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_111=  #ifdef bass_smooth
+comp_112=    float aRng = (int)vis_version == 1 ? 0.26 : 0.34;
+comp_113=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_114=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_115=  #else
+comp_116=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_117=  #endif
+comp_118=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_119=  float aBe  = aDev * 2.0;   // beat scale used by the colour reaction
+comp_120=
+comp_121=  t = time*2.5;
+comp_122=  f = float4(0,0.15,0.32,1);
+comp_123=  float2 si = texsize.xy;
+comp_124=  float2 uvn = (2.*(g*texsize.xy) - si)/min(si.x, si.y);
+comp_125=  float3 ro = float3(0, 0, 0), p=ro;
+comp_126=  ro.y = sin(t*.2)*15.+15.;
+comp_127=  ro.x = sin(t*.5)*5.;
+comp_128=  ro.z = t*5.;
+comp_129=  float3 rd = cam(uvn, p, float3(0,1,0), p + float3(0,0,1));
+comp_130=  // MOUSE: holding the mouse button turns the camera slightly (pointer X = yaw, pointer Y = pitch)
+comp_131=  float aYaw   = (0.5 - mouse.x) * 0.7 * saturate(mouse.z);
+comp_132=  float aPitch = (mouse.y - 0.5) * 0.45 * saturate(mouse.z);
+comp_133=  float cYaw = cos(aYaw), sYaw = sin(aYaw);
+comp_134=  rd.xz = float2(rd.x * cYaw - rd.z * sYaw, rd.x * sYaw + rd.z * cYaw);
+comp_135=  float cPit = cos(aPitch), sPit = sin(aPitch);
+comp_136=  rd.yz = float2(rd.y * cPit - rd.z * sPit, rd.y * sPit + rd.z * cPit);
+comp_137=  // (no re-normalize: with no button held both rotations are exact identities, so the
+comp_138=  // un-pressed frame stays byte-identical; the ray length error is ~1e-7 at most)
+comp_139=  float s = 1., h = .15, td = 0., d=1.,dd=0., w;
+comp_140=  float var = 0.03;
+comp_141=  for (float i=min(frame,0);i<200.;i++)
+comp_142=  {
+comp_143=    // CONV: replaced break with breaking condition
+comp_144=    if(s<0.01||d>500.||td>.95) i=200.;
+comp_145=    s = map(p) * (s>0.001?var:.2);
+comp_146=    if (s < h)
+comp_147=    {
+comp_148=      w = (1.-td) * (h-s)*i/200.;
+comp_149=      f += w;
+comp_150=      td += w;
+comp_151=    }
+comp_152=
+comp_153=    dd += 0.012;
+comp_154=    td += 0.005;
+comp_155=    s = max(s, 0.05);
+comp_156=    d+=s;
+comp_157=    p = ro+rd*d;
+comp_158=  }
+comp_159=
+comp_160=  f.rgb = lerp( f.rgb, float3(0,0.15,0.52), 1.0 - exp( -0.001*d*d) )/max(dd, 0.000001);
+comp_161=  // fog
+comp_162=
+comp_163=  // vigneting from iq Shader Mike : https://www.shadertoy.com/view/MsXGWr
+comp_164=  float2 q = g;
+comp_165=  f.rgb *= 0.5 + 0.5*pow( max(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.0), 0.25 );   // guarded: negative base gave NaN (black side bars)
+comp_166=  ret = f;
+comp_167=  // AUDIO: peaks rotate the hue towards pink/magenta (version 3+ stays neutral);
+comp_168=  // version 2 gets a much smaller swing - with the attack bands the full shift read too strong
+comp_169=  float aHue = (int)vis_version == 1 ? 1.05 : 1.1;
+comp_170=  ret.rgb = hueRotate(ret.rgb, saturate(aBe) * aHue);
+comp_171=}
+comp_172=
