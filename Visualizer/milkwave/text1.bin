@@ -25,3 +25,6 @@ SHIFT + F10             Set fixed Spout resolution
 F11                     Hardcut mode: normal/based on music
 F12                     Transparency mode (removes the black background)
 CTRL + F12              Toggle black mode (no preset rendering)
+
+ESC                     Cancel a preset that is still compiling (keeps the current one)
+SHIFT + ESC             Close the visualizer without confirmation

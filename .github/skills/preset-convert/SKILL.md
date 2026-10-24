@@ -1,6 +1,6 @@
 ---
-name: preset
-description: 'Convert a Shadertoy GLSL shader into a working Milkwave .milk preset for the DX9 Visualizer, including its vis_version audio reactivity. Use when: converting or creating a preset, adding or tuning audio reactivity (bass/mid/treb, vis_version, vis_intensity, vis_shift), a preset renders black or flat, the legacy shader compiler reports X3xxx/X4xxx errors, or a preset must be verified and deployed to presets/Milkwave/Conv.'
+name: preset-convert
+description: 'Convert a Shadertoy GLSL shader into a working Milkwave .milk preset for the DX9 Visualizer, including its vis_version audio reactivity. Use when: converting or creating a preset, adding or tuning audio reactivity (bass/mid/treb, vis_version, vis_intensity, vis_shift) or a mouse reaction (scene tilt, camera angle), a preset renders black or flat, the legacy shader compiler reports X3xxx/X4xxx errors, or a preset must be verified and deployed to presets/Milkwave/Conv.'
 argument-hint: 'Shadertoy URL or shader ID (e.g. https://www.shadertoy.com/view/MdVXzw) [+ optional preset title]'
 ---
 
@@ -122,7 +122,10 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
    - Put the block next to the value it feeds (inside the function that owns the parameter, as
      `CineShader Lava`, `kishimisu`, `Breeze` do), not floating at the end of the shader.
    - Amplitude: about `0.1 .. 0.5` of a normalised `0..1` parameter, `0.05 .. 0.1` for a zoom
-     factor; version 1 must not be stronger than version 2.
+     factor; version 1 must not be stronger than version 2. **Version 2 is the usual
+     overshoot**: keep it an accent, at most ~`1.3 .. 1.4x` the calm range (house style `aRng`
+     `0.26` for v1 and `0.34` for v2 — not `0.45`), and cap colour/hue swings at about
+     `1.5 rad` (~85°). When in doubt ship it milder; the user can still raise vis_intensity.
    - If the shader has no parameter that can carry a reaction, ship it without one instead of
      inventing a global zoom pulse.
    - For a quick manual check, press Settings → Audio → Test in the Remote. It plays
@@ -144,7 +147,57 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
      give the *same MD5* for every setting. Details, limits and the base results:
      [audio-reactivity.md](./references/audio-reactivity.md#reproducible-verification-no-live-audio).
    - Optional: offer a calm and a punchy variant as two preset files so the user can choose.
-7. **Deliver.** Copy the preset (BOM-free) to both folders above, keep the attribution header.
+7. **Add a mouse reaction** (optional, but usually wanted). Mouse input is independent of the
+   audio contract: it must not touch `vis_version`, nothing goes into the `#ifdef bass_smooth`
+   blocks, and version 3+ may still react to the mouse. `include.fx` supplies `mouse`
+   (a `float4`; `mouse_x`, `mouse_y`, `mouse_pos` are aliases):
+
+   | Component | Meaning |
+   | --- | --- |
+   | `mouse.x` | pointer X, `0` = left .. `1` = right (same direction as `uv.x`) |
+   | `mouse.y` | pointer Y, `0` = top .. `1` = bottom (matches `uv.y`; the warp-script `mouse_y` variable is the other way round) |
+   | `mouse.z` | `1` while a mouse button is held, `0` otherwise (Milkwave: the **right** button; the left one is reserved for the preset UI) |
+   | `mouse_clicked` | `1` for only 2 frames after a click — too short for a visible effect, do not use it for the reaction |
+   | `mouse.w` | last Y while clicked (iMouse emulation), rarely needed |
+
+   - **Prefer tilting the scene and/or changing the camera angle** — that is what the user
+     usually wants. Shipped examples: `ADOB + IkeC - Waves Remix` (whole-scene tilt),
+     `chronos + IkeC - Astral Jelly Journey` (viewport angle from `mouse.xy`),
+     `hughsk + IkeC - 2015-12-12` (camera rotation), `Apollonian Structure` (view offset).
+   - Multiply the reaction with `saturate(mouse.z)` so the frame without a pressed button is
+     *exactly* unchanged, and keep the amount small: about `±0.1 .. ±0.2 rad` for a tilt,
+     `±0.1 .. ±0.5` of the existing angle for a camera reaction.
+   - 2D tilt: rotate `uv` around the centre, branch-free. `sin(0) = 0` and `cos(0) = 1`, so the
+     untouched frame stays byte-identical:
+     ```hlsl
+     // CONV: holding the mouse button tilts the scene slightly, pointer X sets the angle
+     float aTilt = (mouse.x - 0.5) * 0.3 * saturate(mouse.z);
+     float aTiltS = sin(aTilt), aTiltC = cos(aTilt);
+     uv = float2(uv.x * aTiltC - uv.y * aTiltS, uv.x * aTiltS + uv.y * aTiltC);
+     ```
+   - Raymarcher: rotate the ray direction (or the eye position around the target) instead of the
+     screen — `mouse.x` → yaw, `mouse.y` → pitch, both scaled by `saturate(mouse.z)`.
+   - Never let the base look depend on the pointer position: with no button held the preset must
+     render exactly like the unreacted version (the `vis_version` 3 gate compares such captures).
+   - Milkwave only feeds the mouse while *interactive mouse control* is enabled (`Ctrl+M`,
+     default on; `settings.ini` → `bEnableMouseInteraction=1`). The pointer position is polled
+     every frame, so it needs no mouse messages, but the button state does.
+   - Verify with window messages, **not** `mouse_event` (injected clicks are unreliable and may
+     not reach the window). Freeze the frame first (`VAR_TIME=0`, `AUDIO_TEST=1,1,1`,
+     `HUE_AUTO=0`, `COL_HUE=0`), make the window topmost, place the pointer with `SetCursorPos`,
+     then use a small P/Invoke class (`GetWindowRect`, `SetWindowPos`, `SetCursorPos`,
+     `SendMessage`) with `$h` = `MainWindowHandle`, `$r` = window rect, `$w` = its width and
+     `$cx`/`$cy` = its centre:
+     ```powershell
+     # baseline -> WM_RBUTTONDOWN at ~15% width -> move pointer to ~85% -> WM_RBUTTONUP
+     $lp = [IntPtr](($cy - $r.Top) -shl 16 -bor ([int]($cx - 0.35*$w) - $r.Left))
+     [MwMsg]::SendMessage($h, 0x0204, [IntPtr]2, $lp)   # WM_RBUTTONDOWN
+     [MwMsg]::SendMessage($h, 0x0205, [IntPtr]0, $lp)   # WM_RBUTTONUP
+     ```
+     Expected: `press-left` ≠ `press-right` (the pointer steers the effect) and `released` =
+     `baseline` (same MD5). Always restore the window's topmost state and the pointer position
+     afterwards.
+8. **Deliver.** Copy the preset (BOM-free) to both folders above, keep the attribution header.
 
 ## Hard rules
 
@@ -162,6 +215,10 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
   above must be indistinguishable from an unreacted preset.
 - Audio reactivity is verified with injected bands (`AUDIO_TEST=`, `audio-verify.ps1`), never by
   relying on live music. The audible WAV (`audio-sim.ps1`) is only for presets reading `get_fft()`.
+- Mouse reactions are independent of the audio guards: keep `mouse`/`mouse_clicked` out of the
+  `#ifdef bass_smooth` blocks, and always scale the reaction with `saturate(mouse.z)` so the
+  frame without a pressed button is identical to the unreacted preset. Prefer tilting the scene
+  or turning the camera; `mouse_clicked` (2 frames) is not a usable trigger.
 - **Budget: after 5 failed attempts, stop, note the reason and pick another shader.**
 - **60-second compile limit.** No compile run may exceed 60 s. Use the timeout wrapper in step 4;
   on `TIMEOUT` kill the process by PID, record "compile > 60 s", and skip the shader (one cheaper
@@ -186,6 +243,9 @@ File name: `<author> + IkeC - <shader name>.milk`. Create the `Conv` folder on f
 | Visualizer freezes on load | shader too heavy for DX9; restart the engine and drop it |
 | Bright cores turn black (bright rims around black blobs) | negative or NaN accumulator reaching the output — e.g. `exp(...)/v` with `v` made negative by an audio-modulated blend weight, or `1/length()` at the centre. Use `tanh(max(O, 0.)/2e2)` and keep blend weights `saturate()`d |
 | Still reacts to audio at version 3 | an audio term outside the version guard, or a second `#ifdef bass_smooth` block without the `> 2` branch |
+| Mouse does nothing | `mouse_clicked` used as the trigger (2-frame pulse), `mouse.z` missing from the expression, or interactive mouse control is off (`Ctrl+M`) |
+| Tilt/angle sticks after releasing the button | the reaction is not multiplied by `saturate(mouse.z)` |
+| Mouse test makes the whole frame move | the clock was still running (`VAR_TIME=0` missing) or live audio/waveform was active — freeze with `VAR_TIME=0` + `AUDIO_TEST=1,1,1` before comparing captures |
 | Reaction is dead or inverted | swapped `smoothstep`/`clamp` arguments (`smoothstep(bass_att,0,2)`, `clamp(0,2,bass_att)`), or `vol_*` used as a volume level (the engine fills it with `treb/3`) |
 
 ## Configuration

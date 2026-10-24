@@ -105,6 +105,8 @@ namespace MilkwaveRemote {
     private string midiDefaultFileName = "midi-default.txt";
 
     private string windowNotFound = "Not connected to a visualizer";
+    private string firstRunWindowHint = "Middle/Right Mouse Button here to toggle window states";
+    private bool hasSavedWindowLocation = true;  // false on a first start (no window coordinates stored yet)
     private string defaultFontName = "Segoe UI";
     private string lastSpoutSenderName = "";
 
@@ -1003,8 +1005,13 @@ namespace MilkwaveRemote {
         if (loadedSettings != null) {
           Settings = loadedSettings;
         }
+        // First start detection: the position is written when the Remote closes, and the shipped
+        // settings template leaves it empty - either way there is nothing to restore yet.
+        hasSavedWindowLocation = JsonContainsProperty(jsonString, nameof(Settings.RemoteWindowLocation))
+                                 && !Settings.RemoteWindowLocation.IsEmpty;
       } catch (Exception) {
         Settings = new Settings();
+        hasSavedWindowLocation = false;
       }
 
       try {
@@ -1097,6 +1104,9 @@ namespace MilkwaveRemote {
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
       LoadAndSetSettings();
+      if (!hasSavedWindowLocation) {
+        SetStatusText(firstRunWindowHint);
+      }
       RefreshSpriteButtonImages();
       ApplyPanelMode(); // This will call UpdateModeToggleButton
       SetPanelsVisibility();
@@ -2450,7 +2460,9 @@ namespace MilkwaveRemote {
             }
 
           } else {
-            SetStatusText(windowNotFound);
+            // Not connected. On a first start (no window coordinates saved yet) the status bar
+            // advertises the status-bar mouse actions instead of the plain connection message.
+            SetStatusText(hasSavedWindowLocation ? windowNotFound : firstRunWindowHint);
           }
         }
       } finally {
@@ -2463,6 +2475,11 @@ namespace MilkwaveRemote {
         .Replace(" " + Environment.NewLine, Environment.NewLine)
         .Replace(Environment.NewLine + " ", Environment.NewLine)
         .Replace(Environment.NewLine, " // ").Replace("&", "&&").Trim();
+      // On a first start (no window coordinates saved yet) the status bar never goes blank -
+      // it keeps advertising the status-bar mouse actions until real feedback replaces it.
+      if (text.Length == 0 && !hasSavedWindowLocation) {
+        text = firstRunWindowHint;
+      }
       if (!text.Equals(statusBar.Text)) {
         statusBar.Text = text;
       }
@@ -3469,10 +3486,15 @@ namespace MilkwaveRemote {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt && (Control.ModifierKeys & Keys.Control) == 0) {
         if (e.KeyCode == Keys.V) {
           e.SuppressKeyPress = true;
-          if (cboVisualizerInstance.Items.Count > 1) {
-            int next = (cboVisualizerInstance.SelectedIndex + 1) % cboVisualizerInstance.Items.Count;
-            cboVisualizerInstance.SelectedIndex = next;
-            SetStatusText($"Switched to {ConnectedVisualizerName}");
+          if (_activeClient != null) {
+            if (cboVisualizerInstance.Items.Count > 1) {
+              int next = (cboVisualizerInstance.SelectedIndex + 1) % cboVisualizerInstance.Items.Count;
+              cboVisualizerInstance.SelectedIndex = next;
+              SetStatusText($"Switched to {ConnectedVisualizerName}");
+            }
+          } else {
+            // Not connected: Alt+V re-scans for running visualizers and connects to the first one
+            btnVisualizerScan_Click(null, EventArgs.Empty);
           }
         }
       }
@@ -4925,9 +4947,29 @@ namespace MilkwaveRemote {
       txtTags.Text = "";
     }
 
+    /// <summary>
+    /// True when the JSON object contains the given property (case-insensitive).
+    /// Used to tell a first start (no window coordinates saved yet) from a restored session.
+    /// </summary>
+    private static bool JsonContainsProperty(string json, string propertyName) {
+      try {
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object)
+          return false;
+        foreach (var property in doc.RootElement.EnumerateObject()) {
+          if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            return true;
+        }
+      } catch {
+        // unparsable settings count as "nothing saved"
+      }
+      return false;
+    }
+
     private void LoadAndSetSettings() {
       updatingSettingsParams = true;
-      Location = Settings.RemoteWindowLocation;
+      // An empty value means the window was never placed: use the same default as a fresh install.
+      Location = Settings.RemoteWindowLocation.IsEmpty ? new Point(50, 50) : Settings.RemoteWindowLocation;
       Size optimalSize = GetCalculatedOptionalTopPanelSize();
       bool hasSavedWindowSize = Settings.RemoteWindowSize.Width > 0 && Settings.RemoteWindowSize.Height > 0;
       if (hasSavedWindowSize) {

@@ -982,7 +982,7 @@ namespace MilkwaveRemote
       lblVisualizer.TabIndex = 89;
       lblVisualizer.Text = "Visualizer";
       lblVisualizer.TextAlign = ContentAlignment.MiddleRight;
-      toolTip1.SetToolTip(lblVisualizer, "Double-click: Start Visualizer if no window found\r\nCtrl+F2: Reset window\r\nAlt+V: Select next Visualizer\r\n");
+      toolTip1.SetToolTip(lblVisualizer, "Double-click: Start Visualizer if no window found\r\nCtrl+F2: Reset window\r\nAlt+V: Select next Visualizer (or rescan when not connected)\r\n");
       lblVisualizer.DoubleClick += lblWindow_DoubleClick;
       // 
       // btnSend

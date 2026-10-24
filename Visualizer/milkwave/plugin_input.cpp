@@ -1212,6 +1212,11 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           break;
 
         case VK_ESCAPE:
+          // A preset whose shaders are still being compiled can be aborted - the current
+          // preset keeps playing. Takes precedence over the close confirmation below.
+          if (m_UI_mode == UI_REGULAR && CancelPendingPresetLoad())
+            return 0;  // we processed (or absorbed) the key
+
           if (m_UI_mode == UI_LOAD || m_UI_mode == UI_MENU || m_UI_mode == UI_MASHUP) {
             m_UI_mode = UI_REGULAR;
             return 0;  // we processed (or absorbed) the key

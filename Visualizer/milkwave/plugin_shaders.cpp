@@ -723,6 +723,11 @@ bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bComp
   if (m_nMaxPSVersion <= 0)
     return true;
 
+  // A background preset compile can be aborted from the UI (ESC). Give up between shaders -
+  // D3DXCompileShader itself cannot be interrupted, so this is the earliest safe checkpoint.
+  if (bCompileOnly && m_nPresetCompileCancel)
+    return false;
+
   // load one of the pixel shaders
   if (!sh->warp.ptr && pState->m_nWarpPSVersion > 0) {
     bool bOK = RecompilePShader(pState->m_szWarpShadersText, &sh->warp, SHADER_WARP, false, pState->m_nWarpPSVersion,
@@ -738,6 +743,8 @@ bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bComp
 
     if (bTick)
       return true;
+    if (bCompileOnly && m_nPresetCompileCancel)
+      return false;
   }
 
   if (!sh->comp.ptr && pState->m_nCompPSVersion > 0) {

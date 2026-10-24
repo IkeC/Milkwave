@@ -567,6 +567,7 @@ class CPlugin : public CPluginShell {
   float m_fLoadingPresetBlendTime;
   HANDLE m_hPresetCompileThread = NULL;
   volatile LONG m_nPresetCompileStatus = 0;  // 0=idle, 1=running, 2=done
+  volatile LONG m_nPresetCompileCancel = 0;  // 1 = the user aborted the pending preset load (ESC)
   ULONGLONG m_nPresetCompileStartTick = 0;
   bool m_bPresetCompileNotificationShown = false;
   std::wstring m_sPresetCompilePath;
@@ -968,6 +969,7 @@ class CPlugin : public CPluginShell {
   void CompilePresetShadersToFile(wchar_t* m_szCurrentPresetFile, bool bSkipIfCached = false);
   void StartPendingPresetCompile();
   void StopPendingPresetCompile(bool wait);
+  bool CancelPendingPresetLoad();  // ESC while a preset compiles: keep the current preset
   static unsigned __stdcall PendingPresetCompileThreadProc(void* param);
   void CompilePendingPresetShaders();
   void ClearPreset();

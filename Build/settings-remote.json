@@ -15,9 +15,9 @@
         "shader \u0026 !expensive"
     ],
     "RemoteWindowLocation": {
-        "IsEmpty": false,
-        "X": 50,
-        "Y": 50
+        "IsEmpty": true,
+        "X": 0,
+        "Y": 0
     },
     "RemoteWindowSize": {
         "IsEmpty": false,

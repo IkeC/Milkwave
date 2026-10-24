@@ -501,6 +501,7 @@ void CPlugin::CompilePendingPresetShaders() {
     swprintf_s(buf, L"Preset shader compile took %llums: %s", elapsedMs, szFile);
     milkwave->LogInfo(buf);
   }
+  InterlockedExchange(&m_nPresetCompileCancel, 0);
   InterlockedExchange(&m_nPresetCompileStatus, 2);
 }
 
@@ -510,6 +511,7 @@ void CPlugin::StartPendingPresetCompile() {
   m_sPresetCompilePath = m_szLoadingPreset;
   m_nPresetCompileStartTick = GetTickCount64();
   m_bPresetCompileNotificationShown = false;
+  InterlockedExchange(&m_nPresetCompileCancel, 0);
   InterlockedExchange(&m_nPresetCompileStatus, 1);
 
   unsigned threadId = 0;
@@ -531,9 +533,30 @@ void CPlugin::StopPendingPresetCompile(bool wait) {
     CloseHandle(m_hPresetCompileThread);
     m_hPresetCompileThread = NULL;
   }
+  InterlockedExchange(&m_nPresetCompileCancel, 0);
   InterlockedExchange(&m_nPresetCompileStatus, 0);
   m_bPresetCompileNotificationShown = false;
   ClearErrors(ERR_PRESET_COMPILING);
+}
+
+bool CPlugin::CancelPendingPresetLoad() {
+  // ESC while a preset is compiling: abort the pending load and keep the current preset.
+  // The compile thread is asked to stop at its next checkpoint; until it exits, the
+  // status stays 1 so a new load cannot start a second compile on top of it.
+  if (m_nPresetCompileStatus != 1)
+    return false;
+
+  InterlockedExchange(&m_nPresetCompileCancel, 1);
+
+  m_nLoadingPreset = 0;  // LoadPresetTick() no longer applies the pending preset
+  m_bLoadingMilk2 = false;
+  m_szLoadingPreset[0] = 0;
+  m_bPresetCompileNotificationShown = false;
+  ClearErrors(ERR_PRESET_COMPILING);
+
+  milkwave->LogInfo(L"Preset shader compile cancelled by user (ESC)");
+  AddError(L"Preset load cancelled", 2.0f, ERR_NOTIFY, false);
+  return true;
 }
 
 void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
