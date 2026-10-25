@@ -60,65 +60,74 @@ comp_55=  return min(e, d);
 comp_56=}
 comp_57=
 comp_58=shader_body {
-comp_59=  float4 o = 0;
-comp_60=  float2 u = float2((uv.x - 0.5)*texsize.x/texsize.y, -(uv.y - 0.5));
-comp_61=  u.y -= .2;
-comp_62=
-comp_63=  int i;
-comp_64=  float s = 0., d = 0.05;
-comp_65=
-comp_66=  float3 p = P(T), ro = p;
-comp_67=  float3 Z = N(P(T + 2.) - p);
-comp_68=  float3 X = N(float3(Z.z, 0., -Z.x));
-comp_69=
-comp_70=  // rotated ray direction: vec3(R(a)*u, 1) * mat3(-X, cross(X,Z), Z)
-comp_71=  float a = sin(T*.005)*.4;
-comp_72=  float3 vv = float3(cos(a)*u.x + cos(a + 11.)*u.y, cos(a + 33.)*u.x + cos(a)*u.y, 1.);
-comp_73=  float3 D = N(float3(dot(vv, -X), dot(vv, cross(X, Z)), dot(vv, Z)));
-comp_74=  // MOUSE: holding the mouse button looks around - pointer X steers yaw, pointer Y steers pitch.
-comp_75=  // Independent of the audio versions; saturate(mouse.z) keeps the un-pressed frame identical.
-comp_76=  float mMx = (mouse.x - 0.5) * saturate(mouse.z);
-comp_77=  float mMy = (mouse.y - 0.5) * saturate(mouse.z);
-comp_78=  float mYaw = mMx * 0.85, mPitch = mMy * 0.5;
-comp_79=  float mCy = cos(mYaw), mSy = sin(mYaw);
-comp_80=  D.xz = mul(transpose(float2x2(mCy, mSy, -mSy, mCy)), D.xz);
-comp_81=  float mCp = cos(mPitch), mSp = sin(mPitch);
-comp_82=  D.yz = mul(transpose(float2x2(mCp, mSp, -mSp, mCp)), D.yz);
-comp_83=
-comp_84=  lights = 0;
-comp_85=  for (i = 0; i < 100; i++) {
-comp_86=    p = ro + D * d;
-comp_87=    s = map(p) * .8;
-comp_88=    d += s;
-comp_89=    o += lights + 1./max(s, .01);
-comp_90=  }
-comp_91=
-comp_92=  // normal, tetrahedron technique
-comp_93=  float h = 0.005;
-comp_94=  float2 k = float2(1, -1);
-comp_95=  float3 n = N(k.xyy*map(p + k.xyy*h) +
-comp_96=               k.yyx*map(p + k.yyx*h) +
-comp_97=               k.yxy*map(p + k.yxy*h) +
-comp_98=               k.xxx*map(p + k.xxx*h));
-comp_99=
-comp_100=  o *= (.1 + max(dot(n, -D), 0.));
-comp_101=
-comp_102=  // reflection march
-comp_103=  float4 ref = 0;
-comp_104=  lights = 0;
-comp_105=  p += n*.05;
-comp_106=  D = reflect(D, n);
-comp_107=  for (i = 0; i < 50; i++) {
-comp_108=    s = map(p) * .8;
-comp_109=    ref += lights + 1./max(s, .01);
-comp_110=    p += D * s;
-comp_111=  }
-comp_112=
-comp_113=  o += o*ref;
-comp_114=  // CONV: hue-preserving tone map. The old per-channel boost exp(float4(1e1,2,1,0)*d/5e2)
-comp_115=  // scaled red, green and blue differently, so the colour of a spiral changed with distance;
-comp_116=  // one shared boost only changes brightness (and fades to white), tanh keeps it in range.
-comp_117=  o = tanh(max(o, 0.) / 1e9 * exp(2.0 * d / 5e2));
-comp_118=  ret = o;
-comp_119=}
-comp_120=
+comp_59=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_60=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_61=  // untouched frame stays byte-identical.
+comp_62=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_63=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_64=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_65=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_66=  float4 mwDead = float4(0.5, 0.5, 0.0, 0.0);   // superseded: the old mouse code below now reads a centred, released pointer
+comp_67=
+comp_68=  float4 o = 0;
+comp_69=  float2 u = float2((uv.x - 0.5)*texsize.x/texsize.y, -(uv.y - 0.5));
+comp_70=  u.y -= .2;
+comp_71=
+comp_72=  int i;
+comp_73=  float s = 0., d = 0.05;
+comp_74=
+comp_75=  float3 p = P(T), ro = p;
+comp_76=  float3 Z = N(P(T + 2.) - p);
+comp_77=  float3 X = N(float3(Z.z, 0., -Z.x));
+comp_78=
+comp_79=  // rotated ray direction: vec3(R(a)*u, 1) * mat3(-X, cross(X,Z), Z)
+comp_80=  float a = sin(T*.005)*.4;
+comp_81=  float3 vv = float3(cos(a)*u.x + cos(a + 11.)*u.y, cos(a + 33.)*u.x + cos(a)*u.y, 1.);
+comp_82=  float3 D = N(float3(dot(vv, -X), dot(vv, cross(X, Z)), dot(vv, Z)));
+comp_83=  // MOUSE: holding the mouse button looks around - pointer X steers yaw, pointer Y steers pitch.
+comp_84=  // Independent of the audio versions; saturate(mwDead.z) keeps the un-pressed frame identical.
+comp_85=  float mMx = (mwDead.x - 0.5) * saturate(mwDead.z);
+comp_86=  float mMy = (mwDead.y - 0.5) * saturate(mwDead.z);
+comp_87=  float mYaw = mMx * 0.85, mPitch = mMy * 0.5;
+comp_88=  float mCy = cos(mYaw), mSy = sin(mYaw);
+comp_89=  D.xz = mul(transpose(float2x2(mCy, mSy, -mSy, mCy)), D.xz);
+comp_90=  float mCp = cos(mPitch), mSp = sin(mPitch);
+comp_91=  D.yz = mul(transpose(float2x2(mCp, mSp, -mSp, mCp)), D.yz);
+comp_92=
+comp_93=  lights = 0;
+comp_94=  for (i = 0; i < 100; i++) {
+comp_95=    p = ro + D * d;
+comp_96=    s = map(p) * .8;
+comp_97=    d += s;
+comp_98=    o += lights + 1./max(s, .01);
+comp_99=  }
+comp_100=
+comp_101=  // normal, tetrahedron technique
+comp_102=  float h = 0.005;
+comp_103=  float2 k = float2(1, -1);
+comp_104=  float3 n = N(k.xyy*map(p + k.xyy*h) +
+comp_105=               k.yyx*map(p + k.yyx*h) +
+comp_106=               k.yxy*map(p + k.yxy*h) +
+comp_107=               k.xxx*map(p + k.xxx*h));
+comp_108=
+comp_109=  o *= (.1 + max(dot(n, -D), 0.));
+comp_110=
+comp_111=  // reflection march
+comp_112=  float4 ref = 0;
+comp_113=  lights = 0;
+comp_114=  p += n*.05;
+comp_115=  D = reflect(D, n);
+comp_116=  for (i = 0; i < 50; i++) {
+comp_117=    s = map(p) * .8;
+comp_118=    ref += lights + 1./max(s, .01);
+comp_119=    p += D * s;
+comp_120=  }
+comp_121=
+comp_122=  o += o*ref;
+comp_123=  // CONV: hue-preserving tone map. The old per-channel boost exp(float4(1e1,2,1,0)*d/5e2)
+comp_124=  // scaled red, green and blue differently, so the colour of a spiral changed with distance;
+comp_125=  // one shared boost only changes brightness (and fades to white), tanh keeps it in range.
+comp_126=  o = tanh(max(o, 0.) / 1e9 * exp(2.0 * d / 5e2));
+comp_127=  ret = o;
+comp_128=}
+comp_129=

@@ -43,54 +43,63 @@ comp_38=float getWeight(float f) {
 comp_39=  return (+ getAmp(f-2.0) + getAmp(f-1.0) + getAmp(f+2.0) + getAmp(f+1.0) + getAmp(f)) / 5.0; }
 comp_40=
 comp_41=  shader_body {
-comp_42=    float4 fragColor = 0;
-comp_43=    float2 fragCoord  = uv;
-comp_44=    // CONV: Center on screen, then try some aspect correction
-comp_45=    uv = (uv*2) - 1;
-comp_46=    uv *= aspect.xy;
-comp_47=    // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_48=    uv = float2(uv.x, -uv.y);
-comp_49=    // CONV: Adjust viewpoint (x,y individually or both)
-comp_50=    uv += float2(0,0) + 0;
-comp_51=    uv *= float2(1,1) * 1;
-comp_52=    // CONV: holding the mouse button tilts the scene slightly, pointer X sets the angle
-comp_53=    float aTilt = (mouse.x - 0.5) * 0.5 * saturate(mouse.z);
-comp_54=    float aTiltS = sin(aTilt), aTiltC = cos(aTilt);
-comp_55=    uv = float2(uv.x * aTiltC - uv.y * aTiltS, uv.x * aTiltS + uv.y * aTiltC);
-comp_56=    // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
-comp_57=    #ifdef bass_smooth
-comp_58=      float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
-comp_59=      float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
-comp_60=        : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
-comp_61=    #else
-comp_62=      float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
-comp_63=    #endif
-comp_64=    float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
-comp_65=    float aBe  = aDev * 4.0;   // beat scale used by the colour reaction
-comp_66=    // AUDIO: the wave displacement follows the music bands (smooth/att) instead of the noise texture (see getAmp)
-comp_67=
-comp_68=    float2 uvTrue = fragCoord.xy / texsize.xy;
-comp_69=    // float2 uv = -1.0 + 2.0 * uvTrue;
-comp_70=
-comp_71=    float lineIntensity;
-comp_72=    float glowWidth;
-comp_73=    float3 color = float3(0.0, 0.0, 0.0);
-comp_74=
-comp_75=    for(float i = 0.0; i < 5.0; i++) {
+comp_42=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_43=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_44=  // untouched frame stays byte-identical.
+comp_45=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_46=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_47=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_48=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_49=  float4 mwDead = float4(0.5, 0.5, 0.0, 0.0);   // superseded: the old mouse code below now reads a centred, released pointer
+comp_50=
+comp_51=    float4 fragColor = 0;
+comp_52=    float2 fragCoord  = uv;
+comp_53=    // CONV: Center on screen, then try some aspect correction
+comp_54=    uv = (uv*2) - 1;
+comp_55=    uv *= aspect.xy;
+comp_56=    // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_57=    uv = float2(uv.x, -uv.y);
+comp_58=    // CONV: Adjust viewpoint (x,y individually or both)
+comp_59=    uv += float2(0,0) + 0;
+comp_60=    uv *= float2(1,1) * 1;
+comp_61=    // CONV: holding the mouse button tilts the scene slightly, pointer X sets the angle
+comp_62=    float aTilt = (mwDead.x - 0.5) * 0.5 * saturate(mwDead.z);
+comp_63=    float aTiltS = sin(aTilt), aTiltC = cos(aTilt);
+comp_64=    uv = float2(uv.x * aTiltC - uv.y * aTiltS, uv.x * aTiltS + uv.y * aTiltC);
+comp_65=    // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_66=    #ifdef bass_smooth
+comp_67=      float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
+comp_68=      float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_69=        : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_70=    #else
+comp_71=      float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_72=    #endif
+comp_73=    float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_74=    float aBe  = aDev * 4.0;   // beat scale used by the colour reaction
+comp_75=    // AUDIO: the wave displacement follows the music bands (smooth/att) instead of the noise texture (see getAmp)
 comp_76=
-comp_77=      uv.y += (0.2 * sin(uv.x + i/7.0 - time * 0.6));
-comp_78=      float Y = uv.y + getWeight(squared(i) * 20.0) *
-comp_79=      (tex2D(iChannel0, float2(uvTrue.x, 1)).x - 0.5);
-comp_80=      lineIntensity = 0.4 + squared(1.6 * abs(mod_conv(uvTrue.x + i / 1.3 + time,2.0) - 1.0));
-comp_81=      glowWidth = abs(lineIntensity / (150.0 * Y));
-comp_82=      color += float3(glowWidth * (2.0 + sin(time * 0.13)),
-comp_83=      glowWidth * (2.0 - sin(time * 0.23)),
-comp_84=      glowWidth * (2.0 - cos(time * 0.19)));
-comp_85=    }
-comp_86=
-comp_87=    fragColor = float4(color, 1.0);
-comp_88=    ret = fragColor;
-comp_89=    // AUDIO: the line colours rotate slowly with the level
-comp_90=    ret = lerp(ret, ret.zyx, aBe * 0.15);
-comp_91=  }
-comp_92=
+comp_77=    float2 uvTrue = fragCoord.xy / texsize.xy;
+comp_78=    // float2 uv = -1.0 + 2.0 * uvTrue;
+comp_79=
+comp_80=    float lineIntensity;
+comp_81=    float glowWidth;
+comp_82=    float3 color = float3(0.0, 0.0, 0.0);
+comp_83=
+comp_84=    for(float i = 0.0; i < 5.0; i++) {
+comp_85=
+comp_86=      uv.y += (0.2 * sin(uv.x + i/7.0 - time * 0.6));
+comp_87=      float Y = uv.y + getWeight(squared(i) * 20.0) *
+comp_88=      (tex2D(iChannel0, float2(uvTrue.x, 1)).x - 0.5);
+comp_89=      lineIntensity = 0.4 + squared(1.6 * abs(mod_conv(uvTrue.x + i / 1.3 + time,2.0) - 1.0));
+comp_90=      glowWidth = abs(lineIntensity / (150.0 * Y));
+comp_91=      color += float3(glowWidth * (2.0 + sin(time * 0.13)),
+comp_92=      glowWidth * (2.0 - sin(time * 0.23)),
+comp_93=      glowWidth * (2.0 - cos(time * 0.19)));
+comp_94=    }
+comp_95=
+comp_96=    fragColor = float4(color, 1.0);
+comp_97=    ret = fragColor;
+comp_98=    // AUDIO: the line colours rotate slowly with the level
+comp_99=    ret = lerp(ret, ret.zyx, aBe * 0.15);
+comp_100=  }
+comp_101=

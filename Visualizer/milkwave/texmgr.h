@@ -78,6 +78,9 @@ DDPIXELFORMAT          ddpf;
   // input variables for expression eval
   double *var_time, *var_frame, *var_fps, *var_progress;
   double *var_bass, *var_bass_att, *var_mid, *var_mid_att, *var_treb, *var_treb_att;
+  double* var_title_dur;  // duration of the song title animation, so sprites can fade in sync with it
+  double* var_aspect;     // screen height/width ratio of the render target (width/height), for square sprites
+  double* var_cover_style;  // 0 = cover in the lower-right corner, 1 = fullscreen zoom
   // output variables for expression eval
   double *var_x, *var_y;
   double *var_sx, *var_sy, *var_rot, *var_flipx, *var_flipy;
@@ -101,6 +104,13 @@ class texmgr {
 
   // data
   td_tex m_tex[NUM_TEX];
+
+  // duration of the song title animation (seconds); exposed to sprite code as "title_dur"
+  float m_fTitleDur = 1.7f;
+  // render target aspect (width/height); exposed to sprite code as "aspect"
+  float m_fAspect = 1.7778f;
+  // cover behaviour (0 = lower right corner, 1 = fullscreen zoom); exposed as "cover_style"
+  float m_fCoverStyle = 0.0f;
 
  protected:
   // members

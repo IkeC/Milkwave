@@ -101,76 +101,85 @@ comp_96=  return rd;
 comp_97=}
 comp_98=
 comp_99=shader_body {
-comp_100=  float4 f = 0;
-comp_101=  float2 g  = uv;
-comp_102=  // CONV: Center on screen, then try some aspect correction
-comp_103=  uv = (uv*2) - 1;
-comp_104=  uv *= aspect.xy;
-comp_105=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_106=  uv = float2(uv.x, -uv.y);
-comp_107=  // CONV: Adjust viewpoint (x,y individually or both)
-comp_108=  uv += float2(0,0) + 0;
-comp_109=  uv *= float2(1,1) * 1;
-comp_110=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
-comp_111=  #ifdef bass_smooth
-comp_112=    float aRng = (int)vis_version == 1 ? 0.26 : 0.34;
-comp_113=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
-comp_114=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
-comp_115=  #else
-comp_116=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
-comp_117=  #endif
-comp_118=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
-comp_119=  float aBe  = aDev * 2.0;   // beat scale used by the colour reaction
-comp_120=
-comp_121=  t = time*2.5;
-comp_122=  f = float4(0,0.15,0.32,1);
-comp_123=  float2 si = texsize.xy;
-comp_124=  float2 uvn = (2.*(g*texsize.xy) - si)/min(si.x, si.y);
-comp_125=  float3 ro = float3(0, 0, 0), p=ro;
-comp_126=  ro.y = sin(t*.2)*15.+15.;
-comp_127=  ro.x = sin(t*.5)*5.;
-comp_128=  ro.z = t*5.;
-comp_129=  float3 rd = cam(uvn, p, float3(0,1,0), p + float3(0,0,1));
-comp_130=  // MOUSE: holding the mouse button turns the camera slightly (pointer X = yaw, pointer Y = pitch)
-comp_131=  float aYaw   = (0.5 - mouse.x) * 0.7 * saturate(mouse.z);
-comp_132=  float aPitch = (mouse.y - 0.5) * 0.45 * saturate(mouse.z);
-comp_133=  float cYaw = cos(aYaw), sYaw = sin(aYaw);
-comp_134=  rd.xz = float2(rd.x * cYaw - rd.z * sYaw, rd.x * sYaw + rd.z * cYaw);
-comp_135=  float cPit = cos(aPitch), sPit = sin(aPitch);
-comp_136=  rd.yz = float2(rd.y * cPit - rd.z * sPit, rd.y * sPit + rd.z * cPit);
-comp_137=  // (no re-normalize: with no button held both rotations are exact identities, so the
-comp_138=  // un-pressed frame stays byte-identical; the ray length error is ~1e-7 at most)
-comp_139=  float s = 1., h = .15, td = 0., d=1.,dd=0., w;
-comp_140=  float var = 0.03;
-comp_141=  for (float i=min(frame,0);i<200.;i++)
-comp_142=  {
-comp_143=    // CONV: replaced break with breaking condition
-comp_144=    if(s<0.01||d>500.||td>.95) i=200.;
-comp_145=    s = map(p) * (s>0.001?var:.2);
-comp_146=    if (s < h)
-comp_147=    {
-comp_148=      w = (1.-td) * (h-s)*i/200.;
-comp_149=      f += w;
-comp_150=      td += w;
-comp_151=    }
-comp_152=
-comp_153=    dd += 0.012;
-comp_154=    td += 0.005;
-comp_155=    s = max(s, 0.05);
-comp_156=    d+=s;
-comp_157=    p = ro+rd*d;
-comp_158=  }
-comp_159=
-comp_160=  f.rgb = lerp( f.rgb, float3(0,0.15,0.52), 1.0 - exp( -0.001*d*d) )/max(dd, 0.000001);
-comp_161=  // fog
-comp_162=
-comp_163=  // vigneting from iq Shader Mike : https://www.shadertoy.com/view/MsXGWr
-comp_164=  float2 q = g;
-comp_165=  f.rgb *= 0.5 + 0.5*pow( max(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.0), 0.25 );   // guarded: negative base gave NaN (black side bars)
-comp_166=  ret = f;
-comp_167=  // AUDIO: peaks rotate the hue towards pink/magenta (version 3+ stays neutral);
-comp_168=  // version 2 gets a much smaller swing - with the attack bands the full shift read too strong
-comp_169=  float aHue = (int)vis_version == 1 ? 1.05 : 1.1;
-comp_170=  ret.rgb = hueRotate(ret.rgb, saturate(aBe) * aHue);
-comp_171=}
-comp_172=
+comp_100=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_101=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_102=  // untouched frame stays byte-identical.
+comp_103=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_104=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_105=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_106=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_107=  float4 mwDead = float4(0.5, 0.5, 0.0, 0.0);   // superseded: the old mouse code below now reads a centred, released pointer
+comp_108=
+comp_109=  float4 f = 0;
+comp_110=  float2 g  = uv;
+comp_111=  // CONV: Center on screen, then try some aspect correction
+comp_112=  uv = (uv*2) - 1;
+comp_113=  uv *= aspect.xy;
+comp_114=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_115=  uv = float2(uv.x, -uv.y);
+comp_116=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_117=  uv += float2(0,0) + 0;
+comp_118=  uv *= float2(1,1) * 1;
+comp_119=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_120=  #ifdef bass_smooth
+comp_121=    float aRng = (int)vis_version == 1 ? 0.26 : 0.34;
+comp_122=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_123=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_124=  #else
+comp_125=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_126=  #endif
+comp_127=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_128=  float aBe  = aDev * 2.0;   // beat scale used by the colour reaction
+comp_129=
+comp_130=  t = time*2.5;
+comp_131=  f = float4(0,0.15,0.32,1);
+comp_132=  float2 si = texsize.xy;
+comp_133=  float2 uvn = (2.*(g*texsize.xy) - si)/min(si.x, si.y);
+comp_134=  float3 ro = float3(0, 0, 0), p=ro;
+comp_135=  ro.y = sin(t*.2)*15.+15.;
+comp_136=  ro.x = sin(t*.5)*5.;
+comp_137=  ro.z = t*5.;
+comp_138=  float3 rd = cam(uvn, p, float3(0,1,0), p + float3(0,0,1));
+comp_139=  // MOUSE: holding the mouse button turns the camera slightly (pointer X = yaw, pointer Y = pitch)
+comp_140=  float aYaw   = (0.5 - mwDead.x) * 0.7 * saturate(mwDead.z);
+comp_141=  float aPitch = (mwDead.y - 0.5) * 0.45 * saturate(mwDead.z);
+comp_142=  float cYaw = cos(aYaw), sYaw = sin(aYaw);
+comp_143=  rd.xz = float2(rd.x * cYaw - rd.z * sYaw, rd.x * sYaw + rd.z * cYaw);
+comp_144=  float cPit = cos(aPitch), sPit = sin(aPitch);
+comp_145=  rd.yz = float2(rd.y * cPit - rd.z * sPit, rd.y * sPit + rd.z * cPit);
+comp_146=  // (no re-normalize: with no button held both rotations are exact identities, so the
+comp_147=  // un-pressed frame stays byte-identical; the ray length error is ~1e-7 at most)
+comp_148=  float s = 1., h = .15, td = 0., d=1.,dd=0., w;
+comp_149=  float var = 0.03;
+comp_150=  for (float i=min(frame,0);i<200.;i++)
+comp_151=  {
+comp_152=    // CONV: replaced break with breaking condition
+comp_153=    if(s<0.01||d>500.||td>.95) i=200.;
+comp_154=    s = map(p) * (s>0.001?var:.2);
+comp_155=    if (s < h)
+comp_156=    {
+comp_157=      w = (1.-td) * (h-s)*i/200.;
+comp_158=      f += w;
+comp_159=      td += w;
+comp_160=    }
+comp_161=
+comp_162=    dd += 0.012;
+comp_163=    td += 0.005;
+comp_164=    s = max(s, 0.05);
+comp_165=    d+=s;
+comp_166=    p = ro+rd*d;
+comp_167=  }
+comp_168=
+comp_169=  f.rgb = lerp( f.rgb, float3(0,0.15,0.52), 1.0 - exp( -0.001*d*d) )/max(dd, 0.000001);
+comp_170=  // fog
+comp_171=
+comp_172=  // vigneting from iq Shader Mike : https://www.shadertoy.com/view/MsXGWr
+comp_173=  float2 q = g;
+comp_174=  f.rgb *= 0.5 + 0.5*pow( max(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.0), 0.25 );   // guarded: negative base gave NaN (black side bars)
+comp_175=  ret = f;
+comp_176=  // AUDIO: peaks rotate the hue towards pink/magenta (version 3+ stays neutral);
+comp_177=  // version 2 gets a much smaller swing - with the attack bands the full shift read too strong
+comp_178=  float aHue = (int)vis_version == 1 ? 1.05 : 1.1;
+comp_179=  ret.rgb = hueRotate(ret.rgb, saturate(aBe) * aHue);
+comp_180=}
+comp_181=

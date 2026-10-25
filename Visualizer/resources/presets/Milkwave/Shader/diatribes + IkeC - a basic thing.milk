@@ -12,54 +12,61 @@ comp_7=#define LOOPS 80
 comp_8=#define SPEED 0.2
 comp_9=
 comp_10=shader_body {
-comp_11=  float4 o = 0;
-comp_12=  // CONV: Center on screen, then try some aspect correction
-comp_13=  uv *= aspect.xy;
-comp_14=  float2 u = uv;
-comp_15=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_16=  uv = float2(uv.x, -uv.y);
-comp_17=  uv.x += 0.5;
-comp_18=  uv.y += 4;
-comp_19=  uv.y *= 0.15;
-comp_20=
-comp_21=  float3 p = 0;
-comp_22=  float2 r = uv;
-comp_23=  float i=0,s=0,d,t=time*SPEED;
-comp_24=  float4 fl = float4(4,2,1,0);
-comp_25=
-comp_26=  for(o*=i; i++<LOOPS; ) {
-comp_27=    // shorthand for standard raymarch sample, then move forward:
-comp_28=    // p = ro + rd * d, p.z += t;
-comp_29=    // p = float3((u+u-r.xy)/r.y * d, d + t);
-comp_30=    p = float3((u + u - r.xy) / r.y * d, d + t);
-comp_31=
-comp_32=    // warp p with xor-style turbulence
-comp_33=    for (s = 1.; s <8.;s *= 1.42)
-comp_34=    p += sin(t + p.yzx * 2.) * .3;
-comp_35=
-comp_36=    // 1. - length(p.x) is the complement of the distance to a cylinder,
-comp_37=    // aka, a tunnel (inside the cylinder). remove the above turbulence warping to see it.
+comp_11=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_12=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_13=  // untouched frame stays byte-identical.
+comp_14=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_15=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_16=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_17=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_18=  float4 o = 0;
+comp_19=  // CONV: Center on screen, then try some aspect correction
+comp_20=  uv *= aspect.xy;
+comp_21=  float2 u = uv;
+comp_22=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_23=  uv = float2(uv.x, -uv.y);
+comp_24=  uv.x += 0.5;
+comp_25=  uv.y += 4;
+comp_26=  uv.y *= 0.15;
+comp_27=
+comp_28=  float3 p = 0;
+comp_29=  float2 r = uv;
+comp_30=  float i=0,s=0,d,t=time*SPEED;
+comp_31=  float4 fl = float4(4,2,1,0);
+comp_32=
+comp_33=  for(o*=i; i++<LOOPS; ) {
+comp_34=    // shorthand for standard raymarch sample, then move forward:
+comp_35=    // p = ro + rd * d, p.z += t;
+comp_36=    // p = float3((u+u-r.xy)/r.y * d, d + t);
+comp_37=    p = float3((u + u - r.xy) / r.y * d, d + t);
 comp_38=
-comp_39=    // .009 + abs(tunnel) * .1 makes it translucent and understeps a lot (*.1)
-comp_40=    // to give it a blurry/smooth effect, play with .009 and *.1
-comp_41=    d += s = .009 + abs(1.-length(p.yx))*.1;
+comp_39=    // warp p with xor-style turbulence
+comp_40=    for (s = 1.; s <8.;s *= 1.42)
+comp_41=    p += sin(t + p.yzx * 2.) * .3;
 comp_42=
-comp_43=    // color: 1.+cos so we don't go negative, d+float4(1,2,3,4) samples from the palette
-comp_44=    // divide by s for form and distance
+comp_43=    // 1. - length(p.x) is the complement of the distance to a cylinder,
+comp_44=    // aka, a tunnel (inside the cylinder). remove the above turbulence warping to see it.
 comp_45=
-comp_46=    #ifdef bass_smooth
-comp_47=      fl.z += (int)vis_version > 2 ? 0.1*vis_intensity+vis_shift : (0.15*smoothstep(0.5,3,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
-comp_48=    #else
-comp_49=      fl.z += 0.1*smoothstep(0.5,20,bass_att);
-comp_50=    #endif
-comp_51=
-comp_52=    o += (1.+cos(d+fl)) / s;
-comp_53=  }
-comp_54=
-comp_55=  // tonemap and divide brightness
-comp_56=  o = tanh(o / 5e3);
-comp_57=  // o = o / (o + 1.0);
-comp_58=  // o = smoothstep(0.0, 1.0, o / 5000.0);
-comp_59=
-comp_60=  ret = o;
-comp_61=}
+comp_46=    // .009 + abs(tunnel) * .1 makes it translucent and understeps a lot (*.1)
+comp_47=    // to give it a blurry/smooth effect, play with .009 and *.1
+comp_48=    d += s = .009 + abs(1.-length(p.yx))*.1;
+comp_49=
+comp_50=    // color: 1.+cos so we don't go negative, d+float4(1,2,3,4) samples from the palette
+comp_51=    // divide by s for form and distance
+comp_52=
+comp_53=    #ifdef bass_smooth
+comp_54=      fl.z += (int)vis_version > 2 ? 0.1*vis_intensity+vis_shift : (0.15*smoothstep(0.5,3,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_55=    #else
+comp_56=      fl.z += 0.1*smoothstep(0.5,20,bass_att);
+comp_57=    #endif
+comp_58=
+comp_59=    o += (1.+cos(d+fl)) / s;
+comp_60=  }
+comp_61=
+comp_62=  // tonemap and divide brightness
+comp_63=  o = tanh(o / 5e3);
+comp_64=  // o = o / (o + 1.0);
+comp_65=  // o = smoothstep(0.0, 1.0, o / 5000.0);
+comp_66=
+comp_67=  ret = o;
+comp_68=}

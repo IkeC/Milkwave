@@ -166,108 +166,115 @@ comp_161=  return (2.0+p*(p*p-1.5)) / (uv_conv.x+uv_conv.y);
 comp_162=}
 comp_163=
 comp_164=shader_body {
-comp_165=  float4 fragColor = 0;
-comp_166=
-comp_167=  // CONV: Center on screen, then try some aspect correction
-comp_168=  uv.x = (uv.x*2) - 1;
-comp_169=  uv.y = (uv.y*4) - 2;
-comp_170=  uv = float2(-uv.x, uv.y);
-comp_171=  uv *= aspect.xy;
-comp_172=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_173=  float2 fragCoord  = uv;
-comp_174=
-comp_175=  // get coords and direction
-comp_176=  // float2 uv=fragCoord.xy/texsize.xy-.5;
-comp_177=  //uv.y*=texsize.y/texsize.x;
-comp_178=  uv*=0.4;
-comp_179=
-comp_180=  float3 dir=float3(uv*zoom,1.);
+comp_165=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_166=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_167=  // untouched frame stays byte-identical.
+comp_168=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_169=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_170=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_171=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_172=  float4 fragColor = 0;
+comp_173=
+comp_174=  // CONV: Center on screen, then try some aspect correction
+comp_175=  uv.x = (uv.x*2) - 1;
+comp_176=  uv.y = (uv.y*4) - 2;
+comp_177=  uv = float2(-uv.x, uv.y);
+comp_178=  uv *= aspect.xy;
+comp_179=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_180=  float2 fragCoord  = uv;
 comp_181=
-comp_182=  float time_scale = 0.5;
-comp_183=  float time_conv = time * time_scale;
-comp_184=
-comp_185=  float2 uv2 = fragCoord.xy / min(texsize.x, texsize.y);
-comp_186=  uv2=normalize(float3(uv,0.212)).xy;
-comp_187=  float t = time * .1 + ((.25 + .05 * sin(time * .1))/(length(uv.xy) + .47)) * 12.2+time;
-comp_188=  float si = sin(t);
-comp_189=  float co = cos(t);
-comp_190=  float2x2 ma = float2x2(co, si, -si, co);
-comp_191=  ;
-comp_192=
-comp_193=  float2 fbm_scale = float2(1.0, 1.0);
-comp_194=  float2 t_scale = float2(5.0, 5.0);
-comp_195=
-comp_196=  float2 x_offset = float2(123.456, 0.0);
-comp_197=  float2 y_offset = float2(349.234, 1704.2);
-comp_198=
-comp_199=  float2 x_coords = (uv2 + x_offset) * fbm_scale;
-comp_200=  float xo = fBm(float3(x_coords, time_conv));
-comp_201=
-comp_202=  float2 tx_coords = (uv2 + x_offset) * t_scale;
-comp_203=  float xt = turbulence(float3(tx_coords, time_conv));
-comp_204=
-comp_205=  float2 y_coords = (uv2 + y_offset) * fbm_scale;
-comp_206=  float yo = fBm(float3(y_coords, time_conv));
-comp_207=
-comp_208=  float2 ty_coords = (uv2 + y_offset) * t_scale;
-comp_209=  float yt = turbulence(float3(ty_coords, time_conv));
-comp_210=
-comp_211=  float2 pixel = 1.0 / texsize.xy;
-comp_212=  float max_po = 10.0;
-comp_213=  float2 po = max_po * float2(xo + xt, yo + yt) * pixel;
-comp_214=  po = mul(po, transpose(float2x2(cos(time)*2.,sin(time)*2.,-sin(time)*2.,cos(time)*2.)));
-comp_215=  float2 tc = fragCoord.xy / texsize.xy;
-comp_216=  float3 from=float3(1.,.5,0.5);
-comp_217=  dir.xy*=po;
-comp_218=
-comp_219=  // volumetric rendering
-comp_220=  float s=0.1,fade=1.;
-comp_221=  float3 v=float3(0., 0., 0.);
-comp_222=
-comp_223=  #ifdef bass_smooth
-comp_224=    float fac = (int)vis_version > 2 ? 0.9*vis_intensity+vis_shift : (0.8 + 0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
-comp_225=  #else
-comp_226=    float fac = 0.9 + 0.02*smoothstep(0,2,bass_att);
-comp_227=  #endif
-comp_228=
-comp_229=  for (int r=0; r<volsteps; r++) {
-comp_230=    float3 p=from+s*dir*.5;
-comp_231=    p = abs(float3(tile,tile,tile)-mod_conv(p,float3(tile*2.,tile*2.,tile*2.)));
-comp_232=
-comp_233=    // tiling fold
-comp_234=    float pa,a=pa=0.;
-comp_235=    for (int i=0; i<iterations; i++) {
-comp_236=      p=abs(p)/dot(p,p)-formuparam;
-comp_237=      // the magic formula
-comp_238=      a+=abs(length(p)-pa);
-comp_239=      // absolute sum of average change
-comp_240=      pa=length(p);
-comp_241=    }
-comp_242=
-comp_243=    float dm=max(0.,darkmatter-a*a*.001);
-comp_244=    // dark matter
-comp_245=    a*=a*a;
-comp_246=    // add contrast
-comp_247=    if (r>6) fade*=1.3-dm;
-comp_248=    // dark matter, don't render near
-comp_249=    // v+=float3(dm,dm*.5,0.);
-comp_250=    v+=fade;
-comp_251=    v+=float3(s,s*s,s*s*s*s)*a*brightness*fade;
-comp_252=    // coloring based on distance
-comp_253=    fade*=distfading;
-comp_254=    // distance fading
-comp_255=    fade*=fac;
-comp_256=    s+=stepsize;
-comp_257=  }
-comp_258=
-comp_259=  v=lerp(float3(length(v), length(v), length(v)),v,saturation);
-comp_260=
-comp_261=  // color adjust
-comp_262=  fragColor = float4(v*.03,1.);
-comp_263=  uv *= 2.0 * ( cos(time * 2.0) -2.5);
-comp_264=  // scale
-comp_265=  float anim = sin(time * 12.0) * 0.1 + 1.0;
-comp_266=  // anim between 0.9 - 1.1
-comp_267=  fragColor*= float4(happy_star(uv, anim) * float3(0.5,0.5,0.55)*0.2, 1.0);
-comp_268=  ret = fragColor;
-comp_269=}
+comp_182=  // get coords and direction
+comp_183=  // float2 uv=fragCoord.xy/texsize.xy-.5;
+comp_184=  //uv.y*=texsize.y/texsize.x;
+comp_185=  uv*=0.4;
+comp_186=
+comp_187=  float3 dir=float3(uv*zoom,1.);
+comp_188=
+comp_189=  float time_scale = 0.5;
+comp_190=  float time_conv = time * time_scale;
+comp_191=
+comp_192=  float2 uv2 = fragCoord.xy / min(texsize.x, texsize.y);
+comp_193=  uv2=normalize(float3(uv,0.212)).xy;
+comp_194=  float t = time * .1 + ((.25 + .05 * sin(time * .1))/(length(uv.xy) + .47)) * 12.2+time;
+comp_195=  float si = sin(t);
+comp_196=  float co = cos(t);
+comp_197=  float2x2 ma = float2x2(co, si, -si, co);
+comp_198=  ;
+comp_199=
+comp_200=  float2 fbm_scale = float2(1.0, 1.0);
+comp_201=  float2 t_scale = float2(5.0, 5.0);
+comp_202=
+comp_203=  float2 x_offset = float2(123.456, 0.0);
+comp_204=  float2 y_offset = float2(349.234, 1704.2);
+comp_205=
+comp_206=  float2 x_coords = (uv2 + x_offset) * fbm_scale;
+comp_207=  float xo = fBm(float3(x_coords, time_conv));
+comp_208=
+comp_209=  float2 tx_coords = (uv2 + x_offset) * t_scale;
+comp_210=  float xt = turbulence(float3(tx_coords, time_conv));
+comp_211=
+comp_212=  float2 y_coords = (uv2 + y_offset) * fbm_scale;
+comp_213=  float yo = fBm(float3(y_coords, time_conv));
+comp_214=
+comp_215=  float2 ty_coords = (uv2 + y_offset) * t_scale;
+comp_216=  float yt = turbulence(float3(ty_coords, time_conv));
+comp_217=
+comp_218=  float2 pixel = 1.0 / texsize.xy;
+comp_219=  float max_po = 10.0;
+comp_220=  float2 po = max_po * float2(xo + xt, yo + yt) * pixel;
+comp_221=  po = mul(po, transpose(float2x2(cos(time)*2.,sin(time)*2.,-sin(time)*2.,cos(time)*2.)));
+comp_222=  float2 tc = fragCoord.xy / texsize.xy;
+comp_223=  float3 from=float3(1.,.5,0.5);
+comp_224=  dir.xy*=po;
+comp_225=
+comp_226=  // volumetric rendering
+comp_227=  float s=0.1,fade=1.;
+comp_228=  float3 v=float3(0., 0., 0.);
+comp_229=
+comp_230=  #ifdef bass_smooth
+comp_231=    float fac = (int)vis_version > 2 ? 0.9*vis_intensity+vis_shift : (0.8 + 0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_232=  #else
+comp_233=    float fac = 0.9 + 0.02*smoothstep(0,2,bass_att);
+comp_234=  #endif
+comp_235=
+comp_236=  for (int r=0; r<volsteps; r++) {
+comp_237=    float3 p=from+s*dir*.5;
+comp_238=    p = abs(float3(tile,tile,tile)-mod_conv(p,float3(tile*2.,tile*2.,tile*2.)));
+comp_239=
+comp_240=    // tiling fold
+comp_241=    float pa,a=pa=0.;
+comp_242=    for (int i=0; i<iterations; i++) {
+comp_243=      p=abs(p)/dot(p,p)-formuparam;
+comp_244=      // the magic formula
+comp_245=      a+=abs(length(p)-pa);
+comp_246=      // absolute sum of average change
+comp_247=      pa=length(p);
+comp_248=    }
+comp_249=
+comp_250=    float dm=max(0.,darkmatter-a*a*.001);
+comp_251=    // dark matter
+comp_252=    a*=a*a;
+comp_253=    // add contrast
+comp_254=    if (r>6) fade*=1.3-dm;
+comp_255=    // dark matter, don't render near
+comp_256=    // v+=float3(dm,dm*.5,0.);
+comp_257=    v+=fade;
+comp_258=    v+=float3(s,s*s,s*s*s*s)*a*brightness*fade;
+comp_259=    // coloring based on distance
+comp_260=    fade*=distfading;
+comp_261=    // distance fading
+comp_262=    fade*=fac;
+comp_263=    s+=stepsize;
+comp_264=  }
+comp_265=
+comp_266=  v=lerp(float3(length(v), length(v), length(v)),v,saturation);
+comp_267=
+comp_268=  // color adjust
+comp_269=  fragColor = float4(v*.03,1.);
+comp_270=  uv *= 2.0 * ( cos(time * 2.0) -2.5);
+comp_271=  // scale
+comp_272=  float anim = sin(time * 12.0) * 0.1 + 1.0;
+comp_273=  // anim between 0.9 - 1.1
+comp_274=  fragColor*= float4(happy_star(uv, anim) * float3(0.5,0.5,0.55)*0.2, 1.0);
+comp_275=  ret = fragColor;
+comp_276=}

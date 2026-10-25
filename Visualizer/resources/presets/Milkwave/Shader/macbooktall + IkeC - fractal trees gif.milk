@@ -219,37 +219,44 @@ comp_214=  return float3x3(x, y, forward);
 comp_215=}
 comp_216=
 comp_217=shader_body {
-comp_218=  float4 fragColor = 0;
-comp_219=  float2 fragCoord  = uv;
-comp_220=  // CONV: Center on screen, then try some aspect correction
-comp_221=  uv = (uv*2) - 1;
-comp_222=  uv.x+= 0.2;
-comp_223=  uv.y+= -0.9;
-comp_224=  uv *= aspect.xy;
-comp_225=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_226=  uv = float2(uv.x, -uv.y);
-comp_227=
-comp_228=  // float2 uv = fragCoord.xy / texsize.xy;
-comp_229=  uv = uv * 2.0 - 1.0;
-comp_230=  float3 camPos = float3(3., -1.5, time*5.);
-comp_231=  float3 camDir = camPos+float3(-1.25,0.1, 1.);
-comp_232=  float3x3 cam = camera(camPos, camDir, 0.);
-comp_233=
-comp_234=  float3 rayDir = mul(cam, normalize(float3(uv, 0.8)));
-comp_235=
-comp_236=  Ray ray;
-comp_237=  ray.ro = camPos;
-comp_238=  ray.rd = rayDir;
-comp_239=
+comp_218=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_219=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_220=  // untouched frame stays byte-identical.
+comp_221=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_222=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_223=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_224=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_225=  float4 fragColor = 0;
+comp_226=  float2 fragCoord  = uv;
+comp_227=  // CONV: Center on screen, then try some aspect correction
+comp_228=  uv = (uv*2) - 1;
+comp_229=  uv.x+= 0.2;
+comp_230=  uv.y+= -0.9;
+comp_231=  uv *= aspect.xy;
+comp_232=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_233=  uv = float2(uv.x, -uv.y);
+comp_234=
+comp_235=  // float2 uv = fragCoord.xy / texsize.xy;
+comp_236=  uv = uv * 2.0 - 1.0;
+comp_237=  float3 camPos = float3(3., -1.5, time*5.);
+comp_238=  float3 camDir = camPos+float3(-1.25,0.1, 1.);
+comp_239=  float3x3 cam = camera(camPos, camDir, 0.);
 comp_240=
-comp_241=    ray.rd.x -= 0.03;
+comp_241=  float3 rayDir = mul(cam, normalize(float3(uv, 0.8)));
 comp_242=
-comp_243=    // fly up and down
-comp_244=    ray.ro.y += sin(time*0.2)*5;
-comp_245=    
-comp_246=    //ray.rd.y += fac;
+comp_243=  Ray ray;
+comp_244=  ray.ro = camPos;
+comp_245=  ray.rd = rayDir;
+comp_246=
 comp_247=
-comp_248=  float4 col = render(ray);
-comp_249=  
-comp_250=  ret = float4(1.-col.xyz,clamp(1.-col.w/MAXDIST, 0., 1.));
-comp_251=}
+comp_248=    ray.rd.x -= 0.03;
+comp_249=
+comp_250=    // fly up and down
+comp_251=    ray.ro.y += sin(time*0.2)*5;
+comp_252=    
+comp_253=    //ray.rd.y += fac;
+comp_254=
+comp_255=  float4 col = render(ray);
+comp_256=  
+comp_257=  ret = float4(1.-col.xyz,clamp(1.-col.w/MAXDIST, 0., 1.));
+comp_258=}

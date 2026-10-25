@@ -199,6 +199,7 @@ namespace MilkwaveRemote {
       PresetLink,
       PresetChangeWithSong,
       PresetDisplayCover,
+      CoverStyle,
       PresetDisplayTrack,
       PresetDisplayPreset,
       InvertPreset,
@@ -1097,6 +1098,12 @@ namespace MilkwaveRemote {
       // loop starts, i.e. until after this constructor has finished.
       _ = Handle;
 
+      // Default the cover selector to "Corner (medium)" BEFORE anything connects: once the pipe is
+      // up, changing SelectedIndex raises SelectedIndexChanged and would push COVER_STYLE to the
+      // visualizer, overwriting the size stored in its settings.ini. The real value is filled in
+      // from the SETTINGS| state message (COVERSTYLE=...) instead.
+      cboSettingsCover.SelectedIndex = 1;
+
 #if !DEBUG
       ConnectToVisualizer();
 #else
@@ -1895,6 +1902,13 @@ namespace MilkwaveRemote {
                   chkPresetChangeWithSong.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("DISPLAYCOVER", StringComparison.OrdinalIgnoreCase)) {
                   chkPresetDisplayCover.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("COVERSTYLE", StringComparison.OrdinalIgnoreCase)) {
+                  if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int coverStyle)) {
+                    int index = Math.Clamp(coverStyle, 0, cboSettingsCover.Items.Count - 1);
+                    if (cboSettingsCover.SelectedIndex != index) {
+                      cboSettingsCover.SelectedIndex = index;
+                    }
+                  }
                 } else if (key.Equals("SONGINFOPOLLING", StringComparison.OrdinalIgnoreCase)) {
                   chkPresetDisplayTrack.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("PRESETINFOONCHANGE", StringComparison.OrdinalIgnoreCase)) {
@@ -2379,6 +2393,10 @@ namespace MilkwaveRemote {
               message = "PRESET_CHANGE_WITH_SONG=" + (chkPresetChangeWithSong.Checked ? "1" : "0");
             } else if (type == MessageType.PresetDisplayCover) {
               message = "DISPLAY_COVER=" + (chkPresetDisplayCover.Checked ? "1" : "0");
+            } else if (type == MessageType.CoverStyle) {
+              int coverStyle = cboSettingsCover.SelectedIndex < 0 ? 1 : cboSettingsCover.SelectedIndex;
+              message = "COVER_STYLE=" + coverStyle;
+              statusMessage = "Cover: " + (coverStyle == 0 ? "corner (small)" : coverStyle == 1 ? "corner (medium)" : coverStyle == 2 ? "corner (large)" : "fullscreen zoom");
             } else if (type == MessageType.PresetDisplayTrack) {
               message = "SONGINFO_POLLING=" + (chkPresetDisplayTrack.Checked ? "1" : "0");
             } else if (type == MessageType.PresetDisplayPreset) {
@@ -7293,6 +7311,13 @@ namespace MilkwaveRemote {
     private void chkPresetDisplayCover_CheckedChanged(object sender, EventArgs e) {
       if (updatingSettingsParams) return;
       SendToMilkwaveVisualizer("", MessageType.PresetDisplayCover);
+    }
+
+    private void cboSettingsCover_SelectedIndexChanged(object sender, EventArgs e) {
+      // Applies the "Cover" behaviour (0..2 = corner thumbnail sizes, 3 = fullscreen zoom) to the
+      // visualizer; the value comes back in the SETTINGS| state message as COVERSTYLE.
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.CoverStyle);
     }
 
     private void chkPresetDisplayTrack_CheckedChanged(object sender, EventArgs e) {

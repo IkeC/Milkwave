@@ -1,6 +1,6 @@
 ## v4.2 (unreleased)
 
-* 20 new audio-reactive Shader presets, each with two versions and mouse support, tagged with "42"
+* 20 new audio-reactive Shader presets, each with three versions and mouse support, tagged with "42"
 * Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 * Visualizer: Improved Desktop Mode (Ctrl+F9)
 * Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"
@@ -15,6 +15,7 @@
 * Remote/Visualizer: "Textborder" setting outlines all messages and notifications with configurable color
 * Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
 * Remote Settings tab: Invert preset output
+* Song Cover: lower-right thumbnail in three sizes (small, medium, large) or fullscreen, fading with the song title
 
 ## v4.1 (2026-09-10)
 

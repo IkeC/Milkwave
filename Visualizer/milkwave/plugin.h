@@ -456,6 +456,10 @@ class CPlugin : public CPluginShell {
   bool m_bShowSongInfo = false;  // 'b' pins the song info to the screen (persisted)
   bool m_DisplayCover = true;
   bool m_DisplayCoverWhenPressingB = true;
+  // Album cover: 0 = small, 1 = medium (default), 2 = large lower-right thumbnail, 3 = fullscreen
+  // zoom (the classic MilkDrop centre zoom). Exposed to sprite code as "cover_style" so [img00]
+  // in sprites.ini can pick the matching behaviour.
+  int m_CoverStyle = 1;
   // Show the preset info for PresetInfoOnChangeSeconds seconds on every preset
   // change while it is not shown permanently (F4). Toggle with Ctrl+F4.
   bool m_bPresetInfoOnChange = true;

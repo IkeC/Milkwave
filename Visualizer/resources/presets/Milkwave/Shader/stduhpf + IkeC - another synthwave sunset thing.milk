@@ -227,94 +227,99 @@ comp_222=    return col;
 comp_223=  }
 comp_224=
 comp_225=  shader_body {
-comp_226=    float4 fragColor = 0;
-comp_227=    // CONV: Center on screen, then try some aspect correction
-comp_228=    uv = (uv*2) - 1;
-comp_229=    uv *= aspect.xy;
-comp_230=    // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_231=    uv = float2(uv.x, -uv.y);
-comp_232=    float2 fragCoord  = uv;
-comp_233=
-comp_234=    #ifdef AA
-comp_235=    for(float x = 0.;x<1.;x+=1./float(AA)){
-comp_236=      for(float y = 0.;y<1.;y+=1./float(AA)){
-comp_237=        #else
-comp_238=        const float AA=1.,x=0.,y=0.;
-comp_239=        #endif
-comp_240=
-comp_241=        // uv = (2.*(fragCoord+float2(x,y))-uv.xy)/uv.y;
-comp_242=
-comp_243=        const float shutter_speed = .25;
-comp_244=        // for motion blur
+comp_226=  // MOUSE: holding the right button tilts the scene, pointer X sets the angle. sin(0)=0 / cos(0)=1,
+comp_227=  // so the frame without a pressed button stays byte-identical.
+comp_228=  float mwTilt = (mouse.x - 0.5) * 0.5 * saturate(mouse.z);
+comp_229=  float mwTiltS = sin(mwTilt), mwTiltC = cos(mwTilt);
+comp_230=  uv = float2(uv.x * mwTiltC - uv.y * mwTiltS, uv.x * mwTiltS + uv.y * mwTiltC);
+comp_231=    float4 fragColor = 0;
+comp_232=    // CONV: Center on screen, then try some aspect correction
+comp_233=    uv = (uv*2) - 1;
+comp_234=    uv *= aspect.xy;
+comp_235=    // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_236=    uv = float2(uv.x, -uv.y);
+comp_237=    float2 fragCoord  = uv;
+comp_238=
+comp_239=    #ifdef AA
+comp_240=    for(float x = 0.;x<1.;x+=1./float(AA)){
+comp_241=      for(float y = 0.;y<1.;y+=1./float(AA)){
+comp_242=        #else
+comp_243=        const float AA=1.,x=0.,y=0.;
+comp_244=        #endif
 comp_245=
-comp_246=        // float dt = frac(tex2D(iChannel0,float(AA)*(fragCoord+float2(x,y))/uv.xy).r+time)*shutter_speed;
+comp_246=        // uv = (2.*(fragCoord+float2(x,y))-uv.xy)/uv.y;
 comp_247=
-comp_248=        float dt = frac(hash21(float(AA)*(fragCoord+float2(x,y)))+time)*shutter_speed;
-comp_249=
-comp_250=        jTime = time;
-comp_251=
-comp_252=        float fx = sin(time*0.3)*0.3;
-comp_253=
-comp_254=        #ifdef bass_smooth
-comp_255=          float fy = (int)vis_version > sin(time*0.3)*0.3+1.1 ? 1*vis_intensity+vis_shift : (0.6+0.2*bass_smooth)*vis_intensity+vis_shift;
-comp_256=        #else
-comp_257=          float fy = sin(time*0.3)*0.3+1.1;
-comp_258=        #endif
-comp_259=        
-comp_260=        float fz = (-20000.+jTime*speed);
-comp_261=        float3 ro = float3(fx,fy,fz);
-comp_262=
-comp_263=        #ifdef stereo
-comp_264=        ro+=stereo*float3(.2*(float(uv.x>0.)-.5),0.,0.);
-comp_265=        const float de = .9;
-comp_266=        uv.x=uv.x+.5*(uv.x>0.?-de:de);
-comp_267=        uv*=2.;
-comp_268=        #endif
-comp_269=        float dis = 1.2;
-comp_270=        float3 rd = normalize(float3(uv,dis));
-comp_271=        // float3 rd = normalize(float3(uv,sqrt(1.-dot(uv,uv))));
-comp_272=
-comp_273=        float2 i = intersect(ro,rd);
-comp_274=        float d = i.x;
-comp_275=        float sunheight = .16;
-comp_276=        float f1 = sunheight+.05*0.35*cos(jTime*0.1);
-comp_277=        float3 ld = normalize(float3(0,f1,0.7));
-comp_278=        float3 fog = d>0.?exp2(-d*float3(.14,.1,.28)):float3(0,0,0);
-comp_279=        float3 sky = gsky(rd,ld,d<0.);
-comp_280=
-comp_281=        float3 p = ro+d*rd;
-comp_282=        float3 n = normalize(grad(p));
-comp_283=
-comp_284=        float diff = dot(n,ld)+.1*n.y;
-comp_285=        float3 col = float3(.1,.11,.18)*diff;
-comp_286=
-comp_287=        float3 rfd = reflect(rd,n);
-comp_288=        float3 rfcol = gsky(rfd,ld,true);
-comp_289=
-comp_290=        // floor
-comp_291=        // col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),0.),5.));
-comp_292=
-comp_293=        float shiny = 0.88;
-comp_294=        col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),shiny),5.));
-comp_295=
-comp_296=        #ifdef VAPORWAVE
-comp_297=        col = lerp(col,float3(.4,.5,1.),1.-smoothstep(0.,.05,i.y));
-comp_298=        col = lerp(sky,col,fog);
-comp_299=        col = sqrt(col);
-comp_300=        #else
-comp_301=        col = lerp(col,float3(.8,.1,.92),1.-smoothstep(0.,.05,i.y));
-comp_302=        col = lerp(sky,col,fog);
-comp_303=        // no gamma for that old cg look
-comp_304=        #endif
-comp_305=
-comp_306=        if(d<0.) d=1e6;
-comp_307=        d=min(d,10.);
-comp_308=
-comp_309=        fragColor += float4(clamp(col,0,1),d<0. ? 0 : 0.1+exp2(-d));
+comp_248=        const float shutter_speed = .25;
+comp_249=        // for motion blur
+comp_250=
+comp_251=        // float dt = frac(tex2D(iChannel0,float(AA)*(fragCoord+float2(x,y))/uv.xy).r+time)*shutter_speed;
+comp_252=
+comp_253=        float dt = frac(hash21(float(AA)*(fragCoord+float2(x,y)))+time)*shutter_speed;
+comp_254=
+comp_255=        jTime = time;
+comp_256=
+comp_257=        float fx = sin(time*0.3)*0.3;
+comp_258=
+comp_259=        #ifdef bass_smooth
+comp_260=          float fy = (int)vis_version > sin(time*0.3)*0.3+1.1 ? 1*vis_intensity+vis_shift : (0.6+0.2*bass_smooth)*vis_intensity+vis_shift;
+comp_261=        #else
+comp_262=          float fy = sin(time*0.3)*0.3+1.1;
+comp_263=        #endif
+comp_264=        
+comp_265=        float fz = (-20000.+jTime*speed);
+comp_266=        float3 ro = float3(fx,fy,fz);
+comp_267=
+comp_268=        #ifdef stereo
+comp_269=        ro+=stereo*float3(.2*(float(uv.x>0.)-.5),0.,0.);
+comp_270=        const float de = .9;
+comp_271=        uv.x=uv.x+.5*(uv.x>0.?-de:de);
+comp_272=        uv*=2.;
+comp_273=        #endif
+comp_274=        float dis = 1.2;
+comp_275=        float3 rd = normalize(float3(uv,dis));
+comp_276=        // float3 rd = normalize(float3(uv,sqrt(1.-dot(uv,uv))));
+comp_277=
+comp_278=        float2 i = intersect(ro,rd);
+comp_279=        float d = i.x;
+comp_280=        float sunheight = .16;
+comp_281=        float f1 = sunheight+.05*0.35*cos(jTime*0.1);
+comp_282=        float3 ld = normalize(float3(0,f1,0.7));
+comp_283=        float3 fog = d>0.?exp2(-d*float3(.14,.1,.28)):float3(0,0,0);
+comp_284=        float3 sky = gsky(rd,ld,d<0.);
+comp_285=
+comp_286=        float3 p = ro+d*rd;
+comp_287=        float3 n = normalize(grad(p));
+comp_288=
+comp_289=        float diff = dot(n,ld)+.1*n.y;
+comp_290=        float3 col = float3(.1,.11,.18)*diff;
+comp_291=
+comp_292=        float3 rfd = reflect(rd,n);
+comp_293=        float3 rfcol = gsky(rfd,ld,true);
+comp_294=
+comp_295=        // floor
+comp_296=        // col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),0.),5.));
+comp_297=
+comp_298=        float shiny = 0.88;
+comp_299=        col = lerp(col,rfcol,.05+.95*pow(max(1.+dot(rd,n),shiny),5.));
+comp_300=
+comp_301=        #ifdef VAPORWAVE
+comp_302=        col = lerp(col,float3(.4,.5,1.),1.-smoothstep(0.,.05,i.y));
+comp_303=        col = lerp(sky,col,fog);
+comp_304=        col = sqrt(col);
+comp_305=        #else
+comp_306=        col = lerp(col,float3(.8,.1,.92),1.-smoothstep(0.,.05,i.y));
+comp_307=        col = lerp(sky,col,fog);
+comp_308=        // no gamma for that old cg look
+comp_309=        #endif
 comp_310=
-comp_311=        #ifdef AA
-comp_312=        fragColor/=float(AA*AA);
-comp_313=        }}
-comp_314=        #endif
-comp_315=        ret = fragColor;
-comp_316=      }
+comp_311=        if(d<0.) d=1e6;
+comp_312=        d=min(d,10.);
+comp_313=
+comp_314=        fragColor += float4(clamp(col,0,1),d<0. ? 0 : 0.1+exp2(-d));
+comp_315=
+comp_316=        #ifdef AA
+comp_317=        fragColor/=float(AA*AA);
+comp_318=        }}
+comp_319=        #endif
+comp_320=        ret = fragColor;
+comp_321=      }

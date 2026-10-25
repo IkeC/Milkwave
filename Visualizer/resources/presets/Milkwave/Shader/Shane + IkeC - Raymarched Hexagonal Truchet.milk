@@ -175,134 +175,141 @@ comp_170=  return max(d.y/1.2 - d.x*1., 0.)/1.2;
 comp_171=}
 comp_172=
 comp_173=shader_body {
-comp_174=  float4 fragColor = 0;
-comp_175=  // CONV: Center on screen, then try some aspect correction
-comp_176=  // uv = (uv*2) - 1;
-comp_177=
-comp_178=  float2 fragCoord  = uv;
-comp_179=  fragCoord.y -= 0.2;
-comp_180=  uv.y += 0.5;
-comp_181=  uv.x += 0.5;
-comp_182=  // uv *= aspect.xy;
-comp_183=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_184=  // uv = float2(uv.x, -uv.y);
-comp_185=
-comp_186=  // Unit directional ray - Coyote's observation.
-comp_187=  float3 rd = normalize(float3(3.*fragCoord - uv.xy, uv.y));
-comp_188=
-comp_189=  float tm = time/2.;
-comp_190=  // Rotate the XY-plane back and forth. Note that sine and cosine are kind of rolled into one.
-comp_191=  float fac = sin(time*0.11)*0.4+1.2;
-comp_192=  float2 a = sin(float2(1.570796, 0) + sin(tm/4.)*.3);
-comp_193=  // Fabrice's observation.
-comp_194=  rd.xy = mul(transpose(float2x2(a, -a.y, a.x)),rd.xy);
+comp_174=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_175=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_176=  // untouched frame stays byte-identical.
+comp_177=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_178=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_179=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_180=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_181=  float4 fragColor = 0;
+comp_182=  // CONV: Center on screen, then try some aspect correction
+comp_183=  // uv = (uv*2) - 1;
+comp_184=
+comp_185=  float2 fragCoord  = uv;
+comp_186=  fragCoord.y -= 0.2;
+comp_187=  uv.y += 0.5;
+comp_188=  uv.x += 0.5;
+comp_189=  // uv *= aspect.xy;
+comp_190=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_191=  // uv = float2(uv.x, -uv.y);
+comp_192=
+comp_193=  // Unit directional ray - Coyote's observation.
+comp_194=  float3 rd = normalize(float3(3.*fragCoord - uv.xy, uv.y));
 comp_195=
-comp_196=  // Ray origin. Moving in the X-direction to the right.
-comp_197=  float3 ro = 0.1*fac*float3(tm, cos(tm/4.), 0.5);
-comp_198=
-comp_199=  // Light position, hovering around behind the camera.
-comp_200=  float3 lp = ro + float3(cos(tm/2.)*.5, sin(tm/2.)*.5, -.5);
-comp_201=
-comp_202=  // Standard raymarching segment. Because of the straight forward setup, not many iterations are necessary.
-comp_203=  float d, t=0.;
-comp_204=  
-comp_205=  for(int j=0;j<LOOPS;j++){
-comp_206=    d = map(ro + rd*t);
-comp_207=    // distance to the function.
-comp_208=    t += d*.7;
-comp_209=    // Total distance from the camera to the surface.
-comp_210=
-comp_211=    // The plane "is" the far plane, so no "far = plane" break is needed.
-comp_212=    // CONV: break unsupported, see Milkwave manual
-comp_213=    if(d<0.001) j=LOOPS;
-comp_214=  }
-comp_215=
-comp_216=  // Edge and curve value. Passed into, and set, during the normal calculation.
-comp_217=  float edge=0, crv=0;
-comp_218=
-comp_219=  // Surface postion, surface normal and light direction.
-comp_220=  float3 sp = ro + rd*t;
-comp_221=  float3 sn = getNormal(sp, edge, crv);
-comp_222=  float3 ld = lp - sp;
-comp_223=
-comp_224=  // Coloring and texturing the surface.
-comp_225=  // 
-comp_226=  // Height map.
-comp_227=  float c = heightMap(sp.xy);
-comp_228=
-comp_229=  // Folding, or wrapping, the values above to produce the snake-like pattern that lines up with the randomly
-comp_230=  // flipped hex cells produced by the height map.
-comp_231=  float3 fold = cos(float3(1, 2, 4)*c*6.2831589);
-comp_232=
-comp_233=  // Using the height map value, then wrapping it, to produce a finer grain Truchet pattern for the overlay.
-comp_234=  float c2 = heightMap((sp.xy + sp.z*.025)*6.);
-comp_235=  c2 = cos(c2*6.2831589*3.);
-comp_236=  c2 = (clamp(c2 +.5, 0., 1.));
-comp_237=
-comp_238=  // Function based bump mapping. I prefer none in this example, but it's there if you want it.
-comp_239=  //if(temp.x>0. || temp.y>0.) sn = dbF(sp, sn, .001);
-comp_240=
-comp_241=  // Surface color value.
-comp_242=  float3 oC = float3(1, 1, 1);
-comp_243=
-comp_244=  if(fold.x>0.) oC = float3(1, .05, .1)*c2;
-comp_245=  // Reddish pink with finer grained Truchet overlay.
-comp_246=
-comp_247=  if(fold.x<0.05 && (fold.y)<0.) oC = float3(1, .7, .45)*(c2*.25 + .75);
-comp_248=  // Lighter lined borders.
-comp_249=  else if(fold.x<0.) oC = float3(1, .8, .4)*c2;
-comp_250=  // Gold, with overlay.
-comp_251=
-comp_252=  // oC *= n3D(sp*128.)*.35 + .65; // Extra fine grained noisy texturing.
+comp_196=  float tm = time/2.;
+comp_197=  // Rotate the XY-plane back and forth. Note that sine and cosine are kind of rolled into one.
+comp_198=  float fac = sin(time*0.11)*0.4+1.2;
+comp_199=  float2 a = sin(float2(1.570796, 0) + sin(tm/4.)*.3);
+comp_200=  // Fabrice's observation.
+comp_201=  rd.xy = mul(transpose(float2x2(a, -a.y, a.x)),rd.xy);
+comp_202=
+comp_203=  // Ray origin. Moving in the X-direction to the right.
+comp_204=  float3 ro = 0.1*fac*float3(tm, cos(tm/4.), 0.5);
+comp_205=
+comp_206=  // Light position, hovering around behind the camera.
+comp_207=  float3 lp = ro + float3(cos(tm/2.)*.5, sin(tm/2.)*.5, -.5);
+comp_208=
+comp_209=  // Standard raymarching segment. Because of the straight forward setup, not many iterations are necessary.
+comp_210=  float d, t=0.;
+comp_211=  
+comp_212=  for(int j=0;j<LOOPS;j++){
+comp_213=    d = map(ro + rd*t);
+comp_214=    // distance to the function.
+comp_215=    t += d*.7;
+comp_216=    // Total distance from the camera to the surface.
+comp_217=
+comp_218=    // The plane "is" the far plane, so no "far = plane" break is needed.
+comp_219=    // CONV: break unsupported, see Milkwave manual
+comp_220=    if(d<0.001) j=LOOPS;
+comp_221=  }
+comp_222=
+comp_223=  // Edge and curve value. Passed into, and set, during the normal calculation.
+comp_224=  float edge=0, crv=0;
+comp_225=
+comp_226=  // Surface postion, surface normal and light direction.
+comp_227=  float3 sp = ro + rd*t;
+comp_228=  float3 sn = getNormal(sp, edge, crv);
+comp_229=  float3 ld = lp - sp;
+comp_230=
+comp_231=  // Coloring and texturing the surface.
+comp_232=  // 
+comp_233=  // Height map.
+comp_234=  float c = heightMap(sp.xy);
+comp_235=
+comp_236=  // Folding, or wrapping, the values above to produce the snake-like pattern that lines up with the randomly
+comp_237=  // flipped hex cells produced by the height map.
+comp_238=  float3 fold = cos(float3(1, 2, 4)*c*6.2831589);
+comp_239=
+comp_240=  // Using the height map value, then wrapping it, to produce a finer grain Truchet pattern for the overlay.
+comp_241=  float c2 = heightMap((sp.xy + sp.z*.025)*6.);
+comp_242=  c2 = cos(c2*6.2831589*3.);
+comp_243=  c2 = (clamp(c2 +.5, 0., 1.));
+comp_244=
+comp_245=  // Function based bump mapping. I prefer none in this example, but it's there if you want it.
+comp_246=  //if(temp.x>0. || temp.y>0.) sn = dbF(sp, sn, .001);
+comp_247=
+comp_248=  // Surface color value.
+comp_249=  float3 oC = float3(1, 1, 1);
+comp_250=
+comp_251=  if(fold.x>0.) oC = float3(1, .05, .1)*c2;
+comp_252=  // Reddish pink with finer grained Truchet overlay.
 comp_253=
-comp_254=  // Sending some greenish particle pulses through the snake-like patterns. With all the shininess going
-comp_255=  // on, this effect is a little on the subtle side.
-comp_256=  float p1 = 1.0 - smoothstep(0., .1, fold.x*.5+.5);
-comp_257=  // Restrict to the snake-like path.
-comp_258=  // Other path.
-comp_259=  // float p2 = 1.0 - smoothstep(0., .1, cos(heightMap(sp.xy + 1. + time/4.)*6.283)*.5+.5);
-comp_260=  float p2 = 1.0 - smoothstep(0., .1, Voronoi(sp.xy*4. + float2(tm, cos(tm/4.))));
-comp_261=  p1 = (p2 + .25)*p1;
-comp_262=  // Overlap the paths.
-comp_263=  oC += oC.yxz*p1*p1;
-comp_264=  // Gives a kind of electron effect. Works better with just Voronoi, but it'll do.
-comp_265=
-comp_266=  float lDist = max(length(ld), 0.001);
-comp_267=  // Light distance.
-comp_268=  float atten = 1./(1. + lDist*.125);
-comp_269=  // Light attenuation.
-comp_270=
-comp_271=  ld /= lDist;
-comp_272=  // Normalizing the light direction vector.
-comp_273=
-comp_274=  float diff = max(dot(ld, sn), 0.);
-comp_275=  // Diffuse.
-comp_276=  float spec = pow(max( dot( reflect(-ld, sn), -rd ), 0.0 ), 16.);
-comp_277=  // Specular.
-comp_278=  float fre = pow(clamp(dot(sn, rd) + 1., .0, 1.), 3.);
-comp_279=  // Fresnel, for some mild glow.
+comp_254=  if(fold.x<0.05 && (fold.y)<0.) oC = float3(1, .7, .45)*(c2*.25 + .75);
+comp_255=  // Lighter lined borders.
+comp_256=  else if(fold.x<0.) oC = float3(1, .8, .4)*c2;
+comp_257=  // Gold, with overlay.
+comp_258=
+comp_259=  // oC *= n3D(sp*128.)*.35 + .65; // Extra fine grained noisy texturing.
+comp_260=
+comp_261=  // Sending some greenish particle pulses through the snake-like patterns. With all the shininess going
+comp_262=  // on, this effect is a little on the subtle side.
+comp_263=  float p1 = 1.0 - smoothstep(0., .1, fold.x*.5+.5);
+comp_264=  // Restrict to the snake-like path.
+comp_265=  // Other path.
+comp_266=  // float p2 = 1.0 - smoothstep(0., .1, cos(heightMap(sp.xy + 1. + time/4.)*6.283)*.5+.5);
+comp_267=  float p2 = 1.0 - smoothstep(0., .1, Voronoi(sp.xy*4. + float2(tm, cos(tm/4.))));
+comp_268=  p1 = (p2 + .25)*p1;
+comp_269=  // Overlap the paths.
+comp_270=  oC += oC.yxz*p1*p1;
+comp_271=  // Gives a kind of electron effect. Works better with just Voronoi, but it'll do.
+comp_272=
+comp_273=  float lDist = max(length(ld), 0.001);
+comp_274=  // Light distance.
+comp_275=  float atten = 1./(1. + lDist*.125);
+comp_276=  // Light attenuation.
+comp_277=
+comp_278=  ld /= lDist;
+comp_279=  // Normalizing the light direction vector.
 comp_280=
-comp_281=  // Shading. Note, there are no actual shadows. The camera is front on, so the following
-comp_282=  // two functions are enough to give a shadowy appearance.
-comp_283=  crv = crv*.9 + .1;
-comp_284=  // Curvature value, to darken the crevices.
-comp_285=  float ao = calculateAO(sp, sn);
-comp_286=  // Ambient occlusion, for self shadowing.
+comp_281=  float diff = max(dot(ld, sn), 0.);
+comp_282=  // Diffuse.
+comp_283=  float spec = pow(max( dot( reflect(-ld, sn), -rd ), 0.0 ), 16.);
+comp_284=  // Specular.
+comp_285=  float fre = pow(clamp(dot(sn, rd) + 1., .0, 1.), 3.);
+comp_286=  // Fresnel, for some mild glow.
 comp_287=
-comp_288=  // Combining the terms above to light the texel.
-comp_289=  float3 col = oC*(diff + .5) + float3(1., .7, .4)*spec*2. + float3(.4, .7, 1)*fre;
-comp_290=
-comp_291=  col += (oC*.5+.5)*envMap(reflect(rd, sn), sn)*6.;
-comp_292=  // Fake environment mapping.
-comp_293=
-comp_294=  // Edges.
-comp_295=  col *= 1. - edge*.85;
-comp_296=  // Darker edges.
+comp_288=  // Shading. Note, there are no actual shadows. The camera is front on, so the following
+comp_289=  // two functions are enough to give a shadowy appearance.
+comp_290=  crv = crv*.9 + .1;
+comp_291=  // Curvature value, to darken the crevices.
+comp_292=  float ao = calculateAO(sp, sn);
+comp_293=  // Ambient occlusion, for self shadowing.
+comp_294=
+comp_295=  // Combining the terms above to light the texel.
+comp_296=  float3 col = oC*(diff + .5) + float3(1., .7, .4)*spec*2. + float3(.4, .7, 1)*fre;
 comp_297=
-comp_298=  // Applying the shades.
-comp_299=  col *= (atten*crv*ao);
+comp_298=  col += (oC*.5+.5)*envMap(reflect(rd, sn), sn)*6.;
+comp_299=  // Fake environment mapping.
 comp_300=
-comp_301=  // Rough gamma correction, then present to the screen.
-comp_302=  fragColor = float4(sqrt(clamp(col, 0., 1.)), 1.);
-comp_303=  ret = fragColor;
-comp_304=}
+comp_301=  // Edges.
+comp_302=  col *= 1. - edge*.85;
+comp_303=  // Darker edges.
+comp_304=
+comp_305=  // Applying the shades.
+comp_306=  col *= (atten*crv*ao);
+comp_307=
+comp_308=  // Rough gamma correction, then present to the screen.
+comp_309=  fragColor = float4(sqrt(clamp(col, 0., 1.)), 1.);
+comp_310=  ret = fragColor;
+comp_311=}

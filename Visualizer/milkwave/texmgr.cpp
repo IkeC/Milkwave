@@ -213,6 +213,9 @@ bool texmgr::RunInitCode(int iSlot, char* szInitCode) {
   *(m_tex[iSlot].var_blendmode) = 0.0;
   *(m_tex[iSlot].var_done) = 0.0;
   *(m_tex[iSlot].var_burn) = 1.0;
+  *(m_tex[iSlot].var_title_dur) = (double)m_fTitleDur;
+  *(m_tex[iSlot].var_aspect) = (double)m_fAspect;
+  *(m_tex[iSlot].var_cover_style) = (double)m_fCoverStyle;
 
 #ifndef _NO_EXPR_
   if (m_tex[iSlot].m_codehandle)
@@ -293,6 +296,9 @@ void texmgr::RegisterBuiltInVariables(int iSlot) {
   m_tex[iSlot].var_mid_att = NSEEL_VM_regvar(eel_ctx, "mid_att");
   m_tex[iSlot].var_treb = NSEEL_VM_regvar(eel_ctx, "treb");
   m_tex[iSlot].var_treb_att = NSEEL_VM_regvar(eel_ctx, "treb_att");
+  m_tex[iSlot].var_title_dur = NSEEL_VM_regvar(eel_ctx, "title_dur");
+  m_tex[iSlot].var_aspect = NSEEL_VM_regvar(eel_ctx, "aspect");
+  m_tex[iSlot].var_cover_style = NSEEL_VM_regvar(eel_ctx, "cover_style");
 
   // output variables
   m_tex[iSlot].var_x = NSEEL_VM_regvar(eel_ctx, "x");

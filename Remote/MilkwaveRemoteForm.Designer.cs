@@ -275,6 +275,8 @@ namespace MilkwaveRemote
       numLyricsOutlineAmount = new NumericUpDown();
       label16 = new Label();
       pnlSettingTextborder = new Panel();
+      label17 = new Label();
+      cboSettingsCover = new ComboBox();
       btnSpace = new Button();
       btnBackspace = new Button();
       btnWatermark = new Button();
@@ -2212,7 +2214,7 @@ namespace MilkwaveRemote
       // 
       // lblVisIntensity
       // 
-      lblVisIntensity.Location = new Point(152, 5);
+      lblVisIntensity.Location = new Point(141, 5);
       lblVisIntensity.Name = "lblVisIntensity";
       lblVisIntensity.Size = new Size(58, 23);
       lblVisIntensity.TabIndex = 150;
@@ -2223,7 +2225,7 @@ namespace MilkwaveRemote
       // 
       // lblVisShift
       // 
-      lblVisShift.Location = new Point(159, 34);
+      lblVisShift.Location = new Point(148, 34);
       lblVisShift.Name = "lblVisShift";
       lblVisShift.Size = new Size(51, 23);
       lblVisShift.TabIndex = 152;
@@ -2234,7 +2236,7 @@ namespace MilkwaveRemote
       // 
       // lblVisVersion
       // 
-      lblVisVersion.Location = new Point(159, 63);
+      lblVisVersion.Location = new Point(148, 63);
       lblVisVersion.Name = "lblVisVersion";
       lblVisVersion.Size = new Size(51, 23);
       lblVisVersion.TabIndex = 154;
@@ -2446,7 +2448,7 @@ namespace MilkwaveRemote
       // 
       // lblQuality
       // 
-      lblQuality.Location = new Point(24, 121);
+      lblQuality.Location = new Point(154, 93);
       lblQuality.Name = "lblQuality";
       lblQuality.Size = new Size(45, 23);
       lblQuality.TabIndex = 161;
@@ -2468,7 +2470,7 @@ namespace MilkwaveRemote
       // 
       // lblBrightness
       // 
-      lblBrightness.Location = new Point(416, 34);
+      lblBrightness.Location = new Point(405, 34);
       lblBrightness.Name = "lblBrightness";
       lblBrightness.Size = new Size(66, 23);
       lblBrightness.TabIndex = 169;
@@ -2479,7 +2481,7 @@ namespace MilkwaveRemote
       // 
       // lblSaturation
       // 
-      lblSaturation.Location = new Point(279, 34);
+      lblSaturation.Location = new Point(268, 34);
       lblSaturation.Name = "lblSaturation";
       lblSaturation.Size = new Size(69, 23);
       lblSaturation.TabIndex = 167;
@@ -2490,7 +2492,7 @@ namespace MilkwaveRemote
       // 
       // lblHue
       // 
-      lblHue.Location = new Point(290, 5);
+      lblHue.Location = new Point(279, 5);
       lblHue.Name = "lblHue";
       lblHue.Size = new Size(58, 23);
       lblHue.TabIndex = 165;
@@ -2514,7 +2516,7 @@ namespace MilkwaveRemote
       // 
       chkQualityAuto.Appearance = Appearance.Button;
       chkQualityAuto.FlatStyle = FlatStyle.System;
-      chkQualityAuto.Location = new Point(282, 122);
+      chkQualityAuto.Location = new Point(412, 94);
       chkQualityAuto.Name = "chkQualityAuto";
       chkQualityAuto.Size = new Size(56, 23);
       chkQualityAuto.TabIndex = 172;
@@ -2616,7 +2618,7 @@ namespace MilkwaveRemote
       // 
       numSettingsHueAuto.DecimalPlaces = 2;
       numSettingsHueAuto.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numSettingsHueAuto.Location = new Point(488, 7);
+      numSettingsHueAuto.Location = new Point(477, 7);
       numSettingsHueAuto.Margin = new Padding(3, 2, 3, 2);
       numSettingsHueAuto.Maximum = new decimal(new int[] { 999, 0, 0, 131072 });
       numSettingsHueAuto.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
@@ -2632,7 +2634,7 @@ namespace MilkwaveRemote
       // 
       chkHueAuto.Appearance = Appearance.Button;
       chkHueAuto.FlatStyle = FlatStyle.System;
-      chkHueAuto.Location = new Point(421, 6);
+      chkHueAuto.Location = new Point(410, 6);
       chkHueAuto.Name = "chkHueAuto";
       chkHueAuto.Size = new Size(56, 23);
       chkHueAuto.TabIndex = 174;
@@ -2939,7 +2941,7 @@ namespace MilkwaveRemote
       // 
       // labelEQDecay
       // 
-      labelEQDecay.Location = new Point(143, 92);
+      labelEQDecay.Location = new Point(2, 120);
       labelEQDecay.Name = "labelEQDecay";
       labelEQDecay.Size = new Size(67, 23);
       labelEQDecay.TabIndex = 189;
@@ -3022,7 +3024,7 @@ namespace MilkwaveRemote
       // 
       // labelEQBoost
       // 
-      labelEQBoost.Location = new Point(281, 92);
+      labelEQBoost.Location = new Point(2, 148);
       labelEQBoost.Name = "labelEQBoost";
       labelEQBoost.Size = new Size(67, 23);
       labelEQBoost.TabIndex = 191;
@@ -3453,7 +3455,7 @@ namespace MilkwaveRemote
       // 
       chkInvert.Appearance = Appearance.Button;
       chkInvert.FlatStyle = FlatStyle.System;
-      chkInvert.Location = new Point(354, 64);
+      chkInvert.Location = new Point(343, 64);
       chkInvert.Name = "chkInvert";
       chkInvert.Size = new Size(56, 23);
       chkInvert.TabIndex = 192;
@@ -3466,7 +3468,7 @@ namespace MilkwaveRemote
       // 
       // label10
       // 
-      label10.Location = new Point(279, 63);
+      label10.Location = new Point(268, 63);
       label10.Name = "label10";
       label10.Size = new Size(69, 23);
       label10.TabIndex = 193;
@@ -3491,7 +3493,7 @@ namespace MilkwaveRemote
       // 
       // btnAudioTest
       // 
-      btnAudioTest.Location = new Point(282, 150);
+      btnAudioTest.Location = new Point(413, 122);
       btnAudioTest.Name = "btnAudioTest";
       btnAudioTest.Size = new Size(56, 23);
       btnAudioTest.TabIndex = 195;
@@ -3543,7 +3545,7 @@ namespace MilkwaveRemote
       // 
       // label16
       // 
-      label16.Location = new Point(416, 63);
+      label16.Location = new Point(342, 148);
       label16.Name = "label16";
       label16.Size = new Size(66, 23);
       label16.TabIndex = 197;
@@ -3555,12 +3557,36 @@ namespace MilkwaveRemote
       // 
       pnlSettingTextborder.BackColor = Color.Black;
       pnlSettingTextborder.BorderStyle = BorderStyle.FixedSingle;
-      pnlSettingTextborder.Location = new Point(550, 65);
+      pnlSettingTextborder.Location = new Point(477, 150);
       pnlSettingTextborder.Name = "pnlSettingTextborder";
       pnlSettingTextborder.Size = new Size(30, 23);
       pnlSettingTextborder.TabIndex = 225;
       toolTip1.SetToolTip(pnlSettingTextborder, "Outline color for messages and notifications (settings.ini: TextBorderColorR/G/B)");
       pnlSettingTextborder.Click += pnlSettingTextborder_Click;
+      // 
+      // label17
+      // 
+      label17.Location = new Point(141, 148);
+      label17.Name = "label17";
+      label17.Size = new Size(58, 23);
+      label17.TabIndex = 226;
+      label17.Text = "Cover";
+      label17.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label17, "Outline thickness for all messages and notifications");
+      // 
+      // cboSettingsCover
+      // 
+      cboSettingsCover.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboSettingsCover.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboSettingsCover.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboSettingsCover.FormattingEnabled = true;
+      cboSettingsCover.Items.AddRange(new object[] { "Corner (small)", "Corner (medium)", "Corner (large)", "Fullscreen Zoom" });
+      cboSettingsCover.Location = new Point(205, 150);
+      cboSettingsCover.Name = "cboSettingsCover";
+      cboSettingsCover.Size = new Size(132, 23);
+      cboSettingsCover.TabIndex = 227;
+      toolTip1.SetToolTip(cboSettingsCover, "Album cover: lower-right thumbnail in three sizes (small/medium/large) or the classic fullscreen zoom");
+      cboSettingsCover.SelectedIndexChanged += cboSettingsCover_SelectedIndexChanged;
       // 
       // btnSpace
       // 
@@ -3840,7 +3866,7 @@ namespace MilkwaveRemote
       // 
       numVisShift.DecimalPlaces = 2;
       numVisShift.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numVisShift.Location = new Point(216, 36);
+      numVisShift.Location = new Point(205, 36);
       numVisShift.Margin = new Padding(3, 2, 3, 2);
       numVisShift.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numVisShift.Minimum = new decimal(new int[] { 99999, 0, 0, -2147352576 });
@@ -3854,7 +3880,7 @@ namespace MilkwaveRemote
       // 
       numVisIntensity.DecimalPlaces = 2;
       numVisIntensity.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numVisIntensity.Location = new Point(216, 7);
+      numVisIntensity.Location = new Point(205, 7);
       numVisIntensity.Margin = new Padding(3, 2, 3, 2);
       numVisIntensity.Maximum = new decimal(new int[] { 99999, 0, 0, 131072 });
       numVisIntensity.Name = "numVisIntensity";
@@ -3911,7 +3937,7 @@ namespace MilkwaveRemote
       // 
       // numVisVersion
       // 
-      numVisVersion.Location = new Point(216, 65);
+      numVisVersion.Location = new Point(205, 65);
       numVisVersion.Margin = new Padding(3, 2, 3, 2);
       numVisVersion.Maximum = new decimal(new int[] { 999, 0, 0, 0 });
       numVisVersion.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -4788,6 +4814,8 @@ namespace MilkwaveRemote
       // 
       tabSettings.BackColor = SystemColors.ControlLight;
       tabSettings.BorderStyle = BorderStyle.FixedSingle;
+      tabSettings.Controls.Add(cboSettingsCover);
+      tabSettings.Controls.Add(label17);
       tabSettings.Controls.Add(pnlSettingTextborder);
       tabSettings.Controls.Add(numSettingTextborder);
       tabSettings.Controls.Add(label16);
@@ -4838,7 +4866,7 @@ namespace MilkwaveRemote
       // 
       // numSettingTextborder
       // 
-      numSettingTextborder.Location = new Point(488, 65);
+      numSettingTextborder.Location = new Point(413, 150);
       numSettingTextborder.Margin = new Padding(3, 2, 3, 2);
       numSettingTextborder.Maximum = new decimal(new int[] { 16, 0, 0, 0 });
       numSettingTextborder.Name = "numSettingTextborder";
@@ -4850,7 +4878,7 @@ namespace MilkwaveRemote
       // 
       // label12
       // 
-      label12.Location = new Point(217, 150);
+      label12.Location = new Point(348, 122);
       label12.Name = "label12";
       label12.Size = new Size(51, 23);
       label12.TabIndex = 194;
@@ -4861,7 +4889,7 @@ namespace MilkwaveRemote
       // 
       numFFTBoost.DecimalPlaces = 2;
       numFFTBoost.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numFFTBoost.Location = new Point(354, 94);
+      numFFTBoost.Location = new Point(75, 150);
       numFFTBoost.Margin = new Padding(3, 2, 3, 2);
       numFFTBoost.Maximum = new decimal(new int[] { 999, 0, 0, 131072 });
       numFFTBoost.Name = "numFFTBoost";
@@ -4875,7 +4903,7 @@ namespace MilkwaveRemote
       // 
       numFFTDecay.DecimalPlaces = 2;
       numFFTDecay.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numFFTDecay.Location = new Point(216, 94);
+      numFFTDecay.Location = new Point(75, 122);
       numFFTDecay.Margin = new Padding(3, 2, 3, 2);
       numFFTDecay.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numFFTDecay.Name = "numFFTDecay";
@@ -4901,7 +4929,7 @@ namespace MilkwaveRemote
       // 
       // btnCacheClear
       // 
-      btnCacheClear.Location = new Point(75, 150);
+      btnCacheClear.Location = new Point(205, 122);
       btnCacheClear.Name = "btnCacheClear";
       btnCacheClear.Size = new Size(56, 23);
       btnCacheClear.TabIndex = 185;
@@ -4911,7 +4939,7 @@ namespace MilkwaveRemote
       // 
       // btnCacheCompile
       // 
-      btnCacheCompile.Location = new Point(140, 150);
+      btnCacheCompile.Location = new Point(270, 122);
       btnCacheCompile.Name = "btnCacheCompile";
       btnCacheCompile.Size = new Size(70, 23);
       btnCacheCompile.TabIndex = 184;
@@ -4921,7 +4949,7 @@ namespace MilkwaveRemote
       // 
       // label19
       // 
-      label19.Location = new Point(19, 150);
+      label19.Location = new Point(149, 122);
       label19.Name = "label19";
       label19.Size = new Size(51, 23);
       label19.TabIndex = 183;
@@ -4932,7 +4960,7 @@ namespace MilkwaveRemote
       // 
       numSettingsBrightness.DecimalPlaces = 2;
       numSettingsBrightness.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numSettingsBrightness.Location = new Point(488, 36);
+      numSettingsBrightness.Location = new Point(477, 36);
       numSettingsBrightness.Margin = new Padding(3, 2, 3, 2);
       numSettingsBrightness.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numSettingsBrightness.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
@@ -4946,7 +4974,7 @@ namespace MilkwaveRemote
       // 
       numSettingsSaturation.DecimalPlaces = 2;
       numSettingsSaturation.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numSettingsSaturation.Location = new Point(354, 36);
+      numSettingsSaturation.Location = new Point(343, 36);
       numSettingsSaturation.Margin = new Padding(3, 2, 3, 2);
       numSettingsSaturation.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numSettingsSaturation.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
@@ -4960,7 +4988,7 @@ namespace MilkwaveRemote
       // 
       numSettingsHue.DecimalPlaces = 2;
       numSettingsHue.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numSettingsHue.Location = new Point(354, 7);
+      numSettingsHue.Location = new Point(343, 7);
       numSettingsHue.Margin = new Padding(3, 2, 3, 2);
       numSettingsHue.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numSettingsHue.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
@@ -4972,7 +5000,7 @@ namespace MilkwaveRemote
       // 
       // btnQualityDouble
       // 
-      btnQualityDouble.Location = new Point(140, 122);
+      btnQualityDouble.Location = new Point(270, 94);
       btnQualityDouble.Name = "btnQualityDouble";
       btnQualityDouble.Size = new Size(70, 23);
       btnQualityDouble.TabIndex = 163;
@@ -4982,7 +5010,7 @@ namespace MilkwaveRemote
       // 
       // btnQualityHalf
       // 
-      btnQualityHalf.Location = new Point(216, 122);
+      btnQualityHalf.Location = new Point(346, 94);
       btnQualityHalf.Name = "btnQualityHalf";
       btnQualityHalf.Size = new Size(56, 23);
       btnQualityHalf.TabIndex = 162;
@@ -4994,7 +5022,7 @@ namespace MilkwaveRemote
       // 
       numQuality.DecimalPlaces = 2;
       numQuality.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numQuality.Location = new Point(75, 122);
+      numQuality.Location = new Point(205, 94);
       numQuality.Margin = new Padding(3, 2, 3, 2);
       numQuality.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numQuality.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
@@ -6708,5 +6736,7 @@ namespace MilkwaveRemote
     private NumericUpDown numSettingTextborder;
     private Label label16;
     private Panel pnlSettingTextborder;
+    private ComboBox cboSettingsCover;
+    private Label label17;
   }
 }

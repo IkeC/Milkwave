@@ -490,6 +490,9 @@ void CPlugin::MyReadConfig() {
   m_SongInfoDisplaySeconds = GetPrivateProfileFloatW(L"Milkwave", L"SongInfoDisplaySeconds", m_SongInfoDisplaySeconds, pIni);
   m_bShowSongInfo = GetPrivateProfileBoolW(L"Milkwave", L"ShowSongInfo", m_bShowSongInfo, pIni);
   m_DisplayCover = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCover", m_DisplayCover, pIni);
+  m_CoverStyle = GetPrivateProfileIntW(L"Milkwave", L"CoverStyle", m_CoverStyle, pIni);
+  if (m_CoverStyle < 0) m_CoverStyle = 0;
+  if (m_CoverStyle > 3) m_CoverStyle = 3;
   m_InvertPresetOutput = GetPrivateProfileBoolW(L"Milkwave", L"InvertPresetOutput", m_InvertPresetOutput, pIni);
   m_DisplayCoverWhenPressingB = GetPrivateProfileBoolW(L"Milkwave", L"DisplayCoverWhenPressingB", m_DisplayCoverWhenPressingB, pIni);
   m_bPresetInfoOnChange = GetPrivateProfileBoolW(L"Milkwave", L"PresetInfoOnChange", m_bPresetInfoOnChange, pIni);
@@ -733,6 +736,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_bShowSongInfo, L"ShowSongInfo", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_ChangePresetWithSong, L"ChangePresetWithSong", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_DisplayCover, L"DisplayCover", pIni, L"Milkwave");
+  WritePrivateProfileIntW(m_CoverStyle, L"CoverStyle", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_bPresetInfoOnChange, L"PresetInfoOnChange", pIni, L"Milkwave");
   WritePrivateProfileFloatW(m_PresetInfoOnChangeSeconds, L"PresetInfoOnChangeSeconds", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_textBorder, L"TextBorder", pIni, L"Milkwave");

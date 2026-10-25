@@ -619,6 +619,19 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.AddNotification(enabled ? L"Cover Display enabled" : L"Cover Display disabled");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
+  } else if (wcsncmp(sMessage, L"COVER_STYLE=", 12) == 0) {
+    // "COVER_STYLE=0/1/2/3": 0 = small, 1 = medium, 2 = large lower-right thumbnail, 3 = fullscreen zoom.
+    std::wstring styleValue(sMessage + 12);
+    int style = _wtoi(styleValue.c_str());
+    if (style < 0) style = 0;
+    if (style > 3) style = 3;
+    if (style != g_plugin.m_CoverStyle) {
+      g_plugin.m_CoverStyle = style;
+      WritePrivateProfileIntW(style, L"CoverStyle", g_plugin.GetConfigIniFile(), L"Milkwave");
+      g_plugin.AddNotification(style == 0 ? L"Cover: Corner (small)" : style == 1 ? L"Cover: Corner (medium)" : style == 2 ? L"Cover: Corner (large)"
+                                                                                                                                     : L"Cover: fullscreen zoom");
+      g_plugin.SendSettingsInfoToMilkwaveRemote();
+    }
   } else if (wcsncmp(sMessage, L"SONGINFO_POLLING", 16) == 0) {
     // "SONGINFO_POLLING=1/0" sets the state (Remote checkbox), the bare
     // "SONGINFO_POLLING" (command buttons / scripts) toggles it like Ctrl+B.
