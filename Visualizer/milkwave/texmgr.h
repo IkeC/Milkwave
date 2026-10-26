@@ -85,6 +85,7 @@ DDPIXELFORMAT          ddpf;
   double* var_aspect;     // screen height/width ratio of the render target (width/height), for square sprites
   double* var_cover_style;  // 0 = cover in the lower-right corner, 1 = fullscreen zoom
   double* var_taskbar;      // fraction of the height covered by the taskbar (Desktop Mode), 0 otherwise
+  double* var_img_aspect;   // image height/width (1 for square artwork, 0.5625 for a 16:9 video thumbnail)
   // output variables for expression eval
   double *var_x, *var_y;
   double *var_sx, *var_sy, *var_rot, *var_flipx, *var_flipy;

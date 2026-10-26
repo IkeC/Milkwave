@@ -1423,6 +1423,25 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
   SendMessageToMilkwaveRemote(msg.c_str(), true);
 }
 
+void CPlugin::SetRenderQuality(float newQuality, bool notify) {
+  const float clamped = clamp(newQuality, 0.01f, 1.0f);
+  if (fabsf(clamped - m_fRenderQuality) > 0.0001f) {
+    m_fRenderQuality = clamped;
+    ResetBufferAndFonts();
+    SendSettingsInfoToMilkwaveRemote();
+  }
+  if (notify)
+    NotifyRenderQuality();
+}
+
+void CPlugin::NotifyRenderQuality() {
+  // Show the quality setting (what the shortcut/slider changes, the same value the Remote shows);
+  // in auto mode the rendered resolution is derived from it and the window size.
+  wchar_t buf[64];
+  swprintf_s(buf, 64, bQualityAuto ? L"Quality %d%% (auto)" : L"Quality %d%%", (int)(m_fRenderQuality * 100.0f + 0.5f));
+  AddNotification(buf);
+}
+
 void CPlugin::CaptureScreenshot() {
   wchar_t filename[MAX_PATH];
   CaptureScreenshotWithFilename(filename, MAX_PATH);

@@ -1270,6 +1270,21 @@ static LRESULT CALLBACK DesktopControllerWndProc(HWND hWnd, UINT uMsg, WPARAM wP
   }
 
   switch (uMsg) {
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+    case WM_CHAR:
+    case WM_SYSCHAR:
+    case WM_SYSKEYDOWN:
+    case WM_SYSKEYUP: {
+      // Desktop Mode makes the render window a non-activatable child of the desktop, so it can
+      // never take the keyboard focus by itself. The taskbar button belongs to this controller
+      // window, so when the user selects the visualizer there, hand the keys over to the render
+      // window and the usual shortcuts (F1, Ctrl+Q, Ctrl+F9, ...) work as expected.
+      if (desktopControllerOwner != nullptr && IsWindow(desktopControllerOwner)) {
+        PostMessageW(desktopControllerOwner, uMsg, wParam, lParam);
+      }
+      return 0;
+    }
     case WM_CLOSE: {
       // The taskbar's "Close window" must close the visualizer, not just the
       // invisible controller window.
@@ -1318,13 +1333,22 @@ static void EnsureDesktopControllerWindow(HWND mainWindow) {
   GetWindowTextW(mainWindow, title, _countof(title));
 
   desktopControllerOwner = mainWindow;
+  // No WS_EX_NOACTIVATE: the user may pick the visualizer in the taskbar while Desktop Mode is
+  // active, and this window has to take the focus so the keyboard shortcuts can be forwarded.
   desktopControllerWindow = CreateWindowExW(
-      WS_EX_APPWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
+      WS_EX_APPWINDOW | WS_EX_LAYERED | WS_EX_TRANSPARENT,
       kDesktopControllerClass, title, WS_POPUP,
       0, 0, 1, 1, nullptr, nullptr, instance, nullptr);
   if (desktopControllerWindow != nullptr) {
     SetLayeredWindowAttributes(desktopControllerWindow, 0, 0, LWA_ALPHA);
     ShowWindow(desktopControllerWindow, SW_SHOWNOACTIVATE);
+    wchar_t message[128];
+    swprintf_s(message, L"Desktop Mode: controller window 0x%p created", desktopControllerWindow);
+    milkwave.LogInfo(message);
+  } else {
+    wchar_t message[128];
+    swprintf_s(message, L"Desktop Mode: controller window could not be created (err=%lu)", GetLastError());
+    milkwave.LogInfo(message);
   }
 }
 

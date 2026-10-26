@@ -837,11 +837,11 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     g_plugin.AddError(buf, 2.0f, ERR_NOTIFY, false);
   } else if (wcsncmp(sMessage, L"VAR_QUALITY=", 12) == 0) {
     std::wstring message(sMessage + 12);
-    g_plugin.m_fRenderQuality = std::stof(message);
-    ResetBufferAndFonts();
+    g_plugin.SetRenderQuality(std::stof(message));  // Remote slider: notifies "Quality NN%"
   } else if (wcsncmp(sMessage, L"VAR_AUTO=", 9) == 0) {
     g_plugin.bQualityAuto = (sMessage[9] == L'1');
     ResetBufferAndFonts();
+    g_plugin.NotifyRenderQuality();  // auto quality changes the effective value too
   } else if (wcsncmp(sMessage, L"SPOUT_ACTIVE=", 13) == 0) {
     wchar_t status = sMessage[13];
     if ((status == L'0' && bSpoutOut) || (status == L'1' && !bSpoutOut)) {
@@ -1216,19 +1216,9 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     m_blackmode = !m_blackmode;  // Ctrl+F12
     AddNotification(m_blackmode ? L"Black Mode enabled" : L"Black Mode disabled");
   } else if (wcsncmp(sMessage, L"QUALITY_DOUBLE", 14) == 0) {
-    const float newQuality = clamp(m_fRenderQuality * 2.0f, 0.01f, 1.0f);  // Ctrl+Q
-    if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
-      m_fRenderQuality = newQuality;
-      ResetBufferAndFonts();
-      SendSettingsInfoToMilkwaveRemote();
-    }
+    SetRenderQuality(m_fRenderQuality * 2.0f);  // Ctrl+Q
   } else if (wcsncmp(sMessage, L"QUALITY_HALF", 12) == 0) {
-    const float newQuality = clamp(m_fRenderQuality * 0.5f, 0.01f, 1.0f);  // Shift+Ctrl+Q
-    if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
-      m_fRenderQuality = newQuality;
-      ResetBufferAndFonts();
-      SendSettingsInfoToMilkwaveRemote();
-    }
+    SetRenderQuality(m_fRenderQuality * 0.5f);  // Shift+Ctrl+Q
   } else if (wcsncmp(sMessage, L"HUE_SHIFT_UP", 12) == 0) {
     m_ColShiftHue += 0.02f;  // Ctrl+H
     if (m_ColShiftHue >= 1.0f) m_ColShiftHue = -1.0f;

@@ -4390,6 +4390,10 @@ lpDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTFP_LINEAR );
       *(m_texmgr.m_tex[iSlot].var_aspect) = (double)m_texmgr.m_fAspect;
       *(m_texmgr.m_tex[iSlot].var_cover_style) = (double)m_texmgr.m_fCoverStyle;
       *(m_texmgr.m_tex[iSlot].var_taskbar) = (double)m_texmgr.m_fTaskbar;
+      // the drawing code below squashes the sprite to the image's own aspect ratio, so let the
+      // sprite code know it too (a 16:9 video thumbnail is not square like album art)
+      *(m_texmgr.m_tex[iSlot].var_img_aspect) =
+          (m_texmgr.m_tex[iSlot].img_w > 0) ? (double)m_texmgr.m_tex[iSlot].img_h / (double)m_texmgr.m_tex[iSlot].img_w : 1.0;
       *(m_texmgr.m_tex[iSlot].var_bass) = (double)mysound.imm_rel[0];
       *(m_texmgr.m_tex[iSlot].var_mid) = (double)mysound.imm_rel[1];
       *(m_texmgr.m_tex[iSlot].var_treb) = (double)mysound.imm_rel[2];

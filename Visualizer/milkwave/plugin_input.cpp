@@ -718,12 +718,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
               case 'Q': {
                 if (bCtrlHeldDown) {
                   const float multiplier = bShiftHeldDown ? 2.0f : 0.5f;
-                  float newQuality = clamp(m_fRenderQuality * multiplier, 0.01f, 1.0f);
-                  if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
-                    m_fRenderQuality = newQuality;
-                    ResetBufferAndFonts();
-                    SendSettingsInfoToMilkwaveRemote();
-                  }
+                  SetRenderQuality(m_fRenderQuality * multiplier);  // notifies "Quality NN%"
                   return 0;
                 }
                 break;
@@ -1378,6 +1373,14 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           break;
 
         case VK_SPACE:
+          // Ctrl+Space mirrors the middle mouse button: re-poll the current track info (and
+          // album cover) and flash the preset info, so it answers "which song / preset is this".
+          if ((GetKeyState(VK_CONTROL) & mask) != 0) {
+            if (milkwave)
+              milkwave->doPollExplicit = true;
+            FlashPresetInfo();
+            return 0;  // we processed (or absorbed) the key
+          }
           if (m_UI_mode == UI_LOAD)
             goto HitEnterFromLoadMenu;
           if (!m_bPresetLockedByCode) {
@@ -1848,12 +1851,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
           SendPresetWaveInfoToMilkwaveRemote();
         } else {
           const float multiplier = (wParam == 'q') ? 0.5f : 2.0f;
-          float newQuality = clamp(m_fRenderQuality * multiplier, 0.01f, 1.0f);
-          if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
-            m_fRenderQuality = newQuality;
-            ResetBufferAndFonts();
-            SendSettingsInfoToMilkwaveRemote();
-          }
+          SetRenderQuality(m_fRenderQuality * multiplier);  // notifies "Quality NN%"
         }
         return 0;  // we processed (or absorbed) the key
       }

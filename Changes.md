@@ -14,8 +14,10 @@
 * Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
 * Remote/Visualizer: "Textborder" setting outlines all messages and notifications with configurable color
 * Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
+* Visualizer: Changing the render quality shows a notification (e.g. "Quality 50%")
 * Remote Settings tab: Invert preset output
 * Song Cover: lower-right thumbnail in three sizes (small, medium, large) or fullscreen, fading with the song title and staying above the taskbar in Desktop Mode
+* Song Cover: non-square artwork (e.g. a 16:9 video thumbnail) keeps its aspect ratio and stays in the corner instead of leaving a gap below it
 * Visualizer: Lyrics lookup retries temporary LRCLIB failures (busy/rate limited) instead of leaving the new song without lyrics
 * Visualizer: Lyrics keep the same size at every render quality setting
 

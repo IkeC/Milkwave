@@ -252,6 +252,7 @@ bool texmgr::RunInitCode(int iSlot, char* szInitCode) {
   *(m_tex[iSlot].var_aspect) = (double)m_fAspect;
   *(m_tex[iSlot].var_cover_style) = (double)m_fCoverStyle;
   *(m_tex[iSlot].var_taskbar) = (double)m_fTaskbar;
+  *(m_tex[iSlot].var_img_aspect) = (m_tex[iSlot].img_w > 0) ? (double)m_tex[iSlot].img_h / (double)m_tex[iSlot].img_w : 1.0;
 
 #ifndef _NO_EXPR_
   if (m_tex[iSlot].m_codehandle)
@@ -336,6 +337,7 @@ void texmgr::RegisterBuiltInVariables(int iSlot) {
   m_tex[iSlot].var_aspect = NSEEL_VM_regvar(eel_ctx, "aspect");
   m_tex[iSlot].var_cover_style = NSEEL_VM_regvar(eel_ctx, "cover_style");
   m_tex[iSlot].var_taskbar = NSEEL_VM_regvar(eel_ctx, "taskbar");
+  m_tex[iSlot].var_img_aspect = NSEEL_VM_regvar(eel_ctx, "img_aspect");
 
   // output variables
   m_tex[iSlot].var_x = NSEEL_VM_regvar(eel_ctx, "x");

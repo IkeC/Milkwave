@@ -682,6 +682,11 @@ class CPlugin : public CPluginShell {
   // change does. Does nothing while the info is shown permanently (F4) or when the
   // feature is turned off (Ctrl+F4).
   void FlashPresetInfo();
+  // Applies a new render quality (clamped to 1..100%), rebuilds the buffers and fonts, tells the
+  // Remote and shows "Quality NN%" - one path for the shortcuts, the Remote slider and IPC.
+  void SetRenderQuality(float newQuality, bool notify = true);
+  // Shows the effective quality (auto quality included) as "Quality NN%" / "Quality NN% (auto)".
+  void NotifyRenderQuality();
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile);
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile, bool doForce);
   void PostMessageToMilkwaveRemote(UINT msg);
