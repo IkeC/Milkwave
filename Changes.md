@@ -15,7 +15,9 @@
 * Remote/Visualizer: "Textborder" setting outlines all messages and notifications with configurable color
 * Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
 * Remote Settings tab: Invert preset output
-* Song Cover: lower-right thumbnail in three sizes (small, medium, large) or fullscreen, fading with the song title
+* Song Cover: lower-right thumbnail in three sizes (small, medium, large) or fullscreen, fading with the song title and staying above the taskbar in Desktop Mode
+* Visualizer: Lyrics lookup retries temporary LRCLIB failures (busy/rate limited) instead of leaving the new song without lyrics
+* Visualizer: Lyrics keep the same size at every render quality setting
 
 ## v4.1 (2026-09-10)
 

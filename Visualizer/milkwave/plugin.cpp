@@ -1706,6 +1706,7 @@ bool CPlugin::LaunchSprite(int nSpriteNum, int nSlot) {
   m_texmgr.m_fTitleDur = m_fSongTitleAnimDuration;
   m_texmgr.m_fAspect = (GetHeight() > 0) ? (float)GetWidth() / (float)GetHeight() : 1.7778f;
   m_texmgr.m_fCoverStyle = (float)m_CoverStyle;
+  m_texmgr.m_fTaskbar = GetDesktopModeBottomInset();
   int ret = m_texmgr.LoadTex(img, nSlot, initcode, code, GetTime(), GetFrame(), ck);
   m_texmgr.m_tex[nSlot].nUserData = nSpriteNum;
   wchar_t buf[1024];

@@ -1083,6 +1083,7 @@ class CPlugin : public CPluginShell {
   void ApplyWindowOpacity(HWND hwnd, float opacity);
   bool IsBorderlessFullscreen(HWND hWnd);
   int GetDesktopModeTaskbarHeight();  // taskbar covering the bottom of the window, in canvas pixels (0 outside Desktop Mode)
+  float GetDesktopModeBottomInset();  // same as a fraction of the window height (0 = nothing covers the bottom)
   virtual LRESULT MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
   void KillAllSprites();
   void KillAllSupertexts();

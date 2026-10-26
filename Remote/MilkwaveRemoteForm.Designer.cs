@@ -2448,7 +2448,7 @@ namespace MilkwaveRemote
       // 
       // lblQuality
       // 
-      lblQuality.Location = new Point(154, 93);
+      lblQuality.Location = new Point(154, 149);
       lblQuality.Name = "lblQuality";
       lblQuality.Size = new Size(45, 23);
       lblQuality.TabIndex = 161;
@@ -2516,7 +2516,7 @@ namespace MilkwaveRemote
       // 
       chkQualityAuto.Appearance = Appearance.Button;
       chkQualityAuto.FlatStyle = FlatStyle.System;
-      chkQualityAuto.Location = new Point(412, 94);
+      chkQualityAuto.Location = new Point(412, 150);
       chkQualityAuto.Name = "chkQualityAuto";
       chkQualityAuto.Size = new Size(56, 23);
       chkQualityAuto.TabIndex = 172;
@@ -3493,7 +3493,7 @@ namespace MilkwaveRemote
       // 
       // btnAudioTest
       // 
-      btnAudioTest.Location = new Point(413, 122);
+      btnAudioTest.Location = new Point(412, 122);
       btnAudioTest.Name = "btnAudioTest";
       btnAudioTest.Size = new Size(56, 23);
       btnAudioTest.TabIndex = 195;
@@ -3545,7 +3545,7 @@ namespace MilkwaveRemote
       // 
       // label16
       // 
-      label16.Location = new Point(342, 148);
+      label16.Location = new Point(342, 92);
       label16.Name = "label16";
       label16.Size = new Size(66, 23);
       label16.TabIndex = 197;
@@ -3557,7 +3557,7 @@ namespace MilkwaveRemote
       // 
       pnlSettingTextborder.BackColor = Color.Black;
       pnlSettingTextborder.BorderStyle = BorderStyle.FixedSingle;
-      pnlSettingTextborder.Location = new Point(477, 150);
+      pnlSettingTextborder.Location = new Point(477, 94);
       pnlSettingTextborder.Name = "pnlSettingTextborder";
       pnlSettingTextborder.Size = new Size(30, 23);
       pnlSettingTextborder.TabIndex = 225;
@@ -3566,7 +3566,7 @@ namespace MilkwaveRemote
       // 
       // label17
       // 
-      label17.Location = new Point(141, 148);
+      label17.Location = new Point(141, 92);
       label17.Name = "label17";
       label17.Size = new Size(58, 23);
       label17.TabIndex = 226;
@@ -3581,9 +3581,9 @@ namespace MilkwaveRemote
       cboSettingsCover.DropDownStyle = ComboBoxStyle.DropDownList;
       cboSettingsCover.FormattingEnabled = true;
       cboSettingsCover.Items.AddRange(new object[] { "Corner (small)", "Corner (medium)", "Corner (large)", "Fullscreen Zoom" });
-      cboSettingsCover.Location = new Point(205, 150);
+      cboSettingsCover.Location = new Point(205, 94);
       cboSettingsCover.Name = "cboSettingsCover";
-      cboSettingsCover.Size = new Size(132, 23);
+      cboSettingsCover.Size = new Size(133, 23);
       cboSettingsCover.TabIndex = 227;
       toolTip1.SetToolTip(cboSettingsCover, "Album cover: lower-right thumbnail in three sizes (small/medium/large) or the classic fullscreen zoom");
       cboSettingsCover.SelectedIndexChanged += cboSettingsCover_SelectedIndexChanged;
@@ -4866,7 +4866,7 @@ namespace MilkwaveRemote
       // 
       // numSettingTextborder
       // 
-      numSettingTextborder.Location = new Point(413, 150);
+      numSettingTextborder.Location = new Point(413, 94);
       numSettingTextborder.Margin = new Padding(3, 2, 3, 2);
       numSettingTextborder.Maximum = new decimal(new int[] { 16, 0, 0, 0 });
       numSettingTextborder.Name = "numSettingTextborder";
@@ -5000,7 +5000,7 @@ namespace MilkwaveRemote
       // 
       // btnQualityDouble
       // 
-      btnQualityDouble.Location = new Point(270, 94);
+      btnQualityDouble.Location = new Point(270, 150);
       btnQualityDouble.Name = "btnQualityDouble";
       btnQualityDouble.Size = new Size(70, 23);
       btnQualityDouble.TabIndex = 163;
@@ -5010,7 +5010,7 @@ namespace MilkwaveRemote
       // 
       // btnQualityHalf
       // 
-      btnQualityHalf.Location = new Point(346, 94);
+      btnQualityHalf.Location = new Point(347, 150);
       btnQualityHalf.Name = "btnQualityHalf";
       btnQualityHalf.Size = new Size(56, 23);
       btnQualityHalf.TabIndex = 162;
@@ -5022,7 +5022,7 @@ namespace MilkwaveRemote
       // 
       numQuality.DecimalPlaces = 2;
       numQuality.Increment = new decimal(new int[] { 2, 0, 0, 131072 });
-      numQuality.Location = new Point(205, 94);
+      numQuality.Location = new Point(205, 150);
       numQuality.Margin = new Padding(3, 2, 3, 2);
       numQuality.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numQuality.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });

@@ -57,10 +57,24 @@ void texmgr::Init(LPDIRECT3DDEVICE9 lpDD) {
   for (int i = 0; i < NUM_TEX; i++) {
     m_tex[i].pSurface = NULL;
     m_tex[i].szFileName[0] = 0;
+    ZeroMemory(&m_tex[i].ftWriteTime, sizeof(FILETIME));
     m_tex[i].m_codehandle = NULL;
     m_tex[i].m_szExpr[0] = 0;
     m_tex[i].tex_eel_ctx = NSEEL_VM_alloc();
   }
+}
+
+// Last write time of an image file; false when it cannot be queried (missing file, no access).
+static bool GetImageWriteTime(const wchar_t* szFilename, FILETIME* pft) {
+  if (!szFilename || !*szFilename || !pft)
+    return false;
+
+  WIN32_FILE_ATTRIBUTE_DATA data = {};
+  if (!GetFileAttributesExW(szFilename, GetFileExInfoStandard, &data))
+    return false;
+
+  *pft = data.ftLastWriteTime;
+  return true;
 }
 
 int texmgr::LoadTex(wchar_t* szFilename, int iSlot, char* szInitCode, char* szCode, float time, int frame, unsigned int ck) {
@@ -70,6 +84,24 @@ int texmgr::LoadTex(wchar_t* szFilename, int iSlot, char* szInitCode, char* szCo
   // Free any existing texture in this slot before reuse
   KillTex(iSlot);
 
+  // Timestamp of the file on disk right now. If a cached texture with the same name was loaded
+  // from an older version of the file (the media poll rewrites sprites\cover.png for every new
+  // song), drop it so the new artwork is loaded instead of showing the previous song's cover.
+  FILETIME ftNew = {};
+  const bool bHasWriteTime = GetImageWriteTime(szFilename, &ftNew);
+  if (bHasWriteTime) {
+    bool bStale = false;
+    for (int x = 0; x < NUM_TEX; x++)
+      if (m_tex[x].pSurface && _wcsicmp(m_tex[x].szFileName, szFilename) == 0 &&
+          CompareFileTime(&m_tex[x].ftWriteTime, &ftNew) != 0)
+        bStale = true;
+
+    if (bStale)
+      for (int x = 0; x < NUM_TEX; x++)
+        if (m_tex[x].pSurface && _wcsicmp(m_tex[x].szFileName, szFilename) == 0)
+          KillTex(x);
+  }
+
   // first, if this texture is already loaded, just add another instance.
   bool bTextureInstanced = false;
   {
@@ -78,6 +110,7 @@ int texmgr::LoadTex(wchar_t* szFilename, int iSlot, char* szInitCode, char* szCo
         m_tex[iSlot].pSurface = m_tex[x].pSurface;
         m_tex[iSlot].img_w = m_tex[x].img_w;
         m_tex[iSlot].img_h = m_tex[x].img_h;
+        m_tex[iSlot].ftWriteTime = m_tex[x].ftWriteTime;
         wcscpy(m_tex[iSlot].szFileName, szFilename);
         m_tex[iSlot].m_szExpr[0] = 0;
 
@@ -118,6 +151,7 @@ int texmgr::LoadTex(wchar_t* szFilename, int iSlot, char* szInitCode, char* szCo
 
     m_tex[iSlot].img_w = info.Width;
     m_tex[iSlot].img_h = info.Height;
+    m_tex[iSlot].ftWriteTime = bHasWriteTime ? ftNew : FILETIME{};
   }
 
   m_tex[iSlot].fStartTime = time;
@@ -157,6 +191,7 @@ void texmgr::KillTex(int iSlot) {
     m_tex[iSlot].pSurface = NULL;
   }
   m_tex[iSlot].szFileName[0] = 0;
+  ZeroMemory(&m_tex[iSlot].ftWriteTime, sizeof(FILETIME));
 
   FreeCode(iSlot);
 }
@@ -216,6 +251,7 @@ bool texmgr::RunInitCode(int iSlot, char* szInitCode) {
   *(m_tex[iSlot].var_title_dur) = (double)m_fTitleDur;
   *(m_tex[iSlot].var_aspect) = (double)m_fAspect;
   *(m_tex[iSlot].var_cover_style) = (double)m_fCoverStyle;
+  *(m_tex[iSlot].var_taskbar) = (double)m_fTaskbar;
 
 #ifndef _NO_EXPR_
   if (m_tex[iSlot].m_codehandle)
@@ -299,6 +335,7 @@ void texmgr::RegisterBuiltInVariables(int iSlot) {
   m_tex[iSlot].var_title_dur = NSEEL_VM_regvar(eel_ctx, "title_dur");
   m_tex[iSlot].var_aspect = NSEEL_VM_regvar(eel_ctx, "aspect");
   m_tex[iSlot].var_cover_style = NSEEL_VM_regvar(eel_ctx, "cover_style");
+  m_tex[iSlot].var_taskbar = NSEEL_VM_regvar(eel_ctx, "taskbar");
 
   // output variables
   m_tex[iSlot].var_x = NSEEL_VM_regvar(eel_ctx, "x");

@@ -11,6 +11,28 @@ constexpr std::int64_t ASSUMED_TIMELINE_START_OFFSET_MS = 500;
 // treat it as a real seek and let the displayed line go back. Prevents the
 // lyrics from briefly flickering back to a previous line.
 constexpr std::int64_t kLyricsBackwardJitterToleranceMs = 1000;
+
+// Retry policy for failed lyric lookups: LRCLIB answers 429/5xx (or not at all) often enough that
+// a single failed request would leave the song without lyrics until the user re-requests them.
+constexpr int kLyricsMaxRetries = 3;
+constexpr std::chrono::seconds kLyricsRetryDelay{2};
+
+// Only temporary problems are worth another attempt: a rate limit, a server error or a request
+// that failed before a status code arrived. "Not found" (404) would just repeat the same answer.
+bool IsTransientLyricsFailure(const LyricsResolution& resolution) {
+  if (resolution.document.state == LyricsDocumentState::Loaded ||
+      resolution.document.state == LyricsDocumentState::Instrumental) {
+    return false;
+  }
+  if (resolution.source != LyricsSource::None) {
+    return false;
+  }
+  if (resolution.httpStatus == 0) {
+    return !resolution.error.empty();
+  }
+  return resolution.httpStatus == 408 || resolution.httpStatus == 425 || resolution.httpStatus == 429 ||
+         resolution.httpStatus >= 500;
+}
 }  // namespace
 
 Milkwave::Milkwave() {}
@@ -394,6 +416,30 @@ void Milkwave::LyricsWorkerLoop() {
     }
 
     auto resolution = ResolveLyrics(lyricsInstallDirectory, track, L"Milkwave/1.0", apiUrl);
+
+    // LRCLIB answers 429/5xx or the request fails on the network level every now and then. Without
+    // a retry the song simply stays without lyrics until the user toggles lyrics off/on (which
+    // issues a fresh request), so keep retrying a few times with a growing delay. A newer track
+    // request during the wait supersedes the retries immediately.
+    for (int attempt = 0; IsTransientLyricsFailure(resolution) && attempt < kLyricsMaxRetries; ++attempt) {
+      LogInfo(L"Lyrics request failed (http=" + std::to_wstring(resolution.httpStatus) + L"), retry " +
+              std::to_wstring(attempt + 1) + L"/" + std::to_wstring(kLyricsMaxRetries) + L": " + track.artist +
+              L" - " + track.title);
+
+      {
+        std::unique_lock<std::mutex> lock(lyricsMutex);
+        const auto delay = kLyricsRetryDelay * (attempt + 1);
+        const bool superseded = lyricsCondition.wait_for(lock, delay, [this] {
+          return stopLyricsWorker || pendingLyricsTrack.has_value();
+        });
+        if (superseded) {
+          resolution = LyricsResolution{};  // a newer track is waiting; its generation check wins
+          break;
+        }
+      }
+
+      resolution = ResolveLyrics(lyricsInstallDirectory, track, L"Milkwave/1.0", apiUrl);
+    }
 
     std::lock_guard<std::mutex> lock(lyricsMutex);
     if (requestGeneration == lyricsRequestGeneration) {

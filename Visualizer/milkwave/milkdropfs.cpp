@@ -4383,9 +4383,13 @@ lpDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTFP_LINEAR );
       *(m_texmgr.m_tex[iSlot].var_fps) = (double)GetFps();
       *(m_texmgr.m_tex[iSlot].var_progress) = (double)m_pState->m_fBlendProgress;
       m_texmgr.m_fAspect = (GetHeight() > 0) ? (float)GetWidth() / (float)GetHeight() : 1.7778f;
+      // Desktop Mode stretches the window over the whole screen, so the taskbar covers the bottom
+      // edge; sprite code uses "taskbar" to keep e.g. the cover thumbnail above it (like the texts).
+      m_texmgr.m_fTaskbar = GetDesktopModeBottomInset();
       *(m_texmgr.m_tex[iSlot].var_title_dur) = (double)m_texmgr.m_fTitleDur;
       *(m_texmgr.m_tex[iSlot].var_aspect) = (double)m_texmgr.m_fAspect;
       *(m_texmgr.m_tex[iSlot].var_cover_style) = (double)m_texmgr.m_fCoverStyle;
+      *(m_texmgr.m_tex[iSlot].var_taskbar) = (double)m_texmgr.m_fTaskbar;
       *(m_texmgr.m_tex[iSlot].var_bass) = (double)mysound.imm_rel[0];
       *(m_texmgr.m_tex[iSlot].var_mid) = (double)mysound.imm_rel[1];
       *(m_texmgr.m_tex[iSlot].var_treb) = (double)mysound.imm_rel[2];

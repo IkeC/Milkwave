@@ -68,6 +68,9 @@ float                  scale_x, scale_y;  // the factors by which the original i
 DDPIXELFORMAT          ddpf;
   */
   wchar_t szFileName[512];
+  // Write time of szFileName when the texture was loaded, so a file that changed on disk
+  // (e.g. sprites\cover.png for the next song) is reloaded instead of re-instanced.
+  FILETIME ftWriteTime;
   float fStartTime;
   int nStartFrame;
   int nUserData;
@@ -81,6 +84,7 @@ DDPIXELFORMAT          ddpf;
   double* var_title_dur;  // duration of the song title animation, so sprites can fade in sync with it
   double* var_aspect;     // screen height/width ratio of the render target (width/height), for square sprites
   double* var_cover_style;  // 0 = cover in the lower-right corner, 1 = fullscreen zoom
+  double* var_taskbar;      // fraction of the height covered by the taskbar (Desktop Mode), 0 otherwise
   // output variables for expression eval
   double *var_x, *var_y;
   double *var_sx, *var_sy, *var_rot, *var_flipx, *var_flipy;
@@ -111,6 +115,7 @@ class texmgr {
   float m_fAspect = 1.7778f;
   // cover behaviour (0 = lower right corner, 1 = fullscreen zoom); exposed as "cover_style"
   float m_fCoverStyle = 0.0f;
+  float m_fTaskbar = 0.0f;
 
  protected:
   // members

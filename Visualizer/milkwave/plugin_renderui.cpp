@@ -256,12 +256,6 @@ void CPlugin::RenderLyricsOverlay(bool burnIn, int targetWidth, int targetHeight
   // target is the reduced-quality backbuffer, and 1:1 on the overlay/preset.
   const int logicalWidth = GetWidth();
   const float drawResolutionScale = logicalWidth > 0 ? (float)canvasWidth / (float)logicalWidth : 1.0f;
-  // Auto Scale has always sized text relative to the reduced backbuffer.
-  // Compensate here so the full-resolution texture keeps the same on-screen
-  // size that the quality-scaled lyrics had before.
-  const float qualityScale = IsSpoutActiveAndFixed()
-                                 ? 1.0f
-                                 : clamp(GetEffectiveRenderQuality(GetWidth(), GetHeight()), 0.01f, 1.0f);
 
   float opacity = lyricState.opacity;
   if (opacity < 0.0f) opacity = 0.0f;
@@ -302,7 +296,10 @@ void CPlugin::RenderLyricsOverlay(bool burnIn, int targetWidth, int targetHeight
       const int sampleWidth = sampleRect.right - sampleRect.left;
       const float baseScale = m_lyricsCurrentFontScale >= 0.0f ? m_lyricsCurrentFontScale : 1.0f;
       if (sampleWidth > 0) {
-        const float desiredSize = scaleForSize * baseScale * ((float)maxWidthPixels / (float)sampleWidth) / qualityScale;
+        // Widths are compared in the same units (GetWidth() is the window width and the
+        // sample is measured with the full-resolution font), so the resulting font size -
+        // and with it the on-screen lyric size - does not depend on the render quality.
+        const float desiredSize = scaleForSize * baseScale * ((float)maxWidthPixels / (float)sampleWidth);
         int targetPixels = (int)(desiredSize + 0.5f);
         if (targetPixels < 8) targetPixels = 8;
         if (targetPixels > 256) targetPixels = 256;
@@ -836,6 +833,42 @@ int CPlugin::GetDesktopModeTaskbarHeight() {
   // Text coordinates are scaled by the render quality.
   const float scale = GetEffectiveRenderQuality(GetWidth(), GetHeight());
   return static_cast<int>(taskbarHeight * scale + 0.5f);
+}
+
+// Same information as GetDesktopModeBottomInset(), but as a fraction of the window height
+// (0..1). Sprite code uses it via the "taskbar" variable to keep the cover thumbnail above the
+// taskbar in Desktop Mode, exactly like the song title texts.
+float CPlugin::GetDesktopModeBottomInset() {
+  if (!m_bDesktopMode) {
+    return 0.0f;
+  }
+
+  HWND hwnd = GetPluginWindow();
+  if (hwnd == nullptr) {
+    return 0.0f;
+  }
+
+  RECT windowRect = {0};
+  if (!GetWindowRect(hwnd, &windowRect)) {
+    return 0.0f;
+  }
+  const POINT bottomRight = {windowRect.right - 1, windowRect.bottom - 1};
+  HMONITOR monitor = MonitorFromPoint(bottomRight, MONITOR_DEFAULTTONEAREST);
+
+  MONITORINFO monitorInfo = {0};
+  monitorInfo.cbSize = sizeof(MONITORINFO);
+  if (monitor == nullptr || !GetMonitorInfo(monitor, &monitorInfo)) {
+    return 0.0f;
+  }
+
+  const int monitorHeight = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+  const int taskbarHeight = monitorInfo.rcMonitor.bottom - monitorInfo.rcWork.bottom;
+  if (monitorHeight <= 0 || taskbarHeight <= 0) {
+    return 0.0f;
+  }
+
+  const float inset = static_cast<float>(taskbarHeight) / static_cast<float>(monitorHeight);
+  return inset > 0.45f ? 0.45f : inset;  // never push the sprite more than ~half a screen
 }
 
 std::wstring CPlugin::TruncateTextWithEllipsis(LPD3DXFONT font, const std::wstring& text, int maxWidth) const {
