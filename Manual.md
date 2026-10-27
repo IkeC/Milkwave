@@ -8,7 +8,7 @@ If you need help with the Visualizer itself, press F1 there to cycle through the
 
 # Interface
 
-The Tabs panel (top half) holds most features available in the Remote, described in detail below. You can show or hide any of the tabs by setting the corresponding _ShowTab_ key in the _Milkwave_ section of _settings.ini_ (_ShowTabPreset_, _ShowTabMessage_, _ShowTabInOut_, _ShowTabSettings_, _ShowTabLyrics_, _ShowTabFonts_, _ShowTabMidi_, _ShowTabWave_ and _ShowTabShader_; all are on by default except the Shader tab).
+The Tabs panel (top half) holds most features available in the Remote, described in detail below. You can show or hide any of the tabs by setting the corresponding _ShowTab_ key in the _Milkwave_ section of _settings.ini_ (_ShowTabPreset_, _ShowTabMessage_, _ShowTabInOut_, _ShowTabSettings_, _ShowTabLyrics_, _ShowTabFonts_, _ShowTabMidi_, _ShowTabWave_ and _ShowTabShader_; all are on by default except the Shader tab). The same can be done from the "Show/Hide Tabs" submenu of the "Milkwave" menu in the bottom right corner, which toggles each tab individually and writes the setting to _settings.ini_.
 
 The Buttons panel (bottom half) has two modes: "Command" mode and "Preset" mode. You can switch between modes using the blue arrows button in the lower right corner.
 
@@ -22,7 +22,7 @@ You can also edit the **[Buttons]** section of _settings.ini_ by hand (restart t
 
 **Preset mode** allows you to assign the currently running preset to a button by right-clicking it. After assignmwent, the button will display a preview image of the preset. Left-clicking the button will start the preset in Visualizer, a middle-click will clear it. You can use blue numbered button in the lower right to switch between 3 banks of preset buttons, giving you a total of 45 assignable preset buttons. You can also press each of these buttons from script or MIDI using the command "BTN=<number>" (see _script-default.txt_ for details).
 
-Note that you can choose to hide either the Tabs or the Button panel with the popup menu that opens by clicking "Milkwave" in the bottom right corner. You may also use the menu to access help resources, open the Visualizer window, switch between light and dark mode, and toggle color or monochrome button image display.
+Note that you can choose to hide either the Tabs or the Button panel with the popup menu that opens by clicking "Milkwave" in the bottom right corner ("Tabs Panel" and "Button Panel"). The "Show/Hide Tabs" submenu of the same menu turns single tabs on or off. You may also use the menu to access help resources, open the Visualizer window, switch between light and dark mode, and toggle color or monochrome button image display.
 
 At the bottom, you can left-click the status bar to copy its content to the clipboard, middle-click to set a "compact" mode, or right-click to quickly switch between tabs and button panel. You can set the "compact" mode size in _settings-remote.json_ using the key _RemoteWindowCompactSize_.
 

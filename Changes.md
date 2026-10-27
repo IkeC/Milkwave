@@ -16,6 +16,7 @@
 * Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
 * Visualizer: Changing the render quality shows a notification (e.g. "Quality 50%")
 * Remote Settings tab: Invert preset output
+* Remote: "Show/Hide Tabs" submenu in the "Milkwave" menu turns each tab on or off individually (saved as the ShowTab* keys in _settings.ini_)
 * Song Cover: lower-right thumbnail in three sizes (small, medium, large) or fullscreen, fading with the song title and staying above the taskbar in Desktop Mode
 * Song Cover: non-square artwork (e.g. a 16:9 video thumbnail) keeps its aspect ratio and stays in the corner instead of leaving a gap below it
 * Visualizer: Lyrics lookup retries temporary LRCLIB failures (busy/rate limited) instead of leaving the new song without lyrics

@@ -3010,13 +3010,18 @@ int StartThreads(HINSTANCE instance) {
         milkwave.LogInfo(L"DirectX 9 DLL not in registry, exiting");
         return -1;
       }
-      if (!g_plugin.CheckDX9DLL()) {
-        milkwave.LogInfo(L"DirectX 9 DLL not found, exiting");
-        return -1;
-      }
 
-      // if we made it here, skip this check in the future
+      // if we made it here, skip this (legacy registry) check in the future
       g_plugin.m_CheckDirectXOnStartup = false;
+    }
+
+    // D3DX9_43.dll is delay-loaded (see DelayLoadDLLs in plugin.vcxproj), so the
+    // executable starts even when the DirectX End-User Runtime is missing. It is
+    // still a hard requirement: verify it before the first D3DX call, otherwise
+    // the delay-load helper would raise an exception at that call site.
+    if (!g_plugin.CheckDX9DLL()) {
+      milkwave.LogInfo(L"DirectX 9 DLL (d3dx9_43.dll) not found, exiting");
+      return -1;
     }
 
     milkwave.LogInfo(L"Starting render thread");

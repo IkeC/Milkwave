@@ -1175,6 +1175,44 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       }
     } catch (...) {
     }
+  } else if (wcsncmp(sMessage, L"SHOWTAB", 7) == 0) {
+    // "SHOWTAB<Name>=0|1" shows or hides one tab of the Remote (settings.ini
+    // [Milkwave] ShowTab*, Remote menu "Show/Hide Tabs"). The new state is echoed
+    // back with the SETTINGS message so every connected Remote updates its menu.
+    const wchar_t* suffix = sMessage + 7;
+    const wchar_t* separator = wcschr(suffix, L'=');
+    if (separator != nullptr) {
+      const bool visible = separator[1] == L'1';
+      const std::wstring name(suffix, separator - suffix);
+      struct RemoteTabSetting {
+        const wchar_t* name;
+        const wchar_t* iniKey;
+        bool* value;
+      };
+      const RemoteTabSetting tabSettings[] = {
+          {L"PRESET", L"ShowTabPreset", &g_plugin.m_ShowTabPreset},
+          {L"MESSAGE", L"ShowTabMessage", &g_plugin.m_ShowTabMessage},
+          {L"INOUT", L"ShowTabInOut", &g_plugin.m_ShowTabInOut},
+          {L"SETTINGS", L"ShowTabSettings", &g_plugin.m_ShowTabSettings},
+          {L"LYRICS", L"ShowTabLyrics", &g_plugin.m_ShowTabLyrics},
+          {L"FONTS", L"ShowTabFonts", &g_plugin.m_ShowTabFonts},
+          {L"MIDI", L"ShowTabMidi", &g_plugin.m_ShowTabMidi},
+          {L"WAVE", L"ShowTabWave", &g_plugin.m_ShowTabWave},
+          {L"SHADER", L"ShowTabShader", &g_plugin.m_ShowTabShader},
+      };
+      for (const RemoteTabSetting& tabSetting : tabSettings) {
+        if (_wcsicmp(name.c_str(), tabSetting.name) != 0) {
+          continue;
+        }
+        if (*tabSetting.value != visible) {
+          *tabSetting.value = visible;
+          std::wstring iniKey(tabSetting.iniKey);
+          WritePrivateProfileIntW(visible, iniKey.data(), g_plugin.GetConfigIniFile(), L"Milkwave");
+          g_plugin.SendSettingsInfoToMilkwaveRemote();
+        }
+        break;
+      }
+    }
   } else if (wcsncmp(sMessage, L"SPOUT_RESOLUTION=", 17) == 0) {
     std::wstring message(sMessage + 17);
     size_t pos = message.find(L'x');

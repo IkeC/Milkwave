@@ -42,6 +42,16 @@ namespace MilkwaveRemote
       toolStripMenuItemHelp = new ToolStripMenuItem();
       toolStripMenuItemSupporters = new ToolStripMenuItem();
       toolStripSeparator3 = new ToolStripSeparator();
+      toolStripMenuItemShowHideTabs = new ToolStripMenuItem();
+      toolStripMenuItemShowTabPreset = new ToolStripMenuItem();
+      toolStripMenuItemShowTabMessage = new ToolStripMenuItem();
+      toolStripMenuItemShowTabInOut = new ToolStripMenuItem();
+      toolStripMenuItemShowTabSettings = new ToolStripMenuItem();
+      toolStripMenuItemShowTabLyrics = new ToolStripMenuItem();
+      toolStripMenuItemShowTabFonts = new ToolStripMenuItem();
+      toolStripMenuItemShowTabMidi = new ToolStripMenuItem();
+      toolStripMenuItemShowTabWave = new ToolStripMenuItem();
+      toolStripMenuItemShowTabShader = new ToolStripMenuItem();
       toolStripMenuItemTabsPanel = new ToolStripMenuItem();
       toolStripMenuItemButtonPanel = new ToolStripMenuItem();
       toolStripMenuItemSpriteButtonImages = new ToolStripMenuItem();
@@ -587,7 +597,7 @@ namespace MilkwaveRemote
       // 
       // toolStripDropDownButton
       // 
-      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripMenuItemSpriteButtonImages, toolStripMenuItemColorButtonImages, toolStripSeparator4, toolStripMenuItemMonitorCPU, toolStripMenuItemMonitorGPU, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
+      toolStripDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemHomepage, toolStripSeparator1, toolStripMenuItemHelp, toolStripMenuItemSupporters, toolStripSeparator3, toolStripMenuItemShowHideTabs, toolStripMenuItemTabsPanel, toolStripMenuItemButtonPanel, toolStripMenuItemSpriteButtonImages, toolStripMenuItemColorButtonImages, toolStripSeparator4, toolStripMenuItemMonitorCPU, toolStripMenuItemMonitorGPU, toolStripSeparator2, toolStripMenuItemDarkMode, toolStripMenuItemOpenVisualizer });
       toolStripDropDownButton.Image = (Image)resources.GetObject("toolStripDropDownButton.Image");
       toolStripDropDownButton.ImageTransparentColor = Color.Magenta;
       toolStripDropDownButton.Name = "toolStripDropDownButton";
@@ -625,6 +635,102 @@ namespace MilkwaveRemote
       // 
       toolStripSeparator3.Name = "toolStripSeparator3";
       toolStripSeparator3.Size = new Size(152, 6);
+      // 
+      // toolStripMenuItemShowHideTabs
+      // 
+      toolStripMenuItemShowHideTabs.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemShowTabPreset, toolStripMenuItemShowTabMessage, toolStripMenuItemShowTabInOut, toolStripMenuItemShowTabSettings, toolStripMenuItemShowTabLyrics, toolStripMenuItemShowTabFonts, toolStripMenuItemShowTabMidi, toolStripMenuItemShowTabWave, toolStripMenuItemShowTabShader });
+      toolStripMenuItemShowHideTabs.Name = "toolStripMenuItemShowHideTabs";
+      toolStripMenuItemShowHideTabs.Size = new Size(155, 22);
+      toolStripMenuItemShowHideTabs.Text = "Show/Hide Tabs";
+      toolStripMenuItemShowHideTabs.ToolTipText = "Show or hide single tabs of the Tabs panel";
+      // 
+      // toolStripMenuItemShowTabPreset
+      // 
+      toolStripMenuItemShowTabPreset.Checked = true;
+      toolStripMenuItemShowTabPreset.CheckState = CheckState.Checked;
+      toolStripMenuItemShowTabPreset.Name = "toolStripMenuItemShowTabPreset";
+      toolStripMenuItemShowTabPreset.Size = new Size(180, 22);
+      toolStripMenuItemShowTabPreset.Tag = "PRESET";
+      toolStripMenuItemShowTabPreset.Text = "Preset";
+      toolStripMenuItemShowTabPreset.Click += toolStripMenuItemShowTab_Click;
+      // 
+      // toolStripMenuItemShowTabMessage
+      // 
+      toolStripMenuItemShowTabMessage.Checked = true;
+      toolStripMenuItemShowTabMessage.CheckState = CheckState.Checked;
+      toolStripMenuItemShowTabMessage.Name = "toolStripMenuItemShowTabMessage";
+      toolStripMenuItemShowTabMessage.Size = new Size(180, 22);
+      toolStripMenuItemShowTabMessage.Tag = "MESSAGE";
+      toolStripMenuItemShowTabMessage.Text = "Message";
+      toolStripMenuItemShowTabMessage.Click += toolStripMenuItemShowTab_Click;
+      // 
+      // toolStripMenuItemShowTabInOut
+      // 
+      toolStripMenuItemShowTabInOut.Checked = true;
+      toolStripMenuItemShowTabInOut.CheckState = CheckState.Checked;
+      toolStripMenuItemShowTabInOut.Name = "toolStripMenuItemShowTabInOut";
+      toolStripMenuItemShowTabInOut.Size = new Size(180, 22);
+      toolStripMenuItemShowTabInOut.Tag = "INOUT";
+      toolStripMenuItemShowTabInOut.Text = "In/Out";
+      toolStripMenuItemShowTabInOut.Click += toolStripMenuItemShowTab_Click;
+      // 
+      // toolStripMenuItemShowTabSettings
+      // 
+      toolStripMenuItemShowTabSettings.Checked = true;
+      toolStripMenuItemShowTabSettings.CheckState = CheckState.Checked;
+      toolStripMenuItemShowTabSettings.Name = "toolStripMenuItemShowTabSettings";
+      toolStripMenuItemShowTabSettings.Size = new Size(180, 22);
+      toolStripMenuItemShowTabSettings.Tag = "SETTINGS";
+      toolStripMenuItemShowTabSettings.Text = "Settings";
+      toolStripMenuItemShowTabSettings.Click += toolStripMenuItemShowTab_Click;
+      // 
+      // toolStripMenuItemShowTabLyrics
+      // 
+      toolStripMenuItemShowTabLyrics.Checked = true;
+      toolStripMenuItemShowTabLyrics.CheckState = CheckState.Checked;
+      toolStripMenuItemShowTabLyrics.Name = "toolStripMenuItemShowTabLyrics";
+      toolStripMenuItemShowTabLyrics.Size = new Size(180, 22);
+      toolStripMenuItemShowTabLyrics.Tag = "LYRICS";
+      toolStripMenuItemShowTabLyrics.Text = "Lyrics";
+      toolStripMenuItemShowTabLyrics.Click += toolStripMenuItemShowTab_Click;
+      // 
+      // toolStripMenuItemShowTabFonts
+      // 
+      toolStripMenuItemShowTabFonts.Checked = true;
+      toolStripMenuItemShowTabFonts.CheckState = CheckState.Checked;
+      toolStripMenuItemShowTabFonts.Name = "toolStripMenuItemShowTabFonts";
+      toolStripMenuItemShowTabFonts.Size = new Size(180, 22);
+      toolStripMenuItemShowTabFonts.Tag = "FONTS";
+      toolStripMenuItemShowTabFonts.Text = "Fonts";
+      toolStripMenuItemShowTabFonts.Click += toolStripMenuItemShowTab_Click;
+      // 
+      // toolStripMenuItemShowTabMidi
+      // 
+      toolStripMenuItemShowTabMidi.Checked = true;
+      toolStripMenuItemShowTabMidi.CheckState = CheckState.Checked;
+      toolStripMenuItemShowTabMidi.Name = "toolStripMenuItemShowTabMidi";
+      toolStripMenuItemShowTabMidi.Size = new Size(180, 22);
+      toolStripMenuItemShowTabMidi.Tag = "MIDI";
+      toolStripMenuItemShowTabMidi.Text = "MIDI";
+      toolStripMenuItemShowTabMidi.Click += toolStripMenuItemShowTab_Click;
+      // 
+      // toolStripMenuItemShowTabWave
+      // 
+      toolStripMenuItemShowTabWave.Checked = true;
+      toolStripMenuItemShowTabWave.CheckState = CheckState.Checked;
+      toolStripMenuItemShowTabWave.Name = "toolStripMenuItemShowTabWave";
+      toolStripMenuItemShowTabWave.Size = new Size(180, 22);
+      toolStripMenuItemShowTabWave.Tag = "WAVE";
+      toolStripMenuItemShowTabWave.Text = "Wave";
+      toolStripMenuItemShowTabWave.Click += toolStripMenuItemShowTab_Click;
+      // 
+      // toolStripMenuItemShowTabShader
+      // 
+      toolStripMenuItemShowTabShader.Name = "toolStripMenuItemShowTabShader";
+      toolStripMenuItemShowTabShader.Size = new Size(180, 22);
+      toolStripMenuItemShowTabShader.Tag = "SHADER";
+      toolStripMenuItemShowTabShader.Text = "Shader";
+      toolStripMenuItemShowTabShader.Click += toolStripMenuItemShowTab_Click;
       // 
       // toolStripMenuItemTabsPanel
       // 
@@ -6368,6 +6474,16 @@ namespace MilkwaveRemote
     private ToolStripMenuItem toolStripMenuItemSpriteButtonImages;
     private ToolStripMenuItem toolStripMenuItemColorButtonImages;
     private ToolStripSeparator toolStripSeparator2;
+    private ToolStripMenuItem toolStripMenuItemShowHideTabs;
+    private ToolStripMenuItem toolStripMenuItemShowTabPreset;
+    private ToolStripMenuItem toolStripMenuItemShowTabMessage;
+    private ToolStripMenuItem toolStripMenuItemShowTabInOut;
+    private ToolStripMenuItem toolStripMenuItemShowTabSettings;
+    private ToolStripMenuItem toolStripMenuItemShowTabLyrics;
+    private ToolStripMenuItem toolStripMenuItemShowTabFonts;
+    private ToolStripMenuItem toolStripMenuItemShowTabMidi;
+    private ToolStripMenuItem toolStripMenuItemShowTabWave;
+    private ToolStripMenuItem toolStripMenuItemShowTabShader;
     private ToolStripMenuItem toolStripMenuItemTabsPanel;
     private Label lblPreset;
     private ComboBox cboPresets;

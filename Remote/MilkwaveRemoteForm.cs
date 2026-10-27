@@ -267,7 +267,8 @@ namespace MilkwaveRemote {
       PrecompileCache,
       EQAttack,
       EQDecay,
-      EQBoost
+      EQBoost,
+      ShowTab
     }
 
     private class PendingThumbnail {
@@ -981,6 +982,14 @@ namespace MilkwaveRemote {
       Program.LogToFile("### Milkwave Remote Starting ###");
       Program.LogToFile($"Application version: {version ?? "unknown"}");
       InitializeComponent();
+
+      // Seed the configured tab set with the pages the Designer created. The
+      // visualizer's ShowTab* settings update it later; the "Show/Hide Tabs"
+      // submenu toggles single tabs of it.
+      foreach (TabPage page in tabControl.TabPages) {
+        configuredVisibleTabs.Add(page.Name);
+      }
+
       previousLyricsPosX = numLyricsPosX.Value;
       previousLyricsPosY = numLyricsPosY.Value;
 
@@ -2026,6 +2035,10 @@ namespace MilkwaveRemote {
 
     // --- Remote tab visibility (visualizer [Milkwave] ShowTab* settings) ---
 
+    // Tab pages enabled by the visualizer settings (settings.ini [Milkwave] ShowTab*).
+    // The "Show/Hide Tabs" submenu and the visualizer's state messages both drive it.
+    private readonly HashSet<string> configuredVisibleTabs = new(StringComparer.OrdinalIgnoreCase);
+
     // Tab pages in their canonical (Designer) order, used to re-insert a tab at
     // its original position when a ShowTab* setting turns it back on.
     private static readonly string[] TabOrder = new[] {
@@ -2048,13 +2061,8 @@ namespace MilkwaveRemote {
 
     // Applies a visualizer "SHOWTAB*=" setting to the matching tab page.
     private void ApplyTabVisibility(string key, string value) {
-      bool show = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+      bool configured = value.Equals("1", StringComparison.OrdinalIgnoreCase);
       string up = key.ToUpperInvariant();
-      // The MIDI tab additionally requires the Remote's own MIDI setting to be
-      // enabled (otherwise MIDI device setup is skipped and the tab is inert).
-      if (up == "SHOWTABMIDI") {
-        show = show && Settings.MidiEnabled;
-      }
       string? tabName = up switch {
         "SHOWTABPRESET" => "tabPreset",
         "SHOWTABMESSAGE" => "tabMessage",
@@ -2068,16 +2076,69 @@ namespace MilkwaveRemote {
         _ => null,
       };
       if (tabName == null) return;
+      // The submenu always shows the configured setting, even while the MIDI tab is
+      // force-hidden below because the Remote's own MIDI support is switched off.
+      ToolStripMenuItem? menuItem = GetShowTabMenuItem(tabName);
+      if (menuItem != null) {
+        menuItem.Checked = configured;
+      }
+      // The MIDI tab additionally requires the Remote's own MIDI setting to be
+      // enabled (otherwise MIDI device setup is skipped and the tab is inert).
+      bool show = configured && (up != "SHOWTABMIDI" || Settings.MidiEnabled);
       SetTabVisible(GetTabPageByName(tabName), show);
     }
 
+    // Maps a Designer tab page name to its "Show/Hide Tabs" submenu entry.
+    private ToolStripMenuItem? GetShowTabMenuItem(string tabName) => tabName switch {
+      "tabPreset" => toolStripMenuItemShowTabPreset,
+      "tabMessage" => toolStripMenuItemShowTabMessage,
+      "tabInOut" => toolStripMenuItemShowTabInOut,
+      "tabSettings" => toolStripMenuItemShowTabSettings,
+      "tabLyrics" => toolStripMenuItemShowTabLyrics,
+      "tabFonts" => toolStripMenuItemShowTabFonts,
+      "tabMidi" => toolStripMenuItemShowTabMidi,
+      "tabWave" => toolStripMenuItemShowTabWave,
+      "tabShader" => toolStripMenuItemShowTabShader,
+      _ => null,
+    };
+
+    // Maps a "Show/Hide Tabs" submenu suffix (ToolStripMenuItem.Tag) to its page.
+    private static string? GetTabNameFromSuffix(string suffix) => suffix.ToUpperInvariant() switch {
+      "PRESET" => "tabPreset",
+      "MESSAGE" => "tabMessage",
+      "INOUT" => "tabInOut",
+      "SETTINGS" => "tabSettings",
+      "LYRICS" => "tabLyrics",
+      "FONTS" => "tabFonts",
+      "MIDI" => "tabMidi",
+      "WAVE" => "tabWave",
+      "SHADER" => "tabShader",
+      _ => null,
+    };
+
     private void SetTabVisible(TabPage? page, bool visible) {
       if (page == null) return;
-      bool present = tabControl.TabPages.Contains(page);
-      if (visible && !present) {
-        InsertTabAtCanonicalPosition(page);
-      } else if (!visible && present) {
-        tabControl.TabPages.Remove(page);
+      if (visible) {
+        configuredVisibleTabs.Add(page.Name);
+      } else {
+        configuredVisibleTabs.Remove(page.Name);
+      }
+      UpdateTabPages();
+    }
+
+    // Adds/removes tab pages so that the control shows exactly the configured tabs.
+    private void UpdateTabPages() {
+      if (tabControl.IsDisposed) return;
+      foreach (string name in TabOrder) {
+        TabPage? page = GetTabPageByName(name);
+        if (page == null) continue;
+        bool shouldShow = configuredVisibleTabs.Contains(name);
+        bool present = tabControl.TabPages.Contains(page);
+        if (shouldShow && !present) {
+          InsertTabAtCanonicalPosition(page);
+        } else if (!shouldShow && present) {
+          tabControl.TabPages.Remove(page);
+        }
       }
       // Keep a valid tab selected when tabs are hidden/reshown.
       if (tabControl.TabPages.Count > 0 &&
@@ -2152,7 +2213,8 @@ namespace MilkwaveRemote {
         PopulateMidiDevicesList();
         MidiHelper.MidiMessageReceived += MidiMessageReceived();
       } else {
-        tabControl.TabPages.Remove(tabMidi);
+        SetTabVisible(tabMidi, false);
+        toolStripMenuItemShowTabMidi.Enabled = false;
       }
 
       // count the lines in data\include.fx
@@ -2377,6 +2439,9 @@ namespace MilkwaveRemote {
               message = "TEXTBORDER=" + (int)numSettingTextborder.Value;
             } else if (type == MessageType.TextBorderColor) {
               message = "TEXTBORDER_COLOR=" + pnlSettingTextborder.BackColor.R + "," + pnlSettingTextborder.BackColor.G + "," + pnlSettingTextborder.BackColor.B;
+            } else if (type == MessageType.ShowTab) {
+              // messageToSend is "<Name>=<0|1>", e.g. "PRESET=0"
+              message = "SHOWTAB" + messageToSend;
             } else if (type == MessageType.ColSaturation) {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
@@ -3492,6 +3557,8 @@ namespace MilkwaveRemote {
 
     private void MainForm_KeyDown(object sender, KeyEventArgs e) {
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        // No page is selected while "Show/Hide Tabs" hides all tabs.
+        string? selectedTabName = tabControl.SelectedTab?.Name;
         if (e.KeyCode == Keys.A) {
           e.SuppressKeyPress = true;
           txtMessage.Focus();
@@ -3503,7 +3570,7 @@ namespace MilkwaveRemote {
           btnPresetLoadDirectory_Click(null, null);
         } else if (e.KeyCode == Keys.F) {
           e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
-          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+          if (string.Equals(selectedTabName, "tabShader")) {
             if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
               txtShaderFind.SelectAll();
               txtShaderFind.Focus();
@@ -3513,12 +3580,12 @@ namespace MilkwaveRemote {
             } else {
               FindShaderString();
             }
-          } else if (tabControl.SelectedTab.Name.Equals("tabPreset")) {
+          } else if (string.Equals(selectedTabName, "tabPreset")) {
             txtFilterPresets.SelectAll();
             txtFilterPresets.Focus();
           }
         } else if (e.KeyCode == Keys.L) {
-          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+          if (string.Equals(selectedTabName, "tabShader")) {
             e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
             btnShadertoyFilesLoad_Click(null, null);
           }
@@ -3534,16 +3601,16 @@ namespace MilkwaveRemote {
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
           e.SuppressKeyPress = true;
-          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+          if (string.Equals(selectedTabName, "tabShader")) {
             btnSendShader_Click(null, null);
-          } else if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+          } else if (string.Equals(selectedTabName, "tabMessage")) {
             SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
           }
         } else if (e.KeyCode == Keys.T) {
           e.SuppressKeyPress = true;
           btnTagsSave_Click(null, null);
         } else if (e.KeyCode == Keys.X) {
-          if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+          if (string.Equals(selectedTabName, "tabMessage")) {
             e.SuppressKeyPress = true;
             btnSendFile_Click(null, null);
           }
@@ -3553,13 +3620,16 @@ namespace MilkwaveRemote {
           }
         } else if (e.KeyCode == Keys.Y) {
           e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
-          if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+          if (string.Equals(selectedTabName, "tabMessage")) {
             chkAutoplay.Checked = !chkAutoplay.Checked;
           } else {
             chkShaderLeft.Checked = !chkShaderLeft.Checked;
           }
         } else if (e.KeyCode == Keys.Tab) {
-          if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
+          if (tabControl.TabPages.Count == 0) {
+            // All tabs hidden via "Show/Hide Tabs": nothing to cycle through.
+            e.SuppressKeyPress = true;
+          } else if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
             // Switch to the previous tab
             int previousIndex = (tabControl.SelectedIndex - 1 + tabControl.TabPages.Count) % tabControl.TabPages.Count; // Loop back to the last tab if at the first
             tabControl.SelectedIndex = previousIndex;
@@ -4103,6 +4173,20 @@ namespace MilkwaveRemote {
 
     private void toolStripMenuItemOpenVisualizer_Click(object sender, EventArgs e) {
       StartVisualizerIfNotFound(false);
+    }
+
+    private void toolStripMenuItemShowTab_Click(object? sender, EventArgs e) {
+      if (sender is not ToolStripMenuItem item || item.Tag is not string suffix) return;
+      string? tabName = GetTabNameFromSuffix(suffix);
+      if (tabName == null) return;
+
+      bool visible = !item.Checked;
+      item.Checked = visible;
+      SetTabVisible(GetTabPageByName(tabName), visible);
+
+      // Store the setting in the visualizer (settings.ini [Milkwave] ShowTab*), which
+      // echoes the new state back and therefore re-syncs this submenu on every client.
+      SendToMilkwaveVisualizer(suffix + "=" + (visible ? "1" : "0"), MessageType.ShowTab);
     }
 
     private void toolStripMenuItemTabsPanel_Click(object sender, EventArgs e) {
@@ -5124,7 +5208,10 @@ namespace MilkwaveRemote {
         Settings.RemoteWindowSize = RestoreBounds.Size;
       }
       Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
-      Settings.SelectedTabIndex = tabControl.SelectedIndex;
+      // -1 while "Show/Hide Tabs" hides every tab: keep the last real selection.
+      if (tabControl.SelectedIndex >= 0) {
+        Settings.SelectedTabIndex = tabControl.SelectedIndex;
+      }
       Settings.ShaderFileChecked = chkShaderFile.Checked;
       Settings.WrapChecked = chkWrap.Checked;
       Settings.ControllerActive = chkControllerActive.Checked;

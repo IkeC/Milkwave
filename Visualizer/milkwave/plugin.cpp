@@ -2554,7 +2554,10 @@ bool CPlugin::CheckForDirectX9c() {
 
 void CPlugin::ShowDirectXMissingMessage() {
   if (MessageBoxA(NULL,
-                  "Could not initialize DirectX 9.\n\nPlease install the DirectX End-User Legacy Runtimes.\n\nOpen Download-Website now?",
+                  "Could not initialize DirectX 9.\n\n"
+                  "The DirectX 9 runtime (d3dx9_43.dll) is missing.\n"
+                  "Please install the DirectX End-User Legacy Runtimes.\n\n"
+                  "Open Download-Website now?",
                   "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
     // open website in browser
     ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
