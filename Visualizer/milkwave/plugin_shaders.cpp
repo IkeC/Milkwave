@@ -1008,7 +1008,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
         SafeRelease(m_pShaderCompileErrors);
         AddNotification(wideErrorMsg);
       } else {
-        if (MessageBoxA(GetPluginWindow(), "The shader could not be compiled.\n\nPlease install the Microsoft DirectX End-User Runtimes.\n\nOpen Download-Website now?", "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
+        if (MessageBoxA(GetPluginWindow(), "Milkwave Visualizer needs Microsoft DirectX End-User Runtime to work.\n\nInstalling this does not affect your current DirectX installation.\n\nOpen Microsoft Download Website now?", "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
           // open website in browser
           ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
         }

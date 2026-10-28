@@ -1169,8 +1169,50 @@ namespace MilkwaveRemote {
       if (onlyIfNotFound && _activeClient != null)
         return;
 
+      // "Only if not found" also has to cover a visualizer that is running but has no pipe:
+      // it may still be starting, or it may never create one at all (e.g. it is showing the
+      // "DirectX 9 missing" dialog). Launching again would open a second instance.
+      if (onlyIfNotFound && IsVisualizerProcessRunning(IsSelectedVisualizerDX12()))
+        return;
+
       // Launch the visualizer and connect via pipe
       LaunchAndConnectVisualizer();
+    }
+
+    private string GetVisualizerExePath(bool isDX12) {
+      string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
+      if (string.IsNullOrEmpty(exePath)) {
+        // Fall back to default exe name
+        exePath = isDX12 ? "MDropDX12.exe" : "MilkwaveVisualizer.exe";
+      }
+
+      // If it's just a filename, resolve relative to the appropriate visualizer dir
+      if (!Path.IsPathRooted(exePath)) {
+        exePath = Path.Combine(GetVisualizerDir(isDX12), exePath);
+      }
+
+      return exePath;
+    }
+
+    /// <summary>
+    /// True when the visualizer executable is already running, with or without a pipe.
+    /// </summary>
+    private bool IsVisualizerProcessRunning(bool isDX12) {
+      string processName = Path.GetFileNameWithoutExtension(GetVisualizerExePath(isDX12));
+      if (string.IsNullOrEmpty(processName)) {
+        return false;
+      }
+
+      try {
+        var processes = Process.GetProcessesByName(processName);
+        foreach (var process in processes) {
+          process.Dispose();
+        }
+        return processes.Length > 0;
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error checking for a running visualizer: {ex.Message}");
+        return false;
+      }
     }
 
     /// <summary>
@@ -1465,14 +1507,7 @@ namespace MilkwaveRemote {
     /// and selects it in cboVisualizerInstance once it appears.
     /// </summary>
     private void LaunchVisualizerExe(bool isDX12) {
-      string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
-      if (string.IsNullOrEmpty(exePath)) {
-        exePath = isDX12 ? "MDropDX12.exe" : "MilkwaveVisualizer.exe";
-      }
-
-      if (!Path.IsPathRooted(exePath)) {
-        exePath = Path.Combine(GetVisualizerDir(isDX12), exePath);
-      }
+      string exePath = GetVisualizerExePath(isDX12);
 
       if (!File.Exists(exePath)) {
         SetStatusText($"Visualizer not found: {exePath}");
@@ -1519,7 +1554,7 @@ namespace MilkwaveRemote {
         // Timed out — still rescan so the combo reflects current state
         BeginInvoke(() => {
           ScanAndPopulateVisualizers();
-          SetStatusText("Visualizer launched but pipe not ready — try Scan");
+          SetStatusText("Visualizer launched but pipe not ready");
         });
       });
       SetStatusText("");
@@ -1634,17 +1669,7 @@ namespace MilkwaveRemote {
       _ = client.ConnectAsync(target.Host, target.Port, target.Pin, target.DeviceId, target.DeviceName);    }
 
     private void LaunchAndConnectVisualizer() {
-      bool isDX12 = IsSelectedVisualizerDX12();
-      string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
-      if (string.IsNullOrEmpty(exePath)) {
-        // Fall back to default exe name
-        exePath = isDX12 ? "MDropDX12.exe" : "MilkwaveVisualizer.exe";
-      }
-
-      // If it's just a filename, resolve relative to the appropriate visualizer dir
-      if (!Path.IsPathRooted(exePath)) {
-        exePath = Path.Combine(GetVisualizerDir(isDX12), exePath);
-      }
+      string exePath = GetVisualizerExePath(IsSelectedVisualizerDX12());
 
       if (!File.Exists(exePath)) {
         SetStatusText($"Visualizer not found: {exePath}");
@@ -1671,7 +1696,7 @@ namespace MilkwaveRemote {
       }
 
       ScanAndPopulateVisualizers();
-      SetStatusText("Visualizer launched but pipe not ready — try Scan");
+      SetStatusText("Visualizer launched but pipe not ready");
     }
 
     private void cboWindowTitle_SelectedIndexChanged(object? sender, EventArgs e) {
