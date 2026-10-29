@@ -1,8 +1,9 @@
 @echo off
 setlocal
 
-REM Paths are resolved relative to this script's own location (%~dp0), so the
-REM task works no matter what working directory VS Code runs it in.
+REM Copies the MDropDX12 executable and its default INI files. Paths are
+REM resolved relative to this script's own location (%~dp0), so the task works
+REM no matter what working directory VS Code runs it in.
 REM   <scriptdir>            = C:\Source\Milkwave\Build\
 REM   <scriptdir>..\Release  = C:\Source\Milkwave\Release          (deployment target)
 REM   <scriptdir>..\..\MDropDX12\src\mDropDX12\Release_x64        (MDropDX12 build output)
@@ -24,4 +25,5 @@ if not exist "%mDropDX12Path%\MDropDX12.exe" (
 rmdir /s /q "%releasePath%\MDropDX12"
 mkdir "%releasePath%\MDropDX12"
 copy /y "%mDropDX12Path%\MDropDX12.exe" "%releasePath%\MDropDX12\"
+copy /y "%~dp0MDropDX12\*.ini" "%releasePath%\MDropDX12\"
 endlocal
