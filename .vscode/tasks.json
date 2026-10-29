@@ -143,6 +143,19 @@
 			}
 		},
 		{
+			"label": "Build Release ZIPs",
+			"type": "shell",
+			"command": "${workspaceFolder}\\Install\\release-zips.cmd",
+			"dependsOn": [
+				"Build RELEASE"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			}
+		},
+		{
 			"label": "Format Visualizer",
 			"type": "shell",
 			"command": "Get-ChildItem -Path '${workspaceFolder}\\Visualizer\\milkwave' -Include '*.cpp','*.h' -Recurse | ForEach-Object { & 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\bin\\clang-format.exe' -i $_.FullName }; Write-Host 'Done.'",

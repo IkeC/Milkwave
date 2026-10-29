@@ -3691,23 +3691,23 @@ namespace MilkwaveRemote
       cboSettingsCover.TabIndex = 227;
       toolTip1.SetToolTip(cboSettingsCover, "Album cover: lower-right thumbnail in three sizes (small/medium/large) or the classic fullscreen zoom");
       cboSettingsCover.SelectedIndexChanged += cboSettingsCover_SelectedIndexChanged;
-      //
+      // 
       // cboTransitionMode
-      //
+      // 
       cboTransitionMode.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
       cboTransitionMode.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
       cboTransitionMode.AutoCompleteSource = AutoCompleteSource.ListItems;
       cboTransitionMode.DropDownStyle = ComboBoxStyle.DropDownList;
       cboTransitionMode.FormattingEnabled = true;
-      cboTransitionMode.Location = new Point(420, 122);
+      cboTransitionMode.Location = new Point(420, 123);
       cboTransitionMode.Name = "cboTransitionMode";
       cboTransitionMode.Size = new Size(110, 23);
       cboTransitionMode.TabIndex = 185;
       toolTip1.SetToolTip(cboTransitionMode, "Random transition, or a fixed blend pattern. T in the Visualizer cycles through them.");
       cboTransitionMode.SelectedIndexChanged += cboTransitionMode_SelectedIndexChanged;
-      //
+      // 
       // label18
-      //
+      // 
       label18.Location = new Point(353, 123);
       label18.Name = "label18";
       label18.Size = new Size(61, 23);

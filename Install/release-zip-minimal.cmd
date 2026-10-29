@@ -64,4 +64,4 @@ echo Archive contents:
 "%SEVENZ%" l "%OUTPUT%"
 
 popd
-pause
+if /i not "%MILKWAVE_NO_PAUSE%"=="1" pause

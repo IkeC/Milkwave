@@ -48,4 +48,4 @@ echo Created: "%OUTPUT%"
 "%SEVENZ%" d "%OUTPUT%" "resources\presets\Milkwave\Shader\Conv"
 
 popd
-pause
+if /i not "%MILKWAVE_NO_PAUSE%"=="1" pause

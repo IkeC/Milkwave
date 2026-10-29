@@ -20,7 +20,6 @@
 * Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
 * Remote: "Show/Hide Tabs" submenu in the "Milkwave" menu turns each tab on or off individually (saved as the ShowTab* keys in _settings.ini_)
 * Remote/Visualizer: Preset transition selector; T in the Visualizer cycles Random and the fixed transition types
-* Visualizer: Long preset titles are shortened with a "..." suffix instead of being clipped
 * Updated projectm-eval to v1.0.8
 
 ## v4.1 (2026-09-10)
