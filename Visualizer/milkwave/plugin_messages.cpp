@@ -662,6 +662,10 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
       g_plugin.AddNotification(enabled ? L"Preset info on change enabled" : L"Preset info on change disabled");
       g_plugin.SendSettingsInfoToMilkwaveRemote();
     }
+  } else if (wcsncmp(sMessage, L"MIXTYPE=", 8) == 0) {
+    // "MIXTYPE=-1..20" sets the preset blend transition type used by the next
+    // preset change. -1 lets the Visualizer pick a random type.
+    g_plugin.SetTransitionType(_wtoi(sMessage + 8), true);
   } else if (wcsncmp(sMessage, L"CYCLE_VERSION", 13) == 0) {
     // Cycle the visual version 1 -> 2 -> 3 (same as Ctrl+V in the Visualizer)
     g_plugin.CycleVisVersion();
@@ -695,6 +699,12 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     m_fTimeBetweenPresets = GetPrivateProfileFloatW(L"Settings", L"fTimeBetweenPresets", m_fTimeBetweenPresets, GetConfigIniFile());
     m_fPresetStartTime = GetTime();
     m_fNextPresetTime = -1.0f;  // force recalculation
+  } else if (wcsncmp(sMessage, L"FLASH_INFO", 10) == 0) {
+    // Same as Ctrl+Space: re-poll the track info/cover and flash the preset info.
+    if (milkwave) {
+      milkwave->doPollExplicit = true;
+    }
+    g_plugin.FlashPresetInfo();
   } else if (wcsncmp(sMessage, L"TESTFONTS", 9) == 0) {
     ClearErrors(ERR_MSG_BOTTOM_EXTRA_1);
     ClearErrors(ERR_MSG_BOTTOM_EXTRA_2);

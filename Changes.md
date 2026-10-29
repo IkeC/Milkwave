@@ -8,19 +8,19 @@
 * Remote: Bottom panel button functions assignable from context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click)
 * Visualizer: Flash preset info on preset change with configurable duration (Ctrl+F4)
 * Remote/Visualizer: Lyrics text outline and background box options with configurable color
-* Visualizer: `.milk` Windows file association support
 * Remote: Preset change and info buttons with improved locking logic dependency
 * Visualizer: Uncompiled shader presets now compile in the background while the current preset keeps playing
-* Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
 * Remote/Visualizer: "Textborder" setting outlines all messages and notifications with configurable color
-* Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
-* Visualizer: Changing the render quality shows a notification (e.g. "Quality 50%")
-* Remote Settings tab: Invert preset output
-* Remote: "Show/Hide Tabs" submenu in the "Milkwave" menu turns each tab on or off individually (saved as the ShowTab* keys in _settings.ini_)
-* Song Cover: lower-right thumbnail in three sizes (small, medium, large) or fullscreen, fading with the song title and staying above the taskbar in Desktop Mode
-* Song Cover: non-square artwork (e.g. a 16:9 video thumbnail) keeps its aspect ratio and stays in the corner instead of leaving a gap below it
+* Remote Settings: Invert preset output
+* Visualizer: Album art in bottom corner (small, medium, large) or fullscreen, fading with the song title
 * Visualizer: Lyrics lookup retries temporary LRCLIB failures (busy/rate limited) instead of leaving the new song without lyrics
 * Visualizer: Lyrics keep the same size at every render quality setting
+* Visualizer: Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
+* Visualizer: `.milk` Windows file association support
+* Remote: "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
+* Remote: "Show/Hide Tabs" submenu in the "Milkwave" menu turns each tab on or off individually (saved as the ShowTab* keys in _settings.ini_)
+* Remote/Visualizer: Preset transition selector; T in the Visualizer cycles Random and the fixed transition types
+* Visualizer: Long preset titles are shortened with a "..." suffix instead of being clipped
 
 ## v4.1 (2026-09-10)
 

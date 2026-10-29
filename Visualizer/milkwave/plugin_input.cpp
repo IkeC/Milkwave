@@ -1919,7 +1919,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
       case 't':
       case 'T':
-        LaunchSongTitleAnim(-1);
+        CycleTransitionType();
         return 0;  // we processed (or absorbed) the key
       case 'o':
         m_pState->m_fWarpAmount /= 1.1f;

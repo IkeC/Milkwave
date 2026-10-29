@@ -3,7 +3,71 @@
 
 #include "plugin.h"
 #include "plugin_internals.h"
+#include "utility.h"
 #include <cmath>
+
+namespace {
+// Keep in sync with MilkwaveRemoteForm.TransitionModeNames in the Remote.
+const wchar_t* const kTransitionTypeNames[] = {
+    L"Uniform Fade",
+    L"Directional Wipe",
+    L"Plasma",
+    L"Radial",
+    L"Clock",
+    L"Spiral",
+    L"Rhombus",
+    L"Nuclear Clock",
+    L"Square/Diamond",
+    L"Checkerboard",
+    L"Curtain",
+    L"Bubbles",
+    L"Kaleidoscope",
+    L"Moebius Strip",
+    L"Stars",
+    L"Disco Floor",
+    L"Fire",
+    L"Drain Swirl",
+    L"Julia Set",
+    L"Vertical Wipe",
+    L"Horizontal Wipe",
+};
+}
+
+int GetTransitionTypeCount() {
+  return static_cast<int>(sizeof(kTransitionTypeNames) / sizeof(kTransitionTypeNames[0]));
+}
+
+const wchar_t* GetTransitionTypeName(int mixType) {
+  if (mixType < 0 || mixType >= GetTransitionTypeCount())
+    return L"Random";
+  return kTransitionTypeNames[mixType];
+}
+
+void CPlugin::SetTransitionType(int mixType, bool notifyRemote) {
+  if (mixType < -1)
+    mixType = -1;
+  if (mixType >= GetTransitionTypeCount())
+    mixType = GetTransitionTypeCount() - 1;
+  if (mixType == m_nMixType)
+    return;
+
+  m_nMixType = mixType;
+  WritePrivateProfileIntW(mixType, L"Mixtype", GetConfigIniFile(), L"Settings");
+
+  wchar_t message[128];
+  swprintf_s(message, L"Transition: %s", GetTransitionTypeName(mixType));
+  AddNotification(message);
+
+  if (notifyRemote)
+    SendSettingsInfoToMilkwaveRemote();
+}
+
+void CPlugin::CycleTransitionType() {
+  int next = m_nMixType + 1;
+  if (next >= GetTransitionTypeCount())
+    next = -1;
+  SetTransitionType(next, true);
+}
 
 void CPlugin::RandomizeBlendPattern() {
   if (!m_vertinfo)

@@ -287,6 +287,8 @@ namespace MilkwaveRemote
       pnlSettingTextborder = new Panel();
       label17 = new Label();
       cboSettingsCover = new ComboBox();
+      cboTransitionMode = new ComboBox();
+      label18 = new Label();
       btnSpace = new Button();
       btnBackspace = new Button();
       btnWatermark = new Button();
@@ -359,10 +361,6 @@ namespace MilkwaveRemote
       splitContainer1 = new SplitContainer();
       tabControl = new FlatTabControl();
       tabPreset = new TabPage();
-      btnTag10 = new Button();
-      btnTag9 = new Button();
-      btnTag8 = new Button();
-      btnTag7 = new Button();
       btnTag6 = new Button();
       btnTag5 = new Button();
       btnTag4 = new Button();
@@ -608,39 +606,39 @@ namespace MilkwaveRemote
       // toolStripMenuItemHomepage
       // 
       toolStripMenuItemHomepage.Name = "toolStripMenuItemHomepage";
-      toolStripMenuItemHomepage.Size = new Size(155, 22);
+      toolStripMenuItemHomepage.Size = new Size(160, 22);
       toolStripMenuItemHomepage.Text = "Milkwave";
       toolStripMenuItemHomepage.Click += toolStripMenuItemReleases_Click;
       // 
       // toolStripSeparator1
       // 
       toolStripSeparator1.Name = "toolStripSeparator1";
-      toolStripSeparator1.Size = new Size(152, 6);
+      toolStripSeparator1.Size = new Size(157, 6);
       // 
       // toolStripMenuItemHelp
       // 
       toolStripMenuItemHelp.Name = "toolStripMenuItemHelp";
-      toolStripMenuItemHelp.Size = new Size(155, 22);
+      toolStripMenuItemHelp.Size = new Size(160, 22);
       toolStripMenuItemHelp.Text = "Help";
       toolStripMenuItemHelp.Click += toolStripMenuItemHelp_Click;
       // 
       // toolStripMenuItemSupporters
       // 
       toolStripMenuItemSupporters.Name = "toolStripMenuItemSupporters";
-      toolStripMenuItemSupporters.Size = new Size(155, 22);
+      toolStripMenuItemSupporters.Size = new Size(160, 22);
       toolStripMenuItemSupporters.Text = "Supporters";
       toolStripMenuItemSupporters.Click += toolStripMenuItemSupporters_Click;
       // 
       // toolStripSeparator3
       // 
       toolStripSeparator3.Name = "toolStripSeparator3";
-      toolStripSeparator3.Size = new Size(152, 6);
+      toolStripSeparator3.Size = new Size(157, 6);
       // 
       // toolStripMenuItemShowHideTabs
       // 
       toolStripMenuItemShowHideTabs.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItemShowTabPreset, toolStripMenuItemShowTabMessage, toolStripMenuItemShowTabInOut, toolStripMenuItemShowTabSettings, toolStripMenuItemShowTabLyrics, toolStripMenuItemShowTabFonts, toolStripMenuItemShowTabMidi, toolStripMenuItemShowTabWave, toolStripMenuItemShowTabShader });
       toolStripMenuItemShowHideTabs.Name = "toolStripMenuItemShowHideTabs";
-      toolStripMenuItemShowHideTabs.Size = new Size(155, 22);
+      toolStripMenuItemShowHideTabs.Size = new Size(160, 22);
       toolStripMenuItemShowHideTabs.Text = "Show/Hide Tabs";
       toolStripMenuItemShowHideTabs.ToolTipText = "Show or hide single tabs of the Tabs panel";
       // 
@@ -649,7 +647,7 @@ namespace MilkwaveRemote
       toolStripMenuItemShowTabPreset.Checked = true;
       toolStripMenuItemShowTabPreset.CheckState = CheckState.Checked;
       toolStripMenuItemShowTabPreset.Name = "toolStripMenuItemShowTabPreset";
-      toolStripMenuItemShowTabPreset.Size = new Size(180, 22);
+      toolStripMenuItemShowTabPreset.Size = new Size(120, 22);
       toolStripMenuItemShowTabPreset.Tag = "PRESET";
       toolStripMenuItemShowTabPreset.Text = "Preset";
       toolStripMenuItemShowTabPreset.Click += toolStripMenuItemShowTab_Click;
@@ -659,7 +657,7 @@ namespace MilkwaveRemote
       toolStripMenuItemShowTabMessage.Checked = true;
       toolStripMenuItemShowTabMessage.CheckState = CheckState.Checked;
       toolStripMenuItemShowTabMessage.Name = "toolStripMenuItemShowTabMessage";
-      toolStripMenuItemShowTabMessage.Size = new Size(180, 22);
+      toolStripMenuItemShowTabMessage.Size = new Size(120, 22);
       toolStripMenuItemShowTabMessage.Tag = "MESSAGE";
       toolStripMenuItemShowTabMessage.Text = "Message";
       toolStripMenuItemShowTabMessage.Click += toolStripMenuItemShowTab_Click;
@@ -669,7 +667,7 @@ namespace MilkwaveRemote
       toolStripMenuItemShowTabInOut.Checked = true;
       toolStripMenuItemShowTabInOut.CheckState = CheckState.Checked;
       toolStripMenuItemShowTabInOut.Name = "toolStripMenuItemShowTabInOut";
-      toolStripMenuItemShowTabInOut.Size = new Size(180, 22);
+      toolStripMenuItemShowTabInOut.Size = new Size(120, 22);
       toolStripMenuItemShowTabInOut.Tag = "INOUT";
       toolStripMenuItemShowTabInOut.Text = "In/Out";
       toolStripMenuItemShowTabInOut.Click += toolStripMenuItemShowTab_Click;
@@ -679,7 +677,7 @@ namespace MilkwaveRemote
       toolStripMenuItemShowTabSettings.Checked = true;
       toolStripMenuItemShowTabSettings.CheckState = CheckState.Checked;
       toolStripMenuItemShowTabSettings.Name = "toolStripMenuItemShowTabSettings";
-      toolStripMenuItemShowTabSettings.Size = new Size(180, 22);
+      toolStripMenuItemShowTabSettings.Size = new Size(120, 22);
       toolStripMenuItemShowTabSettings.Tag = "SETTINGS";
       toolStripMenuItemShowTabSettings.Text = "Settings";
       toolStripMenuItemShowTabSettings.Click += toolStripMenuItemShowTab_Click;
@@ -689,7 +687,7 @@ namespace MilkwaveRemote
       toolStripMenuItemShowTabLyrics.Checked = true;
       toolStripMenuItemShowTabLyrics.CheckState = CheckState.Checked;
       toolStripMenuItemShowTabLyrics.Name = "toolStripMenuItemShowTabLyrics";
-      toolStripMenuItemShowTabLyrics.Size = new Size(180, 22);
+      toolStripMenuItemShowTabLyrics.Size = new Size(120, 22);
       toolStripMenuItemShowTabLyrics.Tag = "LYRICS";
       toolStripMenuItemShowTabLyrics.Text = "Lyrics";
       toolStripMenuItemShowTabLyrics.Click += toolStripMenuItemShowTab_Click;
@@ -699,7 +697,7 @@ namespace MilkwaveRemote
       toolStripMenuItemShowTabFonts.Checked = true;
       toolStripMenuItemShowTabFonts.CheckState = CheckState.Checked;
       toolStripMenuItemShowTabFonts.Name = "toolStripMenuItemShowTabFonts";
-      toolStripMenuItemShowTabFonts.Size = new Size(180, 22);
+      toolStripMenuItemShowTabFonts.Size = new Size(120, 22);
       toolStripMenuItemShowTabFonts.Tag = "FONTS";
       toolStripMenuItemShowTabFonts.Text = "Fonts";
       toolStripMenuItemShowTabFonts.Click += toolStripMenuItemShowTab_Click;
@@ -709,7 +707,7 @@ namespace MilkwaveRemote
       toolStripMenuItemShowTabMidi.Checked = true;
       toolStripMenuItemShowTabMidi.CheckState = CheckState.Checked;
       toolStripMenuItemShowTabMidi.Name = "toolStripMenuItemShowTabMidi";
-      toolStripMenuItemShowTabMidi.Size = new Size(180, 22);
+      toolStripMenuItemShowTabMidi.Size = new Size(120, 22);
       toolStripMenuItemShowTabMidi.Tag = "MIDI";
       toolStripMenuItemShowTabMidi.Text = "MIDI";
       toolStripMenuItemShowTabMidi.Click += toolStripMenuItemShowTab_Click;
@@ -719,7 +717,7 @@ namespace MilkwaveRemote
       toolStripMenuItemShowTabWave.Checked = true;
       toolStripMenuItemShowTabWave.CheckState = CheckState.Checked;
       toolStripMenuItemShowTabWave.Name = "toolStripMenuItemShowTabWave";
-      toolStripMenuItemShowTabWave.Size = new Size(180, 22);
+      toolStripMenuItemShowTabWave.Size = new Size(120, 22);
       toolStripMenuItemShowTabWave.Tag = "WAVE";
       toolStripMenuItemShowTabWave.Text = "Wave";
       toolStripMenuItemShowTabWave.Click += toolStripMenuItemShowTab_Click;
@@ -727,7 +725,7 @@ namespace MilkwaveRemote
       // toolStripMenuItemShowTabShader
       // 
       toolStripMenuItemShowTabShader.Name = "toolStripMenuItemShowTabShader";
-      toolStripMenuItemShowTabShader.Size = new Size(180, 22);
+      toolStripMenuItemShowTabShader.Size = new Size(120, 22);
       toolStripMenuItemShowTabShader.Tag = "SHADER";
       toolStripMenuItemShowTabShader.Text = "Shader";
       toolStripMenuItemShowTabShader.Click += toolStripMenuItemShowTab_Click;
@@ -737,7 +735,7 @@ namespace MilkwaveRemote
       toolStripMenuItemTabsPanel.Checked = true;
       toolStripMenuItemTabsPanel.CheckState = CheckState.Checked;
       toolStripMenuItemTabsPanel.Name = "toolStripMenuItemTabsPanel";
-      toolStripMenuItemTabsPanel.Size = new Size(155, 22);
+      toolStripMenuItemTabsPanel.Size = new Size(160, 22);
       toolStripMenuItemTabsPanel.Text = "Tabs Panel";
       toolStripMenuItemTabsPanel.Click += toolStripMenuItemTabsPanel_Click;
       // 
@@ -746,7 +744,7 @@ namespace MilkwaveRemote
       toolStripMenuItemButtonPanel.Checked = true;
       toolStripMenuItemButtonPanel.CheckState = CheckState.Checked;
       toolStripMenuItemButtonPanel.Name = "toolStripMenuItemButtonPanel";
-      toolStripMenuItemButtonPanel.Size = new Size(155, 22);
+      toolStripMenuItemButtonPanel.Size = new Size(160, 22);
       toolStripMenuItemButtonPanel.Text = "Button Panel";
       toolStripMenuItemButtonPanel.ToolTipText = "Ctrl+B";
       toolStripMenuItemButtonPanel.Click += toolStripMenuItemButtonPanel_Click;
@@ -756,7 +754,7 @@ namespace MilkwaveRemote
       toolStripMenuItemSpriteButtonImages.Checked = true;
       toolStripMenuItemSpriteButtonImages.CheckState = CheckState.Checked;
       toolStripMenuItemSpriteButtonImages.Name = "toolStripMenuItemSpriteButtonImages";
-      toolStripMenuItemSpriteButtonImages.Size = new Size(155, 22);
+      toolStripMenuItemSpriteButtonImages.Size = new Size(160, 22);
       toolStripMenuItemSpriteButtonImages.Text = "Sprite Images";
       toolStripMenuItemSpriteButtonImages.Click += toolStripMenuItemSpriteButtonImages_Click;
       // 
@@ -765,21 +763,21 @@ namespace MilkwaveRemote
       toolStripMenuItemColorButtonImages.Checked = true;
       toolStripMenuItemColorButtonImages.CheckState = CheckState.Checked;
       toolStripMenuItemColorButtonImages.Name = "toolStripMenuItemColorButtonImages";
-      toolStripMenuItemColorButtonImages.Size = new Size(155, 22);
+      toolStripMenuItemColorButtonImages.Size = new Size(160, 22);
       toolStripMenuItemColorButtonImages.Text = "Color Images";
       toolStripMenuItemColorButtonImages.Click += toolStripMenuItemColorButtonImages_Click;
       // 
       // toolStripSeparator4
       // 
       toolStripSeparator4.Name = "toolStripSeparator4";
-      toolStripSeparator4.Size = new Size(152, 6);
+      toolStripSeparator4.Size = new Size(157, 6);
       // 
       // toolStripMenuItemMonitorCPU
       // 
       toolStripMenuItemMonitorCPU.Checked = true;
       toolStripMenuItemMonitorCPU.CheckState = CheckState.Checked;
       toolStripMenuItemMonitorCPU.Name = "toolStripMenuItemMonitorCPU";
-      toolStripMenuItemMonitorCPU.Size = new Size(155, 22);
+      toolStripMenuItemMonitorCPU.Size = new Size(160, 22);
       toolStripMenuItemMonitorCPU.Text = "CPU Monitor";
       toolStripMenuItemMonitorCPU.Click += toolStripMenuItemMonitorCPU_Click;
       // 
@@ -788,28 +786,28 @@ namespace MilkwaveRemote
       toolStripMenuItemMonitorGPU.Checked = true;
       toolStripMenuItemMonitorGPU.CheckState = CheckState.Checked;
       toolStripMenuItemMonitorGPU.Name = "toolStripMenuItemMonitorGPU";
-      toolStripMenuItemMonitorGPU.Size = new Size(155, 22);
+      toolStripMenuItemMonitorGPU.Size = new Size(160, 22);
       toolStripMenuItemMonitorGPU.Text = "GPU Monitor";
       toolStripMenuItemMonitorGPU.Click += toolStripMenuItemMonitorGPU_Click;
       // 
       // toolStripSeparator2
       // 
       toolStripSeparator2.Name = "toolStripSeparator2";
-      toolStripSeparator2.Size = new Size(152, 6);
+      toolStripSeparator2.Size = new Size(157, 6);
       // 
       // toolStripMenuItemDarkMode
       // 
       toolStripMenuItemDarkMode.Checked = true;
       toolStripMenuItemDarkMode.CheckState = CheckState.Checked;
       toolStripMenuItemDarkMode.Name = "toolStripMenuItemDarkMode";
-      toolStripMenuItemDarkMode.Size = new Size(155, 22);
+      toolStripMenuItemDarkMode.Size = new Size(160, 22);
       toolStripMenuItemDarkMode.Text = "Dark Mode";
       toolStripMenuItemDarkMode.Click += toolStripMenuItemDarkMode_Click;
       // 
       // toolStripMenuItemOpenVisualizer
       // 
       toolStripMenuItemOpenVisualizer.Name = "toolStripMenuItemOpenVisualizer";
-      toolStripMenuItemOpenVisualizer.Size = new Size(155, 22);
+      toolStripMenuItemOpenVisualizer.Size = new Size(160, 22);
       toolStripMenuItemOpenVisualizer.Text = "Open Visualizer";
       toolStripMenuItemOpenVisualizer.ToolTipText = "Ctrl+O";
       toolStripMenuItemOpenVisualizer.Click += toolStripMenuItemOpenVisualizer_Click;
@@ -1728,7 +1726,7 @@ namespace MilkwaveRemote
       // 
       // lblMostUsed
       // 
-      lblMostUsed.Location = new Point(1, 124);
+      lblMostUsed.Location = new Point(1, 123);
       lblMostUsed.Name = "lblMostUsed";
       lblMostUsed.Size = new Size(67, 23);
       lblMostUsed.TabIndex = 136;
@@ -3693,6 +3691,30 @@ namespace MilkwaveRemote
       cboSettingsCover.TabIndex = 227;
       toolTip1.SetToolTip(cboSettingsCover, "Album cover: lower-right thumbnail in three sizes (small/medium/large) or the classic fullscreen zoom");
       cboSettingsCover.SelectedIndexChanged += cboSettingsCover_SelectedIndexChanged;
+      //
+      // cboTransitionMode
+      //
+      cboTransitionMode.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+      cboTransitionMode.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+      cboTransitionMode.AutoCompleteSource = AutoCompleteSource.ListItems;
+      cboTransitionMode.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboTransitionMode.FormattingEnabled = true;
+      cboTransitionMode.Location = new Point(420, 122);
+      cboTransitionMode.Name = "cboTransitionMode";
+      cboTransitionMode.Size = new Size(110, 23);
+      cboTransitionMode.TabIndex = 185;
+      toolTip1.SetToolTip(cboTransitionMode, "Random transition, or a fixed blend pattern. T in the Visualizer cycles through them.");
+      cboTransitionMode.SelectedIndexChanged += cboTransitionMode_SelectedIndexChanged;
+      //
+      // label18
+      //
+      label18.Location = new Point(353, 123);
+      label18.Name = "label18";
+      label18.Size = new Size(61, 23);
+      label18.TabIndex = 186;
+      label18.Text = "Transition";
+      label18.TextAlign = ContentAlignment.MiddleRight;
+      toolTip1.SetToolTip(label18, "Soft-Cut Transition used by the Visualizer");
       // 
       // btnSpace
       // 
@@ -4596,6 +4618,9 @@ namespace MilkwaveRemote
       // 
       tabPreset.BackColor = SystemColors.ControlLight;
       tabPreset.BorderStyle = BorderStyle.FixedSingle;
+      tabPreset.Controls.Add(btnTag6);
+      tabPreset.Controls.Add(label18);
+      tabPreset.Controls.Add(cboTransitionMode);
       tabPreset.Controls.Add(chkPresetDisplayPreset);
       tabPreset.Controls.Add(chkPresetDisplayTrack);
       tabPreset.Controls.Add(chkPresetDisplayCover);
@@ -4610,11 +4635,6 @@ namespace MilkwaveRemote
       tabPreset.Controls.Add(txtFilterTags);
       tabPreset.Controls.Add(cboTagsFilter);
       tabPreset.Controls.Add(btnTagsSave);
-      tabPreset.Controls.Add(btnTag10);
-      tabPreset.Controls.Add(btnTag9);
-      tabPreset.Controls.Add(btnTag8);
-      tabPreset.Controls.Add(btnTag7);
-      tabPreset.Controls.Add(btnTag6);
       tabPreset.Controls.Add(btnTag5);
       tabPreset.Controls.Add(btnTag4);
       tabPreset.Controls.Add(btnTag2);
@@ -4642,53 +4662,13 @@ namespace MilkwaveRemote
       tabPreset.TabIndex = 1;
       tabPreset.Text = "Preset";
       // 
-      // btnTag10
-      // 
-      btnTag10.FlatStyle = FlatStyle.System;
-      btnTag10.Location = new Point(485, 123);
-      btnTag10.Name = "btnTag10";
-      btnTag10.Size = new Size(40, 23);
-      btnTag10.TabIndex = 135;
-      btnTag10.UseVisualStyleBackColor = true;
-      btnTag10.Click += btnTag_Click;
-      // 
-      // btnTag9
-      // 
-      btnTag9.FlatStyle = FlatStyle.System;
-      btnTag9.Location = new Point(439, 123);
-      btnTag9.Name = "btnTag9";
-      btnTag9.Size = new Size(40, 23);
-      btnTag9.TabIndex = 134;
-      btnTag9.UseVisualStyleBackColor = true;
-      btnTag9.Click += btnTag_Click;
-      // 
-      // btnTag8
-      // 
-      btnTag8.FlatStyle = FlatStyle.System;
-      btnTag8.Location = new Point(393, 123);
-      btnTag8.Name = "btnTag8";
-      btnTag8.Size = new Size(40, 23);
-      btnTag8.TabIndex = 133;
-      btnTag8.UseVisualStyleBackColor = true;
-      btnTag8.Click += btnTag_Click;
-      // 
-      // btnTag7
-      // 
-      btnTag7.FlatStyle = FlatStyle.System;
-      btnTag7.Location = new Point(347, 123);
-      btnTag7.Name = "btnTag7";
-      btnTag7.Size = new Size(40, 23);
-      btnTag7.TabIndex = 132;
-      btnTag7.UseVisualStyleBackColor = true;
-      btnTag7.Click += btnTag_Click;
-      // 
       // btnTag6
       // 
       btnTag6.FlatStyle = FlatStyle.System;
-      btnTag6.Location = new Point(301, 123);
+      btnTag6.Location = new Point(302, 123);
       btnTag6.Name = "btnTag6";
       btnTag6.Size = new Size(40, 23);
-      btnTag6.TabIndex = 131;
+      btnTag6.TabIndex = 187;
       btnTag6.UseVisualStyleBackColor = true;
       btnTag6.Click += btnTag_Click;
       // 
@@ -6563,11 +6543,6 @@ namespace MilkwaveRemote
     private Label lblEcho;
     private NumericUpDown numWaveScale;
     private Label lblScale;
-    private Button btnTag6;
-    private Button btnTag10;
-    private Button btnTag9;
-    private Button btnTag8;
-    private Button btnTag7;
     private Label lblMostUsed;
     private ComboBox cboTagsFilter;
     private TabPage tabFonts;
@@ -6854,5 +6829,8 @@ namespace MilkwaveRemote
     private Panel pnlSettingTextborder;
     private ComboBox cboSettingsCover;
     private Label label17;
+    private ComboBox cboTransitionMode;
+    private Label label18;
+    private Button btnTag6;
   }
 }

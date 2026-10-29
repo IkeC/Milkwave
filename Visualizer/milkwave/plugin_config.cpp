@@ -704,6 +704,7 @@ void CPlugin::MyWriteConfig() {
   WritePrivateProfileIntW(m_nTrebStart, L"TrebStart", pIni, L"Settings");
   WritePrivateProfileIntW(m_nTrebEnd, L"TrebEnd", pIni, L"Settings");
 
+  WritePrivateProfileIntW(m_nMixType, L"Mixtype", pIni, L"Settings");
   WritePrivateProfileFloatW(m_fBlendTimeAuto, L"fBlendTimeAuto", pIni, L"Settings");
   WritePrivateProfileFloatW(m_fBlendTimeUser, L"fBlendTimeUser", pIni, L"Settings");
   WritePrivateProfileFloatW(m_fTimeBetweenPresets, L"fTimeBetweenPresets", pIni, L"Settings");

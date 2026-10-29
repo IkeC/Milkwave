@@ -228,6 +228,9 @@ static HWND desktopWorkerW = nullptr;
 static float desktopModePreviousOpacity = 1.0f;
 static bool desktopModePreviousClickthrough = false;
 static bool desktopModePreviousColorKey = false;  // Transparency Mode (colour key) was in effect
+// Set when the taskbar jump list's "Toggle Desktop Mode" task starts this process
+// because no running visualizer answered on the old instance's pipe.
+static bool startInDesktopModeFromJumpList = false;
 
 static HWND desktopControllerWindow = nullptr;
 static HWND desktopControllerOwner = nullptr;
@@ -2505,10 +2508,13 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   // Right-click on the taskbar button -> "Toggle Desktop Mode" / "Open Milkwave Remote"
   BuildTaskbarJumpList();
 
-  // Desktop Mode was still active when the app was closed -> restore it.
-  if (g_plugin.m_WindowDesktopMode && !g_plugin.m_bDesktopMode) {
+  // Desktop Mode was still active when the app was closed -> restore it. A taskbar
+  // "Toggle Desktop Mode" task that could not reach a running instance also starts
+  // this new process directly in Desktop Mode.
+  if ((g_plugin.m_WindowDesktopMode || startInDesktopModeFromJumpList) && !g_plugin.m_bDesktopMode) {
     ToggleDesktopMode(hwnd);
   }
+  startInDesktopModeFromJumpList = false;
 
   // Start TCP network server if enabled
   if (g_plugin.m_TcpEnabled) {
@@ -3083,8 +3089,10 @@ void SeTranslatorFunction(unsigned int code, _EXCEPTION_POINTERS* ep) {
 
 // A click on a taskbar jump list task starts a second process with
 // "--<action>=<pid>". Ask the running instance to perform the action through
-// its pipe and exit without starting another visualizer. The arguments must
-// match kDesktopModeJumpListArgument / kOpenRemoteJumpListArgument.
+// its pipe and exit without starting another visualizer. If no instance answers,
+// "Toggle Desktop Mode" falls through to a normal start so the new process can
+// enter Desktop Mode itself. The arguments must match kDesktopModeJumpListArgument /
+// kOpenRemoteJumpListArgument.
 static bool ForwardJumpListTask(LPCSTR cmdLine) {
   if (cmdLine == nullptr) {
     return false;
@@ -3104,15 +3112,25 @@ static bool ForwardJumpListTask(LPCSTR cmdLine) {
       continue;
     }
     const DWORD targetPid = (DWORD)strtoul(marker + strlen(jumpListTask.argument), nullptr, 10);
+    const bool isDesktopModeTask = wcscmp(jumpListTask.signal, L"SIGNAL|DESKTOP_MODE") == 0;
+    bool forwarded = false;
     if (targetPid != 0) {
       wchar_t pipeName[64];
       swprintf_s(pipeName, L"\\\\.\\pipe\\Milkwave_%u", targetPid);
       HANDLE hPipe = CreateFileW(pipeName, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
       if (hPipe != INVALID_HANDLE_VALUE) {
+        const DWORD messageBytes = (DWORD)(wcslen(jumpListTask.signal) * sizeof(wchar_t));
         DWORD written = 0;
-        WriteFile(hPipe, jumpListTask.signal, (DWORD)(wcslen(jumpListTask.signal) * sizeof(wchar_t)), &written, nullptr);
+        forwarded = WriteFile(hPipe, jumpListTask.signal, messageBytes, &written, nullptr) && written == messageBytes;
         CloseHandle(hPipe);
       }
+    }
+
+    if (!forwarded && isDesktopModeTask) {
+      // The taskbar keeps the task after the visualizer exits, but its PID then
+      // points to a dead pipe. Continue starting normally and enter Desktop Mode.
+      startInDesktopModeFromJumpList = true;
+      return false;
     }
     return true;
   }

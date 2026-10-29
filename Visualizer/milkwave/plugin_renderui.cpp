@@ -1002,6 +1002,16 @@ void CPlugin::MyRenderUI(
       DWORD cg = m_fontinfo[DECORATIVE_FONT].G;
       DWORD cb = m_fontinfo[DECORATIVE_FONT].B;
       DWORD color = (alpha << 24) | (cr << 16) | (cg << 8) | cb;
+
+      int presetInfoMaxWidth = xR - xL;
+      if (m_textBorder > 0) {
+        presetInfoMaxWidth -= m_textBorder;
+      }
+      if (presetInfoMaxWidth < 1) {
+        presetInfoMaxWidth = 1;
+      }
+      std::wstring presetInfoText = TruncateTextWithEllipsis(pFont, buf, presetInfoMaxWidth);
+      wcsncpy_s(buf, _countof(buf), presetInfoText.c_str(), _TRUNCATE);
       MyTextOut_Color(buf, MTO_UPPER_RIGHT, color);
       // MyTextOut_Shadow(buf, MTO_UPPER_RIGHT, color);
     }

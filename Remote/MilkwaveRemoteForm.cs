@@ -200,6 +200,7 @@ namespace MilkwaveRemote {
       PresetChangeWithSong,
       PresetDisplayCover,
       CoverStyle,
+      TransitionMode,
       PresetDisplayTrack,
       PresetDisplayPreset,
       InvertPreset,
@@ -270,6 +271,33 @@ namespace MilkwaveRemote {
       EQBoost,
       ShowTab
     }
+
+    // Order matches the Visualizer's Mixtype values: index 0 is Random (-1),
+    // index 1 is transition type 0, and so on.
+    private static readonly string[] TransitionModeNames = {
+      "Random",
+      "Uniform Fade",
+      "Directional Wipe",
+      "Plasma",
+      "Radial",
+      "Clock",
+      "Spiral",
+      "Rhombus",
+      "Nuclear Clock",
+      "Square/Diamond",
+      "Checkerboard",
+      "Curtain",
+      "Bubbles",
+      "Kaleidoscope",
+      "Moebius Strip",
+      "Stars",
+      "Disco Floor",
+      "Fire",
+      "Drain Swirl",
+      "Julia Set",
+      "Vertical Wipe",
+      "Horizontal Wipe",
+    };
 
     private class PendingThumbnail {
       public Preset Preset { get; set; } = new Preset();
@@ -983,6 +1011,11 @@ namespace MilkwaveRemote {
       Program.LogToFile($"Application version: {version ?? "unknown"}");
       InitializeComponent();
 
+      updatingSettingsParams = true;
+      cboTransitionMode.Items.AddRange(TransitionModeNames);
+      cboTransitionMode.SelectedIndex = 0;
+      updatingSettingsParams = false;
+
       // Seed the configured tab set with the pages the Designer created. The
       // visualizer's ShowTab* settings update it later; the "Show/Hide Tabs"
       // submenu toggles single tabs of it.
@@ -1159,6 +1192,13 @@ namespace MilkwaveRemote {
         timeBetweenPresets = 60m;
       }
       numPresetChange.Value = Math.Clamp(timeBetweenPresets, numPresetChange.Minimum, numPresetChange.Maximum);
+
+      string mixTypeValue = RemoteHelper.GetIniValue("Settings", "Mixtype", "-1");
+      if (int.TryParse(mixTypeValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int mixType)) {
+        updatingSettingsParams = true;
+        cboTransitionMode.SelectedIndex = Math.Clamp(mixType + 1, 0, cboTransitionMode.Items.Count - 1);
+        updatingSettingsParams = false;
+      }
 
       LoadButtonConfiguration(visualizerSettingsPath);
       ApplyPanelMode(); // apply the configured command button captions
@@ -1932,6 +1972,13 @@ namespace MilkwaveRemote {
                   chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) {
                   chkSettingsPresetRandom.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("MIXTYPE", StringComparison.OrdinalIgnoreCase)) {
+                  if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int mixType)) {
+                    int index = Math.Clamp(mixType + 1, 0, cboTransitionMode.Items.Count - 1);
+                    if (cboTransitionMode.SelectedIndex != index) {
+                      cboTransitionMode.SelectedIndex = index;
+                    }
+                  }
                 } else if (key.Equals("CHANGEWITHSONG", StringComparison.OrdinalIgnoreCase)) {
                   chkPresetChangeWithSong.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("DISPLAYCOVER", StringComparison.OrdinalIgnoreCase)) {
@@ -2487,6 +2534,10 @@ namespace MilkwaveRemote {
               int coverStyle = cboSettingsCover.SelectedIndex < 0 ? 1 : cboSettingsCover.SelectedIndex;
               message = "COVER_STYLE=" + coverStyle;
               statusMessage = "Cover: " + (coverStyle == 0 ? "corner (small)" : coverStyle == 1 ? "corner (medium)" : coverStyle == 2 ? "corner (large)" : "fullscreen zoom");
+            } else if (type == MessageType.TransitionMode) {
+              int transitionType = cboTransitionMode.SelectedIndex <= 0 ? -1 : cboTransitionMode.SelectedIndex - 1;
+              message = "MIXTYPE=" + transitionType.ToString(CultureInfo.InvariantCulture);
+              statusMessage = "Transition: " + (cboTransitionMode.SelectedItem?.ToString() ?? "Random");
             } else if (type == MessageType.PresetDisplayTrack) {
               message = "SONGINFO_POLLING=" + (chkPresetDisplayTrack.Checked ? "1" : "0");
             } else if (type == MessageType.PresetDisplayPreset) {
@@ -3386,6 +3437,7 @@ namespace MilkwaveRemote {
       new CommandFunctionOption { Category = "Display", Name = "Change FPS", Shortcut = "F3", Command = "SEND=0x72" },
       new CommandFunctionOption { Category = "Display", Name = "Preset Info", Shortcut = "F4", Command = "SEND=0x73" },
       new CommandFunctionOption { Category = "Display", Name = "Preset Info on Change", Shortcut = "Ctrl+F4", Command = "PRESETINFO_ON_CHANGE" },
+      new CommandFunctionOption { Category = "Display", Name = "Flash Info", Shortcut = "Ctrl+Space", Command = "FLASH_INFO" },
       new CommandFunctionOption { Category = "Display", Name = "Visual Version", Shortcut = "Ctrl+V", Command = "CYCLE_VERSION" },
       new CommandFunctionOption { Category = "Display", Name = "Invert Preset Output", Shortcut = "", Command = "INVERT_PRESET" },
       new CommandFunctionOption { Category = "Display", Name = "Show FPS Setting", Shortcut = "Ctrl+F3", Command = "SHOW_FPS_SETTING" },
@@ -3417,10 +3469,9 @@ namespace MilkwaveRemote {
       new CommandFunctionOption { Category = "Track", Name = "Track Info", Shortcut = "B", Command = "SEND=0x42" },
       new CommandFunctionOption { Category = "Track", Name = "Song Info Polling", Shortcut = "Ctrl+B", Command = "SONGINFO_POLLING" },
       new CommandFunctionOption { Category = "Track", Name = "Cover Display", Shortcut = "Ctrl+C", Command = "DISPLAY_COVER" },
+      new CommandFunctionOption { Category = "Track", Name = "Toggle Lyrics", Shortcut = "Ctrl+L", Command = "LYRICS_ACTIVE" },
       new CommandFunctionOption { Category = "Track", Name = "Set Default Audio Device", Shortcut = "Ctrl+D", Command = "AUDIO_DEVICE_DEFAULT" },
       new CommandFunctionOption { Category = "Track", Name = "Show Audio Device", Shortcut = "Shift+Ctrl+D", Command = "AUDIO_DEVICE_INFO" },
-      // Lyrics
-      new CommandFunctionOption { Category = "Lyrics", Name = "Toggle Lyrics", Shortcut = "Ctrl+L", Command = "LYRICS_ACTIVE" },
       // Sprites & Messages
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Sprite/Msg Mode", Shortcut = "K", Command = "SEND=0x4B" },
       new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Sprite/Msg", Shortcut = "Delete", Command = "SEND=0x2E" },
@@ -4246,6 +4297,11 @@ namespace MilkwaveRemote {
     }
 
     private void SetPanelsVisibility() {
+      bool wasCompactMode = !Settings.ShowButtonPanel;
+      bool isCompactMode = !toolStripMenuItemButtonPanel.Checked;
+      if (wasCompactMode != isCompactMode) {
+        SaveCurrentModeWindowSize(wasCompactMode);
+      }
       Settings.ShowTabsPanel = toolStripMenuItemTabsPanel.Checked;
       Settings.ShowButtonPanel = toolStripMenuItemButtonPanel.Checked;
       splitContainer1.Panel1Collapsed = !Settings.ShowTabsPanel;
@@ -4931,34 +4987,6 @@ namespace MilkwaveRemote {
         btnTag6.Tag = null;
         btnTag6.Text = "";
       }
-
-      if (sortedTags.Count > 6) {
-        SetButtonTagInfo(btnTag7, sortedTags[6]);
-      } else {
-        btnTag7.Tag = null;
-        btnTag7.Text = "";
-      }
-
-      if (sortedTags.Count > 7) {
-        SetButtonTagInfo(btnTag8, sortedTags[7]);
-      } else {
-        btnTag8.Tag = null;
-        btnTag8.Text = "";
-      }
-
-      if (sortedTags.Count > 8) {
-        SetButtonTagInfo(btnTag9, sortedTags[8]);
-      } else {
-        btnTag9.Tag = null;
-        btnTag9.Text = "";
-      }
-
-      if (sortedTags.Count > 9) {
-        SetButtonTagInfo(btnTag10, sortedTags[9]);
-      } else {
-        btnTag10.Tag = null;
-        btnTag10.Text = "";
-      }
     }
 
     private List<(string Tag, int Count)> GetTagsListSortedByCount() {
@@ -5183,6 +5211,9 @@ namespace MilkwaveRemote {
 
       toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
+      if (!Settings.ShowButtonPanel) {
+        ApplyCompactWindowSize();
+      }
       toolStripMenuItemSpriteButtonImages.Checked = Settings.EnableSpriteButtonImage;
       toolStripMenuItemColorButtonImages.Checked = Settings.EnableColorButtonImages;
       toolStripMenuItemMonitorCPU.Checked = Settings.EnableMonitorCPU;
@@ -5227,11 +5258,10 @@ namespace MilkwaveRemote {
     private void SetAndSaveSettings() {
       if (WindowState == FormWindowState.Normal) {
         Settings.RemoteWindowLocation = Location;
-        Settings.RemoteWindowSize = Size;
       } else {
         Settings.RemoteWindowLocation = RestoreBounds.Location;
-        Settings.RemoteWindowSize = RestoreBounds.Size;
       }
+      SaveCurrentModeWindowSize(!Settings.ShowButtonPanel);
       Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
       // -1 while "Show/Hide Tabs" hides every tab: keep the last real selection.
       if (tabControl.SelectedIndex >= 0) {
@@ -5976,17 +6006,7 @@ namespace MilkwaveRemote {
           } else {
             toolStripMenuItemButtonPanel.Checked = false;
             SetPanelsVisibility();
-
-            if (Settings.RemoteWindowCompactSize.Width > 0) {
-              Width = Settings.RemoteWindowCompactSize.Width;
-            } else {
-              Width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + 57;
-            }
-            if (Settings.RemoteWindowCompactSize.Height > 0) {
-              Height = Settings.RemoteWindowCompactSize.Height;
-            } else {
-              ClientSize = new Size(ClientSize.Width, GetDefaultCompactClientHeight());
-            }
+            ApplyCompactWindowSize();
           }
         } else if (e.Button == MouseButtons.Right) {
           if (toolStripMenuItemButtonPanel.Checked) {
@@ -7006,8 +7026,12 @@ namespace MilkwaveRemote {
     private Size GetCalculatedOptionalTopPanelSize() {
       // The bottom row of the preset tab (the display options) is not right-anchored, so the window
       // has to be wide enough to show it completely, with a small border on the right.
+      // Right-anchored controls adapt to the window and must not inflate that minimum width.
       int contentRight = 0;
       foreach (Control control in tabPreset.Controls) {
+        if ((control.Anchor & AnchorStyles.Right) != 0 || control.Dock == DockStyle.Fill) {
+          continue;
+        }
         contentRight = Math.Max(contentRight, control.Right);
       }
 
@@ -7020,6 +7044,32 @@ namespace MilkwaveRemote {
 
     private int GetDefaultCompactClientHeight() {
       return GetDefaultTabPanelHeight() + statusStrip1.Height + 5;
+    }
+
+    private void SaveCurrentModeWindowSize(bool compactMode) {
+      Size currentSize = WindowState == FormWindowState.Normal ? Size : RestoreBounds.Size;
+      if (currentSize.Width <= 0 || currentSize.Height <= 0) {
+        return;
+      }
+
+      if (compactMode) {
+        Settings.RemoteWindowCompactSize = currentSize;
+      } else {
+        Settings.RemoteWindowSize = currentSize;
+      }
+    }
+
+    private void ApplyCompactWindowSize() {
+      if (Settings.RemoteWindowCompactSize.Width > 0) {
+        Width = Settings.RemoteWindowCompactSize.Width;
+      } else {
+        Width = GetCalculatedOptionalTopPanelSize().Width;
+      }
+      if (Settings.RemoteWindowCompactSize.Height > 0) {
+        Height = Settings.RemoteWindowCompactSize.Height;
+      } else {
+        ClientSize = new Size(ClientSize.Width, GetDefaultCompactClientHeight());
+      }
     }
 
     private int GetDefaultTabPanelHeight() {
@@ -7430,6 +7480,14 @@ namespace MilkwaveRemote {
       // visualizer; the value comes back in the SETTINGS| state message as COVERSTYLE.
       if (updatingSettingsParams) return;
       SendToMilkwaveVisualizer("", MessageType.CoverStyle);
+    }
+
+    private void cboTransitionMode_SelectedIndexChanged(object sender, EventArgs e) {
+      // Sends the selected transition type as Mixtype (-1 = Random, 0..20 = fixed type).
+      // The Visualizer echoes its current value in SETTINGS|MIXTYPE=... so changes made
+      // with T in the Visualizer also update this combo box.
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.TransitionMode);
     }
 
     private void chkPresetDisplayTrack_CheckedChanged(object sender, EventArgs e) {

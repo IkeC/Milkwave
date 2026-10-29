@@ -60,6 +60,10 @@ void ShowAudioDeviceName();
 // Locates MilkwaveRemote.exe next to the visualizer (see plugin.cpp)
 bool MilkwaveRemoteFindExecutable(std::wstring& exePath);
 
+// Preset blend transition types (settings.ini [Settings] Mixtype; -1 = random)
+int GetTransitionTypeCount();
+const wchar_t* GetTransitionTypeName(int mixType);
+
 // Vertex declarations (defined in plugin.cpp)
 extern D3DVERTEXELEMENT9 g_MyVertDecl[];
 extern D3DVERTEXELEMENT9 g_WfVertDecl[];

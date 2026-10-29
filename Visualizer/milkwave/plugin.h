@@ -384,7 +384,7 @@ class CPlugin : public CPluginShell {
   int m_nTexBitsPerCh;
   int m_nGridX;
   int m_nGridY;
-  int m_nMixType = -1;  // -1 = Random
+  int m_nMixType = -1;  // -1 = Random, 0-20 = fixed transition type
 
   // bool		m_bShowPressF1ForHelp;
   // char		m_szMonitorName[256];
@@ -1012,6 +1012,8 @@ class CPlugin : public CPluginShell {
   void SendPresetChangedInfoToMilkwaveRemote();
   void SendPresetWaveInfoToMilkwaveRemote();
   void SendSettingsInfoToMilkwaveRemote();
+  void SetTransitionType(int mixType, bool notifyRemote);
+  void CycleTransitionType();
   void SetWaveParamsFromMessage(std::wstring& message);
   void ApplyVisVersion(float version, bool notifyRemote);
   void CycleVisVersion();

@@ -49,6 +49,7 @@ SPACE / H               Soft / hard cut to next preset
 BACKSPACE               Go back to previous preset
 ` / ~                   [un]lock current preset
 R                       Toggle random/sequential preset order
+T                       Cycle preset transition type (Random / 0-20)
 L                       Load specific preset
 M                       Show/hide preset-editing menu
 N                       Show per-frame monitor
