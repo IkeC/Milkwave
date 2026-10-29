@@ -126,6 +126,23 @@
 			"group": "build"
 		},
 		{
+			"label": "Update ProjectM Libraries",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\Build\\update-projectm-libs.ps1"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			}
+		},
+		{
 			"label": "Format Visualizer",
 			"type": "shell",
 			"command": "Get-ChildItem -Path '${workspaceFolder}\\Visualizer\\milkwave' -Include '*.cpp','*.h' -Recurse | ForEach-Object { & 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\bin\\clang-format.exe' -i $_.FullName }; Write-Host 'Done.'",
