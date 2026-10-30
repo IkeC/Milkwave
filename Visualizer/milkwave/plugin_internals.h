@@ -60,6 +60,10 @@ void ShowAudioDeviceName();
 // Locates MilkwaveRemote.exe next to the visualizer (see plugin.cpp)
 bool MilkwaveRemoteFindExecutable(std::wstring& exePath);
 
+// Starts Milkwave Remote or brings the running instance to the front; usable before the plugin
+// is initialized (taskbar jump list helper). Returns false when the Remote could not be started.
+bool OpenMilkwaveRemoteExternal();
+
 // Preset blend transition types (settings.ini [Settings] Mixtype; -1 = random)
 int GetTransitionTypeCount();
 const wchar_t* GetTransitionTypeName(int mixType);

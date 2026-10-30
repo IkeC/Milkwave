@@ -3,13 +3,16 @@
 * 20 new audio-reactive Shader presets, each with three versions and mouse support, tagged with "42"
 * Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 * Visualizer: Improved Desktop Mode (Ctrl+F9)
+* Visualizer: Keyboard shortcuts work reliably in Desktop Mode (character keys were handled twice) and the keyboard returns to the window when Desktop Mode is left (no more beeping keys)
 * Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"
+* Visualizer: "Open Milkwave Remote" in the taskbar menu also starts the Remote when no Visualizer is running
 * Visualizer: Taskbar thumbnail toolbar with buttons for the previous preset, the opacity (5% steps), the preset lock and the next preset
 * Remote: Bottom panel button functions assignable from context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click)
 * Visualizer: Flash preset info on preset change with configurable duration (Ctrl+F4)
 * Remote/Visualizer: Lyrics text outline and background box options with configurable color
 * Remote: Preset change and info buttons with improved locking logic dependency
 * Visualizer: Uncompiled shader presets now compile in the background while the current preset keeps playing
+* Visualizer: The startup preset is shown right away again (the empty "no preset" pattern no longer flashes while it compiles)
 * Remote/Visualizer: "Textborder" setting outlines all messages and notifications with configurable color
 * Remote Settings: Invert preset output
 * Visualizer: Album art in bottom corner (small, medium, large) or fullscreen, fading with the song title

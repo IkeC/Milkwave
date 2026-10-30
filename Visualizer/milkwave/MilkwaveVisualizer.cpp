@@ -1275,19 +1275,24 @@ static LRESULT CALLBACK DesktopControllerWndProc(HWND hWnd, UINT uMsg, WPARAM wP
   switch (uMsg) {
     case WM_KEYDOWN:
     case WM_KEYUP:
-    case WM_CHAR:
-    case WM_SYSCHAR:
     case WM_SYSKEYDOWN:
-    case WM_SYSKEYUP: {
+    case WM_SYSKEYUP:
       // Desktop Mode makes the render window a non-activatable child of the desktop, so it can
-      // never take the keyboard focus by itself. The taskbar button belongs to this controller
-      // window, so when the user selects the visualizer there, hand the keys over to the render
-      // window and the usual shortcuts (F1, Ctrl+Q, Ctrl+F9, ...) work as expected.
+      // never take the keyboard focus by itself (SetFocus is refused for it). The taskbar button
+      // belongs to this controller window, so when the user selects the visualizer there, hand
+      // the keys over to the render window and the usual shortcuts (F1, Ctrl+Q, Ctrl+F9, ...)
+      // work as expected.
       if (desktopControllerOwner != nullptr && IsWindow(desktopControllerOwner)) {
         PostMessageW(desktopControllerOwner, uMsg, wParam, lParam);
       }
       return 0;
-    }
+    case WM_CHAR:
+    case WM_SYSCHAR:
+      // Not forwarded: the render window's message loop translates the forwarded WM_KEYDOWN
+      // into its own WM_CHAR, so passing the character message on top of it made every character
+      // key fire twice (pressing R toggled the preset order twice and only re-displayed the
+      // unchanged value).
+      return 0;
     case WM_CLOSE: {
       // The taskbar's "Close window" must close the visualizer, not just the
       // invisible controller window.
@@ -1305,8 +1310,10 @@ static LRESULT CALLBACK DesktopControllerWndProc(HWND hWnd, UINT uMsg, WPARAM wP
       }
       return 0;
     default:
-      return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+      break;
   }
+
+  return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
 // Creates the tiny invisible top-level window that keeps the taskbar button
@@ -1466,6 +1473,15 @@ static void BuildTaskbarJumpList() {
   }
 }
 
+// Hands the keyboard back to the render window once it is a normal, activatable window again.
+// Deliberately without AttachThreadInput: attaching to another application's input queue can
+// block (it does so for Explorer's), and the hand-over to the controller window in
+// ToggleDesktopMode keeps the foreground in this process, so SetForegroundWindow is granted.
+static void ActivateVisualizerWindow(HWND hWnd) {
+  SetForegroundWindow(hWnd);
+  SetFocus(hWnd);
+}
+
 static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
   try {
     if (!g_plugin.m_bDesktopMode) {
@@ -1561,6 +1577,11 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       RegisterDesktopModeHotkey(hWnd);
       g_plugin.AddNotification(L"Desktop Mode enabled (Ctrl+F9 to exit)");
     } else {
+      // Leaving Desktop Mode always gives the keyboard back to the window once it is back, no
+      // matter how the switch was triggered. Windows only grants that to a process that owns the
+      // foreground, received the last input event or was allowed to take it (the taskbar's jump
+      // list passes that right on, see ForwardJumpListTask), so the attempts below can still be
+      // refused - they are not harmful then.
       UnregisterDesktopModeHotkey(hWnd);
       // Leave Desktop Mode before the device reset below, so that nothing applies the
       // Desktop Mode alpha after the switch back, and restore the normal opacity first.
@@ -1583,8 +1604,19 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       SetWindowPos(hWnd, HWND_TOP, g_plugin.m_desktop_lastRect.left, g_plugin.m_desktop_lastRect.top,
                    width, height, SWP_FRAMECHANGED);
 
-      // The render window is back in the taskbar, so the controller can go.
-      DestroyDesktopControllerWindow();
+      // The controller has to outlive the switch. It is the only window of this process that can
+      // still be activated once the render window is hidden for the surface rebuild below: if it
+      // were destroyed here, the process would be left without any foreground window, and Win32
+      // no longer grants it the foreground when the window comes back - the keys keep going to
+      // the desktop or the taskbar, which beep on every key press. Hand the foreground to the
+      // controller before the window goes away; the reshow timer activates the render window and
+      // only then destroys the controller.
+      if (desktopControllerWindow != nullptr && IsWindow(desktopControllerWindow)) {
+        SetForegroundWindow(desktopControllerWindow);
+        SetFocus(desktopControllerWindow);
+      } else {
+        DestroyDesktopControllerWindow();
+      }
       AddTaskbarThumbnailButtons(hWnd);
 
       if (g_plugin.m_bAlwaysOnTop) {
@@ -1770,6 +1802,12 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
           SetWindowPos(hWnd, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
                        SWP_FRAMECHANGED | SWP_DRAWFRAME | SWP_NOACTIVATE);
           g_plugin.ApplyWindowOpacity(hWnd, g_plugin.fOpacity);
+          // The window is a normal, activatable window again; hand the keyboard back to it.
+          ActivateVisualizerWindow(hWnd);
+        }
+        // The controller kept the process in the foreground while the window was hidden.
+        if (!g_plugin.m_bDesktopMode) {
+          DestroyDesktopControllerWindow();
         }
         return 0;
       }
@@ -3115,6 +3153,15 @@ static bool ForwardJumpListTask(LPCSTR cmdLine) {
     const bool isDesktopModeTask = wcscmp(jumpListTask.signal, L"SIGNAL|DESKTOP_MODE") == 0;
     bool forwarded = false;
     if (targetPid != 0) {
+      // The click came from the taskbar, so Explorer owns the foreground - not this process and
+      // not the running visualizer. This helper is the process Explorer started, so it may pass
+      // the right on: the visualizer then takes the keyboard back when it leaves Desktop Mode
+      // (see ToggleDesktopMode). Granted before the signal so it is already in place when the
+      // running instance reacts.
+      if (isDesktopModeTask) {
+        AllowSetForegroundWindow(targetPid);
+      }
+
       wchar_t pipeName[64];
       swprintf_s(pipeName, L"\\\\.\\pipe\\Milkwave_%u", targetPid);
       HANDLE hPipe = CreateFileW(pipeName, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
@@ -3126,11 +3173,21 @@ static bool ForwardJumpListTask(LPCSTR cmdLine) {
       }
     }
 
-    if (!forwarded && isDesktopModeTask) {
-      // The taskbar keeps the task after the visualizer exits, but its PID then
-      // points to a dead pipe. Continue starting normally and enter Desktop Mode.
-      startInDesktopModeFromJumpList = true;
-      return false;
+    if (!forwarded) {
+      if (isDesktopModeTask) {
+        // The taskbar keeps the task after the visualizer exits, but its PID then
+        // points to a dead pipe. Continue starting normally and enter Desktop Mode.
+        startInDesktopModeFromJumpList = true;
+        return false;
+      }
+      // No running visualizer answered. The Remote does not need one, so start it (or raise a
+      // running instance) from here instead of exiting without doing anything.
+      if (!OpenMilkwaveRemoteExternal()) {
+        MessageBoxW(nullptr,
+                    L"Could not start Milkwave Remote.\n\nMake sure MilkwaveRemote.exe is in the same folder as "
+                    L"MilkwaveVisualizer.exe.",
+                    L"Milkwave Visualizer", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
+      }
     }
     return true;
   }

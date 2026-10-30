@@ -23,6 +23,8 @@ SET CMD=del /s /q
 %CMD% "*Altars Of Madness 2 (Cold Snap Edit)*"
 %CMD% "*Jian Simanjuntak - Particle Nights in Jakarta*"
 %CMD% "*Jetplane Military*"
+%CMD% "*Tesla Coil*"
+
 pause
 
 ::exclusions, because preset is referencing textures that we don't ship

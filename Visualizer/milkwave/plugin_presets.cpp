@@ -725,7 +725,11 @@ void CPlugin::LoadPreset(const wchar_t* szPresetFilename, float fBlendTime) {
 
   const bool hasPresetShaders =
       (m_pNewState->m_nWarpPSVersion > 0 || m_pNewState->m_nCompPSVersion > 0);
-  if (m_ShaderCaching && m_nMaxPSVersion > 0 && hasPresetShaders) {
+  // The first preset of a session is always applied right away, even with background compilation:
+  // there is no previous preset that could keep rendering, so until the compile finished the
+  // window would show the empty default scene ("no preset") for a moment after startup.
+  const bool bBackgroundCompile = m_ShaderCaching && m_nMaxPSVersion > 0 && hasPresetShaders && m_bInitialPresetSelected;
+  if (bBackgroundCompile) {
     m_nLoadingPreset = 1;  // LoadPresetTick() waits for the compile to finish
     StartPendingPresetCompile();
   } else if (fBlendTime == 0) {

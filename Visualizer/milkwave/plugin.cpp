@@ -2454,6 +2454,41 @@ void CPlugin::OpenMilkwaveRemote() {
   }
 }
 
+// Starts Milkwave Remote, or brings the running instance to the front, without using any plugin
+// state: the taskbar jump list task calls it from a short-lived helper process, before the
+// visualizer itself is initialized (see ForwardJumpListTask in MilkwaveVisualizer.cpp).
+bool OpenMilkwaveRemoteExternal() {
+  const HWND remoteWindow = FindMilkwaveRemoteWindow();
+  if (remoteWindow != nullptr) {
+    if (IsIconic(remoteWindow)) {
+      ShowWindow(remoteWindow, SW_RESTORE);
+    }
+    // No AttachThreadInput here: the helper process was started from the taskbar click, so it may
+    // take the foreground itself (see ForwardJumpListTask).
+    SetForegroundWindow(remoteWindow);
+    return true;
+  }
+
+  std::wstring exePath;
+  if (!MilkwaveRemoteFindExecutable(exePath)) {
+    exePath = L"MilkwaveRemote.exe";  // let CreateProcess search for it
+  }
+  std::wstring commandLine = L"\"" + exePath + L"\"";
+
+  STARTUPINFOW si;
+  PROCESS_INFORMATION pi;
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  ZeroMemory(&pi, sizeof(pi));
+
+  if (!CreateProcessW(exePath.c_str(), commandLine.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    return false;
+  }
+  CloseHandle(pi.hProcess);
+  CloseHandle(pi.hThread);
+  return true;
+}
+
 void CPlugin::SetAudioDeviceDisplayName(const wchar_t* displayName, bool isRenderDevice) {
   m_nAudioDeviceActiveType = isRenderDevice ? 2 : 1;
 
