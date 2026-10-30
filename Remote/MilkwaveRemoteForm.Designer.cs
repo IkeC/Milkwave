@@ -289,6 +289,7 @@ namespace MilkwaveRemote
       cboSettingsCover = new ComboBox();
       cboTransitionMode = new ComboBox();
       label18 = new Label();
+      label20 = new Label();
       btnSpace = new Button();
       btnBackspace = new Button();
       btnWatermark = new Button();
@@ -370,6 +371,7 @@ namespace MilkwaveRemote
       numPresetChange = new NumericUpDown();
       tabMessage = new TabPage();
       tabInOut = new TabPage();
+      cboDesktopMode = new ComboBox();
       btnControllerInputScan = new Button();
       cboInputController = new ComboBox();
       btnSpoutInputScan = new Button();
@@ -3250,7 +3252,7 @@ namespace MilkwaveRemote
       // 
       numLyricsWidth.DecimalPlaces = 2;
       numLyricsWidth.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-      numLyricsWidth.Location = new Point(449, 150);
+      numLyricsWidth.Location = new Point(448, 150);
       numLyricsWidth.Margin = new Padding(3, 2, 3, 2);
       numLyricsWidth.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
       numLyricsWidth.Name = "numLyricsWidth";
@@ -3486,7 +3488,7 @@ namespace MilkwaveRemote
       // 
       numLyricsTimeOffset.DecimalPlaces = 2;
       numLyricsTimeOffset.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
-      numLyricsTimeOffset.Location = new Point(340, 151);
+      numLyricsTimeOffset.Location = new Point(339, 151);
       numLyricsTimeOffset.Margin = new Padding(3, 2, 3, 2);
       numLyricsTimeOffset.Maximum = new decimal(new int[] { 9999, 0, 0, 131072 });
       numLyricsTimeOffset.Minimum = new decimal(new int[] { 9999, 0, 0, -2147352576 });
@@ -3614,7 +3616,7 @@ namespace MilkwaveRemote
       cboLyricsOutline.DropDownStyle = ComboBoxStyle.DropDownList;
       cboLyricsOutline.FormattingEnabled = true;
       cboLyricsOutline.Items.AddRange(new object[] { "No Outline/BG", "Text Outline", "Background (25%)", "Background (50%)", "Background (75%)", "Background (solid)" });
-      cboLyricsOutline.Location = new Point(402, 122);
+      cboLyricsOutline.Location = new Point(402, 123);
       cboLyricsOutline.Name = "cboLyricsOutline";
       cboLyricsOutline.Size = new Size(118, 23);
       cboLyricsOutline.TabIndex = 223;
@@ -3626,9 +3628,9 @@ namespace MilkwaveRemote
       pnlLyricsOutlineColor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
       pnlLyricsOutlineColor.BackColor = Color.Black;
       pnlLyricsOutlineColor.BorderStyle = BorderStyle.FixedSingle;
-      pnlLyricsOutlineColor.Location = new Point(574, 122);
+      pnlLyricsOutlineColor.Location = new Point(574, 123);
       pnlLyricsOutlineColor.Name = "pnlLyricsOutlineColor";
-      pnlLyricsOutlineColor.Size = new Size(30, 23);
+      pnlLyricsOutlineColor.Size = new Size(30, 22);
       pnlLyricsOutlineColor.TabIndex = 224;
       toolTip1.SetToolTip(pnlLyricsOutlineColor, "Outline or box color (settings.ini: LyricsOutlineColorR/G/B)");
       pnlLyricsOutlineColor.Click += pnlLyricsOutlineColor_Click;
@@ -3715,6 +3717,15 @@ namespace MilkwaveRemote
       label18.Text = "Transition";
       label18.TextAlign = ContentAlignment.MiddleRight;
       toolTip1.SetToolTip(label18, "Soft-Cut Transition used by the Visualizer");
+      // 
+      // label20
+      // 
+      label20.Location = new Point(326, 66);
+      label20.Name = "label20";
+      label20.Size = new Size(88, 24);
+      label20.TabIndex = 166;
+      label20.Text = "Desktop Mode";
+      label20.TextAlign = ContentAlignment.MiddleRight;
       // 
       // btnSpace
       // 
@@ -4786,6 +4797,8 @@ namespace MilkwaveRemote
       // 
       tabInOut.BackColor = SystemColors.ControlLight;
       tabInOut.BorderStyle = BorderStyle.FixedSingle;
+      tabInOut.Controls.Add(cboDesktopMode);
+      tabInOut.Controls.Add(label20);
       tabInOut.Controls.Add(lblAmp);
       tabInOut.Controls.Add(chkVisualizerMulti);
       tabInOut.Controls.Add(btnVisualizerDX12);
@@ -4834,6 +4847,15 @@ namespace MilkwaveRemote
       tabInOut.Size = new Size(615, 183);
       tabInOut.TabIndex = 7;
       tabInOut.Text = "In/Out";
+      // 
+      // cboDesktopMode
+      // 
+      cboDesktopMode.DropDownStyle = ComboBoxStyle.DropDownList;
+      cboDesktopMode.FormattingEnabled = true;
+      cboDesktopMode.Location = new Point(420, 67);
+      cboDesktopMode.Name = "cboDesktopMode";
+      cboDesktopMode.Size = new Size(129, 23);
+      cboDesktopMode.TabIndex = 167;
       // 
       // btnControllerInputScan
       // 
@@ -6832,5 +6854,7 @@ namespace MilkwaveRemote
     private ComboBox cboTransitionMode;
     private Label label18;
     private Button btnTag6;
+    private ComboBox cboDesktopMode;
+    private Label label20;
   }
 }

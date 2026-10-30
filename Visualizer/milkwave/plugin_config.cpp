@@ -10,6 +10,31 @@
 #include "shell_defines.h"
 #include "wasabi.h"
 
+// Desktop Mode area: "all" (virtual desktop), "primary" or "current" (monitor of the window).
+int ParseDesktopModeMonitor(const wchar_t* text) {
+  if (text == nullptr) {
+    return DESKTOP_MODE_MONITOR_ALL;
+  }
+  if (_wcsicmp(text, L"primary") == 0) {
+    return DESKTOP_MODE_MONITOR_PRIMARY;
+  }
+  if (_wcsicmp(text, L"current") == 0) {
+    return DESKTOP_MODE_MONITOR_CURRENT;
+  }
+  return DESKTOP_MODE_MONITOR_ALL;
+}
+
+const wchar_t* GetDesktopModeMonitorName(int mode) {
+  switch (mode) {
+    case DESKTOP_MODE_MONITOR_PRIMARY:
+      return L"primary";
+    case DESKTOP_MODE_MONITOR_CURRENT:
+      return L"current";
+    default:
+      return L"all";
+  }
+}
+
 void CPlugin::OverrideDefaults() {
   // Here, you have the option of overriding the "default defaults"
   //   for the stuff on tab 1 of the config panel, replacing them
@@ -588,6 +613,11 @@ void CPlugin::MyReadConfig() {
 
   m_WindowBorderless = GetPrivateProfileBoolW(L"Milkwave", L"WindowBorderless", m_WindowBorderless, pIni);
   m_WindowDesktopMode = GetPrivateProfileBoolW(L"Milkwave", L"WindowDesktopMode", m_WindowDesktopMode, pIni);
+  {
+    wchar_t monitorMode[32] = L"";
+    GetPrivateProfileStringW(L"Milkwave", L"DesktopModeMonitors", L"all", monitorMode, _countof(monitorMode), pIni);
+    m_DesktopModeMonitor = ParseDesktopModeMonitor(monitorMode);
+  }
   m_bAlwaysOnTop = GetPrivateProfileBoolW(L"Milkwave", L"WindowAlwaysOnTop", m_bAlwaysOnTop, pIni);
 
   fOpacity = GetPrivateProfileFloatW(L"Milkwave", L"WindowOpacity", fOpacity, pIni);
@@ -789,6 +819,7 @@ void CPlugin::MyWriteConfig() {
 
   WritePrivateProfileIntW(m_WindowBorderless, L"WindowBorderless", pIni, L"Milkwave");
   WritePrivateProfileIntW(m_WindowDesktopMode, L"WindowDesktopMode", pIni, L"Milkwave");
+  WritePrivateProfileStringW(L"Milkwave", L"DesktopModeMonitors", GetDesktopModeMonitorName(m_DesktopModeMonitor), pIni);
   WritePrivateProfileIntW(m_bAlwaysOnTop, L"WindowAlwaysOnTop", pIni, L"Milkwave");
 
   WritePrivateProfileFloatW(m_WindowWatermarkModeOpacity, L"WindowWatermarkModeOpacity", pIni, L"Milkwave");

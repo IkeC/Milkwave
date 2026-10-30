@@ -3,6 +3,8 @@
 * 20 new audio-reactive Shader presets, each with three versions and mouse support, tagged with "42"
 * Visualizer: Improved reading of audio buffer, reducing average audio latency by 0.15 s
 * Visualizer: Improved Desktop Mode (Ctrl+F9)
+* Visualizer: Desktop Mode can cover all monitors, the primary monitor or the monitor the window is on (Shift+F9)
+* Remote: "Desktop Mode" combo on the In/Out tab sets that scope; the Desktop Mode button uses it
 * Visualizer: Keyboard shortcuts work reliably in Desktop Mode (character keys were handled twice) and the keyboard returns to the window when Desktop Mode is left (no more beeping keys)
 * Visualizer: Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"
 * Visualizer: "Open Milkwave Remote" in the taskbar menu also starts the Remote when no Visualizer is running

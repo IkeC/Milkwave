@@ -60,6 +60,19 @@ void ShowAudioDeviceName();
 // Locates MilkwaveRemote.exe next to the visualizer (see plugin.cpp)
 bool MilkwaveRemoteFindExecutable(std::wstring& exePath);
 
+// Desktop Mode area ([Milkwave] DesktopModeMonitors): "all" | "primary" | "current"
+int ParseDesktopModeMonitor(const wchar_t* text);       // tolerant, falls back to "all"
+const wchar_t* GetDesktopModeMonitorName(int mode);     // "all" | "primary" | "current"
+
+// Re-applies the Desktop Mode geometry after the monitor setting changed (no-op when Desktop
+// Mode is not active). Defined in MilkwaveVisualizer.cpp.
+void RefreshDesktopMode(HWND hwnd);
+
+// Stores, persists and announces a Desktop Mode area, then re-applies it when Desktop Mode is
+// active. Shift+F9 cycles the three areas (all -> primary -> current).
+void ApplyDesktopModeMonitor(HWND hwnd, int mode);
+void CycleDesktopModeMonitor(HWND hwnd);
+
 // Starts Milkwave Remote or brings the running instance to the front; usable before the plugin
 // is initialized (taskbar jump list helper). Returns false when the Remote could not be started.
 bool OpenMilkwaveRemoteExternal();

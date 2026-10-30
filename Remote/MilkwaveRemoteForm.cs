@@ -35,6 +35,9 @@ namespace MilkwaveRemote {
 
     private bool updatingWaveParams = false;
     private bool updatingSettingsParams = false;
+    // Desktop Mode scope last reported by the visualizer (-1 = not reported yet),
+    // so the Desktop Mode button only has to send the combo value when it changed.
+    private int visualizerDesktopModeMonitor = -1;
     // Control whose (otherwise invisible) disabled-state tooltip is currently shown by
     // tabPreset_MouseMove, or null when none is shown.
     private Control? disabledToolTipTarget;
@@ -298,6 +301,15 @@ namespace MilkwaveRemote {
       "Vertical Wipe",
       "Horizontal Wipe",
     };
+
+    // Desktop Mode scope (cboDesktopMode); the tokens match the visualizer's
+    // DESKTOP_MODE_MONITORS / DesktopModeMonitors values.
+    private static readonly string[] DesktopModeMonitorNames = {
+      "All Monitors",
+      "Primary Monitor",
+      "Current Monitor",
+    };
+    private static readonly string[] DesktopModeMonitorTokens = { "all", "primary", "current" };
 
     private class PendingThumbnail {
       public Preset Preset { get; set; } = new Preset();
@@ -1014,7 +1026,11 @@ namespace MilkwaveRemote {
       updatingSettingsParams = true;
       cboTransitionMode.Items.AddRange(TransitionModeNames);
       cboTransitionMode.SelectedIndex = 0;
+      cboDesktopMode.Items.AddRange(DesktopModeMonitorNames);
+      cboDesktopMode.SelectedIndex = 0;
       updatingSettingsParams = false;
+      cboDesktopMode.SelectedIndexChanged += cboDesktopMode_SelectedIndexChanged;
+      toolTip1.SetToolTip(cboDesktopMode, "Area covered by Desktop Mode: all monitors, primary or current monitor");
 
       // Seed the configured tab set with the pages the Designer created. The
       // visualizer's ShowTab* settings update it later; the "Show/Hide Tabs"
@@ -2089,6 +2105,15 @@ namespace MilkwaveRemote {
                 } else if (key.Equals("TEXTBORDERCOLORB", StringComparison.OrdinalIgnoreCase)) {
                   textBorderColorB = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int borderB) ? Math.Clamp(borderB, 0, 255) : 0;
                   ApplyTextBorderColor();
+                } else if (key.Equals("DESKTOMMONITORS", StringComparison.OrdinalIgnoreCase)) {
+                  int monitorIndex = Array.FindIndex(DesktopModeMonitorTokens,
+                    token => token.Equals(value, StringComparison.OrdinalIgnoreCase));
+                  if (monitorIndex >= 0) {
+                    visualizerDesktopModeMonitor = monitorIndex;
+                    if (cboDesktopMode.SelectedIndex != monitorIndex) {
+                      cboDesktopMode.SelectedIndex = monitorIndex;
+                    }
+                  }
                 } else if (key.StartsWith("SHOWTAB", StringComparison.OrdinalIgnoreCase)) {
                   ApplyTabVisibility(key, value);
                 }
@@ -3371,11 +3396,34 @@ namespace MilkwaveRemote {
       }
 
       if (command.StartsWith("SIGNAL|", StringComparison.OrdinalIgnoreCase)) {
-        PipeSendSignal(command.Substring(7));
+        string signal = command.Substring(7);
+        // The Desktop Mode button always uses the scope picked in cboDesktopMode.
+        if (string.Equals(signal, "DESKTOP_MODE", StringComparison.OrdinalIgnoreCase)
+            && cboDesktopMode.SelectedIndex >= 0
+            && visualizerDesktopModeMonitor != cboDesktopMode.SelectedIndex) {
+          SendDesktopModeMonitor(cboDesktopMode.SelectedIndex);
+        }
+        PipeSendSignal(signal);
       } else {
         PipeSend(command);
       }
       SetStatusText($"Pressed {statusLabel}");
+    }
+
+    private void cboDesktopMode_SelectedIndexChanged(object? sender, EventArgs e) {
+      if (cboDesktopMode.SelectedIndex < 0) return;
+      if (updatingSettingsParams) return;  // mirror of the visualizer state, not a user change
+      if (!CanSendPipeMessage) return;
+      if (SendDesktopModeMonitor(cboDesktopMode.SelectedIndex)) {
+        SetStatusText($"Desktop Mode: {cboDesktopMode.Text}");
+      }
+    }
+
+    private bool SendDesktopModeMonitor(int monitor) {
+      int index = Math.Clamp(monitor, 0, DesktopModeMonitorTokens.Length - 1);
+      if (!PipeSend("DESKTOP_MODE_MONITORS=" + DesktopModeMonitorTokens[index])) return false;
+      visualizerDesktopModeMonitor = index;
+      return true;
     }
 
     private static string GetCommandButtonLabel(CommandButtonConfig config) {
@@ -3418,6 +3466,10 @@ namespace MilkwaveRemote {
       new CommandFunctionOption { Category = "Window", Name = "Borderless Window", Shortcut = "F2", Command = "SEND=0x71" },
       new CommandFunctionOption { Category = "Window", Name = "Borderless Fullscreen", Shortcut = "Ctrl+Alt+Enter", Command = "SIGNAL|BORDERLESS_FS" },
       new CommandFunctionOption { Category = "Window", Name = "Desktop Mode", Shortcut = "Ctrl+F9", Command = "SIGNAL|DESKTOP_MODE" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode: All Monitors", Command = "DESKTOP_MODE_MONITORS=all" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode: Primary Monitor", Command = "DESKTOP_MODE_MONITORS=primary" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode: Current Monitor", Command = "DESKTOP_MODE_MONITORS=current" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode: Cycle Area", Shortcut = "Shift+F9", Command = "DESKTOP_MODE_MONITORS_CYCLE" },
       new CommandFunctionOption { Category = "Window", Name = "Watermark Mode", Shortcut = "Ctrl+Shift+F9", Command = "SIGNAL|WATERMARK" },
       new CommandFunctionOption { Category = "Window", Name = "Always On Top", Shortcut = "F7", Command = "SEND=0x76" },
       new CommandFunctionOption { Category = "Window", Name = "Clickthrough", Shortcut = "F9", Command = "SEND=0x78" },

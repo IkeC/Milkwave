@@ -177,6 +177,8 @@ MDropDX12 understands a larger signal table (extra display signals plus `NEXT_PR
 | `OPACITY=<0-1>` | Window opacity. Note the asymmetry: commands take 0-1 while the `OPACITY=` notification reports 0-100 |
 | `OPACITY_UP`, `OPACITY_DOWN` | One opacity step brighter or dimmer (Shift+Up / Shift+Down, or Shift+mouse wheel) |
 | `STRETCH_MONITORS` | Toggle stretching across all monitors (Alt+S) |
+| `DESKTOP_MODE_MONITORS=<all\|primary\|current>` | Area covered by Desktop Mode: all monitors (virtual desktop, default), the primary monitor, or the monitor the window is on. Saved as `[Milkwave] DesktopModeMonitors` and applied immediately when Desktop Mode is active (also Shift+F9 in the Visualizer) |
+| `DESKTOP_MODE_MONITORS_CYCLE` | Cycle that area: all monitors → primary → current monitor → all monitors (Shift+F9) |
 | `WINDOW_RESET` | Reset window size and position (Ctrl+F2) |
 | `WINDOW_FIXED_SIZE` | Toggle the fixed window size (Shift+Ctrl+F2) |
 | `SHOW_FPS_SETTING` | Show the current FPS limit as a notification (Ctrl+F3) |

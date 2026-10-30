@@ -19,6 +19,7 @@ F7                      Always on top
 F8 / R+M MOUSEBUTTON    Open Milkwave Remote
 F9                      Toggle clickthrough mode
 CTRL + F9               Toggle desktop mode (renders behind the desktop icons)
+SHIFT + F9              Cycle desktop mode area: all monitors / primary / current
 SHIFT + CTRL + F9       Toggle watermark mode (windowed clickthrough fullscreen)
 F10 / CTRL + Z          Enable/disable Spout output
 SHIFT + F10             Set fixed Spout resolution

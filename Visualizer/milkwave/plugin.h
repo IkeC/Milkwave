@@ -138,6 +138,13 @@ enum {
   MD2_PS_4_0 = 5,  // not supported by milkdrop
 };
 
+// Area covered by Desktop Mode ([Milkwave] DesktopModeMonitors / DESKTOP_MODE_MONITORS=...)
+enum {
+  DESKTOP_MODE_MONITOR_ALL = 0,      // the whole virtual desktop (default)
+  DESKTOP_MODE_MONITOR_PRIMARY = 1,  // the primary monitor only
+  DESKTOP_MODE_MONITOR_CURRENT = 2,  // the monitor the window is on
+};
+
 typedef struct {
   int nFont;
   float fSize;  // 0..100
@@ -430,6 +437,9 @@ class CPlugin : public CPluginShell {
 
   // Desktop Mode (window re-parented behind the desktop icons)
   bool m_bDesktopMode = false;
+  // Which area Desktop Mode covers ([Milkwave] DesktopModeMonitors): all monitors (virtual
+  // desktop), the primary monitor only, or the monitor the window is on.
+  int m_DesktopModeMonitor = DESKTOP_MODE_MONITOR_ALL;
   RECT m_desktop_lastRect = {0};
   LONG_PTR m_desktop_lastStyle = 0;
   LONG_PTR m_desktop_lastStyleEx = 0;
@@ -710,6 +720,8 @@ class CPlugin : public CPluginShell {
 #define WM_USER_OPEN_REMOTE WM_USER + 170  // bring Milkwave Remote to the front, start it if needed
 // System-wide hotkey registered while Desktop Mode is active (Ctrl+F9)
 #define MW_HOTKEY_DESKTOP_MODE 0xBD01
+// System-wide hotkey registered while Desktop Mode is active (Shift+F9: cycle the covered area)
+#define MW_HOTKEY_DESKTOP_MONITOR_CYCLE 0xBD02
 #define WM_USER_PIPE_IPC_MESSAGE WM_USER + 200  // lParam = heap-allocated wchar_t* from pipe server
 
   FFT myfft;

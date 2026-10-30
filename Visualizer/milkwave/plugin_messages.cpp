@@ -1245,6 +1245,12 @@ void CPlugin::LaunchMessage(wchar_t* sMessage) {
     // ─── Commands that mirror Visualizer shortcuts not sent as plain keystrokes ───
   } else if (wcsncmp(sMessage, L"STRETCH_MONITORS", 16) == 0) {
     ToggleStretch(GetPluginWindow());  // Alt+S
+  } else if (wcsncmp(sMessage, L"DESKTOP_MODE_MONITORS=", 22) == 0) {
+    // Area covered by Desktop Mode: "all" (whole virtual desktop), "primary" or "current"
+    // (monitor of the window). Same path as Shift+F9 in the visualizer.
+    ApplyDesktopModeMonitor(GetPluginWindow(), ParseDesktopModeMonitor(sMessage + 22));
+  } else if (wcsncmp(sMessage, L"DESKTOP_MODE_MONITORS_CYCLE", 27) == 0) {
+    CycleDesktopModeMonitor(GetPluginWindow());  // Shift+F9
   } else if (wcsncmp(sMessage, L"WINDOW_RESET", 12) == 0) {
     ResetWindow(GetPluginWindow());  // Ctrl+F2
   } else if (wcsncmp(sMessage, L"WINDOW_FIXED_SIZE", 17) == 0) {

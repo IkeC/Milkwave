@@ -224,6 +224,7 @@ static RECT lastRect = {0};
 
 // Desktop Mode state
 static bool desktopModeHotkeyRegistered = false;
+static bool desktopModeMonitorHotkeyRegistered = false;
 static HWND desktopWorkerW = nullptr;
 static float desktopModePreviousOpacity = 1.0f;
 static bool desktopModePreviousClickthrough = false;
@@ -894,14 +895,24 @@ static void RegisterDesktopModeHotkey(HWND hwnd) {
   if (!desktopModeHotkeyRegistered) {
     milkwave.LogInfo(L"Desktop Mode: RegisterHotKey(Ctrl+F9) failed; use the Remote to exit");
   }
+  // Shift+F9 changes the covered area from outside the window as well; the render window
+  // cannot be focused while it is a child of the desktop.
+  desktopModeMonitorHotkeyRegistered =
+      RegisterHotKey(hwnd, MW_HOTKEY_DESKTOP_MONITOR_CYCLE, MOD_SHIFT | MOD_NOREPEAT, VK_F9) != FALSE;
+  if (!desktopModeMonitorHotkeyRegistered) {
+    milkwave.LogInfo(L"Desktop Mode: RegisterHotKey(Shift+F9) failed; cycle with the Remote");
+  }
 }
 
 static void UnregisterDesktopModeHotkey(HWND hwnd) {
-  if (!desktopModeHotkeyRegistered) {
-    return;
+  if (desktopModeHotkeyRegistered) {
+    UnregisterHotKey(hwnd, MW_HOTKEY_DESKTOP_MODE);
+    desktopModeHotkeyRegistered = false;
   }
-  UnregisterHotKey(hwnd, MW_HOTKEY_DESKTOP_MODE);
-  desktopModeHotkeyRegistered = false;
+  if (desktopModeMonitorHotkeyRegistered) {
+    UnregisterHotKey(hwnd, MW_HOTKEY_DESKTOP_MONITOR_CYCLE);
+    desktopModeMonitorHotkeyRegistered = false;
+  }
 }
 
 // ── Taskbar thumbnail toolbar (preset navigation and preset lock) ────────────
@@ -1482,6 +1493,99 @@ static void ActivateVisualizerWindow(HWND hWnd) {
   SetFocus(hWnd);
 }
 
+// Area covered by Desktop Mode: the whole virtual desktop (all monitors), the primary monitor or
+// the monitor the window is on - see [Milkwave] DesktopModeMonitors.
+static void GetDesktopModeRect(HWND hWnd, RECT* rect) {
+  if (g_plugin.m_DesktopModeMonitor != DESKTOP_MODE_MONITOR_ALL) {
+    const HMONITOR monitor =
+        (g_plugin.m_DesktopModeMonitor == DESKTOP_MODE_MONITOR_PRIMARY)
+            ? MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY)
+            : MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO info = {sizeof(MONITORINFO)};
+    if (monitor != nullptr && GetMonitorInfoW(monitor, &info)) {
+      *rect = info.rcMonitor;
+      return;
+    }
+  }
+
+  rect->left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+  rect->top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+  rect->right = rect->left + GetSystemMetrics(SM_CXVIRTUALSCREEN);
+  rect->bottom = rect->top + GetSystemMetrics(SM_CYVIRTUALSCREEN);
+}
+
+// Moves/resizes the render window to the current Desktop Mode area, e.g. after the monitor
+// setting was changed while Desktop Mode is active.
+void RefreshDesktopMode(HWND hWnd) {
+  if (!g_plugin.m_bDesktopMode || desktopWorkerW == nullptr || hWnd == nullptr || !IsWindow(hWnd)) {
+    return;
+  }
+
+  try {
+    RECT rect = {0};
+    GetDesktopModeRect(hWnd, &rect);
+    const int width = rect.right - rect.left;
+    const int height = rect.bottom - rect.top;
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+
+    POINT origin = {rect.left, rect.top};
+    ScreenToClient(desktopWorkerW, &origin);
+
+    g_plugin.SetVariableBackBuffer(width, height);
+    SafeResetDevice();
+    SetWindowPos(hWnd, desktopHostIsDefViewHost ? HWND_BOTTOM : HWND_TOP, origin.x, origin.y, width, height,
+                 SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    g_plugin.ApplyWindowOpacity(hWnd, g_plugin.fOpacity);
+    opacityReapplyPending = true;
+    RefreshDesktopIcons(FindProgramManager());
+  } catch (const std::exception& e) {
+    milkwave.LogException(L"RefreshDesktopMode", e, true);
+  }
+}
+
+// Stores a new Desktop Mode area, persists it, announces it and applies it right away when
+// Desktop Mode is active. The Remote's "Desktop Mode" combo shows the same notification.
+void ApplyDesktopModeMonitor(HWND hwnd, int mode) {
+  if (mode != DESKTOP_MODE_MONITOR_PRIMARY && mode != DESKTOP_MODE_MONITOR_CURRENT) {
+    mode = DESKTOP_MODE_MONITOR_ALL;
+  }
+  g_plugin.m_DesktopModeMonitor = mode;
+  WritePrivateProfileStringW(L"Milkwave", L"DesktopModeMonitors", GetDesktopModeMonitorName(mode),
+                             g_plugin.GetConfigIniFile());
+  switch (mode) {
+    case DESKTOP_MODE_MONITOR_PRIMARY:
+      g_plugin.AddNotification(L"Desktop Mode covers the primary monitor");
+      break;
+    case DESKTOP_MODE_MONITOR_CURRENT:
+      g_plugin.AddNotification(L"Desktop Mode covers the current monitor");
+      break;
+    default:
+      g_plugin.AddNotification(L"Desktop Mode covers all monitors");
+      break;
+  }
+  RefreshDesktopMode(hwnd);
+  g_plugin.SendSettingsInfoToMilkwaveRemote();
+}
+
+// Shift+F9: all monitors -> primary monitor -> current monitor -> all monitors.
+void CycleDesktopModeMonitor(HWND hwnd) {
+  int next = DESKTOP_MODE_MONITOR_ALL;
+  switch (g_plugin.m_DesktopModeMonitor) {
+    case DESKTOP_MODE_MONITOR_ALL:
+      next = DESKTOP_MODE_MONITOR_PRIMARY;
+      break;
+    case DESKTOP_MODE_MONITOR_PRIMARY:
+      next = DESKTOP_MODE_MONITOR_CURRENT;
+      break;
+    default:
+      next = DESKTOP_MODE_MONITOR_ALL;
+      break;
+  }
+  ApplyDesktopModeMonitor(hwnd, next);
+}
+
 static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
   try {
     if (!g_plugin.m_bDesktopMode) {
@@ -1539,18 +1643,20 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       // child of the WorkerW.
       EnsureDesktopControllerWindow(hWnd);
 
+      // Area covered by Desktop Mode ([Milkwave] DesktopModeMonitors). Evaluated before the
+      // window is re-parented, so "current" still refers to the monitor the window is on.
+      RECT desktopRect = {0};
+      GetDesktopModeRect(hWnd, &desktopRect);
+      const int width = desktopRect.right - desktopRect.left;
+      const int height = desktopRect.bottom - desktopRect.top;
+      POINT origin = {desktopRect.left, desktopRect.top};
+      ScreenToClient(desktopWorkerW, &origin);
+
       SetWindowLongPtrW(hWnd, GWL_STYLE, WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS);
       SetWindowLongPtrW(hWnd, GWL_EXSTYLE, WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_LAYERED);
       // Set before the opacity is applied, so that it is stored as the Desktop Mode value.
       g_plugin.m_bDesktopMode = true;
       SetParent(hWnd, desktopWorkerW);
-
-      const int x = GetSystemMetrics(SM_XVIRTUALSCREEN);
-      const int y = GetSystemMetrics(SM_YVIRTUALSCREEN);
-      const int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-      const int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-      POINT origin = {x, y};
-      ScreenToClient(desktopWorkerW, &origin);
 
       g_plugin.SetVariableBackBuffer(width, height);
       SafeResetDevice();
@@ -1819,6 +1925,10 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         ToggleDesktopMode(hWnd);
         return 0;
       }
+      if (wParam == MW_HOTKEY_DESKTOP_MONITOR_CYCLE) {
+        CycleDesktopModeMonitor(hWnd);
+        return 0;
+      }
       break;
     }
 
@@ -1881,13 +1991,15 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       }
       if (wParam == VK_F9) {
         bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+        bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
         if (isCtrlPressed) {
-          bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
           if (isShiftPressed) {
             ToggleBorderlessFullscreen(hWnd, true);  // watermark mode
           } else {
             ToggleDesktopMode(hWnd);
           }
+        } else if (isShiftPressed) {
+          CycleDesktopModeMonitor(hWnd);  // all monitors -> primary -> current monitor
         } else {
           ToggleClickThrough(hWnd);
           if (clickthrough) {
