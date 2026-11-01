@@ -848,6 +848,19 @@ void CPlugin::RenderFrame(int bRedraw) {
       CopyBackBufferToFullResOverlay();
       lpDevice->Present(NULL, NULL, NULL, NULL);  // Present the black screen
     }
+  } else if (m_szCurrentPresetFile[0] == 0) {
+    // No preset has been applied yet: the first one of the session is still compiling in the
+    // background. The default MilkDrop state would show its "no preset" test pattern for that
+    // time, so keep the screen empty instead - MyRenderFn() keeps ticking the preset load and
+    // the shell draws the notifications ("Compiling ...") on top of this.
+    if (lpDevice) {
+      lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+      CopyBackBufferToFullResOverlay();
+    }
+    if (GetFrame() == 0) {
+      m_fStartTime = GetTime();
+      m_fPresetStartTime = GetTime();
+    }
   } else {
     int i;
 
