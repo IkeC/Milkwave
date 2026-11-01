@@ -25,7 +25,7 @@ comp_20=
 comp_21=float map(float3 p) {
 comp_22=  // tube radii breathe with the low end of the spectrum
 comp_23=  float rads = 1;
-comp_24=  #ifdef bass_smooth
+comp_24=  #ifdef vis_version
 comp_25=    if ((int)vis_version == 1)      rads += 1.0*(smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
 comp_26=    else if ((int)vis_version == 2) rads += 0.5*(smoothstep(0, 2, bass_att) - 0.5)*vis_intensity + vis_shift;
 comp_27=    else                            rads += 0.0*vis_intensity + vis_shift;

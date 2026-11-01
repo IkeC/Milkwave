@@ -81,7 +81,7 @@ comp_76=  float fac = 1e9;
 comp_77=  float shift = 2.8;
 comp_78=  
 comp_79=  // react to audio
-comp_80=  #ifdef bass_smooth
+comp_80=  #ifdef vis_version
 comp_81=    if (vis_version == 1) {
 comp_82=      float range = pow(4, vis_intensity);
 comp_83=      fac = fac * (1+2*range-clamp(0,2,bass_smooth)*range);

@@ -208,7 +208,7 @@ comp_203=
 comp_204=shader_body {
 comp_205=  float4 fragColor = 0;
 comp_206=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
-comp_207=  #ifdef bass_smooth
+comp_207=  #ifdef vis_version
 comp_208=    float aRng = (int)vis_version == 1 ? 0.34 : 0.42;
 comp_209=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_210=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
@@ -216,37 +216,46 @@ comp_211=  #else
 comp_212=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
 comp_213=  #endif
 comp_214=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
-comp_215=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // beat scale, colour reaction scale
-comp_216=  // AUDIO: loud levels darken the sky a little and strengthen the reflections on the water
-comp_217=  float skyDark = saturate(aDev) * ((int)vis_version == 2 ? 0.55 : 0.45);
-comp_218=  float refl    = 1.0 + saturate(aDev) * ((int)vis_version == 2 ? 1.40 : 0.90);
-comp_219=  // MOUSE: holding the button looks around - pointer X yaws, pointer Y pitches
-comp_220=  float2 mMouse = (mouse.xy - 0.5) * saturate(mouse.z);
-comp_221=  float mYaw    = mMouse.x * 1.1;    // +-0.55 rad
-comp_222=  float mPitch  = mMouse.y * 0.6;    // +-0.3 rad
-comp_223=  // CONV: Shadertoy fragCoord is in pixels with the origin in the bottom left corner
-comp_224=  float2 fragPixel = uv_orig.xy * texsize.xy;
-comp_225=  fragPixel.y = texsize.y - fragPixel.y;
-comp_226=
-comp_227=  // CONV: the original adds iMouse.x*0.01 here - the camera yaw/pitch reaction is applied in getPixel
-comp_228=  float time_conv = time * 0.3;
-comp_229=
-comp_230=  #ifdef AA
-comp_231=  float3 color = float3(0.0, 0.0, 0.0);
-comp_232=  for(int i = -1; i <= 1; i++) {
-comp_233=    for(int j = -1; j <= 1; j++) {
-comp_234=      color += getPixel(fragPixel + float2(i, j)/3.0, time_conv, mYaw, mPitch, skyDark, refl);
-comp_235=    }
-comp_236=  }
-comp_237=  color /= 9.0;
-comp_238=  #else
-comp_239=  float3 color = getPixel(fragPixel, time_conv, mYaw, mPitch, skyDark, refl);
-comp_240=  #endif
-comp_241=
-comp_242=  // AUDIO: the water greens up slightly on beats (unchanged)
-comp_243=  color = lerp(color, color * float3(0.92, 1.06, 0.98), saturate(aBe) * 0.35 * aCol);
-comp_244=
-comp_245=  // post
-comp_246=  fragColor = float4(pow(color,float3(0.65, 0.65, 0.65)), 1.0);
-comp_247=  ret = fragColor;
-comp_248=}
+comp_215=  #ifdef vis_version
+comp_216=    float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // beat scale, colour reaction scale
+comp_217=  #else
+comp_218=    float aBe  = aDev * 4.0, aCol = 1.3;   // other MilkDrop variants: v2 tuning
+comp_219=  #endif
+comp_220=  // AUDIO: loud levels darken the sky a little and strengthen the reflections on the water
+comp_221=  #ifdef vis_version
+comp_222=    float skyDark = saturate(aDev) * ((int)vis_version == 2 ? 0.55 : 0.45);
+comp_223=    float refl    = 1.0 + saturate(aDev) * ((int)vis_version == 2 ? 1.40 : 0.90);
+comp_224=  #else
+comp_225=    float skyDark = saturate(aDev) * 0.55;    // other MilkDrop variants: v2 tuning
+comp_226=    float refl    = 1.0 + saturate(aDev) * 1.40;
+comp_227=  #endif
+comp_228=  // MOUSE: holding the button looks around - pointer X yaws, pointer Y pitches
+comp_229=  float2 mMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_230=  float mYaw    = mMouse.x * 1.1;    // +-0.55 rad
+comp_231=  float mPitch  = mMouse.y * 0.6;    // +-0.3 rad
+comp_232=  // CONV: Shadertoy fragCoord is in pixels with the origin in the bottom left corner
+comp_233=  float2 fragPixel = uv_orig.xy * texsize.xy;
+comp_234=  fragPixel.y = texsize.y - fragPixel.y;
+comp_235=
+comp_236=  // CONV: the original adds iMouse.x*0.01 here - the camera yaw/pitch reaction is applied in getPixel
+comp_237=  float time_conv = time * 0.3;
+comp_238=
+comp_239=  #ifdef AA
+comp_240=  float3 color = float3(0.0, 0.0, 0.0);
+comp_241=  for(int i = -1; i <= 1; i++) {
+comp_242=    for(int j = -1; j <= 1; j++) {
+comp_243=      color += getPixel(fragPixel + float2(i, j)/3.0, time_conv, mYaw, mPitch, skyDark, refl);
+comp_244=    }
+comp_245=  }
+comp_246=  color /= 9.0;
+comp_247=  #else
+comp_248=  float3 color = getPixel(fragPixel, time_conv, mYaw, mPitch, skyDark, refl);
+comp_249=  #endif
+comp_250=
+comp_251=  // AUDIO: the water greens up slightly on beats (unchanged)
+comp_252=  color = lerp(color, color * float3(0.92, 1.06, 0.98), saturate(aBe) * 0.35 * aCol);
+comp_253=
+comp_254=  // post
+comp_255=  fragColor = float4(pow(color,float3(0.65, 0.65, 0.65)), 1.0);
+comp_256=  ret = fragColor;
+comp_257=}

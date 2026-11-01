@@ -74,7 +74,7 @@ comp_69=  // react to audio
 comp_70=  float saturation = 0.5;
 comp_71=  float brightness = -0.4;
 comp_72=  
-comp_73=  #ifdef bass_smooth
+comp_73=  #ifdef vis_version
 comp_74=    float fac1 = 1, fac2 = 1;
 comp_75=    if (vis_version == 1) {
 comp_76=      fac1 = 0.2+smoothstep(0,2,bass_smooth);

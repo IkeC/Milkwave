@@ -57,7 +57,7 @@ comp_52=  // instantly, and saw the obvious. :)
 comp_53=  c += (m(o - .01)*m(o - d)*4e1 - 2.)/o.z + 1.1;
 comp_54=  
 comp_55=  // audio reactivity
-comp_56=  #ifdef bass_smooth
+comp_56=  #ifdef vis_version
 comp_57=    // bass_smooth is a Milkwave-specific parameter
 comp_58=    float f1 = vis_shift;
 comp_59=    float f2 = vis_intensity;

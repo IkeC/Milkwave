@@ -29,7 +29,7 @@ comp_24=  float3 col = 0;
 comp_25=
 comp_26=  // decoration grid: cells per unit, breathes with the high end
 comp_27=  float gsz = 8.;
-comp_28=  #ifdef bass_smooth
+comp_28=  #ifdef vis_version
 comp_29=    if ((int)vis_version == 1)      gsz *= 1. + 0.30*(smoothstep(0, 2, treb_smooth) - 0.5)*vis_intensity + vis_shift;
 comp_30=    else if ((int)vis_version == 2) gsz *= 1. + 0.50*(smoothstep(0, 2, treb_att) - 0.5)*vis_intensity + vis_shift;
 comp_31=    else                            gsz *= 1. + 0.0*vis_intensity + vis_shift;
@@ -39,7 +39,7 @@ comp_34=  #endif
 comp_35=
 comp_36=  // layer colour gain, lifts with the low end
 comp_37=  float cgain = 1.;
-comp_38=  #ifdef bass_smooth
+comp_38=  #ifdef vis_version
 comp_39=    if ((int)vis_version == 1)      cgain += 0.12*(smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
 comp_40=    else if ((int)vis_version == 2) cgain += 0.20*(smoothstep(0, 2, bass_att) - 0.5)*vis_intensity + vis_shift;
 comp_41=    else                            cgain += 0.0*vis_intensity + vis_shift;

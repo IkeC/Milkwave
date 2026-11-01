@@ -28,7 +28,7 @@ comp_23=  float2 u = float2((uv.x - 0.5)*texsize.x/texsize.y, (0.5 - uv.y));
 comp_24=
 comp_25=  // tunnel radius opens with the low end
 comp_26=  float rbase = 4.;
-comp_27=  #ifdef bass_smooth
+comp_27=  #ifdef vis_version
 comp_28=    if ((int)vis_version == 1)      rbase += 0.24*(smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
 comp_29=    else if ((int)vis_version == 2) rbase += 0.36*(smoothstep(0, 2, bass_att) - 0.5)*vis_intensity + vis_shift;
 comp_30=    else                            rbase += 0.0*vis_intensity + vis_shift;
@@ -38,7 +38,7 @@ comp_33=  #endif
 comp_34=
 comp_35=  // scale relief deepens with the high end
 comp_36=  float scoop = 0.25;
-comp_37=  #ifdef bass_smooth
+comp_37=  #ifdef vis_version
 comp_38=    if ((int)vis_version == 1)      scoop += 0.05*(smoothstep(0, 2, treb_smooth) - 0.5)*vis_intensity + vis_shift;
 comp_39=    else if ((int)vis_version == 2) scoop += 0.07*(smoothstep(0, 2, treb_att) - 0.5)*vis_intensity + vis_shift;
 comp_40=    else                            scoop += 0.0*vis_intensity + vis_shift;

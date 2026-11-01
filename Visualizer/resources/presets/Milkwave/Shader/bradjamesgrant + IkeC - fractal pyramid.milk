@@ -70,7 +70,7 @@ comp_65=  uv = float2(uv.x, -uv.y);
 comp_66=  
 comp_67=  uv = uv*(0.9-0.4*sin(time*0.2));
 comp_68=  
-comp_69=  #ifdef bass_smooth
+comp_69=  #ifdef vis_version
 comp_70=    uv *= (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1-(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.25))*vis_intensity+vis_shift;
 comp_71=  #else
 comp_72=    uv *= (1-(smoothstep(0,2,bass_att)*0.05));

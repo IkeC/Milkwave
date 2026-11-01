@@ -28,7 +28,7 @@ comp_23=float getAmp(float frequency) {
 comp_24=  // AUDIO: bass/mid/treble bands instead of the FFT - version 1 reads the smoothed bands,
 comp_25=  // version 2 the attack bands, version > 2 the original noise texture (static)
 comp_26=  float aNoise = tex2D(iChannel0, float2(frequency / 512.0, 0)).x;
-comp_27=  #ifdef bass_smooth
+comp_27=  #ifdef vis_version
 comp_28=    float aBand = frequency < 60.0 ? ((int)vis_version == 1 ? bass_smooth : bass_att)
 comp_29=                : frequency < 250.0 ? ((int)vis_version == 1 ? mid_smooth : mid_att)
 comp_30=                : ((int)vis_version == 1 ? treb_smooth : treb_att);
@@ -67,7 +67,7 @@ comp_62=    float aTilt = (mwDead.x - 0.5) * 0.5 * saturate(mwDead.z);
 comp_63=    float aTiltS = sin(aTilt), aTiltC = cos(aTilt);
 comp_64=    uv = float2(uv.x * aTiltC - uv.y * aTiltS, uv.x * aTiltS + uv.y * aTiltC);
 comp_65=    // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
-comp_66=    #ifdef bass_smooth
+comp_66=    #ifdef vis_version
 comp_67=      float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
 comp_68=      float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_69=        : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;

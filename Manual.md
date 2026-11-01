@@ -291,6 +291,24 @@ Or wrap your code in a conditional block:
 float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 #endif
 ```
+## Guarding Milkwave-only variables
+
+Other MilkDrop variants have neither the _\*\_smooth_ nor the _vis\*_ variables, so any preset that uses them has to be guarded. The Shader presets in this collection all use the same shape, and new presets should follow it:
+
+```
+#ifdef vis_version
+  // Milkwave (and any variant that has vis_version): version 1 = calm bands,
+  // version 2 = attack bands, version 3+ = static
+  float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+    : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+#else
+  // everywhere else: use the attack bands, which is the version 2 tuning
+  float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+#endif
+```
+
+Guard on _vis_version_ rather than on _bass_smooth_: when a variant has no _vis_version_, it has no _\*\_smooth_ either, so the `#else` branch has to fall back to the _\*\_att_ variables. The same rule applies to every later `(int)vis_version == 1 ? ... : ...` decision - keep it inside the guard, or give it a `#else` fallback that uses the version 2 values.
+
 ## "vis_intensity", "vis_shift" and "vis_version" preset variables
 
 Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running. They can also be assigned to MIDI controls. Press Ctrl+V in the Visualizer to cycle the version between 1, 2 and 3; the active version is shown as a notification, and Remote changes show the same notification.

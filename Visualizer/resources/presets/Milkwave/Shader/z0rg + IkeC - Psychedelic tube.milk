@@ -43,7 +43,7 @@ comp_38=  p.xy -= float2(sin(p.z+time), cos(p.z*.5+time))*.5;
 comp_39=  p.y += sin(p.z*2.+time)*.1;
 comp_40=  // tube radius breathes with the low end (base look is audio-independent)
 comp_41=  float trad = 0.125;
-comp_42=  #ifdef bass_smooth
+comp_42=  #ifdef vis_version
 comp_43=    if ((int)vis_version == 1)      trad += 0.25*(smoothstep(0, 2, bass_smooth) - 0.5)*vis_intensity + vis_shift;
 comp_44=    else if ((int)vis_version == 2) trad += 0.40*(smoothstep(0, 2, bass_att) - 0.5)*vis_intensity + vis_shift;
 comp_45=    else                            trad += 0.0*vis_intensity + vis_shift;
@@ -123,7 +123,7 @@ comp_118=    luv.x += sin(id.y*.5)*time*2.;
 comp_119=    luv = mod_conv(luv+.5*rep, rep)-.5*rep;
 comp_120=    // dash width follows the high end
 comp_121=    float dashw = 0.169;
-comp_122=    #ifdef bass_smooth
+comp_122=    #ifdef vis_version
 comp_123=      if ((int)vis_version == 1)      dashw += 0.10*(smoothstep(0, 2, treb_smooth) - 0.5)*vis_intensity + vis_shift;
 comp_124=      else if ((int)vis_version == 2) dashw += 0.16*(smoothstep(0, 2, treb_att) - 0.5)*vis_intensity + vis_shift;
 comp_125=      else                            dashw += 0.0*vis_intensity + vis_shift;
@@ -146,7 +146,7 @@ comp_141=  float2 fragCoord = uv*texsize.xy;
 comp_142=  float2 u_rd = float2(uv.x-0.5, 0.5-uv.y)*texsize.xy/texsize.xx;
 comp_143=
 comp_144=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
-comp_145=  #ifdef bass_smooth
+comp_145=  #ifdef vis_version
 comp_146=    float aRng = (int)vis_version == 1 ? 0.34 : 0.42;
 comp_147=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_148=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;

@@ -94,7 +94,7 @@ comp_89=    acc += a;
 comp_90=    t += dist * 0.5;
 comp_91=  }
 comp_92=  
-comp_93=  #ifdef bass_smooth
+comp_93=  #ifdef vis_version
 comp_94=    float fac = (int)vis_version > 2 ? 1+0.5*vis_intensity+vis_shift : 1+0.5*smoothstep((int)vis_version == 1 ? bass_smooth : bass_att,0,2);
 comp_95=  #else
 comp_96=    float fac = 1+0.5*smoothstep(bass_att,0,2);

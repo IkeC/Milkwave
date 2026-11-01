@@ -277,7 +277,7 @@ comp_272=*/
 comp_273=
 comp_274=  //col *= 1.+lightning*fade*lerp(1., .1, story*story); // composite lightning  
 comp_275=
-comp_276=  #ifdef bass_smooth
+comp_276=  #ifdef vis_version
 comp_277=    col = (int)vis_version > 2 ? col*vis_intensity+vis_shift : (col+0.05*(clamp((int)vis_version == 1 ? bass_smooth : bass_att, 0, 2)-1))*vis_intensity+vis_shift;
 comp_278=  #endif
 comp_279=  

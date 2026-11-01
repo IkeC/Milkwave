@@ -158,7 +158,7 @@ comp_153=  // float sunsize=7.-max(0.,tex2D(iChannel0,float2(.6,.2)).x)*5.;
 comp_154=  // 4.6: very bright, 7.6: small
 comp_155=
 comp_156=  float sunsize = 7.6;
-comp_157=  #ifdef bass_smooth
+comp_157=  #ifdef vis_version
 comp_158=  sunsize -= 2*vis_shift;
 comp_159=  if (vis_version ==  1) {
 comp_160=    sunsize -= clamp(0,2,bass_smooth)*1.5*vis_intensity;

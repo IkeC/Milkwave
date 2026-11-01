@@ -77,7 +77,7 @@ comp_72=
 comp_73=float hash(float2 uv_conv){
 comp_74=  float a = amp(uv_conv);
 comp_75=  
-comp_76=  #ifdef bass_smooth
+comp_76=  #ifdef vis_version
 comp_77=    float fac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_78=  #else
 comp_79=    float fac = 0.9 + 0.2*smoothstep(0,2,bass_att);
@@ -260,7 +260,7 @@ comp_255=        jTime = time;
 comp_256=
 comp_257=        float fx = sin(time*0.3)*0.3;
 comp_258=
-comp_259=        #ifdef bass_smooth
+comp_259=        #ifdef vis_version
 comp_260=          float fy = (int)vis_version > sin(time*0.3)*0.3+1.1 ? 1*vis_intensity+vis_shift : (0.6+0.2*bass_smooth)*vis_intensity+vis_shift;
 comp_261=        #else
 comp_262=          float fy = sin(time*0.3)*0.3+1.1;

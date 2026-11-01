@@ -122,7 +122,7 @@ comp_117=  // CONV: Adjust viewpoint (x,y individually or both)
 comp_118=  uv += float2(0,0) + 0;
 comp_119=  uv *= float2(1,1) * 1;
 comp_120=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
-comp_121=  #ifdef bass_smooth
+comp_121=  #ifdef vis_version
 comp_122=    float aRng = (int)vis_version == 1 ? 0.26 : 0.34;
 comp_123=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_124=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
@@ -182,7 +182,10 @@ comp_177=  f.rgb *= 0.5 + 0.5*pow( max(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.0), 0
 comp_178=  ret = f;
 comp_179=  // AUDIO: peaks rotate the hue towards pink/magenta (version 3+ stays neutral);
 comp_180=  // version 2 gets a much smaller swing - with the attack bands the full shift read too strong
-comp_181=  float aHue = (int)vis_version == 1 ? 1.05 : 1.1;
-comp_182=  ret.rgb = hueRotate(ret.rgb, saturate(aBe) * aHue);
-comp_183=}
-comp_184=
+comp_181=  #ifdef vis_version
+comp_182=    float aHue = (int)vis_version == 1 ? 1.05 : 1.1;
+comp_183=  #else
+comp_184=    float aHue = 1.1;   // other MilkDrop variants: v2 tuning
+comp_185=  #endif
+comp_186=  ret.rgb = hueRotate(ret.rgb, saturate(aBe) * aHue);
+comp_187=}
