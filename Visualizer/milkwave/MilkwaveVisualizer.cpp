@@ -152,6 +152,13 @@ static const UINT kThumbButtonNextPreset = 5;
 static UINT taskbarButtonCreatedMessage = 0;
 static ITaskbarList3* taskbarList = nullptr;
 static HWND renderWindow = nullptr;  // main visualizer window, set once it exists
+
+// Set when Explorer destroyed the window our render window was parented into (Desktop Mode).
+// Explorer rebuilds its wallpaper WorkerW whenever the wallpaper changes, and a child window
+// is destroyed together with its parent, so the render window dies with it. Instead of closing
+// the visualizer, CreateWindowAndRun re-creates the window and re-enters Desktop Mode.
+static bool desktopHostDestroyed = false;
+static bool desktopModeRestorePending = false;
 // A device reset or a re-parent leaves layered windows opaque, so the opacity of the
 // active mode is applied again on the next rendered frame (see ToggleDesktopMode and
 // SafeResetDevice).
@@ -1487,7 +1494,7 @@ void CycleDesktopModeMonitor(HWND hwnd) {
   ApplyDesktopModeMonitor(hwnd, next);
 }
 
-static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
+static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true, bool quiet = false) {
   try {
     if (!g_plugin.m_bDesktopMode) {
       // Desktop Mode replaces the wallpaper, so leave the exclusive display
@@ -1514,7 +1521,9 @@ static void ToggleDesktopMode(HWND hWnd, bool updatePersistedState = true) {
       EnumWindows(FindDesktopWorkerWProc, reinterpret_cast<LPARAM>(&desktopWorkerW));
       if (desktopWorkerW == NULL) {
         milkwave.LogInfo(L"Desktop Mode: desktop icon host window not found");
-        g_plugin.AddError(L"Desktop Mode failed: desktop window not found", 5.0f, ERR_MISC, false);
+        if (!quiet) {
+          g_plugin.AddError(L"Desktop Mode failed: desktop window not found", 5.0f, ERR_MISC, false);
+        }
         return;
       }
       milkwave.LogInfo(desktopHostIsDefViewHost
@@ -1782,7 +1791,20 @@ LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
       DestroyDesktopControllerWindow();
       UnregisterDesktopModeHotkey(hWnd);
       ReleaseTaskbarThumbnailToolbar();
-      PostQuitMessage(0);
+      if (renderWindow == hWnd) {
+        renderWindow = nullptr;
+      }
+      if (g_plugin.m_bDesktopMode) {
+        // The window is a child of Explorer's wallpaper WorkerW. Explorer destroys that window
+        // when the wallpaper changes (and on other desktop rebuilds), which takes the render
+        // window down with it. Re-create it and re-attach instead of quitting.
+        milkwave.LogInfo(L"Desktop Mode: desktop host window was destroyed, re-creating the render window");
+        g_plugin.m_bDesktopMode = false;
+        desktopModeRestorePending = true;
+        desktopHostDestroyed = true;
+      } else {
+        PostQuitMessage(0);
+      }
       break;
     }
 
@@ -2439,6 +2461,15 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   milkwave.LogInfo(L"CreateWindowAndRun: Creating window");
 
+  // .Init is called once for the whole run; everything below is per window, because the window is
+  // re-created when Desktop Mode loses its host (see desktopHostDestroyed).
+  milkwave.Init(g_plugin.m_szBaseDir);
+  milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
+  milkwave.doSaveCover = g_plugin.m_DisplayCover;
+
+  // Window lifetime loop: normally one iteration. When Explorer destroys the desktop host our
+  // render window dies with it, and the loop re-creates the window and re-attaches to Desktop Mode.
+  for (;;) {
   if (g_plugin.m_WindowX == 0 || g_plugin.m_WindowY == 0 || g_plugin.m_WindowWidth == 0 || g_plugin.m_WindowHeight == 0) {
     RECT workArea{};
     if (!SystemParametersInfoW(SPI_GETWORKAREA, 0, &workArea, 0)) {
@@ -2522,11 +2553,7 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
     ToggleBorderlessWindow(hwnd);
   }
 
-  // always ensure .Init is called after the window is created (ShowWindow above)
-  milkwave.Init(g_plugin.m_szBaseDir);
-  milkwave.doPoll = g_plugin.m_SongInfoPollingEnabled;
-  milkwave.doSaveCover = g_plugin.m_DisplayCover;
-
+  // everything below is per window: it runs again when Desktop Mode loses its host window
   unsigned int frame = 0;
 
   // Milkwave: Moved to StartThreads()
@@ -2563,10 +2590,20 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
   // Desktop Mode was still active when the app was closed -> restore it. A taskbar
   // "Toggle Desktop Mode" task that could not reach a running instance also starts
-  // this new process directly in Desktop Mode.
-  if ((g_plugin.m_WindowDesktopMode || startInDesktopModeFromJumpList) && !g_plugin.m_bDesktopMode) {
-    ToggleDesktopMode(hwnd);
+  // this new process directly in Desktop Mode. The same applies after Explorer destroyed
+  // the window we were attached to: retry briefly, because the replacement host is
+  // (re-)created asynchronously by Explorer.
+  if ((g_plugin.m_WindowDesktopMode || startInDesktopModeFromJumpList || desktopModeRestorePending) &&
+      !g_plugin.m_bDesktopMode) {
+    const int attempts = desktopModeRestorePending ? 8 : 1;
+    for (int attempt = 0; attempt < attempts && !g_plugin.m_bDesktopMode; attempt++) {
+      if (attempt > 0) {
+        Sleep(250);
+      }
+      ToggleDesktopMode(hwnd, true, attempt + 1 < attempts);
+    }
   }
+  desktopModeRestorePending = false;
   startInDesktopModeFromJumpList = false;
 
   // Start TCP network server if enabled
@@ -2589,6 +2626,9 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
 
     PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
     while (WM_QUIT != msg.message) {
+      if (desktopHostDestroyed) {
+        break;  // the window is gone; re-create it below instead of rendering into a dead handle
+      }
       try {
         if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
           TranslateMessage(&msg);
@@ -2609,19 +2649,33 @@ unsigned __stdcall CreateWindowAndRun(void* data) {
   }
   milkwave.LogInfo(L"CreateWindowAndRun: Message loop ended");
 
+  // Per-window cleanup. When Explorer destroyed the desktop host the loop re-creates the window
+  // and re-attaches, so the configuration is only written when the visualizer really exits.
+  KillTimer(hwnd, IDT_TCP_POLL);
+  g_tcpServer.Stop();
+  g_pipeServer.Stop();
+  if (!desktopHostDestroyed) {
+    g_plugin.MyWriteConfig();
+  } else {
+    // A pending preset load/compile belongs to the window that just died; ask it to stop
+    // instead of letting it finish against the device that is released below.
+    g_plugin.CancelPendingPresetLoad();
+  }
+  g_plugin.PluginQuit();
+  DeinitD3d();
+
+  if (!desktopHostDestroyed) {
+    break;
+  }
+  desktopHostDestroyed = false;
+  milkwave.LogInfo(L"CreateWindowAndRun: re-creating the render window");
+  }  // for (;;)
+
   // Release the SMTC objects and uninitialize this thread's WinRT apartment
   // before the render thread exits. Deferring this to the global destructor
   // would release them at process exit, after the apartment is gone, and
   // crash in winrt::impl::abi<...>::unconditional_release_ref().
   milkwave.Shutdown();
-
-  KillTimer(hwnd, IDT_TCP_POLL);
-  g_tcpServer.Stop();
-  g_pipeServer.Stop();
-  g_plugin.MyWriteConfig();
-  g_plugin.PluginQuit();
-
-  DeinitD3d();
 
   threadRender = nullptr;
   threadId = 0;

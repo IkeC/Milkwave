@@ -55,9 +55,15 @@ int CPlugin::AllocateMyNonDx9Stuff() {
   m_bMMX = CheckForMMX();
   // m_bSSE = CheckForSSE();
 
-  m_pState->Default();
-  m_pOldState->Default();
-  m_pNewState->Default();
+  // This also runs when the render window is re-created, which happens when Desktop Mode loses
+  // the Explorer desktop host (wallpaper or desktop color change). A preset is playing by then
+  // and has to survive the restart, so only a first start resets the states; AllocateMyDX9Stuff()
+  // reloads the shaders from m_pState for an already running preset.
+  if (!m_bInitialPresetSelected) {
+    m_pState->Default();
+    m_pOldState->Default();
+    m_pNewState->Default();
+  }
 
   // Initialize video capture
   m_pVideoCaptureTexture = nullptr;
