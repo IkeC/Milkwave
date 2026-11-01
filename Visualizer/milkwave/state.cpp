@@ -328,6 +328,17 @@ void CState::RegisterBuiltInVariables(int flags) {
     var_pf_mousedown = NSEEL_VM_regvar(m_pf_eel, "mousedown");
     var_pf_mouseclick = NSEEL_VM_regvar(m_pf_eel, "mouseclick");
 
+    // system time and date (names as introduced by BeatDrop, so its presets work here too)
+    var_pf_year = NSEEL_VM_regvar(m_pf_eel, "year");
+    var_pf_month = NSEEL_VM_regvar(m_pf_eel, "month");
+    var_pf_day = NSEEL_VM_regvar(m_pf_eel, "day");
+    var_pf_weekday = NSEEL_VM_regvar(m_pf_eel, "weekday");
+    var_pf_hour = NSEEL_VM_regvar(m_pf_eel, "hour");
+    var_pf_minute = NSEEL_VM_regvar(m_pf_eel, "minute");
+    var_pf_second = NSEEL_VM_regvar(m_pf_eel, "second");
+    var_pf_milliseconds = NSEEL_VM_regvar(m_pf_eel, "milliseconds");
+    var_pf_totalseconds = NSEEL_VM_regvar(m_pf_eel, "totalseconds");
+
     var_pf_blur1min = NSEEL_VM_regvar(m_pf_eel, "blur1_min");
     var_pf_blur2min = NSEEL_VM_regvar(m_pf_eel, "blur2_min");
     var_pf_blur3min = NSEEL_VM_regvar(m_pf_eel, "blur3_min");

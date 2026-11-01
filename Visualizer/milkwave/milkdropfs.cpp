@@ -595,6 +595,17 @@ void CPlugin::LoadPerFrameEvallibVars(CState* pState) {
   *pState->var_pf_mousey = (double)m_mouseY;
   *pState->var_pf_mousedown = m_mouseDown ? 1.0 : 0.0;
   *pState->var_pf_mouseclick = m_mouseClicked > 0 ? 1.0 : 0.0;
+
+  // system time and date - real values, not blended across a preset transition
+  *pState->var_pf_year = (double)m_sysYear;
+  *pState->var_pf_month = (double)m_sysMonth;
+  *pState->var_pf_day = (double)m_sysDay;
+  *pState->var_pf_weekday = (double)m_sysWeekday;
+  *pState->var_pf_hour = (double)m_sysHour;
+  *pState->var_pf_minute = (double)m_sysMinute;
+  *pState->var_pf_second = (double)m_sysSecond;
+  *pState->var_pf_milliseconds = (double)m_sysMilliseconds;
+  *pState->var_pf_totalseconds = (double)m_sysTotalSeconds;
 }
 
 void CPlugin::RunPerFrameEquations(int code) {
@@ -4836,6 +4847,8 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
   if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0.0f));
   if (h[17]) pCT->SetVector(lpDevice, h[17], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0.0f));
+  if (h[18]) pCT->SetVector(lpDevice, h[18], &D3DXVECTOR4((float)m_sysHour, (float)m_sysMinute, (float)m_sysSecond, m_sysTotalSeconds));
+  if (h[19]) pCT->SetVector(lpDevice, h[19], &D3DXVECTOR4((float)m_sysYear, (float)m_sysMonth, (float)m_sysDay, (float)m_sysWeekday));
 
   // write q vars
   int num_q_float4s = sizeof(p->q_const_handles) / sizeof(p->q_const_handles[0]);

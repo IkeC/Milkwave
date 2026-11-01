@@ -316,6 +316,38 @@ If you've played around with one of these values and want to save it to the pres
 
 Note that this would be a Milkwave specific change that would not port over to other MilkDrop variants since they use a different _include.fx_. If you want a portable version, include your own version of _shiftHSV()_ in your preset and call that. See the "SnoopethDuckDuck + IkeC - Breeze" preset for an example.
 
+## System time and date preset variables
+
+Presets can read the system clock. The values are refreshed once per rendered frame and use the names introduced by BeatDrop 1.5, so presets written for BeatDrop work here unchanged.
+
+Per-frame and per-frame-init variables:
+
+- _year, month, day_ - the current date
+- _weekday_ - day of the week, 1 = Monday ... 7 = Sunday
+- _hour, minute, second, milliseconds_
+- _totalseconds_ - seconds since midnight, including the milliseconds (e.g. 50271.25)
+
+Shader variables (in the warp and comp shader):
+
+- _sysTime_ - `float4(hour, minute, second, seconds since midnight)`
+- _sysDate_ - `float4(year, month, day, weekday)`
+- _sysTimeHour, sysTimeMinute, sysTimeSecond, sysTimeTotalSeconds_
+- _sysDateYear, sysDateMonth, sysDateDay, sysDateWeekday_
+
+Example of a comp shader that fades the image with the minute:
+
+```
+comp_1=`shader_body
+comp_2=`{
+comp_3=`  float minuteFade = 0.5 + 0.5 * sin(sysTimeMinute * 0.10472);
+comp_4=`  ret = tex2D(sampler_main, uv).xyz * minuteFade;
+comp_5=`}
+```
+
+The shader variables are deliberately prefixed. A preset that declares its own `day`, `hour` or `year` inside a shader keeps working, because Milkwave does not define these short names as macros.
+
+The values are never blended during a preset transition; they are always the real clock values.
+
 # Closing Notes
 
 This manual was written by IkeC. If you want to contribute to this manual or need further help, it's a good idea to [open an issue on GitHub](https://github.com/IkeC/Milkwave/issues) or [join the Milkwave Discord server](https://bit.ly/Ikes-Discord). The latter is also a good place to share your presets or discuss with other users.

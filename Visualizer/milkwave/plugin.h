@@ -456,6 +456,14 @@ class CPlugin : public CPluginShell {
   bool m_mouseDown;
   int m_mouseClicked;
 
+  // System time and date, read once per rendered frame (see MyRenderFn).
+  // Presets get them as the per-frame variables year, month, day, weekday, hour,
+  // minute, second, milliseconds and totalseconds, and as the shader variables
+  // sysTime and sysDate.
+  int m_sysYear = 0, m_sysMonth = 0, m_sysDay = 0, m_sysWeekday = 0;
+  int m_sysHour = 0, m_sysMinute = 0, m_sysSecond = 0, m_sysMilliseconds = 0;
+  float m_sysTotalSeconds = 0.0f;
+
   float fOpacity = 1.0f;  // 0.0f = 100% transparent, 1.0f = 100% opaque
   bool m_RemotePresetLink = false;
   float m_MediaKeyNotifyTime = 1.0f;

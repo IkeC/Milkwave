@@ -37,6 +37,20 @@ void CPlugin::MyRenderFn(int redraw) {
     // list is only modified from the render thread.
     FlushShaderNotifications();
 
+    // System time and date for presets (per-frame variables and the sysTime/sysDate shaders).
+    SYSTEMTIME sysTime;
+    GetLocalTime(&sysTime);
+    m_sysYear = sysTime.wYear;
+    m_sysMonth = sysTime.wMonth;
+    m_sysDay = sysTime.wDay;
+    m_sysWeekday = (sysTime.wDayOfWeek == 0) ? 7 : sysTime.wDayOfWeek;  // 1 = Monday ... 7 = Sunday
+    m_sysHour = sysTime.wHour;
+    m_sysMinute = sysTime.wMinute;
+    m_sysSecond = sysTime.wSecond;
+    m_sysMilliseconds = sysTime.wMilliseconds;
+    m_sysTotalSeconds = (float)m_sysHour * 3600.0f + (float)m_sysMinute * 60.0f + (float)m_sysSecond +
+                        (float)m_sysMilliseconds * 0.001f;
+
     float dt = GetTime() - m_prev_time;
     m_prev_time = GetTime();  // note: m_prev_time is not for general use!
     m_bPresetLockedByCode = (m_UI_mode != UI_REGULAR);
