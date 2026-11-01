@@ -1026,8 +1026,6 @@ int CPlugin::AllocateMyDX9Stuff() {
     const bool bCommandLinePreset = (wcslen(m_szCommandLinePreset) > 0);
     const wchar_t* szStartupPreset = bCommandLinePreset ? m_szCommandLinePreset : m_szPresetStartup;
     if ((bCommandLinePreset || m_bEnablePresetStartup) && wcslen(szStartupPreset) > 0) {
-      LoadPreset(szStartupPreset, 0.0f);
-
       std::wstring message(szStartupPreset);
       size_t pos = message.find_last_of(L"\\/");
       std::wstring sPath;
@@ -1041,6 +1039,17 @@ int CPlugin::AllocateMyDX9Stuff() {
         // If no separator is found, assume the fullPath is just a filename
         sFilename = message;
       }
+
+      // A preset opened from Explorer also becomes the preset folder, so that the next
+      // preset continues in the file's folder (same as dropping a file onto the window).
+      // The new folder is scanned here, so do it before the index lookup below.
+      if (bCommandLinePreset && sPath.length() > 0 && _wcsicmp(sPath.c_str(), m_szPresetDir) != 0) {
+        wchar_t szNewPath[MAX_PATH];
+        wcscpy_s(szNewPath, sPath.c_str());
+        ChangePresetDir(szNewPath, m_szPresetDir, false);
+      }
+
+      LoadPreset(szStartupPreset, 0.0f);
 
       // try to set the current preset index
       for (size_t i = 0; i < m_presets.size(); i++) {

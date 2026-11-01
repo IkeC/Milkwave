@@ -784,7 +784,7 @@ class CPlugin : public CPluginShell {
   wchar_t m_szImgIniFile[MAX_PATH];
   wchar_t m_szPresetDir[MAX_PATH];
   wchar_t m_szPresetStartup[MAX_PATH];
-  wchar_t m_szCommandLinePreset[MAX_PATH] = {};  // .milk file passed by Explorer, wins over m_szPresetStartup
+  wchar_t m_szCommandLinePreset[MAX_PATH] = {};  // .milk file passed by Explorer; wins over m_szPresetStartup and sets the preset folder
   wchar_t m_szAudioDevicePrevious[MAX_PATH];
   wchar_t m_szAudioDevice[MAX_PATH];
   wchar_t m_szAudioDeviceDisplayName[MAX_PATH];

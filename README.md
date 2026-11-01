@@ -95,7 +95,7 @@ For a chronological list of Milkwave releases and features, read the [Changes](C
 
 ## Support
 
-This project incorporates the work of many different authors over the years, as listed below. Naturally, the entirety of this project is Open Source and there will never be a paid version of it.
+Money has never been the thriving factor to put so many hours into Milkwave development, but to build upon and continue the open-source spirit of the original MilkDrop implementations and the creative work of the many preset authors. Following this tradition, there will always be a single version for everyone that includes all features Milkwave has to offer.
 
 However, if you're satisfied with the additions we made within Milkwave and you want to support our work, you may do so using [**Ko-fi**](https://ko-fi.com/ikeserver) or [**PayPal**](https://www.paypal.com/ncp/payment/5XMP3S69PJLCU). You'll be listed as a supporter within the next program release unless you don't want to.
 
@@ -137,6 +137,8 @@ The presets themselves are not covered by either of these licenses, they either 
 
 So, my pragmatic and common sense approach would be: Always keep in mind that you are using the artistic work of someone else. Respect the original authors work by showing the preset filename (at least briefly), and you should be fine. If in doubt, always ask the creator of the piece you use.
 
-## Contributions
+## Milkwave and AI
 
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, shall be licensed as above.
+Everything in Milkwave was hand-coded until 2025, building on the work by many different authors. Since then, different LLM models have been used to implement, analyze and refine some of the more recent features and iron out bugs. However, none of this means that any of it is just vibe-coded: All presets, features and releases are manually tested and refined with the experience of a senior software architect.
+
+Hopefully you'll recognize this gives you both of both worlds - a feature-rich experience combined with the quality, love and care of hand-crafted software. AI is a powerful tool, but any tool is just as good as the one using it properly to its strengths and weaknesses.

@@ -2,7 +2,7 @@
     "Styles": [
         {
             "Name": "Style A",
-            "Value": "time=5.0|growth=2.0"
+            "Value": "time=5.0|growth=2.0|fade=2.0|fadeout=2.0"
         },
         {
             "Name": "Style B",
@@ -43,6 +43,12 @@
     "VisIntensity": 1.0,
     "VisShift": 0.0,
     "VisVersion": 1,
+    "MessageText": "Hi from Milkwave Remote!",
+    "MessageFont": "Segoe UI",
+    "MessageFontSize": 25,
+    "MessageColor": "",
+    "MessageBPM": 120,
+    "MessageBeats": 8,
     "MidiEnabled": true,
     "MidiBufferDelay": 30,
     "ShadertoyFilesDirectory": "",

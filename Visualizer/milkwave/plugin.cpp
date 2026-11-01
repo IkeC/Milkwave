@@ -2307,12 +2307,28 @@ bool CPlugin::OpenSender(unsigned int width, unsigned int height) {
 
 }  // end OpenSender
 
-// Looks for MilkwaveRemote.exe next to the visualizer (the release folder is
-// the working directory, the executable folder is used when running from the
-// build output). Returns false when the executable cannot be found, in which
-// case the caller lets Windows search for the bare file name.
+// Looks for MilkwaveRemote.exe next to the visualizer. Only explicit locations are searched:
+// CreateProcess with a bare file name would also look in the process' current directory and
+// %PATH%, which started the Remote of an unrelated Milkwave installation whenever the
+// visualizer was launched with a different "Start in" folder.
 bool MilkwaveRemoteFindExecutable(std::wstring& exePath) {
   std::vector<std::wstring> candidates;
+
+  // Next to the running executable: that is the release folder, or the build output folder of a
+  // debug build.
+  wchar_t modulePath[MAX_PATH] = {0};
+  if (GetModuleFileNameW(nullptr, modulePath, MAX_PATH) != 0) {
+    std::wstring exeDir(modulePath);
+    const size_t separator = exeDir.find_last_of(L"\\/");
+    if (separator != std::wstring::npos) {
+      exeDir.resize(separator + 1);
+      candidates.push_back(exeDir + L"MilkwaveRemote.exe");
+      // Build output layout: ...\Visualizer\milkwave\Debug -> ...\Release
+      candidates.push_back(exeDir + L"..\\..\\..\\..\\Release\\MilkwaveRemote.exe");
+    }
+  }
+
+  // The plugin base directory (the debug build points it at the release folder).
   if (g_plugin.m_szBaseDir[0] != L'\0') {
     std::wstring baseDir(g_plugin.m_szBaseDir);
     if (!baseDir.empty() && baseDir.back() != L'\\') {
@@ -2321,21 +2337,17 @@ bool MilkwaveRemoteFindExecutable(std::wstring& exePath) {
     candidates.push_back(baseDir + L"MilkwaveRemote.exe");
   }
 
-  wchar_t modulePath[MAX_PATH] = {0};
-  if (GetModuleFileNameW(nullptr, modulePath, MAX_PATH) != 0) {
-    std::wstring exeDir(modulePath);
-    const size_t separator = exeDir.find_last_of(L"\\/");
-    if (separator != std::wstring::npos) {
-      exeDir.resize(separator + 1);
-      candidates.push_back(exeDir + L"MilkwaveRemote.exe");
-    }
-  }
-
   for (const auto& candidate : candidates) {
-    if (GetFileAttributesW(candidate.c_str()) != INVALID_FILE_ATTRIBUTES) {
-      exePath = candidate;
-      return true;
+    if (GetFileAttributesW(candidate.c_str()) == INVALID_FILE_ATTRIBUTES) {
+      continue;
     }
+    wchar_t fullPath[MAX_PATH] = {0};
+    if (GetFullPathNameW(candidate.c_str(), MAX_PATH, fullPath, nullptr) != 0) {
+      exePath = fullPath;
+    } else {
+      exePath = candidate;
+    }
+    return true;
   }
   return false;
 }
@@ -2436,8 +2448,10 @@ void CPlugin::OpenMilkwaveRemote() {
   // Start the program "MilkwaveRemote.exe"
   std::wstring exePath;
   if (!MilkwaveRemoteFindExecutable(exePath)) {
-    exePath = L"MilkwaveRemote.exe";  // let CreateProcess search for it
+    AddError(L"Milkwave Remote not found (MilkwaveRemote.exe in the Visualizer's folder)", 4.0f, ERR_MISC, true);
+    return;
   }
+  ::milkwave.LogInfo(L"Starting Milkwave Remote: " + exePath);
   std::wstring commandLine = L"\"" + exePath + L"\"";
 
   STARTUPINFOW si;
@@ -2472,8 +2486,11 @@ bool OpenMilkwaveRemoteExternal() {
 
   std::wstring exePath;
   if (!MilkwaveRemoteFindExecutable(exePath)) {
-    exePath = L"MilkwaveRemote.exe";  // let CreateProcess search for it
+    return false;
   }
+  OutputDebugStringW(L"Starting Milkwave Remote: ");
+  OutputDebugStringW(exePath.c_str());
+  OutputDebugStringW(L"\n");
   std::wstring commandLine = L"\"" + exePath + L"\"";
 
   STARTUPINFOW si;

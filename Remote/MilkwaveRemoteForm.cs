@@ -651,24 +651,30 @@ namespace MilkwaveRemote {
           return Path.GetFullPath(normalized);
         }
 
-        string candidate = Path.GetFullPath(Path.Combine(BaseDir, normalized));
+        // The Visualizer resolves a relative img= against its resources folder
+        // (m_szMilkdrop2Path = <visualizer folder>\resources\), so that is where the sprite is
+        // really read from. Look there first: a leftover file of the same name next to the
+        // Visualizer (the pre-4.2 "sprites\" layout) must not hide the live cover.
+        string visualizerDir = GetVisualizerDir(IsSelectedVisualizerDX12());
+        string resourcesPath = Path.GetFullPath(Path.Combine(visualizerDir, "resources", normalized));
+        if (File.Exists(resourcesPath)) {
+          return resourcesPath;
+        }
+
+        string candidate = Path.GetFullPath(Path.Combine(visualizerDir, normalized));
         if (File.Exists(candidate)) {
           return candidate;
         }
 
-        // Try resources fallback for: simple filenames, or paths starting with "sprites\"
-        bool isSimpleFilename = !normalized.Contains(Path.DirectorySeparatorChar) && !normalized.Contains(Path.AltDirectorySeparatorChar);
-        bool isSpritesPath = normalized.StartsWith("sprites" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
-                             normalized.StartsWith("sprites/", StringComparison.OrdinalIgnoreCase);
-
-        if (isSimpleFilename || isSpritesPath) {
-          string resourcesFallback = Path.GetFullPath(Path.Combine(BaseDir, "resources", normalized));
-          if (File.Exists(resourcesFallback)) {
-            return resourcesFallback;
+        // Remote and Visualizer installed in different folders: fall back to the Remote's own.
+        foreach (string root in new[] { Path.Combine(BaseDir, "resources"), BaseDir }) {
+          string fallback = Path.GetFullPath(Path.Combine(root, normalized));
+          if (File.Exists(fallback)) {
+            return fallback;
           }
         }
 
-        return candidate;
+        return resourcesPath;
       } catch (Exception) {
         return string.Empty;
       }
@@ -2263,7 +2269,8 @@ namespace MilkwaveRemote {
     private void MainForm_Shown(object sender, EventArgs e) {
       btnSend.Focus();
 
-      pnlColorMessage.BackColor = Color.FromArgb(200, 0, 200); // purple
+      // The swatch is set here last, so the color saved for the last message wins over the default.
+      pnlColorMessage.BackColor = GetSavedMessageColor() ?? Color.FromArgb(200, 0, 200); // purple
       colorDialogMessage.Color = pnlColorMessage.BackColor;
 
       pnlColorWave.BackColor = Color.FromArgb(0, 200, 0); // dark green
@@ -2383,6 +2390,9 @@ namespace MilkwaveRemote {
       } else {
         SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
       }
+
+      StoreMessageTabSettings();
+      SaveSettingsToFile();
 
       txtMessage.Focus();
       txtMessage.SelectAll();
@@ -5302,9 +5312,43 @@ namespace MilkwaveRemote {
       numVisShift.Value = (decimal)Settings.VisShift;
       numVisVersion.Value = Settings.VisVersion;
 
+      txtMessage.Text = Settings.MessageText ?? string.Empty;
+      string savedMessageFont = Settings.MessageFont ?? string.Empty;
+      // An empty entry means "use the Visualizer's default font"; a font that is not installed any more is skipped.
+      if (savedMessageFont.Length == 0 || cboFonts.Items.Contains(savedMessageFont)) {
+        cboFonts.SelectedItem = savedMessageFont;
+      }
+      numSize.Value = Math.Clamp(Settings.MessageFontSize, numSize.Minimum, numSize.Maximum);
+      numBPM.Value = Math.Clamp(Settings.MessageBPM, numBPM.Minimum, numBPM.Maximum);
+      numBeats.Value = Math.Clamp(Settings.MessageBeats, numBeats.Minimum, numBeats.Maximum);
+      SetFormattedMessage();
+
       RefreshSpriteButtonImages(false);
       updatingSettingsParams = false;
       UpdateInputMixControlsEnabled();
+    }
+
+    /// <summary>Color saved for the last message, or null when nothing (usable) was saved.</summary>
+    private Color? GetSavedMessageColor() {
+      if (string.IsNullOrWhiteSpace(Settings.MessageColor)) {
+        return null;
+      }
+      try {
+        return ColorTranslator.FromHtml(Settings.MessageColor);
+      } catch (Exception) {
+        return null;
+      }
+    }
+
+    private void StoreMessageTabSettings() {
+      Settings.MessageText = txtMessage.Text;
+      Settings.MessageFont = cboFonts.Text;
+      Settings.MessageFontSize = numSize.Value;
+      Settings.MessageColor = pnlColorMessage.BackColor.IsEmpty
+        ? string.Empty
+        : ColorTranslator.ToHtml(pnlColorMessage.BackColor);
+      Settings.MessageBPM = numBPM.Value;
+      Settings.MessageBeats = numBeats.Value;
     }
 
     private void SetAndSaveSettings() {
@@ -5333,6 +5377,8 @@ namespace MilkwaveRemote {
       Settings.VisIntensity = numVisIntensity.Value;
       Settings.VisShift = numVisShift.Value;
       Settings.VisVersion = (int)numVisVersion.Value;
+
+      StoreMessageTabSettings();
 
       Settings.UseDX12 = IsSelectedVisualizerDX12();
       Settings.WindowTitle = cboVisualizerInstance.Text;

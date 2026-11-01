@@ -170,6 +170,12 @@ bool Milkwave::EnsureMediaManager() {
   }
 }
 
+// A track is loaded when the media session reports artist or title; without one there is
+// nothing to identify (and any cover would be a leftover from the previous track).
+bool Milkwave::HasCurrentTrack() const {
+  return !currentArtist.empty() || !currentTitle.empty();
+}
+
 void Milkwave::PollMediaInfo() {
   if (!doPoll && !doPollExplicit) return;
 
@@ -194,7 +200,8 @@ void Milkwave::PollMediaInfo() {
       const auto timelineDurationMs = timelineEndMs - timelineStartMs;
       const bool hasReportedTimeline = timelineDurationMs > 0 && timelinePositionMs >= 0;
       auto playbackInfo = currentSession.GetPlaybackInfo();
-      const bool nextIsPlaying = playbackInfo.PlaybackStatus() == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
+      const auto playbackStatus = playbackInfo.PlaybackStatus();
+      const bool nextIsPlaying = playbackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
       const auto playbackRate = playbackInfo.PlaybackRate();
       const double nextPlaybackRate = playbackRate ? playbackRate.Value() : 1.0;
       const auto nowSteadyMs = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
@@ -225,7 +232,11 @@ void Milkwave::PollMediaInfo() {
 
       isPlaying = nextIsPlaying;
       hasPlaybackState = true;
-      if (!hasReportedTimeline && playbackInfo.PlaybackStatus() == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped) {
+      // Only a playing session shows lyrics. Stopping (or pausing - Spotify and other players
+      // report both as "paused") clears the line that was on screen; the track metadata stays, so
+      // the song info still identifies the track.
+      lyricsStopped = !nextIsPlaying;
+      if (!hasReportedTimeline && playbackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped) {
         ResetTimeline();
         hasTimeline = !currentArtist.empty() || !currentTitle.empty();
         timelineApproximate = hasTimeline;
@@ -283,6 +294,7 @@ void Milkwave::PollMediaInfo() {
       isPlaying = false;
       hasPlaybackState = false;
       hasReportedPosition = false;
+      lyricsStopped = true;
       {
         std::lock_guard<std::mutex> lock(lyricsMutex);
         ++lyricsRequestGeneration;
@@ -336,6 +348,7 @@ std::int64_t Milkwave::EffectiveLyricsPosition(std::int64_t adjustedPositionMs) 
 
 std::wstring Milkwave::CurrentLyricText(std::int64_t offsetMs) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
+  if (lyricsStopped) return L"";  // playback stopped: clear the line that was on screen
   const auto effectivePositionMs = EffectiveLyricsPosition(currentPositionMs + offsetMs);
   const auto* line = lyricsDocument.CurrentLine(effectivePositionMs);
   return line ? line->text : L"";
@@ -344,7 +357,7 @@ std::wstring Milkwave::CurrentLyricText(std::int64_t offsetMs) const {
 Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offsetMs,
                                                                float fadeSeconds) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
-  if (lyricsDocument.lines.empty()) return {};
+  if (lyricsStopped || lyricsDocument.lines.empty()) return {};
   const auto adjustedPositionMs = currentPositionMs + offsetMs;
   const auto effectivePositionMs = EffectiveLyricsPosition(adjustedPositionMs);
   const auto* currentLine = lyricsDocument.CurrentLine(effectivePositionMs);

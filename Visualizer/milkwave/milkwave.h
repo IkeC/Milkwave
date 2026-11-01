@@ -47,6 +47,9 @@ class Milkwave {
   bool hasTimeline = false;
   bool timelineApproximate = false;
   bool isPlaying = false;
+  // Only a playing media session shows lyrics: when playback stops or pauses, the line that was
+  // on screen is cleared (the track metadata stays, so the song info still identifies it).
+  bool lyricsStopped = false;
 
   std::chrono::steady_clock::time_point start_time;
   std::chrono::steady_clock::time_point timelineBaseTime;
@@ -77,6 +80,7 @@ class Milkwave {
   void UpdateCurrentPosition(std::chrono::steady_clock::time_point currentTime);
   void ResetTimeline();  // reset the internal timeline to 0 (restarts lyrics)
   void PollMediaInfo();
+  bool HasCurrentTrack() const;  // false while no media session reports artist/title
   void SetLyricsApiUrl(std::wstring apiUrl);
   void SetLyricsAutoLoad(bool enabled);
   void RequestLyricsNow();                                     // force a lyrics resolution for the current track
