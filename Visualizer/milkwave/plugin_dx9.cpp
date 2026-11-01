@@ -666,6 +666,10 @@ int CPlugin::AllocateMyDX9Stuff() {
       milkwave->LogInfo(L"FFT texture created successfully");
     else
       milkwave->LogInfo(L"Failed to create FFT texture (D3DFMT_R32F not supported?)");
+
+    // Create waveform texture for get_wave()/get_wave_left()/get_wave_right() (row0=left, row1=right)
+    if (pDev->CreateTexture(NUM_WAVEFORM_SAMPLES, 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_R32F, D3DPOOL_DEFAULT, &m_lpWaveTexture, NULL) != D3D_OK)
+      milkwave->LogInfo(L"Failed to create waveform texture (D3DFMT_R32F not supported?)");
   }
 
   // Restart video capture if it was enabled
@@ -1511,6 +1515,7 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
 
   // 2. release stuff
   SafeRelease(m_lpFFTTexture);
+  SafeRelease(m_lpWaveTexture);
   memset(m_fFFTSmoothed, 0, sizeof(m_fFFTSmoothed));
   SafeRelease(m_lpVS[0]);
   SafeRelease(m_lpVS[1]);

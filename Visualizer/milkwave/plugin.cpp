@@ -2122,6 +2122,20 @@ void CPlugin::DoCustomSoundAnalysis() {
         m_lpFFTTexture->UnlockRect(0);
       }
     }
+
+    // waveform for get_wave()/get_wave_left()/get_wave_right(): both channels, scaled to -1..1
+    if (m_lpWaveTexture) {
+      D3DLOCKED_RECT r;
+      if (D3D_OK == m_lpWaveTexture->LockRect(0, &r, NULL, D3DLOCK_DISCARD)) {
+        float* row0 = (float*)r.pBits;
+        float* row1 = (float*)((BYTE*)r.pBits + r.Pitch);
+        for (int wi = 0; wi < NUM_WAVEFORM_SAMPLES; wi++) {
+          row0[wi] = m_sound.fWaveform[0][wi] / 128.0f;
+          row1[wi] = m_sound.fWaveform[1][wi] / 128.0f;
+        }
+        m_lpWaveTexture->UnlockRect(0);
+      }
+    }
   }
 
   // DeepSeek - Update the sample rate (we don't need to check HRESULT every frame)

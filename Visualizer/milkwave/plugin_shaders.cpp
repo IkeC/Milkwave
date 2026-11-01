@@ -375,6 +375,13 @@ void CShaderParams::CacheParams(LPD3DXCONSTANTTABLE pCT, bool bHardErrors) {
           m_texture_bindings[cd.RegisterIndex].bWrap = false;     // clamp
           m_texture_bindings[cd.RegisterIndex].bBilinear = true;  // linear interpolation between bins
         }
+      } else if (!wcscmp(L"wave", szRootName)) {
+        m_texture_bindings[cd.RegisterIndex].texptr = g_plugin.m_lpWaveTexture;
+        m_texcode[cd.RegisterIndex] = TEX_WAVE;
+        if (!bWrapFilterSpecified) {
+          m_texture_bindings[cd.RegisterIndex].bWrap = false;     // clamp
+          m_texture_bindings[cd.RegisterIndex].bBilinear = true;  // linear interpolation between samples
+        }
       } else {
         m_texcode[cd.RegisterIndex] = TEX_DISK;
 
@@ -1108,6 +1115,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
         // Convert to wide string
         MultiByteToWideChar(CP_ACP, 0, errorMsg, -1, wideErrorMsg, _countof(wideErrorMsg));
         dumpmsg(wideErrorMsg);
+        milkwave->LogInfo(wideErrorMsg);  // the notification below is gone after a few seconds
 
         SafeRelease(m_pShaderCompileErrors);
       } else {

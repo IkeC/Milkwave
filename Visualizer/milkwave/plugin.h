@@ -58,6 +58,7 @@ extern "C" int (*warand)(void);
 typedef enum { TEX_DISK,
                TEX_VS,
                TEX_FFT,
+               TEX_WAVE,
                TEX_BLUR0,
                TEX_BLUR1,
                TEX_BLUR2,
@@ -827,6 +828,7 @@ class CPlugin : public CPluginShell {
   int m_nFFTShaderInput = DEFAULT_FFT_SHADER_INPUT;     // runtime FFT input samples (configurable via settings.ini FFTSize)
   int m_nFFTShaderBins = DEFAULT_FFT_SHADER_INPUT / 2;  // runtime FFT output bins (always input / 2)
   IDirect3DTexture9* m_lpFFTTexture = nullptr;          // R32F FFT spectrum texture (row0=smoothed, row1=peak hold)
+  IDirect3DTexture9* m_lpWaveTexture = nullptr;         // R32F waveform texture (row0=left, row1=right)
   float m_fFFTSmoothed[MAX_FFT_SHADER_BINS] = {};       // smoothed mono FFT buffer (sized to max)
   float m_fFFTPeak[MAX_FFT_SHADER_BINS] = {};           // peak hold values (sized to max)
   int m_nFFTPeakHold[MAX_FFT_SHADER_BINS] = {};         // frames remaining at current peak (sized to max)

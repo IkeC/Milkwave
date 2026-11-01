@@ -4763,11 +4763,13 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
       lpDevice->SetTexture(i, m_lpVS[0]);
     else if (p->m_texcode[i] == TEX_FFT)
       lpDevice->SetTexture(i, m_lpFFTTexture);
+    else if (p->m_texcode[i] == TEX_WAVE)
+      lpDevice->SetTexture(i, m_lpWaveTexture);
     else
       lpDevice->SetTexture(i, p->m_texture_bindings[i].texptr);
 
     // also set up sampler stage, if anything is bound here...
-    if (p->m_texcode[i] == TEX_VS || p->m_texcode[i] == TEX_FFT || p->m_texture_bindings[i].texptr) {
+    if (p->m_texcode[i] == TEX_VS || p->m_texcode[i] == TEX_FFT || p->m_texcode[i] == TEX_WAVE || p->m_texture_bindings[i].texptr) {
       bool bAniso = false;
       DWORD HQFilter = bAniso ? D3DTEXF_ANISOTROPIC : D3DTEXF_LINEAR;
       DWORD wrap = p->m_texture_bindings[i].bWrap ? D3DTADDRESS_WRAP : D3DTADDRESS_CLAMP;

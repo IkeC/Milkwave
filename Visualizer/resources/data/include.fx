@@ -241,6 +241,27 @@ float get_fft_peak_hz(float freq) {
     return get_fft_peak(freq / 22050.0);
 }
 
+// Waveform audio texture (row 0 = left channel, row 1 = right channel), values in [-1..1]
+sampler2D sampler_wave;
+#define texsize_wave float4(480.0, 2.0, 1.0/480.0, 0.5)  // width must match NUM_WAVEFORM_SAMPLES (defines.h)
+
+// Get the mono waveform sample at normalized position [0..1]
+float get_wave(float pos) {
+    float left = tex2D(sampler_wave, float2(saturate(pos), 0.25)).x;
+    float right = tex2D(sampler_wave, float2(saturate(pos), 0.75)).x;
+    return (left + right) * 0.5;
+}
+
+// Get the left channel waveform sample at normalized position [0..1]
+float get_wave_left(float pos) {
+    return tex2D(sampler_wave, float2(saturate(pos), 0.25)).x;
+}
+
+// Get the right channel waveform sample at normalized position [0..1]
+float get_wave_right(float pos) {
+    return tex2D(sampler_wave, float2(saturate(pos), 0.75)).x;
+}
+
 float3 shiftHSV(float3 c)
 {
     float3 rgb = c;

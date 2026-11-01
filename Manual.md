@@ -146,6 +146,8 @@ For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolut
 
 With FFT you may control equalizer attack and decay values for presets supporting FFT functions *get_fft(pos)* and *get_fft_hz(freq)*, such as _IkeC - Equalizer.milk_ from the _Milkwave_ presets folder. *get_fft_peak_hz(freq)* is exclusive to Milkwave.
 
+Presets can also read the waveform with *get_wave(pos)*, *get_wave_left(pos)* and *get_wave_right(pos)*, the same functions BeatDrop provides. *pos* is the normalized position in the waveform (0...1); the functions return the sample value in the range -1...1, with *get_wave* being the mono mix of both channels. They read the *sampler_wave* texture, whose size is available as *texsize_wave*. Shader presets such as _Se7enSlasher + Inigo Quilez - Gameboy.milk_ and _Se7enSlasher - Shader Waveform Slice.milk_ use them to draw oscilloscope style visuals.
+
 The "Test" button next to "Audio" plays the simulated band sequence from _audio-test.txt_ instead of the captured audio. Each line of the file contains a hold time and relative bass, mid and treble levels (1.0 = track average); lines starting with # are comments. The Visualizer shows the active values in a notification and synthesises a matching waveform and FFT spectrum, so shader, wave-based and FFT-based presets react. Click "Stop" to return to live audio. This is useful for checking whether a preset reacts as intended without playing music, and it is the interactive counterpart to the preset-conversion audio checks.
 
 ## Tab "Lyrics"
