@@ -45,6 +45,9 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "VideoCapture.h"
 #include <vector>
 #include <array>
+#include <mutex>
+#include <string>
+#include <utility>
 #include "../ns-eel2-shim/ns-eel.h"
 #include "milkwave.h"
 
@@ -546,6 +549,19 @@ class CPlugin : public CPluginShell {
   bool RecompileVShader(const char* szShadersText, VShaderInfo* si, int shaderType, bool bHardErrors, bool bCompileOnly);
   bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion,
                         bool bCompileOnly, bool bSkipIfCached = false);
+  // Shader text that already failed to compile, keyed by crc32 and profile (session scope).
+  // D3DXCompileShader cannot be interrupted and a heavy preset can keep it busy for minutes
+  // before it gives up, so the render thread must never retry text that already failed.
+  std::mutex m_badShaderMutex;
+  std::vector<std::pair<uint32_t, std::string>> m_badShaders;
+  bool IsShaderKnownBad(uint32_t checksum, const char* profile);
+  void RememberBadShader(uint32_t checksum, const char* profile);
+  // Notifications coming from a background shader compile; the render thread drains them so
+  // m_errors is only modified from one thread.
+  std::mutex m_shaderNotifyMutex;
+  std::vector<std::pair<std::wstring, float>> m_pendingShaderNotifications;
+  void QueueShaderNotification(const wchar_t* msg, float duration);
+  void FlushShaderNotifications();
   bool EvictSomeTexture();
   typedef std::vector<TexInfo> TexInfoList;
   TexInfoList m_textures;

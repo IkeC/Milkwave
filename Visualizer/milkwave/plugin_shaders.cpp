@@ -763,6 +763,45 @@ bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bComp
   return true;
 }
 
+bool CPlugin::IsShaderKnownBad(uint32_t checksum, const char* profile) {
+  std::lock_guard<std::mutex> lock(m_badShaderMutex);
+  for (const auto& bad : m_badShaders) {
+    if (bad.first == checksum && bad.second == profile)
+      return true;
+  }
+  return false;
+}
+
+void CPlugin::RememberBadShader(uint32_t checksum, const char* profile) {
+  std::lock_guard<std::mutex> lock(m_badShaderMutex);
+  for (const auto& bad : m_badShaders) {
+    if (bad.first == checksum && bad.second == profile)
+      return;
+  }
+  if (m_badShaders.size() >= 64)
+    m_badShaders.erase(m_badShaders.begin());
+  m_badShaders.emplace_back(checksum, profile);
+}
+
+void CPlugin::QueueShaderNotification(const wchar_t* msg, float duration) {
+  std::lock_guard<std::mutex> lock(m_shaderNotifyMutex);
+  if (m_pendingShaderNotifications.size() >= 8)
+    m_pendingShaderNotifications.erase(m_pendingShaderNotifications.begin());
+  m_pendingShaderNotifications.emplace_back(msg, duration);
+}
+
+void CPlugin::FlushShaderNotifications() {
+  std::vector<std::pair<std::wstring, float>> pending;
+  {
+    std::lock_guard<std::mutex> lock(m_shaderNotifyMutex);
+    if (m_pendingShaderNotifications.empty())
+      return;
+    pending.swap(m_pendingShaderNotifications);
+  }
+  for (auto& item : pending)
+    AddError(&item.first[0], item.second, ERR_NOTIFY, m_fontinfo[SIMPLE_FONT].bBold);
+}
+
 bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, char* szProfile,
                                    LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors,
                                    bool compileOnly, bool skipIfCached) {
@@ -972,6 +1011,18 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
   }
 
   if (!bLoadedFromCache) {
+    // D3DXCompileShader cannot be interrupted. A heavy preset can keep it busy for minutes
+    // before it fails, so never retry text that already failed to compile - unless the caller
+    // explicitly asks for a full recompile (precompile run, skipIfCached == false). Retrying it
+    // while loading a preset would delay the preset switch or freeze the render thread for the
+    // same amount of time.
+    if ((!compileOnly || skipIfCached) && IsShaderKnownBad(checksum, szProfile)) {
+      wchar_t msg[256];
+      swprintf_s(msg, L"Skipped %hs %hs shader compile: it failed to compile before", szWhichShader, szProfile);
+      milkwave->LogInfo(msg);
+      return false;
+    }
+
     HRESULT hresult = D3DXCompileShader(
         szShaderText,
         len,
@@ -993,10 +1044,14 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
       if (D3D_OK == D3DXCompileShader(szShaderText, len, NULL, NULL, szFn,
                                       "ps_2_b", m_dwShaderFlags, &pShaderByteCode, &m_pShaderCompileErrors, ppConstTable)) {
         failed = false;
+      } else {
+        RememberBadShader(checksum, "ps_2_b");
       }
     }
 
     if (failed) {
+      RememberBadShader(checksum, szProfile);
+
       wchar_t wideErrorMsg[1024];
 
       if (m_pShaderCompileErrors) {
@@ -1006,13 +1061,18 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
         dumpmsg(wideErrorMsg);
 
         SafeRelease(m_pShaderCompileErrors);
-        AddNotification(wideErrorMsg);
       } else {
-        if (MessageBoxA(GetPluginWindow(), "Milkwave Visualizer needs Microsoft DirectX End-User Runtime to work.\n\nInstalling this does not affect your current DirectX installation.\n\nOpen Microsoft Download Website now?", "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
-          // open website in browser
-          ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
-        }
+        // Not a single line of compiler output: the legacy compiler gave up without a message,
+        // which in practice means it ran out of memory on a very heavy preset. The DirectX
+        // End-User Runtime is verified at startup, so do not send the user to the download page.
+        swprintf_s(wideErrorMsg, L"%hs %hs shader could not be compiled (no compiler output, hr=0x%08X)",
+                   szWhichShader, szProfile, (unsigned)hresult);
+        milkwave->LogInfo(wideErrorMsg);
       }
+
+      // The compile may run on the background compile thread, so hand the message to the
+      // render thread instead of touching the notification list from here.
+      QueueShaderNotification(wideErrorMsg, 6.0f);
       return false;
     }
 

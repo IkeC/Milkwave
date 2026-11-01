@@ -33,6 +33,10 @@ void CPlugin::MyRenderFn(int redraw) {
 
   //   1. take care of timing/other paperwork/etc. for new frame
   if (!redraw) {
+    // Messages from the background shader compile are handed over here so the notification
+    // list is only modified from the render thread.
+    FlushShaderNotifications();
+
     float dt = GetTime() - m_prev_time;
     m_prev_time = GetTime();  // note: m_prev_time is not for general use!
     m_bPresetLockedByCode = (m_UI_mode != UI_REGULAR);
