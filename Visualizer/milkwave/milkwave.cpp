@@ -11,6 +11,28 @@ constexpr std::int64_t ASSUMED_TIMELINE_START_OFFSET_MS = 500;
 // treat it as a real seek and let the displayed line go back. Prevents the
 // lyrics from briefly flickering back to a previous line.
 constexpr std::int64_t kLyricsBackwardJitterToleranceMs = 1000;
+
+// Retry policy for failed lyric lookups: LRCLIB answers 429/5xx (or not at all) often enough that
+// a single failed request would leave the song without lyrics until the user re-requests them.
+constexpr int kLyricsMaxRetries = 3;
+constexpr std::chrono::seconds kLyricsRetryDelay{2};
+
+// Only temporary problems are worth another attempt: a rate limit, a server error or a request
+// that failed before a status code arrived. "Not found" (404) would just repeat the same answer.
+bool IsTransientLyricsFailure(const LyricsResolution& resolution) {
+  if (resolution.document.state == LyricsDocumentState::Loaded ||
+      resolution.document.state == LyricsDocumentState::Instrumental) {
+    return false;
+  }
+  if (resolution.source != LyricsSource::None) {
+    return false;
+  }
+  if (resolution.httpStatus == 0) {
+    return !resolution.error.empty();
+  }
+  return resolution.httpStatus == 408 || resolution.httpStatus == 425 || resolution.httpStatus == 429 ||
+         resolution.httpStatus >= 500;
+}
 }  // namespace
 
 Milkwave::Milkwave() {}
@@ -26,6 +48,7 @@ Milkwave::~Milkwave() {
 
 void Milkwave::Init(wchar_t* exePath) {
   winrt::init_apartment();  // Initialize the WinRT runtime
+  winrtApartmentInitialized = true;
   start_time = std::chrono::steady_clock::now();
   timelineBaseTime = start_time;
   timelineClock.Reset();
@@ -47,6 +70,23 @@ void Milkwave::Init(wchar_t* exePath) {
 
 void Milkwave::SetLogDirectory(std::filesystem::path directory) {
   if (!directory.empty()) logDirectory = std::move(directory);
+}
+
+void Milkwave::Shutdown() {
+  // Release the SMTC objects while the calling thread's apartment is still
+  // initialized. If they are left to the global destructor, they are released
+  // at process exit after the render thread (and its apartment) is gone, which
+  // crashes inside winrt::impl::abi<...>::unconditional_release_ref().
+  smtcSession = nullptr;
+  smtcManager = nullptr;
+  if (winrtApartmentInitialized) {
+    winrtApartmentInitialized = false;
+    try {
+      winrt::uninit_apartment();
+    } catch (const winrt::hresult_error&) {
+      // The apartment is being torn down anyway; nothing reasonable to do here.
+    }
+  }
 }
 
 void Milkwave::SetLyricsAutoLoad(bool enabled) { m_bLyricsAutoLoad = enabled; }
@@ -130,6 +170,12 @@ bool Milkwave::EnsureMediaManager() {
   }
 }
 
+// A track is loaded when the media session reports artist or title; without one there is
+// nothing to identify (and any cover would be a leftover from the previous track).
+bool Milkwave::HasCurrentTrack() const {
+  return !currentArtist.empty() || !currentTitle.empty();
+}
+
 void Milkwave::PollMediaInfo() {
   if (!doPoll && !doPollExplicit) return;
 
@@ -154,7 +200,8 @@ void Milkwave::PollMediaInfo() {
       const auto timelineDurationMs = timelineEndMs - timelineStartMs;
       const bool hasReportedTimeline = timelineDurationMs > 0 && timelinePositionMs >= 0;
       auto playbackInfo = currentSession.GetPlaybackInfo();
-      const bool nextIsPlaying = playbackInfo.PlaybackStatus() == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
+      const auto playbackStatus = playbackInfo.PlaybackStatus();
+      const bool nextIsPlaying = playbackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
       const auto playbackRate = playbackInfo.PlaybackRate();
       const double nextPlaybackRate = playbackRate ? playbackRate.Value() : 1.0;
       const auto nowSteadyMs = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
@@ -185,7 +232,11 @@ void Milkwave::PollMediaInfo() {
 
       isPlaying = nextIsPlaying;
       hasPlaybackState = true;
-      if (!hasReportedTimeline && playbackInfo.PlaybackStatus() == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped) {
+      // Only a playing session shows lyrics. Stopping (or pausing - Spotify and other players
+      // report both as "paused") clears the line that was on screen; the track metadata stays, so
+      // the song info still identifies the track.
+      lyricsStopped = !nextIsPlaying;
+      if (!hasReportedTimeline && playbackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped) {
         ResetTimeline();
         hasTimeline = !currentArtist.empty() || !currentTitle.empty();
         timelineApproximate = hasTimeline;
@@ -243,6 +294,7 @@ void Milkwave::PollMediaInfo() {
       isPlaying = false;
       hasPlaybackState = false;
       hasReportedPosition = false;
+      lyricsStopped = true;
       {
         std::lock_guard<std::mutex> lock(lyricsMutex);
         ++lyricsRequestGeneration;
@@ -296,6 +348,7 @@ std::int64_t Milkwave::EffectiveLyricsPosition(std::int64_t adjustedPositionMs) 
 
 std::wstring Milkwave::CurrentLyricText(std::int64_t offsetMs) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
+  if (lyricsStopped) return L"";  // playback stopped: clear the line that was on screen
   const auto effectivePositionMs = EffectiveLyricsPosition(currentPositionMs + offsetMs);
   const auto* line = lyricsDocument.CurrentLine(effectivePositionMs);
   return line ? line->text : L"";
@@ -304,7 +357,7 @@ std::wstring Milkwave::CurrentLyricText(std::int64_t offsetMs) const {
 Milkwave::LyricsVisualState Milkwave::CurrentLyricsVisualState(std::int64_t offsetMs,
                                                                float fadeSeconds) const {
   std::lock_guard<std::mutex> lock(lyricsMutex);
-  if (lyricsDocument.lines.empty()) return {};
+  if (lyricsStopped || lyricsDocument.lines.empty()) return {};
   const auto adjustedPositionMs = currentPositionMs + offsetMs;
   const auto effectivePositionMs = EffectiveLyricsPosition(adjustedPositionMs);
   const auto* currentLine = lyricsDocument.CurrentLine(effectivePositionMs);
@@ -376,6 +429,30 @@ void Milkwave::LyricsWorkerLoop() {
     }
 
     auto resolution = ResolveLyrics(lyricsInstallDirectory, track, L"Milkwave/1.0", apiUrl);
+
+    // LRCLIB answers 429/5xx or the request fails on the network level every now and then. Without
+    // a retry the song simply stays without lyrics until the user toggles lyrics off/on (which
+    // issues a fresh request), so keep retrying a few times with a growing delay. A newer track
+    // request during the wait supersedes the retries immediately.
+    for (int attempt = 0; IsTransientLyricsFailure(resolution) && attempt < kLyricsMaxRetries; ++attempt) {
+      LogInfo(L"Lyrics request failed (http=" + std::to_wstring(resolution.httpStatus) + L"), retry " +
+              std::to_wstring(attempt + 1) + L"/" + std::to_wstring(kLyricsMaxRetries) + L": " + track.artist +
+              L" - " + track.title);
+
+      {
+        std::unique_lock<std::mutex> lock(lyricsMutex);
+        const auto delay = kLyricsRetryDelay * (attempt + 1);
+        const bool superseded = lyricsCondition.wait_for(lock, delay, [this] {
+          return stopLyricsWorker || pendingLyricsTrack.has_value();
+        });
+        if (superseded) {
+          resolution = LyricsResolution{};  // a newer track is waiting; its generation check wins
+          break;
+        }
+      }
+
+      resolution = ResolveLyrics(lyricsInstallDirectory, track, L"Milkwave/1.0", apiUrl);
+    }
 
     std::lock_guard<std::mutex> lock(lyricsMutex);
     if (requestGeneration == lyricsRequestGeneration) {

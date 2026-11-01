@@ -126,43 +126,40 @@
 			"group": "build"
 		},
 		{
+			"label": "Update ProjectM Libraries",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\Build\\update-projectm-libs.ps1"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Build Release ZIPs",
+			"type": "shell",
+			"command": "${workspaceFolder}\\Install\\release-zips.cmd",
+			"dependsOn": [
+				"Build RELEASE"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			}
+		},
+		{
 			"label": "Format Visualizer",
 			"type": "shell",
 			"command": "Get-ChildItem -Path '${workspaceFolder}\\Visualizer\\milkwave' -Include '*.cpp','*.h' -Recurse | ForEach-Object { & 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\bin\\clang-format.exe' -i $_.FullName }; Write-Host 'Done.'",
 			"problemMatcher": []
-		},
-		{
-			"label": "Build Visualizer (Debug)",
-			"type": "shell",
-			"command": "msbuild",
-			"args": [
-				"${workspaceFolder}\\Visualizer\\milkwave\\plugin.vcxproj",
-				"/p:Configuration=Debug",
-				"/p:Platform=Win32",
-				"/p:PlatformToolset=v143"
-			]
-		},
-		{
-			"label": "Build Visualizer (Debug)",
-			"type": "shell",
-			"command": "msbuild",
-			"args": [
-				"${workspaceFolder}\\Visualizer\\milkwave\\plugin.vcxproj",
-				"/p:Configuration=Debug",
-				"/p:Platform=Win32",
-				"/p:PlatformToolset=v143"
-			]
-		},
-		{
-			"label": "Build Visualizer (Debug)",
-			"type": "shell",
-			"command": "msbuild",
-			"args": [
-				"${workspaceFolder}\\Visualizer\\milkwave\\plugin.vcxproj",
-				"/p:Configuration=Debug",
-				"/p:Platform=Win32",
-				"/p:PlatformToolset=v143"
-			]
 		}
 	]
 }

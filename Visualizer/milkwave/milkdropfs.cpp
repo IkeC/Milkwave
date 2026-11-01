@@ -834,6 +834,7 @@ void CPlugin::RenderFrame(int bRedraw) {
     if (lpDevice) {
       // Clear the screen to black
       lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+      CopyBackBufferToFullResOverlay();
       lpDevice->Present(NULL, NULL, NULL, NULL);  // Present the black screen
     }
   } else {
@@ -1197,19 +1198,13 @@ void CPlugin::RenderFrame(int bRedraw) {
       }
     }
 
-    for (int i = 0; i < NUM_SUPERTEXTS; i++) {
-      float fProgress = (GetTime() - m_supertexts[i].fStartTime) / m_supertexts[i].fDuration;
-      // finally, render song title animation to back buffer
-      if (m_supertexts[i].fStartTime >= 0 &&
-          !m_supertexts[i].bRedrawSuperText && fProgress <= 1.0f) {
-        ShowSongTitleAnim(GetWidth(), GetHeight(),
-                          min(fProgress, 0.9999f),
-                          i);
-        // TODO accentuate
-        // if (fProgress >= 1.5f)
-        //   m_supertexts[i].fStartTime = -1.0f;	// 'off' state
-      }
-    }
+    // Global "Invert" (Remote Settings tab): invert the preset output after the
+    // composite has been drawn to the backbuffer but before the text overlays
+    // below (song titles, user sprites, input overlay, lyrics), so that only the
+    // preset is inverted and all text stays un-inverted.
+    if (m_InvertPresetOutput)
+      InvertBackBuffer();
+
   }
 
   // Update video capture texture if enabled
@@ -1221,6 +1216,25 @@ void CPlugin::RenderFrame(int bRedraw) {
   }
 
   DrawUserSprites();
+
+  // =========================================================
+  //
+  // INPUT MIXING - Composite video or Spout input onto backbuffer
+  //
+  if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && m_bInputMixOnTop) {
+    CompositeInputMixing(false);  // Render as overlay (transparent)
+  }
+  // =========================================================
+
+  // The full-resolution screen overlay must start from a clean preset frame:
+  // copy it before the live titles/lyrics are drawn into the low-res
+  // backbuffer.  Burn-in effects are already part of the preset render above.
+  CopyBackBufferToFullResOverlay();
+
+  // Draw the low-res title/lyrics copies for Spout and captures.  The sharp
+  // screen copies are rendered separately into the overlay in DrawAndDisplay.
+  DrawActiveSongTitles(GetBackBufferWidth(), GetBackBufferHeight());
+  RenderLyricsOverlay(false, GetBackBufferWidth(), GetBackBufferHeight());
 
   // flip buffers
   IDirect3DTexture9* pTemp = m_lpVS[0];
@@ -1243,21 +1257,6 @@ void CPlugin::RenderFrame(int bRedraw) {
   }
   fOldTime = fNewTime;
   */
-
-  // =========================================================
-  //
-  // INPUT MIXING - Composite video or Spout input onto backbuffer
-  //
-  if ((m_bVideoInputEnabled || m_bSpoutInputEnabled) && m_bInputMixOnTop) {
-    CompositeInputMixing(false);  // Render as overlay (transparent)
-  }
-  // =========================================================
-
-  // =========================================================
-  // LYRICS overlay - drawn onto the backbuffer here so the lyrics appear in
-  // both the on-screen output AND the Spout sender (which grabs the
-  // backbuffer just below).
-  RenderLyricsOverlay(false);
 
   // =========================================================
   //
@@ -4383,6 +4382,18 @@ lpDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTFP_LINEAR );
       *(m_texmgr.m_tex[iSlot].var_frame) = (double)(GetFrame() - m_texmgr.m_tex[iSlot].nStartFrame);
       *(m_texmgr.m_tex[iSlot].var_fps) = (double)GetFps();
       *(m_texmgr.m_tex[iSlot].var_progress) = (double)m_pState->m_fBlendProgress;
+      m_texmgr.m_fAspect = (GetHeight() > 0) ? (float)GetWidth() / (float)GetHeight() : 1.7778f;
+      // Desktop Mode stretches the window over the whole screen, so the taskbar covers the bottom
+      // edge; sprite code uses "taskbar" to keep e.g. the cover thumbnail above it (like the texts).
+      m_texmgr.m_fTaskbar = GetDesktopModeBottomInset();
+      *(m_texmgr.m_tex[iSlot].var_title_dur) = (double)m_texmgr.m_fTitleDur;
+      *(m_texmgr.m_tex[iSlot].var_aspect) = (double)m_texmgr.m_fAspect;
+      *(m_texmgr.m_tex[iSlot].var_cover_style) = (double)m_texmgr.m_fCoverStyle;
+      *(m_texmgr.m_tex[iSlot].var_taskbar) = (double)m_texmgr.m_fTaskbar;
+      // the drawing code below squashes the sprite to the image's own aspect ratio, so let the
+      // sprite code know it too (a 16:9 video thumbnail is not square like album art)
+      *(m_texmgr.m_tex[iSlot].var_img_aspect) =
+          (m_texmgr.m_tex[iSlot].img_w > 0) ? (double)m_texmgr.m_tex[iSlot].img_h / (double)m_texmgr.m_tex[iSlot].img_w : 1.0;
       *(m_texmgr.m_tex[iSlot].var_bass) = (double)mysound.imm_rel[0];
       *(m_texmgr.m_tex[iSlot].var_mid) = (double)mysound.imm_rel[1];
       *(m_texmgr.m_tex[iSlot].var_treb) = (double)mysound.imm_rel[2];
@@ -4867,6 +4878,104 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
       pCT->SetMatrix(lpDevice, p->rot_mat[i], &temp);
     }
   }
+}
+
+//----------------------------------------------------------------------
+// Inverts everything currently in the backbuffer (the composited preset
+// output) in place. Called from RenderFrame after the composite and before
+// the text overlays, so text (song titles, messages, lyrics, sprites) is not
+// inverted. See the "Invert" setting on the Remote Settings tab.
+//----------------------------------------------------------------------
+void CPlugin::InvertBackBuffer() {
+  LPDIRECT3DDEVICE9 lpDevice = GetDevice();
+  if (!lpDevice)
+    return;
+
+  // Save the state we modify.
+  D3DXMATRIX oldProj, oldView, oldWorld;
+  lpDevice->GetTransform(D3DTS_PROJECTION, &oldProj);
+  lpDevice->GetTransform(D3DTS_VIEW, &oldView);
+  lpDevice->GetTransform(D3DTS_WORLD, &oldWorld);
+  DWORD oldAlphaEnable = 0, oldSrcBlend = 0, oldDestBlend = 0, oldFVF = 0;
+  DWORD oldColorOp = 0, oldColorArg1 = 0, oldColorArg2 = 0;
+  DWORD oldAlphaOp = 0, oldAlphaArg1 = 0, oldAlphaArg2 = 0;
+  DWORD oldStage1ColorOp = 0, oldStage1AlphaOp = 0;
+  IDirect3DBaseTexture9* oldTexture0 = NULL;
+  IDirect3DVertexShader9* oldVertexShader = NULL;
+  IDirect3DPixelShader9* oldPixelShader = NULL;
+  lpDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &oldAlphaEnable);
+  lpDevice->GetRenderState(D3DRS_SRCBLEND, &oldSrcBlend);
+  lpDevice->GetRenderState(D3DRS_DESTBLEND, &oldDestBlend);
+  lpDevice->GetFVF(&oldFVF);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLOROP, &oldColorOp);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLORARG1, &oldColorArg1);
+  lpDevice->GetTextureStageState(0, D3DTSS_COLORARG2, &oldColorArg2);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAOP, &oldAlphaOp);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAARG1, &oldAlphaArg1);
+  lpDevice->GetTextureStageState(0, D3DTSS_ALPHAARG2, &oldAlphaArg2);
+  lpDevice->GetTextureStageState(1, D3DTSS_COLOROP, &oldStage1ColorOp);
+  lpDevice->GetTextureStageState(1, D3DTSS_ALPHAOP, &oldStage1AlphaOp);
+  lpDevice->GetTexture(0, &oldTexture0);
+  lpDevice->GetVertexShader(&oldVertexShader);
+  lpDevice->GetPixelShader(&oldPixelShader);
+
+  // 2D projection: x/y in -1..1 map to the full current render target (y=-1 is top).
+  D3DXMATRIX ortho, identity;
+  D3DXMatrixOrthoLH(&ortho, 2.0f, -2.0f, 0.0f, 1.0f);
+  D3DXMatrixIdentity(&identity);
+  lpDevice->SetTransform(D3DTS_PROJECTION, &ortho);
+  lpDevice->SetTransform(D3DTS_VIEW, &identity);
+  lpDevice->SetTransform(D3DTS_WORLD, &identity);
+
+  lpDevice->SetVertexShader(NULL);
+  lpDevice->SetPixelShader(NULL);
+  lpDevice->SetFVF(SPRITEVERTEX_FORMAT);
+  lpDevice->SetTexture(0, NULL);
+
+  // Source colour is the white diffuse; the result is exactly 1 - dest.
+  lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+  lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+  lpDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+  lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+  lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_INVDESTCOLOR);
+  lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+
+  SPRITEVERTEX v[4];
+  ZeroMemory(v, sizeof(v));
+  v[0].x = -1.0f; v[0].y = -1.0f; v[0].tu = 0.0f; v[0].tv = 0.0f;
+  v[1].x = 1.0f;  v[1].y = -1.0f; v[1].tu = 1.0f; v[1].tv = 0.0f;
+  v[2].x = -1.0f; v[2].y = 1.0f;  v[2].tu = 0.0f; v[2].tv = 1.0f;
+  v[3].x = 1.0f;  v[3].y = 1.0f;  v[3].tu = 1.0f; v[3].tv = 1.0f;
+  for (int i = 0; i < 4; i++)
+    v[i].Diffuse = 0xFFFFFFFF;
+
+  lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(SPRITEVERTEX));
+
+  // Restore the state we modified.
+  lpDevice->SetTransform(D3DTS_PROJECTION, &oldProj);
+  lpDevice->SetTransform(D3DTS_VIEW, &oldView);
+  lpDevice->SetTransform(D3DTS_WORLD, &oldWorld);
+  lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, oldAlphaEnable);
+  lpDevice->SetRenderState(D3DRS_SRCBLEND, oldSrcBlend);
+  lpDevice->SetRenderState(D3DRS_DESTBLEND, oldDestBlend);
+  lpDevice->SetFVF(oldFVF);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLOROP, oldColorOp);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG1, oldColorArg1);
+  lpDevice->SetTextureStageState(0, D3DTSS_COLORARG2, oldColorArg2);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, oldAlphaOp);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, oldAlphaArg1);
+  lpDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, oldAlphaArg2);
+  lpDevice->SetTextureStageState(1, D3DTSS_COLOROP, oldStage1ColorOp);
+  lpDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, oldStage1AlphaOp);
+  lpDevice->SetTexture(0, oldTexture0);
+  lpDevice->SetVertexShader(oldVertexShader);
+  lpDevice->SetPixelShader(oldPixelShader);
+  SafeRelease(oldTexture0);
+  SafeRelease(oldVertexShader);
+  SafeRelease(oldPixelShader);
 }
 
 void CPlugin::ShowToUser_NoShaders()  // int bRedraw, int nPassOverride)

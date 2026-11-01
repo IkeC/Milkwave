@@ -3,7 +3,7 @@ rem Create a release zip named Milkwave-Portable-<version>.zip using 7-Zip.
 rem This script excludes unwanted directories and includes only textures used by Milkwave presets.
 
 rem Resolve script and release directories
-set "VERSION=4.1"
+set "VERSION=4.2"
 set "SUBNAME=Minimal"
 
 set "SCRIPT_DIR=%~dp0"
@@ -11,6 +11,16 @@ set "RELEASE_DIR=%SCRIPT_DIR%..\Release"
 set "SEVENZ=C:\Program Files\7-Zip\7z.exe"
 
 set "OUTPUT=%SCRIPT_DIR%\Milkwave-%VERSION%-%SUBNAME%.zip"
+
+for %%F in (MDropDX12.exe settings.ini messages.ini sprites.ini) do (
+  if not exist "%RELEASE_DIR%\MDropDX12\%%F" (
+    echo ERROR: Missing Release\MDropDX12\%%F
+    echo Run Build\release.cmd before creating the zip.
+    pause
+    exit /b 1
+  )
+)
+
 if exist "%OUTPUT%" del /f /q "%OUTPUT%" 2>nul
 
 pushd "%RELEASE_DIR%"
@@ -31,7 +41,6 @@ echo Creating base archive (excluding all textures)...
  -xr!resources\presets\CreamOfTheCrop ^
  -xr!resources\presets\IkeC ^
  -xr!resources\presets\Incubo_ ^
- "-xr!resources\presets\Incubo_ Picks" ^
  -xr!resources\presets\Milkdrop2077 ^
  -xr!resources\presets\Milkwave\Shader\Conv\* ^
  -xr!resources\presets\Quicksave ^
@@ -55,4 +64,4 @@ echo Archive contents:
 "%SEVENZ%" l "%OUTPUT%"
 
 popd
-pause
+if /i not "%MILKWAVE_NO_PAUSE%"=="1" pause

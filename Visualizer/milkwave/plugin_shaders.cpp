@@ -10,6 +10,8 @@
 #include "shell_defines.h"
 #include "wasabi.h"
 #include <cstdint>
+#include <filesystem>
+#include <mutex>
 
 void VShaderInfo::Clear() {
   SafeRelease(ptr);
@@ -668,7 +670,8 @@ bool CPlugin::RecompileVShader(const char* szShadersText, VShaderInfo* si, int s
   return true;
 }
 
-bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion, bool bCompileOnly) {
+bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion,
+                               bool bCompileOnly, bool bSkipIfCached) {
   assert(m_nMaxPSVersion > 0);
 
   SafeRelease(si->ptr);
@@ -704,7 +707,8 @@ bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int s
       break;
   }
 
-  if (!LoadShaderFromMemory(szShadersText, "PS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly))
+  if (!LoadShaderFromMemory(szShadersText, "PS", ver, &si->CT, (void**)&si->ptr, shaderType, bHardErrors, bCompileOnly,
+                            bSkipIfCached))
     return false;
 
   if (!bCompileOnly) {
@@ -715,13 +719,19 @@ bool CPlugin::RecompilePShader(const char* szShadersText, PShaderInfo* si, int s
   return true;
 }
 
-bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly) {
+bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly, bool bSkipIfCached) {
   if (m_nMaxPSVersion <= 0)
     return true;
 
+  // A background preset compile can be aborted from the UI (ESC). Give up between shaders -
+  // D3DXCompileShader itself cannot be interrupted, so this is the earliest safe checkpoint.
+  if (bCompileOnly && m_nPresetCompileCancel)
+    return false;
+
   // load one of the pixel shaders
   if (!sh->warp.ptr && pState->m_nWarpPSVersion > 0) {
-    bool bOK = RecompilePShader(pState->m_szWarpShadersText, &sh->warp, SHADER_WARP, false, pState->m_nWarpPSVersion, bCompileOnly);
+    bool bOK = RecompilePShader(pState->m_szWarpShadersText, &sh->warp, SHADER_WARP, false, pState->m_nWarpPSVersion,
+                                bCompileOnly, bSkipIfCached);
     if (!bOK) {
       // switch to fallback shader
       m_fallbackShaders_ps.warp.ptr->AddRef();
@@ -733,10 +743,13 @@ bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bComp
 
     if (bTick)
       return true;
+    if (bCompileOnly && m_nPresetCompileCancel)
+      return false;
   }
 
   if (!sh->comp.ptr && pState->m_nCompPSVersion > 0) {
-    bool bOK = RecompilePShader(pState->m_szCompShadersText, &sh->comp, SHADER_COMP, false, pState->m_nCompPSVersion, bCompileOnly);
+    bool bOK = RecompilePShader(pState->m_szCompShadersText, &sh->comp, SHADER_COMP, false, pState->m_nCompPSVersion,
+                                bCompileOnly, bSkipIfCached);
     if (!bOK) {
       // switch to fallback shader
       m_fallbackShaders_ps.comp.ptr->AddRef();
@@ -751,7 +764,8 @@ bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bComp
 }
 
 bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, char* szProfile,
-                                   LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly) {
+                                   LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors,
+                                   bool compileOnly, bool skipIfCached) {
   const char szWarpDefines[] =
       "#define rad _rad_ang.x\n"
       "#define ang _rad_ang.y\n"
@@ -939,15 +953,21 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
     pShaderByteCode = LoadShaderBytecodeFromFile(checksum, &szProfile[0]);
   }
 
-  if (pShaderByteCode != NULL && !compileOnly) {
-    // restore ConstTable from cached bytecode
-    HRESULT hr = D3DXGetShaderConstantTable(
-        (DWORD*)pShaderByteCode->GetBufferPointer(),
-        ppConstTable);
-    if (SUCCEEDED(hr)) {
+  if (pShaderByteCode != NULL) {
+    if (!compileOnly) {
+      // restore ConstTable from cached bytecode
+      HRESULT hr = D3DXGetShaderConstantTable(
+          (DWORD*)pShaderByteCode->GetBufferPointer(),
+          ppConstTable);
+      if (SUCCEEDED(hr)) {
+        bLoadedFromCache = true;
+      } else {
+        SafeRelease(pShaderByteCode);  // invalid cached bytecode, fall through to compile
+      }
+    } else if (skipIfCached) {
       bLoadedFromCache = true;
     } else {
-      SafeRelease(pShaderByteCode);  // invalid cached bytecode, fall through to compile
+      SafeRelease(pShaderByteCode);  // compile-only explicitly ignores stale cache
     }
   }
 
@@ -988,7 +1008,7 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
         SafeRelease(m_pShaderCompileErrors);
         AddNotification(wideErrorMsg);
       } else {
-        if (MessageBoxA(GetPluginWindow(), "The shader could not be compiled.\n\nPlease install the Microsoft DirectX End-User Runtimes.\n\nOpen Download-Website now?", "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
+        if (MessageBoxA(GetPluginWindow(), "Milkwave Visualizer needs Microsoft DirectX End-User Runtime to work.\n\nInstalling this does not affect your current DirectX installation.\n\nOpen Microsoft Download Website now?", "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
           // open website in browser
           ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);
         }
@@ -1052,14 +1072,19 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
 
 //----------------------------------------------------------------------
 
-void CPlugin::CompilePresetShadersToFile(wchar_t* sPresetFile) {
+void CPlugin::CompilePresetShadersToFile(wchar_t* sPresetFile, bool bSkipIfCached) {
+  // The startup precompiler and the on-demand preset compiler can both run.
+  // Serialize them because shader compilation uses shared error/notification state.
+  static std::mutex compileMutex;
+  std::lock_guard<std::mutex> lock(compileMutex);
+
   CState* pState = new CState();
   PShaderSet pShaders;
   RemoveAngleBrackets(sPresetFile);
 
   DWORD ApplyFlags = STATE_ALL;
   pState->Import(sPresetFile, GetTime(), NULL, ApplyFlags);
-  LoadShaders(&pShaders, pState, false, true);
+  LoadShaders(&pShaders, pState, false, true, bSkipIfCached);
   delete pState;
   pState = NULL;
 }
@@ -1129,19 +1154,33 @@ void CPlugin::GenCompPShaderText(char* szShaderText, float brightness, float ve_
   p += sprintf(p, "}%c", LF);
 }
 
+static std::string GetShaderCacheFileName(char* prefix, uint32_t shaderFlags, uint32_t checksum) {
+  std::ostringstream fileName;
+  fileName << prefix << "-" << std::hex << std::uppercase << shaderFlags << "-" << checksum << ".shader";
+  return fileName.str();
+}
+
+// The shader cache always lives in the application directory, next to the executable and
+// settings.ini - regardless of the working directory the app was launched from.
+static std::filesystem::path GetShaderCacheFilePath(const wchar_t* baseDir, const std::string& fileName) {
+  std::filesystem::path cacheDir = (baseDir != nullptr && baseDir[0] != L'\0') ? std::filesystem::path(baseDir) : std::filesystem::path(L".");
+  return cacheDir / L"cache" / fileName;
+}
+
 void CPlugin::SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t checksum, char* prefix) {
   if (!pShaderByteCode || !checksum) return;
 
+  std::filesystem::path filePath = GetShaderCacheFilePath(m_szBaseDir, GetShaderCacheFileName(prefix, m_dwShaderFlags, checksum));
+
   // Ensure the "cache" directory exists
-  const char* cacheDir = "cache";
-  if (_mkdir(cacheDir) != 0 && errno != EEXIST) {
-    std::cerr << "Failed to create or access cache directory: " << cacheDir << std::endl;
+  try {
+    std::filesystem::create_directories(filePath.parent_path());
+  } catch (const std::filesystem::filesystem_error& e) {
+    std::cerr << "Failed to create or access cache directory: " << e.what() << std::endl;
     return;
   }
-  std::ostringstream filePath;
-  filePath << cacheDir << "\\" << prefix << "-" << std::hex << std::uppercase << m_dwShaderFlags << "-" << checksum << ".shader";
 
-  std::ofstream outFile(filePath.str(), std::ios::binary);
+  std::ofstream outFile(filePath.wstring().c_str(), std::ios::binary);
   if (outFile.is_open()) {
     outFile.write(
         static_cast<const char*>(pShaderByteCode->GetBufferPointer()),
@@ -1154,10 +1193,9 @@ void CPlugin::SaveShaderBytecodeToFile(ID3DXBuffer* pShaderByteCode, uint32_t ch
 ID3DXBuffer* CPlugin::LoadShaderBytecodeFromFile(uint32_t checksum, char* prefix) {
   ID3DXBuffer* pBuffer = nullptr;
 
-  std::ostringstream filePath;
-  filePath << "cache\\" << prefix << "-" << std::hex << std::uppercase << m_dwShaderFlags << "-" << checksum << ".shader";
+  std::filesystem::path filePath = GetShaderCacheFilePath(m_szBaseDir, GetShaderCacheFileName(prefix, m_dwShaderFlags, checksum));
 
-  std::ifstream inFile(filePath.str(), std::ios::binary | std::ios::ate);
+  std::ifstream inFile(filePath.wstring().c_str(), std::ios::binary | std::ios::ate);
   if (!inFile.is_open()) return nullptr;
 
   std::streamsize size = inFile.tellg();

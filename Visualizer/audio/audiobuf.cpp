@@ -47,11 +47,15 @@ void GetAudioBuf(unsigned char* pWaveL, unsigned char* pWaveR, int SamplesCount)
       pcmBufDrained = true; // Drain buffer to force underrun next time
   }
   else {
-    // Circular buffer (pcmLeftLpb, pcmRightLpb) hold enough samples in it
+    // Circular buffer (pcmLeftLpb, pcmRightLpb) hold enough samples in it.
+    // pcmPos points one slot past the newest sample, so the newest SamplesCount
+    // samples live in [pcmPos - SamplesCount, pcmPos).
+    int base = pcmPos - SamplesCount + SAMPLE_SIZE_LPB;
     for (int i = 0; i < SamplesCount; i++) {
       // int8_t [-128 .. +127] stored into uint8_t [0..255]
-      pWaveL[i % SamplesCount] = pcmLeftLpb[(pcmPos + i) % SAMPLE_SIZE_LPB];
-      pWaveR[i % SamplesCount] = pcmRightLpb[(pcmPos + i) % SAMPLE_SIZE_LPB];
+      int idx = (base + i) % SAMPLE_SIZE_LPB;
+      pWaveL[i] = pcmLeftLpb[idx];
+      pWaveR[i] = pcmRightLpb[idx];
     }
   }
 }
@@ -79,17 +83,21 @@ void GetAudioBufFloat(float* pWaveL, float* pWaveR, int SamplesCount) {
     // Zero-fill beginning if buffer not yet full; valid audio at end.
     // This allows larger FFT windows to work during startup (zero-padded front
     // is naturally tapered by the FFT window function).
+    // pcmPos points one slot past the newest sample, so the newest `available`
+    // samples live in [pcmPos - available, pcmPos) and the window ends at "now".
     int available = (pcmLen < SamplesCount) ? pcmLen : SamplesCount;
     int zeroPrefix = SamplesCount - available;
     if (zeroPrefix > 0) {
       memset(pWaveL, 0, zeroPrefix * sizeof(float));
       memset(pWaveR, 0, zeroPrefix * sizeof(float));
     }
+    int base = pcmPos - available + SAMPLE_SIZE_LPB;
     for (int i = 0; i < available; i++) {
       // Match the legacy waveform amplitude domain used by the FFT path:
       // old m_sound.fWaveform samples were roughly in [-128..127].
-      pWaveL[zeroPrefix + i] = pcmLeftFloatLpb[(pcmPos + i) % SAMPLE_SIZE_LPB] * 128.0f;
-      pWaveR[zeroPrefix + i] = pcmRightFloatLpb[(pcmPos + i) % SAMPLE_SIZE_LPB] * 128.0f;
+      int idx = (base + i) % SAMPLE_SIZE_LPB;
+      pWaveL[zeroPrefix + i] = pcmLeftFloatLpb[idx] * 128.0f;
+      pWaveR[zeroPrefix + i] = pcmRightFloatLpb[idx] * 128.0f;
     }
   }
 }
@@ -174,19 +182,16 @@ void SetAudioBuf(const BYTE* pData, const UINT32 nNumFramesToRead, const WAVEFOR
   // Calculate output samples after downsampling
   int outputSamples = nNumFramesToRead / downsampleRatio;
 
-  // Adjust buffer writing parameters for downsampled data
+  // Adjust buffer writing parameters for downsampled data.
+  // Samples are written forward starting at pcmPos, so pcmPos ends up pointing one
+  // slot past the newest sample. Anchoring the chunk to the cursor (instead of at
+  // pcmPos - outputSamples) keeps the buffer contiguous when the packet size varies.
   int n = 0;
   int start = 0;
   int len = outputSamples;
   if (outputSamples >= SAMPLE_SIZE_LPB) {
-    n = 0;
-    start = outputSamples - SAMPLE_SIZE_LPB;
+    start = outputSamples - SAMPLE_SIZE_LPB;  // keep only the newest SAMPLE_SIZE_LPB frames
     len = SAMPLE_SIZE_LPB;
-  }
-  else {
-    n = SAMPLE_SIZE_LPB - outputSamples;
-    start = 0;
-    len = outputSamples;
   }
 
   for (int i = start; i < len; i++, n++) {
@@ -242,6 +247,6 @@ void SetAudioBuf(const BYTE* pData, const UINT32 nNumFramesToRead, const WAVEFOR
   }
 
   pcmBufDrained = false;
-  pcmLen = (pcmLen + len <= SAMPLE_SIZE_LPB) ? (pcmLen + len) : (SAMPLE_SIZE_LPB);
-  pcmPos = (pcmPos + len) % SAMPLE_SIZE_LPB;
+  pcmLen = (pcmLen + n <= SAMPLE_SIZE_LPB) ? (pcmLen + n) : (SAMPLE_SIZE_LPB);
+  pcmPos = (pcmPos + n) % SAMPLE_SIZE_LPB;
 }

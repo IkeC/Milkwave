@@ -26,34 +26,41 @@ comp_21=  return a - b*cos(5.28318*(c*t+d) );
 comp_22=}
 comp_23=
 comp_24=shader_body {
-comp_25=  float4 fragColor = 0;
-comp_26=  // CONV: Center on screen, then try some aspect correction
-comp_27=  uv = (uv*2) - 1;
-comp_28=  uv *= aspect.xy;
-comp_29=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_30=  uv = float2(uv.x, -uv.y);
-comp_31=
-comp_32=  uv *= 0.5+(sin(time*0.2)*0.2);
-comp_33=  float2 fragCoord  = uv;
-comp_34=
-comp_35=  // float2 uv = (fragCoord * 2.0 - uv.xy) / uv.y;
-comp_36=  float2 uv0 = uv;
-comp_37=  float3 finalColor = float3(0.0, 0.0, 0.0);
+comp_25=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_26=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_27=  // untouched frame stays byte-identical.
+comp_28=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_29=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_30=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_31=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_32=  float4 fragColor = 0;
+comp_33=  // CONV: Center on screen, then try some aspect correction
+comp_34=  uv = (uv*2) - 1;
+comp_35=  uv *= aspect.xy;
+comp_36=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_37=  uv = float2(uv.x, -uv.y);
 comp_38=
-comp_39=  for (float i = 0.0; i < 5.0; i++) {
-comp_40=    uv = frac(uv * 1.6) - 0.5;
+comp_39=  uv *= 0.5+(sin(time*0.2)*0.2);
+comp_40=  float2 fragCoord  = uv;
 comp_41=
-comp_42=    float d = length(uv);
-comp_43=
-comp_44=    float3 col = palette(length(uv0) + time);
+comp_42=  // float2 uv = (fragCoord * 2.0 - uv.xy) / uv.y;
+comp_43=  float2 uv0 = uv;
+comp_44=  float3 finalColor = float3(0.0, 0.0, 0.0);
 comp_45=
-comp_46=    d = sin(d*8. +time)/8.;
-comp_47=    d = abs(d);
+comp_46=  for (float i = 0.0; i < 5.0; i++) {
+comp_47=    uv = frac(uv * 1.6) - 0.5;
 comp_48=
-comp_49=    d = pow(0.01 / d, 1.8);
-comp_50=    finalColor += col * d;
-comp_51=  }
+comp_49=    float d = length(uv);
+comp_50=
+comp_51=    float3 col = palette(length(uv0) + time);
 comp_52=
-comp_53=  fragColor = float4(finalColor, 1.0);
-comp_54=  ret = fragColor;
-comp_55=}
+comp_53=    d = sin(d*8. +time)/8.;
+comp_54=    d = abs(d);
+comp_55=
+comp_56=    d = pow(0.01 / d, 1.8);
+comp_57=    finalColor += col * d;
+comp_58=  }
+comp_59=
+comp_60=  fragColor = float4(finalColor, 1.0);
+comp_61=  ret = fragColor;
+comp_62=}

@@ -1022,10 +1022,11 @@ int CPlugin::AllocateMyDX9Stuff() {
 
   if (!m_bInitialPresetSelected) {
     UpdatePresetList(true);  //...just does its initial burst!
-    if (m_bEnablePresetStartup && wcslen(m_szPresetStartup) > 0) {
-      LoadPreset(m_szPresetStartup, 0.0f);
-
-      std::wstring message(m_szPresetStartup);
+    // A .milk file opened from Explorer wins over the configured startup preset.
+    const bool bCommandLinePreset = (wcslen(m_szCommandLinePreset) > 0);
+    const wchar_t* szStartupPreset = bCommandLinePreset ? m_szCommandLinePreset : m_szPresetStartup;
+    if ((bCommandLinePreset || m_bEnablePresetStartup) && wcslen(szStartupPreset) > 0) {
+      std::wstring message(szStartupPreset);
       size_t pos = message.find_last_of(L"\\/");
       std::wstring sPath;
       std::wstring sFilename;
@@ -1038,6 +1039,17 @@ int CPlugin::AllocateMyDX9Stuff() {
         // If no separator is found, assume the fullPath is just a filename
         sFilename = message;
       }
+
+      // A preset opened from Explorer also becomes the preset folder, so that the next
+      // preset continues in the file's folder (same as dropping a file onto the window).
+      // The new folder is scanned here, so do it before the index lookup below.
+      if (bCommandLinePreset && sPath.length() > 0 && _wcsicmp(sPath.c_str(), m_szPresetDir) != 0) {
+        wchar_t szNewPath[MAX_PATH];
+        wcscpy_s(szNewPath, sPath.c_str());
+        ChangePresetDir(szNewPath, m_szPresetDir, false);
+      }
+
+      LoadPreset(szStartupPreset, 0.0f);
 
       // try to set the current preset index
       for (size_t i = 0; i < m_presets.size(); i++) {
@@ -1352,7 +1364,7 @@ void CPlugin::RecreateLyricsFont(float scale) {
   // Round (not truncate) so a scale passed in as targetSize/sizePerScale maps
   // back to exactly targetSize — prevents off-by-one drift in the recreation
   // hysteresis used by the lyrics render loop.
-  int lyricsFontSize = (int)(m_lyricsFontSize * scale * m_fRenderQuality + 0.5f);
+  int lyricsFontSize = (int)(m_lyricsFontSize * scale + 0.5f);
   if (lyricsFontSize < 8) lyricsFontSize = 8;
   if (lyricsFontSize > 256) lyricsFontSize = 256;
   const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
@@ -1370,7 +1382,7 @@ void CPlugin::RecreateLyricsMeasureFont(float targetScale) {
   if (targetScale < 0.1f) targetScale = 0.1f;
   if (targetScale > 10.0f) targetScale = 10.0f;
   m_lyricsMeasureFontScale = targetScale;
-  int lyricsFontSize = (int)(m_lyricsFontSize * targetScale * m_fRenderQuality + 0.5f);
+  int lyricsFontSize = (int)(m_lyricsFontSize * targetScale + 0.5f);
   if (lyricsFontSize < 8) lyricsFontSize = 8;
   if (lyricsFontSize > 256) lyricsFontSize = 256;
   const wchar_t* lyricsFontFace = m_lyricsFont[0] ? m_lyricsFont : L"Segoe UI";
@@ -1422,8 +1434,10 @@ void CPlugin::CleanUpMyDX9Stuff(int final_cleanup) {
   //  then if we were blending 2 presets, jump fully to the new preset.
   // Otherwise the old preset wouldn't get all reloaded, and it app would crash
   //  when trying to use its stuff.
+  StopPendingPresetCompile(m_nPresetCompileStatus == 1);
   if (m_nLoadingPreset != 0) {
     // finish up the pre-load & start the official blend
+    LoadShaders(&m_NewShaders, m_pNewState, false, false);
     m_nLoadingPreset = 8;
     LoadPresetTick();
   }

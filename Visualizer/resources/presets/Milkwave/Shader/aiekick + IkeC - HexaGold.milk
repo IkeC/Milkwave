@@ -167,92 +167,99 @@ comp_162=  return c.z * fac * lerp( float3(1.0, 1.0, 1.0), rgb, c.y);
 comp_163=}
 comp_164=
 comp_165=shader_body {
-comp_166=  float4 fragColor = 0;
-comp_167=  // CONV: Center on screen, then try some aspect correction
-comp_168=  uv = (uv*2) - 1;
-comp_169=  uv *= aspect.xy;
-comp_170=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_171=  uv = float2(uv.x, -uv.y);
-comp_172=  float2 fragCoord  = uv;
-comp_173=
-comp_174=  float2 si = uv.xy;
-comp_175=
-comp_176=  // central uv
-comp_177=  float2 uvc = uv;
-comp_178=  // (2.*fragCoord.xy-si)/si.y;
-comp_179=
-comp_180=  // classice turning table camera
-comp_181=  float a = time * 0.1 + THUMBNAIL_ANGLE_OFFSET;
-comp_182=  float3 ro = float3(cos(a), 0.0, sin(a)) * 20.0;
-comp_183=  ro.y = 20.0;
-comp_184=  float3 rd = cam(uvc, ro, float3(0, 0, 0), 0.4);
-comp_185=
-comp_186=  float3 col = float3(0.1, 0.1, 0.1);
-comp_187=
-comp_188=  // log raymarching
-comp_189=  float s = 1., d = 0., md = 100.;
-comp_190=  for (int i = min(frame,0); i < LOOPS; i++)
-comp_191=  {
-comp_192=    // CONV: break unsupported, see Milkwave manual
-comp_193=    if (d*d/s>1e8 || d > 70.) {
-comp_194=      i=LOOPS;
-comp_195=    }
-comp_196=
-comp_197=    else {
-comp_198=      s = map(ro + rd * d);
-comp_199=      d += s * 0.5;
-comp_200=    }
-comp_201=
-comp_202=  }
+comp_166=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_167=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_168=  // untouched frame stays byte-identical.
+comp_169=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_170=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_171=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_172=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_173=  float4 fragColor = 0;
+comp_174=  // CONV: Center on screen, then try some aspect correction
+comp_175=  uv = (uv*2) - 1;
+comp_176=  uv *= aspect.xy;
+comp_177=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_178=  uv = float2(uv.x, -uv.y);
+comp_179=  float2 fragCoord  = uv;
+comp_180=
+comp_181=  float2 si = uv.xy;
+comp_182=
+comp_183=  // central uv
+comp_184=  float2 uvc = uv;
+comp_185=  // (2.*fragCoord.xy-si)/si.y;
+comp_186=
+comp_187=  // classice turning table camera
+comp_188=  float a = time * 0.1 + THUMBNAIL_ANGLE_OFFSET;
+comp_189=  float3 ro = float3(cos(a), 0.0, sin(a)) * 20.0;
+comp_190=  ro.y = 20.0;
+comp_191=  float3 rd = cam(uvc, ro, float3(0, 0, 0), 0.4);
+comp_192=
+comp_193=  float3 col = float3(0.1, 0.1, 0.1);
+comp_194=
+comp_195=  // log raymarching
+comp_196=  float s = 1., d = 0., md = 100.;
+comp_197=  for (int i = min(frame,0); i < LOOPS; i++)
+comp_198=  {
+comp_199=    // CONV: break unsupported, see Milkwave manual
+comp_200=    if (d*d/s>1e8 || d > 70.) {
+comp_201=      i=LOOPS;
+comp_202=    }
 comp_203=
-comp_204=  if (d < md)
-comp_205=  {
-comp_206=    // surface point
-comp_207=    float3 p = ro + rd * d;
+comp_204=    else {
+comp_205=      s = map(ro + rd * d);
+comp_206=      d += s * 0.5;
+comp_207=    }
 comp_208=
-comp_209=    // surface normal, precision of 0.1 for remove some aliasing
-comp_210=    float3 n = getNormal(p, 0.1);
-comp_211=
-comp_212=    // light pos
-comp_213=    float3 lp = float3(0,5,0);
-comp_214=
-comp_215=    // light dir
-comp_216=    float3 ld = normalize(lp - p);
-comp_217=
-comp_218=    // diffuse, ambiant occlusion, shadow, specular
-comp_219=    float diff = pow(dot(n, ld) * .5 + .5,2.0);
-comp_220=    float ao = getAmbiantOcclusion(p, n, 40.0);
-comp_221=    float sha = clamp(getShadow(p, ld, 0.01, 150.0, 5.0), 0. ,0.9);
-comp_222=    float spe = pow(max(dot(-rd, reflect(-ld, n)), 0.0), 32.0);
-comp_223=
-comp_224=    if (mat(p) < 0.5)
-comp_225=    // hexa sides
-comp_226=    {
-comp_227=      // smooth hsv
-comp_228=      float3 base = hsv2rgb_smooth(float3(atan2(p.x,p.z)/3.14159*0.5 - time * 0.1, 0.8, 0.8));
-comp_229=
-comp_230=      // vary base color according to ao
-comp_231=      col = lerp(base, float3(1, 1, 1), ao) * 0.5;
-comp_232=    }
-comp_233=
-comp_234=    else
-comp_235=    // hexa face
-comp_236=    {
-comp_237=      // reflected gold
-comp_238=      col = float3(1.0, 0.85, 0.0) * tex2D(iChannel0, reflect(rd, n)).rgb;
+comp_209=  }
+comp_210=
+comp_211=  if (d < md)
+comp_212=  {
+comp_213=    // surface point
+comp_214=    float3 p = ro + rd * d;
+comp_215=
+comp_216=    // surface normal, precision of 0.1 for remove some aliasing
+comp_217=    float3 n = getNormal(p, 0.1);
+comp_218=
+comp_219=    // light pos
+comp_220=    float3 lp = float3(0,5,0);
+comp_221=
+comp_222=    // light dir
+comp_223=    float3 ld = normalize(lp - p);
+comp_224=
+comp_225=    // diffuse, ambiant occlusion, shadow, specular
+comp_226=    float diff = pow(dot(n, ld) * .5 + .5,2.0);
+comp_227=    float ao = getAmbiantOcclusion(p, n, 40.0);
+comp_228=    float sha = clamp(getShadow(p, ld, 0.01, 150.0, 5.0), 0. ,0.9);
+comp_229=    float spe = pow(max(dot(-rd, reflect(-ld, n)), 0.0), 32.0);
+comp_230=
+comp_231=    if (mat(p) < 0.5)
+comp_232=    // hexa sides
+comp_233=    {
+comp_234=      // smooth hsv
+comp_235=      float3 base = hsv2rgb_smooth(float3(atan2(p.x,p.z)/3.14159*0.5 - time * 0.1, 0.8, 0.8));
+comp_236=
+comp_237=      // vary base color according to ao
+comp_238=      col = lerp(base, float3(1, 1, 1), ao) * 0.5;
 comp_239=    }
 comp_240=
-comp_241=    // final brdf
-comp_242=    col += diff * sha * 0.5 + spe;
-comp_243=
-comp_244=    // clamp for avoid overlight
-comp_245=    col = clamp(col, 0., 1.);
-comp_246=  }
+comp_241=    else
+comp_242=    // hexa face
+comp_243=    {
+comp_244=      // reflected gold
+comp_245=      col = float3(1.0, 0.85, 0.0) * tex2D(iChannel0, reflect(rd, n)).rgb;
+comp_246=    }
 comp_247=
-comp_248=  // distance fog
-comp_249=  col *= exp(1.0-d*d*0.001);
+comp_248=    // final brdf
+comp_249=    col += diff * sha * 0.5 + spe;
 comp_250=
-comp_251=  // final color
-comp_252=  fragColor = float4(col,1);
-comp_253=  ret = fragColor;
-comp_254=}
+comp_251=    // clamp for avoid overlight
+comp_252=    col = clamp(col, 0., 1.);
+comp_253=  }
+comp_254=
+comp_255=  // distance fog
+comp_256=  col *= exp(1.0-d*d*0.001);
+comp_257=
+comp_258=  // final color
+comp_259=  fragColor = float4(col,1);
+comp_260=  ret = fragColor;
+comp_261=}

@@ -55,42 +55,49 @@ comp_50=  return normalize(q(e.xyy) + q(e.yxy) + q(e.yyx) + q(e.xxx));
 comp_51=}
 comp_52=
 comp_53=shader_body {
-comp_54=  float4 fragColor = 0;
-comp_55=  float2 fragCoord  = uv;
-comp_56=  // CONV: Center on screen, then try some aspect correction
-comp_57=  uv = (uv*2) - 1;
-comp_58=  uv *= aspect.xy;
-comp_59=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_60=  uv = float2(uv.x, -uv.y);
-comp_61=
-comp_62=  // uv = (2. * fragCoord.xy - uv.xy) / min(uv.x, uv.y);
-comp_63=  // float2 R2D = uv;
-comp_64=  float slowdown = 0.2;
-comp_65=  float T = (sin(time*slowdown)+2)*1;
-comp_66=
-comp_67=  float2 R2D = mul(uv, R2D(100+time/8));
-comp_68=  float3 color = float3(0, 0, 0);
-comp_69=  float3 eye = float3(2.5, 0, 0);
-comp_70=
-comp_71=  float3 ray = normalize(float3(R2D, 1));
-comp_72=
-comp_73=  float d = march(uv,eye, ray, 128, T);
-comp_74=  if (d > 0.) {
-comp_75=    float3 p = eye + ray * d;
-comp_76=    float3 n = normal(p, T);
-comp_77=    float3 lo = float3(0, 2, -3);
-comp_78=    float diffuse = max(0., dot(normalize(lo - p), n));
-comp_79=    color = float3(10., 10., 10.) / p.z  * diffuse;
-comp_80=  }
-comp_81=
-comp_82=  #ifdef bass_smooth
-comp_83=    float fac = (int)vis_version > 2 ? 0.4*vis_intensity+vis_shift : (0.4 * clamp((int)vis_version == 1 ? bass_smooth : bass_att,0.3,1.7))*vis_intensity+vis_shift;
-comp_84=  #else
-comp_85=    float fac = 0.4 * clamp(bass_att,0.97,1.03);
-comp_86=  #endif
-comp_87=
-comp_88=  float3 col = fac+.5*cos(time+uv.xyx+float3(0,2,4));
-comp_89=
-comp_90=  fragColor = float4(color * col,1.0);
-comp_91=  ret = fragColor;
-comp_92=}
+comp_54=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_55=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_56=  // untouched frame stays byte-identical.
+comp_57=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_58=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_59=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_60=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_61=  float4 fragColor = 0;
+comp_62=  float2 fragCoord  = uv;
+comp_63=  // CONV: Center on screen, then try some aspect correction
+comp_64=  uv = (uv*2) - 1;
+comp_65=  uv *= aspect.xy;
+comp_66=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_67=  uv = float2(uv.x, -uv.y);
+comp_68=
+comp_69=  // uv = (2. * fragCoord.xy - uv.xy) / min(uv.x, uv.y);
+comp_70=  // float2 R2D = uv;
+comp_71=  float slowdown = 0.2;
+comp_72=  float T = (sin(time*slowdown)+2)*1;
+comp_73=
+comp_74=  float2 R2D = mul(uv, R2D(100+time/8));
+comp_75=  float3 color = float3(0, 0, 0);
+comp_76=  float3 eye = float3(2.5, 0, 0);
+comp_77=
+comp_78=  float3 ray = normalize(float3(R2D, 1));
+comp_79=
+comp_80=  float d = march(uv,eye, ray, 128, T);
+comp_81=  if (d > 0.) {
+comp_82=    float3 p = eye + ray * d;
+comp_83=    float3 n = normal(p, T);
+comp_84=    float3 lo = float3(0, 2, -3);
+comp_85=    float diffuse = max(0., dot(normalize(lo - p), n));
+comp_86=    color = float3(10., 10., 10.) / p.z  * diffuse;
+comp_87=  }
+comp_88=
+comp_89=  #ifdef bass_smooth
+comp_90=    float fac = (int)vis_version > 2 ? 0.4*vis_intensity+vis_shift : (0.4 * clamp((int)vis_version == 1 ? bass_smooth : bass_att,0.3,1.7))*vis_intensity+vis_shift;
+comp_91=  #else
+comp_92=    float fac = 0.4 * clamp(bass_att,0.97,1.03);
+comp_93=  #endif
+comp_94=
+comp_95=  float3 col = fac+.5*cos(time+uv.xyx+float3(0,2,4));
+comp_96=
+comp_97=  fragColor = float4(color * col,1.0);
+comp_98=  ret = fragColor;
+comp_99=}

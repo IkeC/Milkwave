@@ -4,11 +4,11 @@ Welcome to the Milkwave manual! This document will help you get started with the
 
 In general, make sure to hover the mouse over all labels and buttons to see some inline help tooltips describing most of the features and displaying keyboard shortcuts.
 
-If you need help with the Visualizer itself, press F1 there to see the on-screen help pages. Also take a look at the documentation in the _resources/docs_ folder.
+If you need help with the Visualizer itself, press F1 there to cycle through the three on-screen help pages. The font is fitted automatically so every page stays fully visible in both windowed and fullscreen mode. Also take a look at the documentation in the _resources/docs_ folder.
 
 # Interface
 
-The Tabs panel (top half) holds most features available in the Remote, described in detail below. You can show or hide any of the tabs by setting the corresponding _ShowTab_ key in the _Milkwave_ section of _settings.ini_ (_ShowTabPreset_, _ShowTabMessage_, _ShowTabInOut_, _ShowTabSettings_, _ShowTabLyrics_, _ShowTabFonts_, _ShowTabMidi_, _ShowTabWave_ and _ShowTabShader_; all are on by default except the Shader tab).
+The Tabs panel (top half) holds most features available in the Remote, described in detail below. You can show or hide any of the tabs by setting the corresponding _ShowTab_ key in the _Milkwave_ section of _settings.ini_ (_ShowTabPreset_, _ShowTabMessage_, _ShowTabInOut_, _ShowTabSettings_, _ShowTabLyrics_, _ShowTabFonts_, _ShowTabMidi_, _ShowTabWave_ and _ShowTabShader_; all are on by default except the Shader tab). The same can be done from the "Show/Hide Tabs" submenu of the "Milkwave" menu in the bottom right corner, which toggles each tab individually and writes the setting to _settings.ini_.
 
 The Buttons panel (bottom half) has two modes: "Command" mode and "Preset" mode. You can switch between modes using the blue arrows button in the lower right corner.
 
@@ -16,11 +16,15 @@ The Buttons panel (bottom half) has two modes: "Command" mode and "Preset" mode.
 
 Press K in Visualizer or the button "Sprite/Msg Mode" to change modes. When Visualizer is in message mode, the Remote panel buttons will be labeled 00-99. The button tooltip will show what message will be sent (if a matching definition is defined in _messages.ini_).
 
+The 15 command buttons can be fully customized. The easiest way is to assign functions directly in the Remote: middle-click or Ctrl+left-click a command button to open a menu of ready-made Visualizer functions (Window, Display, Presets, Track, Sprites & Messages, Wave & Warp, Shader) covering the shortcuts from the Visualizer's F1 help. Picking one sets that button's caption and command and saves both to _settings.ini_ right away. Ctrl+right-click opens the same menu for the button's right-click function; its last entry, "Clear Function", removes that right-click function again.
+
+You can also edit the **[Buttons]** section of _settings.ini_ by hand (restart the Remote afterwards). Each button has one line `Button<number>=<caption>|<command>`, and the optional `Button<number>RightClick=<caption>|<command>` defines the right-click command, with its caption shown in the tooltip as "Right-Click: <caption>" (no right-click command means no tooltip). Set either key to `none` to disable it, and use `\n` in a caption for a line break. `<number>` is the button position (1-15) in reading order - Button1 is "Next Preset", Button15 is "Desktop Mode". The `<command>` is the raw message sent to the Visualizer through the named pipe: `SEND=0x20` sends a virtual key by hex key code, any other `SEND=<text>` (e.g. `SEND=~`) sends the text as keystrokes, and `SIGNAL|<name>` triggers a signal such as `SIGNAL|FULLSCREEN`, `SIGNAL|DESKTOP_MODE` or `SIGNAL|BORDERLESS_FS`. For example: `Button1=Next Preset\n(Space)|SEND=0x20` or `Button11RightClick=Borderless Fullscreen|SIGNAL|BORDERLESS_FS`. Only Button11 (Fullscreen, right-click "Borderless Fullscreen") and Button13 (Clear Sprite/Msg, right-click "Clear all Sprites") come with a right-click command, and missing keys are filled in with their defaults.
+
 **Preset mode** allows you to assign the currently running preset to a button by right-clicking it. After assignmwent, the button will display a preview image of the preset. Left-clicking the button will start the preset in Visualizer, a middle-click will clear it. You can use blue numbered button in the lower right to switch between 3 banks of preset buttons, giving you a total of 45 assignable preset buttons. You can also press each of these buttons from script or MIDI using the command "BTN=<number>" (see _script-default.txt_ for details).
 
-Note that you can choose to hide either the Tabs or the Button panel with the popup menu that opens by clicking "Milkwave" in the bottom right corner. You may also use the menu to access help resources, open the Visualizer window, switch between light and dark mode, and toggle color or monochrome button image display.
+Note that you can choose to hide either the Tabs or the Button panel with the popup menu that opens by clicking "Milkwave" in the bottom right corner ("Tabs Panel" and "Button Panel"). The "Show/Hide Tabs" submenu of the same menu turns single tabs on or off. You may also use the menu to access help resources, open the Visualizer window, switch between light and dark mode, and toggle color or monochrome button image display.
 
-At the bottom, you can left-click the status bar to copy its content to the clipboard, middle-click to set a "compact" mode, or right-click to quickly switch between tabs and button panel. You can set the "compact" mode size in _settings-remote.json_ using the key _RemoteWindowCompactSize_.
+At the bottom, you can left-click the status bar to copy its content to the clipboard, middle-click to toggle "compact" mode, or right-click to quickly switch between tabs and button panel. The Remote saves separate window sizes for normal and compact mode in _settings-remote.json_ and restores the size for the selected mode when it starts.
 
 CPU and GPU usage are displayed at the bottom right if enabled. Click the "Milkwave" button at the bottom right to expand a menu providing quick access to additional application settings and information resources.
 
@@ -28,13 +32,23 @@ CPU and GPU usage are displayed at the bottom right if enabled. Click the "Milkw
 
 Send a preset from the drop-down list to display in the Visualizer using "Send". The list will show the presets from _presets/Milkwave_ by default. You can fill the list using the buttons "Tags", "File" and "Dir".
 
+**Transition** selects the blend pattern used for preset changes. **Random** lets the Visualizer choose a pattern; the fixed entries correspond to `Mixtype` 0-20 in _settings.ini_. Pressing T in the Visualizer cycles through the same list, shows a notification, and updates the Remote.
+
 The currently playing Visualizer preset is displayed after the "Running" label. After "Tags" you can supply your own set of tags describing the current preset, separated by comma. If "Running" is checked, the tags are loaded (and saved to) the currently running preset, if it is unchecked the preset from the drop-down list in the first line is used. Click "Save" to save the tag information to tags-remote.json.
 
 Your most used tags are displayed as buttons automatically after the "Most used" label. Note that you may delete the file _tags-remote.json_ anytime if you want to start from scratch.
 
-At the bottom, the "Preset" row controls when and how presets change. "Random" toggles between random and sequential preset order (same as pressing "R" in the Visualizer). "Locked" freezes the current preset (same as pressing "~" in the Visualizer) so that nothing changes it automatically; the preset starts unlocked (settings.ini:bPresetLockOnAtStartup), and while it is locked both "Song" and "After" are disabled. "Song" changes the preset whenever the played track changes (same as pressing Ctrl+A in the Visualizer, settings.ini:ChangePresetWithSong); it replaces the "After" interval, so while "Song" is enabled presets follow the song only and the "After" number box is disabled. "After" is the number of seconds until the next preset change (settings.ini:fTimeBetweenPresets); note that the blending time and a random extra are added to determine the actual duration (settings.ini:fBlendTimeAuto and fTimeBetweenPresetsRand). The "Display" toggles control what is shown for the currently playing track: "Track" displays the song info (same as pressing Ctrl+B in the Visualizer, settings.ini:SongInfoPollingEnabled), and "Cover" displays the cover art whenever the song changes (same as pressing Ctrl+C in the Visualizer, settings.ini:DisplayCover).
+At the bottom, the "Preset" row controls when and how presets change. "Random" toggles between random and sequential preset order (same as pressing "R" in the Visualizer). "Locked" freezes the current preset (same as pressing "~" in the Visualizer) so that nothing changes it automatically; the preset starts unlocked (settings.ini:bPresetLockOnAtStartup), and while it is locked both "Song" and "After" are disabled. "Song" changes the preset whenever the played track changes (same as pressing Ctrl+A in the Visualizer, settings.ini:ChangePresetWithSong); it replaces the "After" interval, so while "Song" is enabled presets follow the song only and the "After" number box is disabled. "After" is the number of seconds until the next preset change (settings.ini:fTimeBetweenPresets); note that the blending time and a random extra are added to determine the actual duration (settings.ini:fBlendTimeAuto and fTimeBetweenPresetsRand). 
+
+The "Display" toggles control what is shown when the track changes: "Track" displays the song info (same as pressing Ctrl+B in the Visualizer, settings.ini:SongInfoPollingEnabled), and "Cover" displays the cover art whenever the song changes (same as pressing Ctrl+C in the Visualizer, settings.ini:DisplayCover). Long artist, title, album or preset-name lines are truncated with an ellipsis so they stay on screen. "Preset" shows the preset info for 6.5 seconds by default on every preset change while the preset info is not shown permanently (same as pressing Ctrl+F4 in the Visualizer, settings.ini:PresetInfoOnChange and PresetInfoOnChangeSeconds). This toggle has no effect when preset info is shown permanently with F4.
 
 The Remote keeps these toggles in sync with the Visualizer, so changing them on either side updates the other. Controls that have no effect in the current state are disabled - hover them to see a tooltip explaining why.
+
+### Opening preset files from Windows
+
+If you associate _.milk_ (or _.milk2_) files with Milkwave Visualizer in Windows, opening a preset file displays it: the installer offers this on its last page ("Associate .milk files", enabled by default), and you can also set it yourself via Explorer's "Open with". When the Visualizer is not running it starts with that preset, and when it is already running the preset is loaded in the running instance instead of opening a second window. That window is restored from the taskbar and brought to the front (if Windows lets the new process pass the activation on, otherwise the taskbar button flashes). The file is loaded as-is, so your preset folder (_settings.ini:szPresetDir_) stays unchanged and the next automatic preset change continues in your own library. In Desktop Mode there is no window to raise, so only the preset changes.
+
+If Windows still opens presets in another program, or keeps asking "How do you want to open this file?", pick Milkwave Visualizer once via "Open with" - Windows keeps a per-file-type choice that overrides the installer's association until it is refreshed.
 
 ## Tab "Message"
 
@@ -104,6 +118,8 @@ To configure **MDropDX12** on the server side, start MDropDX12 and enable the TC
 
 To configure **Milkwave Visualizer** on the server side and see the server status, press Ctrl+N in the Visualizer. Alternatively, set `TcpEnabled=1` in the `[Network]` section of _settings.ini_. You may also specify a different port with `TcpPort` and a PIN (plain text) using `TcpPIN`.
 
+The wire protocol itself - framing, the `AUTH` handshake, every command and the state notifications - is documented in the [appendix](#appendix-milkwave-ipc-protocol-mip), together with example clients in PowerShell.
+
 ## Tab "Settings"
 
 Change the internal "Time", "FPS" and "Frame" values that the Visualizer sends to the preset. This may speed up, slow down or otherwise change the behaviour of the preset, depending on how the preset is built and how (or if) it uses any of these variables.
@@ -114,19 +130,29 @@ With "Hue", "Saturation" and "Brightness", you can change the overall color tone
 
 With the "Quality" setting, you can reduce the size of the backbuffer used for rendering, eg. a quality factor of 0.5 will render to an internal buffer with half the width and height of your Visualizer window. This will improve performance on slower systems, but will also reduce visual quality. A low quality may also yield in a pixellated look, giving a nice retro effect. Note that the quality setting will be ignored if "Fixed" Spout resolution is used.
 
+At reduced quality, messages, notifications, menus, song titles and lyrics are still drawn at the full window resolution in a separate screen overlay, so they stay sharp while the preset itself keeps the lower internal resolution. Spout output and screenshots contain the lower-resolution copy with the same text. Text and lyrics burn-in effects remain part of the preset and are not affected by the overlay.
+
 If you select "Auto", Milkwave tries to make the "perceived" Visualizer quality similar on different window sizes by adjusting the backbuffer size accordingly.
+
+"Invert" inverts the colors of the preset output while leaving the text overlays (song titles, messages, lyrics) unaffected — useful for light-on-dark environments. This is a global setting stored as _InvertPresetOutput_ in the _Milkwave_ section of _settings.ini_, independent of the per-preset "Invert" filter on the Wave tab.
+
+"Textborder" sets the outline thickness used for messages and notifications in the Visualizer (default 2, 0 turns the outline off). The outline color is configured directly in _settings.ini_ with the _TextBorderColorR/G/B_ keys in the _Milkwave_ section (black by default); the thickness itself is stored as _TextBorder_.
 
 Keep in mind that many settings can be automated using script commands in the _script-default.txt_ file or your own script files. See the comments in _script-default.txt_ for details. They can also be MIDI-controlled (see below).
 
 For [Spout](https://spout.zeal.co/), you can set the output to a "Fixed" resolution instead of the Visualizer window size. This may be useful if you want to use Milkwave as a source for other applications that expect a certain resolution. The Visualizer window will then use the fixed backbuffer size and aspect ratio for display.
 
-"Compile" allows you to precompile the shaders defined in _precompile.txt_. This will usually take 2-3 minutes and happen in the background. You may also "Clear" the cache, which will simply remove all files from the _cache_ folder. This may be useful if you want to reset all shaders to be recompiled, eg. after a Milkwave update.
+"Compile" allows you to precompile the shaders defined in _precompile.txt_. This will usually take 3-5 minutes and happen in the background. You may also "Clear" the cache, which will simply remove all files from the _cache_ folder. This may be useful if you want to reset all shaders to be recompiled, eg. after a Milkwave update. If you switch to a shader preset that is not cached yet, the current preset keeps playing while it compiles in the background. If compilation takes longer than one second, a "Compiling <name>" notification shows the preset being prepared.
 
 With FFT you may control equalizer attack and decay values for presets supporting FFT functions *get_fft(pos)* and *get_fft_hz(freq)*, such as _IkeC - Equalizer.milk_ from the _Milkwave_ presets folder. *get_fft_peak_hz(freq)* is exclusive to Milkwave.
+
+The "Test" button next to "Audio" plays the simulated band sequence from _audio-test.txt_ instead of the captured audio. Each line of the file contains a hold time and relative bass, mid and treble levels (1.0 = track average); lines starting with # are comments. The Visualizer shows the active values in a notification and synthesises a matching waveform and FFT spectrum, so shader, wave-based and FFT-based presets react. Click "Stop" to return to live audio. This is useful for checking whether a preset reacts as intended without playing music, and it is the interactive counterpart to the preset-conversion audio checks.
 
 ## Tab "Lyrics"
 
 The Lyrics tab controls the synchronized lyrics overlay that the Visualizer draws on top of the visual output, and that is also included in the Spout sender. When "Auto" is active, Milkwave looks up the lyrics for the currently playing track automatically (eg. from [LRCLIB](https://lrclib.net)) and caches them locally; otherwise you can load a lyrics file manually.
+
+The "Outline/Background" selector styles the lyrics text: "Text Outline" (the default, thickness 3) draws an outline around the text; "Background (25%)", "Background (50%)" and "Background (75%)" draw a box behind it at 25%, 50% or 75% opacity; "Background (solid)" draws a fully opaque box; and "No Outline/Background" keeps the plain look. The color panel sets the outline/box color, and the amount field controls the outline thickness or box padding. A box uses at least 8 pixels on the left and right (the amount itself once it is larger), plus the amount above and below the text, so the border stays balanced without becoming excessive (0 means the box ends exactly at the text). The values are stored in _settings.ini_ as _LyricsOutline_, _LyricsOutlineAmount_ and _LyricsOutlineColorR/G/B_.
 
 The "Status" field shows the current lyrics state ("Lyrics off", "Lyrics loading", "Lyrics loaded", "Lyrics missing timestamps" or "Lyrics unavailable"). "Active" turns the lyrics overlay on or off (settings.ini:LyricsEnabled), and "Auto" toggles the automatic lookup of lyrics for the current track (settings.ini:LyricsAutoLoad).
 
@@ -134,7 +160,7 @@ The "File" field shows the lyrics file in use — only the filename is displayed
 
 The "Font" row sets the font face, size, bold/italic/antialiasing options and the text color used for the lyrics.
 
-The two bottom rows control the layout and timing of the overlay. "Pos X"/"Pos Y" place the lyrics block on the canvas, while "Start X"/"Start Y" define where the lyrics move from while they fade in and out. "Zoom" scales the font at the fade extremes (1.0 means no scaling), and "Fade" sets the fade-in/out duration in seconds (settings.ini:LyricsFade). "Width" limits the maximum width of the lyrics block as a ratio of the canvas (settings.ini:LyricsMaxWidth); longer lines wrap at word boundaries.
+The two bottom rows control the layout and timing of the overlay. "Pos X"/"Pos Y" place the lyrics block on the canvas, while "Start X"/"Start Y" define where the lyrics move from while they fade in and out. Moving Pos X or Pos Y shifts the corresponding start position by the same amount, preserving the fade-in/out travel distance. Double-clicking the Pos label resets Pos X and Pos Y to 0.50 and both start positions to their defaults (0.50 / 0.52); double-clicking the Start label resets both start positions. "Zoom" scales the font at the fade extremes (1.0 means no scaling), and "Fade" sets the fade-in/out duration in seconds (settings.ini:LyricsFade). "Width" limits the maximum width of the lyrics block as a ratio of the canvas (settings.ini:LyricsMaxWidth); longer lines wrap at word boundaries.
 
 "Burntime" bakes the previous line into the background and lets it fade out over the given time in seconds (0 turns this off), similar to the burntime effect for messages. "Burnmode" selects when the burn-in is applied: 0 turns it off, 1 burns the leaving line when its fade-out starts, 2 bakes the current line as it fades in (the original behavior), and 3 only draws the burn-in without the crisp overlay (settings.ini:LyricsBurnTime / LyricsBurnType). "Offset" shifts the lyrics timestamps by the given number of seconds (settings.ini:LyricsOffsetSeconds), eg. to sync the lyrics with a delayed audio feed. The drop shadow is configured directly in _settings.ini_ with the _LyricsShadow_ key.
 
@@ -231,6 +257,16 @@ Here are some common terms that cannot be converted automatically and need to be
 | `int ix = i & 1` (bitwise) | `int ix = i % 2` |
 | `int yx = y >> 1` (bitwise) | `int yx = y / 2` |
 | `if (i==0) return` (asymetric returns) | Put subsequent code in else branch: `if (i==0) {...} else {...} return` |
+| `mul(a, b, c)` (three arguments) | Nest the calls: `mul(mul(a, b), c)` |
+| `line(...)` (function name) | `line` is a reserved HLSL word - rename it (e.g. `lineSeg`) |
+| Heavy loops with many function calls | The legacy compiler unrolls them and can take minutes or hang. Start the loop with `for (int i = min(frame,0); ...)` to keep it rolled, or reduce the iteration count |
+| `texture(iChannel0, p)` inside a loop | Very slow to compile (gradient instruction in a loop). Replace it with procedural noise or a hash |
+| `float3 arr[N];` filled at runtime | The legacy compiler rejects arrays assigned in a function (`X3017`). Use a helper with `if`/`else if` chains returning the values instead |
+| `float3 col = vec3(0.7,...)*someGlobal;` (global) | Global initializers must be literals (`X3011`). Initialize with a literal or assign the value at the start of `shader_body` |
+| `Foo f = Foo(a, b);` (struct) | Struct constructors are rejected (`X3037`) - use field assignment; `static` struct globals are also rejected (`X3017`), so store the fields in separate globals |
+| `if (myFloat4 != float4(0,0,0,0))` | The legacy compiler wants a scalar condition (`X3019`). Compare the components individually |
+| `const float x = otherVar + 1.;` (local) | The initializer must be a literal (`X3011`) - drop `const` (or inline the value) |
+| `for`-loop with a dynamic start (`min(frame,0)`) in a *small* loop | Can make the compiler give up (`X3511: loop does not appear to terminate`). Only use the trick for large/heavy loops |
 
 # Milkwave Visualizer specifics
 
@@ -255,7 +291,7 @@ float3 myColor = float3(sin(bass_smooth)+1, 0, 0);
 ```
 ## "vis_intensity", "vis_shift" and "vis_version" preset variables
 
-Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running. They can also be assigned to MIDI controls.
+Presets can use these variables to modify the intensity or other appearance aspects of a preset. The default values are 1.0 (float) for vis_intensity, 0.0 for vis_shift (float) and 1 for version (integer). Users can adjust these values live from the "Settings" tab in the Remote while the preset is running. They can also be assigned to MIDI controls. Press Ctrl+V in the Visualizer to cycle the version between 1, 2 and 3; the active version is shown as a notification, and Remote changes show the same notification.
 
 See the Shader presets included with Milkwave for examples that make use of these parameters.
 

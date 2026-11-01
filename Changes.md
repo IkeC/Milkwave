@@ -1,7 +1,34 @@
-## v4.2 (unreleased)
+## v4.2 (2026-11-01)
 
-* Remote: Preset change and info buttons with improved locking logic dependency
+* Visualizer
+  - 20 new audio-reactive Shader presets, each with three versions and mouse support, tagged with "42"
+  - Improved reading of audio buffer, reducing average audio latency by 0.15 s
+  - Improved Desktop Mode (Ctrl+F9) can cover all monitors, primary or current monitor (Shift+F9)
+  - Double-clicking a `.milk` file while Desktop Mode is active replaces the preset in the running instance (no second window)
+  - Taskbar right-click menu offers "Toggle Desktop Mode" and "Open Milkwave Remote"
+  - Taskbar thumbnail toolbar with buttons for previous/next preset, opacity and preset lock
+  - Album art in bottom corner (small, medium, large) or fullscreen, fading with the song title
+  - Flash info (Ctrl+Space) only shows the album cover while a track is playing, no leftover cover otherwise
+  - Flash preset info on preset change with configurable duration (Ctrl+F4)
+  - Lyrics lookup retries temporary LRCLIB failures (busy/rate limited)
+  - Lyrics keep the same size at every render quality setting
+  - Lyrics clear the line on screen when playback stops or pauses (only a playing track shows lyrics)
+  - `.milk` Windows file association support
+  - Messages, notifications, menus, song titles and lyrics stay sharp when preset render quality is lowered
+  - Uncompiled shader presets now compile in the background while the current preset keeps playing
+  - Updated projectm-eval to v1.0.8
 
+* Remote
+  - Bottom panel button functions assignable from context menu (middle-click or Ctrl+left-click; right-click functions via Ctrl+right-click)
+  - "Open Milkwave Remote" starts the Remote from the Visualizer's folder only (no instance from an unrelated Milkwave folder any more)
+  - "Textborder" setting outlines all messages and notifications with configurable color
+  - "Show/Hide Tabs" submenu in the "Milkwave" menu turns each tab on or off individually (saved as the ShowTab* keys in _settings.ini_)
+  - Lyrics text outline and background box options with configurable color
+  - Preset transition selector; T in the Visualizer cycles Random and the fixed transition types
+  - Preset change and info buttons with improved locking logic dependency
+  - "Audio" Test button plays the simulated band sequence from `audio-test.txt` and stops with live audio restored
+  - "Invert" preset output
+ 
 ## v4.1 (2026-09-10)
 
 * Lyrics support

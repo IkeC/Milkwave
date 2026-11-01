@@ -54,6 +54,7 @@
 # RAND: Toggle random preset order
 # LOCK: Toggle preset locking
 # PRESETINFO: Toggle preset info
+# PRESETINFOONCHANGE: Toggle showing preset info on preset change (Ctrl+F4)
 # SONGINFO: Toggle song info
 # SOUNDINFO: Toggle sound info
 # FULLSCREEN: Toggle fullscreen

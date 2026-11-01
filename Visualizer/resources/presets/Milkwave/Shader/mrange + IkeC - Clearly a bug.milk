@@ -8,81 +8,88 @@ comp_3=
 comp_4=#define tx sin(time)*0.5+1
 comp_5=
 comp_6=shader_body {
-comp_7=  float4 O = 0;
-comp_8=  // CONV: Center on screen, then try some aspect correction
-comp_9=  uv = (uv*2) - 1;
-comp_10=  uv *= aspect.xy;
-comp_11=  
-comp_12=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_13=  uv = float2(uv.x, -uv.y);
-comp_14=
-comp_15=  uv.y-=0.4;
-comp_16=  float2 C = uv;
-comp_17=  C.y+=0.18;  
-comp_18=
-comp_19=  // contraction
-comp_20=  #ifdef bass_smooth
-comp_21=    float fac = (int)vis_version > 2 ? 0.1*vis_intensity+vis_shift : (smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.3)*vis_intensity+vis_shift;
-comp_22=  #else
-comp_23=    float fac = smoothstep(0,2,bass_att)*0.1;
-comp_24=  #endif
-comp_25=  
-comp_26=  float
-comp_27=  i
-comp_28=  // Loop counter (starts at 0)
-comp_29=  , d
-comp_30=  // Distance to nearest surface
-comp_31=  , z = frac(dot(C,sin(C)))-.5
-comp_32=  // Ray distance + noise for anti-banding
-comp_33=  ;
-comp_34=  float4
-comp_35=  o
-comp_36=  // Accumulated color/lighting
-comp_37=  , p
-comp_38=  // Current 3D position along ray
-comp_39=  ;
-comp_40=  for(
-comp_41=  float2 r = uv.xy
-comp_42=  // Screen resolution
-comp_43=  ; ++i < 77.
-comp_44=  ; z -= .6*d
-comp_45=  // Step forward (larger steps when far from surfaces)
-comp_46=  )
-comp_47=  // Convert 2D pixel to 3D ray direction
-comp_48=  p = float4(z*normalize(float3(C-.5*r,r.y)),.1*time)
-comp_49=
-comp_50=  // Move through 3D space over time
-comp_51=  , p.z += time
-comp_52=
-comp_53=  // Save position for lighting calculations
-comp_54=  , O = p
-comp_55=
-comp_56=  // Apply rotation matrices to create fractal patterns
-comp_57=  // (These transform the 3D coordinates in interesting ways)
-comp_58=  , p.xy = mul(p.xy, transpose(float2x2(cos(2.+O.z+float4(fac,11,33,0)))))
+comp_7=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_8=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_9=  // untouched frame stays byte-identical.
+comp_10=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_11=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_12=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_13=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_14=  float4 O = 0;
+comp_15=  // CONV: Center on screen, then try some aspect correction
+comp_16=  uv = (uv*2) - 1;
+comp_17=  uv *= aspect.xy;
+comp_18=  
+comp_19=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_20=  uv = float2(uv.x, -uv.y);
+comp_21=
+comp_22=  uv.y-=0.4;
+comp_23=  float2 C = uv;
+comp_24=  C.y+=0.18;  
+comp_25=
+comp_26=  // contraction
+comp_27=  #ifdef bass_smooth
+comp_28=    float fac = (int)vis_version > 2 ? 0.1*vis_intensity+vis_shift : (smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.3)*vis_intensity+vis_shift;
+comp_29=  #else
+comp_30=    float fac = smoothstep(0,2,bass_att)*0.1;
+comp_31=  #endif
+comp_32=  
+comp_33=  float
+comp_34=  i
+comp_35=  // Loop counter (starts at 0)
+comp_36=  , d
+comp_37=  // Distance to nearest surface
+comp_38=  , z = frac(dot(C,sin(C)))-.5
+comp_39=  // Ray distance + noise for anti-banding
+comp_40=  ;
+comp_41=  float4
+comp_42=  o
+comp_43=  // Accumulated color/lighting
+comp_44=  , p
+comp_45=  // Current 3D position along ray
+comp_46=  ;
+comp_47=  for(
+comp_48=  float2 r = uv.xy
+comp_49=  // Screen resolution
+comp_50=  ; ++i < 77.
+comp_51=  ; z -= .6*d
+comp_52=  // Step forward (larger steps when far from surfaces)
+comp_53=  )
+comp_54=  // Convert 2D pixel to 3D ray direction
+comp_55=  p = float4(z*normalize(float3(C-.5*r,r.y)),.1*time)
+comp_56=
+comp_57=  // Move through 3D space over time
+comp_58=  , p.z += time
 comp_59=
-comp_60=  // This was originally a bug in the matrix calculation
-comp_61=  // The incorrect transformation created an unexpectedly interesting pattern
-comp_62=  // Bob Ross would call this a "happy little accident"
-comp_63=  , p.xy = mul(p.xy, transpose(float2x2(cos(O+float4(0,11,33,0)))))
-comp_64=
-comp_65=  // Calculate color based on position and space distortion
-comp_66=  // The sin() creates a nice looking palette, division by dot() creates falloff
-comp_67=  , O = (1+sin(.5*O.z+length(p-O)+float4(0,4,3,6)))
-comp_68=  / (.5+2.*dot(O.xy,O.xy))
-comp_69=
-comp_70=  // Domain repetition, repeats the single line and the 2 planes infinitely
-comp_71=  , p = abs(frac(p)-.5)
-comp_72=
-comp_73=  // Calculate distance to nearest surface
-comp_74=  // This combines a cylinder (length(p.xy)-.125) with 2 planesbox (min(p.x,p.y))
-comp_75=  , d = abs(min(length(p.xy)-.125,min(p.x,p.y)+1e-3))+1e-3
+comp_60=  // Save position for lighting calculations
+comp_61=  , O = p
+comp_62=
+comp_63=  // Apply rotation matrices to create fractal patterns
+comp_64=  // (These transform the 3D coordinates in interesting ways)
+comp_65=  , p.xy = mul(p.xy, transpose(float2x2(cos(2.+O.z+float4(fac,11,33,0)))))
+comp_66=
+comp_67=  // This was originally a bug in the matrix calculation
+comp_68=  // The incorrect transformation created an unexpectedly interesting pattern
+comp_69=  // Bob Ross would call this a "happy little accident"
+comp_70=  , p.xy = mul(p.xy, transpose(float2x2(cos(O+float4(0,11,33,0)))))
+comp_71=
+comp_72=  // Calculate color based on position and space distortion
+comp_73=  // The sin() creates a nice looking palette, division by dot() creates falloff
+comp_74=  , O = (1+sin(.5*O.z+length(p-O)+float4(0,4,3,6)))
+comp_75=  / (.5+2.*dot(O.xy,O.xy))
 comp_76=
-comp_77=  // Add lighting contribution (brighter when closer to surfaces)
-comp_78=  , o += O.w/d*O
-comp_79=  ;
-comp_80=
-comp_81=  // tanh() compresses the accumulated brightness to 0-1 range
-comp_82=  // (Like HDR tone mapping in photography)
-comp_83=  ret = tanh(o/2e4);
-comp_84=}
+comp_77=  // Domain repetition, repeats the single line and the 2 planes infinitely
+comp_78=  , p = abs(frac(p)-.5)
+comp_79=
+comp_80=  // Calculate distance to nearest surface
+comp_81=  // This combines a cylinder (length(p.xy)-.125) with 2 planesbox (min(p.x,p.y))
+comp_82=  , d = abs(min(length(p.xy)-.125,min(p.x,p.y)+1e-3))+1e-3
+comp_83=
+comp_84=  // Add lighting contribution (brighter when closer to surfaces)
+comp_85=  , o += O.w/d*O
+comp_86=  ;
+comp_87=
+comp_88=  // tanh() compresses the accumulated brightness to 0-1 range
+comp_89=  // (Like HDR tone mapping in photography)
+comp_90=  ret = tanh(o/2e4);
+comp_91=}

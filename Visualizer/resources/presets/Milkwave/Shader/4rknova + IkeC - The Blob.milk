@@ -57,31 +57,36 @@ comp_52=  return cc;
 comp_53=}
 comp_54=
 comp_55=shader_body {
-comp_56=  float4 fragColor = 0;
-comp_57=  float2 fragCoord  = uv;
-comp_58=  // CONV: Center on screen, then try some aspect correction
-comp_59=  uv = (uv*2) - 1;
-comp_60=  uv *= aspect.xy;
-comp_61=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_62=  uv = float2(uv.x, -uv.y);
-comp_63=
-comp_64=  // float2 uv = (fragCoord.xy / texsize.xy * 2. - 1.) * float2(texsize.x / texsize.y, 1) * 1.25;
-comp_65=
-comp_66=  float3 col = float3(0, 0, 0);
-comp_67=
-comp_68=  #ifdef AA
-comp_69=  // Antialiasing via supersampling
-comp_70=  float e = 1. / min(texsize.y , texsize.x);
-comp_71=  for (float i = -AA; i < AA; ++i) {
-comp_72=    for (float j = -AA; j < AA; ++j) {
-comp_73=      col += samplef(uv + float2(i, j) * (e/AA)) / (4.*AA*AA);
-comp_74=    }
-comp_75=
-comp_76=  }
-comp_77=
-comp_78=  #else
-comp_79=  col += samplef(uv);
-comp_80=  #endif /* AA */
-comp_81=
-comp_82=  ret = float4(clamp(col, 0., 1.), 1);
-comp_83=}
+comp_56=  // MOUSE: holding the right button tilts the scene, pointer X sets the angle. sin(0)=0 / cos(0)=1,
+comp_57=  // so the frame without a pressed button stays byte-identical.
+comp_58=  float mwTilt = (mouse.x - 0.5) * 0.5 * saturate(mouse.z);
+comp_59=  float mwTiltS = sin(mwTilt), mwTiltC = cos(mwTilt);
+comp_60=  uv = float2(uv.x * mwTiltC - uv.y * mwTiltS, uv.x * mwTiltS + uv.y * mwTiltC);
+comp_61=  float4 fragColor = 0;
+comp_62=  float2 fragCoord  = uv;
+comp_63=  // CONV: Center on screen, then try some aspect correction
+comp_64=  uv = (uv*2) - 1;
+comp_65=  uv *= aspect.xy;
+comp_66=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_67=  uv = float2(uv.x, -uv.y);
+comp_68=
+comp_69=  // float2 uv = (fragCoord.xy / texsize.xy * 2. - 1.) * float2(texsize.x / texsize.y, 1) * 1.25;
+comp_70=
+comp_71=  float3 col = float3(0, 0, 0);
+comp_72=
+comp_73=  #ifdef AA
+comp_74=  // Antialiasing via supersampling
+comp_75=  float e = 1. / min(texsize.y , texsize.x);
+comp_76=  for (float i = -AA; i < AA; ++i) {
+comp_77=    for (float j = -AA; j < AA; ++j) {
+comp_78=      col += samplef(uv + float2(i, j) * (e/AA)) / (4.*AA*AA);
+comp_79=    }
+comp_80=
+comp_81=  }
+comp_82=
+comp_83=  #else
+comp_84=  col += samplef(uv);
+comp_85=  #endif /* AA */
+comp_86=
+comp_87=  ret = float4(clamp(col, 0., 1.), 1);
+comp_88=}

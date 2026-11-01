@@ -36,14 +36,13 @@ void ToggleTransparency(HWND hwnd) {
   int width = rect.right - rect.left;
   int height = rect.bottom - rect.top;
 
-  LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-
-  // Enable the layered window attribute without affecting other styles
-  exStyle |= WS_EX_LAYERED;
-  SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
-
-  SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);  // Redraws the window to fix the transparency mode issue for Windows 7, 8 and 8.1.
   if (TranspaMode) {
+    // The colour key needs the layered style
+    LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+    exStyle |= WS_EX_LAYERED;
+    SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+
+    SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);  // Redraws the window to fix the transparency mode issue for Windows 7, 8 and 8.1.
     // Disable window transition animations while in transparent/color-key mode
     BOOL fDisable = TRUE;
     DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &fDisable, sizeof(fDisable));
@@ -54,50 +53,24 @@ void ToggleTransparency(HWND hwnd) {
     // Re-enable window transition animations when leaving transparent mode
     BOOL fDisable = FALSE;
     DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &fDisable, sizeof(fDisable));
-    SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 255, LWA_ALPHA);
+    // Leaving the colour key applies the current opacity again, which also drops the
+    // layered style when the window does not need it any more (100% opacity, no
+    // click-through) - otherwise the window would stay blended with the desktop.
+    g_plugin.ApplyWindowOpacity(hwnd, g_plugin.fOpacity);
     DragAcceptFiles(hwnd, TRUE);
   }
 }
 
 void CPlugin::SetOpacity(HWND hwnd) {
-  if (IsBorderlessFullscreen(hwnd)) {
+  // While a special window mode is active, remember the value for that mode
+  // instead of the normal window opacity.
+  if (g_plugin.m_bDesktopMode) {
+    g_plugin.m_WindowDesktopModeOpacity = fOpacity;
+  } else if (IsBorderlessFullscreen(hwnd)) {
     g_plugin.m_WindowWatermarkModeOpacity = fOpacity;
   }
 
-  // Retrieve the current extended window style
-  LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-
-  // Check if the window is currently in clickthrough mode
-  bool isClickthrough = (exStyle & WS_EX_TRANSPARENT) != 0;
-
-  // Ensure the window is layered (required for transparency)
-  if (!(exStyle & WS_EX_LAYERED)) {
-    exStyle |= WS_EX_LAYERED;
-    SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
-  }
-
-  // Set the new opacity
-  BYTE alpha = static_cast<BYTE>(fOpacity * 255);  // Convert opacity (0.0 to 1.0) to alpha (0 to 255)
-  if (!SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)) {
-    DWORD error = GetLastError();
-    printf("Failed to set window opacity. Error: %lu\n", error);
-  }
-
-  // Modify the clickthrough state
-  if (isClickthrough) {
-    exStyle |= WS_EX_TRANSPARENT;
-  } else {
-    exStyle &= ~WS_EX_TRANSPARENT;
-  }
-
-  // Reapply the extended window styles
-  SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
-
-  // Reapply the alpha value after modifying the extended styles
-  if (!SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)) {
-    DWORD error = GetLastError();
-    printf("Failed to reapply window opacity. Error: %lu\n", error);
-  }
+  ApplyWindowOpacity(hwnd, fOpacity);
 
   int display = static_cast<int>(std::ceil(100 * fOpacity));
   wchar_t buf[1024];
@@ -105,6 +78,41 @@ void CPlugin::SetOpacity(HWND hwnd) {
   g_plugin.AddNotification(buf);
 
   SendMessageToMilkwaveRemote((L"OPACITY=" + std::to_wstring(display)).c_str());
+}
+
+// True while the window still needs the layered style: an opacity below 100%, Transparency
+// Mode (colour key) or click-through. Without any of them the window is a plain opaque
+// window, which is also what makes leaving Desktop Mode/Watermark Mode look opaque again.
+static bool NeedsLayeredStyle(HWND hwnd, float opacity) {
+  // Desktop Mode always stays layered: the wallpaper showing through the preset is part
+  // of the look (and the mode switches the window to a WorkerW child).
+  if (opacity < 1.0f || TranspaMode || g_plugin.m_bDesktopMode) {
+    return true;
+  }
+
+  // Click-through only works on a layered window.
+  return (GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_TRANSPARENT) != 0;
+}
+
+void CPlugin::ApplyWindowOpacity(HWND hwnd, float opacity) {
+  const bool layered = (GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_LAYERED) != 0;
+  const bool needsLayered = NeedsLayeredStyle(hwnd, opacity);
+
+  if (needsLayered != layered) {
+    LONG_PTR exStyle = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+    exStyle = needsLayered ? (exStyle | WS_EX_LAYERED) : (exStyle & ~WS_EX_LAYERED);
+    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, exStyle);
+    // The style change only reaches DWM after the frame has been updated.
+    SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+  }
+
+  if (!needsLayered) {
+    return;
+  }
+
+  BYTE alpha = static_cast<BYTE>(opacity * 255);
+  SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA);
 }
 
 void ToggleWindowOpacity(HWND hwnd, bool bDown) {
@@ -639,7 +647,19 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
         }
           return 0;  // we processed (or absorbed) the key
         case VK_F4:
-          m_bShowPresetInfo = !m_bShowPresetInfo;
+          if ((GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+            m_bPresetInfoOnChange = !m_bPresetInfoOnChange;
+            WritePrivateProfileIntW(m_bPresetInfoOnChange, L"PresetInfoOnChange", GetConfigIniFile(), L"Milkwave");
+            AddNotification(m_bPresetInfoOnChange ? L"Preset info on change enabled" : L"Preset info on change disabled");
+            SendSettingsInfoToMilkwaveRemote();
+          } else {
+            m_bShowPresetInfo = !m_bShowPresetInfo;
+            // Persist right away (like Ctrl+F4) so that reloading the config from the
+            // Remote (e.g. the Fonts tab's Save button) keeps the F4 state the user chose
+            // instead of restoring the value from the previous session.
+            WritePrivateProfileIntW(m_bShowPresetInfo, L"bShowPresetInfo", GetConfigIniFile(), L"Settings");
+            SendSettingsInfoToMilkwaveRemote();
+          }
           return 0;  // we processed (or absorbed) the key
         case VK_F5:
           m_bShowFPS = !m_bShowFPS;
@@ -698,12 +718,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
               case 'Q': {
                 if (bCtrlHeldDown) {
                   const float multiplier = bShiftHeldDown ? 2.0f : 0.5f;
-                  float newQuality = clamp(m_fRenderQuality * multiplier, 0.01f, 1.0f);
-                  if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
-                    m_fRenderQuality = newQuality;
-                    ResetBufferAndFonts();
-                    SendSettingsInfoToMilkwaveRemote();
-                  }
+                  SetRenderQuality(m_fRenderQuality * multiplier);  // notifies "Quality NN%"
                   return 0;
                 }
                 break;
@@ -1192,6 +1207,11 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           break;
 
         case VK_ESCAPE:
+          // A preset whose shaders are still being compiled can be aborted - the current
+          // preset keeps playing. Takes precedence over the close confirmation below.
+          if (m_UI_mode == UI_REGULAR && CancelPendingPresetLoad())
+            return 0;  // we processed (or absorbed) the key
+
           if (m_UI_mode == UI_LOAD || m_UI_mode == UI_MENU || m_UI_mode == UI_MASHUP) {
             m_UI_mode = UI_REGULAR;
             return 0;  // we processed (or absorbed) the key
@@ -1337,6 +1357,10 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           break;
         case 'V':
           if (m_UI_mode == UI_REGULAR) {
+            if (bCtrlHeldDown) {
+              CycleVisVersion();
+              return 0;
+            }
             AddError(L"Next", m_MediaKeyNotifyTime, ERR_NOTIFY, false);
             keybd_event(VK_MEDIA_NEXT_TRACK, 0, 0, 0);
             keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_KEYUP, 0);
@@ -1349,6 +1373,14 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
           break;
 
         case VK_SPACE:
+          // Ctrl+Space mirrors the middle mouse button: re-poll the current track info (and
+          // album cover) and flash the preset info, so it answers "which song / preset is this".
+          if ((GetKeyState(VK_CONTROL) & mask) != 0) {
+            if (milkwave)
+              milkwave->doPollExplicit = true;
+            FlashPresetInfo();
+            return 0;  // we processed (or absorbed) the key
+          }
           if (m_UI_mode == UI_LOAD)
             goto HitEnterFromLoadMenu;
           if (!m_bPresetLockedByCode) {
@@ -1415,7 +1447,7 @@ LRESULT CPlugin::MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lP
             } else if (m_nNumericInputMode == NUMERIC_INPUT_MODE_SPRITE) {
               // kill newest sprite (regular DELETE key)
               // oldest sprite (SHIFT + DELETE),
-              // or all sprites (CTRL + SHIFT + DELETE).
+              // or all sprites (SHIFT + CTRL + DELETE).
 
               m_nNumericInputDigits = 0;
               m_nNumericInputNum = 0;
@@ -1679,6 +1711,7 @@ int CPlugin::ToggleSpout() {
 }
 
 int CPlugin::SetSpoutFixedSize(bool toggleSwitch, bool showNotifications) {
+  ResetFullResTextOverlay();
   bSpoutChanged = true;  // write config on exit
   if (toggleSwitch) {
     bSpoutFixedSize = !bSpoutFixedSize;
@@ -1721,6 +1754,34 @@ int CPlugin::SetSpoutFixedSize(bool toggleSwitch, bool showNotifications) {
 }
 
 //----------------------------------------------------------------------
+
+void CPlugin::ApplyVisVersion(float version, bool notifyRemote) {
+  m_VisVersion = version;
+
+  wchar_t buf[64];
+  const int rounded = (int)(version + 0.5f);
+  if (fabsf(version - (float)rounded) < 0.001f)
+    swprintf(buf, 64, L"Version %d", rounded);
+  else
+    swprintf(buf, 64, L"Version %.2f", version);
+  AddNotification(buf);
+
+  if (notifyRemote) {
+    wchar_t message[64];
+    swprintf(message, 64, L"VERSION=%d", rounded);
+    SendMessageToMilkwaveRemote(message, true);
+  }
+}
+
+void CPlugin::CycleVisVersion() {
+  const int current = (int)floorf(m_VisVersion);
+  int next = 1;
+  if (current == 1)
+    next = 2;
+  else if (current == 2)
+    next = 3;
+  ApplyVisVersion((float)next, true);
+}
 
 int CPlugin::HandleRegularKey(WPARAM wParam) {
   // here we handle all the normal keys for milkdrop-
@@ -1790,12 +1851,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
           SendPresetWaveInfoToMilkwaveRemote();
         } else {
           const float multiplier = (wParam == 'q') ? 0.5f : 2.0f;
-          float newQuality = clamp(m_fRenderQuality * multiplier, 0.01f, 1.0f);
-          if (fabsf(newQuality - m_fRenderQuality) > 0.0001f) {
-            m_fRenderQuality = newQuality;
-            ResetBufferAndFonts();
-            SendSettingsInfoToMilkwaveRemote();
-          }
+          SetRenderQuality(m_fRenderQuality * multiplier);  // notifies "Quality NN%"
         }
         return 0;  // we processed (or absorbed) the key
       }
@@ -1863,7 +1919,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
       case 't':
       case 'T':
-        LaunchSongTitleAnim(-1);
+        CycleTransitionType();
         return 0;  // we processed (or absorbed) the key
       case 'o':
         m_pState->m_fWarpAmount /= 1.1f;
@@ -2077,17 +2133,7 @@ int CPlugin::HandleRegularKey(WPARAM wParam) {
 
       case '`':
       case '~':
-        m_bPresetLockedByUser = !m_bPresetLockedByUser;
-        if (m_bPresetLockedByUser) {
-          wchar_t buf[1024];
-          swprintf(buf, 1024, L"Preset locked");
-          AddNotification(buf);
-        } else {
-          wchar_t buf[1024];
-          swprintf(buf, 1024, L"Preset unlocked");
-          AddNotification(buf);
-        }
-        SendSettingsInfoToMilkwaveRemote();
+        TogglePresetLock();
         return 0;
 
       case 'l':  // LOAD PRESET

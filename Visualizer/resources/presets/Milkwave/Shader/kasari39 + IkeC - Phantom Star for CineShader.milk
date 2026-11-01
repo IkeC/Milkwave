@@ -55,45 +55,52 @@ comp_50=  return ifsBox(p1);
 comp_51=}
 comp_52=
 comp_53=shader_body {
-comp_54=  uv = (uv*2)-1;
-comp_55=  uv *= aspect.xy;
-comp_56=  uv = float2(uv.x, -uv.y);
-comp_57=
-comp_58=  // float2 p = (fragCoord.xy * 2.0 - uv.xy) / min(uv.x, uv.y);
-comp_59=  float2 p = uv;
-comp_60=
-comp_61=  float3 cPos = float3(0.0,0.0, -3.0 * time);
-comp_62=  // float3 cPos = float3(0.3*sin(time*0.8), 0.4*cos(time*0.3), -6.0 * time);
-comp_63=  float3 cDir = normalize(float3(0.0, 0.0, -1.0));
-comp_64=  
-comp_65=  float3 cUp  = float3(sin(time), 1.0, 0.0);
-comp_66=  float3 cSide = cross(cDir, cUp);
-comp_67=  float3 ray = normalize(cSide * p.x + cUp * p.y + cDir);
-comp_68=
-comp_69=  // Phantom Mode https://www.shadertoy.com/view/MtScWW by aiekick
-comp_70=  float acc = 0.0;
-comp_71=  float acc2 = 0.0;
-comp_72=  float t = 0.0;
-comp_73=  for (int i = 0; i < 99; i++) {
-comp_74=    float3 pos = cPos + ray * t;
-comp_75=    float dist = map(pos, cPos);
-comp_76=    dist = max(abs(dist), 0.02);
-comp_77=    float a = exp(-dist*3.0);
-comp_78=    if (mod_conv(length(pos)+24.0*time, 30.0) < 3.0) {
-comp_79=      a *= 2.0;
-comp_80=      acc2 += a;
-comp_81=    }
-comp_82=    acc += a;
-comp_83=    t += dist * 0.5;
-comp_84=  }
-comp_85=  
-comp_86=  #ifdef bass_smooth
-comp_87=    float fac = (int)vis_version > 2 ? 1+0.5*vis_intensity+vis_shift : 1+0.5*smoothstep((int)vis_version == 1 ? bass_smooth : bass_att,0,2);
-comp_88=  #else
-comp_89=    float fac = 1+0.5*smoothstep(bass_att,0,2);
-comp_90=  #endif
-comp_91=  
-comp_92=  float3 col = float3(fac * -0.05 + acc * 0.01, acc * 0.011 + acc2*0.002, fac * acc * 0.012+ acc2*0.005);
-comp_93=  float3 fragColor = float4(col, 1.0 - t * 0.03);
-comp_94=  ret = fragColor;
-comp_95=}
+comp_54=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_55=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_56=  // untouched frame stays byte-identical.
+comp_57=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_58=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_59=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_60=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_61=  uv = (uv*2)-1;
+comp_62=  uv *= aspect.xy;
+comp_63=  uv = float2(uv.x, -uv.y);
+comp_64=
+comp_65=  // float2 p = (fragCoord.xy * 2.0 - uv.xy) / min(uv.x, uv.y);
+comp_66=  float2 p = uv;
+comp_67=
+comp_68=  float3 cPos = float3(0.0,0.0, -3.0 * time);
+comp_69=  // float3 cPos = float3(0.3*sin(time*0.8), 0.4*cos(time*0.3), -6.0 * time);
+comp_70=  float3 cDir = normalize(float3(0.0, 0.0, -1.0));
+comp_71=  
+comp_72=  float3 cUp  = float3(sin(time), 1.0, 0.0);
+comp_73=  float3 cSide = cross(cDir, cUp);
+comp_74=  float3 ray = normalize(cSide * p.x + cUp * p.y + cDir);
+comp_75=
+comp_76=  // Phantom Mode https://www.shadertoy.com/view/MtScWW by aiekick
+comp_77=  float acc = 0.0;
+comp_78=  float acc2 = 0.0;
+comp_79=  float t = 0.0;
+comp_80=  for (int i = 0; i < 99; i++) {
+comp_81=    float3 pos = cPos + ray * t;
+comp_82=    float dist = map(pos, cPos);
+comp_83=    dist = max(abs(dist), 0.02);
+comp_84=    float a = exp(-dist*3.0);
+comp_85=    if (mod_conv(length(pos)+24.0*time, 30.0) < 3.0) {
+comp_86=      a *= 2.0;
+comp_87=      acc2 += a;
+comp_88=    }
+comp_89=    acc += a;
+comp_90=    t += dist * 0.5;
+comp_91=  }
+comp_92=  
+comp_93=  #ifdef bass_smooth
+comp_94=    float fac = (int)vis_version > 2 ? 1+0.5*vis_intensity+vis_shift : 1+0.5*smoothstep((int)vis_version == 1 ? bass_smooth : bass_att,0,2);
+comp_95=  #else
+comp_96=    float fac = 1+0.5*smoothstep(bass_att,0,2);
+comp_97=  #endif
+comp_98=  
+comp_99=  float3 col = float3(fac * -0.05 + acc * 0.01, acc * 0.011 + acc2*0.002, fac * acc * 0.012+ acc2*0.005);
+comp_100=  float3 fragColor = float4(col, 1.0 - t * 0.03);
+comp_101=  ret = fragColor;
+comp_102=}

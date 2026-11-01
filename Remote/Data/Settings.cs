@@ -34,6 +34,14 @@ namespace MilkwaveRemote.Data {
     public decimal VisShift { get; set; } = 0.0M;
     public int VisVersion { get; set; } = 1;
 
+    // Last values used on the Message tab
+    public string MessageText { get; set; } = "Hi from Milkwave Remote!";
+    public string MessageFont { get; set; } = "Segoe UI";
+    public decimal MessageFontSize { get; set; } = 25M;
+    public string MessageColor { get; set; } = "";
+    public decimal MessageBPM { get; set; } = 120M;
+    public decimal MessageBeats { get; set; } = 8M;
+
     public bool MidiEnabled { get; set; } = true;
     public int MidiBufferDelay { get; set; } = 30;
 

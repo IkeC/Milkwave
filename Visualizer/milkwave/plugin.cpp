@@ -596,6 +596,7 @@ SPOUT :
 */
 
 #include "plugin.h"
+#include "plugin_internals.h"
 #include "../audio/audiobuf.h"
 #include "pipe_server.h"
 #include "utility.h"
@@ -1238,6 +1239,7 @@ void OnUserEditedCompShaders(LPARAM param1, LPARAM param2) {
 //   @ 640x480 and using the default help screen font.
 wchar_t* g_szHelp = 0;
 wchar_t* g_szHelp_Page2 = 0;
+wchar_t* g_szHelp_Page3 = 0;
 int g_szHelp_W = 0;
 
 // this is for integrating modern skins (with their Random button)
@@ -1418,8 +1420,27 @@ void CPlugin::SendSettingsInfoToMilkwaveRemote() {
   m_lastSentLyricsLine = lyricsLine;
   m_lastSentLyricsFile = lyricsFile;
 
-  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0") + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0") + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth) + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight) + L"|QUALITY=" + std::to_wstring(m_fRenderQuality) + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0") + L"|HUE=" + std::to_wstring(m_ColShiftHue) + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0") + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1") + L"|CHANGEWITHSONG=" + std::wstring(m_ChangePresetWithSong ? L"1" : L"0") + L"|DISPLAYCOVER=" + std::wstring(m_DisplayCover ? L"1" : L"0") + L"|SONGINFOPOLLING=" + std::wstring(m_SongInfoPollingEnabled ? L"1" : L"0") + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0") + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0") + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f)) + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f)) + L"|EQATTACK=" + std::to_wstring(m_fEQAttackGlobal) + L"|EQDECAY=" + std::to_wstring(m_fEQDecayGlobal) + L"|EQBOOST=" + std::to_wstring(m_fEQBoostGlobal) + L"|LYRICSACTIVE=" + std::wstring(m_lyricsDisplayEnabled ? L"1" : L"0") + L"|LYRICSAUTO=" + std::wstring(m_bLyricsAutoLoad ? L"1" : L"0") + L"|LYRICSSTATUS=" + lyricsStatus + L"|LYRICSLINE=" + lyricsLine + L"|LYRICSFILE=" + lyricsFile + L"|LYRICSFONT=" + lyricsFont + L"|LYRICSFONTSIZE=" + std::to_wstring(m_lyricsFontSize) + L"|LYRICSFONTBOLD=" + std::wstring(m_lyricsFontBold ? L"1" : L"0") + L"|LYRICSFONTITALIC=" + std::wstring(m_lyricsFontItalic ? L"1" : L"0") + L"|LYRICSFONTAA=" + std::wstring(m_lyricsFontAA ? L"1" : L"0") + L"|LYRICSCOLORR=" + std::to_wstring(m_lyricsColorR) + L"|LYRICSCOLORG=" + std::to_wstring(m_lyricsColorG) + L"|LYRICSCOLORB=" + std::to_wstring(m_lyricsColorB) + L"|LYRICSPOSX=" + std::to_wstring(m_lyricsPositionX) + L"|LYRICSPOSY=" + std::to_wstring(m_lyricsPositionY) + L"|LYRICSSTARTX=" + std::to_wstring(m_lyricsStartX) + L"|LYRICSSTARTY=" + std::to_wstring(m_lyricsStartY) + L"|LYRICSZOOM=" + std::to_wstring(m_lyricsZoom) + L"|LYRICSFADE=" + std::to_wstring(m_lyricsFade) + L"|LYRICSOFFSET=" + std::to_wstring((float)m_lyricsOffsetMs / 1000.0f) + L"|LYRICSWIDTH=" + std::to_wstring(m_lyricsMaxWidth) + L"|LYRICSBURN=" + std::to_wstring(m_lyricsBurnTime) + L"|LYRICSBURNTYPE=" + std::to_wstring(m_lyricsBurnType) + L"|LYRICSSHADOW=" + std::to_wstring(m_lyricsShadow) + L"|LYRICSAUTOSCALE=" + std::wstring(m_lyricsAutoScale ? L"1" : L"0") + L"|SHOWTABPRESET=" + std::wstring(m_ShowTabPreset ? L"1" : L"0") + L"|SHOWTABMESSAGE=" + std::wstring(m_ShowTabMessage ? L"1" : L"0") + L"|SHOWTABINOUT=" + std::wstring(m_ShowTabInOut ? L"1" : L"0") + L"|SHOWTABSETTINGS=" + std::wstring(m_ShowTabSettings ? L"1" : L"0") + L"|SHOWTABLYRICS=" + std::wstring(m_ShowTabLyrics ? L"1" : L"0") + L"|SHOWTABFONTS=" + std::wstring(m_ShowTabFonts ? L"1" : L"0") + L"|SHOWTABMIDI=" + std::wstring(m_ShowTabMidi ? L"1" : L"0") + L"|SHOWTABWAVE=" + std::wstring(m_ShowTabWave ? L"1" : L"0") + L"|SHOWTABSHADER=" + std::wstring(m_ShowTabShader ? L"1" : L"0");
+  std::wstring msg = L"SETTINGS|ACTIVE=" + std::wstring(bSpoutOut ? L"1" : L"0") + L"|FIXEDSIZE=" + std::wstring(bSpoutFixedSize ? L"1" : L"0") + L"|FIXEDWIDTH=" + std::to_wstring(nSpoutFixedWidth) + L"|FIXEDHEIGHT=" + std::to_wstring(nSpoutFixedHeight) + L"|QUALITY=" + std::to_wstring(m_fRenderQuality) + L"|AUTO=" + std::wstring(bQualityAuto ? L"1" : L"0") + L"|HUE=" + std::to_wstring(m_ColShiftHue) + L"|LOCKED=" + std::wstring(m_bPresetLockedByUser ? L"1" : L"0") + L"|RANDOM=" + std::wstring(m_bSequentialPresetOrder ? L"0" : L"1") + L"|MIXTYPE=" + std::to_wstring(m_nMixType) + L"|CHANGEWITHSONG=" + std::wstring(m_ChangePresetWithSong ? L"1" : L"0") + L"|DISPLAYCOVER=" + std::wstring(m_DisplayCover ? L"1" : L"0") + L"|COVERSTYLE=" + std::to_wstring(m_CoverStyle) + L"|SONGINFOPOLLING=" + std::wstring(m_SongInfoPollingEnabled ? L"1" : L"0") + L"|PRESETINFOONCHANGE=" + std::wstring(m_bPresetInfoOnChange ? L"1" : L"0") + L"|PRESETINFO=" + std::wstring(m_bShowPresetInfo ? L"1" : L"0") + L"|INVERTPRESET=" + std::wstring(m_InvertPresetOutput ? L"1" : L"0") + L"|INPUTTOP=" + std::wstring(m_bInputMixOnTop ? L"1" : L"0") + L"|LUMAACTIVE=" + std::wstring(m_bInputMixLumaActive ? L"1" : L"0") + L"|LUMATHR=" + std::to_wstring((int)(m_fInputMixLumakeyThreshold * 100.0f)) + L"|LUMASOFT=" + std::to_wstring((int)(m_fInputMixLumakeySoftness * 100.0f)) + L"|EQATTACK=" + std::to_wstring(m_fEQAttackGlobal) + L"|EQDECAY=" + std::to_wstring(m_fEQDecayGlobal) + L"|EQBOOST=" + std::to_wstring(m_fEQBoostGlobal) + L"|LYRICSACTIVE=" + std::wstring(m_lyricsDisplayEnabled ? L"1" : L"0") + L"|LYRICSAUTO=" + std::wstring(m_bLyricsAutoLoad ? L"1" : L"0") + L"|LYRICSSTATUS=" + lyricsStatus + L"|LYRICSLINE=" + lyricsLine + L"|LYRICSFILE=" + lyricsFile + L"|LYRICSFONT=" + lyricsFont + L"|LYRICSFONTSIZE=" + std::to_wstring(m_lyricsFontSize) + L"|LYRICSFONTBOLD=" + std::wstring(m_lyricsFontBold ? L"1" : L"0") + L"|LYRICSFONTITALIC=" + std::wstring(m_lyricsFontItalic ? L"1" : L"0") + L"|LYRICSFONTAA=" + std::wstring(m_lyricsFontAA ? L"1" : L"0") + L"|LYRICSCOLORR=" + std::to_wstring(m_lyricsColorR) + L"|LYRICSCOLORG=" + std::to_wstring(m_lyricsColorG) + L"|LYRICSCOLORB=" + std::to_wstring(m_lyricsColorB) + L"|LYRICSPOSX=" + std::to_wstring(m_lyricsPositionX) + L"|LYRICSPOSY=" + std::to_wstring(m_lyricsPositionY) + L"|LYRICSSTARTX=" + std::to_wstring(m_lyricsStartX) + L"|LYRICSSTARTY=" + std::to_wstring(m_lyricsStartY) + L"|LYRICSZOOM=" + std::to_wstring(m_lyricsZoom) + L"|LYRICSFADE=" + std::to_wstring(m_lyricsFade) + L"|LYRICSOFFSET=" + std::to_wstring((float)m_lyricsOffsetMs / 1000.0f) + L"|LYRICSWIDTH=" + std::to_wstring(m_lyricsMaxWidth) + L"|LYRICSBURN=" + std::to_wstring(m_lyricsBurnTime) + L"|LYRICSBURNTYPE=" + std::to_wstring(m_lyricsBurnType) + L"|LYRICSSHADOW=" + std::to_wstring(m_lyricsShadow) + L"|LYRICSOUTLINE=" + std::to_wstring(m_lyricsOutlineMode) + L"|LYRICSOUTLINEAMOUNT=" + std::to_wstring(m_lyricsOutlineAmount) + L"|LYRICSOUTLINECOLORR=" + std::to_wstring(m_lyricsOutlineColorR) + L"|LYRICSOUTLINECOLORG=" + std::to_wstring(m_lyricsOutlineColorG) + L"|LYRICSOUTLINECOLORB=" + std::to_wstring(m_lyricsOutlineColorB) + L"|LYRICSAUTOSCALE=" + std::wstring(m_lyricsAutoScale ? L"1" : L"0") + L"|SHOWTABPRESET=" + std::wstring(m_ShowTabPreset ? L"1" : L"0") + L"|SHOWTABMESSAGE=" + std::wstring(m_ShowTabMessage ? L"1" : L"0") + L"|SHOWTABINOUT=" + std::wstring(m_ShowTabInOut ? L"1" : L"0") + L"|SHOWTABSETTINGS=" + std::wstring(m_ShowTabSettings ? L"1" : L"0") + L"|SHOWTABLYRICS=" + std::wstring(m_ShowTabLyrics ? L"1" : L"0") + L"|SHOWTABFONTS=" + std::wstring(m_ShowTabFonts ? L"1" : L"0") + L"|SHOWTABMIDI=" + std::wstring(m_ShowTabMidi ? L"1" : L"0") + L"|SHOWTABWAVE=" + std::wstring(m_ShowTabWave ? L"1" : L"0") + L"|SHOWTABSHADER=" + std::wstring(m_ShowTabShader ? L"1" : L"0") + L"|TEXTBORDER=" + std::to_wstring(m_textBorder) + L"|TEXTBORDERCOLORR=" + std::to_wstring(m_textBorderColorR) + L"|TEXTBORDERCOLORG=" + std::to_wstring(m_textBorderColorG) + L"|TEXTBORDERCOLORB=" + std::to_wstring(m_textBorderColorB) + L"|DESKTOMMONITORS=" + std::wstring(GetDesktopModeMonitorName(m_DesktopModeMonitor));
   SendMessageToMilkwaveRemote(msg.c_str(), true);
+}
+
+void CPlugin::SetRenderQuality(float newQuality, bool notify) {
+  const float clamped = clamp(newQuality, 0.01f, 1.0f);
+  if (fabsf(clamped - m_fRenderQuality) > 0.0001f) {
+    m_fRenderQuality = clamped;
+    ResetBufferAndFonts();
+    SendSettingsInfoToMilkwaveRemote();
+  }
+  if (notify)
+    NotifyRenderQuality();
+}
+
+void CPlugin::NotifyRenderQuality() {
+  // Show the quality setting (what the shortcut/slider changes, the same value the Remote shows);
+  // in auto mode the rendered resolution is derived from it and the window size.
+  wchar_t buf[64];
+  swprintf_s(buf, 64, bQualityAuto ? L"Quality %d%% (auto)" : L"Quality %d%%", (int)(m_fRenderQuality * 100.0f + 0.5f));
+  AddNotification(buf);
 }
 
 void CPlugin::CaptureScreenshot() {
@@ -1700,9 +1721,14 @@ bool CPlugin::LaunchSprite(int nSpriteNum, int nSlot) {
     }
   }
 
+  // The cover sprite fades in step with the song title animation, so sprite code can read its
+  // duration as "title_dur" (set before LoadTex runs the init code).
+  m_texmgr.m_fTitleDur = m_fSongTitleAnimDuration;
+  m_texmgr.m_fAspect = (GetHeight() > 0) ? (float)GetWidth() / (float)GetHeight() : 1.7778f;
+  m_texmgr.m_fCoverStyle = (float)m_CoverStyle;
+  m_texmgr.m_fTaskbar = GetDesktopModeBottomInset();
   int ret = m_texmgr.LoadTex(img, nSlot, initcode, code, GetTime(), GetFrame(), ck);
   m_texmgr.m_tex[nSlot].nUserData = nSpriteNum;
-
   wchar_t buf[1024];
   switch (ret & TEXMGR_ERROR_MASK) {
     case TEXMGR_ERR_SUCCESS:
@@ -2022,7 +2048,30 @@ void CPlugin::DoCustomSoundAnalysis() {
     // Applying sqrt(fi/refBin) gives +3 dB/octave slope so that a 1/f spectrum
     // (pink noise, typical of music) displays as a flat EQ response.
     const float kPinkRefBin = 1000.0f * (float)m_nFFTShaderBins / 22050.0f;
+    // Interactive audio test: replace get_fft()/get_fft_peak() with a band-shaped
+    // spectrum so FFT-driven presets react without real music. Plain AUDIO_TEST
+    // (used by the capture harness) keeps the analysed spectrum untouched.
+    const bool synthFft = m_bAudioTestOverride && m_bAudioTestWave;
+    const float synthBass = m_AudioTestBands[0];
+    const float synthMid = m_AudioTestBands[1];
+    const float synthTreb = m_AudioTestBands[2];
+    // Linear texture magnitude. get_fft() applies sqrt(), so 0.10 gives about
+    // 0.32 for an average (1.0) band level - roughly the bar height of normal
+    // music at the same FFT settings; avoid the old full-scale 0.75.
+    const float kSynthFftGain = 0.10f;
     for (int fi = 0; fi < m_nFFTShaderBins; fi++) {
+      if (synthFft) {
+        const float pos = (m_nFFTShaderBins > 1) ? (float)fi / (float)(m_nFFTShaderBins - 1) : 0.0f;
+        // 30-250 Hz, 250-4000 Hz and 4-20 kHz, with short cross-fades at the edges.
+        const float bassEnv = clamp((0.020f - pos) / 0.010f, 0.0f, 1.0f);
+        const float trebEnv = clamp((pos - 0.150f) / 0.070f, 0.0f, 1.0f);
+        const float midEnv = (1.0f - bassEnv) * (1.0f - trebEnv);
+        const float level = synthBass * bassEnv + synthMid * midEnv + synthTreb * trebEnv;
+        m_fFFTSmoothed[fi] = clamp(level * kSynthFftGain, 0.0f, 1.0f);
+        m_fFFTPeak[fi] = m_fFFTSmoothed[fi];
+        m_nFFTPeakHold[fi] = 0;
+        continue;
+      }
       float mono = (fShaderSpecLeft[fi] + fShaderSpecRight[fi]) * 0.5f;
       // Store linear magnitude in texture; sqrt() is applied in the shader.
       mono = mono * kScaleFactor;
@@ -2177,6 +2226,46 @@ void CPlugin::DoCustomSoundAnalysis() {
     // swprintf(buffer, 256, L"[%i] %5.2f %5.2f %5.2f %5.2f\n", i, mysound.imm[i], mysound.imm_rel[i], mysound.avg_rel[i], mysound.smooth[i]);
     // OutputDebugStringW(buffer);
   }
+
+  // Test hook (named pipe AUDIO_TEST=): replace the analysed bands with fixed relative
+  // levels so preset reactions can be verified silently and reproducibly.
+  if (m_bAudioTestOverride) {
+    for (i = 0; i < 3; i++) {
+      const float v = m_AudioTestBands[i];
+      mysound.imm[i] = mysound.avg[i] = mysound.long_avg[i] = v;
+      mysound.imm_rel[i] = mysound.avg_rel[i] = mysound.smooth[i] = mysound.smooth_rel[i] = v;
+      mysound.recent[i].clear();
+    }
+
+    // Wave-based presets draw the captured waveform, not the band uniforms. When the
+    // interactive test asks for it, substitute a deterministic band-weighted waveform
+    // so those presets react too. The plain AUDIO_TEST form used by the capture harness
+    // leaves the waveform alone, keeping shader captures byte-identical.
+    if (m_bAudioTestWave) {
+      const float b = m_AudioTestBands[0];
+      const float m = m_AudioTestBands[1];
+      const float t = m_AudioTestBands[2];
+      const float tm = (float)GetTime();
+      for (int s = 0; s < 576; s++) {
+        const float x = (float)s / 575.0f;
+        const float base = x * 6.2831853f;
+        const float lowL = sinf(base * 3.0f + tm * 1.9f);
+        const float midL = sinf(base * 9.0f + tm * 2.7f);
+        const float highL = sinf(base * 23.0f + tm * 3.7f);
+        const float lowR = sinf(base * 3.0f + tm * 1.9f + 0.35f);
+        const float midR = sinf(base * 9.0f + tm * 2.7f + 0.35f);
+        const float highR = sinf(base * 23.0f + tm * 3.7f + 0.70f);
+        float sampleL = (lowL * b * 0.55f + midL * m * 0.30f + highL * t * 0.15f) * 70.0f;
+        float sampleR = (lowR * b * 0.55f + midR * m * 0.30f + highR * t * 0.15f) * 70.0f;
+        sampleL = 127.0f * tanhf(sampleL / 127.0f);
+        sampleR = 127.0f * tanhf(sampleR / 127.0f);
+        mysound.fWave[0][s] = sampleL;
+        mysound.fWave[1][s] = sampleR;
+        m_sound.fWaveform[0][s] = sampleL;
+        m_sound.fWaveform[1][s] = sampleR;
+      }
+    }
+  }
 }
 
 void CPlugin::GetSongTitle(wchar_t* szSongTitle, int nSize) {
@@ -2218,29 +2307,204 @@ bool CPlugin::OpenSender(unsigned int width, unsigned int height) {
 
 }  // end OpenSender
 
-void CPlugin::OpenMilkwaveRemote() {
-  HWND hwnd = FindWindowW(NULL, L"Milkwave Remote");
-  if (hwnd) {
-    // Bring the window to the front
-    SetForegroundWindow(hwnd);
-    ShowWindow(hwnd, SW_RESTORE);
-  } else {
-    // Start the program "MilkwaveRemote.exe"
-    // Ensure STARTUPINFOW is used for CreateProcessW
-    STARTUPINFOW si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
+// Looks for MilkwaveRemote.exe next to the visualizer. Only explicit locations are searched:
+// CreateProcess with a bare file name would also look in the process' current directory and
+// %PATH%, which started the Remote of an unrelated Milkwave installation whenever the
+// visualizer was launched with a different "Start in" folder.
+bool MilkwaveRemoteFindExecutable(std::wstring& exePath) {
+  std::vector<std::wstring> candidates;
 
-    if (!CreateProcessW(L"MilkwaveRemote.exe", NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-      g_plugin.AddError(L"Could not start Milkwave Remote", 3.0f, ERR_MISC, false);
-    } else {
-      g_plugin.AddNotification(L"Starting Milkwave Remote");
-      CloseHandle(pi.hProcess);
-      CloseHandle(pi.hThread);
+  // Next to the running executable: that is the release folder, or the build output folder of a
+  // debug build.
+  wchar_t modulePath[MAX_PATH] = {0};
+  if (GetModuleFileNameW(nullptr, modulePath, MAX_PATH) != 0) {
+    std::wstring exeDir(modulePath);
+    const size_t separator = exeDir.find_last_of(L"\\/");
+    if (separator != std::wstring::npos) {
+      exeDir.resize(separator + 1);
+      candidates.push_back(exeDir + L"MilkwaveRemote.exe");
+      // Build output layout: ...\Visualizer\milkwave\Debug -> ...\Release
+      candidates.push_back(exeDir + L"..\\..\\..\\..\\Release\\MilkwaveRemote.exe");
     }
   }
+
+  // The plugin base directory (the debug build points it at the release folder).
+  if (g_plugin.m_szBaseDir[0] != L'\0') {
+    std::wstring baseDir(g_plugin.m_szBaseDir);
+    if (!baseDir.empty() && baseDir.back() != L'\\') {
+      baseDir.push_back(L'\\');
+    }
+    candidates.push_back(baseDir + L"MilkwaveRemote.exe");
+  }
+
+  for (const auto& candidate : candidates) {
+    if (GetFileAttributesW(candidate.c_str()) == INVALID_FILE_ATTRIBUTES) {
+      continue;
+    }
+    wchar_t fullPath[MAX_PATH] = {0};
+    if (GetFullPathNameW(candidate.c_str(), MAX_PATH, fullPath, nullptr) != 0) {
+      exePath = fullPath;
+    } else {
+      exePath = candidate;
+    }
+    return true;
+  }
+  return false;
+}
+
+namespace {
+
+struct RemoteWindowSearch {
+  const wchar_t* executableName;
+  HWND window;
+};
+
+BOOL CALLBACK FindRemoteWindowProc(HWND hwnd, LPARAM lParam) {
+  RemoteWindowSearch* search = reinterpret_cast<RemoteWindowSearch*>(lParam);
+  if (GetWindow(hwnd, GW_OWNER) != nullptr || !IsWindowVisible(hwnd)) {
+    return TRUE;
+  }
+
+  DWORD processId = 0;
+  GetWindowThreadProcessId(hwnd, &processId);
+  if (processId == 0) {
+    return TRUE;
+  }
+
+  HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+  if (process == nullptr) {
+    return TRUE;
+  }
+  wchar_t imagePath[MAX_PATH] = {0};
+  DWORD imagePathLength = _countof(imagePath);
+  const BOOL gotPath = QueryFullProcessImageNameW(process, 0, imagePath, &imagePathLength);
+  CloseHandle(process);
+  if (!gotPath) {
+    return TRUE;
+  }
+
+  const wchar_t* fileName = wcsrchr(imagePath, L'\\');
+  fileName = fileName != nullptr ? fileName + 1 : imagePath;
+  if (_wcsicmp(fileName, search->executableName) == 0) {
+    search->window = hwnd;
+    return FALSE;
+  }
+  return TRUE;
+}
+
+// Finds the Remote's main window by title, with a fallback to its process name
+// in case the title was customized.
+HWND FindMilkwaveRemoteWindow() {
+  HWND hwnd = FindWindowW(nullptr, L"Milkwave Remote");
+  if (hwnd != nullptr && IsWindow(hwnd)) {
+    return hwnd;
+  }
+
+  RemoteWindowSearch search = {L"MilkwaveRemote.exe", nullptr};
+  EnumWindows(FindRemoteWindowProc, reinterpret_cast<LPARAM>(&search));
+  return search.window;
+}
+
+// SetForegroundWindow is ignored while another application owns the foreground,
+// so the input queues of both threads are attached for the call. If Windows
+// still refuses, a short topmost flash brings the window to the front.
+void ActivateWindow(HWND hwnd) {
+  if (IsIconic(hwnd)) {
+    ShowWindow(hwnd, SW_RESTORE);
+  }
+
+  const HWND foregroundWindow = GetForegroundWindow();
+  const DWORD foregroundThread = foregroundWindow != nullptr ? GetWindowThreadProcessId(foregroundWindow, nullptr) : 0;
+  const DWORD targetThread = GetWindowThreadProcessId(hwnd, nullptr);
+  bool attached = false;
+  if (foregroundThread != 0 && foregroundThread != targetThread) {
+    attached = AttachThreadInput(foregroundThread, targetThread, TRUE) != FALSE;
+  }
+
+  BringWindowToTop(hwnd);
+  SetForegroundWindow(hwnd);
+  SetFocus(hwnd);
+
+  if (attached) {
+    AttachThreadInput(foregroundThread, targetThread, FALSE);
+  }
+
+  if (GetForegroundWindow() != hwnd) {
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    SetForegroundWindow(hwnd);
+  }
+}
+
+}  // namespace
+
+void CPlugin::OpenMilkwaveRemote() {
+  const HWND remoteWindow = FindMilkwaveRemoteWindow();
+  if (remoteWindow != nullptr) {
+    ActivateWindow(remoteWindow);
+    return;
+  }
+
+  // Start the program "MilkwaveRemote.exe"
+  std::wstring exePath;
+  if (!MilkwaveRemoteFindExecutable(exePath)) {
+    AddError(L"Milkwave Remote not found (MilkwaveRemote.exe in the Visualizer's folder)", 4.0f, ERR_MISC, true);
+    return;
+  }
+  ::milkwave.LogInfo(L"Starting Milkwave Remote: " + exePath);
+  std::wstring commandLine = L"\"" + exePath + L"\"";
+
+  STARTUPINFOW si;
+  PROCESS_INFORMATION pi;
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  ZeroMemory(&pi, sizeof(pi));
+
+  if (!CreateProcessW(exePath.c_str(), commandLine.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    g_plugin.AddError(L"Could not start Milkwave Remote", 3.0f, ERR_MISC, false);
+  } else {
+    g_plugin.AddNotification(L"Starting Milkwave Remote");
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+  }
+}
+
+// Starts Milkwave Remote, or brings the running instance to the front, without using any plugin
+// state: the taskbar jump list task calls it from a short-lived helper process, before the
+// visualizer itself is initialized (see ForwardJumpListTask in MilkwaveVisualizer.cpp).
+bool OpenMilkwaveRemoteExternal() {
+  const HWND remoteWindow = FindMilkwaveRemoteWindow();
+  if (remoteWindow != nullptr) {
+    if (IsIconic(remoteWindow)) {
+      ShowWindow(remoteWindow, SW_RESTORE);
+    }
+    // No AttachThreadInput here: the helper process was started from the taskbar click, so it may
+    // take the foreground itself (see ForwardJumpListTask).
+    SetForegroundWindow(remoteWindow);
+    return true;
+  }
+
+  std::wstring exePath;
+  if (!MilkwaveRemoteFindExecutable(exePath)) {
+    return false;
+  }
+  OutputDebugStringW(L"Starting Milkwave Remote: ");
+  OutputDebugStringW(exePath.c_str());
+  OutputDebugStringW(L"\n");
+  std::wstring commandLine = L"\"" + exePath + L"\"";
+
+  STARTUPINFOW si;
+  PROCESS_INFORMATION pi;
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  ZeroMemory(&pi, sizeof(pi));
+
+  if (!CreateProcessW(exePath.c_str(), commandLine.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    return false;
+  }
+  CloseHandle(pi.hProcess);
+  CloseHandle(pi.hThread);
+  return true;
 }
 
 void CPlugin::SetAudioDeviceDisplayName(const wchar_t* displayName, bool isRenderDevice) {
@@ -2343,7 +2607,7 @@ bool CPlugin::CheckForDirectX9c() {
 
 void CPlugin::ShowDirectXMissingMessage() {
   if (MessageBoxA(NULL,
-                  "Could not initialize DirectX 9.\n\nPlease install the DirectX End-User Legacy Runtimes.\n\nOpen Download-Website now?",
+                  "Milkwave Visualizer needs Microsoft DirectX End-User Runtime to work.\n\nInstalling this does not affect your current DirectX installation.\n\nOpen Microsoft Download Website now?",
                   "Milkwave Visualizer", MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST) == IDYES) {
     // open website in browser
     ShellExecuteA(NULL, "open", "https://www.microsoft.com/en-us/download/details.aspx?id=35", NULL, NULL, SW_SHOWNORMAL);

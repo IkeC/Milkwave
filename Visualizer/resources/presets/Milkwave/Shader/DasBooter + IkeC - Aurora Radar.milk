@@ -33,39 +33,46 @@ comp_28=
 comp_29=// pseudoperlin improvement from foxes idea
 comp_30=
 comp_31=shader_body {
-comp_32=  float4 O = 0;
-comp_33=  float2 U  = uv;
-comp_34=  // CONV: Center on screen, then try some aspect correction
-comp_35=  uv = uv-1;
-comp_36=  uv *= aspect.xy;
-comp_37=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_38=  uv = float2(uv.x, -uv.y);
-comp_39=
-comp_40=  // zoom
-comp_41=  uv.x = uv.x-10;
-comp_42=  uv*=0.08;
-comp_43=  uv*= 0.8+0.5*(sin(time*0.1)+1)/2;
-comp_44=
-comp_45=  float2 R = uv.xy+0.3;
+comp_32=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_33=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_34=  // untouched frame stays byte-identical.
+comp_35=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_36=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_37=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_38=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_39=  float4 O = 0;
+comp_40=  float2 U  = uv;
+comp_41=  // CONV: Center on screen, then try some aspect correction
+comp_42=  uv = uv-1;
+comp_43=  uv *= aspect.xy;
+comp_44=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_45=  uv = float2(uv.x, -uv.y);
 comp_46=
-comp_47=  float n = noise(float3(U*2.0/min(R.x,R.y), .03*time)),
-comp_48=
-comp_49=  // first num controls zoom, second speed.
-comp_50=  v = sin(26.28*(sin(time / 25.0) + 4.)*n),
-comp_51=  t = time*0.1;
-comp_52=
-comp_53=  #ifdef bass_smooth
-comp_54=    n += (int)vis_version > 2 ? 0.2*vis_intensity+vis_shift : (0.35*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
-comp_55=  #else
-comp_56=    n += 0.2*(smoothstep(0,2,bass_att)-0.5);
-comp_57=  #endif
-comp_58=
-comp_59=  v = smoothstep(1.,0, .3*abs(v)/fwidth(v));
-comp_60=
-comp_61=  O = lerp( exp(-50./R.y )* tex2D( iChannel0, (U+float2(cos(0.3*time),sin(0.5*t)))/R),
-comp_62=  // .97
-comp_63=  .5+.5*sin(05.*n+(sin(time / 10.0) * 5.0)+float4(0,2.1,-2.1,0)),
-comp_64=  v );
+comp_47=  // zoom
+comp_48=  uv.x = uv.x-10;
+comp_49=  uv*=0.08;
+comp_50=  uv*= 0.8+0.5*(sin(time*0.1)+1)/2;
+comp_51=
+comp_52=  float2 R = uv.xy+0.3;
+comp_53=
+comp_54=  float n = noise(float3(U*2.0/min(R.x,R.y), .03*time)),
+comp_55=
+comp_56=  // first num controls zoom, second speed.
+comp_57=  v = sin(26.28*(sin(time / 25.0) + 4.)*n),
+comp_58=  t = time*0.1;
+comp_59=
+comp_60=  #ifdef bass_smooth
+comp_61=    n += (int)vis_version > 2 ? 0.2*vis_intensity+vis_shift : (0.35*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
+comp_62=  #else
+comp_63=    n += 0.2*(smoothstep(0,2,bass_att)-0.5);
+comp_64=  #endif
 comp_65=
-comp_66=  ret = O;
-comp_67=}
+comp_66=  v = smoothstep(1.,0, .3*abs(v)/fwidth(v));
+comp_67=
+comp_68=  O = lerp( exp(-50./R.y )* tex2D( iChannel0, (U+float2(cos(0.3*time),sin(0.5*t)))/R),
+comp_69=  // .97
+comp_70=  .5+.5*sin(05.*n+(sin(time / 10.0) * 5.0)+float4(0,2.1,-2.1,0)),
+comp_71=  v );
+comp_72=
+comp_73=  ret = O;
+comp_74=}

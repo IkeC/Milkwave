@@ -210,6 +210,47 @@ int CTextManager::DrawTextW(LPD3DXFONT pFont, wchar_t* szText, RECT* pRect, DWOR
   return h;
 }
 
+void CTextManager::DrawOutlineCopies(const td_string& text) {
+  if (!text.pfont || !text.msg) return;
+
+  int amount = m_nOutline;
+  if (amount <= 0) return;
+  if (amount > 16) amount = 16;
+
+  // Keep the outline in sync with the text's fade-out alpha.
+  const DWORD textAlpha = (text.color >> 24) & 0xFF;
+  if (textAlpha == 0) return;
+  const DWORD outlineColor = (m_dwOutlineColor & 0x00FFFFFF) | (textAlpha << 24);
+
+  // Outline copies are drawn directly to the destination surface: black text
+  // cannot be part of the additive text surface. Alpha blending is required
+  // for dark outlines, which add nothing under the usual additive text blend.
+  DWORD oldBlendEnable = FALSE;
+  DWORD oldSrcBlend = D3DBLEND_ONE;
+  DWORD oldDestBlend = D3DBLEND_ONE;
+  m_lpDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &oldBlendEnable);
+  m_lpDevice->GetRenderState(D3DRS_SRCBLEND, &oldSrcBlend);
+  m_lpDevice->GetRenderState(D3DRS_DESTBLEND, &oldDestBlend);
+  m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+  m_lpDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+  m_lpDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+  for (int dy = -amount; dy <= amount; dy++) {
+    for (int dx = -amount; dx <= amount; dx++) {
+      if (dx == 0 && dy == 0) continue;
+      if (dx * dx + dy * dy > amount * amount) continue;
+
+      RECT r = text.rect;
+      OffsetRect(&r, dx, dy);
+      text.pfont->DrawTextW(NULL, text.msg, -1, &r, text.flags, outlineColor);
+    }
+  }
+
+  m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, oldBlendEnable);
+  m_lpDevice->SetRenderState(D3DRS_SRCBLEND, oldSrcBlend);
+  m_lpDevice->SetRenderState(D3DRS_DESTBLEND, oldDestBlend);
+}
+
 #define MATCH(i, j) (m_msg[m_b][i].pfont == m_msg[1 - m_b][j].pfont &&                          \
                      m_msg[m_b][i].flags == m_msg[1 - m_b][j].flags &&                          \
                      m_msg[m_b][i].color == m_msg[1 - m_b][j].color &&                          \
@@ -547,9 +588,11 @@ void CTextManager::DrawNow() {
 
       for (int i = 0; i < m_nMsg[m_b]; i++)
         if (bRedrawText == 2 || m_msg[m_b][i].added == 1)
-          if (m_msg[m_b][i].pfont)  // dark boxes have pfont==NULL
+          if (m_msg[m_b][i].pfont) {  // dark boxes have pfont==NULL
+            if (!bRTT) DrawOutlineCopies(m_msg[m_b][i]);
             // warning: in DX9, the DT_WORD_ELLIPSIS and DT_NOPREFIX flags cause no text to render!!
             m_msg[m_b][i].pfont->DrawTextW(NULL, m_msg[m_b][i].msg, -1, &m_msg[m_b][i].rect, m_msg[m_b][i].flags, m_msg[m_b][i].color);
+          }
           else if (m_msg[m_b][i].added || bRedrawText == 2 || !bRTT) {
             WFVERTEX v3[4];
             float x0 = -1.0f + 2.0f * m_msg[m_b][i].rect.left / (float)desc_text_surface.Width;
@@ -573,6 +616,12 @@ void CTextManager::DrawNow() {
         m_lpDevice->SetRenderTarget(0, pBackBuffer);  //, pZBuffer );
         // m_lpDevice->SetDepthStencilSurface( pZBuffer );
       }
+
+      // Draw outline copies directly to the backbuffer: they must stay
+      // behind the additive text surface blit (black adds nothing).
+      for (int i = 0; i < m_nMsg[m_b]; i++)
+        if (m_msg[m_b][i].pfont)
+          DrawOutlineCopies(m_msg[m_b][i]);
 
       // 5. blit text surface to backbuffer
       m_lpDevice->SetTexture(0, m_lpTextSurface);
@@ -634,5 +683,65 @@ void CTextManager::DrawNow() {
   // flip:
   m_b = 1 - m_b;
 
+  ClearAll();
+}
+
+void CTextManager::DrawNowOverlay() {
+  if (!m_lpDevice)
+    return;
+
+  if (m_nMsg[m_b] > 0) {
+    IDirect3DSurface9* pBackBuffer = NULL;
+    if (SUCCEEDED(m_lpDevice->GetRenderTarget(0, &pBackBuffer)) && pBackBuffer) {
+      D3DSURFACE_DESC desc;
+      pBackBuffer->GetDesc(&desc);
+
+      D3DXMATRIX oldProj;
+      m_lpDevice->GetTransform(D3DTS_PROJECTION, &oldProj);
+      D3DXMATRIX ortho;
+      D3DXMatrixOrthoLH(&ortho, 2.0f, -2.0f, 0.0f, 1.0f);
+      m_lpDevice->SetTransform(D3DTS_PROJECTION, &ortho);
+
+      m_lpDevice->SetTexture(0, NULL);
+      m_lpDevice->SetTexture(1, NULL);
+      m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+      m_lpDevice->SetVertexShader(NULL);
+      m_lpDevice->SetPixelShader(NULL);
+      m_lpDevice->SetFVF(WFVERTEX_FORMAT);
+
+      for (int i = 0; i < m_nMsg[m_b]; i++) {
+        if (m_msg[m_b][i].pfont) {
+          DrawOutlineCopies(m_msg[m_b][i]);
+          m_msg[m_b][i].pfont->DrawTextW(NULL, m_msg[m_b][i].msg, -1, &m_msg[m_b][i].rect,
+                                         m_msg[m_b][i].flags, m_msg[m_b][i].color);
+        } else {
+          WFVERTEX v[4];
+          const float x0 = -1.0f + 2.0f * m_msg[m_b][i].rect.left / (float)desc.Width;
+          const float x1 = -1.0f + 2.0f * m_msg[m_b][i].rect.right / (float)desc.Width;
+          const float y0 = -1.0f + 2.0f * m_msg[m_b][i].rect.top / (float)desc.Height;
+          const float y1 = -1.0f + 2.0f * m_msg[m_b][i].rect.bottom / (float)desc.Height;
+          for (int k = 0; k < 4; k++) {
+            v[k].x = (k % 2) ? x0 : x1;
+            v[k].y = (k / 2) ? y0 : y1;
+            v[k].z = 0;
+            v[k].Diffuse = m_msg[m_b][i].bgColor;
+          }
+          m_lpDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(WFVERTEX));
+        }
+      }
+
+      m_lpDevice->SetTransform(D3DTS_PROJECTION, &oldProj);
+      m_lpDevice->SetTexture(0, NULL);
+      m_lpDevice->SetTexture(1, NULL);
+      m_lpDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+      m_lpDevice->SetVertexShader(NULL);
+      m_lpDevice->SetPixelShader(NULL);
+      m_lpDevice->SetFVF(SPRITEVERTEX_FORMAT);
+      pBackBuffer->Release();
+    }
+  }
+
+  // Do not flip here: the low-resolution pass keeps using its own previous
+  // frame's message list for the surface cache.
   ClearAll();
 }

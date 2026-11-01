@@ -18,50 +18,57 @@ comp_13=  return length(pos - float3(5., 5., 5.)) - 1.;
 comp_14=}
 comp_15=
 comp_16=shader_body {
-comp_17=  float4 fragColor;
-comp_18=  float2 fragCoord;
-comp_19=  // CONV: Center on screen, then try some aspect correction
-comp_20=  uv = (uv*2) - 1;
-comp_21=  uv *= aspect.xy;
-comp_22=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_23=  uv = float2(uv.x, -uv.y);
-comp_24=
-comp_25=  // float2 uv = (fragCoord * 2. - texsize.xy)/max(texsize.x, texsize.y);
-comp_26=
-comp_27=  // Move and rotate camera over time
-comp_28=  float3 origin = float3(0., 5., 0.) * time;
-comp_29=  float angle = radians(time*3.);
-comp_30=  uv = mul(uv, transpose(float2x2(cos(angle), -sin(angle), sin(angle), cos(angle))));
+comp_17=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_18=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_19=  // untouched frame stays byte-identical.
+comp_20=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_21=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_22=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_23=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_24=  float4 fragColor;
+comp_25=  float2 fragCoord;
+comp_26=  // CONV: Center on screen, then try some aspect correction
+comp_27=  uv = (uv*2) - 1;
+comp_28=  uv *= aspect.xy;
+comp_29=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_30=  uv = float2(uv.x, -uv.y);
 comp_31=
-comp_32=  // Use spherical projection for ray direction
-comp_33=  float3 ray_dir = float3(sin(uv.x), cos(uv.x)*cos(uv.y), sin(uv.y));
-comp_34=  float3 ray_pos = float3(origin);
-comp_35=
-comp_36=  float ray_length = 0.;
-comp_37=
+comp_32=  // float2 uv = (fragCoord * 2. - texsize.xy)/max(texsize.x, texsize.y);
+comp_33=
+comp_34=  // Move and rotate camera over time
+comp_35=  float3 origin = float3(0., 5., 0.) * time;
+comp_36=  float angle = radians(time*3.);
+comp_37=  uv = mul(uv, transpose(float2x2(cos(angle), -sin(angle), sin(angle), cos(angle))));
 comp_38=
-comp_39=  for(float i = 0.; i < 7.; i++){
-comp_40=    float dist = sdf(ray_pos);
-comp_41=    ray_length += dist;
-comp_42=    ray_pos += ray_dir * dist;
-comp_43=    // Push rays outward with increasing distance
-comp_44=    ray_dir = normalize(ray_dir + float3(uv.x, 0., uv.y) * dist * .3);
-comp_45=  }
-comp_46=    
-comp_47=  float3 o = float3(sdf(ray_pos), sdf(ray_pos), sdf(ray_pos));
-comp_48=
-comp_49=  #ifdef bass_smooth
-comp_50=    float fac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1.2-0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
-comp_51=    float faccol = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1.05-0.1*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
-comp_52=  #else
-comp_53=    float fac = 1;
-comp_54=    float faccol = 1.05-0.1*smoothstep(0,2,bass_att);
-comp_55=  #endif
-comp_56=
-comp_57=  ray_length *= fac;
-comp_58=
-comp_59=  o = cos(o + float3(faccol*6.,0,.5));
-comp_60=  o *= smoothstep(38., 20., ray_length);
-comp_61=
-comp_62=  ret = float4(o, 1.);
-comp_63=}
+comp_39=  // Use spherical projection for ray direction
+comp_40=  float3 ray_dir = float3(sin(uv.x), cos(uv.x)*cos(uv.y), sin(uv.y));
+comp_41=  float3 ray_pos = float3(origin);
+comp_42=
+comp_43=  float ray_length = 0.;
+comp_44=
+comp_45=
+comp_46=  for(float i = 0.; i < 7.; i++){
+comp_47=    float dist = sdf(ray_pos);
+comp_48=    ray_length += dist;
+comp_49=    ray_pos += ray_dir * dist;
+comp_50=    // Push rays outward with increasing distance
+comp_51=    ray_dir = normalize(ray_dir + float3(uv.x, 0., uv.y) * dist * .3);
+comp_52=  }
+comp_53=    
+comp_54=  float3 o = float3(sdf(ray_pos), sdf(ray_pos), sdf(ray_pos));
+comp_55=
+comp_56=  #ifdef bass_smooth
+comp_57=    float fac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1.2-0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_58=    float faccol = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1.05-0.1*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_59=  #else
+comp_60=    float fac = 1;
+comp_61=    float faccol = 1.05-0.1*smoothstep(0,2,bass_att);
+comp_62=  #endif
+comp_63=
+comp_64=  ray_length *= fac;
+comp_65=
+comp_66=  o = cos(o + float3(faccol*6.,0,.5));
+comp_67=  o *= smoothstep(38., 20., ray_length);
+comp_68=
+comp_69=  ret = float4(o, 1.);
+comp_70=}

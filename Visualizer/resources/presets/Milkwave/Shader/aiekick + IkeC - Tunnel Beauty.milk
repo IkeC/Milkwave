@@ -1,0 +1,184 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// aiekick - Tunnel Beauty / https://www.shadertoy.com/view/Mt3GW2
+comp_2=// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (Shadertoy default)
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV2: guarded length helpers (legacy compiler reports lenv() as division by zero)
+comp_8=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_9=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_10=float lenv(float4 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_11=
+comp_12=float3x3 RotZ(float a){return float3x3(cos(a),-sin(a),0.,sin(a),cos(a),0.,0.,0.,1.);}
+comp_13=// get rotation matrix near z
+comp_14=
+comp_15=// AUDIO: tunnel half width offset, assigned once per pixel before the ray march (0 = unchanged look)
+comp_16=static float tunnelW = 0.0;
+comp_17=
+comp_18=float3 path(float3 p)
+comp_19={
+comp_20=  p = mul(p, transpose(RotZ(p.z * 0.1)));
+comp_21=  p += sin(p.zxy * 0.5) * 0.5;
+comp_22=  p = mul(p, transpose(RotZ(p.z * 0.2)));
+comp_23=  return sin(p.zxy * 0.2) * 2.;
+comp_24=}
+comp_25=
+comp_26=float df(float3 p)
+comp_27={
+comp_28=  p += path(p);
+comp_29=  p = mul(p, transpose(RotZ(p.z * 0.1)));
+comp_30=  return 1.1 + tunnelW - cos(p.z*1.5) * 0.2 - max(abs(p.x),abs(p.y)) + lenv(p.xy)*0.2;
+comp_31=}
+comp_32=
+comp_33=float3 nor( float3 pos, float prec )
+comp_34={
+comp_35=  float3 eps = float3( prec, 0., 0. );
+comp_36=  float3 nor = float3(
+comp_37=  df(pos+eps.xyy) - df(pos-eps.xyy),
+comp_38=  df(pos+eps.yxy) - df(pos-eps.yxy),
+comp_39=  df(pos+eps.yyx) - df(pos-eps.yyx) );
+comp_40=  return normalize(nor);
+comp_41=}
+comp_42=
+comp_43=float3 blackbody(float Temp)
+comp_44={
+comp_45=  float3 col = float3(255., 255., 255.);
+comp_46=  col.x = 56100000. * pow(Temp,(-3. / 2.)) + 148.;
+comp_47=  col.y = 100.04 * log(Temp) - 623.6;
+comp_48=  if (Temp > 6500.) col.y = 35200000. * pow(Temp,(-3. / 2.)) + 184.;
+comp_49=  col.z = 194.18 * log(Temp) - 1448.6;
+comp_50=  col = clamp(col, 0., 255.)/255.;
+comp_51=  if (Temp < 1000.) col *= Temp/1000.;
+comp_52=  return col;
+comp_53=}
+comp_54=
+comp_55=float SubDensity(float3 surfPoint, float prec, float ms)
+comp_56={
+comp_57=  float3 n;
+comp_58=  float s = 0.;
+comp_59=  const int iter = 10;
+comp_60=  for (int i=min(frame,0);i<iter;i++)
+comp_61=  {
+comp_62=    n = nor(surfPoint,prec);
+comp_63=    surfPoint = surfPoint - n * ms;
+comp_64=    s += df(surfPoint);
+comp_65=  }
+comp_66=
+comp_67=  return 1.-s/(ms*float(iter));
+comp_68=  // s < 0. => inside df
+comp_69=}
+comp_70=
+comp_71=float SubDensity(float3 p, float s)
+comp_72={
+comp_73=  float3 n = nor(p,s);
+comp_74=  // precise normale at surf point
+comp_75=  return df(p - n * s);
+comp_76=  // ratio between df step and constant step
+comp_77=}
+comp_78=
+comp_79=shader_body {
+comp_80=  float4 fragColor = 0;
+comp_81=  float2 fragCoord  = uv;
+comp_82=  // CONV: Center on screen, then try some aspect correction
+comp_83=  uv = (uv*2) - 1;
+comp_84=  uv *= aspect.xy;
+comp_85=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_86=  uv = float2(uv.x, -uv.y);
+comp_87=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_88=  uv += float2(0,0) + 0;
+comp_89=  uv *= float2(1,1) * 1;
+comp_90=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_91=  #ifdef bass_smooth
+comp_92=    float aRng = (int)vis_version == 1 ? 0.26 : 0.45;
+comp_93=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_94=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_95=  #else
+comp_96=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_97=  #endif
+comp_98=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_99=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // beat scale, colour reaction scale
+comp_100=  // AUDIO: the level widens/narrows the tunnel - the camera itself does not move
+comp_101=  tunnelW = aDev * 1.0;
+comp_102=
+comp_103=  float2 g = fragCoord * texsize.xy;
+comp_104=  float2 si = texsize.xy;
+comp_105=
+comp_106=  uv = (g+g-si)/si.y;
+comp_107=
+comp_108=  float time_conv = time*1.2;
+comp_109=
+comp_110=  float3 ro = float3(0,0, time_conv*5.);
+comp_111=  ro -= path(ro);
+comp_112=
+comp_113=  float3 cv = ro + float3(0,0,4);
+comp_114=  // cam view
+comp_115=  cv -= path(cv);
+comp_116=
+comp_117=  float3 lp = ro;
+comp_118=  // light pos
+comp_119=
+comp_120=  float3 cu = normalize(float3(0,1,0));
+comp_121=  float3 z = normalize(cv-ro);
+comp_122=  float3 x = normalize(cross(cu,z));
+comp_123=  float3 y = cross(z,x);
+comp_124=  float3 rd = normalize(z + uv.x*x + uv.y*y);
+comp_125=  // MOUSE: holding the mouse button looks around - pointer X steers yaw, pointer Y steers pitch.
+comp_126=  // Independent of the audio versions; saturate(mouse.z) keeps the un-pressed frame identical.
+comp_127=  float mMx = (mouse.x - 0.5) * saturate(mouse.z);
+comp_128=  float mMy = (mouse.y - 0.5) * saturate(mouse.z);
+comp_129=  float mYaw = mMx * 1.0, mPitch = mMy * 0.6;
+comp_130=  float mCy = cos(mYaw), mSy = sin(mYaw);
+comp_131=  rd.xz = mul(transpose(float2x2(mCy, mSy, -mSy, mCy)), rd.xz);
+comp_132=  float mCp = cos(mPitch), mSp = sin(mPitch);
+comp_133=  rd.yz = mul(transpose(float2x2(mCp, mSp, -mSp, mCp)), rd.yz);
+comp_134=
+comp_135=  float s = 1., d = 0.;
+comp_136=  for (int i=min(frame,0); i<30; i++)
+comp_137=  // 30 iterations yeah :)
+comp_138=  {
+comp_139=    // CONV: replaced break with breaking condition
+comp_140=    if (log(d/1e6)>0.)  i=30;
+comp_141=    // due to this special  i=30 condition
+comp_142=    d += df(ro+rd*d);
+comp_143=  }
+comp_144=
+comp_145=  float3 p = ro + rd * d;
+comp_146=  // surface point
+comp_147=  float3 ld = normalize(lp-p);
+comp_148=  // light dir
+comp_149=  float3 n = nor(p, 0.1);
+comp_150=  // normal at surface point
+comp_151=  float3 refl = reflect(rd,n);
+comp_152=  // reflected ray dir at surf point
+comp_153=  float diff = clamp( dot( n, ld ), 0.0, 1.0 );
+comp_154=  // diffuse
+comp_155=  float fre = pow( clamp( 1. + dot(n,rd),0.0,1.0), 4. );
+comp_156=  // fresnel
+comp_157=  float spe = pow(clamp( dot( refl, ld ), 0.0, 1.0 ),16.);
+comp_158=  // specular
+comp_159=  // AUDIO: the reflections get stronger/weaker with the level
+comp_160=  float aRefl = clamp(1.0 + aBe * 1.0, 0.25, 2.5);
+comp_161=  float3 col = float3(0.8,0.5,0.2);
+comp_162=  float sss = df(p - n*0.001)/0.01;
+comp_163=  // quick sss 0.001 of subsurface
+comp_164=
+comp_165=  float sb = SubDensity(p, 0.01, 0.1);
+comp_166=  // deep subdensity from 0.01 to 0.1 (10 iterations)
+comp_167=  float3 bb = blackbody(200. * sb);
+comp_168=  // blackbody color
+comp_169=  float sss2 = 0.8 - SubDensity(p, 3.);
+comp_170=  // one step sub density of df of 3 of subsurface
+comp_171=
+comp_172=  float3 a = (diff + fre * aRefl + bb * sss2 * .8 + col * sss * .2) * 0.35 + spe * aRefl;
+comp_173=  float3 b = col * sss;
+comp_174=
+comp_175=  fragColor.rgb = lerp(a, b, .8-exp(-0.01*d*d));
+comp_176=  ret = fragColor;
+comp_177=  // AUDIO: the glow warms up on beats
+comp_178=  ret = lerp(ret, ret * float3(1.12, 1.0, 0.86), saturate(aBe) * 0.35 * aCol);
+comp_179=}
+comp_180=

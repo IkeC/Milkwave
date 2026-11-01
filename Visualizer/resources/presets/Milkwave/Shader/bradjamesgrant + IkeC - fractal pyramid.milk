@@ -53,33 +53,40 @@ comp_48=  return float4(col,1./(d*100.));
 comp_49=}
 comp_50=
 comp_51=shader_body {
-comp_52=  float4 fragColor;
-comp_53=  float2 fragCoord;
-comp_54=  // CONV: Center on screen, then try some aspect correction
-comp_55=  uv = (uv*2) - 1;
-comp_56=  uv *= aspect.xy;
-comp_57=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_58=  uv = float2(uv.x, -uv.y);
-comp_59=  
-comp_60=  uv = uv*(0.9-0.4*sin(time*0.2));
-comp_61=  
-comp_62=  #ifdef bass_smooth
-comp_63=    uv *= (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1-(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.25))*vis_intensity+vis_shift;
-comp_64=  #else
-comp_65=    uv *= (1-(smoothstep(0,2,bass_att)*0.05));
-comp_66=  #endif
-comp_67=  
-comp_68=  // float2 uv = (fragCoord-(texsize.xy/2.))/texsize.x;
-comp_69=  float3 ro = float3(0.,0.,-50.);
-comp_70=  ro.xz = rotate(ro.xz,time);
-comp_71=  float3 cf = normalize(-ro);
-comp_72=  float3 cs = normalize(cross(cf,float3(0.,1.,0.)));
-comp_73=  float3 cu = normalize(cross(cf,cs));
-comp_74=
-comp_75=  float3 uuv = ro+cf*3. + uv.x*cs + uv.y*cu;
-comp_76=
-comp_77=  float3 rd = normalize(uuv-ro);
-comp_78=  float4 col = rm(ro,rd);
-comp_79=  
-comp_80=  ret = col;
-comp_81=}
+comp_52=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_53=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_54=  // untouched frame stays byte-identical.
+comp_55=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_56=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_57=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_58=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_59=  float4 fragColor;
+comp_60=  float2 fragCoord;
+comp_61=  // CONV: Center on screen, then try some aspect correction
+comp_62=  uv = (uv*2) - 1;
+comp_63=  uv *= aspect.xy;
+comp_64=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_65=  uv = float2(uv.x, -uv.y);
+comp_66=  
+comp_67=  uv = uv*(0.9-0.4*sin(time*0.2));
+comp_68=  
+comp_69=  #ifdef bass_smooth
+comp_70=    uv *= (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1-(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*0.25))*vis_intensity+vis_shift;
+comp_71=  #else
+comp_72=    uv *= (1-(smoothstep(0,2,bass_att)*0.05));
+comp_73=  #endif
+comp_74=  
+comp_75=  // float2 uv = (fragCoord-(texsize.xy/2.))/texsize.x;
+comp_76=  float3 ro = float3(0.,0.,-50.);
+comp_77=  ro.xz = rotate(ro.xz,time);
+comp_78=  float3 cf = normalize(-ro);
+comp_79=  float3 cs = normalize(cross(cf,float3(0.,1.,0.)));
+comp_80=  float3 cu = normalize(cross(cf,cs));
+comp_81=
+comp_82=  float3 uuv = ro+cf*3. + uv.x*cs + uv.y*cu;
+comp_83=
+comp_84=  float3 rd = normalize(uuv-ro);
+comp_85=  float4 col = rm(ro,rd);
+comp_86=  
+comp_87=  ret = col;
+comp_88=}

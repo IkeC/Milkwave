@@ -169,59 +169,66 @@ comp_164=  return (normalize((uv_conv.x) * right + (uv_conv.y) * up + fov * forw
 comp_165=}
 comp_166=
 comp_167=shader_body {
-comp_168=  float4 c_out = 0;
-comp_169=  // CONV: Center on screen, then try some aspect correction
-comp_170=
-comp_171=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_172=  // uv = float2(uv.x, -uv.y);
-comp_173=  uv.x = uv.x-0.5;
-comp_174=
-comp_175=  uv.y = uv.y+0.3;
-comp_176=
-comp_177=  float2 f = uv;
-comp_178=  f.y-=0.4;
-comp_179=
-comp_180=  uv *= aspect.xy;
-comp_181=  f *= aspect.xy;
-comp_182=
-comp_183=  t  = time*.125;
-comp_184=
-comp_185=  float3	col = float3(0., 0., 0.);
-comp_186=  float2 R = uv.xy,
-comp_187=  uv_c  = float2(f-R/2.) / R.y;
-comp_188=
-comp_189=  float3	dir = camera(uv_c);
-comp_190=  float3	pos = float3(.0, .0, 0.0);
+comp_168=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_169=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_170=  // untouched frame stays byte-identical.
+comp_171=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_172=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_173=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_174=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_175=  float4 c_out = 0;
+comp_176=  // CONV: Center on screen, then try some aspect correction
+comp_177=
+comp_178=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_179=  // uv = float2(uv.x, -uv.y);
+comp_180=  uv.x = uv.x-0.5;
+comp_181=
+comp_182=  uv.y = uv.y+0.3;
+comp_183=
+comp_184=  float2 f = uv;
+comp_185=  f.y-=0.4;
+comp_186=
+comp_187=  uv *= aspect.xy;
+comp_188=  f *= aspect.xy;
+comp_189=
+comp_190=  t  = time*.125;
 comp_191=
-comp_192=  pos.z = 4.5-time*2.;
-comp_193=
-comp_194=  #ifdef bass_smooth
-comp_195=    pos.z += (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.3*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
-comp_196=  #else
-comp_197=    pos.z += 0.15*smoothstep(0,2,bass_att);
-comp_198=  #endif
-comp_199=
-comp_200=  #ifdef LIGHT
-comp_201=  h = float3(0., 0., 0.);
-comp_202=  #endif
-comp_203=  float2	inter = (march(pos, dir));
-comp_204=  if (inter.y <= FAR)
-comp_205=  col.xyz = ret_col*(1.-inter.x*.0025);
-comp_206=  else
-comp_207=  col *= 0.;
-comp_208=
-comp_209=  #ifdef LIGHT
-comp_210=  col += h*.005125;
-comp_211=  #endif
-comp_212=
-comp_213=  col *= 0.9;
-comp_214=
-comp_215=  #ifdef bass_smooth
-comp_216=    col.r += (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.7*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
-comp_217=  #else
-comp_218=    col.r += 0.05*(smoothstep(0,2,bass_att)-0.5);
-comp_219=  #endif
-comp_220=
-comp_221=  c_out =  float4(col,1.0);
-comp_222=  ret = c_out;
-comp_223=}
+comp_192=  float3	col = float3(0., 0., 0.);
+comp_193=  float2 R = uv.xy,
+comp_194=  uv_c  = float2(f-R/2.) / R.y;
+comp_195=
+comp_196=  float3	dir = camera(uv_c);
+comp_197=  float3	pos = float3(.0, .0, 0.0);
+comp_198=
+comp_199=  pos.z = 4.5-time*2.;
+comp_200=
+comp_201=  #ifdef bass_smooth
+comp_202=    pos.z += (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.3*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_203=  #else
+comp_204=    pos.z += 0.15*smoothstep(0,2,bass_att);
+comp_205=  #endif
+comp_206=
+comp_207=  #ifdef LIGHT
+comp_208=  h = float3(0., 0., 0.);
+comp_209=  #endif
+comp_210=  float2	inter = (march(pos, dir));
+comp_211=  if (inter.y <= FAR)
+comp_212=  col.xyz = ret_col*(1.-inter.x*.0025);
+comp_213=  else
+comp_214=  col *= 0.;
+comp_215=
+comp_216=  #ifdef LIGHT
+comp_217=  col += h*.005125;
+comp_218=  #endif
+comp_219=
+comp_220=  col *= 0.9;
+comp_221=
+comp_222=  #ifdef bass_smooth
+comp_223=    col.r += (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.7*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
+comp_224=  #else
+comp_225=    col.r += 0.05*(smoothstep(0,2,bass_att)-0.5);
+comp_226=  #endif
+comp_227=
+comp_228=  c_out =  float4(col,1.0);
+comp_229=  ret = c_out;
+comp_230=}

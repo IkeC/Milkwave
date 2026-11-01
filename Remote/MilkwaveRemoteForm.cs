@@ -22,6 +22,11 @@ namespace MilkwaveRemote {
     private System.Windows.Forms.Timer monitorTimer;
     private System.Windows.Forms.Timer spoutRefreshTimer;
     private System.Windows.Forms.Timer controllerTimer;
+    private System.Windows.Forms.Timer audioTestTimer;
+    private System.Windows.Forms.Timer autoScanTimer;   // re-scans for a visualizer while not connected
+    private bool autoScanInProgress = false;
+    private List<(double Seconds, float Bass, float Mid, float Treble, string Label)> audioTestSteps = new();
+    private int audioTestIndex = -1;
 
     private int currentAutoplayIndex = 0;
     private int lastLineIndex = 0;
@@ -30,6 +35,9 @@ namespace MilkwaveRemote {
 
     private bool updatingWaveParams = false;
     private bool updatingSettingsParams = false;
+    // Desktop Mode scope last reported by the visualizer (-1 = not reported yet),
+    // so the Desktop Mode button only has to send the combo value when it changed.
+    private int visualizerDesktopModeMonitor = -1;
     // Control whose (otherwise invisible) disabled-state tooltip is currently shown by
     // tabPreset_MouseMove, or null when none is shown.
     private Control? disabledToolTipTarget;
@@ -37,6 +45,14 @@ namespace MilkwaveRemote {
     private int lyricsColorR = 255;
     private int lyricsColorG = 255;
     private int lyricsColorB = 255;
+    private decimal previousLyricsPosX;
+    private decimal previousLyricsPosY;
+    private int lyricsOutlineColorR = 0;
+    private int lyricsOutlineColorG = 0;
+    private int lyricsOutlineColorB = 0;
+    private int textBorderColorR = 0;  // outline color for messages/notifications (TextBorderColorR/G/B)
+    private int textBorderColorG = 0;
+    private int textBorderColorB = 0;
     private uint lastControllerButtons = 0;
     private Dictionary<int, string> controllerConfig = new();
 
@@ -94,6 +110,8 @@ namespace MilkwaveRemote {
     private string midiDefaultFileName = "midi-default.txt";
 
     private string windowNotFound = "Not connected to a visualizer";
+    private string firstRunWindowHint = "Middle/Right Mouse Button here to toggle window states";
+    private bool hasSavedWindowLocation = true;  // false on a first start (no window coordinates stored yet)
     private string defaultFontName = "Segoe UI";
     private string lastSpoutSenderName = "";
 
@@ -104,6 +122,7 @@ namespace MilkwaveRemote {
     private string milkwaveControllerFile = "controller-remote.json";
     private string milkwaveNetworkRemoteFile = "network-remote.json";
     private string milkwaveMessagesEditorFile = "messages-editor.html";
+    private string audioTestFileName = "audio-test.txt";
 
     private string visualizerSpritesFile = "sprites.ini";
     private string visualizerMessagesFile = "messages.ini";
@@ -130,7 +149,14 @@ namespace MilkwaveRemote {
 
     private PresetDeck presetDeck = new PresetDeck();
     private Button[] presetDeckButtons = Array.Empty<Button>();
+    private readonly CommandButtonConfig[] commandButtonConfigs = BuildDefaultCommandButtonConfigs();
     private readonly Dictionary<int, PendingThumbnail> pendingThumbnailAssignments = new();
+
+    private bool suppressCommandClick;         // swallows the Click that follows a function-assignment gesture
+    private Button? pendingAssignButton;       // command button pressed for function assignment
+    private bool pendingAssignRightClick;      // true when the pending gesture configures the right-click function
+    private ContextMenuStrip? commandFunctionMenu; // reusable function menu (see ShowCommandButtonAssignmentMenu)
+    private string? commandButtonSettingsPath; // settings.ini that persists button assignments
 
     private ShaderHelper ShaderHelper = new ShaderHelper();
     private MidiHelper MidiHelper;
@@ -176,7 +202,11 @@ namespace MilkwaveRemote {
       PresetLink,
       PresetChangeWithSong,
       PresetDisplayCover,
+      CoverStyle,
+      TransitionMode,
       PresetDisplayTrack,
+      PresetDisplayPreset,
+      InvertPreset,
       Amplify,
       Wave,
       WaveClear,
@@ -216,6 +246,9 @@ namespace MilkwaveRemote {
       LyricsFontItalic,
       LyricsFontAA,
       LyricsColor,
+      LyricsOutline,
+      LyricsOutlineAmount,
+      LyricsOutlineColor,
       LyricsPosX,
       LyricsPosY,
       LyricsStartX,
@@ -227,6 +260,8 @@ namespace MilkwaveRemote {
       LyricsBurnType,
       LyricsTimeOffset,
       LyricsAutoScale,
+      TextBorder,
+      TextBorderColor,
       CaptureScreenshot,
       VideoInput,
       SpoutInput,
@@ -236,12 +271,56 @@ namespace MilkwaveRemote {
       PrecompileCache,
       EQAttack,
       EQDecay,
-      EQBoost
+      EQBoost,
+      ShowTab
     }
+
+    // Order matches the Visualizer's Mixtype values: index 0 is Random (-1),
+    // index 1 is transition type 0, and so on.
+    private static readonly string[] TransitionModeNames = {
+      "Random",
+      "Uniform Fade",
+      "Directional Wipe",
+      "Plasma",
+      "Radial",
+      "Clock",
+      "Spiral",
+      "Rhombus",
+      "Nuclear Clock",
+      "Square/Diamond",
+      "Checkerboard",
+      "Curtain",
+      "Bubbles",
+      "Kaleidoscope",
+      "Moebius Strip",
+      "Stars",
+      "Disco Floor",
+      "Fire",
+      "Drain Swirl",
+      "Julia Set",
+      "Vertical Wipe",
+      "Horizontal Wipe",
+    };
+
+    // Desktop Mode scope (cboDesktopMode); the tokens match the visualizer's
+    // DESKTOP_MODE_MONITORS / DesktopModeMonitors values.
+    private static readonly string[] DesktopModeMonitorNames = {
+      "All Monitors",
+      "Primary Monitor",
+      "Current Monitor",
+    };
+    private static readonly string[] DesktopModeMonitorTokens = { "all", "primary", "current" };
 
     private class PendingThumbnail {
       public Preset Preset { get; set; } = new Preset();
       public DateTime RequestTime { get; set; }
+    }
+
+    private sealed class CommandButtonConfig {
+      public string Caption = "";
+      public string Command = "";
+      public string RightClickCaption = "";
+      public string RightClickCommand = "";
     }
 
     private void SetAllControlFontSizes(Control parent, float fontSize) {
@@ -286,6 +365,8 @@ namespace MilkwaveRemote {
         if (button != null) {
           button.Tag = i + 1;
           button.MouseDown += PresetDeckButton_MouseDown;
+          button.MouseDown += CommandPanelButton_MouseDown;
+          button.MouseUp += CommandPanelButton_MouseUp;
           button.Resize += PresetDeckButton_Resize;
         }
       }
@@ -570,24 +651,30 @@ namespace MilkwaveRemote {
           return Path.GetFullPath(normalized);
         }
 
-        string candidate = Path.GetFullPath(Path.Combine(BaseDir, normalized));
+        // The Visualizer resolves a relative img= against its resources folder
+        // (m_szMilkdrop2Path = <visualizer folder>\resources\), so that is where the sprite is
+        // really read from. Look there first: a leftover file of the same name next to the
+        // Visualizer (the pre-4.2 "sprites\" layout) must not hide the live cover.
+        string visualizerDir = GetVisualizerDir(IsSelectedVisualizerDX12());
+        string resourcesPath = Path.GetFullPath(Path.Combine(visualizerDir, "resources", normalized));
+        if (File.Exists(resourcesPath)) {
+          return resourcesPath;
+        }
+
+        string candidate = Path.GetFullPath(Path.Combine(visualizerDir, normalized));
         if (File.Exists(candidate)) {
           return candidate;
         }
 
-        // Try resources fallback for: simple filenames, or paths starting with "sprites\"
-        bool isSimpleFilename = !normalized.Contains(Path.DirectorySeparatorChar) && !normalized.Contains(Path.AltDirectorySeparatorChar);
-        bool isSpritesPath = normalized.StartsWith("sprites" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
-                             normalized.StartsWith("sprites/", StringComparison.OrdinalIgnoreCase);
-
-        if (isSimpleFilename || isSpritesPath) {
-          string resourcesFallback = Path.GetFullPath(Path.Combine(BaseDir, "resources", normalized));
-          if (File.Exists(resourcesFallback)) {
-            return resourcesFallback;
+        // Remote and Visualizer installed in different folders: fall back to the Remote's own.
+        foreach (string root in new[] { Path.Combine(BaseDir, "resources"), BaseDir }) {
+          string fallback = Path.GetFullPath(Path.Combine(root, normalized));
+          if (File.Exists(fallback)) {
+            return fallback;
           }
         }
 
-        return candidate;
+        return resourcesPath;
       } catch (Exception) {
         return string.Empty;
       }
@@ -942,6 +1029,25 @@ namespace MilkwaveRemote {
       Program.LogToFile($"Application version: {version ?? "unknown"}");
       InitializeComponent();
 
+      updatingSettingsParams = true;
+      cboTransitionMode.Items.AddRange(TransitionModeNames);
+      cboTransitionMode.SelectedIndex = 0;
+      cboDesktopMode.Items.AddRange(DesktopModeMonitorNames);
+      cboDesktopMode.SelectedIndex = 0;
+      updatingSettingsParams = false;
+      cboDesktopMode.SelectedIndexChanged += cboDesktopMode_SelectedIndexChanged;
+      toolTip1.SetToolTip(cboDesktopMode, "Area covered by Desktop Mode: all monitors, primary or current monitor");
+
+      // Seed the configured tab set with the pages the Designer created. The
+      // visualizer's ShowTab* settings update it later; the "Show/Hide Tabs"
+      // submenu toggles single tabs of it.
+      foreach (TabPage page in tabControl.TabPages) {
+        configuredVisibleTabs.Add(page.Name);
+      }
+
+      previousLyricsPosX = numLyricsPosX.Value;
+      previousLyricsPosY = numLyricsPosY.Value;
+
       VisualizerPresetsFolder = Path.Combine(BaseDir, "resources\\presets\\");
       ShaderFilesFolder = Path.Combine(BaseDir, "resources\\shader\\");
       PresetsShaderConvFolder = Path.Combine(VisualizerPresetsFolder, "Milkwave\\Shader\\Conv\\");
@@ -966,8 +1072,13 @@ namespace MilkwaveRemote {
         if (loadedSettings != null) {
           Settings = loadedSettings;
         }
+        // First start detection: the position is written when the Remote closes, and the shipped
+        // settings template leaves it empty - either way there is nothing to restore yet.
+        hasSavedWindowLocation = JsonContainsProperty(jsonString, nameof(Settings.RemoteWindowLocation))
+                                 && !Settings.RemoteWindowLocation.IsEmpty;
       } catch (Exception) {
         Settings = new Settings();
+        hasSavedWindowLocation = false;
       }
 
       try {
@@ -1034,6 +1145,12 @@ namespace MilkwaveRemote {
       controllerTimer.Tick += ControllerTimer_Tick;
       controllerTimer.Interval = 50; // 20Hz polling
 
+      // While nothing is connected the Remote looks for a Visualizer every 2 seconds,
+      // so one that is started after the Remote is picked up automatically.
+      autoScanTimer = new System.Windows.Forms.Timer();
+      autoScanTimer.Interval = 2000;
+      autoScanTimer.Tick += AutoScanTimer_Tick;
+
       tabControl.SelectedIndex = Settings.SelectedTabIndex;
 
       // Create the window handle BEFORE connecting. The visualizer replies to our STATE
@@ -1044,6 +1161,12 @@ namespace MilkwaveRemote {
       // With the handle in place such messages are marshalled and queued until the message
       // loop starts, i.e. until after this constructor has finished.
       _ = Handle;
+
+      // Default the cover selector to "Corner (medium)" BEFORE anything connects: once the pipe is
+      // up, changing SelectedIndex raises SelectedIndexChanged and would push COVER_STYLE to the
+      // visualizer, overwriting the size stored in its settings.ini. The real value is filled in
+      // from the SETTINGS| state message (COVERSTYLE=...) instead.
+      cboSettingsCover.SelectedIndex = 1;
 
 #if !DEBUG
       ConnectToVisualizer();
@@ -1060,6 +1183,9 @@ namespace MilkwaveRemote {
 
     private void MilkwaveRemoteForm_Load(object sender, EventArgs e) {
       LoadAndSetSettings();
+      if (!hasSavedWindowLocation) {
+        SetStatusText(firstRunWindowHint);
+      }
       RefreshSpriteButtonImages();
       ApplyPanelMode(); // This will call UpdateModeToggleButton
       SetPanelsVisibility();
@@ -1069,6 +1195,7 @@ namespace MilkwaveRemote {
 #else
       StartVisualizerIfNotFound(true);
 #endif
+      EnsureAutoScanTimerState();
 
       ofd = new OpenFileDialog();
       ofd.Filter = "MilkDrop Presets|*.milk;*.milk2|All files (*.*)|*.*";
@@ -1078,13 +1205,25 @@ namespace MilkwaveRemote {
       txtShaderHLSL.Font = new Font(txtShaderHLSL.Font.FontFamily, 10f, txtShaderHLSL.Font.Style);
       txtShaderGLSL.Font = txtShaderHLSL.Font;
 
-      RemoteHelper = new RemoteHelper(Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), visualizerSettingsFile));
+      string visualizerSettingsPath = Path.Combine(GetVisualizerDir(IsSelectedVisualizerDX12()), visualizerSettingsFile);
+      RemoteHelper = new RemoteHelper(visualizerSettingsPath);
+      commandButtonSettingsPath = visualizerSettingsPath;
 
       string fTimeBetweenPresets = RemoteHelper.GetIniValue("Settings", "fTimeBetweenPresets", "60");
       if (!decimal.TryParse(fTimeBetweenPresets, NumberStyles.Float, CultureInfo.InvariantCulture, out var timeBetweenPresets)) {
         timeBetweenPresets = 60m;
       }
       numPresetChange.Value = Math.Clamp(timeBetweenPresets, numPresetChange.Minimum, numPresetChange.Maximum);
+
+      string mixTypeValue = RemoteHelper.GetIniValue("Settings", "Mixtype", "-1");
+      if (int.TryParse(mixTypeValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int mixType)) {
+        updatingSettingsParams = true;
+        cboTransitionMode.SelectedIndex = Math.Clamp(mixType + 1, 0, cboTransitionMode.Items.Count - 1);
+        updatingSettingsParams = false;
+      }
+
+      LoadButtonConfiguration(visualizerSettingsPath);
+      ApplyPanelMode(); // apply the configured command button captions
     }
 
     private void StartVisualizerIfNotFound(bool onlyIfNotFound) {
@@ -1092,8 +1231,50 @@ namespace MilkwaveRemote {
       if (onlyIfNotFound && _activeClient != null)
         return;
 
+      // "Only if not found" also has to cover a visualizer that is running but has no pipe:
+      // it may still be starting, or it may never create one at all (e.g. it is showing the
+      // "DirectX 9 missing" dialog). Launching again would open a second instance.
+      if (onlyIfNotFound && IsVisualizerProcessRunning(IsSelectedVisualizerDX12()))
+        return;
+
       // Launch the visualizer and connect via pipe
       LaunchAndConnectVisualizer();
+    }
+
+    private string GetVisualizerExePath(bool isDX12) {
+      string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
+      if (string.IsNullOrEmpty(exePath)) {
+        // Fall back to default exe name
+        exePath = isDX12 ? "MDropDX12.exe" : "MilkwaveVisualizer.exe";
+      }
+
+      // If it's just a filename, resolve relative to the appropriate visualizer dir
+      if (!Path.IsPathRooted(exePath)) {
+        exePath = Path.Combine(GetVisualizerDir(isDX12), exePath);
+      }
+
+      return exePath;
+    }
+
+    /// <summary>
+    /// True when the visualizer executable is already running, with or without a pipe.
+    /// </summary>
+    private bool IsVisualizerProcessRunning(bool isDX12) {
+      string processName = Path.GetFileNameWithoutExtension(GetVisualizerExePath(isDX12));
+      if (string.IsNullOrEmpty(processName)) {
+        return false;
+      }
+
+      try {
+        var processes = Process.GetProcessesByName(processName);
+        foreach (var process in processes) {
+          process.Dispose();
+        }
+        return processes.Length > 0;
+      } catch (Exception ex) {
+        Debug.WriteLine($"Error checking for a running visualizer: {ex.Message}");
+        return false;
+      }
     }
 
     /// <summary>
@@ -1265,6 +1446,8 @@ namespace MilkwaveRemote {
       _activeClient.MessageReceived -= OnPipeMessageReceived;
       _activeClient.Dispose();
       _activeClient = null;
+      // Without a client the 2 s re-scan must run again (a successful attach stops it).
+      EnsureAutoScanTimerState();
     }
 
     private void ScanAndPopulateVisualizers() {
@@ -1292,6 +1475,55 @@ namespace MilkwaveRemote {
       cboVisualizerInstance.Enabled = anyEntries;
       cboVisualizerInstance.SelectedIndex = 0;
       cboVisualizerInstance.SelectedIndexChanged += cboWindowTitle_SelectedIndexChanged;
+    }
+
+    /// <summary>
+    /// Starts the 2 s re-scan while nothing is connected and stops it once a client is attached.
+    /// </summary>
+    private void EnsureAutoScanTimerState() {
+      if (autoScanTimer == null)
+        return;
+
+      if (_activeClient != null) {
+        if (autoScanTimer.Enabled)
+          autoScanTimer.Stop();
+      } else if (!autoScanTimer.Enabled) {
+        autoScanTimer.Start();
+      }
+    }
+
+    /// <summary>
+    /// Runs every 2 s while the Remote shows "Not connected to a visualizer": discovers local
+    /// instances and network targets again and connects to the first one it finds.
+    /// </summary>
+    private void AutoScanTimer_Tick(object? sender, EventArgs e) {
+      if (_activeClient != null) {
+        autoScanTimer.Stop();
+        return;
+      }
+      if (autoScanInProgress || SendingMessage || IsDisposed)
+        return;
+
+      autoScanInProgress = true;
+      try {
+        var instances = PipeClient.DiscoverVisualizers();
+        if (instances.Count > 0) {
+          ScanAndPopulateVisualizers();
+          ConnectToInstance(instances[0]);
+          EnsureAutoScanTimerState();
+          return;
+        }
+
+        // No local instance: fall back to the configured network targets (if any).
+        if (_activeNetworkTargets.Count > 0) {
+          ConnectToNetworkTarget(_activeNetworkTargets[0]);
+          EnsureAutoScanTimerState();
+        }
+      } catch (Exception ex) {
+        Debug.WriteLine($"Auto-scan for visualizers failed: {ex.Message}");
+      } finally {
+        autoScanInProgress = false;
+      }
     }
 
     private void btnVisualizerScan_Click(object? sender, EventArgs e) {
@@ -1337,14 +1569,7 @@ namespace MilkwaveRemote {
     /// and selects it in cboVisualizerInstance once it appears.
     /// </summary>
     private void LaunchVisualizerExe(bool isDX12) {
-      string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
-      if (string.IsNullOrEmpty(exePath)) {
-        exePath = isDX12 ? "MDropDX12.exe" : "MilkwaveVisualizer.exe";
-      }
-
-      if (!Path.IsPathRooted(exePath)) {
-        exePath = Path.Combine(GetVisualizerDir(isDX12), exePath);
-      }
+      string exePath = GetVisualizerExePath(isDX12);
 
       if (!File.Exists(exePath)) {
         SetStatusText($"Visualizer not found: {exePath}");
@@ -1391,7 +1616,7 @@ namespace MilkwaveRemote {
         // Timed out — still rescan so the combo reflects current state
         BeginInvoke(() => {
           ScanAndPopulateVisualizers();
-          SetStatusText("Visualizer launched but pipe not ready — try Scan");
+          SetStatusText("Visualizer launched but pipe not ready");
         });
       });
       SetStatusText("");
@@ -1425,6 +1650,7 @@ namespace MilkwaveRemote {
       pipeClient.MessageReceived += OnPipeMessageReceived;
       pipeClient.Disconnected += OnPipeDisconnected;
       _activeClient = pipeClient;
+      EnsureAutoScanTimerState();
 
       if (pipeClient.Connect(target.pid)) {
         SetStatusText($"Connected to {target.name} (PID: {target.pid})");
@@ -1502,21 +1728,10 @@ namespace MilkwaveRemote {
       };
       _activeClient = client;
       SetStatusText($"Connecting to {target.Name}...");
-      _ = client.ConnectAsync(target.Host, target.Port, target.Pin, target.DeviceId, target.DeviceName);
-    }
+      _ = client.ConnectAsync(target.Host, target.Port, target.Pin, target.DeviceId, target.DeviceName);    }
 
     private void LaunchAndConnectVisualizer() {
-      bool isDX12 = IsSelectedVisualizerDX12();
-      string exePath = isDX12 ? Settings.VisualizerExeDX12 : Settings.VisualizerExe;
-      if (string.IsNullOrEmpty(exePath)) {
-        // Fall back to default exe name
-        exePath = isDX12 ? "MDropDX12.exe" : "MilkwaveVisualizer.exe";
-      }
-
-      // If it's just a filename, resolve relative to the appropriate visualizer dir
-      if (!Path.IsPathRooted(exePath)) {
-        exePath = Path.Combine(GetVisualizerDir(isDX12), exePath);
-      }
+      string exePath = GetVisualizerExePath(IsSelectedVisualizerDX12());
 
       if (!File.Exists(exePath)) {
         SetStatusText($"Visualizer not found: {exePath}");
@@ -1543,7 +1758,7 @@ namespace MilkwaveRemote {
       }
 
       ScanAndPopulateVisualizers();
-      SetStatusText("Visualizer launched but pipe not ready — try Scan");
+      SetStatusText("Visualizer launched but pipe not ready");
     }
 
     private void cboWindowTitle_SelectedIndexChanged(object? sender, EventArgs e) {
@@ -1565,6 +1780,8 @@ namespace MilkwaveRemote {
         return;
       }
 
+      StopAudioTest(false);
+
       int closedPid = (_activeClient is PipeClient pc) ? pc.ConnectedPid : 0;
       bool wasSelected = closedPid != 0 &&
                          cboVisualizerInstance.SelectedIndex >= 0 &&
@@ -1580,6 +1797,7 @@ namespace MilkwaveRemote {
       }
 
       ScanAndPopulateVisualizers();
+      EnsureAutoScanTimerState();
 
       if (_discoveredInstances.Count == 0) {
         SetStatusText("Visualizer closed, no instances remaining");
@@ -1723,6 +1941,20 @@ namespace MilkwaveRemote {
               numOpacity.ValueChanged += numOpacity_ValueChanged;
             }
           }
+        } else if (message.StartsWith("VERSION=")) {
+          // The Visualizer sends this whenever the audio-reaction version is cycled there
+          // (Ctrl+V in the Visualizer window or the CYCLE_VERSION command), so the Remote's
+          // version field follows along instead of going stale.
+          string version = message.Substring(message.IndexOf("=") + 1);
+          if (int.TryParse(version, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedVersion)) {
+            int clampedVersion = Math.Clamp(parsedVersion, (int)numVisVersion.Minimum, (int)numVisVersion.Maximum);
+            if ((int)numVisVersion.Value != clampedVersion) {
+              // do not echo the change straight back as VAR_VERSION
+              numVisVersion.ValueChanged -= numVisVersion_ValueChanged;
+              numVisVersion.Value = clampedVersion;
+              numVisVersion.ValueChanged += numVisVersion_ValueChanged;
+            }
+          }
         } else if (message.StartsWith("DEVICE=")) {
           string device = message.Substring(message.IndexOf("=") + 1);
           RemoteHelper.SelectDeviceByName(cboAudioDevice, device);
@@ -1762,12 +1994,30 @@ namespace MilkwaveRemote {
                   chkPresetLocked.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) {
                   chkSettingsPresetRandom.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("MIXTYPE", StringComparison.OrdinalIgnoreCase)) {
+                  if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int mixType)) {
+                    int index = Math.Clamp(mixType + 1, 0, cboTransitionMode.Items.Count - 1);
+                    if (cboTransitionMode.SelectedIndex != index) {
+                      cboTransitionMode.SelectedIndex = index;
+                    }
+                  }
                 } else if (key.Equals("CHANGEWITHSONG", StringComparison.OrdinalIgnoreCase)) {
                   chkPresetChangeWithSong.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("DISPLAYCOVER", StringComparison.OrdinalIgnoreCase)) {
                   chkPresetDisplayCover.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("COVERSTYLE", StringComparison.OrdinalIgnoreCase)) {
+                  if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int coverStyle)) {
+                    int index = Math.Clamp(coverStyle, 0, cboSettingsCover.Items.Count - 1);
+                    if (cboSettingsCover.SelectedIndex != index) {
+                      cboSettingsCover.SelectedIndex = index;
+                    }
+                  }
                 } else if (key.Equals("SONGINFOPOLLING", StringComparison.OrdinalIgnoreCase)) {
                   chkPresetDisplayTrack.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("PRESETINFOONCHANGE", StringComparison.OrdinalIgnoreCase)) {
+                  chkPresetDisplayPreset.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("INVERTPRESET", StringComparison.OrdinalIgnoreCase)) {
+                  chkInvert.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("INPUTTOP", StringComparison.OrdinalIgnoreCase)) {
                   chkInputTop.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
                 } else if (key.Equals("LUMAACTIVE", StringComparison.OrdinalIgnoreCase)) {
@@ -1813,6 +2063,21 @@ namespace MilkwaveRemote {
                 } else if (key.Equals("LYRICSCOLORB", StringComparison.OrdinalIgnoreCase)) {
                   lyricsColorB = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ? Math.Clamp(b, 0, 255) : 255;
                   ApplyLyricsColor();
+                } else if (key.Equals("LYRICSOUTLINE", StringComparison.OrdinalIgnoreCase)) {
+                  if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int outlineMode)) {
+                    cboLyricsOutline.SelectedIndex = Math.Clamp(outlineMode, 0, cboLyricsOutline.Items.Count - 1);
+                  }
+                } else if (key.Equals("LYRICSOUTLINEAMOUNT", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numLyricsOutlineAmount, value);
+                } else if (key.Equals("LYRICSOUTLINECOLORR", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsOutlineColorR = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int outlineR) ? Math.Clamp(outlineR, 0, 255) : 0;
+                  ApplyLyricsOutlineColor();
+                } else if (key.Equals("LYRICSOUTLINECOLORG", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsOutlineColorG = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int outlineG) ? Math.Clamp(outlineG, 0, 255) : 0;
+                  ApplyLyricsOutlineColor();
+                } else if (key.Equals("LYRICSOUTLINECOLORB", StringComparison.OrdinalIgnoreCase)) {
+                  lyricsOutlineColorB = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int outlineB) ? Math.Clamp(outlineB, 0, 255) : 0;
+                  ApplyLyricsOutlineColor();
                 } else if (key.Equals("LYRICSPOSX", StringComparison.OrdinalIgnoreCase)) {
                   SetLyricsNumeric(numLyricsPosX, value);
                 } else if (key.Equals("LYRICSPOSY", StringComparison.OrdinalIgnoreCase)) {
@@ -1835,6 +2100,26 @@ namespace MilkwaveRemote {
                   SetLyricsNumeric(numLyricsBurnmode, value);
                 } else if (key.Equals("LYRICSAUTOSCALE", StringComparison.OrdinalIgnoreCase)) {
                   chkLyricsAutoScale.Checked = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+                } else if (key.Equals("TEXTBORDER", StringComparison.OrdinalIgnoreCase)) {
+                  SetLyricsNumeric(numSettingTextborder, value);
+                } else if (key.Equals("TEXTBORDERCOLORR", StringComparison.OrdinalIgnoreCase)) {
+                  textBorderColorR = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int borderR) ? Math.Clamp(borderR, 0, 255) : 0;
+                  ApplyTextBorderColor();
+                } else if (key.Equals("TEXTBORDERCOLORG", StringComparison.OrdinalIgnoreCase)) {
+                  textBorderColorG = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int borderG) ? Math.Clamp(borderG, 0, 255) : 0;
+                  ApplyTextBorderColor();
+                } else if (key.Equals("TEXTBORDERCOLORB", StringComparison.OrdinalIgnoreCase)) {
+                  textBorderColorB = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int borderB) ? Math.Clamp(borderB, 0, 255) : 0;
+                  ApplyTextBorderColor();
+                } else if (key.Equals("DESKTOMMONITORS", StringComparison.OrdinalIgnoreCase)) {
+                  int monitorIndex = Array.FindIndex(DesktopModeMonitorTokens,
+                    token => token.Equals(value, StringComparison.OrdinalIgnoreCase));
+                  if (monitorIndex >= 0) {
+                    visualizerDesktopModeMonitor = monitorIndex;
+                    if (cboDesktopMode.SelectedIndex != monitorIndex) {
+                      cboDesktopMode.SelectedIndex = monitorIndex;
+                    }
+                  }
                 } else if (key.StartsWith("SHOWTAB", StringComparison.OrdinalIgnoreCase)) {
                   ApplyTabVisibility(key, value);
                 }
@@ -1852,6 +2137,10 @@ namespace MilkwaveRemote {
     }
 
     // --- Remote tab visibility (visualizer [Milkwave] ShowTab* settings) ---
+
+    // Tab pages enabled by the visualizer settings (settings.ini [Milkwave] ShowTab*).
+    // The "Show/Hide Tabs" submenu and the visualizer's state messages both drive it.
+    private readonly HashSet<string> configuredVisibleTabs = new(StringComparer.OrdinalIgnoreCase);
 
     // Tab pages in their canonical (Designer) order, used to re-insert a tab at
     // its original position when a ShowTab* setting turns it back on.
@@ -1875,13 +2164,8 @@ namespace MilkwaveRemote {
 
     // Applies a visualizer "SHOWTAB*=" setting to the matching tab page.
     private void ApplyTabVisibility(string key, string value) {
-      bool show = value.Equals("1", StringComparison.OrdinalIgnoreCase);
+      bool configured = value.Equals("1", StringComparison.OrdinalIgnoreCase);
       string up = key.ToUpperInvariant();
-      // The MIDI tab additionally requires the Remote's own MIDI setting to be
-      // enabled (otherwise MIDI device setup is skipped and the tab is inert).
-      if (up == "SHOWTABMIDI") {
-        show = show && Settings.MidiEnabled;
-      }
       string? tabName = up switch {
         "SHOWTABPRESET" => "tabPreset",
         "SHOWTABMESSAGE" => "tabMessage",
@@ -1895,16 +2179,69 @@ namespace MilkwaveRemote {
         _ => null,
       };
       if (tabName == null) return;
+      // The submenu always shows the configured setting, even while the MIDI tab is
+      // force-hidden below because the Remote's own MIDI support is switched off.
+      ToolStripMenuItem? menuItem = GetShowTabMenuItem(tabName);
+      if (menuItem != null) {
+        menuItem.Checked = configured;
+      }
+      // The MIDI tab additionally requires the Remote's own MIDI setting to be
+      // enabled (otherwise MIDI device setup is skipped and the tab is inert).
+      bool show = configured && (up != "SHOWTABMIDI" || Settings.MidiEnabled);
       SetTabVisible(GetTabPageByName(tabName), show);
     }
 
+    // Maps a Designer tab page name to its "Show/Hide Tabs" submenu entry.
+    private ToolStripMenuItem? GetShowTabMenuItem(string tabName) => tabName switch {
+      "tabPreset" => toolStripMenuItemShowTabPreset,
+      "tabMessage" => toolStripMenuItemShowTabMessage,
+      "tabInOut" => toolStripMenuItemShowTabInOut,
+      "tabSettings" => toolStripMenuItemShowTabSettings,
+      "tabLyrics" => toolStripMenuItemShowTabLyrics,
+      "tabFonts" => toolStripMenuItemShowTabFonts,
+      "tabMidi" => toolStripMenuItemShowTabMidi,
+      "tabWave" => toolStripMenuItemShowTabWave,
+      "tabShader" => toolStripMenuItemShowTabShader,
+      _ => null,
+    };
+
+    // Maps a "Show/Hide Tabs" submenu suffix (ToolStripMenuItem.Tag) to its page.
+    private static string? GetTabNameFromSuffix(string suffix) => suffix.ToUpperInvariant() switch {
+      "PRESET" => "tabPreset",
+      "MESSAGE" => "tabMessage",
+      "INOUT" => "tabInOut",
+      "SETTINGS" => "tabSettings",
+      "LYRICS" => "tabLyrics",
+      "FONTS" => "tabFonts",
+      "MIDI" => "tabMidi",
+      "WAVE" => "tabWave",
+      "SHADER" => "tabShader",
+      _ => null,
+    };
+
     private void SetTabVisible(TabPage? page, bool visible) {
       if (page == null) return;
-      bool present = tabControl.TabPages.Contains(page);
-      if (visible && !present) {
-        InsertTabAtCanonicalPosition(page);
-      } else if (!visible && present) {
-        tabControl.TabPages.Remove(page);
+      if (visible) {
+        configuredVisibleTabs.Add(page.Name);
+      } else {
+        configuredVisibleTabs.Remove(page.Name);
+      }
+      UpdateTabPages();
+    }
+
+    // Adds/removes tab pages so that the control shows exactly the configured tabs.
+    private void UpdateTabPages() {
+      if (tabControl.IsDisposed) return;
+      foreach (string name in TabOrder) {
+        TabPage? page = GetTabPageByName(name);
+        if (page == null) continue;
+        bool shouldShow = configuredVisibleTabs.Contains(name);
+        bool present = tabControl.TabPages.Contains(page);
+        if (shouldShow && !present) {
+          InsertTabAtCanonicalPosition(page);
+        } else if (!shouldShow && present) {
+          tabControl.TabPages.Remove(page);
+        }
       }
       // Keep a valid tab selected when tabs are hidden/reshown.
       if (tabControl.TabPages.Count > 0 &&
@@ -1932,7 +2269,8 @@ namespace MilkwaveRemote {
     private void MainForm_Shown(object sender, EventArgs e) {
       btnSend.Focus();
 
-      pnlColorMessage.BackColor = Color.FromArgb(200, 0, 200); // purple
+      // The swatch is set here last, so the color saved for the last message wins over the default.
+      pnlColorMessage.BackColor = GetSavedMessageColor() ?? Color.FromArgb(200, 0, 200); // purple
       colorDialogMessage.Color = pnlColorMessage.BackColor;
 
       pnlColorWave.BackColor = Color.FromArgb(0, 200, 0); // dark green
@@ -1979,7 +2317,8 @@ namespace MilkwaveRemote {
         PopulateMidiDevicesList();
         MidiHelper.MidiMessageReceived += MidiMessageReceived();
       } else {
-        tabControl.TabPages.Remove(tabMidi);
+        SetTabVisible(tabMidi, false);
+        toolStripMenuItemShowTabMidi.Enabled = false;
       }
 
       // count the lines in data\include.fx
@@ -2051,6 +2390,9 @@ namespace MilkwaveRemote {
       } else {
         SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
       }
+
+      StoreMessageTabSettings();
+      SaveSettingsToFile();
 
       txtMessage.Focus();
       txtMessage.SelectAll();
@@ -2172,6 +2514,12 @@ namespace MilkwaveRemote {
               message = "LYRICS_FONTAA=" + (chkLyricsFontAA.Checked ? "1" : "0");
             } else if (type == MessageType.LyricsColor) {
               message = "LYRICS_COLOR=" + pnlLyricsColor.BackColor.R + "," + pnlLyricsColor.BackColor.G + "," + pnlLyricsColor.BackColor.B;
+            } else if (type == MessageType.LyricsOutline) {
+              message = "LYRICS_OUTLINE=" + cboLyricsOutline.SelectedIndex;
+            } else if (type == MessageType.LyricsOutlineAmount) {
+              message = "LYRICS_OUTLINE_AMOUNT=" + (int)numLyricsOutlineAmount.Value;
+            } else if (type == MessageType.LyricsOutlineColor) {
+              message = "LYRICS_OUTLINE_COLOR=" + pnlLyricsOutlineColor.BackColor.R + "," + pnlLyricsOutlineColor.BackColor.G + "," + pnlLyricsOutlineColor.BackColor.B;
             } else if (type == MessageType.LyricsPosX) {
               message = "LYRICS_POSX=" + numLyricsPosX.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.LyricsPosY) {
@@ -2194,6 +2542,13 @@ namespace MilkwaveRemote {
               message = "LYRICS_OFFSET=" + numLyricsTimeOffset.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.LyricsAutoScale) {
               message = "LYRICS_AUTOSCALE=" + (chkLyricsAutoScale.Checked ? "1" : "0");
+            } else if (type == MessageType.TextBorder) {
+              message = "TEXTBORDER=" + (int)numSettingTextborder.Value;
+            } else if (type == MessageType.TextBorderColor) {
+              message = "TEXTBORDER_COLOR=" + pnlSettingTextborder.BackColor.R + "," + pnlSettingTextborder.BackColor.G + "," + pnlSettingTextborder.BackColor.B;
+            } else if (type == MessageType.ShowTab) {
+              // messageToSend is "<Name>=<0|1>", e.g. "PRESET=0"
+              message = "SHOWTAB" + messageToSend;
             } else if (type == MessageType.ColSaturation) {
               message = "COL_SATURATION=" + numSettingsSaturation.Value.ToString(CultureInfo.InvariantCulture);
             } else if (type == MessageType.ColBrightness) {
@@ -2210,8 +2565,20 @@ namespace MilkwaveRemote {
               message = "PRESET_CHANGE_WITH_SONG=" + (chkPresetChangeWithSong.Checked ? "1" : "0");
             } else if (type == MessageType.PresetDisplayCover) {
               message = "DISPLAY_COVER=" + (chkPresetDisplayCover.Checked ? "1" : "0");
+            } else if (type == MessageType.CoverStyle) {
+              int coverStyle = cboSettingsCover.SelectedIndex < 0 ? 1 : cboSettingsCover.SelectedIndex;
+              message = "COVER_STYLE=" + coverStyle;
+              statusMessage = "Cover: " + (coverStyle == 0 ? "corner (small)" : coverStyle == 1 ? "corner (medium)" : coverStyle == 2 ? "corner (large)" : "fullscreen zoom");
+            } else if (type == MessageType.TransitionMode) {
+              int transitionType = cboTransitionMode.SelectedIndex <= 0 ? -1 : cboTransitionMode.SelectedIndex - 1;
+              message = "MIXTYPE=" + transitionType.ToString(CultureInfo.InvariantCulture);
+              statusMessage = "Transition: " + (cboTransitionMode.SelectedItem?.ToString() ?? "Random");
             } else if (type == MessageType.PresetDisplayTrack) {
               message = "SONGINFO_POLLING=" + (chkPresetDisplayTrack.Checked ? "1" : "0");
+            } else if (type == MessageType.PresetDisplayPreset) {
+              message = "PRESETINFO_ON_CHANGE=" + (chkPresetDisplayPreset.Checked ? "1" : "0");
+            } else if (type == MessageType.InvertPreset) {
+              message = "INVERT_PRESET=" + (chkInvert.Checked ? "1" : "0");
             } else if (type == MessageType.SpoutActive) {
               message = "SPOUT_ACTIVE=" + (chkSpoutActive.Checked ? "1" : "0");
             } else if (type == MessageType.SpoutFixedSize) {
@@ -2362,7 +2729,9 @@ namespace MilkwaveRemote {
             }
 
           } else {
-            SetStatusText(windowNotFound);
+            // Not connected. On a first start (no window coordinates saved yet) the status bar
+            // advertises the status-bar mouse actions instead of the plain connection message.
+            SetStatusText(hasSavedWindowLocation ? windowNotFound : firstRunWindowHint);
           }
         }
       } finally {
@@ -2375,6 +2744,11 @@ namespace MilkwaveRemote {
         .Replace(" " + Environment.NewLine, Environment.NewLine)
         .Replace(Environment.NewLine + " ", Environment.NewLine)
         .Replace(Environment.NewLine, " // ").Replace("&", "&&").Trim();
+      // On a first start (no window coordinates saved yet) the status bar never goes blank -
+      // it keeps advertising the status-bar mouse actions until real feedback replaces it.
+      if (text.Length == 0 && !hasSavedWindowLocation) {
+        text = firstRunWindowHint;
+      }
       if (!text.Equals(statusBar.Text)) {
         statusBar.Text = text;
       }
@@ -2713,6 +3087,9 @@ namespace MilkwaveRemote {
           SendUnicodeChars("~");
         } else if (tokenUpper.Equals("PRESETINFO")) {
           SendPostMessage(VK_F4, "F4");
+        } else if (tokenUpper.Equals("PRESETINFOONCHANGE")) {
+          // Toggle the "show preset info on preset change" feature (Ctrl+F4)
+          if (CanSendPipeMessage) PipeSend("PRESETINFO_ON_CHANGE");
         } else if (tokenUpper.Equals("SONGINFO")) {
           SendPostMessage(VK_B, "B");
         } else if (tokenUpper.Equals("SOUNDINFO")) {
@@ -2830,30 +3207,15 @@ namespace MilkwaveRemote {
       SetStatusText($"Pressed {keyName}");
     }
 
-    private void btnF3_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F3, "F3");
-    }
+    private void btnF3_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF3);
 
-    private void btnF4_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F4, "F4");
-    }
+    private void btnF4_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF4);
 
-    private void btnF7_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F7, "F7");
-    }
+    private void btnF7_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF7);
 
-    private void btnSpace_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_SPACE, "Space");
-    }
+    private void btnSpace_Click(object sender, EventArgs e) => ExecuteCommandButton(btnSpace);
 
-    private void btnBackspace_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_BACKSPACE, "Backspace");
-    }
+    private void btnBackspace_Click(object sender, EventArgs e) => ExecuteCommandButton(btnBackspace);
 
     private void SendUnicodeChars(string inputString) {
       if (!CanSendPipeMessage) {
@@ -2865,42 +3227,446 @@ namespace MilkwaveRemote {
       SetStatusText($"Pressed {inputString.ToUpper()}");
     }
 
-    private void btnTilde_Click(object sender, EventArgs e) {
+    private void btnTilde_Click(object sender, EventArgs e) => ExecuteCommandButton(btnTilde);
+
+    private void btnDelete_Click(object sender, EventArgs e) => ExecuteCommandButton(btnDelete);
+
+    private void btnAltEnter_Click(object sender, EventArgs e) => ExecuteCommandButton(btnAltEnter);
+
+    private void btnN_Click(object sender, EventArgs e) => ExecuteCommandButton(btnN);
+
+    private void btnF2_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF2);
+
+    private void btnK_Click(object sender, EventArgs e) => ExecuteCommandButton(btnK);
+
+    private void btnF10_Click(object sender, EventArgs e) => ExecuteCommandButton(btnF10);
+
+    private void ExecuteCommandButton(Button button) {
+      // Swallow the Click that belongs to a function-assignment gesture. Depending on
+      // event order it can arrive before the MouseUp that opens the menu, so the pending
+      // state set on MouseDown is checked as well (and must survive for MouseUp to use).
+      if (suppressCommandClick || pendingAssignButton == button) {
+        suppressCommandClick = false;
+        return;
+      }
       if (Settings.IsPresetMode) return;
-      SendUnicodeChars("~");
+      int index = Array.IndexOf(presetDeckButtons, button);
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+      ExecuteButtonCommand(config.Command, GetCommandButtonLabel(config));
     }
 
-    private void btnDelete_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_DELETE, "Delete");
+    private void CommandPanelButton_MouseDown(object? sender, MouseEventArgs e) {
+      pendingAssignButton = null;
+      pendingAssignRightClick = false;
+      suppressCommandClick = false;
+      if (Settings.IsPresetMode || sender is not Button button) return;
+
+      int index = Array.IndexOf(presetDeckButtons, button);
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+
+      bool ctrlHeld = (Control.ModifierKeys & Keys.Control) == Keys.Control;
+
+      // Middle-click, Ctrl+left-click (button function) or Ctrl+right-click (right-click
+      // function) arm the assignment menu; it opens on mouse-up so the release of the same
+      // click cannot activate one of its items.
+      if (e.Button == MouseButtons.Middle ||
+          (e.Button == MouseButtons.Left && ctrlHeld) ||
+          (e.Button == MouseButtons.Right && ctrlHeld)) {
+        pendingAssignButton = button;
+        pendingAssignRightClick = e.Button == MouseButtons.Right;
+        return;
+      }
+
+      if (e.Button != MouseButtons.Right) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+      if (string.IsNullOrWhiteSpace(config.RightClickCommand)) return;
+      string rightClickLabel = config.RightClickCaption.Length > 0 ? config.RightClickCaption : GetCommandButtonLabel(config);
+      ExecuteButtonCommand(config.RightClickCommand, rightClickLabel + " (right-click)");
     }
 
-    private void btnAltEnter_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
-      PipeSendSignal("FULLSCREEN");
-      SetStatusText("Pressed Fullscreen");
+    private void CommandPanelButton_MouseUp(object? sender, MouseEventArgs e) {
+      if (sender is not Button button || pendingAssignButton != button) return;
+      bool forRightClick = pendingAssignRightClick;
+      pendingAssignButton = null;
+      pendingAssignRightClick = false;
+      if (!button.ClientRectangle.Contains(e.Location)) return;
+      suppressCommandClick = true;
+      ShowCommandButtonAssignmentMenu(button, forRightClick);
     }
 
-    private void btnN_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_N, "N");
+    private void ShowCommandButtonAssignmentMenu(Button button, bool forRightClick) {
+      int index = Array.IndexOf(presetDeckButtons, button);
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+      string currentCommand = forRightClick ? config.RightClickCommand : config.Command;
+
+      List<string> categories = new List<string>();
+      foreach (CommandFunctionOption option in CommandFunctionCatalog) {
+        if (!categories.Contains(option.Category)) categories.Add(option.Category);
+      }
+
+      // Reused across invocations: disposing the drop-down in its own Closed event
+      // makes ToolStripManager throw when it later processes an activation change.
+      if (commandFunctionMenu == null) {
+        commandFunctionMenu = new ContextMenuStrip();
+      }
+      ContextMenuStrip menu = commandFunctionMenu;
+      menu.Items.Clear();
+
+      // Header naming the gesture being configured; not selectable.
+      ToolStripMenuItem headerItem = new ToolStripMenuItem(forRightClick ? "Set Right Mouse Button Function" : "Set Left Mouse Button Function");
+      headerItem.Enabled = false;
+      menu.Items.Add(headerItem);
+      menu.Items.Add(new ToolStripSeparator());
+
+      foreach (string category in categories) {
+        // Escape '&': ToolStripMenuItem treats it as an access-key marker.
+        ToolStripMenuItem categoryItem = new ToolStripMenuItem(category.Replace("&", "&&"));
+        bool categoryChecked = false;
+        foreach (CommandFunctionOption option in CommandFunctionCatalog) {
+          if (option.Category != category) continue;
+          string itemText = option.Shortcut.Length > 0 ? $"{option.Name} ({option.Shortcut})" : option.Name;
+          ToolStripMenuItem item = new ToolStripMenuItem(itemText.Replace("&", "&&"));
+          bool isCurrent = string.Equals(currentCommand, option.Command, StringComparison.OrdinalIgnoreCase);
+          item.Checked = isCurrent;
+          categoryChecked |= isCurrent;
+          item.Click += (s, args) => AssignCommandFunctionToButton(index, option, forRightClick);
+          categoryItem.DropDownItems.Add(item);
+        }
+        categoryItem.CheckState = categoryChecked ? CheckState.Checked : CheckState.Unchecked;
+        menu.Items.Add(categoryItem);
+      }
+
+      if (forRightClick) {
+        menu.Items.Add(new ToolStripSeparator());
+        ToolStripMenuItem clearItem = new ToolStripMenuItem("Clear Function");
+        clearItem.Enabled = config.RightClickCommand.Length > 0;
+        clearItem.Click += (s, args) => ClearCommandFunctionFromButton(index);
+        menu.Items.Add(clearItem);
+      }
+
+      menu.Show(Cursor.Position);
+      SetStatusText(forRightClick
+        ? $"Choose a right-click function for button {index + 1}"
+        : $"Choose a function for button {index + 1}");
     }
 
-    private void btnF2_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F2, "F2");
+    private void AssignCommandFunctionToButton(int index, CommandFunctionOption option, bool forRightClick) {
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+
+      if (forRightClick) {
+        config.RightClickCaption = option.Name;
+        config.RightClickCommand = option.Command;
+        PersistButtonSetting(index, true);
+        RestoreCommandButtonAppearance(index);
+        SetStatusText($"Button {index + 1} right-click set to {option.Name}");
+        return;
+      }
+
+      config.Caption = option.Shortcut.Length > 0 ? $"{option.Name}\n({option.Shortcut})" : option.Name;
+      config.Command = option.Command;
+      PersistButtonSetting(index, false);
+      RestoreCommandButtonAppearance(index);
+      SetStatusText($"Button {index + 1} set to {option.Name}");
     }
 
-    private void btnK_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_K, "K");
+    private void ClearCommandFunctionFromButton(int index) {
+      if (index < 0 || index >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+
+      config.RightClickCaption = "";
+      config.RightClickCommand = "";
+      PersistButtonSetting(index, true);
+      RestoreCommandButtonAppearance(index);
+      SetStatusText($"Button {index + 1} right-click function cleared");
     }
 
-    private void btnF10_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F10, "F10");
+    private void PersistButtonSetting(int index, bool rightClick) {
+      if (RemoteHelper == null || commandButtonSettingsPath == null || !File.Exists(commandButtonSettingsPath)) return;
+      CommandButtonConfig config = commandButtonConfigs[index];
+      string number = (index + 1).ToString(CultureInfo.InvariantCulture);
+
+      if (rightClick) {
+        string value = config.RightClickCommand.Length > 0
+          ? $"{EscapeCaption(config.RightClickCaption)}|{config.RightClickCommand}"
+          : "none";
+        RemoteHelper.SetIniValue("Buttons", "Button" + number + "RightClick", value);
+      } else {
+        RemoteHelper.SetIniValue("Buttons", "Button" + number, $"{EscapeCaption(config.Caption)}|{config.Command}");
+      }
     }
+
+    private void ExecuteButtonCommand(string command, string statusLabel) {
+      if (string.IsNullOrWhiteSpace(command)) return;
+      if (!CanSendPipeMessage) {
+        SetStatusText(windowNotFound);
+        return;
+      }
+
+      if (command.StartsWith("SIGNAL|", StringComparison.OrdinalIgnoreCase)) {
+        string signal = command.Substring(7);
+        // The Desktop Mode button always uses the scope picked in cboDesktopMode.
+        if (string.Equals(signal, "DESKTOP_MODE", StringComparison.OrdinalIgnoreCase)
+            && cboDesktopMode.SelectedIndex >= 0
+            && visualizerDesktopModeMonitor != cboDesktopMode.SelectedIndex) {
+          SendDesktopModeMonitor(cboDesktopMode.SelectedIndex);
+        }
+        PipeSendSignal(signal);
+      } else {
+        PipeSend(command);
+      }
+      SetStatusText($"Pressed {statusLabel}");
+    }
+
+    private void cboDesktopMode_SelectedIndexChanged(object? sender, EventArgs e) {
+      if (cboDesktopMode.SelectedIndex < 0) return;
+      if (updatingSettingsParams) return;  // mirror of the visualizer state, not a user change
+      if (!CanSendPipeMessage) return;
+      if (SendDesktopModeMonitor(cboDesktopMode.SelectedIndex)) {
+        SetStatusText($"Desktop Mode: {cboDesktopMode.Text}");
+      }
+    }
+
+    private bool SendDesktopModeMonitor(int monitor) {
+      int index = Math.Clamp(monitor, 0, DesktopModeMonitorTokens.Length - 1);
+      if (!PipeSend("DESKTOP_MODE_MONITORS=" + DesktopModeMonitorTokens[index])) return false;
+      visualizerDesktopModeMonitor = index;
+      return true;
+    }
+
+    private static string GetCommandButtonLabel(CommandButtonConfig config) {
+      int lineBreakIndex = config.Caption.IndexOf('\n');
+      string label = lineBreakIndex >= 0 ? config.Caption.Substring(0, lineBreakIndex) : config.Caption;
+      return label.Trim();
+    }
+
+    private static CommandButtonConfig[] BuildDefaultCommandButtonConfigs() {
+      return new[] {
+        new CommandButtonConfig { Caption = "Next Preset\n(Space)", Command = "SEND=0x20" },
+        new CommandButtonConfig { Caption = "Previous Preset\n(Backspace)", Command = "SEND=0x08" },
+        new CommandButtonConfig { Caption = "Sound Info\n(N)", Command = "SEND=0x4E" },
+        new CommandButtonConfig { Caption = "Song Info\n(B)", Command = "SEND=0x42" },
+        new CommandButtonConfig { Caption = "Preset Lock\n(~)", Command = "SEND=~" },
+        new CommandButtonConfig { Caption = "Borderless\n(F2)", Command = "SEND=0x71" },
+        new CommandButtonConfig { Caption = "Change FPS\n(F3)", Command = "SEND=0x72" },
+        new CommandButtonConfig { Caption = "Preset Info\n(F4)", Command = "SEND=0x73" },
+        new CommandButtonConfig { Caption = "Always On Top\n(F7)", Command = "SEND=0x76" },
+        new CommandButtonConfig { Caption = "Toggle Spout\n(F10)", Command = "SEND=0x79" },
+        new CommandButtonConfig { Caption = "Fullscreen\n(Alt+Enter)", Command = "SIGNAL|FULLSCREEN", RightClickCaption = "Borderless Fullscreen", RightClickCommand = "SIGNAL|BORDERLESS_FS" },
+        new CommandButtonConfig { Caption = "Sprite/Msg Mode\n(K)", Command = "SEND=0x4B" },
+        new CommandButtonConfig { Caption = "Clear Sprite/Msg\n(Delete)", Command = "SEND=0x2E", RightClickCaption = "Clear all Sprites", RightClickCommand = "CLEARSPRITES" },
+        new CommandButtonConfig { Caption = "Watermark Mode\n(Ctrl+Shift+F9)", Command = "SIGNAL|WATERMARK" },
+        new CommandButtonConfig { Caption = "Desktop Mode\n(Ctrl+F9)", Command = "SIGNAL|DESKTOP_MODE" },
+      };
+    }
+
+    private sealed class CommandFunctionOption {
+      public string Category = "";
+      public string Name = "";
+      public string Shortcut = "";
+      public string Command = "";
+    }
+
+    // Functions offered when assigning a command to a button (middle-click or Ctrl+left-click).
+    private static readonly CommandFunctionOption[] CommandFunctionCatalog = {
+      // Window
+      new CommandFunctionOption { Category = "Window", Name = "Fullscreen", Shortcut = "Alt+Enter", Command = "SIGNAL|FULLSCREEN" },
+      new CommandFunctionOption { Category = "Window", Name = "Borderless Window", Shortcut = "F2", Command = "SEND=0x71" },
+      new CommandFunctionOption { Category = "Window", Name = "Borderless Fullscreen", Shortcut = "Ctrl+Alt+Enter", Command = "SIGNAL|BORDERLESS_FS" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode", Shortcut = "Ctrl+F9", Command = "SIGNAL|DESKTOP_MODE" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode: All Monitors", Command = "DESKTOP_MODE_MONITORS=all" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode: Primary Monitor", Command = "DESKTOP_MODE_MONITORS=primary" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode: Current Monitor", Command = "DESKTOP_MODE_MONITORS=current" },
+      new CommandFunctionOption { Category = "Window", Name = "Desktop Mode: Cycle Area", Shortcut = "Shift+F9", Command = "DESKTOP_MODE_MONITORS_CYCLE" },
+      new CommandFunctionOption { Category = "Window", Name = "Watermark Mode", Shortcut = "Ctrl+Shift+F9", Command = "SIGNAL|WATERMARK" },
+      new CommandFunctionOption { Category = "Window", Name = "Always On Top", Shortcut = "F7", Command = "SEND=0x76" },
+      new CommandFunctionOption { Category = "Window", Name = "Clickthrough", Shortcut = "F9", Command = "SEND=0x78" },
+      new CommandFunctionOption { Category = "Window", Name = "Open Milkwave Remote", Shortcut = "F8", Command = "SIGNAL|OPEN_REMOTE" },
+      new CommandFunctionOption { Category = "Window", Name = "Toggle Spout", Shortcut = "F10", Command = "SEND=0x79" },
+      new CommandFunctionOption { Category = "Window", Name = "Fixed Spout Resolution", Shortcut = "Shift+F10", Command = "SPOUT_FIXEDSIZE" },
+      new CommandFunctionOption { Category = "Window", Name = "Toggle Network Server", Shortcut = "Ctrl+Shift+N", Command = "NETWORK_SERVER" },
+      new CommandFunctionOption { Category = "Window", Name = "Network Server Status", Shortcut = "Ctrl+N", Command = "NETWORK_SERVER_STATUS" },
+      new CommandFunctionOption { Category = "Window", Name = "Stretch All Monitors", Shortcut = "Alt+S", Command = "STRETCH_MONITORS" },
+      new CommandFunctionOption { Category = "Window", Name = "Reset Window", Shortcut = "Ctrl+F2", Command = "WINDOW_RESET" },
+      new CommandFunctionOption { Category = "Window", Name = "Fixed Window Size", Shortcut = "Shift+Ctrl+F2", Command = "WINDOW_FIXED_SIZE" },
+      new CommandFunctionOption { Category = "Window", Name = "Opacity +5%", Shortcut = "Shift+Wheel Up", Command = "OPACITY_UP" },
+      new CommandFunctionOption { Category = "Window", Name = "Opacity -5%", Shortcut = "Shift+Wheel Down", Command = "OPACITY_DOWN" },
+      // Display
+      new CommandFunctionOption { Category = "Display", Name = "Help", Shortcut = "F1", Command = "SEND=0x70" },
+      new CommandFunctionOption { Category = "Display", Name = "Transparency Mode", Shortcut = "F12", Command = "SEND=0x7B" },
+      new CommandFunctionOption { Category = "Display", Name = "Change FPS", Shortcut = "F3", Command = "SEND=0x72" },
+      new CommandFunctionOption { Category = "Display", Name = "Preset Info", Shortcut = "F4", Command = "SEND=0x73" },
+      new CommandFunctionOption { Category = "Display", Name = "Preset Info on Change", Shortcut = "Ctrl+F4", Command = "PRESETINFO_ON_CHANGE" },
+      new CommandFunctionOption { Category = "Display", Name = "Flash Info", Shortcut = "Ctrl+Space", Command = "FLASH_INFO" },
+      new CommandFunctionOption { Category = "Display", Name = "Visual Version", Shortcut = "Ctrl+V", Command = "CYCLE_VERSION" },
+      new CommandFunctionOption { Category = "Display", Name = "Invert Preset Output", Shortcut = "", Command = "INVERT_PRESET" },
+      new CommandFunctionOption { Category = "Display", Name = "Show FPS Setting", Shortcut = "Ctrl+F3", Command = "SHOW_FPS_SETTING" },
+      new CommandFunctionOption { Category = "Display", Name = "Black Mode", Shortcut = "Ctrl+F12", Command = "BLACKMODE" },
+      new CommandFunctionOption { Category = "Display", Name = "Double Quality", Shortcut = "Ctrl+Q", Command = "QUALITY_DOUBLE" },
+      new CommandFunctionOption { Category = "Display", Name = "Half Quality", Shortcut = "Shift+Ctrl+Q", Command = "QUALITY_HALF" },
+      new CommandFunctionOption { Category = "Display", Name = "Hue Shift +", Shortcut = "Ctrl+H", Command = "HUE_SHIFT_UP" },
+      new CommandFunctionOption { Category = "Display", Name = "Hue Shift -", Shortcut = "Shift+Ctrl+H", Command = "HUE_SHIFT_DOWN" },
+      new CommandFunctionOption { Category = "Display", Name = "Mouse Interaction", Shortcut = "Ctrl+M", Command = "MOUSE_INTERACTION" },
+      new CommandFunctionOption { Category = "Display", Name = "FPS Display", Shortcut = "F5", Command = "SEND=0x74" },
+      new CommandFunctionOption { Category = "Display", Name = "Rating Display", Shortcut = "F6", Command = "SEND=0x75" },
+      new CommandFunctionOption { Category = "Display", Name = "Hard Cut Mode", Shortcut = "F11", Command = "SEND=0x7A" },
+      new CommandFunctionOption { Category = "Display", Name = "Per-Frame Monitor", Shortcut = "N", Command = "SEND=0x4E" },
+      new CommandFunctionOption { Category = "Display", Name = "Save Screenshot", Shortcut = "Ctrl+X", Command = "CAPTURE" },
+      // Presets
+      new CommandFunctionOption { Category = "Presets", Name = "Next Preset", Shortcut = "Space", Command = "SEND=0x20" },
+      new CommandFunctionOption { Category = "Presets", Name = "Hard Cut to Next Preset", Shortcut = "H", Command = "SEND=0x48" },
+      new CommandFunctionOption { Category = "Presets", Name = "Previous Preset", Shortcut = "Backspace", Command = "SEND=0x08" },
+      new CommandFunctionOption { Category = "Presets", Name = "Preset Lock", Shortcut = "~", Command = "SEND=~" },
+      new CommandFunctionOption { Category = "Presets", Name = "Random Order", Shortcut = "R", Command = "SEND=0x52" },
+      new CommandFunctionOption { Category = "Presets", Name = "Quicksave", Shortcut = "Ctrl+S", Command = "QUICKSAVE" },
+      new CommandFunctionOption { Category = "Presets", Name = "Quicksave 2", Shortcut = "Ctrl+Shift+S", Command = "QUICKSAVE2" },
+      new CommandFunctionOption { Category = "Presets", Name = "Preset Change with Song", Shortcut = "Ctrl+A", Command = "PRESET_CHANGE_WITH_SONG" },
+      // Track
+      new CommandFunctionOption { Category = "Track", Name = "Previous Track", Shortcut = "Z", Command = "SEND=0x5A" },
+      new CommandFunctionOption { Category = "Track", Name = "Next Track", Shortcut = "V", Command = "SEND=0x56" },
+      new CommandFunctionOption { Category = "Track", Name = "Play/Pause", Shortcut = "X", Command = "SEND=0x58" },
+      new CommandFunctionOption { Category = "Track", Name = "Stop", Shortcut = "C", Command = "SEND=0x43" },
+      new CommandFunctionOption { Category = "Track", Name = "Track Info", Shortcut = "B", Command = "SEND=0x42" },
+      new CommandFunctionOption { Category = "Track", Name = "Song Info Polling", Shortcut = "Ctrl+B", Command = "SONGINFO_POLLING" },
+      new CommandFunctionOption { Category = "Track", Name = "Cover Display", Shortcut = "Ctrl+C", Command = "DISPLAY_COVER" },
+      new CommandFunctionOption { Category = "Track", Name = "Toggle Lyrics", Shortcut = "Ctrl+L", Command = "LYRICS_ACTIVE" },
+      new CommandFunctionOption { Category = "Track", Name = "Set Default Audio Device", Shortcut = "Ctrl+D", Command = "AUDIO_DEVICE_DEFAULT" },
+      new CommandFunctionOption { Category = "Track", Name = "Show Audio Device", Shortcut = "Shift+Ctrl+D", Command = "AUDIO_DEVICE_INFO" },
+      // Sprites & Messages
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Sprite/Msg Mode", Shortcut = "K", Command = "SEND=0x4B" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Sprite/Msg", Shortcut = "Delete", Command = "SEND=0x2E" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear all Sprites", Shortcut = "Ctrl+K", Command = "CLEARSPRITES" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Messages/Song Titles", Shortcut = "Ctrl+T", Command = "CLEARTEXTS" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Reload Messages", Shortcut = "*", Command = "SEND=*" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Sprite Kill Mode", Shortcut = "Shift+K", Command = "SPRITE_KILL_MODE" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Clear Oldest Sprite", Shortcut = "Shift+Del", Command = "CLEAR_OLDEST_SPRITE" },
+      new CommandFunctionOption { Category = "Sprites & Messages", Name = "Delete All Sprites", Shortcut = "Shift+Ctrl+Del", Command = "CLEAR_ALL_SPRITES_MESSAGES" },
+      // Wave & Warp
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Echo Zoom +", Shortcut = "Q", Command = "SEND=Q" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Echo Zoom -", Shortcut = "q", Command = "SEND=q" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Mode +", Shortcut = "w", Command = "SEND=w" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Mode -", Shortcut = "W", Command = "SEND=W" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Alpha +", Shortcut = "E", Command = "SEND=E" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Alpha -", Shortcut = "e", Command = "SEND=e" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Warp Scale +", Shortcut = "U", Command = "SEND=U" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Warp Scale -", Shortcut = "u", Command = "SEND=u" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Zoom +", Shortcut = "i", Command = "SEND=i" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Zoom -", Shortcut = "I", Command = "SEND=I" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Warp Amount +", Shortcut = "O", Command = "SEND=O" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Warp Amount -", Shortcut = "o", Command = "SEND=o" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Video Echo Alpha +", Shortcut = "P", Command = "SEND=P" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Video Echo Alpha -", Shortcut = "p", Command = "SEND=p" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Gamma +", Shortcut = "G", Command = "SEND=G" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Gamma -", Shortcut = "g", Command = "SEND=g" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Scale +", Shortcut = "J", Command = "SEND=J" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Wave Scale -", Shortcut = "j", Command = "SEND=j" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "X Offset +", Shortcut = "]", Command = "SEND=]" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "X Offset -", Shortcut = "[", Command = "SEND=[" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Y Offset +", Shortcut = "}", Command = "SEND=}" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Y Offset -", Shortcut = "{", Command = "SEND={" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Rotation +", Shortcut = "<", Command = "SEND=<" },
+      new CommandFunctionOption { Category = "Wave & Warp", Name = "Rotation -", Shortcut = ">", Command = "SEND=>" },
+      // Shader
+      new CommandFunctionOption { Category = "Shader", Name = "Random Mini-Mash-Up", Shortcut = "A", Command = "SEND=0x41" },
+      new CommandFunctionOption { Category = "Shader", Name = "Toggle Shader Locks", Shortcut = "D", Command = "SEND=0x44" },
+      new CommandFunctionOption { Category = "Shader", Name = "Toggle Echo Orientation", Shortcut = "F", Command = "SEND=0x46" },
+      new CommandFunctionOption { Category = "Shader", Name = "Randomize Warp Shader", Shortcut = "!", Command = "SEND=!" },
+      new CommandFunctionOption { Category = "Shader", Name = "Randomize Comp Shader", Shortcut = "@", Command = "SEND=@" },
+    };
+
+    private void LoadButtonConfiguration(string settingsPath) {
+      try {
+        bool canPersist = File.Exists(settingsPath);
+
+        // Button 11 took over the "Borderless Fullscreen" right-click default from button 14.
+        // Move a persisted old default along so existing settings get the new layout; anything
+        // else the user assigned to button 14 stays untouched.
+        if (canPersist) {
+          string legacyRightClick = RemoteHelper.GetIniValue("Buttons", "Button14RightClick", "").Trim();
+          bool isLegacyDefault = legacyRightClick.Equals("Borderless Fullscreen|SIGNAL|BORDERLESS_FS", StringComparison.OrdinalIgnoreCase) ||
+                                 legacyRightClick.Equals("SIGNAL|BORDERLESS_FS", StringComparison.OrdinalIgnoreCase);
+          if (isLegacyDefault && string.IsNullOrWhiteSpace(RemoteHelper.GetIniValue("Buttons", "Button11RightClick", ""))) {
+            RemoteHelper.SetIniValue("Buttons", "Button11RightClick", legacyRightClick);
+            RemoteHelper.SetIniValue("Buttons", "Button14RightClick", "none");
+          }
+        }
+
+        for (int i = 0; i < commandButtonConfigs.Length; i++) {
+          string captionKey = "Button" + (i + 1).ToString(CultureInfo.InvariantCulture);
+          string rightClickKey = captionKey + "RightClick";
+          CommandButtonConfig config = commandButtonConfigs[i];
+
+          string value = RemoteHelper.GetIniValue("Buttons", captionKey, "");
+          if (string.IsNullOrWhiteSpace(value)) {
+            value = $"{EscapeCaption(config.Caption)}|{config.Command}";
+            if (canPersist) {
+              RemoteHelper.SetIniValue("Buttons", captionKey, value);
+            }
+          }
+          ParseButtonConfig(value, config);
+
+          string rightClickValue = RemoteHelper.GetIniValue("Buttons", rightClickKey, "");
+          if (string.IsNullOrWhiteSpace(rightClickValue)) {
+            if (config.RightClickCommand.Length > 0) {
+              rightClickValue = $"{EscapeCaption(config.RightClickCaption)}|{config.RightClickCommand}";
+              if (canPersist) {
+                RemoteHelper.SetIniValue("Buttons", rightClickKey, rightClickValue);
+              }
+            }
+          }
+          ParseRightClickConfig(rightClickValue, config);
+        }
+      } catch (Exception ex) {
+        Program.SaveErrorToFile(ex, "Load button configuration");
+      }
+    }
+
+    private static void ParseButtonConfig(string value, CommandButtonConfig config) {
+      int separatorIndex = value.IndexOf('|');
+      string caption = separatorIndex >= 0 ? value.Substring(0, separatorIndex) : value;
+      string command = separatorIndex >= 0 ? value.Substring(separatorIndex + 1) : "";
+
+      caption = UnescapeCaption(caption.Trim());
+      command = command.Trim();
+
+      if (caption.Length > 0) config.Caption = caption;
+      if (command.Length > 0) config.Command = command;
+    }
+
+    private static void ParseRightClickConfig(string value, CommandButtonConfig config) {
+      string trimmed = value.Trim();
+      if (trimmed.Length == 0 || trimmed.Equals("none", StringComparison.OrdinalIgnoreCase)) {
+        config.RightClickCommand = "";
+        config.RightClickCaption = "";
+        return;
+      }
+
+      // Values written before right-click captions were supported hold the command only.
+      if (trimmed.StartsWith("SEND=", StringComparison.OrdinalIgnoreCase) ||
+          trimmed.StartsWith("SIGNAL|", StringComparison.OrdinalIgnoreCase)) {
+        bool isDefaultCommand = trimmed.Equals(config.RightClickCommand, StringComparison.OrdinalIgnoreCase);
+        config.RightClickCommand = trimmed;
+        config.RightClickCaption = isDefaultCommand && config.RightClickCaption.Length > 0 ? config.RightClickCaption : trimmed;
+        return;
+      }
+
+      int separatorIndex = trimmed.IndexOf('|');
+      string caption = separatorIndex >= 0 ? trimmed.Substring(0, separatorIndex) : trimmed;
+      string command = separatorIndex >= 0 ? trimmed.Substring(separatorIndex + 1) : trimmed;
+
+      caption = UnescapeCaption(caption.Trim());
+      command = command.Trim();
+
+      config.RightClickCommand = command;
+      config.RightClickCaption = command.Length == 0 ? "" : (caption.Length > 0 ? caption : command);
+    }
+
+    private static string EscapeCaption(string caption) => caption.Replace("\n", "\\n");
+
+    private static string UnescapeCaption(string caption) =>
+      caption.Replace("\\r\\n", "\n").Replace("\\n", "\n");
 
     private void btn00_Click(object sender, EventArgs e) { SendUnicodeChars("00"); }
     private void btn11_Click(object sender, EventArgs e) { SendUnicodeChars("11"); }
@@ -2929,6 +3695,8 @@ namespace MilkwaveRemote {
 
     private void MainForm_KeyDown(object sender, KeyEventArgs e) {
       if ((Control.ModifierKeys & Keys.Control) == Keys.Control) {
+        // No page is selected while "Show/Hide Tabs" hides all tabs.
+        string? selectedTabName = tabControl.SelectedTab?.Name;
         if (e.KeyCode == Keys.A) {
           e.SuppressKeyPress = true;
           txtMessage.Focus();
@@ -2940,7 +3708,7 @@ namespace MilkwaveRemote {
           btnPresetLoadDirectory_Click(null, null);
         } else if (e.KeyCode == Keys.F) {
           e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
-          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+          if (string.Equals(selectedTabName, "tabShader")) {
             if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
               txtShaderFind.SelectAll();
               txtShaderFind.Focus();
@@ -2950,12 +3718,12 @@ namespace MilkwaveRemote {
             } else {
               FindShaderString();
             }
-          } else if (tabControl.SelectedTab.Name.Equals("tabPreset")) {
+          } else if (string.Equals(selectedTabName, "tabPreset")) {
             txtFilterPresets.SelectAll();
             txtFilterPresets.Focus();
           }
         } else if (e.KeyCode == Keys.L) {
-          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+          if (string.Equals(selectedTabName, "tabShader")) {
             e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
             btnShadertoyFilesLoad_Click(null, null);
           }
@@ -2971,16 +3739,16 @@ namespace MilkwaveRemote {
           btnPresetSend_Click(null, null);
         } else if (e.KeyCode == Keys.S) {
           e.SuppressKeyPress = true;
-          if (tabControl.SelectedTab.Name.Equals("tabShader")) {
+          if (string.Equals(selectedTabName, "tabShader")) {
             btnSendShader_Click(null, null);
-          } else if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+          } else if (string.Equals(selectedTabName, "tabMessage")) {
             SendToMilkwaveVisualizer(txtMessage.Text, MessageType.Message);
           }
         } else if (e.KeyCode == Keys.T) {
           e.SuppressKeyPress = true;
           btnTagsSave_Click(null, null);
         } else if (e.KeyCode == Keys.X) {
-          if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+          if (string.Equals(selectedTabName, "tabMessage")) {
             e.SuppressKeyPress = true;
             btnSendFile_Click(null, null);
           }
@@ -2990,13 +3758,16 @@ namespace MilkwaveRemote {
           }
         } else if (e.KeyCode == Keys.Y) {
           e.SuppressKeyPress = true; // Prevent the beep sound on Enter key press
-          if (tabControl.SelectedTab.Name.Equals("tabMessage")) {
+          if (string.Equals(selectedTabName, "tabMessage")) {
             chkAutoplay.Checked = !chkAutoplay.Checked;
           } else {
             chkShaderLeft.Checked = !chkShaderLeft.Checked;
           }
         } else if (e.KeyCode == Keys.Tab) {
-          if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
+          if (tabControl.TabPages.Count == 0) {
+            // All tabs hidden via "Show/Hide Tabs": nothing to cycle through.
+            e.SuppressKeyPress = true;
+          } else if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift) {
             // Switch to the previous tab
             int previousIndex = (tabControl.SelectedIndex - 1 + tabControl.TabPages.Count) % tabControl.TabPages.Count; // Loop back to the last tab if at the first
             tabControl.SelectedIndex = previousIndex;
@@ -3016,10 +3787,15 @@ namespace MilkwaveRemote {
       if ((Control.ModifierKeys & Keys.Alt) == Keys.Alt && (Control.ModifierKeys & Keys.Control) == 0) {
         if (e.KeyCode == Keys.V) {
           e.SuppressKeyPress = true;
-          if (cboVisualizerInstance.Items.Count > 1) {
-            int next = (cboVisualizerInstance.SelectedIndex + 1) % cboVisualizerInstance.Items.Count;
-            cboVisualizerInstance.SelectedIndex = next;
-            SetStatusText($"Switched to {ConnectedVisualizerName}");
+          if (_activeClient != null) {
+            if (cboVisualizerInstance.Items.Count > 1) {
+              int next = (cboVisualizerInstance.SelectedIndex + 1) % cboVisualizerInstance.Items.Count;
+              cboVisualizerInstance.SelectedIndex = next;
+              SetStatusText($"Switched to {ConnectedVisualizerName}");
+            }
+          } else {
+            // Not connected: Alt+V re-scans for running visualizers and connects to the first one
+            btnVisualizerScan_Click(null, EventArgs.Empty);
           }
         }
       }
@@ -3159,6 +3935,7 @@ namespace MilkwaveRemote {
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
       try {
 
+        StopAudioTest(true);
         DisposeSpriteButtonImages();
         SetAndSaveSettings();
         if (Settings.MidiEnabled) {
@@ -3536,6 +4313,20 @@ namespace MilkwaveRemote {
       StartVisualizerIfNotFound(false);
     }
 
+    private void toolStripMenuItemShowTab_Click(object? sender, EventArgs e) {
+      if (sender is not ToolStripMenuItem item || item.Tag is not string suffix) return;
+      string? tabName = GetTabNameFromSuffix(suffix);
+      if (tabName == null) return;
+
+      bool visible = !item.Checked;
+      item.Checked = visible;
+      SetTabVisible(GetTabPageByName(tabName), visible);
+
+      // Store the setting in the visualizer (settings.ini [Milkwave] ShowTab*), which
+      // echoes the new state back and therefore re-syncs this submenu on every client.
+      SendToMilkwaveVisualizer(suffix + "=" + (visible ? "1" : "0"), MessageType.ShowTab);
+    }
+
     private void toolStripMenuItemTabsPanel_Click(object sender, EventArgs e) {
       toolStripMenuItemTabsPanel.Checked = !toolStripMenuItemTabsPanel.Checked;
       if (!toolStripMenuItemTabsPanel.Checked && !toolStripMenuItemButtonPanel.Checked) {
@@ -3568,6 +4359,11 @@ namespace MilkwaveRemote {
     }
 
     private void SetPanelsVisibility() {
+      bool wasCompactMode = !Settings.ShowButtonPanel;
+      bool isCompactMode = !toolStripMenuItemButtonPanel.Checked;
+      if (wasCompactMode != isCompactMode) {
+        SaveCurrentModeWindowSize(wasCompactMode);
+      }
       Settings.ShowTabsPanel = toolStripMenuItemTabsPanel.Checked;
       Settings.ShowButtonPanel = toolStripMenuItemButtonPanel.Checked;
       splitContainer1.Panel1Collapsed = !Settings.ShowTabsPanel;
@@ -3975,6 +4771,145 @@ namespace MilkwaveRemote {
       SetStatusText($"Audio device list reloaded");
     }
 
+    /// <summary>
+    /// Plays the simulated band sequence from audio-test.txt through the Visualizer.
+    /// Clicking while a sequence is running stops it and restores live audio.
+    /// </summary>
+    private void btnAudioTest_Click(object? sender, EventArgs e) {
+      if (audioTestTimer != null) {
+        StopAudioTest(true);
+        return;
+      }
+      if (!CanSendPipeMessage) {
+        SetStatusText(windowNotFound);
+        return;
+      }
+
+      string path = Path.Combine(BaseDir, audioTestFileName);
+      if (!File.Exists(path)) {
+        MessageBox.Show(this,
+          $"Could not find {audioTestFileName} in:{Environment.NewLine}{BaseDir}" +
+          Environment.NewLine + Environment.NewLine +
+          "The simulated audio sequence is shipped with Milkwave. Reinstall or recreate the file.",
+          "Audio Test", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+      }
+
+      List<(double Seconds, float Bass, float Mid, float Treble, string Label)> steps;
+      List<string> invalidLines;
+      try {
+        steps = ParseAudioTestFile(path, out invalidLines);
+      } catch (Exception ex) {
+        MessageBox.Show(this, $"Could not read {path}:{Environment.NewLine}{ex.Message}",
+          "Audio Test", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+      }
+
+      if (steps.Count == 0) {
+        MessageBox.Show(this,
+          $"No usable steps found in {path}.{Environment.NewLine}{Environment.NewLine}" +
+          "Each data line needs: <hold-seconds> <bass> <mid> <treble> [label]",
+          "Audio Test", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+      }
+
+      if (invalidLines.Count > 0) {
+        string details = string.Join(Environment.NewLine, invalidLines.Take(8));
+        if (invalidLines.Count > 8) details += Environment.NewLine + "...";
+        MessageBox.Show(this,
+          $"Skipped {invalidLines.Count} invalid line(s) in {audioTestFileName}:{Environment.NewLine}{Environment.NewLine}{details}",
+          "Audio Test", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+      }
+
+      audioTestSteps = steps;
+      audioTestIndex = -1;
+      audioTestTimer = new System.Windows.Forms.Timer();
+      audioTestTimer.Tick += AudioTestTimer_Tick;
+      if (!SendAudioTestStep(0)) return;
+      audioTestTimer.Start();
+    }
+
+    private void AudioTestTimer_Tick(object? sender, EventArgs e) {
+      if (audioTestSteps.Count == 0) {
+        StopAudioTest(true);
+        return;
+      }
+      SendAudioTestStep((audioTestIndex + 1) % audioTestSteps.Count);
+    }
+
+    private bool SendAudioTestStep(int index) {
+      if (index < 0 || index >= audioTestSteps.Count || audioTestTimer == null) return false;
+
+      var step = audioTestSteps[index];
+      string bands = step.Bass.ToString("0.###", CultureInfo.InvariantCulture) + "," +
+                     step.Mid.ToString("0.###", CultureInfo.InvariantCulture) + "," +
+                     step.Treble.ToString("0.###", CultureInfo.InvariantCulture);
+      // The trailing ",1,1" enables the notification and the synthetic waveform used by
+      // wave-based presets. The automated capture harness omits both, so its shader
+      // frames stay byte-identical between band settings.
+      if (!PipeSend($"AUDIO_TEST={bands},1,1")) {
+        StopAudioTest(false);
+        SetStatusText("Audio test stopped: visualizer not reachable");
+        return false;
+      }
+
+      audioTestIndex = index;
+      audioTestTimer.Interval = (int)Math.Round(Math.Clamp(step.Seconds, 0.1, 60.0) * 1000.0);
+      btnAudioTest.Text = "Stop";
+      string label = string.IsNullOrEmpty(step.Label) ? "" : $" ({step.Label})";
+      SetStatusText($"Audio test {index + 1}/{audioTestSteps.Count}: " +
+        $"bass {step.Bass:0.##}, mid {step.Mid:0.##}, treble {step.Treble:0.##}{label}");
+      return true;
+    }
+
+    private void StopAudioTest(bool releaseAudio) {
+      bool wasRunning = audioTestTimer != null;
+      if (audioTestTimer != null) {
+        audioTestTimer.Stop();
+        audioTestTimer.Tick -= AudioTestTimer_Tick;
+        audioTestTimer.Dispose();
+        audioTestTimer = null;
+      }
+      if (releaseAudio && wasRunning) {
+        if (CanSendPipeMessage) PipeSend("AUDIO_TEST=off");
+        SetStatusText("Audio test stopped - live audio restored");
+      }
+      audioTestSteps.Clear();
+      audioTestIndex = -1;
+      btnAudioTest.Text = "Test";
+    }
+
+    private List<(double Seconds, float Bass, float Mid, float Treble, string Label)> ParseAudioTestFile(
+      string path, out List<string> invalidLines) {
+      var steps = new List<(double Seconds, float Bass, float Mid, float Treble, string Label)>();
+      invalidLines = new List<string>();
+      int lineNumber = 0;
+
+      foreach (string rawLine in File.ReadLines(path)) {
+        lineNumber++;
+        string line = rawLine.Trim();
+        if (line.Length == 0 || line.StartsWith("#")) continue;
+
+        string[] parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 4 ||
+            !double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds) ||
+            !float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float bass) ||
+            !float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float mid) ||
+            !float.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float treble) ||
+            !double.IsFinite(seconds) || seconds <= 0 ||
+            !float.IsFinite(bass) || !float.IsFinite(mid) || !float.IsFinite(treble)) {
+          invalidLines.Add($"{lineNumber}: {rawLine.Trim()}");
+          continue;
+        }
+
+        string label = parts.Length > 4 ? string.Join(" ", parts.Skip(4)) : "";
+        steps.Add((Math.Clamp(seconds, 0.1, 60.0),
+          Math.Clamp(bass, 0f, 4f), Math.Clamp(mid, 0f, 4f), Math.Clamp(treble, 0f, 4f), label));
+      }
+
+      return steps;
+    }
+
     private void btnSendFile_Click(object? sender, EventArgs e) {
       SendAutoplayLine(true);
     }
@@ -3986,31 +4921,11 @@ namespace MilkwaveRemote {
       }
     }
 
-    private void btnB_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_B, "B");
-    }
+    private void btnB_Click(object sender, EventArgs e) => ExecuteCommandButton(btnB);
 
-    private void btnTransparency_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      SendPostMessage(VK_F12, "F12");
-    }
+    private void btnTransparency_Click(object sender, EventArgs e) => ExecuteCommandButton(btnTransparency);
 
-    private void btnWatermark_Click(object sender, EventArgs e) {
-      if (Settings.IsPresetMode) return;
-      if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
-      PipeSendSignal("WATERMARK");
-      SetStatusText("Pressed Watermark Mode");
-    }
-
-    private void btnWatermark_MouseDown(object sender, MouseEventArgs e) {
-      if (Settings.IsPresetMode) return;
-      if (e.Button == MouseButtons.Right) {
-        if (!CanSendPipeMessage) { SetStatusText(windowNotFound); return; }
-        PipeSendSignal("BORDERLESS_FS");
-        SetStatusText("Pressed Borderless Fullscreen");
-      }
-    }
+    private void btnWatermark_Click(object sender, EventArgs e) => ExecuteCommandButton(btnWatermark);
 
     private void btnTagsSave_Click(object? sender, EventArgs? e) {
       SaveTags();
@@ -4133,34 +5048,6 @@ namespace MilkwaveRemote {
       } else {
         btnTag6.Tag = null;
         btnTag6.Text = "";
-      }
-
-      if (sortedTags.Count > 6) {
-        SetButtonTagInfo(btnTag7, sortedTags[6]);
-      } else {
-        btnTag7.Tag = null;
-        btnTag7.Text = "";
-      }
-
-      if (sortedTags.Count > 7) {
-        SetButtonTagInfo(btnTag8, sortedTags[7]);
-      } else {
-        btnTag8.Tag = null;
-        btnTag8.Text = "";
-      }
-
-      if (sortedTags.Count > 8) {
-        SetButtonTagInfo(btnTag9, sortedTags[8]);
-      } else {
-        btnTag9.Tag = null;
-        btnTag9.Text = "";
-      }
-
-      if (sortedTags.Count > 9) {
-        SetButtonTagInfo(btnTag10, sortedTags[9]);
-      } else {
-        btnTag10.Tag = null;
-        btnTag10.Text = "";
       }
     }
 
@@ -4352,9 +5239,29 @@ namespace MilkwaveRemote {
       txtTags.Text = "";
     }
 
+    /// <summary>
+    /// True when the JSON object contains the given property (case-insensitive).
+    /// Used to tell a first start (no window coordinates saved yet) from a restored session.
+    /// </summary>
+    private static bool JsonContainsProperty(string json, string propertyName) {
+      try {
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object)
+          return false;
+        foreach (var property in doc.RootElement.EnumerateObject()) {
+          if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            return true;
+        }
+      } catch {
+        // unparsable settings count as "nothing saved"
+      }
+      return false;
+    }
+
     private void LoadAndSetSettings() {
       updatingSettingsParams = true;
-      Location = Settings.RemoteWindowLocation;
+      // An empty value means the window was never placed: use the same default as a fresh install.
+      Location = Settings.RemoteWindowLocation.IsEmpty ? new Point(50, 50) : Settings.RemoteWindowLocation;
       Size optimalSize = GetCalculatedOptionalTopPanelSize();
       bool hasSavedWindowSize = Settings.RemoteWindowSize.Width > 0 && Settings.RemoteWindowSize.Height > 0;
       if (hasSavedWindowSize) {
@@ -4366,6 +5273,9 @@ namespace MilkwaveRemote {
 
       toolStripMenuItemTabsPanel.Checked = Settings.ShowTabsPanel;
       toolStripMenuItemButtonPanel.Checked = Settings.ShowButtonPanel;
+      if (!Settings.ShowButtonPanel) {
+        ApplyCompactWindowSize();
+      }
       toolStripMenuItemSpriteButtonImages.Checked = Settings.EnableSpriteButtonImage;
       toolStripMenuItemColorButtonImages.Checked = Settings.EnableColorButtonImages;
       toolStripMenuItemMonitorCPU.Checked = Settings.EnableMonitorCPU;
@@ -4402,21 +5312,57 @@ namespace MilkwaveRemote {
       numVisShift.Value = (decimal)Settings.VisShift;
       numVisVersion.Value = Settings.VisVersion;
 
+      txtMessage.Text = Settings.MessageText ?? string.Empty;
+      string savedMessageFont = Settings.MessageFont ?? string.Empty;
+      // An empty entry means "use the Visualizer's default font"; a font that is not installed any more is skipped.
+      if (savedMessageFont.Length == 0 || cboFonts.Items.Contains(savedMessageFont)) {
+        cboFonts.SelectedItem = savedMessageFont;
+      }
+      numSize.Value = Math.Clamp(Settings.MessageFontSize, numSize.Minimum, numSize.Maximum);
+      numBPM.Value = Math.Clamp(Settings.MessageBPM, numBPM.Minimum, numBPM.Maximum);
+      numBeats.Value = Math.Clamp(Settings.MessageBeats, numBeats.Minimum, numBeats.Maximum);
+      SetFormattedMessage();
+
       RefreshSpriteButtonImages(false);
       updatingSettingsParams = false;
       UpdateInputMixControlsEnabled();
     }
 
+    /// <summary>Color saved for the last message, or null when nothing (usable) was saved.</summary>
+    private Color? GetSavedMessageColor() {
+      if (string.IsNullOrWhiteSpace(Settings.MessageColor)) {
+        return null;
+      }
+      try {
+        return ColorTranslator.FromHtml(Settings.MessageColor);
+      } catch (Exception) {
+        return null;
+      }
+    }
+
+    private void StoreMessageTabSettings() {
+      Settings.MessageText = txtMessage.Text;
+      Settings.MessageFont = cboFonts.Text;
+      Settings.MessageFontSize = numSize.Value;
+      Settings.MessageColor = pnlColorMessage.BackColor.IsEmpty
+        ? string.Empty
+        : ColorTranslator.ToHtml(pnlColorMessage.BackColor);
+      Settings.MessageBPM = numBPM.Value;
+      Settings.MessageBeats = numBeats.Value;
+    }
+
     private void SetAndSaveSettings() {
       if (WindowState == FormWindowState.Normal) {
         Settings.RemoteWindowLocation = Location;
-        Settings.RemoteWindowSize = Size;
       } else {
         Settings.RemoteWindowLocation = RestoreBounds.Location;
-        Settings.RemoteWindowSize = RestoreBounds.Size;
       }
+      SaveCurrentModeWindowSize(!Settings.ShowButtonPanel);
       Settings.SplitterDistance1 = splitContainer1.SplitterDistance;
-      Settings.SelectedTabIndex = tabControl.SelectedIndex;
+      // -1 while "Show/Hide Tabs" hides every tab: keep the last real selection.
+      if (tabControl.SelectedIndex >= 0) {
+        Settings.SelectedTabIndex = tabControl.SelectedIndex;
+      }
       Settings.ShaderFileChecked = chkShaderFile.Checked;
       Settings.WrapChecked = chkWrap.Checked;
       Settings.ControllerActive = chkControllerActive.Checked;
@@ -4431,6 +5377,8 @@ namespace MilkwaveRemote {
       Settings.VisIntensity = numVisIntensity.Value;
       Settings.VisShift = numVisShift.Value;
       Settings.VisVersion = (int)numVisVersion.Value;
+
+      StoreMessageTabSettings();
 
       Settings.UseDX12 = IsSelectedVisualizerDX12();
       Settings.WindowTitle = cboVisualizerInstance.Text;
@@ -4557,7 +5505,7 @@ namespace MilkwaveRemote {
         // Notify
         string fontFace1 = RemoteHelper.GetIniValueFonts("FontFace1", "Bahnschrift");
         cboFont1.SelectedItem = fontFace1;
-        string fontSize1 = RemoteHelper.GetIniValueFonts("FontSize1", "20");
+        string fontSize1 = RemoteHelper.GetIniValueFonts("FontSize1", "25");
         numFont1.Value = int.Parse(fontSize1);
 
         string fontBold1 = RemoteHelper.GetIniValueFonts("FontBold1", "0");
@@ -4578,7 +5526,7 @@ namespace MilkwaveRemote {
         // Preset
         string fontFace2 = RemoteHelper.GetIniValueFonts("FontFace2", "Bahnschrift");
         cboFont2.SelectedItem = fontFace2;
-        string fontSize2 = RemoteHelper.GetIniValueFonts("FontSize2", "25");
+        string fontSize2 = RemoteHelper.GetIniValueFonts("FontSize2", "30");
         numFont2.Value = int.Parse(fontSize2);
 
         string fontBold2 = RemoteHelper.GetIniValueFonts("FontBold2", "0");
@@ -4599,7 +5547,7 @@ namespace MilkwaveRemote {
         // Menu: Ini-Index is 4
         string fontFaceMenu = RemoteHelper.GetIniValueFonts("FontFace4", "Bahnschrift");
         cboFontMenu.SelectedItem = fontFaceMenu;
-        string fontSizeMenu = RemoteHelper.GetIniValueFonts("FontSize4", "25");
+        string fontSizeMenu = RemoteHelper.GetIniValueFonts("FontSize4", "30");
         numFontMenu.Value = int.Parse(fontSizeMenu);
 
         string fontBoldMenu = RemoteHelper.GetIniValueFonts("FontBold4", "0");
@@ -4620,7 +5568,7 @@ namespace MilkwaveRemote {
         // Artist: Ini-Index is 5!
         string fontFace3 = RemoteHelper.GetIniValueFonts("FontFace5", "Bahnschrift");
         cboFont3.SelectedItem = fontFace3;
-        string fontSize3 = RemoteHelper.GetIniValueFonts("FontSize5", "30");
+        string fontSize3 = RemoteHelper.GetIniValueFonts("FontSize5", "35");
         numFont3.Value = int.Parse(fontSize3);
 
         string fontBold3 = RemoteHelper.GetIniValueFonts("FontBold5", "0");
@@ -4641,7 +5589,7 @@ namespace MilkwaveRemote {
         // Title: Ini-Index is 6!
         string fontFace4 = RemoteHelper.GetIniValueFonts("FontFace6", "Bahnschrift");
         cboFont4.SelectedItem = fontFace4;
-        string fontSize4 = RemoteHelper.GetIniValueFonts("FontSize6", "40");
+        string fontSize4 = RemoteHelper.GetIniValueFonts("FontSize6", "45");
         numFont4.Value = int.Parse(fontSize4);
 
         string fontBold4 = RemoteHelper.GetIniValueFonts("FontBold6", "1");
@@ -4662,7 +5610,7 @@ namespace MilkwaveRemote {
         // Album: Ini-Index is 7!
         string fontFace5 = RemoteHelper.GetIniValueFonts("FontFace7", "Bahnschrift");
         cboFont5.SelectedItem = fontFace5;
-        string fontSize5 = RemoteHelper.GetIniValueFonts("FontSize7", "25");
+        string fontSize5 = RemoteHelper.GetIniValueFonts("FontSize7", "30");
         numFont5.Value = int.Parse(fontSize5);
 
         string fontBold5 = RemoteHelper.GetIniValueFonts("FontBold7", "0");
@@ -4779,7 +5727,7 @@ namespace MilkwaveRemote {
 
     private void lblFont1_DoubleClick(object sender, EventArgs e) {
       cboFont1.SelectedItem = "Bahnschrift";
-      numFont1.Value = 20;
+      numFont1.Value = 25;
       chkFontBold1.Checked = false;
       chkFontItalic1.Checked = false;
       chkFontAA1.Checked = false;
@@ -4788,7 +5736,7 @@ namespace MilkwaveRemote {
 
     private void lblFont2_DoubleClick(object sender, EventArgs e) {
       cboFont2.SelectedItem = "Bahnschrift";
-      numFont2.Value = 25;
+      numFont2.Value = 30;
       chkFontBold2.Checked = false;
       chkFontItalic2.Checked = false;
       chkFontAA2.Checked = true;
@@ -4797,7 +5745,7 @@ namespace MilkwaveRemote {
 
     private void lblMenu_DoubleClick(object sender, EventArgs e) {
       cboFontMenu.SelectedItem = "Bahnschrift";
-      numFontMenu.Value = 25;
+      numFontMenu.Value = 30;
       chkMenuBold.Checked = false;
       chkMenuItalic.Checked = false;
       chkMenuAA.Checked = true;
@@ -4806,7 +5754,7 @@ namespace MilkwaveRemote {
 
     private void lblFont3_DoubleClick(object sender, EventArgs e) {
       cboFont3.SelectedItem = "Bahnschrift";
-      numFont3.Value = 30;
+      numFont3.Value = 35;
       chkFontBold3.Checked = false;
       chkFontItalic3.Checked = false;
       chkFontAA3.Checked = true;
@@ -4815,7 +5763,7 @@ namespace MilkwaveRemote {
 
     private void lblFont4_DoubleClick(object sender, EventArgs e) {
       cboFont4.SelectedItem = "Bahnschrift";
-      numFont4.Value = 40;
+      numFont4.Value = 45;
       chkFontBold4.Checked = true;
       chkFontItalic4.Checked = false;
       chkFontAA4.Checked = true;
@@ -4824,7 +5772,7 @@ namespace MilkwaveRemote {
 
     private void lblFont5_DoubleClick(object sender, EventArgs e) {
       cboFont5.SelectedItem = "Bahnschrift";
-      numFont5.Value = 25;
+      numFont5.Value = 30;
       chkFontBold5.Checked = false;
       chkFontItalic5.Checked = false;
       chkFontAA5.Checked = true;
@@ -5010,6 +5958,11 @@ namespace MilkwaveRemote {
       SendToMilkwaveVisualizer("", MessageType.EQBoost);
     }
 
+    private void numSettingTextborder_ValueChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.TextBorder);
+    }
+
     private void lblFactorTime_Click(object sender, EventArgs e) {
       numFactorTime.Value = 1;
     }
@@ -5151,17 +6104,7 @@ namespace MilkwaveRemote {
           } else {
             toolStripMenuItemButtonPanel.Checked = false;
             SetPanelsVisibility();
-
-            if (Settings.RemoteWindowCompactSize.Width > 0) {
-              Width = Settings.RemoteWindowCompactSize.Width;
-            } else {
-              Width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + 57;
-            }
-            if (Settings.RemoteWindowCompactSize.Height > 0) {
-              Height = Settings.RemoteWindowCompactSize.Height;
-            } else {
-              ClientSize = new Size(ClientSize.Width, GetDefaultCompactClientHeight());
-            }
+            ApplyCompactWindowSize();
           }
         } else if (e.Button == MouseButtons.Right) {
           if (toolStripMenuItemButtonPanel.Checked) {
@@ -6057,6 +7000,11 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void chkInvert_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.InvertPreset);
+    }
+
     private void btnShadertoyFilesLoad_Click(object? sender, EventArgs? e) {
       using (var fbd = new FolderBrowserDialog()) {
         if (Directory.Exists(VisualizerPresetsFolder)) {
@@ -6169,8 +7117,25 @@ namespace MilkwaveRemote {
       }
     }
 
+    // Small border kept to the right of and below the preset tab content, similar to the margin the
+    // right-anchored buttons in the rows above it leave.
+    private const int PresetTabBorder = 10;
+
     private Size GetCalculatedOptionalTopPanelSize() {
-      int width = btnTag10.Left + btnTag10.Width + btnTagsSave.Width + cboPresets.Top * 4;
+      // The bottom row of the preset tab (the display options) is not right-anchored, so the window
+      // has to be wide enough to show it completely, with a small border on the right.
+      // Right-anchored controls adapt to the window and must not inflate that minimum width.
+      int contentRight = 0;
+      foreach (Control control in tabPreset.Controls) {
+        if ((control.Anchor & AnchorStyles.Right) != 0 || control.Dock == DockStyle.Fill) {
+          continue;
+        }
+        contentRight = Math.Max(contentRight, control.Right);
+      }
+
+      int tabInset = tabControl.Width - tabPreset.Width;
+      int windowFrame = Width - ClientSize.Width;
+      int width = contentRight + PresetTabBorder + tabInset + windowFrame;
       int height = cboFont5.Top + cboFont5.Height + cboPresets.Top;
       return new Size(width, height);
     }
@@ -6179,20 +7144,53 @@ namespace MilkwaveRemote {
       return GetDefaultTabPanelHeight() + statusStrip1.Height + 5;
     }
 
+    private void SaveCurrentModeWindowSize(bool compactMode) {
+      Size currentSize = WindowState == FormWindowState.Normal ? Size : RestoreBounds.Size;
+      if (currentSize.Width <= 0 || currentSize.Height <= 0) {
+        return;
+      }
+
+      if (compactMode) {
+        Settings.RemoteWindowCompactSize = currentSize;
+      } else {
+        Settings.RemoteWindowSize = currentSize;
+      }
+    }
+
+    private void ApplyCompactWindowSize() {
+      if (Settings.RemoteWindowCompactSize.Width > 0) {
+        Width = Settings.RemoteWindowCompactSize.Width;
+      } else {
+        Width = GetCalculatedOptionalTopPanelSize().Width;
+      }
+      if (Settings.RemoteWindowCompactSize.Height > 0) {
+        Height = Settings.RemoteWindowCompactSize.Height;
+      } else {
+        ClientSize = new Size(ClientSize.Width, GetDefaultCompactClientHeight());
+      }
+    }
+
     private int GetDefaultTabPanelHeight() {
-      int tabContentHeight = 0;
+      // Height that makes the tab pages end just below their content, so that the bottom row of the
+      // preset tab has no unused space below it while all fixed controls stay fully visible.
+      return tabPreset.Top + GetTabContentBottom() + PresetTabBorder;
+    }
+
+    // Deepest point of the tab pages' fixed content. Controls that follow the tab page height
+    // (docked or bottom-anchored) are skipped, because they adapt to the panel instead of defining
+    // how tall it has to be.
+    private int GetTabContentBottom() {
+      int contentBottom = 0;
       foreach (TabPage tabPage in tabControl.TabPages) {
         foreach (Control control in tabPage.Controls) {
-          tabContentHeight = Math.Max(tabContentHeight, control.Bottom);
+          if (control.Dock == DockStyle.Fill || control.Dock == DockStyle.Bottom || (control.Anchor & AnchorStyles.Bottom) != 0) {
+            continue;
+          }
+          contentBottom = Math.Max(contentBottom, control.Bottom);
         }
       }
 
-      int tabChromeHeight = tabControl.Height - (tabControl.SelectedTab?.Height ?? tabControl.Height);
-      if (tabChromeHeight < 0) {
-        tabChromeHeight = 0;
-      }
-
-      return tabContentHeight + tabChromeHeight;
+      return contentBottom;
     }
 
     private void btnFontGlobalMinus_Click(object sender, EventArgs e) {
@@ -6279,6 +7277,50 @@ namespace MilkwaveRemote {
       }
     }
 
+    private void ApplyLyricsOutlineColor() {
+      pnlLyricsOutlineColor.BackColor = Color.FromArgb(lyricsOutlineColorR, lyricsOutlineColorG, lyricsOutlineColorB);
+    }
+
+    private void pnlLyricsOutlineColor_Click(object sender, EventArgs e) {
+      colorDialogLyrics.Color = pnlLyricsOutlineColor.BackColor;
+      if (colorDialogLyrics.ShowDialog() == DialogResult.OK) {
+        lyricsOutlineColorR = colorDialogLyrics.Color.R;
+        lyricsOutlineColorG = colorDialogLyrics.Color.G;
+        lyricsOutlineColorB = colorDialogLyrics.Color.B;
+        ApplyLyricsOutlineColor();
+        SendToMilkwaveVisualizer("", MessageType.LyricsOutlineColor);
+      }
+    }
+
+    private void ApplyTextBorderColor() {
+      pnlSettingTextborder.BackColor = Color.FromArgb(textBorderColorR, textBorderColorG, textBorderColorB);
+    }
+
+    private void pnlSettingTextborder_Click(object sender, EventArgs e) {
+      using ColorDialog dlg = new ColorDialog();
+      dlg.FullOpen = true;
+      dlg.Color = pnlSettingTextborder.BackColor;
+      if (dlg.ShowDialog(this) == DialogResult.OK) {
+        textBorderColorR = dlg.Color.R;
+        textBorderColorG = dlg.Color.G;
+        textBorderColorB = dlg.Color.B;
+        ApplyTextBorderColor();
+        SendToMilkwaveVisualizer("", MessageType.TextBorderColor);
+      }
+    }
+
+    private void cboLyricsOutline_SelectedIndexChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsOutline);
+      }
+    }
+
+    private void numLyricsOutlineAmount_ValueChanged(object sender, EventArgs e) {
+      if (!updatingSettingsParams) {
+        SendToMilkwaveVisualizer("", MessageType.LyricsOutlineAmount);
+      }
+    }
+
     private void cboLyricsFont_SelectedIndexChanged(object sender, EventArgs e) {
       if (!updatingSettingsParams && cboLyricsFont.SelectedItem != null) {
         SendToMilkwaveVisualizer("", MessageType.LyricsFont);
@@ -6317,11 +7359,23 @@ namespace MilkwaveRemote {
     }
 
     private void numLyricsPosX_ValueChanged(object sender, EventArgs e) {
-      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsPosX);
+      decimal delta = numLyricsPosX.Value - previousLyricsPosX;
+      previousLyricsPosX = numLyricsPosX.Value;
+      if (updatingSettingsParams) return;
+      if (delta != 0) {
+        numLyricsStartX.Value = Math.Clamp(numLyricsStartX.Value + delta, numLyricsStartX.Minimum, numLyricsStartX.Maximum);
+      }
+      SendToMilkwaveVisualizer("", MessageType.LyricsPosX);
     }
 
     private void numLyricsPosY_ValueChanged(object sender, EventArgs e) {
-      if (!updatingSettingsParams) SendToMilkwaveVisualizer("", MessageType.LyricsPosY);
+      decimal delta = numLyricsPosY.Value - previousLyricsPosY;
+      previousLyricsPosY = numLyricsPosY.Value;
+      if (updatingSettingsParams) return;
+      if (delta != 0) {
+        numLyricsStartY.Value = Math.Clamp(numLyricsStartY.Value + delta, numLyricsStartY.Minimum, numLyricsStartY.Maximum);
+      }
+      SendToMilkwaveVisualizer("", MessageType.LyricsPosY);
     }
 
     private void numLyricsStartX_ValueChanged(object sender, EventArgs e) {
@@ -6369,10 +7423,24 @@ namespace MilkwaveRemote {
       numeric.Value = Math.Clamp(value, numeric.Minimum, numeric.Maximum);
     }
 
-    private void lblLyricsPosX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosX, 0.5m); }
-    private void lblLyricsPosY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsPosY, 0.5m); }
-    private void lblLyricsStartX_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartX, 0.5m); }
-    private void lblLyricsStartY_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsStartY, 0.52m); }
+    private void ResetLyricsStartDefaults() {
+      ResetLyricsNumeric(numLyricsStartX, 0.5m);
+      ResetLyricsNumeric(numLyricsStartY, 0.52m);
+    }
+
+    private void ResetLyricsPositionDefaults() {
+      ResetLyricsNumeric(numLyricsPosX, 0.5m);
+      ResetLyricsNumeric(numLyricsPosY, 0.5m);
+      ResetLyricsStartDefaults();
+    }
+
+    private void lblLyricsPosX_DoubleClick(object sender, EventArgs e) { ResetLyricsPositionDefaults(); }
+
+    private void lblLyricsPosY_DoubleClick(object sender, EventArgs e) { ResetLyricsPositionDefaults(); }
+
+    private void lblLyricsStartX_DoubleClick(object sender, EventArgs e) { ResetLyricsStartDefaults(); }
+
+    private void lblLyricsStartY_DoubleClick(object sender, EventArgs e) { ResetLyricsStartDefaults(); }
     private void lblLyricsZoom_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsZoom, 0.95m); }
     private void lblLyricsFade_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsFade, 0.15m); }
     private void lblLyricsWidth_DoubleClick(object sender, EventArgs e) { ResetLyricsNumeric(numLyricsWidth, 0.9m); }
@@ -6456,6 +7524,11 @@ namespace MilkwaveRemote {
           : "Next Preset after this many seconds\r\nNote that fBlendTimeAuto and 0..fTimeBetweenPresetsRand are added to determine the actual duration (see settings.ini)";
       toolTip1.SetToolTip(numPresetChange, afterToolTip);
 
+      // "Preset" display on preset change (Ctrl+F4)
+      chkPresetDisplayPreset.Enabled = true;
+      toolTip1.SetToolTip(chkPresetDisplayPreset,
+        "Display preset info when the preset changes\r\n(same as pressing Ctrl+F4 in Visualizer)\r\nPress F4 in Visualizer to show preset info permanently");
+
       // State changed - drop any manually shown disabled-state tooltip so it cannot go
       // stale (no-op when nothing is shown).
       HideDisabledToolTip();
@@ -6500,9 +7573,29 @@ namespace MilkwaveRemote {
       SendToMilkwaveVisualizer("", MessageType.PresetDisplayCover);
     }
 
+    private void cboSettingsCover_SelectedIndexChanged(object sender, EventArgs e) {
+      // Applies the "Cover" behaviour (0..2 = corner thumbnail sizes, 3 = fullscreen zoom) to the
+      // visualizer; the value comes back in the SETTINGS| state message as COVERSTYLE.
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.CoverStyle);
+    }
+
+    private void cboTransitionMode_SelectedIndexChanged(object sender, EventArgs e) {
+      // Sends the selected transition type as Mixtype (-1 = Random, 0..20 = fixed type).
+      // The Visualizer echoes its current value in SETTINGS|MIXTYPE=... so changes made
+      // with T in the Visualizer also update this combo box.
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.TransitionMode);
+    }
+
     private void chkPresetDisplayTrack_CheckedChanged(object sender, EventArgs e) {
       if (updatingSettingsParams) return;
       SendToMilkwaveVisualizer("", MessageType.PresetDisplayTrack);
+    }
+
+    private void chkPresetDisplayPreset_CheckedChanged(object sender, EventArgs e) {
+      if (updatingSettingsParams) return;
+      SendToMilkwaveVisualizer("", MessageType.PresetDisplayPreset);
     }
 
     private void LoadPresetDeck() {
@@ -6684,29 +7777,26 @@ namespace MilkwaveRemote {
         btn.Image = null;
       }
 
-      // Restore original button text based on which button it is
-      if (btn == btnSpace) btn.Text = "Next Preset\r\n(Space)";
-      else if (btn == btnBackspace) btn.Text = "Previous Preset\r\n(Backspace)";
-      else if (btn == btnN) btn.Text = "Sound Info\r\n(N)";
-      else if (btn == btnB) btn.Text = "Song Info\r\n(B)";
-      else if (btn == btnTilde) btn.Text = "Preset Lock \r\n(~)";
-      else if (btn == btnF2) btn.Text = "Borderless \r\n(F2)";
-      else if (btn == btnF3) btn.Text = "Change FPS\r\n(F3)";
-      else if (btn == btnF4) btn.Text = "Preset Info\r\n(F4)";
-      else if (btn == btnF7) btn.Text = "Always On Top\r\n(F7)";
-      else if (btn == btnF10) btn.Text = "Toggle Spout\r\n(F10)";
-      else if (btn == btnAltEnter) btn.Text = "Fullscreen\r\n(Alt+Enter)";
-      else if (btn == btnK) btn.Text = "Sprite/Msg Mode\r\n(K)";
-      else if (btn == btnDelete) btn.Text = "Clear Sprite/Msg\r\n(Delete)";
-      else if (btn == btnWatermark) btn.Text = "Watermark Mode \r\n(Ctrl+Shift+F9)";
-      else if (btn == btnTransparency) btn.Text = "Transparency\r\n(F12)";
+      // Restore the configured caption and tooltip
+      ApplyCommandButtonAppearance(buttonArrayIndex, btn);
 
       // Reset button styling
       btn.Padding = new Padding(0);
       btn.TextAlign = ContentAlignment.MiddleCenter;
       btn.ImageAlign = ContentAlignment.MiddleCenter;
       btn.TextImageRelation = TextImageRelation.Overlay;
-      toolTip1.SetToolTip(btn, string.Empty);
+    }
+
+    private void ApplyCommandButtonAppearance(int buttonArrayIndex, Button btn) {
+      if (buttonArrayIndex < 0 || buttonArrayIndex >= commandButtonConfigs.Length) return;
+      CommandButtonConfig config = commandButtonConfigs[buttonArrayIndex];
+      btn.Text = config.Caption.Replace("\n", Environment.NewLine);
+      if (config.RightClickCommand.Length > 0) {
+        string rightClickCaption = config.RightClickCaption.Length > 0 ? config.RightClickCaption : config.RightClickCommand;
+        toolTip1.SetToolTip(btn, $"Right-Click: {rightClickCaption}");
+      } else {
+        toolTip1.SetToolTip(btn, string.Empty);
+      }
     }
 
     private void UpdatePresetDeckButtonAppearance(int buttonIndex) {

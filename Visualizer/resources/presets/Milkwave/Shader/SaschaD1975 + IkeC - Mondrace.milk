@@ -24,53 +24,60 @@ comp_19=
 comp_20=float2 rot(float2 v, float a) { return cos(a)*v - sin(a)*float2(v.y, -v.x); }
 comp_21=
 comp_22=shader_body {
-comp_23=  float4 fragColor = 0;
-comp_24=  float2 fragCoord  = uv;
-comp_25=  // CONV: Center on screen, then try some aspect correction
-comp_26=
-comp_27=  uv = (uv*2) - 1;
-comp_28=  uv *= aspect.xy;
-comp_29=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_30=  uv = float2(uv.x, -uv.y);
-comp_31=  
-comp_32=  #ifdef bass_smooth
-comp_33=    float fac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1+0.5*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
-comp_34=  #else
-comp_35=    float fac = 1+0.1*smoothstep(0,2,bass_att);
-comp_36=  #endif
-comp_37=
-comp_38=  float3 ro = float3(0, 0, time*8.),
-comp_39=  p,
-comp_40=  rd = normalize(float3(rot(uv, sin(time/2.)/8.), 1));
-comp_41=
-comp_42=  ro.y = 1. -(map(ro) + map(ro + float3(0., 0., 1.0)))/8.;
-comp_43=
-comp_44=  float far = 50, marched = 0.01, c=0, d;
-comp_45=
-comp_46=  for (int i = 0; i < LOOPS; ++i) {
-comp_47=    p = ro + rd*marched;
-comp_48=    d = map(p);
-comp_49=    marched += d*0.5;
+comp_23=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_24=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_25=  // untouched frame stays byte-identical.
+comp_26=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_27=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_28=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_29=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_30=  float4 fragColor = 0;
+comp_31=  float2 fragCoord  = uv;
+comp_32=  // CONV: Center on screen, then try some aspect correction
+comp_33=
+comp_34=  uv = (uv*2) - 1;
+comp_35=  uv *= aspect.xy;
+comp_36=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_37=  uv = float2(uv.x, -uv.y);
+comp_38=  
+comp_39=  #ifdef bass_smooth
+comp_40=    float fac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1+0.5*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
+comp_41=  #else
+comp_42=    float fac = 1+0.1*smoothstep(0,2,bass_att);
+comp_43=  #endif
+comp_44=
+comp_45=  float3 ro = float3(0, 0, time*8.),
+comp_46=  p,
+comp_47=  rd = normalize(float3(rot(uv, sin(time/2.)/8.), 1));
+comp_48=
+comp_49=  ro.y = 1. -(map(ro) + map(ro + float3(0., 0., 1.0)))/8.;
 comp_50=
-comp_51=    // CONV: break is unsupported, see Milkwave manual for details
-comp_52=    if (abs(d) < 0.001 || abs(d) > far) i=LOOPS;
-comp_53=  }
-comp_54=
-comp_55=  if (marched < far) {
-comp_56=    float2 ve = float2(0., 0.01);
-comp_57=    float3 normal = normalize(float3(
-comp_58=    map(p + ve.yxx),
-comp_59=    map(p + ve.xyx),
-comp_60=    map(p + ve.xxy)
-comp_61=    ));
-comp_62=
-comp_63=    float3 ld = normalize(float3(sin(time/2.)*4., 1.0, 1.0));
-comp_64=    c = (clamp(dot(ld, normal), 0., 1.) + step(frac(p.y*2.), 0.1))*(1. - distance(p, ro)/far);
-comp_65=    } else {
-comp_66=      c = pow(tex2D(iChannel1, uv*.5 + tex2D(iChannel1, uv*.3).xy + time/LOOPS).r, 15.)*.5;
-comp_67=    }
-comp_68=
-comp_69=    // Output to screen
-comp_70=    ret = float4(float3(c,c,c*fac),1.0);
-comp_71=
-comp_72=  }
+comp_51=  float far = 50, marched = 0.01, c=0, d;
+comp_52=
+comp_53=  for (int i = 0; i < LOOPS; ++i) {
+comp_54=    p = ro + rd*marched;
+comp_55=    d = map(p);
+comp_56=    marched += d*0.5;
+comp_57=
+comp_58=    // CONV: break is unsupported, see Milkwave manual for details
+comp_59=    if (abs(d) < 0.001 || abs(d) > far) i=LOOPS;
+comp_60=  }
+comp_61=
+comp_62=  if (marched < far) {
+comp_63=    float2 ve = float2(0., 0.01);
+comp_64=    float3 normal = normalize(float3(
+comp_65=    map(p + ve.yxx),
+comp_66=    map(p + ve.xyx),
+comp_67=    map(p + ve.xxy)
+comp_68=    ));
+comp_69=
+comp_70=    float3 ld = normalize(float3(sin(time/2.)*4., 1.0, 1.0));
+comp_71=    c = (clamp(dot(ld, normal), 0., 1.) + step(frac(p.y*2.), 0.1))*(1. - distance(p, ro)/far);
+comp_72=    } else {
+comp_73=      c = pow(tex2D(iChannel1, uv*.5 + tex2D(iChannel1, uv*.3).xy + time/LOOPS).r, 15.)*.5;
+comp_74=    }
+comp_75=
+comp_76=    // Output to screen
+comp_77=    ret = float4(float3(c,c,c*fac),1.0);
+comp_78=
+comp_79=  }

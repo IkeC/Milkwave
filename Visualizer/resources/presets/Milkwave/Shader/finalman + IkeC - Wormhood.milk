@@ -1,0 +1,228 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=4
+PSVERSION_WARP=4
+PSVERSION_COMP=4
+comp_1=// Wormhood by finalman (Shadertoy MdcSRj) / https://www.shadertoy.com/view/MdcSRj
+comp_2=// CC BY-NC-SA 3.0
+comp_3=// Transpiled to HLSL using Milkwave
+comp_4=
+comp_5=#define tx (sin(time)*0.5+1)
+comp_6=
+comp_7=// CONV: setting iChannel samplers to default noise texture
+comp_8=#define iChannel0 sampler_noise_lq
+comp_9=
+comp_10=// CONV: adding helper functions
+comp_11=float mod_conv(float x, float y) { return x - y * floor(x / y); }
+comp_12=float2 mod_conv(float2 x, float2 y) { return x - y * floor(x / y); }
+comp_13=float3 mod_conv(float3 x, float3 y) { return x - y * floor(x / y); }
+comp_14=float4 mod_conv(float4 x, float4 y) { return x - y * floor(x / y); }
+comp_15=
+comp_16=static const int MAX_STEPS = 200;
+comp_17=static const int NUM_SPHERES = 12;
+comp_18=
+comp_19=float lenv(float2 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_20=float lenv(float3 v) { return sqrt(max(dot(v, v), 0.000001)); }
+comp_21=
+comp_22=// CONV: smooth minimum (a hard min makes the avoidance direction jump between bodies)
+comp_23=float smin(float a, float b, float k)
+comp_24={
+comp_25=  float h = saturate(0.5 + 0.5 * (b - a) / k);
+comp_26=  return lerp(b, a, h) - k * h * (1.0 - h);
+comp_27=}
+comp_28=
+comp_29=// CONV: hue rotation around the grey axis - keeps the luminance of the surface colour
+comp_30=float3 hueRotate(float3 c, float a)
+comp_31={
+comp_32=  float3 k = float3(0.57735027, 0.57735027, 0.57735027);
+comp_33=  float ca = cos(a), sa = sin(a);
+comp_34=  return c * ca + cross(k, c) * sa + k * dot(k, c) * (1.0 - ca);
+comp_35=}
+comp_36=
+comp_37=float sphere(float3 pos, float radius, float3 smpl)
+comp_38={
+comp_39=  return lenv(pos - smpl) - radius;
+comp_40=}
+comp_41=
+comp_42=float plane(float3 dir, float offset, float3 smpl)
+comp_43={
+comp_44=  return dot(dir, smpl) + offset;
+comp_45=}
+comp_46=
+comp_47=float dfDist(float3 smpl, float aSz)
+comp_48={
+comp_49=  float T1 = 10.0;
+comp_50=  float T2 = 2.0 * T1;
+comp_51=
+comp_52=  float result = 10000.0;
+comp_53=
+comp_54=  smpl.y += sin(smpl.z * 0.2 + time) * sin(time * 1.33)
+comp_55=  + sin(smpl.x * 0.3 + time) * sin(time * 3.22)
+comp_56=  + sin(smpl.x * 0.5 + smpl.z * 0.22 + time) * sin(time * 2.22 + smpl.z * 0.1);
+comp_57=  float o = floor((smpl.z + T1) / T2);
+comp_58=  smpl.x += o * 7.0;
+comp_59=  smpl.xz = mod_conv(smpl.xz + T1, float2(T2, T2)) - T1;
+comp_60=
+comp_61=  for (int i = 0; i < NUM_SPHERES; i++)
+comp_62=  {
+comp_63=    float t = float(i) / float(NUM_SPHERES);
+comp_64=    float n = t + time * 0.25 + o * 0.5;
+comp_65=    float3 pos = float3(sin(n * 5.0) * 5.0, cos(n * 3.0) * 9.0, cos(n * 2.0) * 3.0 + 5.0);
+comp_66=    // AUDIO: the worms swell and shrink with the level (aSz is 1.0 when static)
+comp_67=    float radius = (frac(sin(t * 154.31 + 1.7) * 43758.5453) * 2.0 + 1.4) * aSz;
+comp_68=    result = min(result, sphere(pos, radius, smpl));
+comp_69=  }
+comp_70=
+comp_71=  result = min(result, plane(float3(0, -1, 0), 10.0, smpl));
+comp_72=  result = min(result, plane(float3(0, 1, 0), 10.0, smpl));
+comp_73=
+comp_74=  return result;
+comp_75=}
+comp_76=
+comp_77=float3 dfNormal(float3 smpl, float aSz)
+comp_78={
+comp_79=  static const float E = 0.04;
+comp_80=
+comp_81=  float d0 = dfDist(smpl, aSz);
+comp_82=  float dX = dfDist(smpl + float3(E, 0, 0), aSz);
+comp_83=  float dY = dfDist(smpl + float3(0, E, 0), aSz);
+comp_84=  float dZ = dfDist(smpl + float3(0, 0, E), aSz);
+comp_85=
+comp_86=  return normalize(float3(dX - d0, dY - d0, dZ - d0));
+comp_87=}
+comp_88=
+comp_89=float dfOcclusion(float3 smpl, float3 normal, float aSz)
+comp_90={
+comp_91=  float N = 1.0;
+comp_92=  return clamp(dfDist(smpl + normal * N, aSz) / N, 0.0, 1.0);
+comp_93=}
+comp_94=
+comp_95=// CAMERA ONLY: clearance to the nearest worm body (same tiling as dfDist, but spheres only and
+comp_96=// combined with a smooth minimum, so the avoidance direction changes gradually instead of
+comp_97=// snapping from one body to the next)
+comp_98=float dfClear(float3 smpl, float aSz)
+comp_99={
+comp_100=  float T1 = 10.0;
+comp_101=  float T2 = 2.0 * T1;
+comp_102=
+comp_103=  smpl.y += sin(smpl.z * 0.2 + time) * sin(time * 1.33)
+comp_104=  + sin(smpl.x * 0.3 + time) * sin(time * 3.22)
+comp_105=  + sin(smpl.x * 0.5 + smpl.z * 0.22 + time) * sin(time * 2.22 + smpl.z * 0.1);
+comp_106=  float o = floor((smpl.z + T1) / T2);
+comp_107=  smpl.x += o * 7.0;
+comp_108=  smpl.xz = mod_conv(smpl.xz + T1, float2(T2, T2)) - T1;
+comp_109=
+comp_110=  float result = 10000.0;
+comp_111=  for (int i = 0; i < NUM_SPHERES; i++)
+comp_112=  {
+comp_113=    float t = float(i) / float(NUM_SPHERES);
+comp_114=    float n = t + time * 0.25 + o * 0.5;
+comp_115=    float3 pos = float3(sin(n * 5.0) * 5.0, cos(n * 3.0) * 9.0, cos(n * 2.0) * 3.0 + 5.0);
+comp_116=    float radius = (frac(sin(t * 154.31 + 1.7) * 43758.5453) * 2.0 + 1.4) * aSz;
+comp_117=    result = smin(result, lenv(pos - smpl) - radius, 1.5);
+comp_118=  }
+comp_119=
+comp_120=  return result;
+comp_121=}
+comp_122=
+comp_123=float3 dfClearNormal(float3 smpl, float aSz)
+comp_124={
+comp_125=  static const float E = 0.05;
+comp_126=
+comp_127=  float d0 = dfClear(smpl, aSz);
+comp_128=  float dX = dfClear(smpl + float3(E, 0, 0), aSz);
+comp_129=  float dY = dfClear(smpl + float3(0, E, 0), aSz);
+comp_130=  float dZ = dfClear(smpl + float3(0, 0, E), aSz);
+comp_131=
+comp_132=  return normalize(float3(dX - d0, dY - d0, dZ - d0));
+comp_133=}
+comp_134=
+comp_135=float trace(inout float3 pos, float3 dir, inout float3 normal, float aSz)
+comp_136={
+comp_137=  int steps = 0;
+comp_138=  for (int i = 0; i < MAX_STEPS; i++)
+comp_139=  {
+comp_140=    steps++;
+comp_141=    float d = dfDist(pos, aSz);
+comp_142=    pos += d * dir * 1.0;
+comp_143=
+comp_144=    if (d < 0.001)
+comp_145=    {
+comp_146=      // CONV: replaced break with breaking condition
+comp_147=      i = MAX_STEPS;
+comp_148=    }
+comp_149=
+comp_150=  }
+comp_151=
+comp_152=  normal = dfNormal(pos, aSz);
+comp_153=  return float(steps) / float(MAX_STEPS);
+comp_154=}
+comp_155=
+comp_156=shader_body {
+comp_157=  float4 fragColor = 0;
+comp_158=  float2 fragCoord = uv;
+comp_159=  // CONV: Center on screen, then try some aspect correction
+comp_160=  uv = (uv*2) - 1;
+comp_161=  uv *= aspect.xy;
+comp_162=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_163=  uv = float2(uv.x, -uv.y);
+comp_164=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_165=  uv += float2(0,0) + 0;
+comp_166=  uv *= float2(1,1) * 1;
+comp_167=  // AUDIO: 1 = calm (bass_smooth), 2 = more reactive (bass_att), 3+ = static - see the remote's Version tooltip
+comp_168=  #ifdef bass_smooth
+comp_169=    float aRng = (int)vis_version == 1 ? 0.2 : 0.40;
+comp_170=    float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
+comp_171=      : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
+comp_172=  #else
+comp_173=    float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
+comp_174=  #endif
+comp_175=  float aDev = aFac - 1.0;   // 0 at the track average, +loud, -quiet
+comp_176=  float aBe  = aDev * 4.0, aCol = (int)vis_version == 1 ? 0.7 : 1.3;   // beat scale, colour reaction scale
+comp_177=  // AUDIO: the worm bodies swell and shrink with the level. Exactly 1.0 at version 3+ so
+comp_178=  // the static frame is untouched; v1 lands just under v2 because its aRng is a little smaller.
+comp_179=
+comp_180=  float aSz = 1.0 + aDev * 1.9;
+comp_181=  // AUDIO: the camera only pulls back on beats, so it never ends up inside a worm
+comp_182=  fragCoord = (fragCoord - 0.5) * (1.0 + max(aDev, 0.0) * 0.6) + 0.5;
+comp_183=
+comp_184=  float3 opos = float3(4.5,sin(time * 0.4) * 3.0 + 2.0,-7.0 + time * 3.0);
+comp_185=  // CAMERA: hard push-out variant kept only for an A/B smoothness measurement
+comp_186=  for (int c = 0; c < 3; c++)
+comp_187=  {
+comp_188=    float camD = dfDist(opos, aSz);
+comp_189=    if (camD < 2.0)
+comp_190=      opos += dfNormal(opos, aSz) * (2.0 - camD);
+comp_191=    else
+comp_192=      c = 3;
+comp_193=  }
+comp_194=  float3 pos = opos;
+comp_195=  float3 dir = normalize(float3((fragCoord.x - 0.5) * texsize.x / texsize.y, 0.5 - fragCoord.y, 1.0));
+comp_196=  float3 normal = float3(0, 0, 0);
+comp_197=
+comp_198=  // MOUSE: holding the button turns the camera (pointer X = yaw, pointer Y = pitch)
+comp_199=  float2 mRot = (mouse.xy - 0.5) * saturate(mouse.z) * float2(0.9, 0.5);
+comp_200=  float mCy = cos(mRot.x), mSy = sin(mRot.x);
+comp_201=  dir.xz = float2(dir.x * mCy - dir.z * mSy, dir.x * mSy + dir.z * mCy);
+comp_202=  float mCp = cos(mRot.y), mSp = sin(mRot.y);
+comp_203=  dir.yz = float2(dir.y * mCp - dir.z * mSp, dir.y * mSp + dir.z * mCp);
+comp_204=
+comp_205=  float steps = trace(pos, dir, normal, aSz);
+comp_206=  float occ = dfOcclusion(pos, normal, aSz);
+comp_207=  float fogAmt = 1.0 - exp(-lenv(opos - pos) * 0.01);
+comp_208=  float3 fogCol = float3(0.2, 0.14, 0.18);
+comp_209=
+comp_210=  float3 diffuse = float3(0.4, 0.5, 0.6) * dot(normal, normalize(float3(1.0, 0.3, -1.0)));
+comp_211=  float3 ambient = float3(0.4, 0.2, 0.1);
+comp_212=  float3 color = (ambient + diffuse) * float3(1.0 - steps, 1.0 - steps, 1.0 - steps) + pow(1.0 - occ, 1.5) * float3(1.0, 0.9, 0.8) * 0.8;
+comp_213=
+comp_214=  color = lerp(color, fogCol, fogAmt);
+comp_215=  color = (1.0 - exp(-color * 1.5)) * 1.3;
+comp_216=  fragColor = float4(color, 1.0);
+comp_217=  ret = fragColor;
+comp_218=  // AUDIO: the flesh colours rotate with the level
+comp_219=  ret = lerp(ret, ret.zyx, aBe * 0.15 * aCol);
+comp_220=  // AUDIO: and the worm skin slowly changes hue with the level (rotation keeps the brightness)
+comp_221=  float aHue = aDev * ((int)vis_version == 1 ? 1.8 : 2.4);
+comp_222=  ret = hueRotate(ret, aHue);
+comp_223=}
+comp_224=

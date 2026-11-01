@@ -91,7 +91,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 #define MAX_FFT_SHADER_INPUT 8192      // maximum input samples for shader FFT (circular buffer limit)
 #define MAX_FFT_SHADER_BINS 4096       // maximum output frequency bins for shader FFT texture
 #define DEFAULT_FFT_SHADER_INPUT 2048  // default input samples (~46ms window at 44100 Hz, ~2.8 frames at 60fps)
-#define MIN_FFT_SHADER_INPUT 512       // minimum input samples (~12ms, responsive like original MilkDrop)
+#define MIN_FFT_SHADER_INPUT 256       // minimum input samples (~6ms window at 44100 Hz; below this the 0-250 Hz range has too few bins)
 typedef struct {
   float imm[3];       // bass, mids, treble (absolute)
   float imm_rel[3];   // bass, mids, treble (relative to song; 1=avg, 0.9~below, 1.1~above)
@@ -136,6 +136,13 @@ enum {
   MD2_PS_2_X = 3,
   MD2_PS_3_0 = 4,
   MD2_PS_4_0 = 5,  // not supported by milkdrop
+};
+
+// Area covered by Desktop Mode ([Milkwave] DesktopModeMonitors / DESKTOP_MODE_MONITORS=...)
+enum {
+  DESKTOP_MODE_MONITOR_ALL = 0,      // the whole virtual desktop (default)
+  DESKTOP_MODE_MONITOR_PRIMARY = 1,  // the primary monitor only
+  DESKTOP_MODE_MONITOR_CURRENT = 2,  // the monitor the window is on
 };
 
 typedef struct {
@@ -384,7 +391,7 @@ class CPlugin : public CPluginShell {
   int m_nTexBitsPerCh;
   int m_nGridX;
   int m_nGridY;
-  int m_nMixType = -1;  // -1 = Random
+  int m_nMixType = -1;  // -1 = Random, 0-20 = fixed transition type
 
   // bool		m_bShowPressF1ForHelp;
   // char		m_szMonitorName[256];
@@ -418,13 +425,24 @@ class CPlugin : public CPluginShell {
   float m_MessageDefaultFadeoutTime = 0.0f;
 
   bool m_WindowBorderless = false;
+  bool m_WindowDesktopMode = false;  // persisted state: Desktop Mode is restored on the next start
   float m_WindowWatermarkModeOpacity = 0.3f;
+  float m_WindowDesktopModeOpacity = 1.0f;
   int m_WindowX = 0;
   int m_WindowY = 0;
   int m_WindowWidth = 0;
   int m_WindowHeight = 0;
   int m_WindowFixedWidth = 960;
   int m_WindowFixedHeight = 540;
+
+  // Desktop Mode (window re-parented behind the desktop icons)
+  bool m_bDesktopMode = false;
+  // Which area Desktop Mode covers ([Milkwave] DesktopModeMonitors): all monitors (virtual
+  // desktop), the primary monitor only, or the monitor the window is on.
+  int m_DesktopModeMonitor = DESKTOP_MODE_MONITOR_ALL;
+  RECT m_desktop_lastRect = {0};
+  LONG_PTR m_desktop_lastStyle = 0;
+  LONG_PTR m_desktop_lastStyleEx = 0;
 
   // Preset mouse interaction controls
   bool m_bEnableMouseInteraction = true;
@@ -445,8 +463,20 @@ class CPlugin : public CPluginShell {
 
   bool m_ChangePresetWithSong = true;
   float m_SongInfoDisplaySeconds = 5.0f;
+  bool m_bShowSongInfo = false;  // 'b' pins the song info to the screen (persisted)
   bool m_DisplayCover = true;
   bool m_DisplayCoverWhenPressingB = true;
+  // Album cover: 0 = small, 1 = medium (default), 2 = large lower-right thumbnail, 3 = fullscreen
+  // zoom (the classic MilkDrop centre zoom). Exposed to sprite code as "cover_style" so [img00]
+  // in sprites.ini can pick the matching behaviour.
+  int m_CoverStyle = 1;
+  // Show the preset info for PresetInfoOnChangeSeconds seconds on every preset
+  // change while it is not shown permanently (F4). Toggle with Ctrl+F4.
+  bool m_bPresetInfoOnChange = true;
+  float m_PresetInfoOnChangeSeconds = 6.5f;
+  // Settings-tab "Invert": invert the preset output (composite) while leaving the
+  // text overlays (song titles, messages, lyrics) un-inverted.
+  bool m_InvertPresetOutput = false;
   bool m_HideNotificationsWhenRemoteActive = false;
 
   // Remote tab visibility (settings.ini [Milkwave] ShowTab* keys; forwarded to
@@ -511,9 +541,11 @@ class CPlugin : public CPluginShell {
 #define SHADER_BLUR 2
 #define SHADER_OTHER 3
   bool LoadShaderFromMemory(const char* szShaderText, char* szFn, char* szProfile,
-                            LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors, bool compileOnly);
+                            LPD3DXCONSTANTTABLE* ppConstTable, void** ppShader, int shaderType, bool bHardErrors,
+                            bool compileOnly, bool skipIfCached = false);
   bool RecompileVShader(const char* szShadersText, VShaderInfo* si, int shaderType, bool bHardErrors, bool bCompileOnly);
-  bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion, bool bCompileOnly);
+  bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion,
+                        bool bCompileOnly, bool bSkipIfCached = false);
   bool EvictSomeTexture();
   typedef std::vector<TexInfo> TexInfoList;
   TexInfoList m_textures;
@@ -547,6 +579,12 @@ class CPlugin : public CPluginShell {
   int m_nLoadingPreset;
   wchar_t m_szLoadingPreset[MAX_PATH];
   float m_fLoadingPresetBlendTime;
+  HANDLE m_hPresetCompileThread = NULL;
+  volatile LONG m_nPresetCompileStatus = 0;  // 0=idle, 1=running, 2=done
+  volatile LONG m_nPresetCompileCancel = 0;  // 1 = the user aborted the pending preset load (ESC)
+  ULONGLONG m_nPresetCompileStartTick = 0;
+  bool m_bPresetCompileNotificationShown = false;
+  std::wstring m_sPresetCompilePath;
   int m_nPresetsLoadedTotal;              // important for texture eviction age-tracking...
   CState m_state_DO_NOT_USE[4];           // do not use; use pState, pOldState, pNewState, pMilk2OldState instead.
   CState* m_pMilk2OldState;               // 4th CState for .milk2 preset 1 (blend-from state)
@@ -648,7 +686,17 @@ class CPlugin : public CPluginShell {
   int m_presetHistoryFwdFence;
   void PrevPreset(float fBlendTime);
   void NextPreset(float fBlendTime);  // if not retracing our former steps, it will choose a random one.
+  void TogglePresetLock();
   void OnFinishedLoadingPreset();
+  // Show the preset info for m_PresetInfoOnChangeSeconds seconds, the way a preset
+  // change does. Does nothing while the info is shown permanently (F4) or when the
+  // feature is turned off (Ctrl+F4).
+  void FlashPresetInfo();
+  // Applies a new render quality (clamped to 1..100%), rebuilds the buffers and fonts, tells the
+  // Remote and shows "Quality NN%" - one path for the shortcuts, the Remote slider and IPC.
+  void SetRenderQuality(float newQuality, bool notify = true);
+  // Shows the effective quality (auto quality included) as "Quality NN%" / "Quality NN% (auto)".
+  void NotifyRenderQuality();
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile);
   int SendMessageToMilkwaveRemote(const wchar_t* presetFile, bool doForce);
   void PostMessageToMilkwaveRemote(UINT msg);
@@ -668,6 +716,12 @@ class CPlugin : public CPluginShell {
 #define WM_USER_FULLSCREEN WM_USER + 160
 #define WM_USER_WATERMARK WM_USER + 161
 #define WM_USER_BORDERLESS_FS WM_USER + 162
+#define WM_USER_DESKTOP_MODE WM_USER + 169
+#define WM_USER_OPEN_REMOTE WM_USER + 170  // bring Milkwave Remote to the front, start it if needed
+// System-wide hotkey registered while Desktop Mode is active (Ctrl+F9)
+#define MW_HOTKEY_DESKTOP_MODE 0xBD01
+// System-wide hotkey registered while Desktop Mode is active (Shift+F9: cycle the covered area)
+#define MW_HOTKEY_DESKTOP_MONITOR_CYCLE 0xBD02
 #define WM_USER_PIPE_IPC_MESSAGE WM_USER + 200  // lParam = heap-allocated wchar_t* from pipe server
 
   FFT myfft;
@@ -683,6 +737,7 @@ class CPlugin : public CPluginShell {
   bool m_bShowSongTime;
   bool m_bShowSongLen;
   float m_fShowRatingUntilThisTime;
+  float m_fShowPresetInfoUntilThisTime;  // preset info shows until this time after a preset change
 
 #define ERR_ALL 0
 #define ERR_INIT 1    // specifically, loading a preset
@@ -694,6 +749,7 @@ class CPlugin : public CPluginShell {
 #define ERR_MSG_BOTTOM_EXTRA_1 6
 #define ERR_MSG_BOTTOM_EXTRA_2 7
 #define ERR_MSG_BOTTOM_EXTRA_3 8
+#define ERR_PRESET_COMPILING 9
 
   ErrorMsgList m_errors;
   void AddNotification(wchar_t* szMsg);
@@ -728,6 +784,7 @@ class CPlugin : public CPluginShell {
   wchar_t m_szImgIniFile[MAX_PATH];
   wchar_t m_szPresetDir[MAX_PATH];
   wchar_t m_szPresetStartup[MAX_PATH];
+  wchar_t m_szCommandLinePreset[MAX_PATH] = {};  // .milk file passed by Explorer; wins over m_szPresetStartup and sets the preset folder
   wchar_t m_szAudioDevicePrevious[MAX_PATH];
   wchar_t m_szAudioDevice[MAX_PATH];
   wchar_t m_szAudioDeviceDisplayName[MAX_PATH];
@@ -823,6 +880,10 @@ class CPlugin : public CPluginShell {
   int m_nSpoutInputHeight;
 
   int m_nFramesSinceResize;
+  int m_textBorder = 2;  // outline thickness for messages and notifications (0 = off)
+  int m_textBorderColorR = 0;
+  int m_textBorderColorG = 0;
+  int m_textBorderColorB = 0;
   bool m_lyricsDisplayEnabled = true;
   bool m_bLyricsAutoLoad = true;
   bool m_lyricsAutoScale = true;  // auto-fit font so ~LyricsFontSize chars fit per line in the max-width area (on by default)
@@ -835,7 +896,7 @@ class CPlugin : public CPluginShell {
   float m_lyricsZoom = 0.95f;  // font scale applied before fade-in / after fade-out
   float m_lyricsMaxWidth = 0.82f;
   wchar_t m_lyricsFont[256] = L"Segoe UI";
-  int m_lyricsFontSize = 32;
+  int m_lyricsFontSize = 40;
   bool m_lyricsFontBold = false;
   bool m_lyricsFontItalic = false;
   bool m_lyricsFontAA = true;
@@ -843,6 +904,11 @@ class CPlugin : public CPluginShell {
   int m_lyricsColorG = 255;
   int m_lyricsColorB = 255;
   int m_lyricsShadow = 2;
+  int m_lyricsOutlineMode = 1;       // 0=none, 1=outline, 2/3/4=25/50/75% opacity background, 5=solid
+  int m_lyricsOutlineAmount = 3;     // outline thickness / box padding; background sides use at least 8px
+  int m_lyricsOutlineColorR = 0;
+  int m_lyricsOutlineColorG = 0;
+  int m_lyricsOutlineColorB = 0;
   std::int64_t m_lyricsOffsetMs = 0;
   float m_lyricsFade = 0.15f;  // fade in/out time in seconds
   wchar_t m_lyricsApiUrl[512] = L"https://lrclib.net/api";
@@ -871,6 +937,7 @@ class CPlugin : public CPluginShell {
   void InvalidateLyricsWrapCache();
   void WrapLyricsText(const std::wstring& text, int wrapWidthPixels, LPD3DXFONT measureFont,
                       std::vector<std::wstring>& outLines) const;
+  std::wstring TruncateTextWithEllipsis(LPD3DXFONT font, const std::wstring& text, int maxWidth) const;
 
   // Message-style lyrics rendering: the wrapped text is drawn ONCE at the
   // target scale into an offscreen texture and then GPU-scaled each frame, so
@@ -898,7 +965,7 @@ class CPlugin : public CPluginShell {
                                  int wrapWidthPixels, float targetScale);
   void DrawLyricsTextureQuad(LPDIRECT3DTEXTURE9 tex, int useW, int useH, int texSizeX, int texSizeY,
                              int canvasWidth, int canvasHeight, int centerX, int centerY,
-                             float scale, float opacity);
+                             float scale, float opacity, float resolutionScale = 1.0f);
 
   char m_szShaderIncludeText[32768];       // note: this still has char 13's and 10's in it - it's never edited on screen or loaded/saved with a preset.
   int m_nShaderIncludeTextLen;             //  # of chars, not including the final NULL.
@@ -920,7 +987,12 @@ class CPlugin : public CPluginShell {
   void DrawTooltip(wchar_t* str, int xR, int yB);
   void RandomizeBlendPattern();
   void GenPlasma(int x0, int x1, int y0, int y1, float dt);
-  void CompilePresetShadersToFile(wchar_t* m_szCurrentPresetFile);
+  void CompilePresetShadersToFile(wchar_t* m_szCurrentPresetFile, bool bSkipIfCached = false);
+  void StartPendingPresetCompile();
+  void StopPendingPresetCompile(bool wait);
+  bool CancelPendingPresetLoad();  // ESC while a preset compiles: keep the current preset
+  static unsigned __stdcall PendingPresetCompileThreadProc(void* param);
+  void CompilePendingPresetShaders();
   void ClearPreset();
   void RemoveAngleBrackets(wchar_t* str);
   void LoadPerFrameEvallibVars(CState* pState);
@@ -952,7 +1024,11 @@ class CPlugin : public CPluginShell {
   void SendPresetChangedInfoToMilkwaveRemote();
   void SendPresetWaveInfoToMilkwaveRemote();
   void SendSettingsInfoToMilkwaveRemote();
+  void SetTransitionType(int mixType, bool notifyRemote);
+  void CycleTransitionType();
   void SetWaveParamsFromMessage(std::wstring& message);
+  void ApplyVisVersion(float version, bool notifyRemote);
+  void CycleVisVersion();
   void ReadCustomMessages();
   void LaunchSongTitleAnim(int supertextIndex);
   void CaptureScreenshot();
@@ -981,6 +1057,7 @@ class CPlugin : public CPluginShell {
   void WarpedBlit_NoShaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, bool bCullTiles, bool bFlipCulling);
   void ShowToUser_Shaders(int nPass, bool bAlphaBlend, bool bFlipAlpha, bool bCullTiles, bool bFlipCulling);
   void ShowToUser_NoShaders();
+  void InvertBackBuffer();
   void BlurPasses();
   void GetSafeBlurMinMax(CState* pState, float* blur_min, float* blur_max);
   void RunPerFrameEquations(int code);
@@ -994,9 +1071,11 @@ class CPlugin : public CPluginShell {
   int GetNextFreeSupertextIndex();
   void DoCustomSoundAnalysis();
   void DrawMotionVectors();
-  void RenderLyricsOverlay(bool burnIn);
+  void RenderLyricsOverlay(bool burnIn, int targetWidth = -1, int targetHeight = -1);
+  void RenderFullResOverlayExtras(int width, int height) override;
+  void DrawActiveSongTitles(int width, int height);
 
-  bool LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly);
+  bool LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bCompileOnly, bool bSkipIfCached = false);
   void UvToMathSpace(float u, float v, float* rad, float* ang);
   void ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CState* pState);
   void RestoreShaderParams();
@@ -1018,7 +1097,12 @@ class CPlugin : public CPluginShell {
   virtual void MyRenderUI(int* upper_left_corner_y, int* upper_right_corner_y, int* lower_left_corner_y, int* lower_right_corner_y, int xL, int xR);
   void ToggleAlwaysOnTop(HWND hwnd);
   void SetOpacity(HWND hwnd);
+  // Applies an opacity to the window, adding or removing the layered style as needed so
+  // that a fully opaque window really is a plain (unlayered) window.
+  void ApplyWindowOpacity(HWND hwnd, float opacity);
   bool IsBorderlessFullscreen(HWND hWnd);
+  int GetDesktopModeTaskbarHeight();  // taskbar covering the bottom of the window, in canvas pixels (0 outside Desktop Mode)
+  float GetDesktopModeBottomInset();  // same as a fraction of the window height (0 = nothing covers the bottom)
   virtual LRESULT MyWindowProc(HWND hWnd, unsigned uMsg, WPARAM wParam, LPARAM lParam);
   void KillAllSprites();
   void KillAllSupertexts();

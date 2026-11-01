@@ -46,117 +46,126 @@ comp_41=  return f;
 comp_42=}
 comp_43=
 comp_44=shader_body {
-comp_45=  float4 C = 0;
-comp_46=
-comp_47=  uv *= aspect.xy;
-comp_48=  float2 U = uv;
-comp_49=  
-comp_50=  U.x += 0.15;  
-comp_51=  U.y += 0.2;  
-comp_52=  
-comp_53=  uv *= 0.15;
-comp_54=  uv += 1.3;
+comp_45=  // MOUSE: pointer Y zooms - up = zoom in, down = zoom out (0.90x .. 1.30x around the frame centre);
+comp_46=  // pointer X pans the view left/right. Centre + released button give the identity transform, so the
+comp_47=  // untouched frame stays byte-identical.
+comp_48=  float2 mwMouse = (mouse.xy - 0.5) * saturate(mouse.z);
+comp_49=  float mwZoomAmt = mwMouse.y > 0.0 ? 0.6 : 0.2;   // zoom in generously, out carefully
+comp_50=  float mwZoom = 1.0 + mwMouse.y * mwZoomAmt;
+comp_51=  uv = (uv - 0.5) / mwZoom + 0.5 + float2(mwMouse.x * 0.35, 0.0);
+comp_52=  float4 mwDead = float4(0.5, 0.5, 0.0, 0.0);   // superseded: the old mouse code below now reads a centred, released pointer
+comp_53=
+comp_54=  float4 C = 0;
 comp_55=
-comp_56=  uv.y+=-0.2;
-comp_57=  
-comp_58=  float TM = 0.2*time;
-comp_59=  uv.x += 0.1*sin(TM);
-comp_60=  uv.y -= 0*cos(TM);
+comp_56=  uv *= aspect.xy;
+comp_57=  float2 U = uv;
+comp_58=  
+comp_59=  U.x += 0.15;  
+comp_60=  U.y += 0.2;  
 comp_61=  
-comp_62=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_63=  // uv = float2(uv.x, -uv.y);
-comp_64=  float2 R = uv.xy, j,
-comp_65=  // CONV: iMouse unsupported
-comp_66=  M = float2(0.5,0.5) * (1+0.5*sin(0.05*time)),
-comp_67=  m = (M -R/2.)/R.y;
-comp_68=
-comp_69=  // CONV: iMouse unsupported
-comp_70=  // if (iMouse.z < 1. && M.x+M.y < 10.) m = float2(0, .5);
-comp_71=
-comp_72=  float3 o = float3(0, 0, -130.),
-comp_73=  // camera
-comp_74=  u = normalize(float3(U -R/2., R.y)),
-comp_75=  // 3d coords
-comp_76=  c = float3(0, 0, 0),
-comp_77=  p, k;
-comp_78=
-comp_79=  float t = T,
-comp_80=  v = -o.z/3.,
-comp_81=  // pattern scale
-comp_82=  i = 0., d = i,
-comp_83=  s, f, z, r;
-comp_84=
-comp_85=  bool b;
-comp_86=
-comp_87=  for (; i++<70;)
-comp_88=  // raymarch
-comp_89=  {
-comp_90=    p = u*d +o;
-comp_91=    p.xy /= v;
-comp_92=    // scale down
-comp_93=    r = 1.2*length(p.xy);
-comp_94=    // radius
-comp_95=    z = abs(1. -r*r);
-comp_96=    // z warp
-comp_97=    b = r < 1.;
-comp_98=    // inside?
-comp_99=    if (b) z = sqrt(z);
-comp_100=    p.xy /= z+1.;
-comp_101=    // spherize
-comp_102=    p.xy -= m;
-comp_103=    // move with mouse
-comp_104=    p.xy *= 0.6*v;
-comp_105=    // scale back up
-comp_106=    p.xy -= cos(p.z/8. +t*3e2 +float2(0, 1.5708) +z/2.)*.2;
-comp_107=    // wave along z
-comp_108=
-comp_109=    s = map(p, v);
-comp_110=    // sdf
-comp_111=
-comp_112=    r = length(p.xy);
-comp_113=    // new r
-comp_114=    f = cos(round(r)*t*6.2832)*.5+.5;
-comp_115=    // multiples
-comp_116=    k = H(.2 -f/3. +t +p.z/2e2);
-comp_117=    // color
-comp_118=    if (b) k = 1.-k;
-comp_119=    // flip color
+comp_62=  uv *= 0.15;
+comp_63=  uv += 1.3;
+comp_64=
+comp_65=  uv.y+=-0.2;
+comp_66=  
+comp_67=  float TM = 0.2*time;
+comp_68=  uv.x += 0.1*sin(TM);
+comp_69=  uv.y -= 0*cos(TM);
+comp_70=  
+comp_71=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_72=  // uv = float2(uv.x, -uv.y);
+comp_73=  float2 R = uv.xy, j,
+comp_74=  // CONV: iMouse unsupported
+comp_75=  M = float2(0.5,0.5) * (1+0.5*sin(0.05*time)),
+comp_76=  m = (M -R/2.)/R.y;
+comp_77=
+comp_78=  // CONV: iMouse unsupported
+comp_79=  // if (iMouse.z < 1. && M.x+M.y < 10.) m = float2(0, .5);
+comp_80=
+comp_81=  float3 o = float3(0, 0, -130.),
+comp_82=  // camera
+comp_83=  u = normalize(float3(U -R/2., R.y)),
+comp_84=  // 3d coords
+comp_85=  c = float3(0, 0, 0),
+comp_86=  p, k;
+comp_87=
+comp_88=  float t = T,
+comp_89=  v = -o.z/3.,
+comp_90=  // pattern scale
+comp_91=  i = 0., d = i,
+comp_92=  s, f, z, r;
+comp_93=
+comp_94=  bool b;
+comp_95=
+comp_96=  for (; i++<70;)
+comp_97=  // raymarch
+comp_98=  {
+comp_99=    p = u*d +o;
+comp_100=    p.xy /= v;
+comp_101=    // scale down
+comp_102=    r = 1.2*length(p.xy);
+comp_103=    // radius
+comp_104=    z = abs(1. -r*r);
+comp_105=    // z warp
+comp_106=    b = r < 1.;
+comp_107=    // inside?
+comp_108=    if (b) z = sqrt(z);
+comp_109=    p.xy /= z+1.;
+comp_110=    // spherize
+comp_111=    p.xy -= m;
+comp_112=    // move with mouse
+comp_113=    p.xy *= 0.6*v;
+comp_114=    // scale back up
+comp_115=    p.xy -= cos(p.z/8. +t*3e2 +float2(0, 1.5708) +z/2.)*.2;
+comp_116=    // wave along z
+comp_117=
+comp_118=    s = map(p, v);
+comp_119=    // sdf
 comp_120=
-comp_121=    // this stuff can go outside the raymarch,
-comp_122=    // but accumulating it here produces softer edges
-comp_123=    c += min(exp(s/-.05), s)
-comp_124=    // shapes
-comp_125=    * (f+.01)
-comp_126=    // shade pattern
-comp_127=    * min(z, 1.)
-comp_128=    // darken edges
-comp_129=    * sqrt(cos(r*6.2832)*.5 +.5)
-comp_130=    // shade between rows
-comp_131=    * k*k;
-comp_132=    // color
-comp_133=
-comp_134=    // CONV: break is unsupported, see Milkwave manual for details
-comp_135=    if (s < 1e-3 || d > 1e3) i=70;
-comp_136=    d += s*clamp(z, .3, .9);
-comp_137=    // smaller steps towards sphere edge
-comp_138=  }
-comp_139=
-comp_140=  c += tex2D(iChannel0, u*d +o).rrr * float3(0, .4, s)*s*z*.03;  // wavy aqua
-comp_141=
-comp_142=  #ifdef bass_smooth
-comp_143=    float fc = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (smoothstep(0,3,(int)vis_version == 1 ? bass_smooth : bass_att)*0.2)*vis_intensity+vis_shift;
-comp_144=  #else
-comp_145=    float fc = smoothstep(0,2,bass_att)*0.1;
-comp_146=  #endif  
-comp_147=
-comp_148=  c += min(exp(-p.z-f*A)*z*k*.01/s, fc);
-comp_149=  // light tips
+comp_121=    r = length(p.xy);
+comp_122=    // new r
+comp_123=    f = cos(round(r)*t*6.2832)*.5+.5;
+comp_124=    // multiples
+comp_125=    k = H(.2 -f/3. +t +p.z/2e2);
+comp_126=    // color
+comp_127=    if (b) k = 1.-k;
+comp_128=    // flip color
+comp_129=
+comp_130=    // this stuff can go outside the raymarch,
+comp_131=    // but accumulating it here produces softer edges
+comp_132=    c += min(exp(s/-.05), s)
+comp_133=    // shapes
+comp_134=    * (f+.01)
+comp_135=    // shade pattern
+comp_136=    * min(z, 1.)
+comp_137=    // darken edges
+comp_138=    * sqrt(cos(r*6.2832)*.5 +.5)
+comp_139=    // shade between rows
+comp_140=    * k*k;
+comp_141=    // color
+comp_142=
+comp_143=    // CONV: break is unsupported, see Milkwave manual for details
+comp_144=    if (s < 1e-3 || d > 1e3) i=70;
+comp_145=    d += s*clamp(z, .3, .9);
+comp_146=    // smaller steps towards sphere edge
+comp_147=  }
+comp_148=
+comp_149=  c += tex2D(iChannel0, u*d +o).rrr * float3(0, .4, s)*s*z*.03;  // wavy aqua
 comp_150=
-comp_151=  j = p.xy/v+m;
-comp_152=  // 2d coords
-comp_153=  c /= clamp(dot(j, j)*4, .04, 4.);
-comp_154=  // brightness
-comp_155=
-comp_156=  C = float4(exp(log(c)/2.2), 1);
-comp_157=  ret=C;
-comp_158=}
+comp_151=  #ifdef bass_smooth
+comp_152=    float fc = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (smoothstep(0,3,(int)vis_version == 1 ? bass_smooth : bass_att)*0.2)*vis_intensity+vis_shift;
+comp_153=  #else
+comp_154=    float fc = smoothstep(0,2,bass_att)*0.1;
+comp_155=  #endif  
+comp_156=
+comp_157=  c += min(exp(-p.z-f*A)*z*k*.01/s, fc);
+comp_158=  // light tips
+comp_159=
+comp_160=  j = p.xy/v+m;
+comp_161=  // 2d coords
+comp_162=  c /= clamp(dot(j, j)*4, .04, 4.);
+comp_163=  // brightness
+comp_164=
+comp_165=  C = float4(exp(log(c)/2.2), 1);
+comp_166=  ret=C;
+comp_167=}

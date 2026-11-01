@@ -38,6 +38,49 @@ extern CPlugin g_plugin;         // defined in main.cpp
 extern bool g_bDebugOutput;      // defined in support.cpp
 extern bool g_bDumpFileCleared;  // defined in support.cpp
 
+// =====================================================================
+// TCP network server control (defined in MilkwaveVisualizer.cpp)
+// Used by the Ctrl+Shift+N / Ctrl+N hotkeys and by the Remote's
+// "NETWORK_SERVER" / "NETWORK_SERVER_STATUS" button commands.
+// =====================================================================
+void ToggleNetworkServer(HWND hwnd);
+void ShowNetworkServerStatus();
+
+// =====================================================================
+// Window helpers (defined in MilkwaveVisualizer.cpp, called from
+// plugin_messages.cpp for the corresponding Remote button commands).
+// =====================================================================
+void ToggleStretch(HWND hwnd);
+void ResetWindow(HWND hwnd);
+void SetWindowFixedDimensions(HWND hwnd);
+void ChangeWindowOpacityByStep(bool increase);
+void SetDefaultAudioDevice();
+void ShowAudioDeviceName();
+
+// Locates MilkwaveRemote.exe next to the visualizer (see plugin.cpp)
+bool MilkwaveRemoteFindExecutable(std::wstring& exePath);
+
+// Desktop Mode area ([Milkwave] DesktopModeMonitors): "all" | "primary" | "current"
+int ParseDesktopModeMonitor(const wchar_t* text);       // tolerant, falls back to "all"
+const wchar_t* GetDesktopModeMonitorName(int mode);     // "all" | "primary" | "current"
+
+// Re-applies the Desktop Mode geometry after the monitor setting changed (no-op when Desktop
+// Mode is not active). Defined in MilkwaveVisualizer.cpp.
+void RefreshDesktopMode(HWND hwnd);
+
+// Stores, persists and announces a Desktop Mode area, then re-applies it when Desktop Mode is
+// active. Shift+F9 cycles the three areas (all -> primary -> current).
+void ApplyDesktopModeMonitor(HWND hwnd, int mode);
+void CycleDesktopModeMonitor(HWND hwnd);
+
+// Starts Milkwave Remote or brings the running instance to the front; usable before the plugin
+// is initialized (taskbar jump list helper). Returns false when the Remote could not be started.
+bool OpenMilkwaveRemoteExternal();
+
+// Preset blend transition types (settings.ini [Settings] Mixtype; -1 = random)
+int GetTransitionTypeCount();
+const wchar_t* GetTransitionTypeName(int mixType);
+
 // Vertex declarations (defined in plugin.cpp)
 extern D3DVERTEXELEMENT9 g_MyVertDecl[];
 extern D3DVERTEXELEMENT9 g_WfVertDecl[];
@@ -55,6 +98,7 @@ extern CRITICAL_SECTION g_csRemoteMessage;
 // Help text (defined in plugin.cpp)
 extern wchar_t* g_szHelp;
 extern wchar_t* g_szHelp_Page2;
+extern wchar_t* g_szHelp_Page3;
 extern int g_szHelp_W;
 
 // LC2UC table (defined in plugin.cpp)
