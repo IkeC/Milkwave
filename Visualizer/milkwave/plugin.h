@@ -549,6 +549,9 @@ class CPlugin : public CPluginShell {
   bool RecompileVShader(const char* szShadersText, VShaderInfo* si, int shaderType, bool bHardErrors, bool bCompileOnly);
   bool RecompilePShader(const char* szShadersText, PShaderInfo* si, int shaderType, bool bHardErrors, int PSVersion,
                         bool bCompileOnly, bool bSkipIfCached = false);
+  HRESULT CompileShaderWithCrashRetry(const char* text, int len, const char* fn, const char* profile,
+                                      LPD3DXBUFFER* code, LPD3DXBUFFER* errors, LPD3DXCONSTANTTABLE* table,
+                                      DWORD* crashCode);
   // Shader text that already failed to compile, keyed by crc32 and profile (session scope).
   // D3DXCompileShader cannot be interrupted and a heavy preset can keep it busy for minutes
   // before it gives up, so the render thread must never retry text that already failed.

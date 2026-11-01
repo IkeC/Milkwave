@@ -11,6 +11,7 @@
 #include "wasabi.h"
 #include <cstdint>
 #include <filesystem>
+#include <malloc.h>
 #include <mutex>
 
 void VShaderInfo::Clear() {
@@ -763,6 +764,57 @@ bool CPlugin::LoadShaders(PShaderSet* sh, CState* pState, bool bTick, bool bComp
   return true;
 }
 
+// Microsoft's shader compiler can crash outright on some shader text (an access violation inside
+// D3DXCompileShader). Milkwave compiles with the legacy d3dx9_31 compiler on purpose, which is the
+// one that crashed on the Pixel Life/Spectrum City presets (BeatDrop, seethrew/milk-pump issue #1).
+// A crash has to end up as a failed compile, otherwise the whole Visualizer goes down with a preset.
+// SEH cannot be used in a function that needs C++ object unwinding, hence this free function.
+static HRESULT CompileShaderGuarded(LPCSTR text, UINT len, LPCSTR fn, LPCSTR profile, DWORD flags,
+                                    LPD3DXBUFFER* code, LPD3DXBUFFER* errors, LPD3DXCONSTANTTABLE* table,
+                                    DWORD* crashCode) {
+  *crashCode = 0;
+  __try {
+    return D3DXCompileShader(text, len, NULL, NULL, fn, profile, flags, code, errors, table);
+  } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION || GetExceptionCode() == EXCEPTION_STACK_OVERFLOW ||
+                      GetExceptionCode() == EXCEPTION_INT_DIVIDE_BY_ZERO
+                  ? EXCEPTION_EXECUTE_HANDLER
+                  : EXCEPTION_CONTINUE_SEARCH) {
+    *crashCode = GetExceptionCode();
+    // Whatever the compiler half-made is abandoned: it cannot be trusted any more.
+    if (code)
+      *code = NULL;
+    if (errors)
+      *errors = NULL;
+    if (table)
+      *table = NULL;
+    if (*crashCode == EXCEPTION_STACK_OVERFLOW)
+      _resetstkoflw();  // without this the next stack growth on this thread fails immediately
+    return E_FAIL;
+  }
+}
+
+HRESULT CPlugin::CompileShaderWithCrashRetry(const char* text, int len, const char* fn, const char* profile,
+                                             LPD3DXBUFFER* code, LPD3DXBUFFER* errors, LPD3DXCONSTANTTABLE* table,
+                                             DWORD* crashCode) {
+  HRESULT hresult = CompileShaderGuarded(text, (UINT)len, fn, profile, m_dwShaderFlags, code, errors, table, crashCode);
+  if (*crashCode == 0 || (m_dwShaderFlags & D3DXSHADER_USE_LEGACY_D3DX9_31_DLL) == 0)
+    return hresult;
+
+  // The legacy compiler crashed: give the compiler that ships with d3dx9_43 a chance, it handled
+  // the shaders that killed the legacy one.
+  DWORD retryCrashCode = 0;
+  hresult = CompileShaderGuarded(text, (UINT)len, fn, profile,
+                                 m_dwShaderFlags & ~D3DXSHADER_USE_LEGACY_D3DX9_31_DLL, code, errors, table,
+                                 &retryCrashCode);
+  *crashCode = retryCrashCode;
+  if (retryCrashCode == 0 && D3D_OK == hresult) {
+    wchar_t note[] = L"Shader compiler crashed; compiled with the newer compiler instead";
+    milkwave->LogInfo(note);
+    QueueShaderNotification(note, 6.0f);
+  }
+  return hresult;
+}
+
 bool CPlugin::IsShaderKnownBad(uint32_t checksum, const char* profile) {
   std::lock_guard<std::mutex> lock(m_badShaderMutex);
   for (const auto& bad : m_badShaders) {
@@ -1023,26 +1075,19 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
       return false;
     }
 
-    HRESULT hresult = D3DXCompileShader(
-        szShaderText,
-        len,
-        NULL,  // CONST D3DXMACRO* pDefines,
-        NULL,  // LPD3DXINCLUDE pInclude,
-        szFn,
-        szProfile,
-        m_dwShaderFlags,
-        &pShaderByteCode,
-        &m_pShaderCompileErrors,
-        ppConstTable);
+    DWORD crashCode = 0;
+    HRESULT hresult = CompileShaderWithCrashRetry(szShaderText, len, szFn, szProfile, &pShaderByteCode,
+                                                  &m_pShaderCompileErrors, ppConstTable, &crashCode);
 
     if (D3D_OK != hresult) {
       failed = true;
     }
-    // before we totally fail, let's try using ps_2_b instead of ps_2_a
-    if (failed && !strcmp(szProfile, "ps_2_a")) {
+    // before we totally fail, let's try using ps_2_b instead of ps_2_a. Not after a compiler
+    // crash though: the same text would very likely crash it again.
+    if (failed && crashCode == 0 && !strcmp(szProfile, "ps_2_a")) {
       SafeRelease(m_pShaderCompileErrors);
-      if (D3D_OK == D3DXCompileShader(szShaderText, len, NULL, NULL, szFn,
-                                      "ps_2_b", m_dwShaderFlags, &pShaderByteCode, &m_pShaderCompileErrors, ppConstTable)) {
+      if (D3D_OK == CompileShaderWithCrashRetry(szShaderText, len, szFn, "ps_2_b", &pShaderByteCode,
+                                                &m_pShaderCompileErrors, ppConstTable, &crashCode)) {
         failed = false;
       } else {
         RememberBadShader(checksum, "ps_2_b");
@@ -1054,7 +1099,11 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
 
       wchar_t wideErrorMsg[1024];
 
-      if (m_pShaderCompileErrors) {
+      if (crashCode != 0) {
+        swprintf_s(wideErrorMsg, L"%hs %hs shader compiler crashed (0x%08X); the shader is skipped", szWhichShader,
+                   szProfile, (unsigned)crashCode);
+        milkwave->LogInfo(wideErrorMsg);
+      } else if (m_pShaderCompileErrors) {
         const char* errorMsg = (const char*)m_pShaderCompileErrors->GetBufferPointer();
         // Convert to wide string
         MultiByteToWideChar(CP_ACP, 0, errorMsg, -1, wideErrorMsg, _countof(wideErrorMsg));
@@ -1098,8 +1147,17 @@ bool CPlugin::LoadShaderFromMemory(const char* szOrigShaderText, char* szFn, cha
         *ppConstTable = NULL;
       }
       *ppShader = nullptr;
-      HRESULT compileResult = D3DXCompileShader(szShaderText, len, NULL, NULL, szFn, szProfile,
-                                                m_dwShaderFlags, &pShaderByteCode, &m_pShaderCompileErrors, ppConstTable);
+      DWORD crashCode = 0;
+      HRESULT compileResult = CompileShaderWithCrashRetry(szShaderText, len, szFn, szProfile, &pShaderByteCode,
+                                                          &m_pShaderCompileErrors, ppConstTable, &crashCode);
+      if (crashCode != 0) {
+        RememberBadShader(checksum, szProfile);
+        wchar_t crashMsg[256];
+        swprintf_s(crashMsg, L"%hs %hs shader compiler crashed (0x%08X); the shader is skipped", szWhichShader,
+                   szProfile, (unsigned)crashCode);
+        milkwave->LogInfo(crashMsg);
+        QueueShaderNotification(crashMsg, 6.0f);
+      }
       if (D3D_OK == compileResult) {
         hr = 1;
         if (szProfile[0] == 'v')
