@@ -78,7 +78,7 @@ comp_73=  // Accumulate glow — brighter and sharper if not mirrored (above axi
 comp_74=  o += (s > 0. ? 1. : .1) * p.w * p / max(s > 0. ? d : d*d*d, 5E-4)
 comp_75=  ;
 comp_76=  
-comp_77=  #ifdef bass_smooth
+comp_77=  #ifdef vis_version
 comp_78=    float fac = (int)vis_version > 2 ? 0.2*vis_intensity+vis_shift : (0.1 + 0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_79=  #else
 comp_80=    float fac = 0.1 + 0.05*smoothstep(0,2,bass_att);

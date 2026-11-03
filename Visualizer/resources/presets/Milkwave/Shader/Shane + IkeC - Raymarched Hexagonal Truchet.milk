@@ -70,7 +70,7 @@ comp_65=  edge = abs(d1 + d2 - d) + abs(d3 + d4 - d) + abs(d5 + d6 - d);
 comp_66=
 comp_67=  edge = smoothstep(0., 1., sqrt(edge/e.x*2.));
 comp_68=  
-comp_69=  #ifdef bass_smooth
+comp_69=  #ifdef vis_version
 comp_70=    edge *= (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1.1-0.2*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_71=  #else
 comp_72=    edge *= 1.05-0.1*smoothstep(0,2,bass_att);
@@ -126,7 +126,7 @@ comp_121=  float c = n3D(rd)*.57 + n3D(rd*2.)*.28 + n3D(rd*4.)*.15;
 comp_122=
 comp_123=  // Noise value
 comp_124=
-comp_125=  #ifdef bass_smooth
+comp_125=  #ifdef vis_version
 comp_126=    float fac = (0.85+0.3*smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
 comp_127=  #else
 comp_128=    float fac = 0.95+0.1*smoothstep(0,2,bass_att);

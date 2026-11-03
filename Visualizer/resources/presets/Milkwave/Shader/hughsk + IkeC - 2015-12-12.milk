@@ -22,7 +22,7 @@ comp_17=#define GLSLIFY 1
 comp_18=
 comp_19=// AUDIO: level deviation, used by the inner and outer shape functions below
 comp_20=float mwDeviation() {
-comp_21=#ifdef bass_smooth
+comp_21=#ifdef vis_version
 comp_22=  float aRng = (int)vis_version == 1 ? 0.34 : 0.45;
 comp_23=  float aFac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift
 comp_24=    : (1.0 - aRng*0.5 + smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)*aRng) * vis_intensity + vis_shift;
@@ -31,356 +31,361 @@ comp_26=  float aFac = (1.0 - 0.15) + smoothstep(0,2,bass_att)*0.30;
 comp_27=#endif
 comp_28=  // AUDIO: v1 needs a much bigger multiplier - its bass_smooth band is an averaged value, so the
 comp_29=  // same deviation moves far less than bass_att does
-comp_30=  return (aFac - 1.0) * ((int)vis_version == 1 ? 4.0 : 3.0);
-comp_31=}
-comp_32=
-comp_33=float2 mapRefrac(float3 p);
-comp_34=float2 mapSolid(float3 p);
-comp_35=
-comp_36=float2 calcRayIntersection_3975550108(float3 rayOrigin, float3 rayDir, float maxd, float precis) {
-comp_37=  float latest = precis * 2.0;
-comp_38=  float dist   = +0.0;
-comp_39=  float type   = -1.0;
-comp_40=  float2  res    = float2(-1.0, -1.0);
-comp_41=
-comp_42=  for (int i=min(frame,0); i < 50; i++) {
-comp_43=    // CONV: replaced break with breaking condition
-comp_44=    if (latest < precis || dist > maxd)  i = 50;
-comp_45=
-comp_46=    float2 result = mapRefrac(rayOrigin + rayDir * dist);
-comp_47=
-comp_48=    latest = result.x;
-comp_49=    type   = result.y;
-comp_50=    dist  += latest;
-comp_51=  }
+comp_30=  // other MilkDrop variants have no vis_version and get the v2 factor
+comp_31=  #ifdef vis_version
+comp_32=    return (aFac - 1.0) * ((int)vis_version == 1 ? 4.0 : 3.0);
+comp_33=  #else
+comp_34=    return (aFac - 1.0) * 3.0;
+comp_35=  #endif
+comp_36=}
+comp_37=
+comp_38=float2 mapRefrac(float3 p);
+comp_39=float2 mapSolid(float3 p);
+comp_40=
+comp_41=float2 calcRayIntersection_3975550108(float3 rayOrigin, float3 rayDir, float maxd, float precis) {
+comp_42=  float latest = precis * 2.0;
+comp_43=  float dist   = +0.0;
+comp_44=  float type   = -1.0;
+comp_45=  float2  res    = float2(-1.0, -1.0);
+comp_46=
+comp_47=  for (int i=min(frame,0); i < 50; i++) {
+comp_48=    // CONV: replaced break with breaking condition
+comp_49=    if (latest < precis || dist > maxd)  i = 50;
+comp_50=
+comp_51=    float2 result = mapRefrac(rayOrigin + rayDir * dist);
 comp_52=
-comp_53=  if (dist < maxd) {
-comp_54=    res = float2(dist, type);
-comp_55=  }
-comp_56=
-comp_57=  return res;
-comp_58=}
-comp_59=
-comp_60=float2 calcRayIntersection_3975550108(float3 rayOrigin, float3 rayDir) {
-comp_61=  return calcRayIntersection_3975550108(rayOrigin, rayDir, 20.0, 0.001);
-comp_62=}
-comp_63=
-comp_64=float2 calcRayIntersection_766934105(float3 rayOrigin, float3 rayDir, float maxd, float precis) {
-comp_65=  float latest = precis * 2.0;
-comp_66=  float dist   = +0.0;
-comp_67=  float type   = -1.0;
-comp_68=  float2  res    = float2(-1.0, -1.0);
-comp_69=
-comp_70=  for (int i=min(frame,0); i < 60; i++) {
-comp_71=    // CONV: replaced break with breaking condition
-comp_72=    if (latest < precis || dist > maxd)  i = 60;
-comp_73=
-comp_74=    float2 result = mapSolid(rayOrigin + rayDir * dist);
-comp_75=
-comp_76=    latest = result.x;
-comp_77=    type   = result.y;
-comp_78=    dist  += latest;
-comp_79=  }
+comp_53=    latest = result.x;
+comp_54=    type   = result.y;
+comp_55=    dist  += latest;
+comp_56=  }
+comp_57=
+comp_58=  if (dist < maxd) {
+comp_59=    res = float2(dist, type);
+comp_60=  }
+comp_61=
+comp_62=  return res;
+comp_63=}
+comp_64=
+comp_65=float2 calcRayIntersection_3975550108(float3 rayOrigin, float3 rayDir) {
+comp_66=  return calcRayIntersection_3975550108(rayOrigin, rayDir, 20.0, 0.001);
+comp_67=}
+comp_68=
+comp_69=float2 calcRayIntersection_766934105(float3 rayOrigin, float3 rayDir, float maxd, float precis) {
+comp_70=  float latest = precis * 2.0;
+comp_71=  float dist   = +0.0;
+comp_72=  float type   = -1.0;
+comp_73=  float2  res    = float2(-1.0, -1.0);
+comp_74=
+comp_75=  for (int i=min(frame,0); i < 60; i++) {
+comp_76=    // CONV: replaced break with breaking condition
+comp_77=    if (latest < precis || dist > maxd)  i = 60;
+comp_78=
+comp_79=    float2 result = mapSolid(rayOrigin + rayDir * dist);
 comp_80=
-comp_81=  if (dist < maxd) {
-comp_82=    res = float2(dist, type);
-comp_83=  }
-comp_84=
-comp_85=  return res;
-comp_86=}
-comp_87=
-comp_88=float2 calcRayIntersection_766934105(float3 rayOrigin, float3 rayDir) {
-comp_89=  return calcRayIntersection_766934105(rayOrigin, rayDir, 20.0, 0.001);
-comp_90=}
-comp_91=
-comp_92=float3 calcNormal_3606979787(float3 pos, float eps) {
-comp_93=  const float3 v1 = float3( 1.0,-1.0,-1.0);
-comp_94=  const float3 v2 = float3(-1.0,-1.0, 1.0);
-comp_95=  const float3 v3 = float3(-1.0, 1.0,-1.0);
-comp_96=  const float3 v4 = float3( 1.0, 1.0, 1.0);
-comp_97=
-comp_98=  return normalize( v1 * mapRefrac( pos + v1*eps ).x +
-comp_99=  v2 * mapRefrac( pos + v2*eps ).x +
-comp_100=  v3 * mapRefrac( pos + v3*eps ).x +
-comp_101=  v4 * mapRefrac( pos + v4*eps ).x );
-comp_102=}
-comp_103=
-comp_104=float3 calcNormal_3606979787(float3 pos) {
-comp_105=  return calcNormal_3606979787(pos, 0.002);
-comp_106=}
-comp_107=
-comp_108=float3 calcNormal_1245821463(float3 pos, float eps) {
-comp_109=  const float3 v1 = float3( 1.0,-1.0,-1.0);
-comp_110=  const float3 v2 = float3(-1.0,-1.0, 1.0);
-comp_111=  const float3 v3 = float3(-1.0, 1.0,-1.0);
-comp_112=  const float3 v4 = float3( 1.0, 1.0, 1.0);
-comp_113=
-comp_114=  return normalize( v1 * mapSolid( pos + v1*eps ).x +
-comp_115=  v2 * mapSolid( pos + v2*eps ).x +
-comp_116=  v3 * mapSolid( pos + v3*eps ).x +
-comp_117=  v4 * mapSolid( pos + v4*eps ).x );
-comp_118=}
-comp_119=
-comp_120=float3 calcNormal_1245821463(float3 pos) {
-comp_121=  return calcNormal_1245821463(pos, 0.002);
-comp_122=}
-comp_123=
-comp_124=float beckmannDistribution_2315452051(float x, float roughness) {
-comp_125=  float NdotH = max(x, 0.0001);
-comp_126=  float cos2Alpha = NdotH * NdotH;
-comp_127=  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;
-comp_128=  float roughness2 = roughness * roughness;
-comp_129=  float denom = 3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha;
-comp_130=  return exp(tan2Alpha / roughness2) / denom;
-comp_131=}
-comp_132=
-comp_133=float cookTorranceSpecular_1460171947(
-comp_134=float3 lightDirection,
-comp_135=float3 viewDirection,
-comp_136=float3 surfaceNormal,
-comp_137=float roughness,
-comp_138=float fresnel) {
-comp_139=
-comp_140=  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);
-comp_141=  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);
-comp_142=
-comp_143=  float3 H = normalize(lightDirection + viewDirection);
+comp_81=    latest = result.x;
+comp_82=    type   = result.y;
+comp_83=    dist  += latest;
+comp_84=  }
+comp_85=
+comp_86=  if (dist < maxd) {
+comp_87=    res = float2(dist, type);
+comp_88=  }
+comp_89=
+comp_90=  return res;
+comp_91=}
+comp_92=
+comp_93=float2 calcRayIntersection_766934105(float3 rayOrigin, float3 rayDir) {
+comp_94=  return calcRayIntersection_766934105(rayOrigin, rayDir, 20.0, 0.001);
+comp_95=}
+comp_96=
+comp_97=float3 calcNormal_3606979787(float3 pos, float eps) {
+comp_98=  const float3 v1 = float3( 1.0,-1.0,-1.0);
+comp_99=  const float3 v2 = float3(-1.0,-1.0, 1.0);
+comp_100=  const float3 v3 = float3(-1.0, 1.0,-1.0);
+comp_101=  const float3 v4 = float3( 1.0, 1.0, 1.0);
+comp_102=
+comp_103=  return normalize( v1 * mapRefrac( pos + v1*eps ).x +
+comp_104=  v2 * mapRefrac( pos + v2*eps ).x +
+comp_105=  v3 * mapRefrac( pos + v3*eps ).x +
+comp_106=  v4 * mapRefrac( pos + v4*eps ).x );
+comp_107=}
+comp_108=
+comp_109=float3 calcNormal_3606979787(float3 pos) {
+comp_110=  return calcNormal_3606979787(pos, 0.002);
+comp_111=}
+comp_112=
+comp_113=float3 calcNormal_1245821463(float3 pos, float eps) {
+comp_114=  const float3 v1 = float3( 1.0,-1.0,-1.0);
+comp_115=  const float3 v2 = float3(-1.0,-1.0, 1.0);
+comp_116=  const float3 v3 = float3(-1.0, 1.0,-1.0);
+comp_117=  const float3 v4 = float3( 1.0, 1.0, 1.0);
+comp_118=
+comp_119=  return normalize( v1 * mapSolid( pos + v1*eps ).x +
+comp_120=  v2 * mapSolid( pos + v2*eps ).x +
+comp_121=  v3 * mapSolid( pos + v3*eps ).x +
+comp_122=  v4 * mapSolid( pos + v4*eps ).x );
+comp_123=}
+comp_124=
+comp_125=float3 calcNormal_1245821463(float3 pos) {
+comp_126=  return calcNormal_1245821463(pos, 0.002);
+comp_127=}
+comp_128=
+comp_129=float beckmannDistribution_2315452051(float x, float roughness) {
+comp_130=  float NdotH = max(x, 0.0001);
+comp_131=  float cos2Alpha = NdotH * NdotH;
+comp_132=  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;
+comp_133=  float roughness2 = roughness * roughness;
+comp_134=  float denom = 3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha;
+comp_135=  return exp(tan2Alpha / roughness2) / denom;
+comp_136=}
+comp_137=
+comp_138=float cookTorranceSpecular_1460171947(
+comp_139=float3 lightDirection,
+comp_140=float3 viewDirection,
+comp_141=float3 surfaceNormal,
+comp_142=float roughness,
+comp_143=float fresnel) {
 comp_144=
-comp_145=  float NdotH = max(dot(surfaceNormal, H), 0.0);
-comp_146=  float VdotH = max(dot(viewDirection, H), 0.000001);
-comp_147=  float LdotH = max(dot(lightDirection, H), 0.000001);
-comp_148=  float G1 = (2.0 * NdotH * VdotN) / VdotH;
-comp_149=  float G2 = (2.0 * NdotH * LdotN) / LdotH;
-comp_150=  float G = min(1.0, min(G1, G2));
-comp_151=
-comp_152=  float D = beckmannDistribution_2315452051(NdotH, roughness);
-comp_153=
-comp_154=  float F = pow(1.0 - VdotN, fresnel);
-comp_155=
-comp_156=  return  G * F * D / max(3.14159265 * VdotN, 0.000001);
-comp_157=}
+comp_145=  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);
+comp_146=  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);
+comp_147=
+comp_148=  float3 H = normalize(lightDirection + viewDirection);
+comp_149=
+comp_150=  float NdotH = max(dot(surfaceNormal, H), 0.0);
+comp_151=  float VdotH = max(dot(viewDirection, H), 0.000001);
+comp_152=  float LdotH = max(dot(lightDirection, H), 0.000001);
+comp_153=  float G1 = (2.0 * NdotH * VdotN) / VdotH;
+comp_154=  float G2 = (2.0 * NdotH * LdotN) / LdotH;
+comp_155=  float G = min(1.0, min(G1, G2));
+comp_156=
+comp_157=  float D = beckmannDistribution_2315452051(NdotH, roughness);
 comp_158=
-comp_159=float2 squareFrame_1062606552(float2 screenSize, float2 coord) {
-comp_160=  float2 position = 2.0 * (coord.xy / screenSize.xy) - 1.0;
-comp_161=  position.x *= screenSize.x / screenSize.y;
-comp_162=  return position;
-comp_163=}
-comp_164=
-comp_165=float3x3 calcLookAtMatrix_1535977339(float3 origin, float3 target, float roll) {
-comp_166=  float3 rr = float3(sin(roll), cos(roll), 0.0);
-comp_167=  float3 ww = normalize(target - origin);
-comp_168=  float3 uu = normalize(cross(ww, rr));
-comp_169=  float3 vv = normalize(cross(uu, ww));
-comp_170=
-comp_171=  return float3x3(uu, vv, ww);
-comp_172=}
-comp_173=
-comp_174=float3 getRay_870892966(float3x3 camMat, float2 screenPos, float lensLength) {
-comp_175=  return normalize(mul(transpose(camMat), float3(screenPos, lensLength)));
-comp_176=}
-comp_177=
-comp_178=float3 getRay_870892966(float3 origin, float3 target, float2 screenPos, float lensLength) {
-comp_179=  float3x3 camMat = calcLookAtMatrix_1535977339(origin, target, 0.0);
-comp_180=  return getRay_870892966(camMat, screenPos, lensLength);
+comp_159=  float F = pow(1.0 - VdotN, fresnel);
+comp_160=
+comp_161=  return  G * F * D / max(3.14159265 * VdotN, 0.000001);
+comp_162=}
+comp_163=
+comp_164=float2 squareFrame_1062606552(float2 screenSize, float2 coord) {
+comp_165=  float2 position = 2.0 * (coord.xy / screenSize.xy) - 1.0;
+comp_166=  position.x *= screenSize.x / screenSize.y;
+comp_167=  return position;
+comp_168=}
+comp_169=
+comp_170=float3x3 calcLookAtMatrix_1535977339(float3 origin, float3 target, float roll) {
+comp_171=  float3 rr = float3(sin(roll), cos(roll), 0.0);
+comp_172=  float3 ww = normalize(target - origin);
+comp_173=  float3 uu = normalize(cross(ww, rr));
+comp_174=  float3 vv = normalize(cross(uu, ww));
+comp_175=
+comp_176=  return float3x3(uu, vv, ww);
+comp_177=}
+comp_178=
+comp_179=float3 getRay_870892966(float3x3 camMat, float2 screenPos, float lensLength) {
+comp_180=  return normalize(mul(transpose(camMat), float3(screenPos, lensLength)));
 comp_181=}
 comp_182=
-comp_183=void orbitCamera_421267681(
-comp_184=in float camAngle,
-comp_185=in float camHeight,
-comp_186=in float camDistance,
-comp_187=in float2 screenResolution,
-comp_188=out float3 rayOrigin,
-comp_189=out float3 rayDirection,
-comp_190=in float2 coord
-comp_191=) {
-comp_192=  float2 screenPos = squareFrame_1062606552(screenResolution, coord);
-comp_193=  float3 rayTarget = float3(0.0, 0.0, 0.0);
-comp_194=
-comp_195=  rayOrigin = float3(
-comp_196=  camDistance * sin(camAngle),
-comp_197=  camHeight,
-comp_198=  camDistance * cos(camAngle)
-comp_199=  );
-comp_200=
-comp_201=  rayDirection = getRay_870892966(rayOrigin, rayTarget, screenPos, 2.0);
-comp_202=}
-comp_203=
-comp_204=float sdBox_1117569599(float3 position, float3 dimensions) {
-comp_205=  float3 d = abs(position) - dimensions;
-comp_206=
-comp_207=  return min(max(d.x, max(d.y,d.z)), 0.0) + lenv(max(d, 0.0));
-comp_208=}
-comp_209=
-comp_210=float random_2281831123(float2 co)
-comp_211={
-comp_212=  float a = 12.9898;
-comp_213=  float b = 78.233;
-comp_214=  float c = 43758.5453;
-comp_215=  float dt= dot(co.xy ,float2(a,b));
-comp_216=  float sn= mod_conv(dt,3.14);
-comp_217=  return frac(sin(sn) * c);
-comp_218=}
-comp_219=
-comp_220=float fogFactorExp2_529295689(
-comp_221=float dist,
-comp_222=float density
-comp_223=) {
-comp_224=  const float LOG2 = -1.442695;
-comp_225=  float d = density * dist;
-comp_226=  return 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
-comp_227=}
-comp_228=
-comp_229=float intersectPlane(float3 ro, float3 rd, float3 nor, float dist) {
-comp_230=  float denom = dot(rd, nor);
-comp_231=  float t = -(dot(ro, nor) + dist) / denom;
-comp_232=
-comp_233=  return t;
-comp_234=}
-comp_235=
-comp_236=static float3 n4 = float3(0.577,0.577,0.577);
-comp_237=static float3 n5 = float3(-0.577,0.577,0.577);
-comp_238=static float3 n6 = float3(0.577,-0.577,0.577);
-comp_239=static float3 n7 = float3(0.577,0.577,-0.577);
-comp_240=static float3 n8 = float3(0.000,0.357,0.934);
-comp_241=static float3 n9 = float3(0.000,-0.357,0.934);
-comp_242=static float3 n10 = float3(0.934,0.000,0.357);
-comp_243=static float3 n11 = float3(-0.934,0.000,0.357);
-comp_244=static float3 n12 = float3(0.357,0.934,0.000);
-comp_245=static float3 n13 = float3(-0.357,0.934,0.000);
-comp_246=
-comp_247=float icosahedral(float3 p, float r) {
-comp_248=  float s = abs(dot(p,n4));
-comp_249=  s = max(s, abs(dot(p,n5)));
-comp_250=  s = max(s, abs(dot(p,n6)));
-comp_251=  s = max(s, abs(dot(p,n7)));
-comp_252=  s = max(s, abs(dot(p,n8)));
-comp_253=  s = max(s, abs(dot(p,n9)));
-comp_254=  s = max(s, abs(dot(p,n10)));
-comp_255=  s = max(s, abs(dot(p,n11)));
-comp_256=  s = max(s, abs(dot(p,n12)));
-comp_257=  s = max(s, abs(dot(p,n13)));
-comp_258=  return s - r;
-comp_259=}
-comp_260=
-comp_261=float2 rotate2D(float2 p, float a) {
-comp_262=  return mul(p, transpose(float2x2(cos(a), -sin(a), sin(a),  cos(a))));
-comp_263=}
-comp_264=
-comp_265=float2 mapRefrac(float3 p) {
-comp_266=  float d  = icosahedral(p, 1.0 + mwDeviation() * 0.12);
-comp_267=  float id = 0.0;
-comp_268=
-comp_269=  return float2(d, id);
-comp_270=}
-comp_271=
-comp_272=float2 mapSolid(float3 p) {
-comp_273=  p.xz = rotate2D(p.xz, time * 1.25);
-comp_274=  p.yx = rotate2D(p.yx, time * 1.85);
-comp_275=  p.y += sin(time) * 0.25;
-comp_276=  p.x += cos(time) * 0.25;
-comp_277=
-comp_278=  float d = lenv(p) - (0.25 + mwDeviation() * 0.06);
-comp_279=  float id = 1.0;
-comp_280=  float pulse = pow(sin(time * 2.) * 0.5 + 0.5, 9.0) * 2.;
-comp_281=
-comp_282=  d = lerp(d, sdBox_1117569599(p, float3(0.175, 0.175, 0.175) * (1.0 + mwDeviation() * 0.30)), pulse);
-comp_283=
-comp_284=  return float2(d, id);
-comp_285=}
+comp_183=float3 getRay_870892966(float3 origin, float3 target, float2 screenPos, float lensLength) {
+comp_184=  float3x3 camMat = calcLookAtMatrix_1535977339(origin, target, 0.0);
+comp_185=  return getRay_870892966(camMat, screenPos, lensLength);
+comp_186=}
+comp_187=
+comp_188=void orbitCamera_421267681(
+comp_189=in float camAngle,
+comp_190=in float camHeight,
+comp_191=in float camDistance,
+comp_192=in float2 screenResolution,
+comp_193=out float3 rayOrigin,
+comp_194=out float3 rayDirection,
+comp_195=in float2 coord
+comp_196=) {
+comp_197=  float2 screenPos = squareFrame_1062606552(screenResolution, coord);
+comp_198=  float3 rayTarget = float3(0.0, 0.0, 0.0);
+comp_199=
+comp_200=  rayOrigin = float3(
+comp_201=  camDistance * sin(camAngle),
+comp_202=  camHeight,
+comp_203=  camDistance * cos(camAngle)
+comp_204=  );
+comp_205=
+comp_206=  rayDirection = getRay_870892966(rayOrigin, rayTarget, screenPos, 2.0);
+comp_207=}
+comp_208=
+comp_209=float sdBox_1117569599(float3 position, float3 dimensions) {
+comp_210=  float3 d = abs(position) - dimensions;
+comp_211=
+comp_212=  return min(max(d.x, max(d.y,d.z)), 0.0) + lenv(max(d, 0.0));
+comp_213=}
+comp_214=
+comp_215=float random_2281831123(float2 co)
+comp_216={
+comp_217=  float a = 12.9898;
+comp_218=  float b = 78.233;
+comp_219=  float c = 43758.5453;
+comp_220=  float dt= dot(co.xy ,float2(a,b));
+comp_221=  float sn= mod_conv(dt,3.14);
+comp_222=  return frac(sin(sn) * c);
+comp_223=}
+comp_224=
+comp_225=float fogFactorExp2_529295689(
+comp_226=float dist,
+comp_227=float density
+comp_228=) {
+comp_229=  const float LOG2 = -1.442695;
+comp_230=  float d = density * dist;
+comp_231=  return 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
+comp_232=}
+comp_233=
+comp_234=float intersectPlane(float3 ro, float3 rd, float3 nor, float dist) {
+comp_235=  float denom = dot(rd, nor);
+comp_236=  float t = -(dot(ro, nor) + dist) / denom;
+comp_237=
+comp_238=  return t;
+comp_239=}
+comp_240=
+comp_241=static float3 n4 = float3(0.577,0.577,0.577);
+comp_242=static float3 n5 = float3(-0.577,0.577,0.577);
+comp_243=static float3 n6 = float3(0.577,-0.577,0.577);
+comp_244=static float3 n7 = float3(0.577,0.577,-0.577);
+comp_245=static float3 n8 = float3(0.000,0.357,0.934);
+comp_246=static float3 n9 = float3(0.000,-0.357,0.934);
+comp_247=static float3 n10 = float3(0.934,0.000,0.357);
+comp_248=static float3 n11 = float3(-0.934,0.000,0.357);
+comp_249=static float3 n12 = float3(0.357,0.934,0.000);
+comp_250=static float3 n13 = float3(-0.357,0.934,0.000);
+comp_251=
+comp_252=float icosahedral(float3 p, float r) {
+comp_253=  float s = abs(dot(p,n4));
+comp_254=  s = max(s, abs(dot(p,n5)));
+comp_255=  s = max(s, abs(dot(p,n6)));
+comp_256=  s = max(s, abs(dot(p,n7)));
+comp_257=  s = max(s, abs(dot(p,n8)));
+comp_258=  s = max(s, abs(dot(p,n9)));
+comp_259=  s = max(s, abs(dot(p,n10)));
+comp_260=  s = max(s, abs(dot(p,n11)));
+comp_261=  s = max(s, abs(dot(p,n12)));
+comp_262=  s = max(s, abs(dot(p,n13)));
+comp_263=  return s - r;
+comp_264=}
+comp_265=
+comp_266=float2 rotate2D(float2 p, float a) {
+comp_267=  return mul(p, transpose(float2x2(cos(a), -sin(a), sin(a),  cos(a))));
+comp_268=}
+comp_269=
+comp_270=float2 mapRefrac(float3 p) {
+comp_271=  float d  = icosahedral(p, 1.0 + mwDeviation() * 0.12);
+comp_272=  float id = 0.0;
+comp_273=
+comp_274=  return float2(d, id);
+comp_275=}
+comp_276=
+comp_277=float2 mapSolid(float3 p) {
+comp_278=  p.xz = rotate2D(p.xz, time * 1.25);
+comp_279=  p.yx = rotate2D(p.yx, time * 1.85);
+comp_280=  p.y += sin(time) * 0.25;
+comp_281=  p.x += cos(time) * 0.25;
+comp_282=
+comp_283=  float d = lenv(p) - (0.25 + mwDeviation() * 0.06);
+comp_284=  float id = 1.0;
+comp_285=  float pulse = pow(sin(time * 2.) * 0.5 + 0.5, 9.0) * 2.;
 comp_286=
-comp_287=float3 palette( in float t, in float3 a, in float3 b, in float3 c, in float3 d ) {
-comp_288=  return a + b*cos( 6.28318*(c*t+d) );
-comp_289=}
-comp_290=
-comp_291=float3 bg(float3 ro, float3 rd) {
-comp_292=  float3 col = 0.1 + (
-comp_293=  palette(clamp((random_2281831123(rd.xz + sin(time * 0.1)) * 0.5 + 0.5) * 0.035 - rd.y * 0.5 + 0.35, -1.0, 1.0)
-comp_294=  , float3(0.5, 0.45, 0.55)
-comp_295=  , float3(0.5, 0.5, 0.5)
-comp_296=  , float3(1.05, 1.0, 1.0)
-comp_297=  , float3(0.275, 0.2, 0.19)
-comp_298=  )
-comp_299=  );
-comp_300=
-comp_301=  float t = intersectPlane(ro, rd, float3(0, 1, 0), 4.);
-comp_302=
-comp_303=  if (t > 0.0) {
-comp_304=    float3 p = ro + rd * t;
-comp_305=    float g = (1.0 - pow(abs(sin(p.x) * cos(p.z)), 0.25));
-comp_306=
-comp_307=    col += (1.0 - fogFactorExp2_529295689(t, 0.04)) * g * float3(5, 4, 2) * 0.075;
-comp_308=  }
-comp_309=
-comp_310=  return col;
-comp_311=}
-comp_312=
-comp_313=shader_body {
-comp_314=  float4 fragColor = 0;
-comp_315=  float2 fragCoord = uv;
-comp_316=  // CONV: Center on screen, then try some aspect correction
-comp_317=  uv = (uv*2) - 1;
-comp_318=  uv *= aspect.xy;
-comp_319=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
-comp_320=  uv = float2(uv.x, -uv.y);
-comp_321=  // CONV: Adjust viewpoint (x,y individually or both)
-comp_322=  uv += float2(0,0) + 0;
-comp_323=  uv *= float2(1,1) * 1;
-comp_324=
-comp_325=  float3 ro, rd;
-comp_326=
-comp_327=  float2  suv      = uv;
-comp_328=  float2  pixCoord = float2(fragCoord.x, 1.0-fragCoord.y) * texsize.xy;
-comp_329=  float dist     = 4.5;
-comp_330=  float rotation = mouse.z > 0.0
-comp_331=  ? 6. * mouse.x
-comp_332=  : time * 0.45;
-comp_333=  float height = mouse.z > 0.0
-comp_334=  ? 5. * (mouse.y * 2.0 - 1.0)
-comp_335=  : -0.2;
-comp_336=
-comp_337=  orbitCamera_421267681(rotation, height, dist, texsize.xy, ro, rd, pixCoord);
-comp_338=
-comp_339=  float3 color = bg(ro, rd);
-comp_340=  float2 t = calcRayIntersection_3975550108(ro, rd);
-comp_341=  if (t.x > -0.5) {
-comp_342=    float3 pos = ro + rd * t.x;
-comp_343=    float3 nor = calcNormal_3606979787(pos);
-comp_344=    float3 ldir1 = normalize(float3(0.8, 1, 0));
-comp_345=    float3 ldir2 = normalize(float3(-0.4, -1.3, 0));
-comp_346=    float3 lcol1 = float3(0.6, 0.5, 1.1);
-comp_347=    float3 lcol2 = float3(1.4, 0.9, 0.8) * 0.7;
-comp_348=
-comp_349=    float3 ref = refract(rd, nor, 0.97);
-comp_350=    float2 u = calcRayIntersection_766934105(ro + ref * 0.1, ref);
-comp_351=    if (u.x > -0.5) {
-comp_352=      float3 pos2 = ro + ref * u.x;
-comp_353=      float3 nor2 = calcNormal_1245821463(pos2);
-comp_354=      float spec = cookTorranceSpecular_1460171947(ldir1, -ref, nor2, 0.6, 0.95) * 2.;
-comp_355=      float diff1 = 0.05 + max(0., dot(ldir1, nor2));
-comp_356=      float diff2 = max(0., dot(ldir2, nor2));
-comp_357=
-comp_358=      color = spec + (diff1 * lcol1 + diff2 * lcol2);
-comp_359=    }
-comp_360=
-comp_361=    else {
-comp_362=      color = bg(ro + ref * 0.1, ref) * 1.1;
-comp_363=    }
-comp_364=
-comp_365=    color += color * cookTorranceSpecular_1460171947(ldir1, -rd, nor, 0.2, 0.9) * 2.;
-comp_366=    color += 0.05;
-comp_367=  }
-comp_368=
-comp_369=  float vignette = 1.0;   // vignette removed on request
-comp_370=
-comp_371=  color.r = smoothstep(0.05, 0.995, color.r);
-comp_372=  color.b = smoothstep(-0.05, 0.95, color.b);
-comp_373=  color.g = smoothstep(-0.1, 0.95, color.g);
-comp_374=  color.b *= vignette;
+comp_287=  d = lerp(d, sdBox_1117569599(p, float3(0.175, 0.175, 0.175) * (1.0 + mwDeviation() * 0.30)), pulse);
+comp_288=
+comp_289=  return float2(d, id);
+comp_290=}
+comp_291=
+comp_292=float3 palette( in float t, in float3 a, in float3 b, in float3 c, in float3 d ) {
+comp_293=  return a + b*cos( 6.28318*(c*t+d) );
+comp_294=}
+comp_295=
+comp_296=float3 bg(float3 ro, float3 rd) {
+comp_297=  float3 col = 0.1 + (
+comp_298=  palette(clamp((random_2281831123(rd.xz + sin(time * 0.1)) * 0.5 + 0.5) * 0.035 - rd.y * 0.5 + 0.35, -1.0, 1.0)
+comp_299=  , float3(0.5, 0.45, 0.55)
+comp_300=  , float3(0.5, 0.5, 0.5)
+comp_301=  , float3(1.05, 1.0, 1.0)
+comp_302=  , float3(0.275, 0.2, 0.19)
+comp_303=  )
+comp_304=  );
+comp_305=
+comp_306=  float t = intersectPlane(ro, rd, float3(0, 1, 0), 4.);
+comp_307=
+comp_308=  if (t > 0.0) {
+comp_309=    float3 p = ro + rd * t;
+comp_310=    float g = (1.0 - pow(abs(sin(p.x) * cos(p.z)), 0.25));
+comp_311=
+comp_312=    col += (1.0 - fogFactorExp2_529295689(t, 0.04)) * g * float3(5, 4, 2) * 0.075;
+comp_313=  }
+comp_314=
+comp_315=  return col;
+comp_316=}
+comp_317=
+comp_318=shader_body {
+comp_319=  float4 fragColor = 0;
+comp_320=  float2 fragCoord = uv;
+comp_321=  // CONV: Center on screen, then try some aspect correction
+comp_322=  uv = (uv*2) - 1;
+comp_323=  uv *= aspect.xy;
+comp_324=  // CONV: Adjust this to flip the output (±uv.x, ±uv.y)
+comp_325=  uv = float2(uv.x, -uv.y);
+comp_326=  // CONV: Adjust viewpoint (x,y individually or both)
+comp_327=  uv += float2(0,0) + 0;
+comp_328=  uv *= float2(1,1) * 1;
+comp_329=
+comp_330=  float3 ro, rd;
+comp_331=
+comp_332=  float2  suv      = uv;
+comp_333=  float2  pixCoord = float2(fragCoord.x, 1.0-fragCoord.y) * texsize.xy;
+comp_334=  float dist     = 4.5;
+comp_335=  float rotation = mouse.z > 0.0
+comp_336=  ? 6. * mouse.x
+comp_337=  : time * 0.45;
+comp_338=  float height = mouse.z > 0.0
+comp_339=  ? 5. * (mouse.y * 2.0 - 1.0)
+comp_340=  : -0.2;
+comp_341=
+comp_342=  orbitCamera_421267681(rotation, height, dist, texsize.xy, ro, rd, pixCoord);
+comp_343=
+comp_344=  float3 color = bg(ro, rd);
+comp_345=  float2 t = calcRayIntersection_3975550108(ro, rd);
+comp_346=  if (t.x > -0.5) {
+comp_347=    float3 pos = ro + rd * t.x;
+comp_348=    float3 nor = calcNormal_3606979787(pos);
+comp_349=    float3 ldir1 = normalize(float3(0.8, 1, 0));
+comp_350=    float3 ldir2 = normalize(float3(-0.4, -1.3, 0));
+comp_351=    float3 lcol1 = float3(0.6, 0.5, 1.1);
+comp_352=    float3 lcol2 = float3(1.4, 0.9, 0.8) * 0.7;
+comp_353=
+comp_354=    float3 ref = refract(rd, nor, 0.97);
+comp_355=    float2 u = calcRayIntersection_766934105(ro + ref * 0.1, ref);
+comp_356=    if (u.x > -0.5) {
+comp_357=      float3 pos2 = ro + ref * u.x;
+comp_358=      float3 nor2 = calcNormal_1245821463(pos2);
+comp_359=      float spec = cookTorranceSpecular_1460171947(ldir1, -ref, nor2, 0.6, 0.95) * 2.;
+comp_360=      float diff1 = 0.05 + max(0., dot(ldir1, nor2));
+comp_361=      float diff2 = max(0., dot(ldir2, nor2));
+comp_362=
+comp_363=      color = spec + (diff1 * lcol1 + diff2 * lcol2);
+comp_364=    }
+comp_365=
+comp_366=    else {
+comp_367=      color = bg(ro + ref * 0.1, ref) * 1.1;
+comp_368=    }
+comp_369=
+comp_370=    color += color * cookTorranceSpecular_1460171947(ldir1, -rd, nor, 0.2, 0.9) * 2.;
+comp_371=    color += 0.05;
+comp_372=  }
+comp_373=
+comp_374=  float vignette = 1.0;   // vignette removed on request
 comp_375=
-comp_376=  // AUDIO: the whole frame breathes with the level on top of the shape pulse (0 at version 3+)
-comp_377=  color *= 1.0 + mwDeviation() * 0.06;
-comp_378=
-comp_379=  fragColor.rgb = color;
-comp_380=  fragColor.a   = clamp(t.x, 0.5, 1.0);
-comp_381=  ret = fragColor;
-comp_382=}
+comp_376=  color.r = smoothstep(0.05, 0.995, color.r);
+comp_377=  color.b = smoothstep(-0.05, 0.95, color.b);
+comp_378=  color.g = smoothstep(-0.1, 0.95, color.g);
+comp_379=  color.b *= vignette;
+comp_380=
+comp_381=  // AUDIO: the whole frame breathes with the level on top of the shape pulse (0 at version 3+)
+comp_382=  color *= 1.0 + mwDeviation() * 0.06;
+comp_383=
+comp_384=  fragColor.rgb = color;
+comp_385=  fragColor.a   = clamp(t.x, 0.5, 1.0);
+comp_386=  ret = fragColor;
+comp_387=}

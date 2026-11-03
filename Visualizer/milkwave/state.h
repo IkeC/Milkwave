@@ -424,6 +424,9 @@ class CState {
   double* var_pf_blur3max;
   double* var_pf_blur1_edge_darken;
   double *var_pf_mousex, *var_pf_mousey, *var_pf_mousedown, *var_pf_mouseclick;
+  // system time and date (BeatDrop compatible variable names)
+  double *var_pf_year, *var_pf_month, *var_pf_day, *var_pf_weekday;
+  double *var_pf_hour, *var_pf_minute, *var_pf_second, *var_pf_milliseconds, *var_pf_totalseconds;
 
   // for per-vertex expression evaluation:
   NSEEL_VMCTX m_pv_eel;

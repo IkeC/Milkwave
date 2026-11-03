@@ -90,7 +90,7 @@ comp_85=    float diffuse = max(0., dot(normalize(lo - p), n));
 comp_86=    color = float3(10., 10., 10.) / p.z  * diffuse;
 comp_87=  }
 comp_88=
-comp_89=  #ifdef bass_smooth
+comp_89=  #ifdef vis_version
 comp_90=    float fac = (int)vis_version > 2 ? 0.4*vis_intensity+vis_shift : (0.4 * clamp((int)vis_version == 1 ? bass_smooth : bass_att,0.3,1.7))*vis_intensity+vis_shift;
 comp_91=  #else
 comp_92=    float fac = 0.4 * clamp(bass_att,0.97,1.03);

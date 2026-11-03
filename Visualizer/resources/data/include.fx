@@ -21,6 +21,8 @@ float4 _c14 = float4(0.5, 0.5, 0, 0); // mouse
 float4 _c15 = float4(0, 0, 0, 0); // bass_smooth, mid_smooth, treb_smooth, vol_smooth
 float4 _c16 = float4(1, 0, 1, 0); // vis_intensity, vis_shift, vis_version
 float4 _c17 = float4(0, 0, 0, 0); // colshift_hue, colshift_saturation, colshift_brightness
+float4 _c18 = float4(0, 0, 0, 0); // system time: hour, minute, second, seconds since midnight
+float4 _c19 = float4(0, 0, 0, 0); // system date: year, month, day, weekday (1 = Monday .. 7 = Sunday)
 
 float4 _qa; // q vars bank 1 [q1-q4]
 float4 _qb; // q vars bank 2 [q5-q8]
@@ -92,6 +94,20 @@ float4x3 rot_rand4;
 #define colshift_hue        _c17.x
 #define colshift_saturation _c17.y
 #define colshift_brightness _c17.z
+
+// System time and date, same names as BeatDrop. They are deliberately prefixed: a preset that
+// declares its own "day", "hour" or "year" would otherwise break on the macro (BeatDrop renamed
+// these after exactly that conflict, see their commit 9e58cd93).
+#define sysTime            _c18
+#define sysDate            _c19
+#define sysTimeHour        _c18.x
+#define sysTimeMinute      _c18.y
+#define sysTimeSecond      _c18.z
+#define sysTimeTotalSeconds _c18.w
+#define sysDateYear        _c19.x
+#define sysDateMonth       _c19.y
+#define sysDateDay         _c19.z
+#define sysDateWeekday     _c19.w
 
 #define q1 _qa.x
 #define q2 _qa.y
@@ -223,6 +239,27 @@ float get_fft_peak(float pos) {
 // Get peak-hold FFT magnitude at a specific frequency in Hz
 float get_fft_peak_hz(float freq) {
     return get_fft_peak(freq / 22050.0);
+}
+
+// Waveform audio texture (row 0 = left channel, row 1 = right channel), values in [-1..1]
+sampler2D sampler_wave;
+#define texsize_wave float4(480.0, 2.0, 1.0/480.0, 0.5)  // width must match NUM_WAVEFORM_SAMPLES (defines.h)
+
+// Get the mono waveform sample at normalized position [0..1]
+float get_wave(float pos) {
+    float left = tex2D(sampler_wave, float2(saturate(pos), 0.25)).x;
+    float right = tex2D(sampler_wave, float2(saturate(pos), 0.75)).x;
+    return (left + right) * 0.5;
+}
+
+// Get the left channel waveform sample at normalized position [0..1]
+float get_wave_left(float pos) {
+    return tex2D(sampler_wave, float2(saturate(pos), 0.25)).x;
+}
+
+// Get the right channel waveform sample at normalized position [0..1]
+float get_wave_right(float pos) {
+    return tex2D(sampler_wave, float2(saturate(pos), 0.75)).x;
 }
 
 float3 shiftHSV(float3 c)

@@ -37,7 +37,7 @@ comp_32=  uv*=10.;
 comp_33=  float2 id = floor(uv);
 comp_34=  uv = frac(uv);
 comp_35=  
-comp_36=  #ifdef bass_smooth
+comp_36=  #ifdef vis_version
 comp_37=    float fac = (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (0.85 + 0.3*smoothstep(0, 2, (int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_38=  #else
 comp_39=    float fac = 0.85 + 0.3*smoothstep(0, 2, bass_att);

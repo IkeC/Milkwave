@@ -16,7 +16,7 @@ comp_11=  float3 b = float3(0.5, 0.5, 0.5);
 comp_12=  float3 c = float3(1.0, 1.1, 1.0);
 comp_13=  float3 d = float3(0.263, 0.416, 0.557);
 comp_14=
-comp_15=  #ifdef bass_smooth
+comp_15=  #ifdef vis_version
 comp_16=    d -= (int)vis_version > 2 ? 1*vis_intensity+vis_shift : (1.5*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_17=  #else
 comp_18=    d -= 0.2*smoothstep(0,2,bass_att);

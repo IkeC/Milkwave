@@ -37,7 +37,7 @@ comp_32=  /2e4);
 comp_33=  */
 comp_34=
 comp_35=  float shift1 = 0, shift2 = 0, shift3 = 0, shift4 = 0; 
-comp_36=  #ifdef bass_smooth
+comp_36=  #ifdef vis_version
 comp_37=    if (vis_version == 1) {
 comp_38=      shift1 = (-0.5+smoothstep(0,2,bass_smooth))*vis_intensity+vis_shift;
 comp_39=      shift2 = (-0.5+smoothstep(0,2,mid_smooth))*vis_intensity+vis_shift;

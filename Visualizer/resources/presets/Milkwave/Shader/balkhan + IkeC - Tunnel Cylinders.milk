@@ -202,7 +202,7 @@ comp_197=  float3	pos = float3(.0, .0, 0.0);
 comp_198=
 comp_199=  pos.z = 4.5-time*2.;
 comp_200=
-comp_201=  #ifdef bass_smooth
+comp_201=  #ifdef vis_version
 comp_202=    pos.z += (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.3*smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att))*vis_intensity+vis_shift;
 comp_203=  #else
 comp_204=    pos.z += 0.15*smoothstep(0,2,bass_att);
@@ -223,7 +223,7 @@ comp_218=  #endif
 comp_219=
 comp_220=  col *= 0.9;
 comp_221=
-comp_222=  #ifdef bass_smooth
+comp_222=  #ifdef vis_version
 comp_223=    col.r += (int)vis_version > 2 ? 0.05*vis_intensity+vis_shift : (0.7*(smoothstep(0,2,(int)vis_version == 1 ? bass_smooth : bass_att)-0.5))*vis_intensity+vis_shift;
 comp_224=  #else
 comp_225=    col.r += 0.05*(smoothstep(0,2,bass_att)-0.5);

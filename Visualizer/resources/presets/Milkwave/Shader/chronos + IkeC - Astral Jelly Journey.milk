@@ -44,7 +44,7 @@ comp_39=
 comp_40=  // react to audio: bubble size
 comp_41=  float res = length(p - q)-.025+0.01;
 comp_42=  float fac = 0;
-comp_43=  #ifdef bass_smooth
+comp_43=  #ifdef vis_version
 comp_44=  if (vis_version == 1) {
 comp_45=    fac = clamp(0,2,bass_smooth)*0.04;
 comp_46=  }
@@ -184,7 +184,7 @@ comp_179=  color = sRGBencode(color);
 comp_180=
 comp_181=  // react to audio: jelly color
 comp_182=  float fac = 0.8;
-comp_183=  #ifdef bass_smooth
+comp_183=  #ifdef vis_version
 comp_184=  if (vis_version == 1) {
 comp_185=    fac = 1-clamp(0,2,bass_smooth)*0.4;
 comp_186=  }

@@ -17,7 +17,7 @@ comp_12=}
 comp_13=
 comp_14=float getIntensity() {
 comp_15=  float res = 1;
-comp_16=  #ifdef vis_intensity
+comp_16=  #ifdef vis_version
 comp_17=    res = 0.5+0.5/vis_intensity;
 comp_18=  #endif
 comp_19=  return res;
@@ -113,7 +113,7 @@ comp_108=  //col = float3(dif*(1.0+sin(rd.x)),dif,dif*0.8);
 comp_109=  col = float3(dif,dif,dif);
 comp_110=  
 comp_111=  float fac1 = 1;
-comp_112=  #ifdef bass_smooth
+comp_112=  #ifdef vis_version
 comp_113=    if (vis_version == 1) {
 comp_114=      fac1 = fac1 + smoothstep(0,2,bass_smooth);
 comp_115=    }

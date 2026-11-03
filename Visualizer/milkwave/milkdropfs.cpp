@@ -595,6 +595,17 @@ void CPlugin::LoadPerFrameEvallibVars(CState* pState) {
   *pState->var_pf_mousey = (double)m_mouseY;
   *pState->var_pf_mousedown = m_mouseDown ? 1.0 : 0.0;
   *pState->var_pf_mouseclick = m_mouseClicked > 0 ? 1.0 : 0.0;
+
+  // system time and date - real values, not blended across a preset transition
+  *pState->var_pf_year = (double)m_sysYear;
+  *pState->var_pf_month = (double)m_sysMonth;
+  *pState->var_pf_day = (double)m_sysDay;
+  *pState->var_pf_weekday = (double)m_sysWeekday;
+  *pState->var_pf_hour = (double)m_sysHour;
+  *pState->var_pf_minute = (double)m_sysMinute;
+  *pState->var_pf_second = (double)m_sysSecond;
+  *pState->var_pf_milliseconds = (double)m_sysMilliseconds;
+  *pState->var_pf_totalseconds = (double)m_sysTotalSeconds;
 }
 
 void CPlugin::RunPerFrameEquations(int code) {
@@ -836,6 +847,19 @@ void CPlugin::RenderFrame(int bRedraw) {
       lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
       CopyBackBufferToFullResOverlay();
       lpDevice->Present(NULL, NULL, NULL, NULL);  // Present the black screen
+    }
+  } else if (m_szCurrentPresetFile[0] == 0) {
+    // No preset has been applied yet: the first one of the session is still compiling in the
+    // background. The default MilkDrop state would show its "no preset" test pattern for that
+    // time, so keep the screen empty instead - MyRenderFn() keeps ticking the preset load and
+    // the shell draws the notifications ("Compiling ...") on top of this.
+    if (lpDevice) {
+      lpDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+      CopyBackBufferToFullResOverlay();
+    }
+    if (GetFrame() == 0) {
+      m_fStartTime = GetTime();
+      m_fPresetStartTime = GetTime();
     }
   } else {
     int i;
@@ -4752,11 +4776,13 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
       lpDevice->SetTexture(i, m_lpVS[0]);
     else if (p->m_texcode[i] == TEX_FFT)
       lpDevice->SetTexture(i, m_lpFFTTexture);
+    else if (p->m_texcode[i] == TEX_WAVE)
+      lpDevice->SetTexture(i, m_lpWaveTexture);
     else
       lpDevice->SetTexture(i, p->m_texture_bindings[i].texptr);
 
     // also set up sampler stage, if anything is bound here...
-    if (p->m_texcode[i] == TEX_VS || p->m_texcode[i] == TEX_FFT || p->m_texture_bindings[i].texptr) {
+    if (p->m_texcode[i] == TEX_VS || p->m_texcode[i] == TEX_FFT || p->m_texcode[i] == TEX_WAVE || p->m_texture_bindings[i].texptr) {
       bool bAniso = false;
       DWORD HQFilter = bAniso ? D3DTEXF_ANISOTROPIC : D3DTEXF_LINEAR;
       DWORD wrap = p->m_texture_bindings[i].bWrap ? D3DTADDRESS_WRAP : D3DTADDRESS_CLAMP;
@@ -4836,6 +4862,8 @@ void CPlugin::ApplyShaderParams(CShaderParams* p, LPD3DXCONSTANTTABLE pCT, CStat
   if (h[15]) pCT->SetVector(lpDevice, h[15], &D3DXVECTOR4(mysound.smooth[0], mysound.smooth[1], mysound.smooth[2], 0.3333f * (mysound.smooth[0], mysound.smooth[1], mysound.smooth[2])));
   if (h[16]) pCT->SetVector(lpDevice, h[16], &D3DXVECTOR4(m_VisIntensity, m_VisShift, m_VisVersion, 0.0f));
   if (h[17]) pCT->SetVector(lpDevice, h[17], &D3DXVECTOR4(m_ColShiftHue, m_ColShiftSaturation, m_ColShiftBrightness, 0.0f));
+  if (h[18]) pCT->SetVector(lpDevice, h[18], &D3DXVECTOR4((float)m_sysHour, (float)m_sysMinute, (float)m_sysSecond, m_sysTotalSeconds));
+  if (h[19]) pCT->SetVector(lpDevice, h[19], &D3DXVECTOR4((float)m_sysYear, (float)m_sysMonth, (float)m_sysDay, (float)m_sysWeekday));
 
   // write q vars
   int num_q_float4s = sizeof(p->q_const_handles) / sizeof(p->q_const_handles[0]);
